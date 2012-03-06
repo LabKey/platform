@@ -275,21 +275,24 @@ abstract public class PipelineProvider
     public ActionURL handleStatusAction(ViewContext ctx, String name, PipelineStatusFile sf)
             throws HandlerException
     {
-        if (!PipelineProvider.CAPTION_RETRY_BUTTON.equals(name) ||
-                (!PipelineJob.ERROR_STATUS.equals(sf.getStatus()) && !PipelineJob.CANCELLED_STATUS.equals(sf.getStatus())))
-            return null;
-
-        try
+        if (PipelineProvider.CAPTION_RETRY_BUTTON.equals(name))
         {
-            PipelineJobService.get().getJobStore().retry(sf);
+            if (!PipelineJob.ERROR_STATUS.equals(sf.getStatus()) && !PipelineJob.CANCELLED_STATUS.equals(sf.getStatus()))
+            {
+                throw new HandlerException("Unable to retry job that is not in the ERROR or CANCELLED state");
+            }
+            try
+            {
+                PipelineJobService.get().getJobStore().retry(sf);
+            }
+            // CONSIDER: Narrow this net further?
+            catch (IOException e)
+            {
+                throw new HandlerException(e);
+            }
+            return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlDetails(ctx.getContainer(), sf.getRowId());
         }
-        // CONSIDER: Narrow this net further? 
-        catch (Exception e)
-        {
-            throw new HandlerException(e);
-        }
-
-        return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlDetails(ctx.getContainer(), sf.getRowId());
+        return null;
     }
 
     /**
@@ -305,6 +308,11 @@ abstract public class PipelineProvider
         public HandlerException(String message, Throwable cause)
         {
             super(message, cause);
+        }
+
+        public HandlerException(String message)
+        {
+            super(message);
         }
     }
 
