@@ -297,8 +297,10 @@ LABKEY.Utils = new function()
                 return;
 
             var padding = [];
-            offsetX = offsetX || 35;
-            offsetY = offsetY || 30;
+            if (offsetX == undefined || offsetX == null)
+                offsetX = 35;
+            if (offsetY == undefined || offsetY == null)
+                offsetY = 30;
 
             if (paddingX !== undefined && paddingX != null)
                 padding.push(paddingX);
