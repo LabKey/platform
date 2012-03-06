@@ -1110,7 +1110,14 @@ public class PipelineController extends SpringActionController
     {
         public ActionURL getRedirectURL(StatusController.RowIdForm form) throws Exception
         {
-            PipelineStatusManager.cancelStatus(getViewBackgroundInfo(), form.getRowId());
+            try
+            {
+                PipelineStatusManager.cancelStatus(getViewBackgroundInfo(), form.getRowId());
+            }
+            catch (PipelineProvider.HandlerException e)
+            {
+                return StatusController.urlDetails(getContainer(), form.getRowId(), e.getMessage());
+            }
             return form.getReturnActionURL(StatusController.urlShowList(getContainer(), true));
         }
     }

@@ -118,13 +118,22 @@ public class StatusController extends SpringActionController
 
     public static ActionURL urlShowList(Container container, boolean lastFilter)
     {
+        return urlShowList(container, lastFilter, null);
+    }
+
+    public static ActionURL urlShowList(Container container, boolean lastFilter, String errorMessage)
+    {
         ActionURL url = new ActionURL(ShowListAction.class, container);
         if (lastFilter)
             url.addParameter(DataRegion.LAST_FILTER_PARAM, "true");
+        if (errorMessage != null)
+        {
+            url.addParameter("errorMessage", errorMessage);
+        }
         return url;
     }
 
-    abstract public class ShowListBaseAction<FORM extends ReturnUrlForm> extends FormViewAction<FORM>
+    abstract public class ShowListBaseAction<FORM extends ReturnUrlWithErrorForm> extends FormViewAction<FORM>
     {
         public ActionURL getSuccessURL(FORM form)
         {
@@ -141,9 +150,20 @@ public class StatusController extends SpringActionController
             QueryView gridView = new PipelineQueryView(getViewContext(), errors, ShowListRegionAction.class, PipelineService.PipelineButtonOption.Standard);
             gridView.setTitle("Data Pipeline");
 
+            VBox result = new VBox();
+            if (form.getErrorMessage() != null)
+            {
+                errors.addError(new LabkeyError(form.getErrorMessage()));
+            }
+            if (errors.getErrorCount() > 0)
+            {
+                result.addView(new SpringErrorView(errors));
+            }
+
             if (!c.isRoot())
             {
-                return gridView;
+                result.addView(gridView);
+                return result;
             }
             gridView.disableContainerFilterSelection();
 
@@ -151,20 +171,25 @@ public class StatusController extends SpringActionController
             {
                 HtmlView view = new HtmlView("You are not running the Enterprise Pipeline.");
                 view.setTitle("Pipeline Overview");
-                return new VBox(view, gridView);
+                result.addView(view);
             }
-
-            Set<String> locations = new TreeSet<String>();
-            TaskPipelineRegistry registry = PipelineJobService.get();
-            for (TaskFactory taskFactory : registry.getTaskFactories())
+            else
             {
-                locations.add(taskFactory.getExecutionLocation());
+                Set<String> locations = new TreeSet<String>();
+                TaskPipelineRegistry registry = PipelineJobService.get();
+                for (TaskFactory taskFactory : registry.getTaskFactories())
+                {
+                    locations.add(taskFactory.getExecutionLocation());
+                }
+                EnterprisePipelineBean bean = new EnterprisePipelineBean(locations);
+                JspView<EnterprisePipelineBean> overview = new JspView<EnterprisePipelineBean>("/org/labkey/pipeline/status/enterprisePipelineAdmin.jsp", bean);
+                overview.setTitle("Pipeline Overview");
+                result.addView(overview);
             }
-            EnterprisePipelineBean bean = new EnterprisePipelineBean(locations);
-            JspView<EnterprisePipelineBean> overview = new JspView<EnterprisePipelineBean>("/org/labkey/pipeline/status/enterprisePipelineAdmin.jsp", bean);
-            overview.setTitle("Pipeline Overview");
 
-            return new VBox(overview, gridView);
+            result.addView(gridView);
+
+            return result;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -188,15 +213,30 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
-    public class ShowListAction extends ShowListBaseAction<ReturnUrlForm>
+    public static class ReturnUrlWithErrorForm extends ReturnUrlForm
     {
-        public void validateCommand(ReturnUrlForm target, Errors errors)
+        private String _errorMessage;
+
+        public String getErrorMessage()
+        {
+            return _errorMessage;
+        }
+
+        public void setErrorMessage(String errorMessage)
+        {
+            _errorMessage = errorMessage;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ShowListAction extends ShowListBaseAction<ReturnUrlWithErrorForm>
+    {
+        public void validateCommand(ReturnUrlWithErrorForm target, Errors errors)
         {
             // Direct posts do nothing
         }
 
-        public boolean handlePost(ReturnUrlForm o, BindException errors) throws Exception
+        public boolean handlePost(ReturnUrlWithErrorForm o, BindException errors) throws Exception
         {
             return true;    // Direct posts do nothing
         }
@@ -228,18 +268,19 @@ public class StatusController extends SpringActionController
         }
     }
 
-    public static StringExpression urlDetailsData(Container c)
+    public static ActionURL urlDetails(Container c, int rowId)
     {
-        // Would be better to return an ActionURL, but it doesn't yet
-        // seem to support this binding.
-        ActionURL url = new ActionURL(DetailsAction.class, c).addParameter(RowIdForm.Params.rowId, "${RowId}");
-        return StringExpressionFactory.createURL(url);
+        return urlDetails(c, rowId, null);
     }
 
-    public static ActionURL urlDetails(Container c, int rowId)
+    public static ActionURL urlDetails(Container c, int rowId, String errorMessage)
     {
         ActionURL url = new ActionURL(DetailsAction.class, c);
         url.addParameter(RowIdForm.Params.rowId, Integer.toString(rowId));
+        if (errorMessage != null)
+        {
+            url.addParameter("errorMessage", errorMessage);
+        }
         return url;
     }
 
@@ -277,6 +318,14 @@ public class StatusController extends SpringActionController
             detailsView.setTitle("Job Status");
 
             VBox result = new VBox(detailsView);
+            if (form.getErrorMessage() != null)
+            {
+                errors.addError(new LabkeyError(form.getErrorMessage()));
+            }
+            if (errors.getErrorCount() > 0)
+            {
+                result.addView(new SpringErrorView(errors), 0);
+            }
 
             _statusFile = getStatusFile(form.getRowId());
             if (_statusFile != null)
@@ -321,7 +370,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    public static class RowIdForm extends ReturnUrlForm
+    public static class RowIdForm extends ReturnUrlWithErrorForm
     {
         enum Params { rowId }
 
@@ -419,7 +468,7 @@ public class StatusController extends SpringActionController
             }
             catch (PipelineProvider.HandlerException e)
             {
-                reject(errors, e.getMessage());
+                errors.addError(new LabkeyError(e.getMessage()));
             }
 
             return super.getView(form, reshow, errors);
@@ -528,7 +577,7 @@ public class StatusController extends SpringActionController
     {
         public void validateCommand(FORM target, Errors errors)
         {
-            Set<String> runs = DataRegionSelection.getSelected(getViewContext(), false);
+            Set<String> runs = DataRegionSelection.getSelected(getViewContext(), true);
 
             int i = 0;
             int[] rowIds = new int[runs.size()];
@@ -557,17 +606,17 @@ public class StatusController extends SpringActionController
             }
             catch (PipelineProvider.HandlerException e)
             {
-                reject(errors, e.getMessage());
+                errors.addError(new LabkeyError(e.getMessage()));
                 return false;
             }
 
             return true;
         }
 
-        abstract public void handleSelect(FORM form) throws Exception;
+        abstract public void handleSelect(FORM form) throws PipelineProvider.HandlerException;
     }
 
-    public static class SelectStatusForm extends ReturnUrlForm
+    public static class SelectStatusForm extends ReturnUrlWithErrorForm
     {
         private int[] _rowIds;
 
@@ -593,7 +642,7 @@ public class StatusController extends SpringActionController
             return super.handlePost(form, errors);
         }
 
-        public void handleSelect(ActionForm form) throws Exception
+        public void handleSelect(ActionForm form) throws PipelineProvider.HandlerException
         {
             // Let the provider handle the action, if it can.
             for (int rowId : form.getRowIds())
@@ -627,7 +676,7 @@ public class StatusController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class DeleteStatusAction extends PerformStatusActionBase
     {
-        public void handleSelect(SelectStatusForm form) throws Exception
+        public void handleSelect(SelectStatusForm form) throws PipelineProvider.HandlerException
         {
             deleteStatus(getViewBackgroundInfo(), DataRegionSelection.toInts(DataRegionSelection.getSelected(getViewContext(), true)));
         }
@@ -636,7 +685,7 @@ public class StatusController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class CancelStatusAction extends PerformStatusActionBase
     {
-        public void handleSelect(SelectStatusForm form) throws Exception
+        public void handleSelect(SelectStatusForm form) throws PipelineProvider.HandlerException
         {
             cancelStatus(getViewBackgroundInfo(), DataRegionSelection.toInts(DataRegionSelection.getSelected(getViewContext(), true)));
         }
@@ -645,7 +694,7 @@ public class StatusController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class CompleteStatusAction extends PerformStatusActionBase
     {
-        public void handleSelect(SelectStatusForm form) throws Exception
+        public void handleSelect(SelectStatusForm form) throws PipelineProvider.HandlerException
         {
             completeStatus(getUser(), DataRegionSelection.toInts(DataRegionSelection.getSelected(getViewContext(), true)));
         }
@@ -733,7 +782,7 @@ public class StatusController extends SpringActionController
         }
     }
 
-    public static class EscalateMessageForm extends ReturnUrlForm
+    public static class EscalateMessageForm extends ReturnUrlWithErrorForm
     {
         private String _escalateUser;
         private boolean _escalateAll;

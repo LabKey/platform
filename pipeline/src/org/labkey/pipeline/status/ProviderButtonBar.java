@@ -20,7 +20,7 @@ import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DisplayElement;
 
 import java.io.Writer;
@@ -88,9 +88,10 @@ public class ProviderButtonBar extends ButtonBar
                         {
                             if (action.isVisible(_statusFile))
                             {
-                                ActionButton button = new ActionButton("providerAction.view?" +
-                                        "name=" + PageFlowUtil.encode(action.getLabel()) + "&" +
-                                        "rowId=${rowId}", action.getLabel());
+                                ActionURL url = new ActionURL(StatusController.ProviderActionAction.class, _statusFile.lookupContainer());
+                                url.addParameter("name", action.getLabel());
+                                url.addParameter("rowId", _statusFile.getRowId());
+                                ActionButton button = new ActionButton(url, action.getLabel());
                                 button.setActionType(ActionButton.Action.LINK);
                                 if (!ctx.getViewContext().getUser().isAdministrator())
                                     button.setDisplayPermission(UpdatePermission.class);

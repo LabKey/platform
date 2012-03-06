@@ -16,6 +16,7 @@
 
 package org.labkey.pipeline.api;
 
+import com.sun.xml.internal.ws.handler.HandlerException;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
@@ -456,11 +457,11 @@ public class PipelineStatusManager
         return filter;
     }
 
-    public static void completeStatus(User user, int... rowIds) throws SQLException, Container.ContainerException
+    public static void completeStatus(User user, int... rowIds) throws PipelineProvider.HandlerException
     {
-        PipelineSchema.getInstance().getSchema().getScope().ensureTransaction();
         try
         {
+            PipelineSchema.getInstance().getSchema().getScope().ensureTransaction();
             for (int rowId : rowIds)
             {
                 boolean statusSet = false;
@@ -500,15 +501,32 @@ public class PipelineStatusManager
             }
             PipelineSchema.getInstance().getSchema().getScope().commitTransaction();
         }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
         finally
         {
             PipelineSchema.getInstance().getSchema().getScope().closeConnection();
         }
     }
 
-    public static void deleteStatus(ViewBackgroundInfo info, int... rowIds) throws SQLException
+    public static void deleteStatus(ViewBackgroundInfo info, int... rowIds) throws PipelineProvider.HandlerException
     {
-        if (rowIds.length == 0)
+        Set<Integer> ids = new HashSet<Integer>(rowIds.length);
+        for (int rowId : rowIds)
+        {
+            ids.add(rowId);
+        }
+        deleteStatus(info, ids);
+        if (!ids.isEmpty())
+        {
+            throw new PipelineProvider.HandlerException("Failed to delete " + ids.size() + " job" + (ids.size() > 1 ? "s" : ""));
+        }
+    }
+    public static void deleteStatus(ViewBackgroundInfo info, Set<Integer> rowIds) throws PipelineProvider.HandlerException
+    {
+        if (rowIds.isEmpty())
         {
             return;
         }
@@ -572,13 +590,22 @@ public class PipelineStatusManager
                 params.add(pipelineStatusFile.getRowId());
             }
             sql.append(")");
+            // Remember that we deleted these rows
+            rowIds.removeAll(params);
 
             if (!c.isRoot())
             {
                 sql.append(" AND Container = ?");
                 params.add(c.getId());
             }
-            Table.execute(_schema.getSchema(), sql.toString(), params.toArray());
+            try
+            {
+                Table.execute(_schema.getSchema(), sql.toString(), params.toArray());
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
 
             // If we deleted anything, try recursing since we may have deleted all the child jobs which would
             // allow a parent job to be deleted
@@ -586,13 +613,14 @@ public class PipelineStatusManager
         }
     }
 
-    public static void cancelStatus(ViewBackgroundInfo info, int... rowIds) throws SQLException
+    public static void cancelStatus(ViewBackgroundInfo info, int... rowIds) throws PipelineProvider.HandlerException
     {
         if (rowIds.length == 0)
         {
             return;
         }
 
+        int failed = 0;
         for (int rowId : rowIds)
         {
             PipelineStatusFileImpl statusFile = PipelineStatusManager.getStatusFile(rowId);
@@ -600,12 +628,22 @@ public class PipelineStatusManager
             {
                 throw new NotFoundException();
             }
-            cancelStatus(info, statusFile);
+            if (!cancelStatus(info, statusFile))
+            {
+                failed++;
+            }
+        }
+        if (failed == 1)
+        {
+            throw new PipelineProvider.HandlerException("Unable to cancel job");
+        }
+        else if (failed > 1)
+        {
+            throw new PipelineProvider.HandlerException("Unable to cancel " + failed + " jobs");
         }
     }
 
-    private static void cancelStatus(ViewBackgroundInfo info, PipelineStatusFileImpl statusFile)
-            throws SQLException
+    private static boolean cancelStatus(ViewBackgroundInfo info, PipelineStatusFileImpl statusFile)
     {
         Container jobContainer = statusFile.lookupContainer();
         if (!jobContainer.hasPermission(info.getUser(), DeletePermission.class))
@@ -633,8 +671,20 @@ public class PipelineStatusManager
                 newStatus = PipelineJob.CANCELLING_STATUS;
             }
             statusFile.setStatus(newStatus);
-            PipelineStatusManager.updateStatusFile(statusFile);
+            try
+            {
+                PipelineStatusManager.updateStatusFile(statusFile);
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
             PipelineService.get().getPipelineQueue().cancelJob(jobContainer, statusFile);
+            return true;
+        }
+        else
+        {
+            return false;
         }
     }
 
