@@ -1211,10 +1211,18 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpExperimentImpl[] getExperiments(Container container, User user, boolean includeOtherContainers, boolean includeBatches)
     {
+        return getExperiments(container, user, includeOtherContainers, includeBatches, false);
+    }
+
+    public ExpExperimentImpl[] getExperiments(Container container, User user, boolean includeOtherContainers, boolean includeBatches, boolean includeHidden)
+    {
         try
         {
             SimpleFilter filter = createContainerFilter(container, user, includeOtherContainers);
-            filter.addCondition("Hidden", Boolean.FALSE);
+            if (!includeHidden)
+            {
+                filter.addCondition("Hidden", Boolean.FALSE);
+            }
             if (!includeBatches)
             {
                 filter.addCondition("BatchProtocolId", null, CompareType.ISBLANK);
@@ -1827,7 +1835,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             String sql = "SELECT RowId FROM " + getTinfoExperimentRun() + " WHERE Container = ? ;";
             int[] runIds = toInts(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
 
-            ExpExperimentImpl[] exps = getExperiments(c, user, false, true);
+            ExpExperimentImpl[] exps = getExperiments(c, user, false, true, true);
             ExpSampleSet[] sampleSets = getSampleSets(c, user, false);
 
             sql = "SELECT RowId FROM " + getTinfoProtocol() + " WHERE Container = ? ;";
