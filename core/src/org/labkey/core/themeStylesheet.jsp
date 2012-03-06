@@ -684,3 +684,17 @@ li.labkey-tab-inactive a
 .study-schedule-container .x4-reset .x4-grid-header-ct {
     background-color: #<%=grid%>;
 }
+
+.participant-filter-panel div.x4-panel-header {
+    background-color: #<%= webpart %> !important;
+}
+
+.ext-el-mask-msg,
+.ext-el-mask-msg div {
+    border-color: #<%= webpart %>;
+}
+
+.ext-el-mask-msg {
+    background-color: #<%= webpart %>;
+    background-image: none;
+}

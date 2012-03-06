@@ -398,7 +398,7 @@ li.ptid a.unhighlight
             border    : true,
             width     : 260,
             autoHeight: true,
-            minHeight : 200,
+            height    : 400,
             overCls   : 'iScroll',
             bodyStyle : 'padding: 8px',
             listeners : {
