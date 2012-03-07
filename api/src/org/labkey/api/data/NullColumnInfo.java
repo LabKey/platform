@@ -46,7 +46,10 @@ public class NullColumnInfo extends ColumnInfo
 
     public static String nullValue(String typeName)
     {
-        return "CAST(NULL AS " + typeName + ")";
+        if (null == typeName)
+            return "NULL";
+        else
+            return "CAST(NULL AS " + typeName + ")";
     }
 }
 

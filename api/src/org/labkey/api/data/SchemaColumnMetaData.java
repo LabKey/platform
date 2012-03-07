@@ -113,16 +113,19 @@ public class SchemaColumnMetaData
                 {
                     colInfo = getColumn(xmlColumn.getColumnName());
                     if (null != colInfo)
+                    {
                         colInfo.loadFromXml(xmlColumn, true);
+                        continue;
+                    }
                 }
 
-                if (null == colInfo)
-                {
+                if (tinfo.getTableType() != DatabaseTableType.NOT_IN_DB)
+                    colInfo = new VirtualColumnInfo(xmlColumn.getColumnName(), tinfo);
+                else
                     colInfo = new ColumnInfo(xmlColumn.getColumnName(), tinfo);
-                    colInfo.setNullable(true); // default is isNullable()==false
-                    addColumn(colInfo);
-                    colInfo.loadFromXml(xmlColumn, false);
-                }
+                colInfo.setNullable(true);
+                colInfo.loadFromXml(xmlColumn, false);
+                addColumn(colInfo);
             }
         }
 
@@ -352,6 +355,17 @@ public class SchemaColumnMetaData
         {
             xmlCol = xmlColumns.addNewColumn();
             columnInfo.copyToXml(xmlCol, bFull);
+        }
+    }
+
+
+    /** On upgrade there may be columns in .xml that are not in the database */
+    private class VirtualColumnInfo extends NullColumnInfo
+    {
+        VirtualColumnInfo(String name, TableInfo tinfo)
+        {
+            super(tinfo,name,null);
+            setIsUnselectable(true);    // minor hack, to indicate to other code that wants to detect this
         }
     }
 }
