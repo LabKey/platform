@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-EXEC sp_addapprole 'biotrue', 'password';
+CREATE SCHEMA biotrue;
+GO
 
 CREATE TABLE biotrue.server
 (

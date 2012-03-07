@@ -23,11 +23,10 @@
 
 /* exp-0.00-1.10.sql */
 
-EXEC sp_addapprole 'exp', 'password'
+CREATE SCHEMA exp;
 GO
 
-IF NOT EXISTS (SELECT * FROM systypes WHERE name ='LSIDtype')
-    EXEC sp_addtype 'LSIDtype', 'NVARCHAR(300)'
+EXEC sp_addtype 'LSIDtype', 'NVARCHAR(300)';
 GO
 
 CREATE TABLE exp.ExperimentRun

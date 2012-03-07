@@ -18,7 +18,8 @@
 
 /* comm-0.00-1.10.sql */
 
-EXEC sp_addapprole 'comm', 'password';
+CREATE SCHEMA comm;
+GO
 
 CREATE TABLE comm.Announcements
 (

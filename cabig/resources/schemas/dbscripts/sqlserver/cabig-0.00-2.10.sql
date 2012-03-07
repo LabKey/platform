@@ -14,4 +14,4 @@
  * limitations under the License.
  */
 
-EXEC sp_addapprole 'cabig', 'password';
+CREATE SCHEMA cabig;

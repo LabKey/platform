@@ -79,5 +79,5 @@ GO
 
 /* study-10.13-10.14.sql */
 
-EXEC sp_addapprole 'studyDataset', 'password'
+CREATE SCHEMA studyDataset
 GO

@@ -17,7 +17,8 @@
 /* audit-0.00-8.30.sql */
 
 -- Table used by Audit module
-EXEC sp_addapprole 'audit', 'password';
+CREATE SCHEMA audit;
+GO
 
 CREATE TABLE audit.AuditLog
 (

@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-EXEC sp_addapprole 'issues', 'password';
+CREATE SCHEMA issues;
+GO
 
 CREATE TABLE issues.Issues
 (

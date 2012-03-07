@@ -16,7 +16,8 @@
 
 /* filecontent-9.31-9.32.sql */
 
-EXEC sp_addapprole 'filecontent', 'password';
+CREATE SCHEMA filecontent;
+GO
 
 CREATE TABLE filecontent.FileRoots
 (

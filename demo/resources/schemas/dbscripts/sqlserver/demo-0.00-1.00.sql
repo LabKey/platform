@@ -15,7 +15,8 @@
  */
 
 -- Table used by Demo module
-EXEC sp_addapprole 'demo', 'password';
+CREATE SCHEMA demo;
+GO
 
 CREATE TABLE demo.Person
 (

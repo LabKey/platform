@@ -16,7 +16,7 @@
 
 /* study-10.30-10.31.sql */
 
-EXEC sp_addapprole 'assayresult', 'password'
+CREATE SCHEMA assayresult;
 GO
 
 EXEC core.executeJavaUpgradeCode 'materializeAssayResults'

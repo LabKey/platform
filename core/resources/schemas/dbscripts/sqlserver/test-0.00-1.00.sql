@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-EXEC sp_addapprole 'test', 'password';
+CREATE SCHEMA test;
+GO
 
 CREATE TABLE test.TestTable
 (

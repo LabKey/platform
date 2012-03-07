@@ -16,7 +16,8 @@
 
 /* prop-0.00-1.00.sql */
 
-EXEC sp_addapprole 'prop', 'password';
+CREATE SCHEMA prop;
+GO
 
 --
 -- NOTE: Bug in PropertyManager means NULL can't be passed for ObjectId, Category, etc. right now

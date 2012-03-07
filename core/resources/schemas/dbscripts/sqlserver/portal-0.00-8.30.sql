@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-EXEC sp_addapprole 'portal', 'password';
+CREATE SCHEMA portal;
+GO
 
 CREATE TABLE portal.PortalWebParts
 (

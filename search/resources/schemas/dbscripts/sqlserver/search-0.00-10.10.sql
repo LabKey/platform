@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-EXEC sp_addapprole 'search', 'password';
+CREATE SCHEMA search;
+GO
 
 CREATE TABLE search.CrawlCollections
 (

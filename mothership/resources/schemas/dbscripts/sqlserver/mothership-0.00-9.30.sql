@@ -16,7 +16,8 @@
 
 /* mothership-0.00-9.10.sql */
 
-EXEC sp_addapprole 'mothership', 'password';
+CREATE SCHEMA mothership;
+GO
 
 CREATE TABLE mothership.SoftwareRelease
 (

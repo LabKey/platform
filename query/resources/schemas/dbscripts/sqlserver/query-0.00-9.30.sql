@@ -16,7 +16,8 @@
 
 /* query-0.00-8.30.sql */
 
-EXEC sp_addapprole 'query', 'password';
+CREATE SCHEMA query;
+GO
 
 CREATE TABLE query.QueryDef
 (

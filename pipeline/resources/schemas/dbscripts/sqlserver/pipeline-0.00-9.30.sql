@@ -16,7 +16,8 @@
 
 /* pipeline-0.00-9.10.sql */
 
-EXEC sp_addapprole 'pipeline', 'password';
+CREATE SCHEMA pipeline;
+GO
 
 CREATE TABLE pipeline.StatusFiles
 (

@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-EXEC sp_addapprole 'umls', 'password';
+CREATE SCHEMA umls;
+GO
 
 CREATE TABLE umls.MRCOC
 (

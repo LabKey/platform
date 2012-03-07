@@ -16,12 +16,7 @@
 
 /* study-0.00-1.50.sql */
 
-IF NOT EXISTS (SELECT * FROM sysusers WHERE name ='study')
-    EXEC sp_addapprole 'study', 'password'
-GO
-
-IF NOT EXISTS (SELECT * FROM systypes WHERE name ='LSIDtype')
-    EXEC sp_addtype 'LSIDtype', 'NVARCHAR(300)'
+CREATE SCHEMA study;
 GO
 
 

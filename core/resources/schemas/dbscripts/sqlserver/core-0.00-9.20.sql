@@ -16,9 +16,11 @@
 
 /* core-0.00-8.30.sql */
 
+CREATE SCHEMA core;
+GO
+
 EXEC sp_addtype 'ENTITYID', 'UNIQUEIDENTIFIER';
 EXEC sp_addtype 'USERID', 'INT';
-EXEC sp_addapprole 'core', 'password';
 GO
 
 -- for JDBC Login support, validates email/password,
