@@ -48,9 +48,14 @@
 <tr class="labkey-wp-header" style="min-width:600px;">
     <th class="labkey-wp-title-left" style="padding:5px;"><span class="labkey-wp-title-left">Upload file (.xls, .csv, .txt)</span></th>
     <th class="labkey-wp-title-right"><%=PageFlowUtil.generateButton("+","#",null,"id='"+uploadFileDivId+"Expando'")%></tr>
-<tr><td colspan=2 style="display:none;"><div id="<%=uploadFileDivId%>"></div></td></tr>
+<tr><td colspan=2><div id="<%=uploadFileDivId%>"></div></td></tr>
 </table>
-<script> (function(){
+
+<script type="text/javascript">
+    LABKEY.requiresScript("FileUploadField.js");
+</script>
+
+<script type="text/javascript"> (function(){
     var $json = Ext.util.JSON.encode;
     var $html = Ext.util.Format.htmlEncode;
 
@@ -80,16 +85,6 @@
         collapseButton.dom.innerHTML = "+";
         collapseDiv.parent().setStyle("display","none");
     }
-
-
-    function expandFileUpload()
-    {
-        var td = importTsvDiv.getParent();
-        td.setStyle("display","none");
-        td = uploadFileDiv.getParent();
-        td.setStyle("display","inline");
-    }
-
 
     function cancelForm()
     {
@@ -128,8 +123,16 @@
                     var rowCount = action.result.rowCount;
                     msg = rowCount + " row" + (rowCount!=1?"s":"") + " inserted.";
                 }
-                if (msg)
-                    Ext.Msg.alert("Success", msg, function(){window.location = returnUrl;});
+                if (msg){
+                    Ext.Msg.show({
+                        title: "Success",
+                        msg: msg,
+                        closable: false
+                    });
+                    new Ext.util.DelayedTask(function(){
+                        window.location = returnUrl;
+                    }).delay(1500);
+                }
                 else
                     window.location = returnUrl;
             },
@@ -287,12 +290,17 @@
         tsvTextarea = Ext.get(<%=q(tsvId)%>);
         Ext.EventManager.on(tsvTextarea, 'keydown', handleTabsInTextArea);
 
-
+        var fibasic = new Ext.form.FileUploadField({
+            width: 300,
+            hideLabel: true,
+            name: 'file',
+            buttonText: 'Browse',
+            emptyText: 'Select a file to upload'
+        });
 
         uploadFileForm = new Ext.form.FormPanel({
             fileUpload : true,
-            labelWidth: 75, // label settings here cascade unless overridden
-            url:endpoint,
+            url: endpoint,
             title: false, // 'Import text',
             border: false,
             bodyStyle:'padding:5px',
@@ -301,12 +309,7 @@
             timeout: Ext.Ajax.timeout,
 
             items: [
-                {
-                    xtype: 'textfield',
-                    inputType: 'file',
-                    name : 'file',
-                    width:200
-                }
+                    fibasic
             ],
 
             buttonAlign:'left',
@@ -317,6 +320,7 @@
             }]
         });
         uploadFileForm.render(uploadFileDiv);
+        uploadFileDiv.parent().setStyle("display","none");
     }
 
     Ext.onReady(onReady);
