@@ -562,6 +562,11 @@ public class Query
             if (t instanceof ContainerFilterable && getContainerFilter() != null)
                 ((ContainerFilterable) t).setContainerFilter(getContainerFilter());
         }
+        catch (QueryException ex)
+        {
+            _parseErrors.add(ex);
+            return null;
+        }
         catch (UnauthorizedException ex)
         {
             parseError(_parseErrors, "No permission to read table: " + key.getName(), node);
