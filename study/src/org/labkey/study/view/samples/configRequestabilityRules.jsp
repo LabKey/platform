@@ -22,12 +22,10 @@
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.importer.RequestabilityManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-
 <%
+    // TODO: This should use viewPicker.js
     ViewContext context = HttpView.currentContext();
 %>
-
-
 <script type="text/javascript">
     Ext.QuickTips.init();
     window.onbeforeunload = LABKEY.beforeunload();
@@ -94,9 +92,6 @@
             })
         });
     }
-
-    var selectedQueryURL = "";
-    var selectedViewURL = "";
 
     function populateQueries(queryCombo, viewCombo, queriesInfo)
     {
