@@ -1155,8 +1155,19 @@ public class UserController extends SpringActionController
             Container c = getContainer();
             boolean isSiteAdmin = user.isAdministrator();
             boolean isProjectAdminOrBetter = isSiteAdmin || isProjectAdmin();
-            ValidEmail detailsEmail = new ValidEmail(detailsUser.getEmail());
-            boolean loginExists = SecurityManager.loginExists(detailsEmail);
+
+            ValidEmail detailsEmail = null;
+            boolean loginExists = false;
+
+            try
+            {
+                detailsEmail = new ValidEmail(detailsUser.getEmail());
+                loginExists = SecurityManager.loginExists(detailsEmail);
+            }
+            catch (ValidEmail.InvalidEmailException e)
+            {
+                // Allow display and edit of users with invalid email addresses so they can be fixed, #12276.
+            }
 
             DataRegion rgn = getGridRegion(isOwnRecord);
             ButtonBar bb = rgn.getButtonBar(DataRegion.MODE_DETAILS);
@@ -1173,7 +1184,7 @@ public class UserController extends SpringActionController
             if (isSiteAdmin)
             {
                 // Always display "Reset/Create Password" button (even for LDAP and OpenSSO users)... except for admin's own record.
-                if (!isOwnRecord)
+                if (!isOwnRecord && null != detailsEmail)
                 {
                     // Allow admins to create a logins entry if it doesn't exist.  Addresses scenario of user logging
                     // in with SSO and later needing to use database authentication.  Also allows site admin to have
@@ -1408,7 +1419,7 @@ public class UserController extends SpringActionController
             {
                 User user = UserManager.getUser(form.getUserId());
 
-                String message = UserManager.changeEmail(user.getUserId(), new ValidEmail(user.getEmail()), new ValidEmail(form.getNewEmail()), getUser());
+                String message = UserManager.changeEmail(user.getUserId(), user.getEmail(), new ValidEmail(form.getNewEmail()), getUser());
 
                 if (null != message && message.length() > 0)
                     errors.reject(ERROR_MSG, message);
