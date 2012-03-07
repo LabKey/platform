@@ -12,11 +12,28 @@
 */
 var dataFieldName = 'name';
 var dataUrlFieldName = 'viewDataUrl';
+var initialValues = new Array();        // TODO: Select these values in combos
 
-function populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo)
+function populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includeSchema)
 {
+    var schemas;
+
+    if (includeSchema)
+    {
+        schemas = new Array();
+        var len = schemasInfo.schemas.length;
+
+        for (var i = 0; i < len; i++)
+            if (includeSchema(schemasInfo.schemas[i]))
+                schemas.push(schemasInfo.schemas[i]);
+    }
+    else
+    {
+        schemas = schemasInfo.schemas;
+    }
+
     schemaCombo.store.removeAll();
-    schemaCombo.store.loadData(getArrayArray(schemasInfo.schemas));
+    schemaCombo.store.loadData(getArrayArray(schemas));
     schemaCombo.on("select", function(combo, record, index)
     {
         queryCombo.clearValue();
@@ -27,9 +44,6 @@ function populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo)
         })
     });
 }
-
-var selectedQueryURL = "";
-var selectedViewURL = "";
 
 function populateQueries(queryCombo, viewCombo, queriesInfo)
 {
@@ -58,6 +72,7 @@ var defaultViewLabel = "[default view]";
 function populateViews(viewCombo, queryViews)
 {
     var records = [[defaultViewLabel]];
+
     for (var i = 0; i < queryViews.views.length; i++)
     {
         var viewInfo = queryViews.views[i];
@@ -80,8 +95,13 @@ function getArrayArray(simpleArray)
     return arrayArray;
 }
 
-function chooseView(title, helpText, sep, submitFunction)
+// current value is an optional string parameter that provides string containing the current value.
+// includeSchema is an optional function that determines if passed schema name should be included in the schema drop-down.
+function chooseView(title, helpText, sep, submitFunction, currentValue, includeSchema)
 {
+    if (currentValue)
+        initialValues = currentValue.split(sep);
+
     var schemaCombo = new Ext.form.ComboBox({
             typeAhead: false,
             store: new Ext.data.ArrayStore({
@@ -150,7 +170,7 @@ function chooseView(title, helpText, sep, submitFunction)
         });
 
     LABKEY.Query.getSchemas({
-        successCallback: function(schemasInfo) { populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo); }
+        successCallback: function(schemasInfo) { populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includeSchema); }
     });
 
     var labelStyle = 'border-bottom:1px solid #AAAAAA;margin:3px';
