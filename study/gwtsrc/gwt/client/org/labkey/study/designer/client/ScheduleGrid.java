@@ -191,10 +191,10 @@ public abstract class ScheduleGrid extends EditableGrid
 
         void update()
         {
+            designer.setDirty(true);
             if (isGhost)
             {
                 schedule.addTimepoint(tp);
-                designer.setDirty(true);
                 updateAll();
             }
             else
@@ -332,7 +332,7 @@ public abstract class ScheduleGrid extends EditableGrid
                 }
 
                 hide();
-                update();                
+                update();
             }
         }
 

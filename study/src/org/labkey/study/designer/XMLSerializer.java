@@ -24,6 +24,8 @@ import gwt.client.org.labkey.study.designer.client.model.*;
 import org.labkey.study.xml.*;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -144,6 +146,18 @@ public class XMLSerializer
                 GWTAssayDefinition gad = src;
                 gad.setDefaultLab(ref.getLab());
                 gAssaySchedule.getAssays().add(gad);
+            }
+
+        //Note: timepoint storage is somewhat redundant for backward compatibility
+        //The complete list of timepoints is retrieved here to support empty schdules
+        //Assay events serialize their entire timepoint descriptor as well
+        AssaySchedule.Timepoints timepoints = xAssaySchedule.getTimepoints();
+        if (null != timepoints)
+            for (Timepoint tp : timepoints.getTimepointArray())
+            {
+                GWTTimepoint.Unit unit = GWTTimepoint.Unit.fromString(tp.getDisplayUnit());
+                GWTTimepoint gtp = new GWTTimepoint(tp.getName(), tp.getDays()/unit.daysPerUnit, unit);
+                gAssaySchedule.addTimepoint(gtp);
             }
 
         for (AssayEvent evt : xAssaySchedule.getAssayEventArray())
@@ -293,10 +307,17 @@ public class XMLSerializer
 
             AssaySchedule xAssaySchedule = x.addNewAssaySchedule();
             AssaySchedule.Assays assays = xAssaySchedule.addNewAssays();
+            AssaySchedule.Timepoints timepoints = xAssaySchedule.addNewTimepoints();
+
             GWTAssaySchedule gAssaySchedule = def.getAssaySchedule();
             if (null != gAssaySchedule.getDescription())
                 xAssaySchedule.setDescription(gAssaySchedule.getDescription());
-            
+
+            List<Timepoint> scheduleTimepoints = new ArrayList<Timepoint>();
+            for (GWTTimepoint gtp : gAssaySchedule.getTimepoints())
+                scheduleTimepoints.add(createTimepoint(gtp));
+            timepoints.setTimepointArray(scheduleTimepoints.toArray(new Timepoint[scheduleTimepoints.size()]));
+
             for (GWTAssayDefinition gwtAssayDefinition : (List<GWTAssayDefinition>) gAssaySchedule.getAssays())
             {
                 AssayRef assayRef = assays.addNewAssayRef();
