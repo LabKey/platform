@@ -187,6 +187,10 @@ public abstract class BaseStudyTable extends FilteredTable
         ColumnInfo visitColumn = null;
         ColumnInfo visitDescriptionColumn = addWrapColumn(_rootTable.getColumn("VisitDescription"));
 
+        // add the sequenceNum column so we have it for later queries
+        ColumnInfo sequenceNumColumn = addColumn(new AliasedColumn(this, "SequenceNum", _rootTable.getColumn("VisitValue")));
+        sequenceNumColumn.setHidden(true);
+
         if (timepointType == TimepointType.DATE || timepointType == TimepointType.CONTINUOUS)
         {
             //consider:  use SequenceNumMin for visit-based studies too (in visit-based studies VisitValue == SequenceNumMin)
