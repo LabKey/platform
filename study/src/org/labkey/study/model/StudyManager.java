@@ -1495,9 +1495,14 @@ public class StudyManager
 
         if (types != null)
         {
-            if (filter == null)
-                filter = new SimpleFilter("Container", study.getContainer().getId());
-            filter.addInClause("Type", Arrays.asList(types));
+            // ignore during upgrade
+            ColumnInfo typeCol = StudySchema.getInstance().getTableInfoDataSet().getColumn("Type");
+            if (null != typeCol && !typeCol.isUnselectable())
+            {
+                if (filter == null)
+                    filter = new SimpleFilter("Container", study.getContainer().getId());
+                filter.addInClause("Type", Arrays.asList(types));
+            }
         }
         List<DataSetDefinition> datasets = Arrays.asList(_dataSetHelper.get(study.getContainer(), filter, null));
 
@@ -1526,6 +1531,15 @@ public class StudyManager
         return datasets.toArray(new DataSetDefinition[datasets.size()]);
     }
 
+
+    public DataSetDefinition[] getDataSetDefinitionsForUpgrade(Container c) throws SQLException
+    {
+        DataSetDefinition[] datasets = Table.executeQuery(StudySchema.getInstance().getSchema(),
+                "SELECT * FROM study.dataset WHERE container=?", new Object[] {c.getId()}, DataSetDefinition.class);
+        return datasets;
+    }
+
+
     public PropertyDescriptor[] getSharedProperties(Study study)
     {
         return _dataSetHelper.getSharedProperties(study.getContainer());
@@ -1544,7 +1558,7 @@ public class StudyManager
                 Table.execute(StudySchema.getInstance().getSchema(), "UPDATE study.dataset SET entityId=? WHERE container=? and datasetid=? and entityid IS NULL", ds.getEntityId(), ds.getContainer().getId(), ds.getDataSetId());
                 _dataSetHelper.clearCache(ds);
                 ds = _dataSetHelper.get(s.getContainer(), id, "DataSetId");
-                // calling updateDataSetDefinition() during load (getDatasetDefinition()) may causesrecursion problem
+                // calling updateDataSetDefinition() during load (getDatasetDefinition()) may cause recursion problems
                 //updateDataSetDefinition(null, ds);
             }
             return ds;
@@ -3327,6 +3341,11 @@ public class StudyManager
     {
         try
         {
+            // in the upgrade case there  may not be any ancillary studyies
+            TableInfo t = StudySchema.getInstance().getTableInfoStudy();
+            ColumnInfo ssci = t.getColumn("SourceStudyContainerId");
+            if (null == ssci || ssci.isUnselectable())
+                return new StudyImpl[0];
             return Table.select(StudySchema.getInstance().getTableInfoStudy(), Table.ALL_COLUMNS,
                     new SimpleFilter("SourceStudyContainerId", sourceStudyContainer), null, StudyImpl.class);
         }

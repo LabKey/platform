@@ -2510,8 +2510,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         List<DataSetDefinition> defs = new ArrayList<DataSetDefinition>();
         for (Container c : allContainers)
         {
-            Study study = StudyManager.getInstance().getStudy(c);
-            DataSetDefinition[] arr = StudyManager.getInstance().getDataSetDefinitions(study);
+            DataSetDefinition[] arr = StudyManager.getInstance().getDataSetDefinitionsForUpgrade(c);
             if (null == arr) continue;
             defs.addAll(Arrays.asList(arr));
         }
