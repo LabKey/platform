@@ -180,23 +180,38 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
     {
         try
         {
+            // Keep track of all of the runs that have been created by this task
+            Set<ExpRun> importedRuns = new HashSet<ExpRun>();
+
             File permanentXAR = _factory.getXarFile(getJob());
             if (NetworkDrive.exists(permanentXAR))
             {
                 // Be sure that it's been imported (and not already deleted from the database)
-                ExperimentService.get().importXar(new FileXarSource(permanentXAR, getJob()), getJob(), false);
-                return new RecordedActionSet();
+                importedRuns.addAll(ExperimentService.get().importXar(new FileXarSource(permanentXAR, getJob()), getJob(), false));
             }
-
-            if (!NetworkDrive.exists(getLoadingXarFile()))
+            else
             {
-                insertRun();
+                if (!NetworkDrive.exists(getLoadingXarFile()))
+                {
+                    importedRuns.add(insertRun());
+                }
+
+                // Load the data files for this run
+                importedRuns.addAll(ExperimentService.get().importXar(new FileXarSource(getLoadingXarFile(), getJob()), getJob(), false));
+
+                getLoadingXarFile().renameTo(permanentXAR);
             }
 
-            // Load the data files for this run
-            ExperimentService.get().importXar(new FileXarSource(getLoadingXarFile(), getJob()), getJob(), false);
-            
-            getLoadingXarFile().renameTo(permanentXAR);
+            // Check if we've been cancelled. If so, delete any newly created runs from the database
+            PipelineStatusFile statusFile = PipelineService.get().getStatusFile(getJob().getLogFile().getPath());
+            if (statusFile != null && (PipelineJob.CANCELLED_STATUS.equals(statusFile.getStatus()) || PipelineJob.CANCELLING_STATUS.equals(statusFile.getStatus())))
+            {
+                for (ExpRun importedRun : importedRuns)
+                {
+                    getJob().info("Deleting run " + importedRun.getName() + " due to cancellation request");
+                    importedRun.delete(getJob().getUser());
+                }
+            }
         }
         catch (SQLException e)
         {
@@ -206,17 +221,10 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
         {
             throw new PipelineJobException("Failed to import data files", e);
         }
-        finally
-        {
-            if (ExperimentService.get().getSchema().getScope().isTransactionActive())
-            {
-                ExperimentService.get().closeTransaction();
-            }
-        }
         return new RecordedActionSet();
     }
 
-    private void insertRun() throws SQLException, PipelineJobException
+    private ExpRunImpl insertRun() throws SQLException, PipelineJobException
     {
         ExpRunImpl run;
         try
@@ -323,6 +331,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
         // Consider these actions complete. There may be additional runs created later in this job, and they
         // shouldn't duplicate the actions.
         getJob().clearActionSet(run);
+        return run;
     }
 
     private ExpRunImpl insertRun(Set<RecordedAction> actions, XarSource source, Map<URI, String> runOutputsWithRoles, Map<URI, String> runInputsWithRoles, ExpProtocol parentProtocol)

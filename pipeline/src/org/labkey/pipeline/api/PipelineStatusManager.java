@@ -16,7 +16,6 @@
 
 package org.labkey.pipeline.api;
 
-import com.sun.xml.internal.ws.handler.HandlerException;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;

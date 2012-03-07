@@ -18,6 +18,7 @@ package org.labkey.pipeline.mule;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.data.Container;
+import org.labkey.api.util.JobRunner;
 import org.labkey.pipeline.api.PipelineJobServiceImpl;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
@@ -111,7 +112,7 @@ public class EPipelineQueueImpl implements PipelineQueue
     }
 
     /** @return true if we found it on a Globus server and killed it, thus cancelling the job */
-    private boolean cancelGlobusJob(PipelineStatusFile statusFile, PipelineJob job)
+    private boolean cancelGlobusJob(final PipelineStatusFile statusFile, final PipelineJob job)
     {
         TaskFactory taskFactory = job.getActiveTaskFactory();
         for (GlobusClientPropertiesImpl globus : PipelineJobServiceImpl.get().getGlobusClientPropertiesList())
@@ -120,21 +121,27 @@ public class EPipelineQueueImpl implements PipelineQueue
             // Check if it's running through Globus
             if (taskFactory.getExecutionLocation().equals(name))
             {
-                try
+                // It is running through Globus - kill it
+                JobRunner.getDefault().execute(new Runnable()
                 {
-                    // It is running through Globus - kill it
-                    GlobusJobWrapper wrapper = new GlobusJobWrapper(job, false, false);
-                    job.getLogger().info("Cancelling job by submitting request to Globus.");
-                    PipelineJob.logStartStopInfo("Cancelling job by submitting request to Globus. Job ID: " + job.getJobGUID() + ", " + statusFile.getFilePath());
+                    @Override
+                    public void run()
+                    {
+                        try
+                        {
+                            GlobusJobWrapper wrapper = new GlobusJobWrapper(job, false, false);
+                            job.getLogger().info("Cancelling job by submitting request to Globus.");
+                            PipelineJob.logStartStopInfo("Cancelling job by submitting request to Globus. Job ID: " + job.getJobGUID() + ", " + statusFile.getFilePath());
+                            wrapper.cancel();
+                        }
+                        catch (Exception e)
+                        {
+                            _log.error("Error attempting to cancel job " + statusFile.getFilePath(), e);
+                        }
+                    }
 
-                    wrapper.cancel();
-                    return true;
-                }
-                catch (Exception e)
-                {
-                    _log.error("Error attempting to cancel job " + statusFile.getFilePath(), e);
-                    return false;
-                }
+                });
+                return true;
             }
         }
         return false;
