@@ -626,7 +626,10 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
             if (qfk == null)
             {
                 //noinspection ThrowableInstanceNeverThrown
-                qpe.add(new MetadataException("Schema " + xbColumn.getFk().getFkDbSchema() + " not found."));
+                String msgColumnName =
+                        (column.getParentTable()==null?"":column.getParentTable().getName()) +
+                        column.getName();
+                qpe.add(new MetadataException("Schema " + xbColumn.getFk().getFkDbSchema() + " not found, in foreign key definition: " + msgColumnName));
                 return;
             }
             column.setFk(qfk);
