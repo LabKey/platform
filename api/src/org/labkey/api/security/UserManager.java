@@ -443,7 +443,7 @@ public class UserManager
     }
 
 
-    public static String changeEmail(int userId, ValidEmail oldEmail, ValidEmail newEmail, User currentUser)
+    public static String changeEmail(int userId, String oldEmail, ValidEmail newEmail, User currentUser)
     {
         if (null != getUser(newEmail))
             return newEmail + " already exists.";
@@ -454,11 +454,11 @@ public class UserManager
 
             if (SecurityManager.loginExists(oldEmail))
             {
-                Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoLogins() + " SET Email=? WHERE Email=?", newEmail.getEmailAddress(), oldEmail.getEmailAddress());
-                addToUserHistory(getUser(userId), currentUser + " changed email from " + oldEmail.getEmailAddress() + " to " + newEmail.getEmailAddress() + ".");
+                Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoLogins() + " SET Email=? WHERE Email=?", newEmail.getEmailAddress(), oldEmail);
+                addToUserHistory(getUser(userId), currentUser + " changed email from " + oldEmail + " to " + newEmail.getEmailAddress() + ".");
                 User userToBeEdited = getUser(userId);
 
-                if (userToBeEdited.getDisplayName(userToBeEdited).equals(oldEmail.getEmailAddress()))
+                if (userToBeEdited.getDisplayName(userToBeEdited).equals(oldEmail))
                 {
                     Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoUsersData() + " SET DisplayName=? WHERE UserId=?", newEmail.getEmailAddress(), userId);
                 }

@@ -936,7 +936,14 @@ public class SecurityManager
     // Look up email in Logins table and return the corresponding password hash
     public static String getPasswordHash(ValidEmail email)
     {
-        SqlSelector selector = new SqlSelector(core.getSchema(), new SQLFragment("SELECT Crypt FROM " + core.getTableInfoLogins() + " WHERE Email = ?", email.getEmailAddress()));
+        return getPasswordHash(email.getEmailAddress());
+    }
+
+
+    // Look up email in Logins table and return the corresponding password hash
+    private static String getPasswordHash(String email)
+    {
+        SqlSelector selector = new SqlSelector(core.getSchema(), new SQLFragment("SELECT Crypt FROM " + core.getTableInfoLogins() + " WHERE Email = ?", email));
         return selector.getObject(String.class);
     }
 
@@ -949,6 +956,13 @@ public class SecurityManager
             return Crypt.MD5.matches(password, hash.substring(4));
         else
             return Crypt.MD5.matches(password, hash);
+    }
+
+
+    // Used only in the case of email change... current email address might be invalid
+    static boolean loginExists(String email)
+    {
+        return (null != getPasswordHash(email));
     }
 
 
