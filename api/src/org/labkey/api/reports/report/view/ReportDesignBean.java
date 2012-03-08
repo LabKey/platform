@@ -227,7 +227,9 @@ public class ReportDesignBean extends ReportForm
             else
                 descriptor.setFlags(descriptor.getFlags() & ~ReportDescriptor.FLAG_INHERITABLE);
             descriptor.setProperty(ReportDescriptor.Prop.cached, _cached);
-            if (null != getContainer())
+
+            // need to guarantee a container id on the report descriptor else we will blow up when we try to get the security policy
+            if ((null == descriptor.getContainerId()) && (null != getContainer()))
                 descriptor.setContainer(getContainer().getId());
         }
 

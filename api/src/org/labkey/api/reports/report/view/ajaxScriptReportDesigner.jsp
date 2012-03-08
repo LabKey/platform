@@ -49,6 +49,7 @@
     Mode mode = bean.getMode();
     boolean isAdmin = c.hasPermission(ctx.getUser(), AdminPermission.class);
     boolean sourceAndHelp = mode.showSourceAndHelp(ctx.getUser());
+    boolean canEdit = report.getReportId() != null ? report.getDescriptor().canEdit(ctx.getUser(), c) : true;
 
     // Mode determines whether we need unique IDs on all the HTML elements
     String uid = mode.getUniqueID();
@@ -635,7 +636,9 @@ var f_scope<%=uid%> = new (function() {
                 <input type="hidden" name="showDebug" value="true">
                 <input type="hidden" name="<%=ScriptReportDescriptor.Prop.scriptExtension%>" value="<%=StringUtils.trimToEmpty(bean.getScriptExtension())%>">
                 <input type="hidden" name="reportName" id="reportName" value="<%=StringUtils.trimToEmpty(bean.getReportName())%>">
+                <% if (canEdit) { %>
                 <%=generateButton("Save", "javascript:void(0)", "javascript:f_scope" + uid + ".saveReport()")%>
+                <% } %>
             </td></tr>
             <tr><td>&nbsp;</td></tr><%
                 }
