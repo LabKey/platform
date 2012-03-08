@@ -844,23 +844,30 @@ public class CoreController extends SpringActionController
                 throw new ApiUsageException("A child container with that name already exists");
             }
 
-            Container newContainer = ContainerManager.createContainer(getContainer(), name, title, description, workbook, getUser());
+            try
+            {
+                Container newContainer = ContainerManager.createContainer(getContainer(), name, title, description, workbook, getUser());
 
-            String folderTypeName = json.getString("folderType");
-            if (folderTypeName == null && workbook)
-            {
-                folderTypeName = WorkbookFolderType.NAME;
-            }
-            if (folderTypeName != null)
-            {
-                FolderType folderType = ModuleLoader.getInstance().getFolderType(folderTypeName);
-                if (folderType != null)
+                String folderTypeName = json.getString("folderType");
+                if (folderTypeName == null && workbook)
                 {
-                    newContainer.setFolderType(folderType, getUser());
+                    folderTypeName = WorkbookFolderType.NAME;
                 }
-            }
+                if (folderTypeName != null)
+                {
+                    FolderType folderType = ModuleLoader.getInstance().getFolderType(folderTypeName);
+                    if (folderType != null)
+                    {
+                        newContainer.setFolderType(folderType, getUser());
+                    }
+                }
 
-            return new ApiSimpleResponse(newContainer.toJSON(getUser()));
+                return new ApiSimpleResponse(newContainer.toJSON(getUser()));
+            }
+            catch (IllegalArgumentException e)
+            {
+                throw new ApiUsageException(e);
+            }
         }
     }
 
