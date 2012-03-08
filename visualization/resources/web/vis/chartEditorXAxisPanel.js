@@ -110,12 +110,16 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                         this.axis.range.min = undefined;
 
                         var beginning = this.intervalCombo.getValue() + " Since ";
-                        if(this.labelTextField.getValue().indexOf(beginning) == 0) {
+                        if(this.labelTextField.getValue() && this.labelTextField.getValue().indexOf(beginning) == 0) {
                             this.axis.label = "Visit";
                             this.labelTextField.setValue("Visit");
                         }
 
-                        this.fireEvent('chartDefinitionChanged', true);
+                        if(!this.doNotRefreshChart){
+                            this.fireEvent('chartDefinitionChanged', true);
+                        } else {
+                            this.doNotRefreshChart = false;
+                        }
                     }
                 },
                 'enable': function(cmp){
@@ -403,11 +407,21 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                 scope: this,
                 'load': function(store, records, options) {
                     // if there are no zero date option for this study, warn the user
-                    if (store.getTotalCount() == 0)
+                    if (store.getTotalCount() == 0 && this.timepointType == "DATE")
                     {
                         Ext.Msg.alert("Error", "There are no demographic date options available in this study. "
                             + "Please contact an administrator to have them configure the study to work with the Time Chart wizard.", function(){this.fireEvent('noDemographicData');}, this);
                         return;
+                    }
+
+                    if(store.getTotalCount() == 0 && this.timepointType == "visit")
+                    {
+                        // If we don't have any zero dates and we have a visit based study we'll want to automatically
+                        // set the chart up as a visit based chart since there are no other options.
+                        this.doNotRefreshChart = true; // Set doNotRefreshChart to prevent chart from firing ChartDefinitionChanged event.
+                        this.visitChartRadio.setValue(true);
+                        this.labelTextField.setValue("Visit");
+                        this.axis.label = "Visit";
                     }
 
                     // if this is a saved report, we will have a zero date to select

@@ -128,6 +128,8 @@ LABKEY.vis.GroupSelector = Ext.extend(Ext.Panel, {
                                 var index = store.find('label', this.subject.groups[i].label);
                                 if (index == -1)
                                 {
+                                    if(!this.groupsRemovedDisplayField.isVisible())
+                                        this.groupsRemovedDisplayField.setVisible(true);
                                     this.subject.groups.splice(i, 1);
                                     i--;
                                 }
@@ -202,7 +204,16 @@ LABKEY.vis.GroupSelector = Ext.extend(Ext.Panel, {
             style: 'font-size:90%;font-style:italic;'
         });
 
+        this.groupsRemovedDisplayField = new Ext.form.DisplayField({
+            hideLabel: true,
+            hidden: true,
+            html: 'One or more of the participant groups originally saved with this chart are not currently visible. ' +
+                    'The group(s) may have been deleted or you may not have permission to view them. <br> <br>',
+            style: 'font-size:90%;font-style:italic;'
+        });
+
         this.items = [
+            this.groupsRemovedDisplayField,
             this.noGroupsDisplayField,
             this.manageGroupsLink,
             this.defaultDisplayField,

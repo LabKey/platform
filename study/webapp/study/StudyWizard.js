@@ -402,12 +402,14 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         items.push({xtype:'displayfield', html: txt});
 
         this.noGroupRadio = new Ext.form.Radio({
+            height: 20,
             boxLabel:'Use all ' + this.subject.nounPlural.toLowerCase() + ' from the source study',
             name: 'renderType',
             inputValue: 'all'
         });
 
         this.existingGroupRadio = new Ext.form.Radio({
+            height: 20,
             boxLabel:'Select from existing ' + this.subject.nounSingular.toLowerCase() + ' groups',
             name: 'renderType',
             inputValue: 'existing',
@@ -426,16 +428,16 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         items.push(
                 {
-                xtype: 'radiogroup',
-                columns: 2,
-                fieldLabel: '',
-                style:"padding-bottom: 10px;",
-                labelWidth: 5,
-                items: [
-                    this.existingGroupRadio,
-                    this.noGroupRadio
-                ]
-            }
+                    xtype: 'radiogroup',
+                    columns: 2,
+                    fieldLabel: '',
+                    style:"padding-bottom: 10px;",
+                    labelWidth: 5,
+                    items: [
+                        this.existingGroupRadio,
+                        this.noGroupRadio
+                    ]
+                }
         );
 
         this.store = new Ext.data.Store({

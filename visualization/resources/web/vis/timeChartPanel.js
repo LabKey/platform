@@ -740,7 +740,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
         if (this.loaderCount == 0)
         {
-            this.clearChartPanel("Please select either \"Show Individual Lines\" or \"Show Aggregate\".");
+            this.clearChartPanel("Please select either \"Show Individual Lines\" or \"Show Mean\".");
             return;
         }
 
@@ -1004,7 +1004,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     sequenceNumber: rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/sequencenum"]].value
                 });
             }
-            if(rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/Label"]].value.length > 4){
+            if(rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/Label"]].value &&
+               rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/Label"]].value.length > 4){
                 this.longLabels = true;
             }
         }
@@ -1098,7 +1099,9 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 if(this.getSimplifiedConfig(Ext.decode(this.savedChartInfo)) == this.getSimplifiedConfig(this.chartInfo)){
                     this.markDirty(false);
                 } else {
-                    this.markDirty(true);
+                    //Don't mark dirty if the user can't edit the report, that's just mean.
+                    if(this.editorOverviewPanel.canSaveChanges())
+                        this.markDirty(true);
                 }
         }
 
