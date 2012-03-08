@@ -41,8 +41,22 @@ function populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includ
         LABKEY.Query.getQueries({
             schemaName: record.data[record.fields.first().name],
             successCallback: function(queriesInfo) { populateQueries(queryCombo, viewCombo, queriesInfo); }
-        })
+        });
     });
+
+    if (initialValues[0])
+    {
+        var index = schemaCombo.getStore().findExact('name', initialValues[0]);
+
+        if (-1 != index)
+        {
+            var record = schemaCombo.getStore().getAt(index);
+            schemaCombo.setValue(initialValues[0]);
+            schemaCombo.fireEvent('select', schemaCombo, record, index);
+        }
+
+        initialValues[0] = null;
+    }
 }
 
 function populateQueries(queryCombo, viewCombo, queriesInfo)
@@ -65,6 +79,20 @@ function populateQueries(queryCombo, viewCombo, queriesInfo)
             successCallback: function(queriesInfo) { populateViews(viewCombo, queriesInfo); }
         })
     });
+
+    if (initialValues[1])
+    {
+        var queryComboIndex = queryCombo.getStore().findExact('name', initialValues[1]);
+
+        if (-1 != queryComboIndex)
+        {
+            var record = queryCombo.getStore().getAt(queryComboIndex);
+            queryCombo.setValue(initialValues[1]);
+            queryCombo.fireEvent('select', queryCombo, record, queryComboIndex);
+        }
+
+        initialValues[1] = null;
+    }
 }
 
 var defaultViewLabel = "[default view]";
@@ -82,6 +110,16 @@ function populateViews(viewCombo, queryViews)
 
     viewCombo.store.removeAll();
     viewCombo.store.loadData(records);
+
+    if (initialValues[2])
+    {
+        var viewComboIndex = viewCombo.getStore().findExact('name', initialValues[2]);
+
+        if (-1 != viewComboIndex)
+            viewCombo.setValue(initialValues[2]);
+
+        initialValues[2] = null;
+    }
 }
 
 function getArrayArray(simpleArray)
@@ -94,6 +132,8 @@ function getArrayArray(simpleArray)
     }
     return arrayArray;
 }
+
+var s;
 
 // current value is an optional string parameter that provides string containing the current value.
 // includeSchema is an optional function that determines if passed schema name should be included in the schema drop-down.
@@ -120,9 +160,11 @@ function chooseView(title, helpText, sep, submitFunction, currentValue, includeS
             readOnly:false,
             editable:false,
             mode:'local',
-            triggerAction: 'all'
+            triggerAction: 'all',
+            lazyInit: false
         });
 
+    s = schemaCombo;
     var queryCombo = new Ext.form.ComboBox({
             typeAhead: false,
             store: new Ext.data.ArrayStore({
@@ -143,7 +185,8 @@ function chooseView(title, helpText, sep, submitFunction, currentValue, includeS
             readOnly:false,
             editable:false,
             mode:'local',
-            triggerAction: 'all'
+            triggerAction: 'all',
+            lazyInit: false
         });
 
     var viewCombo = new Ext.form.ComboBox({
@@ -166,7 +209,8 @@ function chooseView(title, helpText, sep, submitFunction, currentValue, includeS
             readOnly:false,
             editable:false,
             mode:'local',
-            triggerAction: 'all'
+            triggerAction: 'all',
+            lazyInit: false
         });
 
     LABKEY.Query.getSchemas({
