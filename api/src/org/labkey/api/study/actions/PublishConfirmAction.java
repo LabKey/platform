@@ -29,6 +29,7 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishKey;
@@ -440,6 +441,8 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
             errors.reject(null, "Visit IDs must be numbers.");
         if (missingDate || badDates)
             errors.reject(null, "You must specify a Date for all selected rows.");
+        if (publishData.isEmpty())
+            errors.reject(null, "No data selected to publish");
 
         if (errors.getErrorCount() == 0 && !publishConfirmForm.isValidate())
         {
@@ -448,6 +451,9 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
             if (publishErrors.isEmpty())
             {
                 DataRegionSelection.clearAll(getViewContext(), publishConfirmForm.getDataRegionSelectionKey());
+                // Issue 14111: successURL shouldn't be null if there are no errors, but better to go somewhere than to NPE.
+                if (successURL == null)
+                    successURL = PageFlowUtil.urlProvider(StudyUrls.class).getDatasetsURL(targetStudy);
                 throw new RedirectException(successURL);
             }
             for (String publishError : publishErrors)

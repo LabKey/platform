@@ -21,6 +21,7 @@ import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceRef;
+import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
@@ -75,8 +76,7 @@ public class ModuleHtmlViewDefinition extends ResourceRef
         }
         catch(IOException e)
         {
-            _log.error("Error trying to read HTML content from " + r.getPath(), e);
-            throw new RuntimeException(e);
+            throw new MinorConfigurationException("Error trying to read HTML content from " + r.getPath(), e);
         }
         finally
         {
