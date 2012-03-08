@@ -222,7 +222,8 @@ public class StudyServiceImpl implements StudyService.Service
             String newKey = keyNames.get(key);
             if (newKey != null)
                 key = newKey;
-
+            else if ("_row".equals(key))
+                continue;
             result.put(key, entry.getValue());
         }
 
@@ -290,8 +291,6 @@ public class StudyServiceImpl implements StudyService.Service
         for (int i = 0; i < datas.length; i++)
         {
             Map<String, Object> data = datas[i];
-            // Need to remove extraneous columns
-            data.remove("_row");
             canonicalDatas[i] = canonicalizeDatasetRow(data, queryTableInfo.getColumns());
         }
         return canonicalDatas;
