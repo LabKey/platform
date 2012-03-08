@@ -203,6 +203,9 @@ public class ContainerManager
         if (!Container.isLegalName(name, error))
             throw new IllegalArgumentException(error.toString());
 
+        if (!Container.isLegalTitle(title, error))
+            throw new IllegalArgumentException(error.toString());
+
         Path path = makePath(parent, name);
         SQLException sqlx = null;
         Map<String, Object> insertMap = null;

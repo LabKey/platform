@@ -546,7 +546,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
         if (name.length() > 255)
         {
-            error.append("Folder name must be shorted than 255 characters");
+            error.append("Folder name must be shorter than 255 characters");
             return false;
         }
 
@@ -573,6 +573,32 @@ public class Container implements Serializable, Comparable<Container>, Securable
             if (Character.isISOControl(name.charAt(i)))
             {
                 error.append("Non-printable characters are not allowed in folder names.");
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public static boolean isLegalTitle(String name, StringBuilder error)
+    {
+        if (null == name || 0 == name.trim().length())
+        {
+            return true;  //titles can be blank
+        }
+
+        if (name.length() > 1000)
+        {
+            error.append("Title must be shorter than 1000 characters");
+            return false;
+        }
+
+        //Don't allow ISOControl characters as they are not handled well by the databases
+        for( int i = 0; i < name.length(); ++i)
+        {
+            if (Character.isISOControl(name.charAt(i)))
+            {
+                error.append("Non-printable characters are not allowed in titles.");
                 return false;
             }
         }
