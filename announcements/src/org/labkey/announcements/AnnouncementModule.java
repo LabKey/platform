@@ -191,21 +191,15 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         super.afterUpdate(moduleContext);
 
         if (moduleContext.isNewInstall())
-            bootstrap(moduleContext);
+            bootstrap();
     }
 
-    private void bootstrap(ModuleContext moduleContext)
+    private void bootstrap()
     {
         try
         {
             Container supportContainer = ContainerManager.getDefaultSupportContainer();
             addWebPart(WEB_PART_NAME, supportContainer, null);
-
-            User installerUser = moduleContext.getUpgradeUser();
-
-            // TODO: is this really necessary anymore?
-            //if (installerUser != null && !installerUser.isGuest())
-            //    AnnouncementManager.saveEmailPreference(installerUser, supportContainer, AnnouncementManager.EMAIL_PREFERENCE_ALL);
         }
         catch (SQLException e)
         {
@@ -217,8 +211,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     @NotNull
     public Set<Class> getJUnitTests()
     {
-        return new HashSet<Class>(Arrays.asList(
-            AnnouncementManager.TestCase.class));
+        return new HashSet<Class>(Arrays.asList(AnnouncementManager.TestCase.class));
     }
 
     @Override

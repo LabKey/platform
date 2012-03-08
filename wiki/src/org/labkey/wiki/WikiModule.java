@@ -135,6 +135,7 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
         Container homeContainer = ContainerManager.getHomeContainer();
 
         FolderType collaborationType = ModuleLoader.getInstance().getFolderType(CollaborationFolderType.TYPE_NAME);
+
         try
         {
             supportContainer.setFolderType(collaborationType, moduleContext.getUpgradeUser());

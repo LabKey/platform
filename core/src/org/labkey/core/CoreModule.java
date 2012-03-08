@@ -26,24 +26,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.ClientAPIAuditViewFactory;
 import org.labkey.api.collections.ArrayListMap;
-import org.labkey.api.data.BooleanFormat;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.ContainerService;
-import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DatabaseCache;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.TSVWriter;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableSelectorTestCase;
-import org.labkey.api.data.TableViewFormTestCase;
-import org.labkey.api.data.TempTableTracker;
-import org.labkey.api.data.TestSchema;
-import org.labkey.api.data.XMLWriterTest;
+import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.etl.CachingDataIterator;
 import org.labkey.api.etl.ResultSetDataIterator;
@@ -277,13 +260,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @Override
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<WebPartFactory>(Arrays.asList(new AlwaysAvailableWebPartFactory("Contacts")
-            {
-                public WebPartView getWebPartView(ViewContext ctx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
+        return new ArrayList<WebPartFactory>(Arrays.asList(
+                new AlwaysAvailableWebPartFactory("Contacts")
                 {
-                    return new ContactWebPart();
-                }
-            },
+                    public WebPartView getWebPartView(ViewContext ctx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
+                    {
+                        return new ContactWebPart();
+                    }
+                },
                 new AlwaysAvailableWebPartFactory("Folders", WebPartFactory.LOCATION_MENUBAR, false, false) {
                     public WebPartView getWebPartView(final ViewContext portalCtx, Portal.WebPart webPart) throws Exception
                     {
@@ -418,15 +402,36 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // Users & guests can read from /home
         ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, siteAdminRole, readerRole, readerRole);
 
-        getUpgradeCode().installDefaultMvIndicators();
+        try
+        {
+            // Need to insert standard MV indicators for the root -- okay to call getRoot() since we just created it.
+            Container rootContainer = ContainerManager.getRoot();
+            String rootContainerId = rootContainer.getId();
+            TableInfo mvTable = CoreSchema.getInstance().getTableInfoMvIndicators();
+
+            for (Map.Entry<String,String> qcEntry : MvUtil.getDefaultMvIndicators().entrySet())
+            {
+                Map<String, Object> params = new HashMap<String, Object>();
+                params.put("Container", rootContainerId);
+                params.put("MvIndicator", qcEntry.getKey());
+                params.put("Label", qcEntry.getValue());
+
+                Table.insert(null, mvTable, params);
+            }
+        }
+        catch (Throwable t)
+        {
+            ExceptionUtil.logExceptionToMothership(null, t);
+        }
 
         try
         {
             addWebPart(WEB_PART_NAME, ContainerManager.getHomeContainer(), HttpView.BODY, 0);
         }
-        catch (SQLException e)
+        catch (Throwable t)
         {
-            Logger.getLogger(CoreModule.class).error("Unable to set up home folder", e);
+            Logger.getLogger(CoreModule.class).error("Unable to set up home folder", t);
+            ExceptionUtil.logExceptionToMothership(null, t);
         }
     }
 
