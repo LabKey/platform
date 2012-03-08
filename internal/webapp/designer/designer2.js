@@ -277,6 +277,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
                 text: "View Grid",
                 tooltip: "Apply changes to the view and reshow grid",
                 tooltipType: "title",
+                disabled: !canEdit,
                 handler: this.onApplyClick,
                 scope: this
             };
