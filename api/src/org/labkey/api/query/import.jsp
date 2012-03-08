@@ -116,6 +116,7 @@
             {
                 Ext.getBody().unmask();
                 var msg = null;
+
                 if ("msg" in action.result)
                     msg = action.result.msg;
                 else if ("rowCount" in action.result)
@@ -123,7 +124,9 @@
                     var rowCount = action.result.rowCount;
                     msg = rowCount + " row" + (rowCount!=1?"s":"") + " inserted.";
                 }
-                if (msg){
+
+                if (msg && "rowCount" in action.result && action.result.rowCount > 0)
+                {
                     Ext.Msg.show({
                         title: "Success",
                         msg: msg,
@@ -132,6 +135,10 @@
                     new Ext.util.DelayedTask(function(){
                         window.location = returnUrl;
                     }).delay(1500);
+                }
+                else if("rowCount" in action.result && action.result.rowCount == 0)
+                {
+                    serverInvalid({errors: {_form: "There was an error and the server was unable to insert any rows. Please check to make sure your data is formatted properly."}});
                 }
                 else
                     window.location = returnUrl;
