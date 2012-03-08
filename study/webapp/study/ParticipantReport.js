@@ -6,11 +6,14 @@
 LABKEY.requiresExt4Sandbox(true);
 LABKEY.requiresScript("study/ParticipantFilterPanel.js");
 
+Ext4.tip.QuickTipManager.init();
+
 Ext4.define('LABKEY.ext4.ParticipantReport', {
 
     extend : 'Ext.panel.Panel',
 
-    REPORT_PAGE_TEMPLATE : {
+    REPORT_PAGE_TEMPLATE :
+    {
         template : [
             '<table class="report" cellspacing=0>',
             '<tpl for="pages">',
@@ -23,7 +26,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                         '<tr><td colspan=2 style="padding:5px; font-weight:bold; font-size:1.3em; text-align:center;">{[ this.getHtml(values.headerValue) ]}</td></tr>',
         // note nested <tpl>, this will make values==datavalue and parent==field
                         '<tpl for="this.data.pageFields"><tpl for="parent.first.asArray[values.index]">',
-                            '<tr><td align=right>{[this.getCaptionHtml(parent)]}:&nbsp;</td><td align=left style="{parent.style}">{[this.getHtml(values)]}</td></tr>',
+                            '<tr><td align=right data-qtip="{[parent.qtip]}">{[this.getCaptionHtml(parent)]}:&nbsp;</td><td align=left style="{parent.style}">{[this.getHtml(values)]}</td></tr>',
                         '</tpl></tpl>',
                     '</table>',
                     '</div>',
@@ -31,7 +34,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         // GRID TEMPLATE
                 '<tr>',
                     '<tpl for="this.data.gridFields">',
-                        '<th style="padding-right: 10px;" class="labkey-column-header">{[this.getCaptionHtml(values)]}</th>',
+                        '<th style="padding-right: 10px;" class="labkey-column-header" data-qtip="{qtip}">{[this.getCaptionHtml(values)]}</th>',
                     '</tpl>',
                 '</tr>',
                 '<tpl for="rows">',
@@ -46,7 +49,8 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             '</table>',
             '{[((new Date()).valueOf() - this.start)/1000.0]}'
         ],
-        on : {
+        on :
+        {
             dataload : function(rpt, data)
             {
             },
@@ -679,9 +683,21 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
                 var rec = this.gridFieldStore.findRecord('name', columnToMeasure[field.name]);
                 if (rec)
+                {
                     field.shortCaption = rec.data.label;
+                    var $h = Ext4.util.Format.htmlEncode;
+                    var qtip = "";
+                    qtip += $h(rec.data.queryName);  // TODO use label if available
+                    qtip += ": ";
+                    qtip += $h(rec.data.label || rec.data.name);
+                    if (rec.data.description)
+                        qtip += "<br>" + $h(rec.data.description);
+                    field.qtip = qtip;
+                }
                 else if (columnToMeasure[field.name])
+                {
                     field.shortCaption = columnToMeasure[field.name];
+                }
             }
 
             config.renderTo = this.previewEl || this.previewPanel.getEl().id + '-body';
