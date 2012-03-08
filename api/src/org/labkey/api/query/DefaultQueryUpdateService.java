@@ -17,6 +17,7 @@ package org.labkey.api.query;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.OntologyManager;
@@ -147,7 +148,12 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         //PostgreSQL includes a column named _row for the row index, but since this is selecting by
         //primary key, it will always be 1, which is not only unnecessary, but confusing, so strip it
         if (null != row)
-            row.remove("_row");
+        {
+            if (row instanceof ArrayListMap)
+                ((ArrayListMap)row).getFindMap().remove("_row");
+            else
+                row.remove("_row");
+        }
 
         return row;
     }

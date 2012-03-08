@@ -17,6 +17,7 @@
 package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -209,6 +210,8 @@ public class AliasManager
     {
         if (column.isAliasSet())
         {
+            if (_aliases.get(column.getAlias()) != null)
+                throw new IllegalStateException("alias '" + column.getAlias() + "' is already in use!"); // SEE BUG 13682
             claimAlias(column.getAlias(), column.getName());
         }
         else

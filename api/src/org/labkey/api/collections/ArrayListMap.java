@@ -219,13 +219,14 @@ public class ArrayListMap<K, V> extends AbstractMap<K, V> implements Serializabl
     }
 
 
-    // CONSIDER: throw UnsupportedOperation()
+    /** use getFindMap().remove(key) */
     public V remove(Object key)
     {
-        if (_findMap.containsKey(key))
+        throw new UnsupportedOperationException();
+/*        if (_findMap.containsKey(key))
             return put((K)key, null);
         else
-            return null;
+            return null; */
     }
 
 
