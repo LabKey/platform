@@ -370,7 +370,7 @@ public class Portal
     }
 
     // Add a web part to the container at the specified index, with properties
-    public static WebPart addPart(Container c, String pageId, WebPartFactory desc, String location, int partIndex, @Nullable Map<String, String> properties)
+    public static WebPart addPart(Container c, String pageId, WebPartFactory desc, @Nullable String location, int partIndex, @Nullable Map<String, String> properties)
     {
         Collection<WebPart> parts = getParts(c, pageId);
 
