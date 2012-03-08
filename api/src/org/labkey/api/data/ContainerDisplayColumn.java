@@ -23,6 +23,8 @@ import org.labkey.api.view.ActionURL;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -87,7 +89,7 @@ public class ContainerDisplayColumn extends DataColumn
 
         if (_c == null)
         {
-            String id = (String)ctx.get(getEntityIdFieldKey());
+            String id = getEntityIdValue(ctx);
             if(id != null)
                 return "<deleted>";
             else
@@ -96,14 +98,33 @@ public class ContainerDisplayColumn extends DataColumn
         return _showPath ? _c.getPath() : _c.getTitle();
     }
 
-    private FieldKey getEntityIdFieldKey()
+    //NOTE: custom SQL statements may not container a column named entityId, so we fall back to container if entityId is absent
+    private List<FieldKey> getEntityIdFieldKeys()
     {
-        return new FieldKey(getDisplayColumn().getFieldKey().getParent(), "EntityId");
+        List<FieldKey> keys = new ArrayList<FieldKey>();
+        keys.add(new FieldKey(getDisplayColumn().getFieldKey().getParent(), "EntityId"));
+        keys.add(new FieldKey(getDisplayColumn().getFieldKey().getParent(), "Container"));
+        keys.add(new FieldKey(getDisplayColumn().getFieldKey().getParent(), "Folder"));
+
+        return keys;
+    }
+
+    private String getEntityIdValue(RenderContext ctx)
+    {
+        for(FieldKey fk : getEntityIdFieldKeys())
+        {
+            if(ctx.get(fk) != null && ctx.get(fk) instanceof String)
+            {
+                return (String)ctx.get(fk);
+            }
+        }
+        return null;
     }
 
     private Container getContainer(RenderContext ctx)
     {
-        String id = (String)ctx.get(getEntityIdFieldKey());
+        String id = getEntityIdValue(ctx);
+
         if (id != null)
         {
             _c = ContainerManager.getForId(id);
@@ -116,7 +137,7 @@ public class ContainerDisplayColumn extends DataColumn
     public void addQueryFieldKeys(Set<FieldKey> keys)
     {
         super.addQueryFieldKeys(keys);
-        keys.add(getEntityIdFieldKey());
+        keys.addAll(getEntityIdFieldKeys());
     }
 
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
