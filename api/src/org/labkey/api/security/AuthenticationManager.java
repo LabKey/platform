@@ -47,6 +47,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -57,14 +59,15 @@ import java.util.regex.Pattern;
  */
 public class AuthenticationManager
 {
-    // All registered authentication providers (DbLogin, LDAP, SSO, etc.)
-    private static List<AuthenticationProvider> _allProviders = new ArrayList<AuthenticationProvider>();
-    private static List<AuthenticationProvider> _activeProviders = null;
-    // Map of user id to login provider.  This is needed to handle clean up on logout.
-    private static Map<Integer, AuthenticationProvider> _userProviders = new HashMap<Integer, AuthenticationProvider>();
-
     private static final Logger _log = Logger.getLogger(AuthenticationManager.class);
-    private static Map<String, LinkFactory> _linkFactories = new HashMap<String, LinkFactory>();
+    // All registered authentication providers (DbLogin, LDAP, SSO, etc.)
+    private static final List<AuthenticationProvider> _allProviders = new CopyOnWriteArrayList<AuthenticationProvider>();
+    private static final List<AuthenticationProvider> _activeProviders = new CopyOnWriteArrayList<AuthenticationProvider>();
+    // Map of user id to login provider.  This is needed to handle clean up on logout.
+    private static final Map<Integer, AuthenticationProvider> _userProviders = new ConcurrentHashMap<Integer, AuthenticationProvider>();
+
+    private static volatile Map<String, LinkFactory> _linkFactories = new HashMap<String, LinkFactory>();
+
     public static final String HEADER_LOGO_PREFIX = "auth_header_logo_";
     public static final String LOGIN_PAGE_LOGO_PREFIX = "auth_login_page_logo_";
     public enum Priority { High, Low }
@@ -110,7 +113,7 @@ public class AuthenticationManager
 
     private static String getAuthLogoHtml(ActionURL currentURL, String prefix)
     {
-        if (_linkFactories.size() == 0)
+        if (_linkFactories.isEmpty())
             return null;
 
         StringBuilder html = new StringBuilder();
@@ -249,7 +252,8 @@ public class AuthenticationManager
             if (activeProviders.contains(getProvider(key)))
                 factories.put(key, new LinkFactory(props.get(key), key));
 
-        _activeProviders = activeProviders;
+        _activeProviders.clear();
+        _activeProviders.addAll(activeProviders);
         _linkFactories = factories;
     }
 
