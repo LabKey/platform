@@ -2021,24 +2021,28 @@ public class ReportsController extends BaseStudyController
             form.setComponentId("participant-report-panel-" + UniqueID.getRequestScopedUID(getRequest()));
             form.setExpanded(!(getViewContext().get("reportWebPart") != null));
 
-            JspView<ParticipantReportForm> view = new JspView<ParticipantReportForm>("/org/labkey/study/view/participantReport.jsp", form);
-
-            view.setTitle(StudyService.get().getSubjectNounSingular(getContainer()) + " Report");
-            view.setFrame(WebPartView.FrameType.PORTAL);
-
-            if (getViewContext().hasPermission(InsertPermission.class))
+            if (StudyService.get().getStudy(getContainer()) != null)
             {
-                String script = String.format("javascript:customizeParticipantReport('%s');", form.getComponentId());
-                NavTree edit = new NavTree("Edit", script, getViewContext().getContextPath() + "/_images/partedit.png");
-                view.addCustomMenu(edit);
+                JspView<ParticipantReportForm> view = new JspView<ParticipantReportForm>("/org/labkey/study/view/participantReport.jsp", form);
 
-                NavTree menu = new NavTree();
-                menu.addChild("New " + StudyService.get().getSubjectNounSingular(getContainer()) + " Report", new ActionURL(this.getClass(), getContainer()));
-                menu.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
-                view.setNavMenu(menu);
+                view.setTitle(StudyService.get().getSubjectNounSingular(getContainer()) + " Report");
+                view.setFrame(WebPartView.FrameType.PORTAL);
+
+                if (getViewContext().hasPermission(InsertPermission.class))
+                {
+                    String script = String.format("javascript:customizeParticipantReport('%s');", form.getComponentId());
+                    NavTree edit = new NavTree("Edit", script, getViewContext().getContextPath() + "/_images/partedit.png");
+                    view.addCustomMenu(edit);
+
+                    NavTree menu = new NavTree();
+                    menu.addChild("New " + StudyService.get().getSubjectNounSingular(getContainer()) + " Report", new ActionURL(this.getClass(), getContainer()));
+                    menu.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
+                    view.setNavMenu(menu);
+                }
+                return view;
             }
-
-            return view;
+            else
+                return new HtmlView("A study does not exist in this folder");
         }
 
         public NavTree appendNavTrail(NavTree root)
