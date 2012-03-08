@@ -17,6 +17,7 @@ package org.labkey.api.query;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -26,6 +27,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorUtil;
@@ -284,6 +286,19 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 if (hasTableScript)
                     getQueryTable().fireRowTrigger(container, TableInfo.TriggerType.INSERT, false, i, row, null, extraScriptContext);
                 result.add(row);
+            }
+            catch (SQLException sqlx)
+            {
+                if (StringUtils.startsWith(sqlx.getSQLState(), "22") || SqlDialect.isConstraintException(sqlx))
+                {
+                    ValidationException vex = new ValidationException(sqlx.getMessage());
+                    vex.fillIn(getQueryTable().getPublicSchemaName(), getQueryTable().getName(), row, i);
+                    errors.addRowError(vex);
+                }
+                else
+                {
+                    throw sqlx;
+                }
             }
             catch (ValidationException vex)
             {

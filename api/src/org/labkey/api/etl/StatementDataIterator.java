@@ -15,6 +15,7 @@
  */
 package org.labkey.api.etl;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RuntimeSQLException;
@@ -193,9 +194,10 @@ class StatementDataIterator extends AbstractDataIterator
         }
         catch (SQLException x)
         {
-            if (SqlDialect.isConstraintException(x))
+            if (StringUtils.startsWith(x.getSQLState(), "22") || SqlDialect.isConstraintException(x))
             {
-                // TODO 13792
+                getRowError().addGlobalError(x.getMessage());
+                return false;
             }
             throw new RuntimeSQLException(x);
         }
