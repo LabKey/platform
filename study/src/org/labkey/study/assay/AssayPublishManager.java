@@ -44,6 +44,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.DataSet;
@@ -217,6 +218,11 @@ public class AssayPublishManager implements AssayPublishService.Service
     private ActionURL _publishAssayData(User user, Container sourceContainer, @NotNull Container targetContainer, String assayName, @Nullable ExpProtocol protocol,
                                       List<Map<String, Object>> dataMaps, List<PropertyDescriptor> columns, String keyPropertyName, List<String> errors)
     {
+        if (dataMaps.isEmpty())
+        {
+            errors.add("No data rows to publish");
+            return null;
+        }
 
         StudyImpl targetStudy = StudyManager.getInstance().getStudy(targetContainer);
         assert verifyRequiredColumns(dataMaps, targetStudy.getTimepointType());
@@ -324,15 +330,7 @@ public class AssayPublishManager implements AssayPublishService.Service
             //Make sure that the study is updated with the correct timepoints.
             StudyManager.getInstance().getVisitManager(targetStudy).updateParticipantVisits(user, Collections.singleton(dataset));
 
-            ActionURL url = new ActionURL(StudyController.DatasetAction.class, targetContainer);
-            url.addParameter(DataSetDefinition.DATASETKEY, dataset.getRowId());
-            if (StudyManager.getInstance().showQCStates(targetStudy.getContainer()))
-            {
-                QCStateSet allStates = QCStateSet.getAllStates(targetStudy.getContainer());
-                if (allStates != null)
-                    url.addParameter(BaseStudyController.SharedFormParameters.QCState, allStates.getFormValue());
-            }
-
+            ActionURL url = PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(targetContainer, dataset.getRowId());
             return url;
         }
         catch (SQLException e)

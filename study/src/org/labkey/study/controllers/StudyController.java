@@ -286,6 +286,26 @@ public class StudyController extends BaseStudyController
         {
             return new ActionURL(OverviewAction.class, container);
         }
+
+        @Override
+        public ActionURL getDatasetURL(Container container, int datasetId)
+        {
+            ActionURL url = new ActionURL(StudyController.DatasetAction.class, container);
+            url.addParameter(DataSetDefinition.DATASETKEY, datasetId);
+            if (StudyManager.getInstance().showQCStates(container))
+            {
+                QCStateSet allStates = QCStateSet.getAllStates(container);
+                if (allStates != null)
+                    url.addParameter(BaseStudyController.SharedFormParameters.QCState, allStates.getFormValue());
+            }
+            return url;
+        }
+
+        @Override
+        public ActionURL getDatasetsURL(Container container)
+        {
+            return new ActionURL(StudyController.DatasetsAction.class, container);
+        }
     }
 
     public StudyController()
