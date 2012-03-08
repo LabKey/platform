@@ -40,7 +40,7 @@ public class SpecimenReportQuery
     private static final String sql_pivotByPrimaryType = "SELECT\n" +
             "  Container,\n" +
             "  %s,\n" +
-            "  SequenceNum,\n" +
+            "  Visit,\n" +
             "  %s,\n" +
             "  PrimaryType,\n" +
             "  SUM(VialCount) AS VialCount,\n" +
@@ -51,7 +51,7 @@ public class SpecimenReportQuery
             "\n" +
             "FROM SpecimenSummary\n" +
             "\n" +
-            "GROUP BY Container, %s, SequenceNum, %s, PrimaryType\n" +
+            "GROUP BY Container, %s, Visit, %s, PrimaryType\n" +
             "\n" +
             "PIVOT VialCount, AvailableCount, AtRepositoryCount, LockedInRequestCount, ExpectedAvailableCount\n" +
             "  BY PrimaryType\n" +
