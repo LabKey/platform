@@ -278,7 +278,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
                 }
                 for (String name : schema.getTableAndQueryNames(true))
                 {
-                    if (!StringUtils.startsWithIgnoreCase(name, "SpecimenSummary_PivotBy"))
+                    if (!StringUtils.startsWithIgnoreCase(name, "Primary Type Vial Counts"))
                         continue;
                     Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(context, schema, name, ColumnMatchType.All_VISIBLE, false);
                     if (entry != null)

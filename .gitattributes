@@ -2945,6 +2945,7 @@ study/src/org/labkey/study/query/SpecimenCommentTable.java -text
 study/src/org/labkey/study/query/SpecimenDetailTable.java -text
 study/src/org/labkey/study/query/SpecimenEventQueryView.java -text
 study/src/org/labkey/study/query/SpecimenEventTable.java -text
+study/src/org/labkey/study/query/SpecimenPivotByPrimaryType.java -text
 study/src/org/labkey/study/query/SpecimenQueryView.java -text
 study/src/org/labkey/study/query/SpecimenReportQuery.java -text
 study/src/org/labkey/study/query/SpecimenRequestDisplayColumn.java -text
