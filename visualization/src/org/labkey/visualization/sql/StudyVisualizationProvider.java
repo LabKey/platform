@@ -269,7 +269,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
                 {
                     if (ds.isShowByDefault())
                     {
-                        Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(context, schema, ds.getName(), ColumnMatchType.All_VISIBLE, false);
+                        Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(context, schema, ds.getLabel(), ColumnMatchType.All_VISIBLE, false);
                         if (entry != null)
                         {
                             queries.put(entry.getKey(), entry.getValue());
