@@ -53,6 +53,21 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             StudyJobSupport support = job.getJobSupport(StudyJobSupport.class);
             ImportContext ctx = support.getImportContext();
             StudyDocument.Study studyXml = ctx.getXml();
+
+            // Check if a delay has been requested for testing purposes, to make it easier to cancel the job in a reliable way 
+            if (studyXml.isSetImportDelay() && studyXml.getImportDelay() > 0)
+            {
+                for (int i = 0; i < studyXml.getImportDelay(); i++)
+                {
+                    job.setStatus("Delaying import, waited " + i + " out of "+ studyXml.getImportDelay() + " second delay");
+                    try
+                    {
+                        Thread.sleep(1000);
+                    }
+                    catch (InterruptedException e) {}
+                }
+            }
+            
             StudyImpl study = support.getStudy(true);
 
             // Create the study if it doesn't exist... otherwise, modify the existing properties
@@ -151,6 +166,11 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             new DatasetImporter().process(ctx, vf, support.getSpringErrors());
             if (support.getSpringErrors().hasErrors())
                 throwFirstErrorAsPiplineJobException(support.getSpringErrors());
+        }
+        catch (CancelledException e)
+        {
+            // Let this through without wrapping
+            throw e;
         }
         catch (Throwable t)
         {
