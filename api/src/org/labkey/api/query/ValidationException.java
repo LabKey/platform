@@ -19,6 +19,7 @@ import org.labkey.api.action.SpringActionController;
 import org.springframework.validation.Errors;
 import org.springframework.validation.MapBindingResult;
 
+import java.sql.SQLException;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -257,6 +258,22 @@ public class ValidationException extends Exception implements Iterable<Validatio
         return this;
     }
 
+    public ValidationException addGlobalError(SQLException x)
+    {
+        _globalErrors.add(new SimpleValidationError(x));
+        return this;
+    }
+
+    public int getGlobalErrorCount()
+    {
+        return _globalErrors.size();
+    }
+
+    public SimpleValidationError getGlobalError(int i)
+    {
+        return _globalErrors.get(i);
+    }
+
     /**
      * Returns a live view over the field errors.
      * @param name The field name.
@@ -327,7 +344,7 @@ public class ValidationException extends Exception implements Iterable<Validatio
      * Returns a live view over the global errors.
      * @return A live view over the global errors.
      */
-    public List<String> getGlobalErrors()
+    public List<String> getGlobalErrorStrings()
     {
         return new AbstractList<String>()
         {

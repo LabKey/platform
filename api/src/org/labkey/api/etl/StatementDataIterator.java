@@ -196,7 +196,7 @@ class StatementDataIterator extends AbstractDataIterator
         {
             if (StringUtils.startsWith(x.getSQLState(), "22") || SqlDialect.isConstraintException(x))
             {
-                getRowError().addGlobalError(x.getMessage());
+                getRowError().addGlobalError(x);
                 return false;
             }
             throw new RuntimeSQLException(x);

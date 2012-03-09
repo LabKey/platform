@@ -21,20 +21,39 @@ package org.labkey.api.query;
 * Time: 10:40:29 AM
 */
 
+import org.jetbrains.annotations.NotNull;
+
+import java.sql.SQLException;
+
 public class SimpleValidationError implements ValidationError
 {
-    private String _message;
+    private final String _message;
+    private final Throwable _cause;
     
-    public SimpleValidationError(String message)
+    public SimpleValidationError(@NotNull String message)
     {
         assert null != message: "Null message passed to SimpleValidationError!";
         _message = message;
+        _cause = null;
+    }
+
+    public SimpleValidationError(SQLException x)
+    {
+        _message = x.getMessage();
+        _cause = x;
     }
 
     public String getMessage()
     {
         return _message;
     }
+
+
+    public Throwable getCause()
+    {
+        return _cause;
+    }
+
 
     @Override
     public String toString()

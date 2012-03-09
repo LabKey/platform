@@ -159,7 +159,7 @@ public class ScriptableErrors extends NativeJavaObject
     {
         if (null == name || "null".equals(name))
         {
-            List globalErrors = this.errors.getGlobalErrors();
+            List globalErrors = this.errors.getGlobalErrorStrings();
             if (globalErrors == null)
                 return Scriptable.NOT_FOUND;
             return ScriptUtils.javaToJS(globalErrors, getParentScope());
