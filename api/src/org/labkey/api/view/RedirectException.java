@@ -21,7 +21,7 @@ import org.labkey.api.util.URLHelper;
 
 import javax.servlet.ServletException;
 
-public class RedirectException extends ServletException implements SkipMothershipLogging
+public class RedirectException extends RuntimeException implements SkipMothershipLogging
 {
     String _url;
 
