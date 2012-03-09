@@ -91,6 +91,7 @@ Ext.onReady(function()
     }
     formpanel = new LABKEY.ext.FormPanel({
         items:items,
+        bodyStyle: 'padding: 5px;',
         bbar:[{text:'Submit', handler:submitHandler}]
     });
     formpanel.render(divId);
