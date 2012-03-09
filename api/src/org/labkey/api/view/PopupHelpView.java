@@ -40,11 +40,7 @@ public class PopupHelpView extends PopupMenuView
             menu.addChild("Support", reportAProblemPath);
 
         if (laf.isHelpMenuEnabled())
-        {
-            NavTree help = new NavTree("LabKey Help", topic.getHelpTopicLink());
-            help.setTarget("labkeyHelp");
-            menu.addChild(help);
-        }
+            menu.addChild(topic.getNavTree("LabKey Help"));
 
         menu.setId("helpMenu");
 

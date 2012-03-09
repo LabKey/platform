@@ -31,9 +31,9 @@ import java.util.regex.Pattern;
  */
 public class SearchUtils
 {
-    public static String getHelpURL()
+    public static HelpTopic getHelpTopic()
     {
-        return new HelpTopic("luceneSearch").getHelpTopicLink();
+        return new HelpTopic("luceneSearch");
     }
 
     public static void renderError(JspWriter out, String htmlMessage, boolean includeSpecialSymbolsMessage, boolean includeBooleanOperatorMessage, boolean includeMoreInformationMessage) throws IOException
@@ -58,7 +58,7 @@ public class SearchUtils
 
         if (includeMoreInformationMessage)
         {
-            out.write("  <tr><td>For more information, visit the <a href=\"" + PageFlowUtil.filter(getHelpURL()) + "\" target=\"_new\">search syntax documentation.</a></td></tr>\n");
+            out.write("  <tr><td>For more information, visit the " + getHelpTopic().getLinkHtml("search syntax documentation.") + "</td></tr>\n");
         }
 
         out.write("</table>\n");

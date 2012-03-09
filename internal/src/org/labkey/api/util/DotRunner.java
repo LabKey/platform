@@ -140,9 +140,9 @@ public class DotRunner
         sb.append(" due to an error.\n<BR><pre>");
         sb.append(PageFlowUtil.filter(message));
         sb.append("</pre>");
-        sb.append("For help on fixing your system configuration, please consult the Graphviz section of the <a href=\"");
-        sb.append((new HelpTopic("thirdPartyCode")).getHelpTopicLink());
-        sb.append("\" target=\"_new\">LabKey Server documentation on third party components</a>.<br>");
+        sb.append("For help on fixing your system configuration, please consult the Graphviz section of the ");
+        sb.append((new HelpTopic("thirdPartyCode")).getLinkHtml("LabKey Server documentation on third party components"));
+        sb.append(".<br>");
 
         return sb.toString();
     }

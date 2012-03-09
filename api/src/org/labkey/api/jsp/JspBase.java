@@ -24,6 +24,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.HStringBuilder;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
@@ -313,6 +314,11 @@ abstract public class JspBase extends JspContext implements HasViewContext
     public String helpPopup(String title, String helpText, boolean htmlHelpText)
     {
         return PageFlowUtil.helpPopup(title, helpText, htmlHelpText);
+    }
+
+    public String helpLink(String helpTopic, String displayText)
+    {
+        return new HelpTopic(helpTopic).getLinkHtml(displayText);
     }
 
     public String formatDate(Date date)

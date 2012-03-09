@@ -2685,9 +2685,9 @@ public class SecurityManager
             }
 
             sb.append("</p>");
-            sb.append("<p>For help on fixing your mail server settings, please consult the SMTP section of the <a href=\"");
-            sb.append((new HelpTopic("cpasxml")).getHelpTopicLink());
-            sb.append("\" target=\"_new\">LabKey documentation on modifying your configuration file</a>.<br>");
+            sb.append("<p>For help on fixing your mail server settings, please consult the SMTP section of the ");
+            sb.append(new HelpTopic("cpasxml").getLinkHtml("LabKey documentation on modifying your configuration file"));
+            sb.append(".<br>");
         }
         else
         {

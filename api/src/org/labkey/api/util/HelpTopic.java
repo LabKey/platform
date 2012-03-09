@@ -19,6 +19,7 @@ package org.labkey.api.util;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.view.NavTree;
 
 /**
  * User: Tamra Myers
@@ -27,9 +28,10 @@ import org.labkey.api.module.ModuleLoader;
  */
 public class HelpTopic
 {
-    private String _topic;
-
+    public static String TARGET_NAME = "labkeyHelp"; // LabKey help should always appear in the same tab/window
     private static String HELP_VERSION = null;
+
+    private String _topic;
 
     static
     {
@@ -54,11 +56,35 @@ public class HelpTopic
     @Override
     public String toString()
     {
-        return getHelpTopicLink();
+        return getHelpTopicHref();
     }
 
-    public String getHelpTopicLink()
+    public String getHelpTopicHref()
     {
         return HELP_ROOT_URL + _topic;
+    }
+
+    // Create a standard <a> tag that links to the help topic, displays the provided text, uses the standard target, etc.
+    public String getLinkHtml(String displayText)
+    {
+        StringBuilder html = new StringBuilder();
+        html.append("<a href=\"");
+        html.append(PageFlowUtil.filter(getHelpTopicHref()));
+        html.append("\" target=\"");
+        html.append(TARGET_NAME);
+        html.append("\">");
+        html.append(PageFlowUtil.filter(displayText));
+        html.append("</a>");
+
+        return html.toString();
+    }
+
+    // Get create a NavTree for a menu item that to the help topic, displays the provided text, uses the standard target, etc.
+    public NavTree getNavTree(String displayText)
+    {
+        NavTree tree = new NavTree(displayText, getHelpTopicHref());
+        tree.setTarget(HelpTopic.TARGET_NAME);
+
+        return tree;
     }
 }
