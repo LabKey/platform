@@ -809,7 +809,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     {
         if (isMetadataOverrideable())
         {
-            TableType metadata = QueryService.get().findMetadataOverride(schema, tableName, false, errors);
+            TableType metadata = QueryService.get().findMetadataOverride(schema, tableName, false, false, errors, null);
             overlayMetadata(metadata, schema, errors);
         }
     }

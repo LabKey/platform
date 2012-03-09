@@ -114,8 +114,21 @@ abstract public class QueryService
 
     abstract public List<FieldKey> getDefaultVisibleColumns(List<ColumnInfo> columns);
 
-    abstract public TableType findMetadataOverride(UserSchema schema, String tableName, boolean customQuery, Collection<QueryException> errors);
-    abstract public TableType findMetadataOverride(UserSchema schema, String tableName, boolean customQuery, Collection<QueryException> errors, Path dir);
+    /**
+     * Find a metadata override for the given schema and table by looking in the current folder,
+     * parent folders up to and including the project, the shared container, and finally in
+     * each module active in the current container for
+     * "<code>queries/&lt;schemaName&gt;/&lt;tableName&gt;.qview.xml</code>" metadata files.
+     *
+     * @param schema The schema.
+     * @param tableName The table.
+     * @param customQuery whether to look for custom queries or modified metadata on built-in tables
+     * @param allModules True to search all modules; false to search active modules in the schema's container.
+     * @param errors A collection of errors generated while parsing the metadata xml.
+     * @param dir An alternate location to search for file-based query metadata (defaults to "<code>queries/&lt;schemaName&gt;</code>").  Be careful to only use valid file names.
+     * @return The metadata xml.
+     */
+    abstract public TableType findMetadataOverride(UserSchema schema, String tableName, boolean customQuery, boolean allModules, @NotNull Collection<QueryException> errors, @Nullable Path dir);
 
 	abstract public ResultSet select(QuerySchema schema, String sql) throws SQLException;
     public Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
