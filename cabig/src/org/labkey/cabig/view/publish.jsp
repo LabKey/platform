@@ -15,10 +15,9 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.HelpTopic"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.view.ViewContext"%>
 <%@ page import="org.labkey.cabig.caBIGController" %>
 <%@ page import="org.labkey.cabig.caBIGController.AdminAction" %>
 <%@ page import="org.labkey.cabig.caBIGController.PublishAction" %>
@@ -46,7 +45,7 @@ this folder to caBIG&trade;.  If you do this then all experiment data in this fo
 <%  }  %>
 
 <%=publishButton%>&nbsp;<%=generateButton("Admin", adminUrl)%>
-<br><br>For more information about publishing to caBIG&trade;, <a href="<%=h(new HelpTopic("cabig" ).getHelpTopicLink())%>" target="_new">click here</a>.
+<br><br>For more information about publishing to caBIG&trade;, <%=helpLink("cabig", "click here")%>.
 
 <%
     if (isPublished)

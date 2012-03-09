@@ -96,7 +96,6 @@ import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -1776,7 +1775,6 @@ public class LoginController extends SpringActionController
 
     public static class Config extends ReturnUrlForm
     {
-        public String helpLink = PageFlowUtil.textLink("More information about database authentication", new HelpTopic("configDbLogin").getHelpTopicLink(), null, null, Collections.singletonMap("target", "_new"));
         public PasswordRule currentRule = DbLoginManager.getPasswordRule();
         public PasswordExpiration currentExpiration = DbLoginManager.getPasswordExpiration();
         public boolean reshow = false;

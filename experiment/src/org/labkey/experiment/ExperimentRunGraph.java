@@ -63,7 +63,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class ExperimentRunGraph
 {
     private static File baseDirectory;
-    private static final String dotExePath = "dot";
     private static Logger _log = Logger.getLogger(ExperimentRunGraph.class);
     private static int MAX_WIDTH_SMALL_FONT = 8;
     private static int MAX_WIDTH_BIG_FONT = 3;

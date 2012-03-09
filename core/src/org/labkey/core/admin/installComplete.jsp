@@ -20,8 +20,6 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.util.HelpTopic" %>
-<%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     AdminUrls adminURLs = PageFlowUtil.urlProvider(AdminUrls.class);
@@ -33,8 +31,6 @@
     double coreVersion = org.labkey.api.module.ModuleLoader.getInstance().getCoreModule().getVersion();
     String versionSuffix = Double.toString(Math.floor(coreVersion * 10.0) / 10.0).replace(".", "");
     boolean newInstall = org.labkey.api.module.ModuleLoader.getInstance().isNewInstall();
-    org.labkey.api.util.HelpTopic whatsNew = new HelpTopic("whatsnew" + versionSuffix);
-    org.labkey.api.util.HelpTopic releaseNotes = new HelpTopic("releaseNotes" + versionSuffix);
 %>
 <p>Congratulations! Your LabKey Server installation <%= newInstall ? "is ready to use" : "has been successfully upgraded" %>.</p>
 
@@ -66,10 +62,10 @@
     </li>
 
     <li style="margin-bottom: 10px;">
-        <a href="<%= h(whatsNew.getHelpTopicLink()) %>" target="_blank">Learn what's new in this version of LabKey Server</a>
+        <%=helpLink("whatsnew" + versionSuffix, "Learn what's new in this version of LabKey Server")%>
     </li>
 
     <li style="margin-bottom: 10px;">
-        <a href="<%= h(releaseNotes.getHelpTopicLink()) %>" target="_blank">Read the full release notes for this version of LabKey Server</a>
+        <%=helpLink("releaseNotes" + versionSuffix, "Read the full release notes for this version of LabKey Server")%>
     </li>
 </ul>

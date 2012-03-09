@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.exp.list.ListService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -35,7 +34,7 @@ list templates.<%
 <%
     }
 %>
-<p>For more information about exporting and importing lists, see <a href="<%=new HelpTopic("importExportLists" )%>">the list documentation</a>.</p>
+<p>For more information about exporting and importing lists, see <%=helpLink("exportImportLists", "the list documentation")%>.</p>
 </td></tr>
 <tr><td><input type="file" name="listZip" size="50"></td></tr>
 <tr>

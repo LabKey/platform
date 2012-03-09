@@ -61,7 +61,7 @@
     </tr>
     <tr><td colspan="2">&nbsp;</td></tr>
     <tr>
-        <td colspan=2><%=bean.helpLink%></td>
+        <td colspan=2><%=helpLink("configDbLogin", "More information about database authentication")%></td>
     </tr>
 </table>
 </form>

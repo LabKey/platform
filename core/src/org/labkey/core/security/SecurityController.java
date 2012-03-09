@@ -1722,9 +1722,9 @@ public class SecurityController extends SpringActionController
                 sb.append("\" target=\"_blank\">contents of the message</a> into an email client and send it to the user manually.");
             }
             sb.append("</p>");
-            sb.append("<p>For help on fixing your mail server settings, please consult the SMTP section of the <a href=\"");
-            sb.append((new HelpTopic("cpasxml")).getHelpTopicLink());
-            sb.append("\" target=\"_new\">LabKey Server documentation on modifying your configuration file</a>.</p>");
+            sb.append("<p>For help on fixing your mail server settings, please consult the SMTP section of the ");
+            sb.append(new HelpTopic("cpasxml").getLinkHtml("LabKey Server documentation on modifying your configuration file"));
+            sb.append(".</p>");
         }
 
         public NavTree appendNavTrail(NavTree root)

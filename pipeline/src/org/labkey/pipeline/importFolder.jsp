@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Container c = getViewContext().getContainer();
@@ -31,7 +30,7 @@ individual files that comforms to the LabKey folder export conventions and forma
 using the folder export feature.  Using export and import, a folder can be moved from one server to another or a new folder can
 be created using a standard template.
 
-<%--<p>For more information about exporting, importing, and reloading folders, see <a href="<%=new HelpTopic("importExportFolder" )%>">the folder documentation</a>.</p>--%>
+<%--<p>For more information about exporting, importing, and reloading folders, see <%=helpLink("importExportFolder", "the folder documentation")%>.</p>--%>
 </td></tr>
 <tr><td class="labkey-announcement-title" align=left><span>Import Folder From Local Zip Archive</span></td></tr>
 <tr><td class="labkey-title-area-line"></td></tr>

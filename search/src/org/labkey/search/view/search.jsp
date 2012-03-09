@@ -99,7 +99,7 @@
 
     if (form.getIncludeHelpLink())
     {
-        %>&nbsp;&nbsp;&nbsp;<%=textLink("help", SearchUtils.getHelpURL())%><%
+        %>&nbsp;&nbsp;&nbsp;<%=SearchUtils.getHelpTopic().getLinkHtml("help")%><%
     }
         
     String categories = (null == template.getCategories() ? form.getCategory() : template.getCategories());

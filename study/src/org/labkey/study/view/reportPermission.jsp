@@ -23,9 +23,8 @@
 <%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission"%>
 <%@ page import="org.labkey.api.study.Study"%>
-<%@ page import="org.labkey.api.util.HelpTopic"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController" %>
@@ -169,8 +168,8 @@
         and cannot be granted access through this view. If the checkbox is selected, the group has been given explicit
         access through this view.<br/><br/>For more information on study security, consult the main documentation:
         <ul>
-            <li><a href="<%=new HelpTopic("security" ).getHelpTopicLink()%>" target="_new">LabKey Security Documentation</a></li>
-            <li><a href="<%=new HelpTopic("studySecurity" ).getHelpTopicLink()%>" target="_new">Study Security Documentation</a></li>
+            <li><%=helpLink("security", "LabKey Security Documentation")%></li>
+            <li><%=helpLink("studySecurity", "Study Security Documentation")%></li>
         </ul>
 </table>
 

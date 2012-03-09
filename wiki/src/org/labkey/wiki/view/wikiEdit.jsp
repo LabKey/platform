@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.util.HString" %>
-<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -237,7 +236,7 @@
             <div id="wiki-help-RADEOX-source" style="display:none">
                 <table>
                     <tr>
-                        <td colspan=2><b>Wiki Formatting Guide</b> (<a target="_new" href="<%=(new HelpTopic("wikiSyntax" )).getHelpTopicLink()%>">more help</a>):</td>
+                        <td colspan=2><b>Wiki Formatting Guide</b> (<%=helpLink("wikiSyntax", "more help")%>):</td>
                     </tr>
                     <tr>
                         <td>link to page in this wiki&nbsp;&nbsp;</td>

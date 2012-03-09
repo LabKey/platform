@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.HelpTopic"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.study.controllers.BaseStudyController.StudyJspView"%>
 <%@ page import="org.labkey.study.controllers.StudyController.BulkImportTypesForm"%>
@@ -35,9 +34,7 @@ The first five columns mentioned below are properties of the dataset; the value 
 definitions within each dataset.  The remaining properties are field properties; these will change within each dataset.
 </p>
 <p>
-For more information about the schema definition format, see
-<a href="<%=new HelpTopic("DatasetBulkDefinition" ).getHelpTopicLink()%>" target="_new">the dataset schema definition
-documentation page</a>.
+For more information about the schema definition format, see <%=helpLink("DatasetBulkDefinition", "the dataset schema definition documentation page")%>
 </p>
 <table>
     <tr>

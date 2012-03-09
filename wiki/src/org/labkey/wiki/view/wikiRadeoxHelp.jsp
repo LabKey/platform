@@ -15,11 +15,10 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.HelpTopic"%>
-
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <table>
     <tr>
-        <td colspan=2><b>Formatting Guide</b> (<a target="_new" href="<%=(new HelpTopic("wikiSyntax" )).getHelpTopicLink()%>">more help</a>):</td>
+        <td colspan=2><b>Formatting Guide</b> (<%=helpLink("wikiSyntax", "more help")%>):</td>
     </tr>
     <tr>
         <td>link to page in this wiki&nbsp;&nbsp;</td>

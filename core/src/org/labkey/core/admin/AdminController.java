@@ -1146,8 +1146,8 @@ public class AdminController extends SpringActionController
 
     public static class SiteSettingsBean
     {
-        public String helpLink = "<a href=\"" + (new HelpTopic("configAdmin")).getHelpTopicLink() + "\" target=\"labkeyHelp\">more info...</a>";
-        public String caBigHelpLink = "<a href=\"" + (new HelpTopic("cabig")).getHelpTopicLink() + "\" target=\"labkeyHelp\">more info...</a>";
+        public String helpLink = new HelpTopic("configAdmin").getLinkHtml("more info...");
+        public String caBigHelpLink = new HelpTopic("cabig").getLinkHtml("more info...");
         public boolean upgradeInProgress;
         public boolean testInPage;
 

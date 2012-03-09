@@ -16,12 +16,11 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils"%>
-<%@ page import="org.labkey.api.util.HelpTopic" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<AdminController.WebThemesBean> me = (HttpView<AdminController.WebThemesBean>) HttpView.currentView();
@@ -54,11 +53,9 @@ if (null != webThemeErrors) { %>
     boolean isBuiltInTheme = (selectedTheme != null && !selectedTheme.isEditable());
 
     String disabled = isBuiltInTheme ? "disabled" : "";
-
-    String helpLink = (new HelpTopic("customizeTheme")).getHelpTopicLink();
 %>
 <tr>
-    <td colspan=2>Choose an existing web theme or define a new one. (<a href="<%=helpLink%>" target="_new">examples...</a>)</td>
+    <td colspan=2>Choose an existing web theme or define a new one. (<%=helpLink("customizeTheme", "examples...")%>)</td>
 </tr>
 <tr><td colspan=3 class="labkey-title-area-line"></td></tr>
 <tr>

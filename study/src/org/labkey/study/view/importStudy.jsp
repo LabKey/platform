@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
-<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -44,13 +43,13 @@ Note: Reloading a study will replace existing study data with the data in the ar
     {
 %>
 You can import a study archive to create and populate a new study.  A study archive is a .study.zip file or a collection of
-individual files that comforms to the LabKey study export conventions and formats.  In most cases, a study archive is created
+individual files that conforms to the LabKey study export conventions and formats.  In most cases, a study archive is created
 using the study export feature.  Using export and import, a study can be moved from one server to another or a new study can
 be created using a standard template.
 <%
     }
 %>
-<p>For more information about exporting, importing, and reloading studies, see <a href="<%=new HelpTopic("importExportStudy" )%>">the study documentation</a>.</p>
+<p>For more information about exporting, importing, and reloading studies, see <%=helpLink("importExportStudy", "the study documentation")%>.</p>
 </td></tr>
 <tr><td class="labkey-announcement-title" align=left><span><%=initialCapVerb%> Study From Local Zip Archive</span></td></tr>
 <tr><td class="labkey-title-area-line"></td></tr>

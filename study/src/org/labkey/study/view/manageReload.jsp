@@ -17,9 +17,8 @@
 %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
-<%@ page import="org.labkey.api.util.HelpTopic" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.study.importer.StudyReload.*" %>
+<%@ page import="org.labkey.study.importer.StudyReload.ReloadInterval" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -46,7 +45,7 @@
                 In either case, a reload attempt causes the server to locate a file named <strong>studyload.txt</strong> in the
                 pipeline root. If this file has changed (i.e., the file's modification time has changed) since the last
                 reload then the server will reload the study data from the pipeline.  For more information about the file
-                formats used see the <a href="<%=new HelpTopic("importExportStudy" )%>" target="help">Import/Export/Reload a Study documentation page</a>.
+                formats used see the <%=helpLink("importExportStudy", "Import/Export/Reload a Study documentation page")%>.
             </td>
         </tr>
         <tr>

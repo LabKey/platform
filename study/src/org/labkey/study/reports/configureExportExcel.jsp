@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission"%>
-<%@ page import="org.labkey.api.util.HelpTopic"%>
+<%@ page import="org.labkey.api.study.StudyService"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
@@ -25,7 +25,6 @@
 <%@ page import="org.labkey.study.model.SiteImpl" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.reports.ExportExcelReport" %>
-<%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyImpl> view = (JspView<StudyImpl>)HttpView.currentView();
@@ -54,7 +53,7 @@ The saved view can also be secured so that only a subset of users (e.g. users fr
     <ol>
     <li>You must have imported a Specimen Archive in order for the "Sites" dropdown to list sites. The Specimen Archive defines a list of sites for your Study. </li>
     <li>You must associate ParticipantIDs with CurrentSiteIds via a "Participant Dataset". This step allows participant data records to be mapped to sites.</li>
-    </ol> See the <a href="<%=new HelpTopic("exportExcel" ).getHelpTopicLink()%>" target="_new">help page</a> for more information.
+    </ol> See the <%=helpLink("exportExcel", "help page")%> for more information.
 <% WebPartView.endTitleFrame(out);
 }
 

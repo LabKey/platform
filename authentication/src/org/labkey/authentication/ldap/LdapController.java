@@ -96,7 +96,6 @@ public class LdapController extends SpringActionController
 
     public static class Config extends ReturnUrlForm
     {
-        public String helpLink = PageFlowUtil.textLink("More information about LDAP authentication", new HelpTopic("configLdap").getHelpTopicLink(), null, null, Collections.singletonMap("target", "_new"));
         public boolean reshow = false;
 
         private String servers = StringUtils.join(LdapAuthenticationManager.getServers(), ";");

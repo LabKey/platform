@@ -16,10 +16,9 @@
  */
 %>
 <%@ page import="org.labkey.api.security.SecurityUrls"%>
-<%@ page import="org.labkey.api.util.HelpTopic"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.study.model.SecurityType" %>
+<%@ page import="org.labkey.study.model.SecurityType"%>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
@@ -29,8 +28,8 @@
 <p>Before setting up security for your study please read the documentation on LabKey security and
     on setting up study security.</p>
 <ul>
-    <li><a href="<%=new HelpTopic("security" ).getHelpTopicLink()%>" target="_new">LabKey Security Documentation</a></li>
-    <li><a href="<%=new HelpTopic("studySecurity" ).getHelpTopicLink()%>" target="_new">Study Security Documentation</a></li>
+    <li><%=helpLink("security", "LabKey Security Documentation")%></li>
+    <li><%=helpLink("studySecurity", "Study Security Documentation")%></li>
 </ul>
 
 <p>All users must have READ permissions on this folder to access anything in this study. You can also
