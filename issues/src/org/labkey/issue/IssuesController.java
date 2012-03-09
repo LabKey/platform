@@ -942,8 +942,14 @@ public class IssuesController extends SpringActionController
 
                 HString resolution = defaults.get(ISSUE_RESOLUTION);
 
-                if (resolution != null && !resolution.isEmpty())
+                if (resolution != null && !resolution.isEmpty() && form.get("resolution") == null)
+                {
                     _issue.setResolution(resolution);
+                }
+                else if (form.get("resolution") != null)
+                {
+                    _issue.setResolution(new HString(form.get("resolution").toString()));
+                }
             }
 
             IssuePage page = new IssuePage();

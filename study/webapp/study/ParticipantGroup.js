@@ -7,7 +7,7 @@
 Ext.namespace("LABKEY.study");
 
 Ext.QuickTips.init();
-
+Ext.GuidedTips.init();
 
 LABKEY.study.ParticipantGroupDialog = Ext.extend(Ext.Window, {
 
@@ -69,18 +69,19 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
 
         if (this.hasButtons)
         {
-            buttons.push({text:'Save', handler: this.saveCategory, disabled : !this.canEdit, scope: this});
+            buttons.push({text:'Save', handler: this.saveCategory, disabled : !this.canEdit, margin: '15 0 0 0', scope: this});
             buttons.push({text:'Cancel', handler: function(){this.fireEvent('closeWindow');}, scope: this});
         }
 
         this.categoryPanel = new Ext.form.FormPanel({
             border: false,
             defaults : {disabled : !this.canEdit},
+            labelAlign: 'top',
             items: [{
                 id: 'categoryLabel',
                 xtype: 'textfield',
                 value: this.categoryLabel,
-                hideLabel: true,
+                fieldLabel: this.subject.nounSingular + ' Group Label',
                 emptyText: this.subject.nounSingular + ' Group Label',
                 allowBlank: false,
                 selectOnFocus: true,
@@ -98,7 +99,7 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
                 id: 'categoryIdentifiers',
                 xtype: 'textarea',
                 value: this.categoryParticipantIds,
-                hideLabel: true,
+                fieldLabel: this.subject.nounSingular + ' Identifiers',
                 emptyText: 'Enter ' + this.subject.nounSingular + ' Identifiers Separated by Commas',
                 allowBlank: false,
                 preventMark: true,
@@ -151,13 +152,20 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
             });
         }
 
+        var sharedTip = '' +
+            '<div>' +
+                '<div class=\'g-tip-subheader\'>' +
+                    'Share this ' + Ext.util.Format.htmlEncode(this.subject.nounSingular) + ' group with all users' +
+                '</div>' +
+            '</div>';
 
         this.sharedfield = new Ext.form.Checkbox({
             fieldLabel     : 'Shared',
+            name           : 'Shared',
             labelSeparator : '',
-            labelStyle     : 'width: 150px;',
             hidden         : !this.canShare,
-            disabled       : !this.isAdmin || !this.canEdit
+            disabled       : !this.isAdmin || !this.canEdit,
+            gtip           : sharedTip
         });
 
         Ext.QuickTips.register({

@@ -119,10 +119,25 @@
                         <tr><td class="labkey-form-label">Changed</td><td nowrap="true"><%=bean.writeDate(issue.getModified())%> by <%=h(issue.getModifiedByName(user))%></td></tr>
                         <tr><td class="labkey-form-label"><%=bean.getLabel("Resolved")%></td><td nowrap="true"><%=bean.writeDate(issue.getResolved())%><%= issue.getResolvedBy() != null ? " by " : ""%> <%=h(issue.getResolvedByName(user))%></td></tr>
                         <tr><td class="labkey-form-label"><%=bean.getLabel("Resolution")%></td><td><%=bean.writeSelect(new HString("resolution", false), issue.getResolution(), bean.getResolutionOptions(c), 10)%></td></tr>
-        <% if (bean.isEditable("resolution") || !"open".equals(issue.getStatus().getSource()) && null != issue.getDuplicate()) { %>
+        <% if (bean.isEditable("resolution") || !"open".equals(issue.getStatus().getSource())) { %>
                         <tr><td class="labkey-form-label">Duplicate</td><td>
-                        <% if (bean.isEditable("duplicate")) { %>
-                            <%=bean.writeInput(new HString("duplicate"), HString.valueOf(issue.getDuplicate()), new HString("tabindex=\"10\"" + issue.getResolution().getSource() != "Duplicate" ? " disabled" : ""))%>
+                        <% if (bean.isEditable("duplicate")) {
+                                if(issue.getResolution().getSource().equals("Duplicate"))
+                                {
+                                    //Enabled duplicate field.
+                        %>
+                                    <%=bean.writeInput(new HString("duplicate"), HString.valueOf(issue.getDuplicate()), new HString("tabindex=\"10\""))%>
+                        <%
+                                }
+                                else
+                                {
+                                    //Disabled duplicate field.
+                        %>
+                                    <%=bean.writeInput(new HString("duplicate"), HString.valueOf(issue.getDuplicate()), new HString("tabindex=\"10\" disabled"))%>
+                        <%
+                                }
+                        %>
+                            <%--<%=bean.writeInput(new HString("duplicate"), HString.valueOf(issue.getDuplicate()), new HString("tabindex=\"10\"" + issue.getResolution().getSource() != "Duplicate" ? " disabled" : ""))%>--%>
                             <script type="text/javascript">
                                 var duplicateInput = document.getElementsByName('duplicate')[0];
                                 var duplicateOrig = duplicateInput.value;
