@@ -218,7 +218,7 @@ public class ExperimentService
 
         /** Kicks off an asynchronous move - a PipelineJob is submitted to the queue to perform the move */
         void moveRuns(ViewBackgroundInfo targetInfo, Container sourceContainer, List<ExpRun> runs) throws IOException;
-        public ExpProtocol insertSimpleProtocol(ExpProtocol baseProtocol, User user);
+        public ExpProtocol insertSimpleProtocol(ExpProtocol baseProtocol, User user) throws ExperimentException;
 
         /**
          * The run must be a instance of a protocol created with insertSimpleProtocol().

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.study.assay;
 
+import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.util.FileType;
 import org.labkey.api.exp.api.DataType;
 
@@ -29,7 +30,7 @@ public class AssayDataType extends DataType
 
     public AssayDataType(String namespacePrefix, FileType fileType)
     {
-        this(namespacePrefix, fileType, "Data");
+        this(namespacePrefix, fileType, ExpDataRunInput.DEFAULT_ROLE);
     }
 
     public AssayDataType(String namespacePrefix, FileType fileType, String role)

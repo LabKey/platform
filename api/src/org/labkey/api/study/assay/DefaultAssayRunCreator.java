@@ -32,6 +32,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
@@ -245,7 +246,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                         expData.setRun(run);
                         expData.save(context.getUser());
 
-                        run.getOutputProtocolApplication().addDataInput(context.getUser(), expData, "Data");
+                        run.getOutputProtocolApplication().addDataInput(context.getUser(), expData, ExpDataRunInput.DEFAULT_ROLE);
                         // Add to the cached list of outputs
                         run.getDataOutputs().add(expData);
 
@@ -344,7 +345,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         for (Map.Entry<String, File> entry : files.entrySet())
         {
             ExpData data = DefaultAssayRunCreator.createData(context.getContainer(), entry.getValue(), entry.getValue().getName(), getProvider().getDataType());
-            outputDatas.put(data, "Data");
+            outputDatas.put(data, ExpDataRunInput.DEFAULT_ROLE);
         }
 
         File primaryFile = files.get(AssayDataCollector.PRIMARY_FILE);

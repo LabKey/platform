@@ -27,6 +27,8 @@ import java.sql.SQLException;
 
 public interface ExpData extends ExpProtocolOutput
 {
+    public static final String DEFAULT_CPAS_TYPE = "Data";
+
     DataType getDataType();
     URI getDataFileURI();
 

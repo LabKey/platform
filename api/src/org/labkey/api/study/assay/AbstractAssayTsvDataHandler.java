@@ -168,7 +168,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
         catch (SQLException e)
         {
-            throw new ExperimentException(e);
+            throw new RuntimeSQLException(e);
         }
         catch (IOException e)
         {
@@ -330,7 +330,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     /**
      * @return the set of materials that are inputs to this run
      */
-    private Set<ExpMaterial> checkData(Domain dataDomain, List<Map<String, Object>> rawData, ParticipantVisitResolver resolver) throws IOException, ExperimentException
+    private Set<ExpMaterial> checkData(Domain dataDomain, List<Map<String, Object>> rawData, ParticipantVisitResolver resolver) throws IOException, ValidationException
     {
         List<String> missing = new ArrayList<String>();
         List<String> unexpected = new ArrayList<String>();
@@ -364,7 +364,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         builder.append(", ");
                 }
             }
-            throw new ExperimentException(builder.toString());
+            throw new ValidationException(builder.toString());
         }
 
         DomainProperty participantPD = null;
@@ -542,7 +542,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         if (errorSB.length() != 0)
         {
-            throw new ExperimentException("There are errors in the uploaded data: " + errorSB.toString());
+            throw new ValidationException("There are errors in the uploaded data: " + errorSB.toString());
         }
 
         return materialInputs;

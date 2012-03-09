@@ -517,11 +517,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
         protocol.setMaxInputMaterialPerInstance(1);
         protocol.setMaxInputDataPerInstance(1);
 
-        if (ExperimentService.get().getExpProtocol(protocol.getLSID()) != null)
-        {
-            throw new ExperimentException("An assay with that name already exists");
-        }
-
         return ExperimentService.get().insertSimpleProtocol(protocol, user);
     }
 
