@@ -91,7 +91,12 @@ Ext4.define('LABKEY.ext.ImportWizard', {
                    this.doLoad(data.path);
                 },
                 scope: this,
-                failure: LABKEY.Utils.onError
+                failure: function(error){
+                    if(error.exception)
+                        alert(error.exception);
+                    LABKEY.Utils.onError(error);
+                }
+
             })
         }
         else {
