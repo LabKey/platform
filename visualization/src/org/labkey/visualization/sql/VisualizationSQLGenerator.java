@@ -451,6 +451,22 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
     public static String getSQL(IVisualizationSourceQuery parentQuery, VisualizationSourceColumn.Factory factory, Collection<IVisualizationSourceQuery> queries, List<VisualizationIntervalColumn> intervals, String joinOperator, boolean includeOrderBys) throws VisualizationSQLGenerator.GenerationException
     {
+        // Reorder the queries in case one can join to the other, but not the reverse. For example,
+        // we can join from a standard particiapnt visit/date dataset to a demographic dataset, but not the reverse.
+        List<IVisualizationSourceQuery> reorderedQueries = new ArrayList<IVisualizationSourceQuery>();
+        for (IVisualizationSourceQuery query : queries)
+        {
+            if (query.getJoinTarget() == null)
+            {
+                reorderedQueries.add(0, query);
+            }
+            else
+            {
+                reorderedQueries.add(query);
+            }
+        }
+        queries = reorderedQueries;
+
         // Now that we have the full list of columns we want to select, we can generate our select list
         Map<String, Set<String>> allAliases = getColumnMapping(factory, queries);
         StringBuilder masterSelectList = new StringBuilder();
@@ -486,10 +502,20 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             for (VisualizationSourceColumn orderBy : query.getSorts())
             {
                 Set<String> orderByAliases = allAliases.get(orderBy.getOriginalName());
+                
+                VisualizationSourceColumn column;
                 if (orderByAliases.size() > 1)
-                    orderBys.put(factory.get(orderByAliases.iterator().next()), query);
+                {
+                    column = factory.get(orderByAliases.iterator().next());
+                }
                 else
+                {
+                    column = orderBy;
+                }
+                if (!orderBys.containsKey(column))
+                {
                     orderBys.put(orderBy, query);
+                }
             }
             if (sql.length() == 0)
                 sql.append("SELECT ").append(masterSelectList).append(" FROM\n");
