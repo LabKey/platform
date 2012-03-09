@@ -2960,7 +2960,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    private static ActionURL getModuleStatusURL()
+    public static ActionURL getModuleStatusURL()
     {
         return new ActionURL(ModuleStatusAction.class, ContainerManager.getRoot());
     }

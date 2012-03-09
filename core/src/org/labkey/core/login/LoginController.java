@@ -73,6 +73,7 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.template.PageConfig;
@@ -801,7 +802,7 @@ public class LoginController extends SpringActionController
             verify(form, email, errors);
         }
 
-        protected void verifyBeforeView(SetPasswordForm form, boolean reshow, BindException errors)
+        protected void verifyBeforeView(SetPasswordForm form, boolean reshow, BindException errors) throws RedirectException
         {
             if (!reshow)
                 validateCommand(form, errors);
@@ -1021,14 +1022,14 @@ public class LoginController extends SpringActionController
         protected void verify(SetPasswordForm form, ValidEmail email, Errors errors)
         {
             if (!UserManager.hasNoUsers())
-                errors.reject(ERROR_MSG, "Initial user has already been created.");
+                throw new RedirectException(AdminController.getModuleStatusURL());
 
             _email = email;
             _unrecoverableError = false;
         }
 
         @Override
-        protected void verifyBeforeView(SetPasswordForm form, boolean reshow, BindException errors)
+        protected void verifyBeforeView(SetPasswordForm form, boolean reshow, BindException errors) throws RedirectException
         {
             verify(form, null, errors);
         }
