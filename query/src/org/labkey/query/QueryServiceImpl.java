@@ -1083,7 +1083,7 @@ public class QueryServiceImpl extends QueryService
         }
 
         // Finally, look for file-based definitions in modules
-        Collection<Module> modules = allModules ? ModuleLoader.getInstance().getModules() : container.getActiveModules();
+        Collection<Module> modules = allModules ? ModuleLoader.getInstance().getModules() : schema.getContainer().getActiveModules();
         for (Module module : modules)
         {
             Collection<? extends Resource> queryMetadatas;
