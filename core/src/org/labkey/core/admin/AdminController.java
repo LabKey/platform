@@ -1146,8 +1146,8 @@ public class AdminController extends SpringActionController
 
     public static class SiteSettingsBean
     {
-        public String helpLink = "<a href=\"" + (new HelpTopic("configAdmin")).getHelpTopicLink() + "\" target=\"_new\">more info...</a>";
-        public String caBigHelpLink = "<a href=\"" + (new HelpTopic("cabig")).getHelpTopicLink() + "\" target=\"_new\">more info...</a>";
+        public String helpLink = "<a href=\"" + (new HelpTopic("configAdmin")).getHelpTopicLink() + "\" target=\"labkeyHelp\">more info...</a>";
+        public String caBigHelpLink = "<a href=\"" + (new HelpTopic("cabig")).getHelpTopicLink() + "\" target=\"labkeyHelp\">more info...</a>";
         public boolean upgradeInProgress;
         public boolean testInPage;
 
@@ -1167,6 +1167,7 @@ public class AdminController extends SpringActionController
         private String _themeName;
         private String _themeFont;
         private String _folderDisplayMode;
+        private boolean _enableHelpMenu;
         private String _navigationBarWidth;
         private String _logoHref;
         private String _companyName;
@@ -1249,6 +1250,17 @@ public class AdminController extends SpringActionController
         public void setFolderDisplayMode(String folderDisplayMode)
         {
             _folderDisplayMode = folderDisplayMode;
+        }
+
+        public boolean isEnableHelpMenu()
+        {
+            return _enableHelpMenu;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setEnableHelpMenu(boolean enableHelpMenu)
+        {
+            _enableHelpMenu = enableHelpMenu;
         }
 
         // TODO: Delete: not used?

@@ -58,7 +58,7 @@
 </tr>
 <% } %>
 <tr>
-    <td colspan=2>Customize the look and feel of your LabKey Server installation (<%=bean.helpLink%>)</td>
+    <td colspan=2>Customize the look and feel of <%=c.isRoot() ? "your LabKey Server installation" : "the '" + h(c.getProject().getName()) + "' project"%> (<%=bean.helpLink%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
@@ -124,6 +124,11 @@
         <input type="radio" name="folderDisplayMode" value="<%=FolderDisplayMode.IN_MENU.toString()%>" <%=currentMode.isShowInMenu() ? "CHECKED" : ""%>> <%=h(FolderDisplayMode.IN_MENU.getDisplayString())%><br>
         <input type="radio" name="folderDisplayMode" value="<%=FolderDisplayMode.ADMIN.toString()%>" <%=currentMode == FolderDisplayMode.ADMIN ? "CHECKED" : ""%>> <%=h(FolderDisplayMode.ADMIN.getDisplayString())%><br>
     </td>
+</tr>
+
+<tr>
+    <td class="labkey-form-label">Show LabKey Help menu item</td>
+    <td><input type="checkbox" name="enableHelpMenu" size="50"<%=laf.isHelpMenuEnabled() ? " checked" : "" %>></td>
 </tr>
 
 <tr>

@@ -185,6 +185,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
         {
         }
         props.setFolderDisplayMode(folderDisplayMode);
+        props.setHelpMenuEnabled(form.isEnableHelpMenu());
         props.save();
 
         //write an audit log event
@@ -520,7 +521,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
     private static abstract class LookAndFeelBean
     {
-        public String helpLink = "<a href=\"" + (new HelpTopic("customizeLook")).getHelpTopicLink() + "\" target=\"_new\">more info...</a>";
+        public String helpLink = "<a href=\"" + (new HelpTopic("customizeLook")).getHelpTopicLink() + "\" target=\"labkeyHelp\">more info...</a>";
     }
 
     public static class LookAndFeelResourcesBean extends LookAndFeelBean
