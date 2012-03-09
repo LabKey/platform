@@ -1153,6 +1153,7 @@ Parse:
             assertEquals(datetimeExpected, DateUtil.parseDateTime(dt.toLocaleString()));
             assertEquals(datetimeExpected, DateUtil.parseDateTime(ConvertUtils.convert(dt)));
             assertEquals(datetimeExpected, DateUtil.parseDateTime("2001-02-03 04:05:06"));
+            assertEquals(datetimeExpected, DateUtil.parseDateTime("2001-02-03 04:05:06.0"));
             assertEquals(datetimeExpected, DateUtil.parseDateTime("2001-02-03T04:05:06"));
             assertEquals(datetimeExpected, DateUtil.parseDateTime("2/3/01 4:05:06"));
             assertEquals(datetimeExpected, DateUtil.parseDateTime("2/3/2001 4:05:06"));
