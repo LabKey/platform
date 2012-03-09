@@ -150,10 +150,10 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         }
         catch (RuntimeSQLException e)
         {
-            ValidationException translated = _dataset.translateSQLException(e);
+            String translated = _dataset.translateSQLException(e);
             if (translated != null)
             {
-                errors.addRowError(translated);
+                errors.addRowError(new ValidationException(translated));
                 return 0;
             }
             throw e;

@@ -55,6 +55,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PdLookupForeignKey;
+import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
@@ -2074,14 +2075,26 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         catch (BatchValidationException x)
         {
             assert x == errors;
+            assert errors.hasErrors();
+            for (ValidationException rowError : errors.getRowErrors())
+            {
+                for (int i=0 ; i<rowError.getGlobalErrorCount() ; i++)
+                {
+                    SimpleValidationError e = rowError.getGlobalError(i);
+                    if (!(e.getCause() instanceof SQLException))
+                        continue;
+                    String msg = translateSQLException((SQLException)e.getCause());
+                    rowError.getGlobalErrorStrings().set(i, msg);
+                }
+            }
             return Collections.emptyList();
         }
         catch (RuntimeSQLException e)
         {
-            ValidationException translated = translateSQLException(e);
+            String translated = translateSQLException(e);
             if (translated != null)
             {
-                errors.addRowError(translated);
+                errors.addRowError(new ValidationException(translated));
                 return Collections.emptyList();
             }
             throw e;
@@ -2092,9 +2105,14 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         }
     }
 
-    public ValidationException translateSQLException(RuntimeSQLException e)
+    public String translateSQLException(RuntimeSQLException e)
     {
-        if (SqlDialect.isConstraintException(e.getSQLException()) && e.getMessage() != null && e.getMessage().contains("_pk"))
+        return translateSQLException(e.getSQLException());
+    }
+
+    public String translateSQLException(SQLException e)
+    {
+        if (SqlDialect.isConstraintException(e) && e.getMessage() != null && e.getMessage().contains("_pk"))
         {
             StringBuilder sb = new StringBuilder("Duplicate dataset row. All rows must have unique ");
             sb.append(getStudy().getSubjectColumnName());
@@ -2118,8 +2136,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             sb.append(" values. (");
             sb.append(e.getMessage());
             sb.append(")");
-
-            return new ValidationException(sb.toString());
+            return sb.toString();
         }
         return null;
     }
