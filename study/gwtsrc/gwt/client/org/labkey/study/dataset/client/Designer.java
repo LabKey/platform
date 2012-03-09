@@ -918,7 +918,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             showByDefault.setName("showByDefault");
             panel = new HorizontalPanel();
             panel.add(new Label("Show In Overview"));
-            panel.add(new HelpPopup("Show In Overview", "When this item is checked, this dataset will show in the overview grid by default. It can be unhidden by clicking 'Show Hidden Data.'"));
+            panel.add(new HelpPopup("Show In Overview", "When this item is checked, this dataset will show in the overview grid by default. It can be unhidden by clicking 'Show All Datasets.'"));
             _table.setWidget(row, 0, panel);
             cellFormatter.setStyleName(row, 0, labelStyleName);
             _table.setWidget(row++, 1, showByDefault);

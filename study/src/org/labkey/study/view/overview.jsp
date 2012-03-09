@@ -97,8 +97,8 @@
         hasHiddenData = !datasets[i].isShowByDefault();
     if (hasHiddenData)
     {
-        String viewLink = bean.showAll ? textLink("Hide Extra Data", basePage) :
-                textLink("Show Hidden Data", basePage + "showAll=1");
+        String viewLink = bean.showAll ? textLink("Show Default Datasets", basePage) :
+                textLink("Show All Datasets", basePage + "showAll=1");
         out.write(viewLink);
     }
 %>
@@ -151,7 +151,7 @@
     %>
 </form>
 <br><br>
-<table id="studyOverview" class="labkey-data-region labkey-show-borders"style="border-collapse:collapse;">
+<table id="studyOverview" class="labkey-data-region labkey-show-borders" style="border-collapse:collapse;">
     <tr class="labkey-alternate-row">
         <td class="labkey-column-header"><img alt="" width=60 height=1 src="<%=contextPath%>/_.gif"></td>
         <td class="labkey-column-header"><%
