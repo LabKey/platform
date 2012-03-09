@@ -306,9 +306,14 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
         if (txt) {
             this.measuresStore.filter([{
                 fn: function(record){
+                        // for multi-select don't clear selections on filter
+                        if (this.selModel.isSelected(record))
+                            return true;
+                    
                         var tester = new RegExp(Ext.escapeRe(txt), 'i');
                         return tester.test(record.data.label + record.data.queryName + record.data.description);
-                }
+                },
+                scope : this
             }]);
         }
         else

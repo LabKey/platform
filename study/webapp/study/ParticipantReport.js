@@ -66,6 +66,8 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     if (!page.headerValue.url)
                         page.headerValue.url = LABKEY.ActionURL.buildURL('study', 'participant.view', null, {participantId : page.headerValue.value});
                 }
+                // we don't want the subject id showing in the page break list (since it's already on the header)
+                data.pageFields.shift();
             }
         }
     },
@@ -934,7 +936,10 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
     },
 
     onFailure : function(resp) {
-        Ext4.Msg.alert('Failure', Ext4.decode(resp.responseText));
+        var o = Ext4.decode(resp.responseText);
+        var msg = o.exception || o;
+
+        Ext4.Msg.alert('Failure', msg);
     },
 
     // get the grid fields in a form that the visualization getData api can understand
