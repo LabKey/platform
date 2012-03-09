@@ -186,7 +186,7 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
     public String getCpasType()
     {
         String result = _object.getCpasType();
-        return result == null ? "Data" : result;
+        return result == null ? ExpData.DEFAULT_CPAS_TYPE : result;
     }
 
     public void importDataFile(PipelineJob job, XarSource xarSource) throws ExperimentException

@@ -15,6 +15,8 @@
  */
 package org.labkey.experiment.api;
 
+import org.labkey.api.exp.api.ExpData;
+
 import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URI;
@@ -30,7 +32,7 @@ public class Data extends ProtocolOutput
 
     public Data()
     {
-        setCpasType("Data");
+        setCpasType(ExpData.DEFAULT_CPAS_TYPE);
     }
 
     public String getDataFileUrl()

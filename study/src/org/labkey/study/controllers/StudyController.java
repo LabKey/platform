@@ -3017,10 +3017,9 @@ public class StudyController extends BaseStudyController
                 return Collections.emptyList();
 
             int visitRowId = null == context.get(VisitImpl.VISITKEY) ? 0 : Integer.parseInt((String) context.get(VisitImpl.VISITKEY));
-            VisitImpl visit = null;
             if (visitRowId != 0)
             {
-                visit = studyMgr.getVisitForRowId(study, visitRowId);
+                VisitImpl visit = studyMgr.getVisitForRowId(study, visitRowId);
                 if (null == visit)
                     return Collections.emptyList();
             }

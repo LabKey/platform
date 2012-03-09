@@ -29,6 +29,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
@@ -230,7 +231,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         for (int i = 0; i < inputDataArray.length(); i++)
         {
             JSONObject dataObject = inputDataArray.getJSONObject(i);
-            inputData.put(handleData(dataObject), dataObject.optString(ExperimentJSONConverter.ROLE, "Data"));
+            inputData.put(handleData(dataObject), dataObject.optString(ExperimentJSONConverter.ROLE, ExpDataRunInput.DEFAULT_ROLE));
         }
 
         Map<ExpMaterial, String> inputMaterial = new HashMap<ExpMaterial, String>();
@@ -252,7 +253,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         for (int i=0; i < outputDataArray.length(); i++)
         {
             JSONObject dataObject = outputDataArray.getJSONObject(i);
-            outputData.put(handleData(dataObject), dataObject.optString(ExperimentJSONConverter.ROLE, "Data"));
+            outputData.put(handleData(dataObject), dataObject.optString(ExperimentJSONConverter.ROLE, ExpDataRunInput.DEFAULT_ROLE));
         }
 
         ExpData newData = null;
@@ -262,7 +263,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         {
             newData = DefaultAssayRunCreator.createData(run.getContainer(), null, "Analysis Results", provider.getDataType());
             newData.save(getViewContext().getUser());
-            outputData.put(newData, "Data");
+            outputData.put(newData, ExpDataRunInput.DEFAULT_ROLE);
         }
 
         Map<ExpMaterial, String> outputMaterial = new HashMap<ExpMaterial, String>();
@@ -285,7 +286,23 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
             new ViewBackgroundInfo(context.getContainer(),
                     context.getUser(), context.getActionURL()), LOG, false);
 
-        if (newData != null)
+        ExpData tsvData = newData;
+        // Try to find a data object to attach our data rows to
+        if (tsvData == null && !outputData.isEmpty())
+        {
+            tsvData = outputData.keySet().iterator().next();
+            for (Map.Entry<ExpData, String> entry : outputData.entrySet())
+            {
+                // Prefer the generic "Data" role if we have one
+                if (ExpDataRunInput.DEFAULT_ROLE.equals(entry.getValue()))
+                {
+                    tsvData = entry.getKey();
+                    break;
+                }
+            }
+        }
+
+        if (tsvData != null)
         {
             // programmatic qc validation
             DataValidator dataValidator = provider.getRunCreator().getDataValidator();
@@ -294,7 +311,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
 
             TsvDataHandler dataHandler = new TsvDataHandler();
             dataHandler.setAllowEmptyData(true);
-            dataHandler.importRows(newData, getViewContext().getUser(), run, protocol, provider, rawData);
+            dataHandler.importRows(tsvData, getViewContext().getUser(), run, protocol, provider, rawData);
         }
     }
 

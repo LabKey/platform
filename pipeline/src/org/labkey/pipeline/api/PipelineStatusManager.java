@@ -480,9 +480,9 @@ public class PipelineStatusManager
                         statusSet = true;
                     }
                 }
-                catch (Exception e)
+                catch (SQLException e)
                 {
-                    _log.error("Failed to get pipeline job", e);
+                    throw new RuntimeSQLException(e);
                 }
 
                 if (!statusSet)

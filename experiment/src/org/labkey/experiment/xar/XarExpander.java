@@ -19,6 +19,7 @@ package org.labkey.experiment.xar;
 import org.fhcrc.cpas.exp.xml.*;
 import org.fhcrc.cpas.exp.xml.ExperimentRunType;
 import org.labkey.api.exp.*;
+import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.Replacer;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -301,7 +302,7 @@ public class XarExpander extends AbstractXarImporter
         }
         for (InputOutputRefsType.DataLSID inputDataLSID : inputDataLSIDs)
         {
-            String declaredType = (inputDataLSID.isSetCpasType() ? inputDataLSID.getCpasType() : "Data");
+            String declaredType = (inputDataLSID.isSetCpasType() ? inputDataLSID.getCpasType() : ExpData.DEFAULT_CPAS_TYPE);
             checkDataCpasType(declaredType);
             String lsid = LsidUtils.resolveLsidFromTemplate(inputDataLSID.getStringValue(), context, declaredType, new AutoFileLSIDReplacer(inputDataLSID.getDataFileUrl(), getContainer(), _xarSource));
             inputDataLSID.setStringValue(lsid);
@@ -514,7 +515,7 @@ public class XarExpander extends AbstractXarImporter
                                   XarContext context,
                                   Map<String, ProtocolParameter> effectiveParameters, FileResolver fileResolver) throws XarFormatException
     {
-        String outputType = "Data";
+        String outputType = ExpData.DEFAULT_CPAS_TYPE;
         if (null != pbStep.outputDataType)
             outputType = pbStep.outputDataType;
 

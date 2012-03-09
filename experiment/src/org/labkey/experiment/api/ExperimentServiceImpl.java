@@ -401,7 +401,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         Data data = new Data();
         data.setLSID(lsid);
         data.setName(name);
-        data.setCpasType("Data");
+        data.setCpasType(ExpData.DEFAULT_CPAS_TYPE);
         data.setContainer(container);
         return new ExpDataImpl(data);
     }
@@ -645,7 +645,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         protocol.setLSID(lsid);
         protocol.setContainer(container);
         protocol.setApplicationType(type.toString());
-        protocol.setOutputDataType("Data");
+        protocol.setOutputDataType(ExpData.DEFAULT_CPAS_TYPE);
         protocol.setOutputMaterialType("Material");
         return new ExpProtocolImpl(protocol);
     }
@@ -2921,7 +2921,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 Collections.<ExpData, String>emptyMap(), info, log, true);
     }
 
-    private ExpProtocol ensureSampleDerivationProtocol(User user)
+    private ExpProtocol ensureSampleDerivationProtocol(User user) throws ExperimentException
     {
         ExpProtocol protocol = getExpProtocol(SAMPLE_DERIVATION_PROTOCOL_LSID);
         if (protocol == null)
@@ -3220,18 +3220,24 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public ExpProtocol insertSimpleProtocol(ExpProtocol wrappedProtocol, User user)
+    public ExpProtocol insertSimpleProtocol(ExpProtocol wrappedProtocol, User user) throws ExperimentException
     {
         synchronized (ExperimentService.get().getImportLock())
         {
             try
             {
                 getSchema().getScope().ensureTransaction();
+
+                if (ExperimentService.get().getExpProtocol(wrappedProtocol.getLSID()) != null)
+                {
+                    throw new ExperimentException("An assay with that name already exists");
+                }
+
                 Protocol baseProtocol = ((ExpProtocolImpl)wrappedProtocol).getDataObject();
                 try
                 {
                     wrappedProtocol.setApplicationType(ExpProtocol.ApplicationType.ExperimentRun);
-                    baseProtocol.setOutputDataType("Data");
+                    baseProtocol.setOutputDataType(ExpData.DEFAULT_CPAS_TYPE);
                     baseProtocol.setOutputMaterialType("Material");
                     baseProtocol.setContainer(baseProtocol.getContainer());
 
@@ -3251,7 +3257,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     baseProtocol = saveProtocol(user, baseProtocol);
 
                     Protocol coreProtocol = new Protocol();
-                    coreProtocol.setOutputDataType("Data");
+                    coreProtocol.setOutputDataType(ExpData.DEFAULT_CPAS_TYPE);
                     coreProtocol.setOutputMaterialType("Material");
                     coreProtocol.setContainer(baseProtocol.getContainer());
                     coreProtocol.setApplicationType("ProtocolApplication");
@@ -3274,7 +3280,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     coreProtocol = saveProtocol(user, coreProtocol);
 
                     Protocol outputProtocol = new Protocol();
-                    outputProtocol.setOutputDataType("Data");
+                    outputProtocol.setOutputDataType(ExpData.DEFAULT_CPAS_TYPE);
                     outputProtocol.setOutputMaterialType("Material");
                     outputProtocol.setName(baseProtocol.getName() + " - Output");
                     outputProtocol.setLSID(baseProtocol.getLSID() + ".Output");
