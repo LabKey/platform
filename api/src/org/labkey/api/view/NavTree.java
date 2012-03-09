@@ -47,9 +47,9 @@ public class NavTree extends Pair<String, String> implements Collapsible
 
     static final List<NavTree> EMPTY_LIST = Collections.emptyList();
 
-    String imageSrc = null;
-    Integer imageHeight;
-    Integer imageWidth;
+    String _imageSrc = null;
+    Integer _imageHeight;
+    Integer _imageWidth;
     
     private boolean _selected = false;
     private boolean _collapsed = false;
@@ -62,6 +62,7 @@ public class NavTree extends Pair<String, String> implements Collapsible
     private String _display;
     private String _description;
     private boolean _nofollow = false;
+    private String _target = null;
 
     private ArrayList<NavTree> children = null;
 
@@ -90,7 +91,7 @@ public class NavTree extends Pair<String, String> implements Collapsible
     public NavTree(String display, String href, String imageSrc)
     {
         this(display, href, false);
-        this.imageSrc = imageSrc;
+        _imageSrc = imageSrc;
     }
 
 
@@ -118,7 +119,7 @@ public class NavTree extends Pair<String, String> implements Collapsible
     public NavTree(NavTree source)
     {
         super(source.first, source.second);
-        imageSrc = source.imageSrc;
+        _imageSrc = source._imageSrc;
         _selected = source._selected;
         _collapsed = source._collapsed;
         _canCollapse = source._canCollapse;
@@ -127,8 +128,9 @@ public class NavTree extends Pair<String, String> implements Collapsible
         _script = source._script;
         _id = source._id;
         _disabled = source._disabled;
-        imageHeight = source.imageHeight;
-        imageWidth = source.imageWidth;
+        _imageHeight = source._imageHeight;
+        _imageWidth = source._imageWidth;
+        _target = source._target;
 
         children = new ArrayList<NavTree>();
         if (source.children != null)
@@ -320,30 +322,30 @@ public class NavTree extends Pair<String, String> implements Collapsible
 
     public void setImage(String src, int width, int height)
     {
-        imageSrc = src;
-        imageWidth = width;
-        imageHeight = height;
+        _imageSrc = src;
+        _imageWidth = width;
+        _imageHeight = height;
     }
 
 
     public String getImageSrc()
     {
-        return imageSrc;
+        return _imageSrc;
     }
 
     public void setImageSrc(String imageSrc)
     {
-        this.imageSrc = imageSrc;
+        _imageSrc = imageSrc;
     }
 
     public Integer getImageHeight()
     {
-        return imageHeight;
+        return _imageHeight;
     }
 
     public Integer getImageWidth()
     {
-        return imageWidth;
+        return _imageWidth;
     }
 
     public boolean isCollapsed()
@@ -453,6 +455,16 @@ public class NavTree extends Pair<String, String> implements Collapsible
         _description = description;
     }
 
+    public @Nullable String getTarget()
+    {
+        return _target;
+    }
+
+    public void setTarget(@Nullable String target)
+    {
+        _target = target;
+    }
+
     public void setNoFollow(boolean b)
     {
         _nofollow = b;
@@ -493,11 +505,13 @@ public class NavTree extends Pair<String, String> implements Collapsible
         if (isSelected())
             o.put("checked",true);
         if (null != getImageSrc())
-            o.put("icon",getImageSrc());
+            o.put("icon", getImageSrc());
         if (isDisabled())
             o.put("disabled", true);
         if (null != getValue())
-            o.put("href",getValue());
+            o.put("href", getValue());
+        if (null != getTarget())
+            o.put("hrefTarget", getTarget());
         if (null != getScript())
             o.put("handler", "function(){" + getScript() + "}");
         if (null != getDisplay())
@@ -541,6 +555,8 @@ public class NavTree extends Pair<String, String> implements Collapsible
         if (isDisabled())
             sb.append(",disabled:true");
         sb.append(",href:").append(null != getValue() ? PageFlowUtil.qh(getValue()) : "'javascript: void(0)'");
+        if (null != getTarget())
+            sb.append(",hrefTarget:").append(PageFlowUtil.qh(getTarget()));
         if (null != getScript())
             sb.append(",handler:function(){").append(getScript()).append("}");
         if (null != getChildren() && getChildren().length > 0)

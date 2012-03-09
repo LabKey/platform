@@ -33,11 +33,19 @@ public class PopupHelpView extends PopupMenuView
     {
         NavTree menu = new NavTree("Help" + (AppProps.getInstance().isDevMode() && topic == HelpTopic.DEFAULT_HELP_TOPIC ? " (default)" : ""));
 
-        String reportAProblemPath = LookAndFeelProperties.getInstance(c).getReportAProblemPath();
+        LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
+
+        String reportAProblemPath = laf.getReportAProblemPath();
         if (reportAProblemPath != null && reportAProblemPath.trim().length() > 0 && !user.isGuest())
             menu.addChild("Support", reportAProblemPath);
 
-        menu.addChild("LabKey Help", topic.getHelpTopicLink());
+        if (laf.isHelpMenuEnabled())
+        {
+            NavTree help = new NavTree("LabKey Help", topic.getHelpTopicLink());
+            help.setTarget("labkeyHelp");
+            menu.addChild(help);
+        }
+
         menu.setId("helpMenu");
 
         setNavTree(menu);

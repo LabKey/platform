@@ -15,6 +15,7 @@
  */
 package org.labkey.api.settings;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.FolderDisplayMode;
@@ -50,7 +51,12 @@ public class WriteableLookAndFeelProperties extends LookAndFeelProperties
         storeStringValue(FOLDER_DISPLAY_MODE, folderDisplayMode.toString());
     }
 
-    public void setSupportEmail(String email)
+    public void setHelpMenuEnabled(boolean enabled)
+    {
+        storeBooleanValue(HELP_MENU_ENABLED_PROP, enabled);
+    }
+
+    public void setSupportEmail(@Nullable String email)
     {
         storeStringValue(SUPPORT_EMAIL, email);
     }

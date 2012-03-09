@@ -75,4 +75,9 @@ public class PopupMenuView extends HttpView<PopupMenu>
     {
        model.render(out);
     }
+
+    public boolean hasChildren()
+    {
+        return getNavTree().hasChildren();
+    }
 }

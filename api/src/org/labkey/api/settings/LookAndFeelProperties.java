@@ -36,6 +36,7 @@ public class LookAndFeelProperties extends AbstractWriteableSettingsGroup
     protected static final String SYSTEM_SHORT_NAME_PROP = "systemShortName";
     protected static final String THEME_NAME_PROP = "themeName";
     protected static final String FOLDER_DISPLAY_MODE = "folderDisplayMode";
+    protected static final String HELP_MENU_ENABLED_PROP = "helpMenuEnabled";
     protected static final String NAVIGATION_BAR_WIDTH = "navigationBarWidth";
     protected static final String LOGO_HREF_PROP = "logoHref";
     protected static final String THEME_FONT_PROP = "themeFont";
@@ -134,6 +135,11 @@ public class LookAndFeelProperties extends AbstractWriteableSettingsGroup
         {
             return FolderDisplayMode.ALWAYS;
         }
+    }
+
+    public boolean isHelpMenuEnabled()
+    {
+        return lookupBooleanValue(HELP_MENU_ENABLED_PROP, true);
     }
 
     public String getNavigationBarWidth()

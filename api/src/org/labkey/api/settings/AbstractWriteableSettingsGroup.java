@@ -15,6 +15,7 @@
  */
 package org.labkey.api.settings;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ColumnInfo;
@@ -85,7 +86,7 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
         storeStringValue(name, Integer.toString(value));
     }
 
-    protected void storeStringValue(String name, String value)
+    protected void storeStringValue(String name, @Nullable String value)
     {
         if (value == null)
         {

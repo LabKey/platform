@@ -97,11 +97,15 @@ if ("true".equals(request.getParameter("testFont"))) {
               out.write(" | ");
           }
 
-          include(new PopupHelpView(c, user, bean.pageConfig.getHelpTopic()), out);
+          PopupHelpView helpMenu = new PopupHelpView(c, user, bean.pageConfig.getHelpTopic());
+          if (helpMenu.hasChildren())
+          {
+              include(helpMenu, out);
+              out.write(" | ");
+          }
 
           if (null != user && !user.isGuest())
           {
-              out.write(" | ");
               include(new PopupUserView(currentContext), out);
           }
           else if (bean.pageConfig.shouldIncludeLoginLink())
@@ -111,7 +115,7 @@ if ("true".equals(request.getParameter("testFont"))) {
               if (null != authLogoHtml)
                   out.print(authLogoHtml + "&nbsp;");
 
-              %> | <a href="<%=h(urlProvider(LoginUrls.class).getLoginURL())%>">Sign&nbsp;In</a><%
+              %><a href="<%=h(urlProvider(LoginUrls.class).getLoginURL())%>">Sign&nbsp;In</a><%
           }
           if ("true".equals(request.getParameter("testFont"))) {
         %><span onclick="changeFont()"></span><span class="labkey-theme-font-smallest" onclick="changeFont('Smallest')">A</span><span class="labkey-theme-font-small" onclick="changeFont('Small')">A</span><span class="labkey-theme-font-medium" onclick="changeFont('Medium')">A</span><span class="labkey-theme-font-large" onclick="changeFont('Large')">A</span></span><%}%>
