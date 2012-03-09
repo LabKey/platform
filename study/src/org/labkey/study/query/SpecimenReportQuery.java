@@ -57,6 +57,29 @@ public class SpecimenReportQuery
             "  BY PrimaryType\n" +
             "  IN (SELECT RowId, Description FROM SpecimenPrimaryType)";
 
+
+    private static final String sql_pivotByDerivativeType =
+            "SELECT\n" +
+            "  Container,\n" +
+            "  %s,\n" +
+            "  SequenceNum,\n" +
+            "  %s,\n" +
+            "  PivotColumn,\n" +
+            "  SUM(VialCount) AS VialCount,\n" +
+            "  SUM(LockedInRequestCount) AS LockedInRequestCount,\n" +
+            "  SUM(AtRepositoryCount) AS AtRepositoryCount,\n" +
+            "  SUM(AvailableCount) AS AvailableCount,\n" +
+            "  SUM(ExpectedAvailableCount) AS ExpectedAvailableCount\n" +
+            "\n" +
+            "FROM (SELECT Container, %s, SequenceNum, %s, ('' || PrimaryType || '-' || DerivativeType) AS PivotColumn, VialCount, LockedInRequestCount, AtRepositoryCount, AvailableCount, ExpectedAvailableCount FROM SpecimenSummary) X\n" +
+            "\n" +
+            "GROUP BY Container, %s, SequenceNum, %s, PivotColumn\n" +
+            "\n" +
+            "PIVOT VialCount, AvailableCount, AtRepositoryCount, LockedInRequestCount, ExpectedAvailableCount\n" +
+            "  BY PivotColumn\n" +
+            "  IN (SELECT ('' || PrimaryType || '-' || DerivativeType) FROM (SELECT DISTINCT PrimaryType, DerivativeType FROM SpecimenSummary) X)";
+
+
     public static TableInfo getPivotByPrimaryType(Container container, User user)
     {
         Study study = StudyService.get().getStudy(container);
