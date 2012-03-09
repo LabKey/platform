@@ -66,12 +66,26 @@
         window.location = LABKEY.ActionURL.buildURL("project", "start", workbookInfo.path);
     }
 
-    function submitForm()
+    function submitForm(form)
     {
         var config =
         {
             isWorkbook: true,
+            scope: this,
             successCallback: success,
+            errorCallback: function(error){
+                if(error.exception)
+                    alert(error.exception);
+                else
+                    alert('There was an error creating the workbook');
+
+                //Issue 14279: Create Workbook button doesn't reenable after failed insert attempt
+                var id = Ext.get(form).child('input[type="submit"]').id;
+                var buttons = Ext.get(form).query('a');
+                Ext.each(buttons, function(btn){
+                    Ext.get(btn).replaceClass('labkey-disabled-button', 'labkey-button');
+                }, this);
+            },
             description: document.getElementById("workbookDescription").value,
             title: document.getElementById("workbookTitle").value
         };
