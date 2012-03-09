@@ -217,7 +217,7 @@ public class AssaySchemaImpl extends AssaySchema
 
             ArrayList<QueryException> errors = new ArrayList<QueryException>();
             Path dir = new Path(ModuleAssayLoader.ASSAY_DIR_NAME, provider.getResourceName(), QueryService.MODULE_QUERIES_DIRECTORY);
-            TableType metadata = QueryService.get().findMetadataOverride(this, unprefixedTableName, false, errors, dir);
+            TableType metadata = QueryService.get().findMetadataOverride(this, unprefixedTableName, false, true, errors, dir);
             if (errors.isEmpty())
                 table.overlayMetadata(metadata, this, errors);
 

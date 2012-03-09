@@ -208,7 +208,18 @@ public class QueryServiceImpl extends QueryService
     {
         Map<Map.Entry<String, String>, QueryDefinition> ret = new LinkedHashMap<Map.Entry<String, String>, QueryDefinition>();
 
-        //look in all the active modules in this container to see if they contain any query definitions
+        // session queries have highest priority
+        HttpServletRequest request = HttpView.currentRequest();
+        if (request != null && schemaName != null)
+        {
+            for (QueryDefinition qdef : getAllSessionQueries(request, user, container, schemaName))
+            {
+                Map.Entry<String, String> key = new Pair<String,String>(schemaName, qdef.getName());
+                ret.put(key, qdef);
+            }
+        }
+
+        // look in all the active modules in this container to see if they contain any query definitions
         if (null != schemaName)
         {
             Collection<Module> modules = allModules ? ModuleLoader.getInstance().getModules() : container.getActiveModules();
@@ -250,27 +261,20 @@ public class QueryServiceImpl extends QueryService
                             MODULE_RESOURCES_CACHE.put(cacheKey, moduleQueryDef);
                         }
 
-                        ret.put(new Pair<String,String>(schemaName, moduleQueryDef.getName()),
-                                new ModuleCustomQueryDefinition(moduleQueryDef, user, container));
+                        Map.Entry<String, String> key = new Pair<String,String>(schemaName, moduleQueryDef.getName());
+                        if (!ret.containsKey(key))
+                            ret.put(key, new ModuleCustomQueryDefinition(moduleQueryDef, user, container));
                     }
                 }
             }
         }
 
-        HttpServletRequest request = HttpView.currentRequest();
-        if (request != null && schemaName != null)
-        {
-            for (QueryDefinition qdef : getAllSessionQueries(request, user, container, schemaName))
-            {
-                Map.Entry<String, String> key = new Pair<String,String>(schemaName, qdef.getName());
-                ret.put(key, qdef);
-            }
-        }
-
+        // look in the database for query definitions
         for (QueryDef queryDef : QueryManager.get().getQueryDefs(container, schemaName, false, includeSnapshots, true))
         {
             Map.Entry<String, String> key = new Pair<String,String>(queryDef.getSchema(), queryDef.getName());
-            ret.put(key, new CustomQueryDefinitionImpl(user, queryDef));
+            if (!ret.containsKey(key))
+                ret.put(key, new CustomQueryDefinitionImpl(user, queryDef));
         }
 
         if (!inheritable)
@@ -278,6 +282,7 @@ public class QueryServiceImpl extends QueryService
 
         Container containerCur = container;
 
+        // look up the container hierarchy
         while (!containerCur.isRoot())
         {
             containerCur = containerCur.getParent();
@@ -1012,14 +1017,9 @@ public class QueryServiceImpl extends QueryService
         return ret;
     }
 
-    public TableType findMetadataOverride(UserSchema schema, String tableName, boolean customQuery, Collection<QueryException> errors)
+    public TableType findMetadataOverride(UserSchema schema, String tableName, boolean customQuery, boolean allModules, Collection<QueryException> errors, Path dir)
     {
-        return findMetadataOverride(schema, tableName, customQuery, errors, null);
-    }
-
-    public TableType findMetadataOverride(UserSchema schema, String tableName, boolean customQuery, Collection<QueryException> errors, Path dir)
-    {
-        QueryDef queryDef = findMetadataOverrideImpl(schema, tableName, customQuery, dir);
+        QueryDef queryDef = findMetadataOverrideImpl(schema, tableName, customQuery, allModules, dir);
         if (queryDef == null)
             return null;
 
@@ -1054,11 +1054,8 @@ public class QueryServiceImpl extends QueryService
     }
 
 
-    /**
-     * Looks in the current folder, parent folders up to and including the project, and the shared
-     * container
-     */
-    public QueryDef findMetadataOverrideImpl(UserSchema schema, String tableName, boolean customQuery, Path dir)
+    // BUGBUG: Should we look in the session queries for metadata overrides?
+    public QueryDef findMetadataOverrideImpl(UserSchema schema, String tableName, boolean customQuery, boolean allModules, Path dir)
     {
         if (dir == null)
             dir = new Path(QueryService.MODULE_QUERIES_DIRECTORY, FileUtil.makeLegalName(schema.getName()));
@@ -1086,7 +1083,8 @@ public class QueryServiceImpl extends QueryService
         }
 
         // Finally, look for file-based definitions in modules
-        for (Module module : schema.getContainer().getActiveModules())
+        Collection<Module> modules = allModules ? ModuleLoader.getInstance().getModules() : container.getActiveModules();
+        for (Module module : modules)
         {
             Collection<? extends Resource> queryMetadatas;
 
