@@ -30,7 +30,7 @@ public class LinkTag extends SimpleTagBase
     String _href;
     String _text;
     String _id;
-    String _onClick;
+    String _onclick;
     String _rel;
 
     public void setHref(String href)
@@ -53,9 +53,9 @@ public class LinkTag extends SimpleTagBase
         _id = id;
     }
 
-    public void setOnClick(String onClick)
+    public void setOnclick(String onclick)
     {
-        _onClick = onClick;
+        _onclick = onclick;
     }
 
     public void setRel(String rel)
@@ -70,6 +70,6 @@ public class LinkTag extends SimpleTagBase
             properties.put("rel", _rel);
 
         JspWriter out = getOut();
-        out.write(PageFlowUtil.textLink(_text, _href, _id, _onClick, properties));
+        out.write(PageFlowUtil.textLink(_text, _href, _onclick, _id, properties));
     }
 }

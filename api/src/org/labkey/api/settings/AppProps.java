@@ -83,6 +83,7 @@ public class AppProps extends AbstractWriteableSettingsGroup
     protected static final String NETWORK_DRIVE_PASSWORD = "networkDrivePassword";
     protected static final String CABIG_ENABLED = "caBIGEnabled";
     protected static final String MAIL_RECORDER_ENABLED = "mailRecorderEnabled";
+    protected static final String EXPERIMENTAL_FEATURE_PREFIX = "experimentalFeature.";
     protected static final String WEB_ROOT = "webRoot";
     protected static final String MAX_BLOB_SIZE = "maxBLOBSize";
 
@@ -433,6 +434,12 @@ public class AppProps extends AbstractWriteableSettingsGroup
     public boolean isMailRecorderEnabled()
     {
         return lookupBooleanValue(MAIL_RECORDER_ENABLED, false);
+    }
+
+    public boolean isExperimentalFeatureEnabled(String feature)
+    {
+        return isDevMode() &&
+               lookupBooleanValue(EXPERIMENTAL_FEATURE_PREFIX + feature, false);
     }
 
     public boolean isDevMode()

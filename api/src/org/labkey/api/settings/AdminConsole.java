@@ -29,6 +29,7 @@ public class AdminConsole
     public static enum SettingsLinkType {Configuration, Management, Diagnostics}
 
     private static final Map<SettingsLinkType, Collection<AdminLink>> _links = new HashMap<SettingsLinkType, Collection<AdminLink>>();
+    private static final List<ExperimentalFeatureFlag> _experimentalFlags = new ArrayList<ExperimentalFeatureFlag>();
 
     static
     {
@@ -82,6 +83,69 @@ public class AdminConsole
         public int compareTo(AdminLink o)
         {
             return getText().compareTo(o.getText());
+        }
+    }
+
+    public static void addExperimentalFeatureFlag(String flag, String title, String description, boolean requiresRestart)
+    {
+        synchronized (_experimentalFlags)
+        {
+            _experimentalFlags.add(new ExperimentalFeatureFlag(flag, title, description, requiresRestart));
+        }
+    }
+
+    public static Collection<ExperimentalFeatureFlag> getExperimentalFeatureFlags()
+    {
+        synchronized (_experimentalFlags)
+        {
+            return Collections.unmodifiableList(_experimentalFlags);
+        }
+    }
+
+    public static class ExperimentalFeatureFlag implements Comparable<ExperimentalFeatureFlag>
+    {
+        private final String _flag;
+        private final String _title;
+        private final String _description;
+        private final boolean _requiresRestart;
+
+        public ExperimentalFeatureFlag(String flag, String title, String description, boolean requiresRestart)
+        {
+            _flag = flag;
+            _title = title;
+            _description = description;
+            _requiresRestart = requiresRestart;
+        }
+
+        public String getFlag()
+        {
+            return _flag;
+        }
+
+        public String getTitle()
+        {
+            return _title;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public boolean isRequiresRestart()
+        {
+            return _requiresRestart;
+        }
+
+        @Override
+        public int compareTo(ExperimentalFeatureFlag o)
+        {
+            return getFlag().compareTo(o.getFlag());
+        }
+
+        public boolean isEnabled()
+        {
+            return AppProps.getInstance().isExperimentalFeatureEnabled(getFlag());
         }
     }
 }
