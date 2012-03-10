@@ -2019,6 +2019,7 @@ query/resources/views/SearchPanel.html -text
 query/resources/views/importData.html -text
 query/resources/views/importData.view.xml -text
 query/resources/views/importWizard.html -text
+query/resources/views/importWizard.view.xml -text
 query/resources/views/manageRecord.html -text
 query/resources/views/manageRecord.view.xml -text
 query/resources/views/recordDetails.html -text
