@@ -21,6 +21,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         Ext4.applyIf(config, {
             layout : 'border',
+            minWidth: 625,
             frame  : false, border : false,
 //            height : 700,
             allowCustomize : true

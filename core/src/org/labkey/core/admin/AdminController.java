@@ -160,6 +160,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
+import javax.mail.MessagingException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -4534,27 +4535,32 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class EmailTestAction extends SimpleViewAction<EmailTestForm>
+    public class EmailTestAction extends FormViewAction<EmailTestForm>
     {
-        public ModelAndView getView(EmailTestForm form, BindException errors) throws Exception
+        @Override
+        public void validateCommand(EmailTestForm form, Errors errors)
         {
-            if(null != form.getTo())
+            if(null == form.getTo() || form.getTo().equals(""))
             {
-                LookAndFeelProperties props = LookAndFeelProperties.getInstance(getContainer());
-                MailHelper.ViewMessage msg = MailHelper.createMessage(props.getSystemEmailAddress(), form.getTo());
-                msg.setSubject("Test email message sent from " + props.getShortName());
-                msg.setText(PageFlowUtil.filter(form.getBody()));
-
-                try
-                {
-                    MailHelper.send(msg, getUser(), getContainer());
-                }
-                catch (ConfigurationException e)
-                {
-                    form.setException(e);
-                }
+                errors.reject("To field cannot be blank.");
+                form.setException(new ConfigurationException("To field cannot be blank"));
+                return;
             }
 
+            try
+            {
+                ValidEmail email = new ValidEmail(form.getTo());
+            }
+            catch(ValidEmail.InvalidEmailException e)
+            {
+                errors.reject(e.getMessage());
+                form.setException(new ConfigurationException(e.getMessage()));
+            }
+        }
+
+        @Override
+        public ModelAndView getView(EmailTestForm form, boolean reshow, BindException errors) throws Exception
+        {
             JspView<EmailTestForm> testView = new JspView<EmailTestForm>("/org/labkey/core/admin/emailTest.jsp", form);
             testView.setTitle("Send a Test Email");
 
@@ -4567,6 +4573,50 @@ public class AdminController extends SpringActionController
             }
             else
                 return testView;
+        }
+
+        @Override
+        public boolean handlePost(EmailTestForm form, BindException errors) throws Exception
+        {
+            if(errors.hasErrors())
+            {
+                return false;
+            }
+            
+            LookAndFeelProperties props = LookAndFeelProperties.getInstance(getContainer());
+                try
+                {
+                    MailHelper.ViewMessage msg = MailHelper.createMessage(props.getSystemEmailAddress(), new ValidEmail(form.getTo()).toString());
+                    msg.setSubject("Test email message sent from " + props.getShortName());
+                    msg.setText(PageFlowUtil.filter(form.getBody()));
+
+                    try
+                    {
+                        MailHelper.send(msg, getUser(), getContainer());
+                    }
+                    catch (ConfigurationException e)
+                    {
+                        form.setException(e);
+                        return false;
+                    }
+                    catch (Exception e)
+                    {
+                        form.setException(new ConfigurationException(e.getMessage()));
+                        return false;
+                    }
+                }
+                catch (MessagingException e)
+                {
+                    errors.reject(e.getMessage());
+                    return false;
+                }
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(EmailTestForm emailTestForm)
+        {
+            return new ActionURL(EmailTestAction.class, getContainer());
         }
 
         public NavTree appendNavTrail(NavTree root)

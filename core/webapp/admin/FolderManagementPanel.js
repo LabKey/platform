@@ -484,7 +484,7 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
                     else
                     {
                         for (var c=0; c < target.parentNode.childNodes.length; c++) {
-                            if (target.parentNode.childNodes[c].data.text == node.data.text) {
+                            if (target.parentNode.childNodes[c].data.text.toLowerCase() == node.data.text.toLowerCase()) {
                                 ret.msg = 'A folder /' + node.data.text + ' already exists under /' + target.parentNode.data.text;
                                 return {target : target, cancel : true, msg : ret.msg};
                             }
@@ -521,7 +521,7 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
                 }
 
                 for (var c=0; c < target.childNodes.length; c++) {
-                    if (target.childNodes[c].data.text == node.data.text) {
+                    if (target.childNodes[c].data.text.toLowerCase() == node.data.text.toLowerCase()) {
                         ret.msg = 'A folder /' + node.data.text + ' already exists under /' + target.data.text;
                         return {target : target, cancel : true, msg : ret.msg};
                     }

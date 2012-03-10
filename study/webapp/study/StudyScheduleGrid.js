@@ -376,27 +376,27 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             if(this.timepointType == "DATE"){
                 if(visibleColumns[i].label != null){
 
-                    header = '<div data-qtip="' + visibleColumns[i].label + '<br>Start Day: ' + visibleColumns[i].sequenceMin + ' <br>End Day: ' + visibleColumns[i].sequenceMax;
+                    header = '<span data-qtip="' + visibleColumns[i].label + '<br>Start Day: ' + visibleColumns[i].sequenceMin + ' <br>End Day: ' + visibleColumns[i].sequenceMax;
                     if(visibleColumns[i].cohort){
                         header = header + '<br> Cohort: ' + visibleColumns[i].cohort.label;
                     }
-                    header = header + '">' + visibleColumns[i].label +'</div>';
+                    header = header + '">' + visibleColumns[i].label +'</span>';
                 } else {
                     header = visibleColumns[i].sequenceMin;
                 }
             } else {
                 if(visibleColumns[i].label != null){
                     if(visibleColumns[i].sequenceMin == visibleColumns[i].sequenceMax){
-                        header = '<div data-qtip="' + visibleColumns[i].label + '<br>Sequence: ' + visibleColumns[i].sequenceMin;
+                        header = '<span data-qtip="' + visibleColumns[i].label + '<br>Sequence: ' + visibleColumns[i].sequenceMin;
                     } else {
-                        header = '<div data-qtip="' + visibleColumns[i].label + '<br>Sequence: ' + visibleColumns[i].sequenceMin + ' - ' + visibleColumns[i].sequenceMax;
+                        header = '<span data-qtip="' + visibleColumns[i].label + '<br>Sequence: ' + visibleColumns[i].sequenceMin + ' - ' + visibleColumns[i].sequenceMax;
                     }
                     if(visibleColumns[i].cohort){
                         header = header + '<br> Cohort: ' + visibleColumns[i].cohort.label;
                     }
-                    header = header + '">' + visibleColumns[i].sequenceMin + '<br>' + visibleColumns[i].label +'</div>';
+                    header = header + '">' + visibleColumns[i].sequenceMin + '<br>' + visibleColumns[i].label +'</span>';
                 } else {
-                    header = '<div>' + visibleColumns[i].sequenceMin;
+                    header = '<span>' + visibleColumns[i].sequenceMin;
                 }
             }
 

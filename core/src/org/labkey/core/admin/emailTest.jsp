@@ -20,10 +20,13 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.springframework.validation.Errors" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     JspView<AdminController.EmailTestForm> me = (JspView<AdminController.EmailTestForm>) HttpView.currentView();
     AdminController.EmailTestForm form = me.getModelBean();
+    Errors errors = me.getErrors();
 %>
 
 <p>Use the form below to test your server's email configuration. This will attempt to send an email
@@ -34,25 +37,24 @@ message to the address specified in the 'To' text box containing the content spe
 <div class="labkey-status-error">Your message could not be sent for the following reason(s):<br/>
 <%=h(form.getException().getMessage())%>
 </div>
-<% } else if (null != form.getTo()) { %>
-<div class="labkey-status-info">Your email was successfully sent to <%=h(form.getTo())%>.</div>
-<% } %>
+<% }%>
 
-<form action="<%=new ActionURL(AdminController.EmailTestAction.class, me.getViewContext().getContainer()).getLocalURIString()%>" method="POST"/>
-<table>
-    <tr>
-        <td class="labkey-form-label">To</td>
-        <td><input type="text" name="to" value="<%=h(StringUtils.trimToEmpty(form.getTo()))%>" size="20"/></td>
-    </tr>
-    <tr>
-        <td class="labkey-form-label">Body</td>
-        <td>
-            <textarea rows="20" cols="60" name="body"><%=h(StringUtils.trimToEmpty(form.getBody()))%></textarea>
-        </td>
-    </tr>
-    <tr>
-        <td colspan="2" style="text-align:right">
-            <%=generateSubmitButton("Send")%>
-        </td>
-    </tr>
-</table>
+<form action="<%=new ActionURL(AdminController.EmailTestAction.class, me.getViewContext().getContainer()).getLocalURIString()%>" method="POST">
+    <table>
+        <tr>
+            <td class="labkey-form-label">To</td>
+            <td><input type="text" name="to" value="<%=h(StringUtils.trimToEmpty(form.getTo()))%>" size="20"/></td>
+        </tr>
+        <tr>
+            <td class="labkey-form-label">Body</td>
+            <td>
+                <textarea rows="20" cols="60" name="body"><%=h(StringUtils.trimToEmpty(form.getBody()))%></textarea>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align:right">
+                <%=generateSubmitButton("Send")%>
+            </td>
+        </tr>
+    </table>
+</form>

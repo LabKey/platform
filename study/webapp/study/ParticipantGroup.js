@@ -14,13 +14,17 @@ LABKEY.study.ParticipantGroupDialog = Ext.extend(Ext.Window, {
     constructor : function(config){
         this.panelConfig = config;
         this.addEvents('aftersave');
+        var h = config.hideDataRegion ? 500 : Ext.getBody().getViewSize().height * .75;
+
+        if(h < 500)
+            h = 500;
 
         LABKEY.study.ParticipantGroupDialog.superclass.constructor.call(this, {
             cls: 'extContainer',
             title: 'Define ' + Ext.util.Format.htmlEncode(config.subject.nounSingular) + ' Group',
             layout:'fit',
             width: Ext.getBody().getViewSize().width < 850 ? Ext.getBody().getViewSize().width * .9 : 800,
-            height: config.hideDataRegion ? 250 : Ext.getBody().getViewSize().height * .75,
+            height: h,
             modal: true,
             closeAction:'close'
         });
@@ -69,7 +73,7 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
 
         if (this.hasButtons)
         {
-            buttons.push({text:'Save', handler: this.saveCategory, disabled : !this.canEdit, margin: '15 0 0 0', scope: this});
+            buttons.push({text:'Save', handler: this.saveCategory, disabled : !this.canEdit, scope: this});
             buttons.push({text:'Cancel', handler: function(){this.fireEvent('closeWindow');}, scope: this});
         }
 
