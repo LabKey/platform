@@ -29,6 +29,7 @@ import org.jfree.data.category.DefaultCategoryDataset;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormViewAction;
@@ -230,6 +231,8 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(SettingsLinkType.Configuration, "project display order", new ActionURL(ReorderFoldersAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Configuration, "missing value indicators", new ActionURL(FolderSettingsAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Configuration, "files", new ActionURL(FilesSiteSettingsAction.class, root));
+        if (AppProps.getInstance().isDevMode())
+            AdminConsole.addLink(SettingsLinkType.Configuration, "experimental features", new ActionURL(ExperimentalFeaturesAction.class, root));
 
         // Diagnostics
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "running threads", new ActionURL(ShowThreadsAction.class, root));
@@ -4962,6 +4965,90 @@ public class AdminController extends SpringActionController
         public URLHelper getSuccessURL(ModuleForm form)
         {
             return new ActionURL(ModulesAction.class, ContainerManager.getRoot());
+        }
+    }
+
+    public static class ExperimentalFeaturesForm
+    {
+        private String feature;
+        private boolean enabled;
+
+        public String getFeature()
+        {
+            return feature;
+        }
+
+        public void setFeature(String feature)
+        {
+            this.feature = feature;
+        }
+
+        public boolean isEnabled()
+        {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled)
+        {
+            this.enabled = enabled;
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class ExperimentalFeatureAction extends ApiAction<ExperimentalFeaturesForm>
+    {
+        @Override
+        public ApiResponse execute(ExperimentalFeaturesForm form, BindException errors) throws Exception
+        {
+            String feature = StringUtils.trimToNull(form.getFeature());
+            if (feature == null)
+                throw new ApiUsageException("feature is required");
+
+            if (isPost())
+            {
+                WriteableAppProps props = AppProps.getWriteableInstance();
+                props.setExperimentalFeatureEnabled(form.getFeature(), form.isEnabled());
+                props.save();
+            }
+
+            Map<String, Object> ret = new HashMap<String, Object>();
+            ret.put("feature", form.getFeature());
+            ret.put("enabled", AppProps.getInstance().isExperimentalFeatureEnabled(form.getFeature()));
+            return new ApiSimpleResponse(ret);
+        }
+    }
+
+    @RequiresSiteAdmin
+    public class ExperimentalFeaturesAction extends FormViewAction<Object>
+    {
+        @Override
+        public void validateCommand(Object form, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(Object form, boolean reshow, BindException errors) throws Exception
+        {
+            JspView<Object> view = new JspView<Object>("/org/labkey/core/admin/experimentalFeatures.jsp", null);
+            return view;
+        }
+
+        @Override
+        public boolean handlePost(Object form, BindException errors) throws Exception
+        {
+            throw new UnsupportedOperationException("Nope");
+        }
+
+        @Override
+        public URLHelper getSuccessURL(Object form)
+        {
+            return getShowAdminURL();
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Experimental Features");
         }
     }
 }

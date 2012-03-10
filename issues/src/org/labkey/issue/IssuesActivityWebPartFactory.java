@@ -16,11 +16,11 @@
 package org.labkey.issue;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.data.Entity;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.AlwaysAvailableWebPartFactory;
+import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
@@ -29,24 +29,33 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * User: kevink
  */
-public class IssuesActivityWebPartFactory extends AlwaysAvailableWebPartFactory
+public class IssuesActivityWebPartFactory extends BaseWebPartFactory
 {
     public IssuesActivityWebPartFactory()
     {
-        super("Issues Activity", WebPartFactory.LOCATION_RIGHT, false, false);
+        super("Issues Activity", WebPartFactory.LOCATION_BODY, false, false);
+    }
+
+    // Like AlwaysAvailableWebPartFactory except is available in either BODY or RIGHT and checks the feature is enabled.
+    @Override
+    public boolean isAvailable(Container c, String location)
+    {
+        return (location.equals(WebPartFactory.LOCATION_BODY) || location.equals(WebPartFactory.LOCATION_RIGHT)) &&
+                AppProps.getInstance().isExperimentalFeatureEnabled(IssuesModule.EXPERIMENTAL_ISSUES_ACTIVITY);
     }
 
     @Override
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
     {
-        return new IssuesActivityWebPart();
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(IssuesModule.EXPERIMENTAL_ISSUES_ACTIVITY))
+            return new IssuesActivityWebPart();
+        else
+            return null;
     }
 
     public static class IssuesActivityBean
