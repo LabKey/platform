@@ -19,7 +19,6 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
-import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -248,12 +247,17 @@ public class DateUtil
 
     enum TZ
     {
-        gmt(0),ut(0),utc(0),est(5*60),edt(4*60),cst(6*60),cdt(5*60),mst(7*60),mdt(6*60),pst(8*60),pdt(7*60);
+        z(0),gmt(0),ut(0),utc(0),est(5*60),edt(4*60),cst(6*60),cdt(5*60),mst(7*60),mdt(6*60),pst(8*60),pdt(7*60);
         int tzoffset;
         TZ(int tzoffset)
         {
             this.tzoffset = tzoffset;
         }
+    }
+
+    enum ISO
+    {
+        t;    // T : time marker
     }
 
     static Enum[] parts = null;
@@ -264,6 +268,7 @@ public class DateUtil
         list.addAll(Arrays.asList(Month.values()));
         list.addAll(Arrays.asList(Weekday.values()));
         list.addAll(Arrays.asList(TZ.values()));
+        list.addAll(Arrays.asList(ISO.values()));
         Collections.sort(list, new Comparator<Enum>() {public int compare(Enum e1, Enum e2){ return e1.name().compareTo(e2.name());}});
         parts = list.toArray(new Enum[list.size()]);
     }
@@ -271,12 +276,12 @@ public class DateUtil
     static Comparator compEnum = new Comparator<Object>() {public int compare(Object o1, Object o2){return ((Enum)o1).name().compareTo((String)o2);}};
     static Enum resolveDatePart(String sequence, int start, int end)
     {
-        if (end-start < 2)
-            return null;
         String s = sequence.substring(start,end).toLowerCase();
         int i = Arrays.binarySearch(parts, s, compEnum);
         if (i>=0)
             return parts[i];
+        if (end-start < 2)
+            return null;
         i = -(i+1);
         return i>parts.length-1 ? null : parts[i].name().startsWith(s) ? parts[i] : null;
     }
@@ -372,7 +377,7 @@ validNum:       {
                             n = n % 100 + n / 100 * 60; /* eg "GMT-0430" */
                         if (prevc == '+')       /* plus means east of GMT */
                             n = -n;
-                    if (tzoffset != 0 && tzoffset != -1)
+                        if (tzoffset != 0 && tzoffset != -1)
                             throw new ConversionException(s);
                         tzoffset = n;
                         break validNum;
@@ -424,7 +429,7 @@ validNum:       {
                         {
                             monthexpected = true;
                         }
-                        else if (c != ',' && c > ' ' && c != '-')
+                        else if (c != ',' && c > ' ' && c != '-' && c != 'Z' && c != 'T')
                         {
                             throw new ConversionException(s);
                         }
@@ -473,8 +478,6 @@ validNum:       {
                         break;
                     i++;
                 }
-                if (i - st < 2)
-                    throw new ConversionException(s);
                 Enum dp = null;
                 try
                 {
@@ -488,7 +491,12 @@ validNum:       {
                 if (option != DateTimeOption.TimeOnly && monthexpected && !(dp instanceof Month))
                     throw new ConversionException(s);
                 monthexpected = false;
-                if (dp == AMPM.am || dp == AMPM.pm)
+                if (dp == ISO.t)
+                {
+                    if (hour >= 0 || min >= 0 || sec >= 0)
+                        throw new ConversionException(s);
+                }
+                else if (dp == AMPM.am || dp == AMPM.pm)
                 {
                     /*
                      * AM/PM. Count 12:30 AM as 00:30, 12:30 PM as
@@ -619,8 +627,6 @@ validNum:       {
     {
         try
         {
-            if (s.endsWith("Z"))
-                s = s.substring(0, s.length()-1);
             int len = s.length();
             long ms;
             if (len <= 10)
@@ -651,12 +657,22 @@ validNum:       {
     {
         try
         {
+            return parseStringJDBC(s);
+        }
+        catch (Exception x)
+        {
+            ;
+        }
+
+        try
+        {
             return DateFormat.getInstance().parse(s).getTime();
         }
         catch (Exception x)
         {
             ;
         }
+
         try
         {
             //noinspection deprecation
@@ -666,6 +682,7 @@ validNum:       {
         {
             ;
         }
+
         try
         {
             // java.util.Date.toString produces dates in the following format.  Try to
@@ -677,6 +694,7 @@ validNum:       {
         {
             ;
         }
+
         return parseJsonDateTime(s);
     }
 
@@ -696,17 +714,6 @@ validNum:       {
     // Lenient parsing using a variety of standard formats
     public static long parseDateTime(String s)
     {
-        try
-        {
-            // quick check for JDBC/ISO date
-            if (s.length() >= 10 && s.charAt(4) == '-' && s.charAt(7) == '-')
-                return parseStringJDBC(s);
-        }
-        catch (ConversionException x)
-        {
-            ;
-        }
-
         try
         {
             // strip off trailing decimal :00:00.000
@@ -1141,7 +1148,7 @@ Parse:
 
 
         @Test
-        public void testDateTime()
+        public void testDateTime() throws ParseException
         {
             long datetimeExpected = java.sql.Timestamp.valueOf("2001-02-03 04:05:06").getTime();
             long dateExpected = java.sql.Date.valueOf("2001-02-03").getTime();
@@ -1196,6 +1203,24 @@ Parse:
             assertEquals(parseDateTime("03/feb/2001"), dateExpected);
             assertEquals(parseDateTime("03/FEB/2001"), dateExpected);
             assertIllegalDateTime("Jan/Feb/2001");
+
+            // Z testing
+            SimpleDateFormat zo = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
+            SimpleDateFormat lo = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            SimpleDateFormat ut = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            ut.setTimeZone(TimeZone.getTimeZone("GMT"));
+
+            long datetimeUTC = zo.parse("2001-02-03 04:05:06 GMT").getTime();
+            long datetimeLocal = lo.parse("2001-02-03 04:05:06").getTime();
+            assertEquals(zo.parse("2001-02-03 04:05:06 GMT"), ut.parse("2001-02-03 04:05:06"));
+            long utcOffset = TimeZone.getDefault().getOffset(datetimeUTC);
+            assertEquals(datetimeLocal + utcOffset, datetimeUTC);
+
+            // check that parseDateTimeUS handles ISO
+            assertEquals(datetimeLocal, parseDateTimeUS("2001-02-03 04:05:06", DateTimeOption.DateTime, true));
+            assertEquals(datetimeLocal, parseDateTimeUS("2001-02-03T04:05:06", DateTimeOption.DateTime, true));
+            assertEquals(datetimeUTC, parseDateTimeUS("2001-02-03 04:05:06Z", DateTimeOption.DateTime, true));
+            assertEquals(datetimeUTC, parseDateTimeUS("2001-02-03T04:05:06Z", DateTimeOption.DateTime, true));
         }
 
 
@@ -1360,6 +1385,7 @@ Parse:
             assertEquals(parseDateTime("2010-01-30 23:59:00"), subtractDuration(start,"PT1m"));
             assertEquals(parseDateTime("2010-01-30 23:59:59"), subtractDuration(start,"1s"));
         }
+
 
         @Test
         public void testJSON()
