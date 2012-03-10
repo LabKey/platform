@@ -261,6 +261,10 @@ public class ContainerManager
             }
         }
 
+        // Maybe this will help track down issues like #13813
+        if (null == c)
+            throw new RuntimeException("Container for path '" + path + "' was not created properly.");
+
         //workbooks inherit perms from their parent so don't create a policy if this is a workbook
         if (!workbook)
             SecurityManager.setAdminOnlyPermissions(c);
