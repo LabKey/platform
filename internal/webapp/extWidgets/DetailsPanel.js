@@ -22,6 +22,10 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
     extend: 'Ext.panel.Panel',
     alias: 'widget.labkey-detailspanel',
     initComponent: function(){
+        var params = {schemaName: this.schemaName, 'query.queryName': this.queryName};
+        params['query.' + this.keyFieldName + '~eq'] = this.keyValue;
+        var gridURL = LABKEY.ActionURL.buildURL('query', 'executeQuery', null, params);
+
         Ext4.apply(this, {
             items: [{html: 'Loading...'}],
             bodyStyle: 'padding:5px',
@@ -31,7 +35,12 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
             frame: false,
             defaults: {
                 border: false
-            }
+            },
+            buttonAlign: 'left',
+            buttons: [{
+                text: 'Show Grid',
+                href: gridURL
+            }]
         });
 
         this.callParent(arguments);
