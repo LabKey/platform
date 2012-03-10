@@ -17,13 +17,18 @@
 %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    Container c = getViewContext().getContainer();
+    Boolean includeButtons = ((JspView<Boolean>)HttpView.currentView()).getModelBean();
 %>
-<%=PageFlowUtil.getStandardIncludes(c)%>
-<labkey:errors/><br><br>
+<labkey:errors/><%
+    if (includeButtons)
+    {
+%><br><br>
 <%=PageFlowUtil.generateSubmitButton("Back", "window.history.back(); return false;")%>
-<%=generateButton("Home", AppProps.getInstance().getHomePageActionURL())%>
+<%=generateButton("Home", AppProps.getInstance().getHomePageActionURL())%><%
+    }
+%>

@@ -24,10 +24,15 @@ import org.springframework.validation.BindException;
  * Date: Sep 26, 2007
  * Time: 9:24:09 AM
  */
-public class SimpleErrorView extends JspView
+public class SimpleErrorView extends JspView<Boolean>
 {
+    public SimpleErrorView(BindException errors, boolean includeButtons)
+    {
+        super("/org/labkey/api/action/simpleErrorView.jsp", includeButtons, errors);
+    }
+
     public SimpleErrorView(BindException errors)
     {
-        super("/org/labkey/api/action/simpleErrorView.jsp", null, errors);
+        this(errors, true);
     }
 }

@@ -28,6 +28,9 @@ public class ResultSetIterator implements Iterator<Map<String, Object>>
     private final ResultSet _rs;
     private ResultSetRowMapFactory _factory;
 
+    private boolean _didNext = false;
+    private boolean _hasNext = false;
+
     public static ResultSetIterator get(ResultSet rs)
     {
         return new ResultSetIterator(rs);
@@ -54,7 +57,14 @@ public class ResultSetIterator implements Iterator<Map<String, Object>>
     {
         try
         {
-            return !_rs.isLast();
+            // This used to be simply !_rs.isLast(), but that fails in some edge cases (e.g., no rows)
+            if (!_didNext)
+            {
+                _hasNext = _rs.next();
+                _didNext = true;
+            }
+
+            return _hasNext;
         }
         catch (SQLException e)
         {
@@ -66,7 +76,11 @@ public class ResultSetIterator implements Iterator<Map<String, Object>>
     {
         try
         {
-            _rs.next();
+            if (!_didNext)
+            {
+                _rs.next();
+            }
+            _didNext = false;
 
             if (_rs instanceof CachedResultSet)
                 return ((CachedResultSet)_rs).getRowMap();
