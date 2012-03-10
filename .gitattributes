@@ -4337,6 +4337,7 @@ api/webapp/labkey-ext-theme/resources/css/ext-harvest.css -text
 api/webapp/labkey-ext-theme/resources/css/ext-madison.css -text
 api/webapp/labkey-ext-theme/resources/css/ext-sage.css -text
 api/webapp/labkey-ext-theme/resources/css/ext-seattle.css -text
+api/webapp/labkey-ext-theme/resources/sass/_ext-base.scss -text
 api/webapp/labkey-ext-theme/resources/sass/config.rb -text
 api/webapp/labkey-ext-theme/resources/sass/ext-blue.scss -text
 api/webapp/labkey-ext-theme/resources/sass/ext-brown.scss -text

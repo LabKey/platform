@@ -1,126 +1,13 @@
-// 1. Create theme using 'x4-' prefix
-// 2. Get it working on Chrome/FF/IE9
-// 3. Once complete, rename prefix to 'x-' and recompile scss
-// 4. Slice images
-//      a. Example command from the /labkey-ext-theme directory is:
-//          sencha slice theme -d ..\ext-4.0.7 -c resources\css\ext-seattle.css -v
-//      b. Copy all files generated to /ext-4.0.7/resources/themes/images/default
-// 5. Reset prefix to 'x4-' and recompile scss
-
-// We are currently using the Ext sandbox so we change the prefix to not conflict with other Ext versions on the page
-$prefix: 'x4-';
-$scope-reset-css: true;
-
-// Unless you want to include all components, you must set $include-default to false
-// IF you set this to true, you can also remove lines 10 to 38 of this file
-$include-default: true;
-
 // Insert your custom variables here.
-$base-color: #126495;
-$font-family: Verdana, Arial, Helvetica, sans serif;
+$base-color: #226495;
+$panel-base-color: #DFE8F6;
 
-//panel
-$panel-base-color: #DFE8F6; // #d3d3d3; //#DFE8F6;
-$panel-header-background-color: $base-color;
-$panel-header-color: #fff;
-$panel-body-background-color: #fff;
-$panel-border-color: adjust-color($base-color, $hue: 0deg, $saturation: 7.644%, $lightness: 2.627%) !default;
-$panel-header-inner-border: false;
-$panel-header-background-gradient: color-stops($base-color, $base-color);
+$text-color: #000000;
+$link-color: #126495;
+$grid-color: #E7EFF4;
+$primary-bg-color: #F8F8F8;
+$secondary-bg-color: #FFFFFF;
+$border-title-color: #676767;
+$webpart-color: #E0E6EA;
 
-
-//buttons
-$button-text-transform: uppercase !default;
-$button-default-color: $base-color;
-$button-default-color-over: #000;
-$button-default-color-focus: #000;
-$button-default-color-pressed: #000;
-$button-default-color-disabled: #808080;
-
-$button-small-font-weight: bold; // defaults is 'normal !default'
-$button-small-border-radius: 3px; // default is '3px !default';
-
-$button-default-base-color: #fff;
-$button-default-base-color-over: #fff;
-$button-default-base-color-focus: $button-default-base-color-over;
-$button-default-base-color-pressed: #fff;
-$button-default-base-color-disabled: adjust-color($base-color, $hue: 0deg, $saturation: -55.556%, $lightness: 12.745%) !default; //F7F7F7
-
-$button-default-border-color: #b4b4b4;
-$button-default-border-color-over: #676767;
-$button-default-border-color-focus: #676767;
-$button-default-border-color-pressed: #333;
-$button-default-border-color-disabled: #676767;
-
-$button-default-background-gradient: color-stops(#fff, #e4e4e4);
-$button-default-background-gradient-over: color-stops(#fff, #e4e4e4);
-$button-default-background-gradient-focus: color-stops(#fff, #e4e4e4);
-$button-default-background-gradient-pressed: color-stops(#fff, #e4e4e4);
-$button-default-background-gradient-disabled: color-stops(#fff, #e4e4e4);
-
-$button-default-background-gradient-color-stops: null;
-$button-default-background-gradient-color-stops-over: null;
-$button-default-background-gradient-color-stops-focus: null;
-$button-default-background-gradient-color-stops-pressed: null;
-$button-default-background-gradient-color-stops-disabled: null;
-
-
-$button-toolbar-base-color: $button-default-base-color;
-
-$button-toolbar-border-color: transparent !default;
-$button-toolbar-border-color-over: $button-default-border-color-over;
-$button-toolbar-border-color-focus: $button-default-border-color-focus;
-$button-toolbar-border-color-pressed: $button-default-border-color-pressed;
-$button-toolbar-border-color-disabled: $button-default-border-color-disabled;
-
-$button-toolbar-background-color: transparent !default;
-$button-toolbar-background-color-over: $button-default-base-color-over;
-$button-toolbar-background-color-focus: $button-default-base-color-focus;
-$button-toolbar-background-color-pressed: $button-default-base-color-pressed;
-$button-toolbar-background-color-disabled: transparent;
-
-$button-toolbar-background-gradient: null;
-$button-toolbar-background-gradient-over: color-stops(#fff, #e4e4e4);
-$button-toolbar-background-gradient-focus: color-stops(#fff, #e4e4e4);
-$button-toolbar-background-gradient-pressed: color-stops(#e4e4e4, #fff);
-$button-toolbar-background-gradient-disabled: null;
-
-$button-toolbar-background-gradient-color-stops: null;
-$button-toolbar-background-gradient-color-stops-over: null;
-$button-toolbar-background-gradient-color-stops-focus: null;
-$button-toolbar-background-gradient-color-stops-pressed: null;
-$button-toolbar-background-gradient-color-stops-disabled: null;
-
-
-//window
-$window-background-color: $base-color;
-$window-header-color: #fff;
-$window-body-background-color: #fff;
-
-//grids
-$grid-row-cell-selected-background-color: #C5C5C5 !default;
-
-//toolbars
-$toolbar-background-color: #eeeeee;
-
-//qtips
-$tip-base-color: #eeeeee;
-
-// combo box drop down
-$boundlist-item-over-background-color: #e0e0e0; //adjust-color($base-color, $hue: 3.188deg, $saturation: 0.542%, $lightness: 60%) !default;
-
-// date picker
-$datepicker-base-color: #C0D4ED;
-
-// darken load mask
-$loadmask-opacity: 0.25 !default;
-$loadmask-backgorund: #000 !default;
-
-@import 'ext4/default/all';
-
-// This line changes the location of your images when creating UIs to be relative instead of within the ExtJS directory.
-// You MUST set this to true/string value if you are creating new UIs + supporting legacy browsers.
-// This only applies to new UIs. It does not apply to default component images (i.e. when changing $base-color)
-// The value can either be true, in which case the image path will be "../images/"
-// or a string, of where the path is
-$relative-image-path-for-uis: true; // defaults to "../images/" when true
+@import 'ext-base';
