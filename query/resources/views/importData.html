@@ -5,13 +5,16 @@ LABKEY.requiresScript("/extWidgets/ImportPanel.js");
 </script>
 <script type="text/javascript">
 Ext4.onReady(function(){
+    var webpart = <%=webpartContext%>;
+
     Ext4.create('LABKEY.ext.ImportPanel', {
+        renderTo: webpart.wrapperDivId,
         schemaName: LABKEY.ActionURL.getParameter('schemaName'),
         queryName: LABKEY.ActionURL.getParameter('query.queryName') || LABKEY.ActionURL.getParameter('queryName'),
         viewName: LABKEY.ActionURL.getParameter('query.viewName') || LABKEY.ActionURL.getParameter('viewName')
-    }).render('importDiv');
+    });
 });
 
 </script>
 </head>
-<div id="importDiv"></div>
+

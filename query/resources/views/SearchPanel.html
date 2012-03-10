@@ -8,8 +8,9 @@ LABKEY.requiresScript("/extWidgets/SearchPanel.js");
 <script type="text/javascript">
 
 Ext4.onReady(function(){
-
+    var webpart = <%=webpartContext%>;
     var config = {
+        renderTo: webpart.wrapperDivId,
         schemaName: LABKEY.ActionURL.getParameter('schemaName')
         ,queryName: LABKEY.ActionURL.getParameter('queryName')
         ,viewName: LABKEY.ActionURL.getParameter('viewName')
@@ -20,10 +21,8 @@ Ext4.onReady(function(){
         ,defaultContainerFilter: LABKEY.ActionURL.getParameter('defaultContainerFilter')
     };
 
-    Ext4.create('LABKEY.ext4.SearchPanel', config).render('searchPanel');
+    Ext4.create('LABKEY.ext4.SearchPanel', config);
 
 });
 </script>
 </head>
-
-<div id="searchPanel"></div>

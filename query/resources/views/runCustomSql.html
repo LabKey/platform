@@ -4,8 +4,10 @@ LABKEY.requiresExt4ClientAPI();
 </script>
 <script type="text/javascript">
 Ext4.onReady(function(){
+    var webpart = <%=webpartContext%>;
     Ext4.create('Ext.form.Panel', {
         border: false,
+        renderTo: webpart.wrapperDivId,
         autoHeight: true,
         defaults: {
             border: false
@@ -81,9 +83,8 @@ Ext4.onReady(function(){
             xtype: 'panel',
             itemId: 'grid'
         }]
-    }).render('runCustomSqlDiv');
+    });
 });
 
 </script>
 </head>
-<div id='runCustomSqlDiv'></div>

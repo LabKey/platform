@@ -17,14 +17,15 @@ Ext4.onReady(function(){
         })
     };
 
+    var webpart = <%=webpartContext%>;
     Ext4.create('LABKEY.ext.ImportWizard', {
+        renderTo: webpart.wrapperDivId,
         action: LABKEY.ActionURL.getParameter('action'),
         urlParams: params,
         controller: LABKEY.ActionURL.getParameter('controller')
-    }).render('importwizardDiv');
+    });
 
 });
 
 </script>
 </head>
-<div id="importwizardDiv"></div>

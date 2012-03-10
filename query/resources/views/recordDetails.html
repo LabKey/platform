@@ -8,6 +8,7 @@ LABKEY.requiresScript('/extWidgets/DetailsPanel.js');
 <script type="text/javascript">
 
 Ext4.onReady(function(){
+    var webpart = <%=webpartContext%>;
     if(!LABKEY.ActionURL.getParameter('schemaName') ||
         (!LABKEY.ActionURL.getParameter('queryName') && !LABKEY.ActionURL.getParameter('query.queryName')) ||
         !LABKEY.ActionURL.getParameter('keyField') ||
@@ -19,7 +20,8 @@ Ext4.onReady(function(){
 
     var queryName = LABKEY.ActionURL.getParameter('queryName') || LABKEY.ActionURL.getParameter('query.queryName');
 
-    var panel = Ext4.create('Ext.panel.Panel', {
+    var panelCfg = {
+        renderTo: webpart.wrapperDivId,
         autoHeight: true,
         border: false,
         style: 'padding-bottom:20px;',
@@ -31,14 +33,16 @@ Ext4.onReady(function(){
             queryName: queryName,
             viewName: LABKEY.ActionURL.getParameter('viewName') || LABKEY.ActionURL.getParameter('query.viewName'),
             columns: LABKEY.ActionURL.getParameter('columns') || LABKEY.ActionURL.getParameter('query.columns'),
+            keyFieldName: LABKEY.ActionURL.getParameter('keyField'),
+            keyValue: LABKEY.ActionURL.getParameter('key'),
             filterArray: [
                 LABKEY.Filter.create(LABKEY.ActionURL.getParameter('keyField'), LABKEY.ActionURL.getParameter('key'), LABKEY.Filter.Types.EQUALS)
             ]
         }]
-    });
+    };
 
     if(LABKEY.ActionURL.getParameter('schemaName').match(/^study$/i) && LABKEY.ActionURL.getParameter('keyField').match(/^lsid$/i)){
-        panel.add({
+        panelCfg.items.push({
             xtype: 'button',
             handler: function(b){
                 window.location = LABKEY.ActionURL.buildURL("query", "executeQuery", null, {
@@ -50,14 +54,12 @@ Ext4.onReady(function(){
             text: 'Audit History'
         });
     }
-    panel.render('recordDetailsDiv');
+
+    Ext4.create('Ext.panel.Panel', panelCfg);
 
     LABKEY.NavTrail.setTrail(LABKEY.ActionURL.getParameter('title') || queryName);
 
 });
 
-
 </script>
 </head>
-
-<div id="recordDetailsDiv"></div>
