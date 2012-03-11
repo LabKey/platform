@@ -1062,6 +1062,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                     {
                         synchronized (_commitLock)
                         {
+                            // TODO: Add a check that allows commit in the case where we've been continuous pounding the indexer for a long time...
+                            // either an oldest non-committed document check or a simple _countIndexedSinceCommit > n check.
                             if (_countIndexedSinceCommit > 0 && _lastIndexedTime + 2000 < ms && _runQueue.isEmpty())
                             {
                                 commit();

@@ -18,6 +18,7 @@ package org.labkey.search.model;
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.labkey.api.search.SearchMisconfiguredException;
 
@@ -28,7 +29,7 @@ import java.io.IOException;
 * Date: Mar 9, 2011
 * Time: 10:39:44 PM
 */
-public class NoopWritableIndex implements WritableIndex
+public class NoopWritableIndex implements WritableIndexManager
 {
     private final Logger _log;
 
@@ -50,13 +51,13 @@ public class NoopWritableIndex implements WritableIndex
     }
 
     @Override
-    public LabKeyIndexSearcher getSearcher() throws IOException
+    public IndexSearcher getSearcher() throws IOException
     {
         throw new SearchMisconfiguredException();
     }
 
     @Override
-    public void releaseSearcher(LabKeyIndexSearcher searcher) throws IOException
+    public void releaseSearcher(IndexSearcher searcher) throws IOException
     {
     }
 

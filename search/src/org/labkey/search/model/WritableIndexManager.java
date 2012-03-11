@@ -17,6 +17,7 @@
 package org.labkey.search.model;
 
 import org.apache.lucene.document.Document;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 
 import java.io.IOException;
@@ -26,15 +27,15 @@ import java.io.IOException;
 * Date: Mar 9, 2011
 * Time: 10:26:44 PM
 */
-public interface WritableIndex
+public interface WritableIndexManager
 {
     void clear();
 
     void deleteDocument(String id);
 
-    LabKeyIndexSearcher getSearcher() throws IOException;
+    IndexSearcher getSearcher() throws IOException;
 
-    void releaseSearcher(LabKeyIndexSearcher searcher) throws IOException;
+    void releaseSearcher(IndexSearcher searcher) throws IOException;
 
     void deleteQuery(Query query) throws IOException;
 

@@ -17,7 +17,10 @@ package org.labkey.search.model;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.SearcherManager;
 import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -41,26 +44,57 @@ import java.util.Set;
  * Date: Apr 19, 2010
  * Time: 3:33:05 PM
  */
-public class ExternalIndex extends SearchableIndex implements SecurableResource
+public class ExternalIndexManager extends IndexManager implements SecurableResource
 {
-    private final Object _swapLock = new Object();
-    private final File _indexRoot;
     private static final String RESOURCE_ID = "0d9aaf80-4102-102d-87fb-c74c764dc328";  // Constant, arbitrary GUID for permissions
 
-    public ExternalIndex(File indexRoot, Analyzer analyzer) throws IOException
+    private final Object _swapLock = new Object();
+    private final File _indexRoot;
+    private final Analyzer _analyzer;
+
+    public static ExternalIndexManager get(File indexRoot, Analyzer analyzer) throws IOException
     {
-        super(ensureIndexPath(indexRoot), analyzer);
+        File indexPath = ensureIndexPath(indexRoot);
+
+/*
+        This comment and code were taken from the old LabKeyIndexSearcher... it may be needed here.
+        // IndexSearcher() will throw if the directory is empty or non-existent... opening an IndexWriter first ensures
+        // that the directory is ready.
+        IndexWriter iw = new IndexWriter(directory, new SimpleAnalyzer(), IndexWriter.MaxFieldLength.UNLIMITED);
+        iw.close();
+
+ */
+
+        Directory directory = FSDirectory.open(indexRoot);
+
+        return new ExternalIndexManager(directory, indexPath, analyzer);
+    }
+
+    public ExternalIndexManager(Directory directory, File indexRoot, Analyzer analyzer) throws IOException
+    {
+        super(new SearcherManager(directory, null, null), directory);
         _indexRoot = indexRoot;
+        _analyzer = analyzer;
     }
 
     @Override
-    public @NotNull LabKeyIndexSearcher getSearcher() throws IOException
+    public @NotNull IndexSearcher getSearcher() throws IOException
     {
-        // Must get the swap lock as well -- swapping operation needs to block searcher gets, but not releases.
+        // Must get the swap lock -- swapping operation needs to block searcher gets, but not releases.
         synchronized (_swapLock)
         {
             return super.getSearcher();
         }
+    }
+
+    protected void openDirectory(File indexPath) throws IOException
+    {
+        _directory = FSDirectory.open(indexPath);
+    }
+
+    public Analyzer getAnalyzer()
+    {
+        return _analyzer;
     }
 
     void swap() throws IOException, InterruptedException
@@ -70,7 +104,6 @@ public class ExternalIndex extends SearchableIndex implements SecurableResource
             close();
             File current = ensureIndexPath(_indexRoot);
             openDirectory(current);
-            _searcher = newSearcher();
         }
     }
 
@@ -79,19 +112,7 @@ public class ExternalIndex extends SearchableIndex implements SecurableResource
     {
         synchronized (_swapLock)
         {
-            LabKeyIndexSearcher searcher = getSearcher();
-            releaseSearcher(searcher);
-
-            // Wait until all active searchers are released
-            while (searcher.isInUse())
-                Thread.sleep(1);
-
-            // Now release the one held by this class, which should close the underlying searcher.
-            releaseSearcher(searcher);
-
-            // Now we can close the current directory
-            Directory directory = getDirectory();
-            directory.close();
+            super.close();
         }
     }
 

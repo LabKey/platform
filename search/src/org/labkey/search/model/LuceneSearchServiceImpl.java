@@ -53,7 +53,8 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchUtils;
-import org.labkey.api.search.SearchUtils.*;
+import org.labkey.api.search.SearchUtils.HtmlParseException;
+import org.labkey.api.search.SearchUtils.LuceneMessageParser;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
@@ -105,9 +106,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     // Changes to _index are rare (only when admin changes the index path), but we want any changes to be visible to
     // other threads immediately.
-    private volatile WritableIndex _index;
+    private volatile WritableIndexManager _indexManager;
 
-    private static ExternalIndex _externalIndex;
+    private static ExternalIndexManager _externalIndexManager;
 
     static enum FIELD_NAMES { body, displayTitle, title /* use "title" keyword for search title */, summary,
         url, container, resourceId, uniqueId, navtrail }
@@ -119,14 +120,14 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         try
         {
             File indexDir = SearchPropertyManager.getPrimaryIndexDirectory();
-            _index = new WritableIndexImpl(indexDir, getAnalyzer());
+            _indexManager = WritableIndexManagerImpl.get(indexDir, getAnalyzer());
             setConfigurationError(null);  // Clear out any previous error
         }
         catch (Throwable t)
         {
             _log.error("Error: Unable to initialize search index. Search will be disabled and new documents will not be indexed for searching until this is corrected and the server is restarted. See below for details about the cause.");
             setConfigurationError(t);
-            _index = new NoopWritableIndex(_log);
+            _indexManager = new NoopWritableIndex(_log);
             throw new RuntimeException("Error: Unable to initialize search index", t);
         }
     }
@@ -159,10 +160,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     public void resetExternalIndex() throws IOException, InterruptedException
     {
-        if (null != _externalIndex)
+        if (null != _externalIndexManager)
         {
-            _externalIndex.close();
-            _externalIndex = null;
+            _externalIndexManager.close();
+            _externalIndexManager = null;
         }
 
         ExternalIndexProperties props = SearchPropertyManager.getExternalIndexProperties();
@@ -173,16 +174,16 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             Analyzer analyzer = ExternalAnalyzer.valueOf(props.getExternalIndexAnalyzer()).getAnalyzer();
 
             if (externalIndexFile.exists())
-                _externalIndex = new ExternalIndex(externalIndexFile, analyzer);
+                _externalIndexManager = ExternalIndexManager.get(externalIndexFile, analyzer);
         }
     }
 
 
     public void swapExternalIndex() throws IOException, InterruptedException
     {
-        if (null != _externalIndex)
+        if (null != _externalIndexManager)
         {
-            _externalIndex.swap();
+            _externalIndexManager.swap();
         }
     }
 
@@ -207,7 +208,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     public void clearIndex()
     {
-        _index.clear();
+        _indexManager.clear();
     }
 
 
@@ -795,7 +796,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     protected void deleteDocument(String id)
     {
-        _index.deleteDocument(id);
+        _indexManager.deleteDocument(id);
     }
 
 
@@ -813,7 +814,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 _log.debug("Deleting " + getDocCount(query) + " docs with prefix \"" + prefix + "\"");
             }
 
-            _index.deleteQuery(query);
+            _indexManager.deleteQuery(query);
         }
         catch (IOException e)
         {
@@ -823,10 +824,17 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     private int getDocCount(Query query) throws IOException
     {
-        LabKeyIndexSearcher searcher = _index.getSearcher();
-        TopDocs docs = searcher.search(query, 1);
-        _index.releaseSearcher(searcher);
-        return docs.totalHits;
+        IndexSearcher searcher = _indexManager.getSearcher();
+
+        try
+        {
+            TopDocs docs = searcher.search(query, 1);
+            return docs.totalHits;
+        }
+        finally
+        {
+            _indexManager.releaseSearcher(searcher);
+        }
     }
 
     protected void index(String id, WebdavResource r, Map preprocessMap)
@@ -834,7 +842,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         try
         {
             Document doc = (Document)preprocessMap.get(Document.class);
-            _index.index(r.getDocumentId(), doc);
+            _indexManager.index(r.getDocumentId(), doc);
         }
         catch(Throwable e)
         {
@@ -856,7 +864,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 _log.debug("Deleting " + getDocCount(query) + " docs from container " + id);
             }
 
-            _index.deleteQuery(query);
+            _indexManager.deleteQuery(query);
         }
         catch (IOException e)
         {
@@ -867,13 +875,24 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     protected void commitIndex()
     {
-        _index.commit();
+
+        try
+        {
+            _indexManager.commit();
+        }
+        catch (Throwable t)
+        {
+            // If any exceptions happen during commit() the IndexManager will attempt to close the IndexWriter, making
+            // the IndexManager unusable.  Attempt to reset the index.
+            ExceptionUtil.logExceptionToMothership(null, t);
+            initializeIndex();
+        }
     }
 
 
     public SearchHit find(String id) throws IOException
     {
-        LabKeyIndexSearcher searcher = _index.getSearcher();
+        IndexSearcher searcher = _indexManager.getSearcher();
 
         try
         {
@@ -886,7 +905,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
         finally
         {
-            _index.releaseSearcher(searcher);
+            _indexManager.releaseSearcher(searcher);
         }
     }
     
@@ -1013,7 +1032,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             query = bq;
         }
 
-        LabKeyIndexSearcher searcher = null;
+        IndexSearcher searcher = _indexManager.getSearcher();
 
         try
         {
@@ -1021,7 +1040,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             Filter securityFilter = user==User.getSearchUser() ? null : new SecurityFilter(user, scope.getRoot(current), current, scope.isRecursive());
 
             iTimer.setPhase(SEARCH_PHASE.search);
-            searcher = _index.getSearcher();
 
             TopDocs topDocs;
 
@@ -1036,9 +1054,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         finally
         {
             TIMER.releaseInvocationTimer(iTimer);
-
-            if (null != searcher)
-                _index.releaseSearcher(searcher);
+            _indexManager.releaseSearcher(searcher);
         }
     }
 
@@ -1099,10 +1115,10 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     @Override
     public boolean hasExternalIndexPermission(User user)
     {
-        if (null == _externalIndex)
+        if (null == _externalIndexManager)
             return false;
 
-        SecurityPolicy policy = SecurityManager.getPolicy(_externalIndex);
+        SecurityPolicy policy = SecurityManager.getPolicy(_externalIndexManager);
 
         return policy.hasPermission(user, ReadPermission.class);
     }
@@ -1111,15 +1127,15 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     @Override
     public SearchResult searchExternal(String queryString, int offset, int limit) throws IOException
     {
-        if (null == _externalIndex)
+        if (null == _externalIndexManager)
             throw new IllegalStateException("External index is not defined");
 
         int hitsToRetrieve = offset + limit;
-        LabKeyIndexSearcher searcher = _externalIndex.getSearcher();
+        IndexSearcher searcher = _externalIndexManager.getSearcher();
 
         try
         {
-            QueryParser queryParser = new MultiFieldQueryParser(Version.LUCENE_30, new String[]{"content", "title"}, _externalIndex.getAnalyzer());
+            QueryParser queryParser = new MultiFieldQueryParser(LUCENE_VERSION, new String[]{"content", "title"}, _externalIndexManager.getAnalyzer());
             Query query = queryParser.parse(queryString);
             TopDocs docs = searcher.search(query, hitsToRetrieve);
             return createSearchResult(offset, hitsToRetrieve, docs, searcher);
@@ -1130,7 +1146,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
         finally
         {
-            _externalIndex.releaseSearcher(searcher);
+            _externalIndexManager.releaseSearcher(searcher);
         }
     }
 
@@ -1141,7 +1157,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
         try
         {
-            _index.close();
+            _indexManager.close();
         }
         catch (Exception e)
         {
@@ -1150,8 +1166,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
         try
         {
-            if (null != _externalIndex)
-                _externalIndex.close();
+            if (null != _externalIndexManager)
+                _externalIndexManager.close();
         }
         catch (Exception e)
         {
@@ -1167,17 +1183,15 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
         try
         {
-            LabKeyIndexSearcher is = null;
+            IndexSearcher is = _indexManager.getSearcher();
 
             try
             {
-                is = _index.getSearcher();
                 map.put("Indexed Documents", is.getIndexReader().numDocs());
             }
             finally
             {
-                if (null != is)
-                    _index.releaseSearcher(is);
+                _indexManager.releaseSearcher(is);
             }
         }
         catch (IOException x)
@@ -1223,17 +1237,17 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     public void maintenance()
     {
         super.maintenance();
-        _index.optimize();
+        _indexManager.optimize();
     }
 
     @Override
     public List<SecurableResource> getSecurableResources(User user)
     {
-        if (null != _externalIndex)
+        if (null != _externalIndexManager)
         {
-            SecurityPolicy policy = SecurityManager.getPolicy(_externalIndex);
+            SecurityPolicy policy = SecurityManager.getPolicy(_externalIndexManager);
             if (policy.hasPermission(user, AdminPermission.class))
-                return Collections.singletonList((SecurableResource)_externalIndex);
+                return Collections.singletonList((SecurableResource) _externalIndexManager);
         }
 
         return Collections.emptyList();
