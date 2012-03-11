@@ -51,26 +51,18 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class QueryManager
 {
-    static final private Logger _log = Logger.getLogger(QueryManager.class);
-    static private QueryManager instance;
-    static final private String SCHEMA_NAME = "query";
-    final static public int FLAG_INHERITABLE = 0x01;
-    final static public int FLAG_HIDDEN = 0x02;
-    final static public int FLAG_SNAPSHOT = 0x04;
+    private static final Logger _log = Logger.getLogger(QueryManager.class);
+    private static final QueryManager instance = new QueryManager();
+    private static final String SCHEMA_NAME = "query";
     private static final List<QueryService.QueryListener> _listeners = new CopyOnWriteArrayList<QueryService.QueryListener>();
 
-    synchronized static public QueryManager get()
-    {
-        if (instance == null)
-            instance = new QueryManager();
-        return instance;
-    }
+    public static final int FLAG_INHERITABLE = 0x01;
+    public static final int FLAG_HIDDEN = 0x02;
+    public static final int FLAG_SNAPSHOT = 0x04;
 
-    public QueryDef getQueryDef(int id)
+    public static QueryManager get()
     {
-        QueryDef def = Table.selectObject(getTableInfoQueryDef(), id, QueryDef.class);
-        _log.debug(def.toString());
-        return def;
+        return instance;
     }
 
     /**

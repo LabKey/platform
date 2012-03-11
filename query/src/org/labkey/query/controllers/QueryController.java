@@ -2668,6 +2668,7 @@ public class QueryController extends SpringActionController
             return _format;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setFormat(String format)
         {
             _format = format;
@@ -2682,10 +2683,10 @@ public class QueryController extends SpringActionController
         {
             String schemaName = StringUtils.trimToNull(form.getSchemaName());
             if (null == schemaName)
-                throw new IllegalArgumentException("No value was supplied for the required parameter 'schemaName'.");
+                throw new NotFoundException("No value was supplied for the required parameter 'schemaName'");
             String sql = StringUtils.trimToNull(form.getSql());
             if (null == sql)
-                throw new IllegalArgumentException("No value was supplied for the required parameter 'sql'.");
+                throw new NotFoundException("No value was supplied for the required parameter 'sql'");
 
             UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), schemaName);
 
@@ -2717,8 +2718,6 @@ public class QueryController extends SpringActionController
             view.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
 
             //export it
-            response.setContentType("application/vnd.ms-excel");
-            response.setHeader("Content-disposition", "attachment; filename=\"QueryResults.xls\"");
             response.setHeader("Pragma", "private");
             response.setHeader("Cache-Control", "private");
 

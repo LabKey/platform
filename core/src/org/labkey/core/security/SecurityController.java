@@ -108,6 +108,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
+import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -1765,6 +1766,7 @@ public class SecurityController extends SpringActionController
                 String dot = GroupManager.getGroupGraphSvg(groups, getUser());
                 File dir = FileUtil.getTempDirectory();
                 File svgFile = null;
+
                 try
                 {
                     svgFile = File.createTempFile("groups", ".svg", dir);
@@ -1774,6 +1776,22 @@ public class SecurityController extends SpringActionController
                     runner.execute();
                     String svg = PageFlowUtil.getFileContentsAsString(svgFile);
                     html = svg.substring(svg.indexOf("<svg"));
+                }
+                catch (IOException ioe)
+                {
+                    if (ioe.getMessage().startsWith("Cannot run program \"dot\""))
+                    {
+                        html = "This feature requires graphviz to be installed; ";
+
+                        if (getUser().isAdministrator())
+                            html += "see " + new HelpTopic("thirdPartyCode").getLinkHtml("the LabKey installation instructions") + " for more information.";
+                        else
+                            html += "contact a server administrator about this problem.";
+                    }
+                    else
+                    {
+                        throw ioe;
+                    }
                 }
                 finally
                 {

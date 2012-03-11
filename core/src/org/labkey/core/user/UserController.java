@@ -1245,12 +1245,11 @@ public class UserController extends SpringActionController
                 }
                 else
                 {
-                    Container doneContainer;
+                    Container doneContainer = c.getProject();
 
-                    if (c.isRoot())
+                    // Root or no permission means redirect to home, #12947
+                    if (null == doneContainer || !doneContainer.hasPermission(user, ReadPermission.class))
                         doneContainer = ContainerManager.getHomeContainer();
-                    else
-                        doneContainer = c.getProject();
 
                     ActionURL doneURL = doneContainer.getStartURL(user);
                     doneButton = new ActionButton(doneURL, "Go to " + doneContainer.getName());

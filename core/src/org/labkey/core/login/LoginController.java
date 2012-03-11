@@ -56,6 +56,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserUrls;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
@@ -449,9 +450,9 @@ public class LoginController extends SpringActionController
         Container current = getContainer();
         Container c = (null == current || current.isRoot() ? ContainerManager.getHomeContainer() : getContainer());
 
-        // Default redirect if returnURL is not specified
+        // Default redirect if returnURL is not specified.  Try not to redirect to a folder where the user doesn't have permissions, #12947
         URLHelper defaultURL =
-                null==current || current.isRoot() ? getWelcomeURL() :
+                null == current || current.isRoot() || (null != user && !c.hasPermission(user, ReadPermission.class)) ? getWelcomeURL() :
                 null != user ? c.getStartURL(user) :
                 AppProps.getInstance().getHomePageActionURL();
 
