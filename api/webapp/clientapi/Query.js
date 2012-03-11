@@ -284,9 +284,11 @@ LABKEY.Query = new function()
         {
             // Insert a hidden <form> into to page, put the JSON into it, and submit it - the server's response
             // will make the browser pop up a dialog
-            var html = '<form method="POST" action="' + LABKEY.ActionURL.buildURL("query", "exportSql", config.containerPath) + '">' +
-            '<input type="hidden" name="sql" value="' + Ext.util.Format.htmlEncode(config.sql) + '" />' +
-            '<input type="hidden" name="schemaName" value="' + Ext.util.Format.htmlEncode(config.schemaName) + '" />';
+            var html = '<form method="POST" action="' + LABKEY.ActionURL.buildURL("query", "exportSql", config.containerPath) + '">';
+            if (undefined != config.sql)
+                html += '<input type="hidden" name="sql" value="' + Ext.util.Format.htmlEncode(config.sql) + '" />';
+            if (undefined != config.schemaName)
+                html += '<input type="hidden" name="schemaName" value="' + Ext.util.Format.htmlEncode(config.schemaName) + '" />';
             if (undefined != config.format)
                 html += '<input type="hidden" name="format" value="' + Ext.util.Format.htmlEncode(config.format) + '" />';
             if (undefined != config.containerFilter)

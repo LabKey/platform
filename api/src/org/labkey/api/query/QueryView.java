@@ -1695,7 +1695,7 @@ public class QueryView extends WebPartView<Object>
         boolean sas = "SAS".equals(rgn.getTable().getSqlDialect().getProductName());
         rc.setCache(sas);
         ResultSet rs = rgn.getResultSet(rc);
-        Map<FieldKey,ColumnInfo> map = rc.getFieldMap();
+        Map<FieldKey, ColumnInfo> map = rc.getFieldMap();
         ExcelWriter ew = new ExcelWriter(rs, map, getExportColumns(rgn.getDisplayColumns()), docType);
         ew.setFilenamePrefix(getSettings().getQueryName());
         return ew;

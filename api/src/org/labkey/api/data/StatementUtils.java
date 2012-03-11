@@ -333,6 +333,7 @@ public class StatementUtils
 
             if (null != objectIdVar)
             {
+                Logger.getLogger(StatementUtils.class).info("Code path that selects object IDs");
                 sqlfSelectIds.append(prefix);
                 sqlfSelectIds.append(objectIdVar);
                 selectObjectIdIndex = ++countReturnIds;
