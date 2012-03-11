@@ -1994,7 +1994,7 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function (config)
             cls: "extContainer",
             bodyStyle: "padding: 6px",
             modal: true,
-            width: 480,
+            width: 490,
             height: 260,
             layout: "form",
             defaults: {
