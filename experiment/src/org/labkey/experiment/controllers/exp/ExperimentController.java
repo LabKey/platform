@@ -455,6 +455,18 @@ public class ExperimentController extends SpringActionController
             settings.setAllowChooseQuery(false);
             QueryView queryView = new QueryView(schema, settings, errors)
             {
+                @Override
+                protected boolean canInsert()
+                {
+                    return _source.canImportMoreSamples() && super.canInsert();
+                }
+
+                @Override
+                protected boolean canUpdate()
+                {
+                    return _source.canImportMoreSamples() && super.canUpdate();
+                }
+
                 protected void populateButtonBar(DataView view, ButtonBar bar)
                 {
                     super.populateButtonBar(view, bar);
