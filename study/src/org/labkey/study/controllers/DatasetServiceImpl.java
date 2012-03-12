@@ -298,8 +298,8 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
                 maps = loader.load();
             }
 
-            PropertyDescriptor[] pds = OntologyManager.importOneType(domain.getDomainURI(), maps, errors, getContainer());
-            if (pds == null || pds.length == 0)
+            boolean success = OntologyManager.importOneType(domain.getDomainURI(), maps, errors, getContainer(), getUser());
+            if (!success)
                 errors.add("No properties were successfully imported.");
 
             if (errors.isEmpty())

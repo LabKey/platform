@@ -247,12 +247,6 @@ public class SchemaTsvReader implements SchemaReader
         return _importMaps;
     }
 
-    @Override
-    public List<List<ConditionalFormat>> getConditionalFormats()
-    {
-        return null;
-    }
-
     public Map<Integer, DataSetImportInfo> getDatasetInfo()
     {
         return _datasetInfoMap;

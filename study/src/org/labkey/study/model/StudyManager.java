@@ -38,7 +38,6 @@ import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -2499,7 +2498,7 @@ public class StudyManager
                 }
             };
 
-            PropertyDescriptor[] pds = OntologyManager.importTypes(factory, reader.getTypeNameColumn(), mapsImport, importErrors, c, true);
+            boolean success = OntologyManager.importTypes(factory, reader.getTypeNameColumn(), mapsImport, importErrors, c, true, user);
 
             if (!importErrors.isEmpty())
             {
@@ -2508,24 +2507,10 @@ public class StudyManager
                 return false;
             }
 
-            if (pds.length > 0)
+            if (success)
             {
                 Map<Integer, SchemaReader.DataSetImportInfo> datasetInfoMap = reader.getDatasetInfo();
                 StudyManager manager = StudyManager.getInstance();
-
-                List<List<ConditionalFormat>> formats = reader.getConditionalFormats();
-                if (formats != null)
-                {
-                    assert formats.size() == pds.length;
-                    for (int i = 0; i < pds.length; i++)
-                    {
-                        List<ConditionalFormat> pdFormats = formats.get(i);
-                        if (!pdFormats.isEmpty())
-                        {
-                            PropertyService.get().saveConditionalFormats(user, pds[i], pdFormats);
-                        }
-                    }
-                }
 
                 for (Map.Entry<Integer, SchemaReader.DataSetImportInfo> entry : datasetInfoMap.entrySet())
                 {

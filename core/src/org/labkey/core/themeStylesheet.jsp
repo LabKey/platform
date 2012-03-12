@@ -439,6 +439,11 @@ tr.labkey-wp-header
     color:#<%= text %>;
 }
 
+.labkey-wp-text-buttons a, .labkey-wp-text-buttons a:visited
+{
+    color:#<%= link %>;
+}
+
 .labkey-wp-header a:link, .labkey-wp-header a:visited
 {
     color:#<%= link %>;

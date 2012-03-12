@@ -955,7 +955,8 @@ public class StudyController extends BaseStudyController
             final TableInfo table = queryView.getTable();
             if (table != null)
             {
-                addParticipantListToCache(context, def.getDataSetId(), viewName, generateParticipantList(queryView), _cohortFilter, form.getQCState());
+                // Clear any cached participant lists, since the filter/sort may have changed
+                removeParticipantListFromCache(context, def.getDataSetId(), viewName, _cohortFilter, form.getQCState());
                 getExpandedState(context, def.getDataSetId()).clear();
             }
 
@@ -2944,10 +2945,10 @@ public class StudyController extends BaseStudyController
         return key;
     }
 
-    public static void addParticipantListToCache(ViewContext context, int dataset, String viewName, List<String> participants, CohortFilter cohortFilter, String encodedQCState)
+    public static void removeParticipantListFromCache(ViewContext context, int dataset, String viewName, CohortFilter cohortFilter, String encodedQCState)
     {
         Map<String, List<String>> map = getParticipantMapFromCache(context);
-        map.put(getParticipantListCacheKey(dataset, viewName, cohortFilter, encodedQCState), participants);
+        map.remove(getParticipantListCacheKey(dataset, viewName, cohortFilter, encodedQCState));
     }
 
     @SuppressWarnings("unchecked")
@@ -3044,18 +3045,28 @@ public class StudyController extends BaseStudyController
 
         if (table != null)
         {
-            Set<String> participantSet = new LinkedHashSet<String>();
-            FieldKey ptidKey = new FieldKey(null,StudyService.get().getSubjectColumnName(queryView.getContainer()));
             ResultSet rs = null;
 
             try
             {
-                Results r = queryView.getResults(ShowRows.PAGINATED);
-                if (r != null)
+                // Do a single-column query to get the list of participants that match the filter criteria for this
+                // dataset
+                FieldKey ptidKey = FieldKey.fromParts(StudyService.get().getSubjectColumnName(queryView.getContainer()));
+                Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(table, Collections.singleton(ptidKey));
+                ColumnInfo ptidColumnInfo = columns.get(ptidKey);
+                // Don't bother unless we actually found the participant column (we always should)
+                if (ptidColumnInfo != null)
                 {
-                    rs = r.getResultSet();
-                    ColumnInfo ptidColumnInfo = r.getFieldMap().get(ptidKey);
+                    // Go through the RenderContext directly to get the ResultSet so that we don't also end up calculating
+                    // row counts or other aggregates we don't care about
+                    DataView dataView = queryView.createDataView();
+                    RenderContext ctx = dataView.getRenderContext();
+                    DataRegion dataRegion = dataView.getDataRegion();
+                    queryView.getSettings().setShowRows(ShowRows.ALL);
+                    rs = ctx.getResultSet(columns, table, dataRegion.getQueryParameters(), Table.ALL_ROWS, dataRegion.getOffset(), dataRegion.getName(), false);
                     int ptidIndex = (null != ptidColumnInfo) ? rs.findColumn(ptidColumnInfo.getAlias()) : 0;
+
+                    Set<String> participantSet = new LinkedHashSet<String>();
                     while (rs.next() && ptidIndex > 0)
                     {
                         String ptid = rs.getString(ptidIndex);
@@ -3063,10 +3074,6 @@ public class StudyController extends BaseStudyController
                     }
                     return new ArrayList<String>(participantSet);
                 }
-            }
-            catch (RuntimeSQLException x)
-            {
-                // noop, will get handled properly at dataregion render time
             }
             catch (Exception x)
             {

@@ -1722,8 +1722,8 @@ public class ReportsController extends BaseStudyController
                 if (idx < participantGroup.size()-1)
                 {
                     final String ptid = participantGroup.get(idx+1);
-                    nextParticipantURL = context.cloneActionURL();
-                    nextParticipantURL.replaceParameter("participantId", ptid);
+                    previousParticipantURL = context.cloneActionURL();
+                    previousParticipantURL.replaceParameter("participantId", ptid);
                 }
             }
         }

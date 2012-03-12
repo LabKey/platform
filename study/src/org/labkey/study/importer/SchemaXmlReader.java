@@ -52,7 +52,6 @@ public class SchemaXmlReader implements SchemaReader
     private static final String NAME_KEY = "PlateName";
 
     private final List<Map<String, Object>> _importMaps = new LinkedList<Map<String, Object>>();
-    private final List<List<ConditionalFormat>> _formats = new LinkedList<List<ConditionalFormat>>();
     private final Map<Integer, DataSetImportInfo> _datasetInfoMap;
 
     public SchemaXmlReader(StudyImpl study, VirtualFile root, String metaDataFile, Map<String, DatasetImportProperties> extraImportProps) throws IOException, XmlException, ImportException
@@ -111,7 +110,7 @@ public class SchemaXmlReader implements SchemaReader
             RowMapFactory<Object> mapFactory = new RowMapFactory<Object>(NAME_KEY, "Property", "PropertyURI", "Label", "Description",
                     "RangeURI", "NotNull", "ConceptURI", "Format", "InputType", "HiddenColumn", "MvEnabled", "LookupFolderPath",
                     "LookupSchema", "LookupQuery", "URL", "ImportAliases", "ShownInInsertView", "ShownInUpdateView",
-                    "ShownInDetailsView", "Measure", "Dimension");
+                    "ShownInDetailsView", "Measure", "Dimension", "ConditionalFormats");
 
             if (tableXml.getColumns() != null)
             {
@@ -163,7 +162,7 @@ public class SchemaXmlReader implements SchemaReader
                     }
 
                     ColumnType.Fk fk = columnXml.getFk();
-                    _formats.add(ConditionalFormat.convertFromXML(columnXml.getConditionalFormats()));
+                    List<ConditionalFormat> conditionalFormats = ConditionalFormat.convertFromXML(columnXml.getConditionalFormats());
                     Map<String, Object> map = mapFactory.getRowMap(new Object[]{
                         datasetName,
                         columnName,
@@ -186,7 +185,8 @@ public class SchemaXmlReader implements SchemaReader
                         shownInUpdateView,
                         shownInDetailsView,
                         measure,
-                        dimension
+                        dimension,
+                        conditionalFormats
                     });
 
                     _importMaps.add(map);
@@ -221,12 +221,6 @@ public class SchemaXmlReader implements SchemaReader
     public List<Map<String, Object>> getImportMaps()
     {
         return _importMaps;
-    }
-
-    @Override
-    public List<List<ConditionalFormat>> getConditionalFormats()
-    {
-        return _formats;
     }
 
     public Map<Integer, DataSetImportInfo> getDatasetInfo()

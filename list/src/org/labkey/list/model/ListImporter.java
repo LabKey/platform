@@ -155,9 +155,8 @@ public class ListImporter
         RowMapFactory<Object> mapFactory = new RowMapFactory<Object>(TYPE_NAME_COLUMN, "Property", "PropertyURI", "Label", "Description",
                 "RangeURI", "NotNull", "ConceptURI", "Format", "InputType", "HiddenColumn", "MvEnabled", "LookupFolderPath",
                 "LookupSchema", "LookupQuery", "URL", "ImportAliases", "ShownInInsertView", "ShownInUpdateView",
-                "ShownInDetailsView", "Measure", "Dimension");
+                "ShownInDetailsView", "Measure", "Dimension", "ConditionalFormats");
         List<Map<String, Object>> importMaps = new LinkedList<Map<String, Object>>();
-        List<List<ConditionalFormat>> formats = new ArrayList<List<ConditionalFormat>>();
 
         for (ColumnType columnXml : listXml.getColumns().getColumnArray())
         {
@@ -223,9 +222,9 @@ public class ListImporter
                 shownInUpdateView,
                 shownInDetailsView,
                 measure,
-                dimension
+                dimension,
+                ConditionalFormat.convertFromXML(columnXml.getConditionalFormats())
             });
-            formats.add(ConditionalFormat.convertFromXML(columnXml.getConditionalFormats()));
 
             importMaps.add(map);
         }
@@ -239,22 +238,7 @@ public class ListImporter
             }
         };
 
-        PropertyDescriptor[] pds = OntologyManager.importTypes(factory, TYPE_NAME_COLUMN, importMaps, errors, c, true);
-
-        if (!errors.isEmpty())
-            return;
-
-        assert pds.length == formats.size();
-
-        for (int i = 0; i < pds.length; i++)
-        {
-            List<ConditionalFormat> pdFormats = formats.get(i);
-
-            if (!pdFormats.isEmpty())
-            {
-                PropertyService.get().saveConditionalFormats(user, pds[i], pdFormats);
-            }
-        }
+        OntologyManager.importTypes(factory, TYPE_NAME_COLUMN, importMaps, errors, c, true, user);
     }
 
     private KeyType getKeyType(TableType listXml, String keyName) throws ImportException
