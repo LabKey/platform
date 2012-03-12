@@ -2929,6 +2929,11 @@ public class QueryController extends SpringActionController
                 if (transacted)
                     table.getSchema().getScope().commitTransaction();
             }
+            catch (Table.OptimisticConflictException e)
+            {
+                //issue 13967: provide better message for OptimisticConflictException
+                errors.reject(e.getMessage());
+            }
             finally
             {
                 if (transacted)
