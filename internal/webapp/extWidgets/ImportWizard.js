@@ -82,6 +82,13 @@ Ext4.define('LABKEY.ext.ImportWizard', {
         var panel = btn.up('form') || btn.up('window');
         var type = panel.down('#inputType');
         if(type.getValue().inputType=='new'){
+            // this should really be enforced upstream.
+            // it is possible some actions would be available to users w/ read access only, so we dont completely hide this dialog
+            if(!LABKEY.Security.currentUser.canUpdate){
+                alert('You do not have permission to create new workbooks.  Please choose an existing one.');
+                return;
+            }
+
             LABKEY.Security.createContainer({
                 isWorkbook: true,
                 title: panel.down('#titleField').getValue(),

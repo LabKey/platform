@@ -23,7 +23,13 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
     alias: 'widget.labkey-detailspanel',
     initComponent: function(){
         var params = {schemaName: this.schemaName, 'query.queryName': this.queryName};
-        params['query.' + this.keyFieldName + '~eq'] = this.keyValue;
+        if(this.keyFieldName)
+            params['query.' + this.keyFieldName + '~eq'] = this.keyValue;
+        if(this.filterArray){
+            Ext4.each(this.filterArray, function(filter){
+                params[filter.getURLParameterName()] = filter.getURLParameterValue();
+            }, this);
+        }
         var gridURL = LABKEY.ActionURL.buildURL('query', 'executeQuery', null, params);
 
         Ext4.apply(this, {

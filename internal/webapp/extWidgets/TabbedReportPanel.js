@@ -20,6 +20,7 @@ Ext4.define('LABKEY.ext4.TabbedReportPanel', {
     initComponent: function(){
         Ext4.apply(this, {
             bodyBorder: false
+            ,bodyStyle: 'padding: 10px;'
             ,border: false
             ,reportTabs: {}
             ,defaults: {
@@ -77,7 +78,10 @@ Ext4.define('LABKEY.ext4.TabbedReportPanel', {
                 style: 'padding: 10px'
             },{
                 xtype: 'tabpanel',
-                itemId: 'tabPanel'
+                itemId: 'tabPanel',
+                style: 'padding-bottom: 20px',
+                bodyStyle: 'height: auto;',
+                border: true //todo
             }]
 
         });
@@ -470,15 +474,16 @@ Ext4.define('LABKEY.ext4.TabbedReportPanel', {
             linkTarget: '_blank',
             //renderTo: targetId,
             failure: LABKEY.Utils.onError,
-            success: function(dataRegion, panel){
-                panel.doLayout();
-            },
+//            success: function(dataRegion, panel){
+//                console.log(panel);
+//            },
             scope: this
         };
 
         tab.add({
             xtype: 'labkey-querypanel',
-            style: 'padding-bottom: 10px;',
+            //style: 'padding-bottom: 10px;',
+            autoLoadQuery: true,
             queryConfig: queryConfig
         });
     },
@@ -551,7 +556,7 @@ Ext4.define('LABKEY.ext4.TabbedReportPanel', {
                 store: store,
                 title: (subject ? subject.join("; ") : ''),
                 type: 'line',
-                xField: 'SampleDate',
+                xField: 'Date',
                 yField: 'ViralLoad'
             });
         }
@@ -658,15 +663,15 @@ Ext4.define('LABKEY.ext4.TabbedReportPanel', {
             if(!lowerTab){
                 lowerTab = subTab.add({
                     //xtype: 'tab',
+//                    layout: 'fit',
                     title: rec.get('reporttitle') || rec.get('queryname') || 'default',
                     itemId: reportName,
                     rowData: rec,
-                    //bodyStyle:'padding:5px',
                     border: false,
                     bodyBorder: false,
                     subjectArray: [],
                     filterArray: {},
-                    tbar: {style: 'padding-left:10px'},
+                    //tbar: {style: 'padding-left:10px'},
                     combineSubj: true
                 });
 
@@ -716,7 +721,7 @@ Ext4.define('LABKEY.ext4.TabbedReportPanel', {
                 
         //indicates tab already has up to date content
         if(reload == 0 && !this.forceRefresh){
-            console.log('no reload needed');
+//            console.log('no reload needed');
             return;
         }
         this.forceRefresh = null;
