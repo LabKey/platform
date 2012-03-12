@@ -137,11 +137,12 @@
  * @param {Array} [config.aggregates] An array of aggregate definitions. The objects in this array should have two
  * properties: 'column' and 'type'. The column property is the column name, and the type property may be one of the
  * the {@link LABKEY.AggregateTypes} values.
- * @param {String} [config.showRows] Either 'paginated' (the default) 'selected', 'unselected' or 'all'.
+ * @param {String} [config.showRows] Either 'paginated' (the default) 'selected', 'unselected', 'all', or 'none'.
  *        When 'paginated', the maxRows and offset parameters can be used to page through the query's result set rows.
  *        When 'selected' or 'unselected' the set of rows selected or unselected by the user in the grid view will be returned.
  *        You can programatically get and set the selection using the {@link LABKEY.DataRegion.setSelected} APIs.
- *        Setting <code>config.maxRows</code> to -1 is the same as setting <code>config.showRows</code> to 'all'.
+ *        Setting <code>config.maxRows</code> to -1 is the same as 'all'
+ *        and setting <code>config.maxRows</code> to 0 is the same as 'none'.
  * @param {Integer} [config.maxRows] The maximum number of rows to return from the server (defaults to 100).
  *        If you want to return all possible rows, set this config property to -1.
  * @param {Integer} [config.offset] The index of the first row to return from the server (defaults to 0).
@@ -368,7 +369,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
             params[this.dataRegionName + ".containerFilterName"] = this.containerFilter;
         if (this.showRows)
             params[this.dataRegionName + ".showRows"] = this.showRows;
-        if (this.maxRows)
+        if (this.maxRows >= -1)
             params[this.dataRegionName + ".maxRows"] = this.maxRows;
         if (this.offset)
             params[this.dataRegionName + ".offset"] = this.offset;

@@ -237,8 +237,10 @@ public class QuerySettings
                 {
                     int maxRows = Integer.parseInt(maxRowsParam);
                     assert Table.validMaxRows(maxRows) : maxRows + " is an illegal value for maxRows; should be positive, Table.ALL_ROWS or Table.NO_ROWS";
-                    if (maxRows > 0)
+                    if (maxRows >= 0)
                         _maxRows = maxRows;
+                    if (_maxRows == Table.NO_ROWS)
+                        _showRows = ShowRows.NONE;
                 }
                 catch (NumberFormatException e) { }
             }
@@ -477,6 +479,8 @@ public class QuerySettings
     /** @return The maxRows parameter when {@link ShowRows#PAGINATED}, otherwise ALL_ROWS. */
     public int getMaxRows()
     {
+        if (_showRows == ShowRows.NONE)
+            return Table.NO_ROWS;
         if (_showRows != ShowRows.PAGINATED)
             return Table.ALL_ROWS;
         return _maxRows;
@@ -485,7 +489,7 @@ public class QuerySettings
     public void setMaxRows(int maxRows)
     {
         assert Table.validMaxRows(maxRows) : maxRows + " is an illegal value for maxRows; should be positive, Table.ALL_ROWS or Table.NO_ROWS";
-        assert _showRows == ShowRows.PAGINATED : "Can't set maxRows when not paginated";
+        assert (maxRows == Table.NO_ROWS && _showRows == ShowRows.NONE) || (maxRows == Table.ALL_ROWS && _showRows == ShowRows.ALL) || _showRows == ShowRows.PAGINATED : "Can't set maxRows when not paginated";
         _maxRows = maxRows;
     }
 
@@ -499,7 +503,7 @@ public class QuerySettings
 
     public void setOffset(long offset)
     {
-        assert _showRows == ShowRows.PAGINATED : "Can't set maxRows when not paginated";
+        assert (offset == 0 && _showRows != ShowRows.PAGINATED) || _showRows == ShowRows.PAGINATED : "Can't set maxRows when not paginated";
         _offset = offset;
     }
 

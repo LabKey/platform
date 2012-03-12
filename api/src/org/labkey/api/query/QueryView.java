@@ -216,8 +216,10 @@ public class QueryView extends WebPartView<Object>
 
     protected int getMaxRows()
     {
+        if (getShowRows() == ShowRows.NONE)
+            return Table.NO_ROWS;
         if (getShowRows() != ShowRows.PAGINATED)
-            return 0;
+            return Table.ALL_ROWS;
         return getSettings().getMaxRows();
     }
 
