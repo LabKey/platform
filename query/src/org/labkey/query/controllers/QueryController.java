@@ -35,6 +35,7 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiVersion;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.ExportAction;
+import org.labkey.api.action.ExportException;
 import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
@@ -2722,6 +2723,14 @@ public class QueryController extends SpringActionController
                 view.exportToExcel(response);
             else if ("tsv".equalsIgnoreCase(form.getFormat()))
                 view.exportToTsv(response);
+            else
+                errors.reject(null, "Invalid format specified; must be 'excel' or 'tsv'");
+
+            for (QueryException qe : view.getParseErrors())
+                errors.reject(null, qe.getMessage());
+
+            if (errors.hasErrors())
+                throw new ExportException(new SimpleErrorView(errors, false));
         }
     }
 

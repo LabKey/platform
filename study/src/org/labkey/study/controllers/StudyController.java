@@ -1021,7 +1021,7 @@ public class StudyController extends BaseStudyController
                 else
                 {
                     // discuss the dataset
-                    String title = "Discuss dataset - " + def.getName();
+                    String title = "Discuss dataset - " + def.getLabel();
                     HttpView discussion = service.getDisussionArea(getViewContext(), def.getEntityId(), getViewContext().getActionURL(), title, true, false);
                     view.addView(discussion);
                 }
