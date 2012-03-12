@@ -1378,19 +1378,25 @@ public class QueryView extends WebPartView<Object>
     {
         if (_report != null)
         {
-            ReportDataRegion dr = new ReportDataRegion(getSettings(), getViewContext(), _report);
-            RenderContext ctx = new RenderContext(getViewContext());
+            try {
+                ReportDataRegion dr = new ReportDataRegion(getSettings(), getViewContext(), _report);
+                RenderContext ctx = new RenderContext(getViewContext());
 
-            if (!isPrintView())
-            {
-                // not sure why this is necessary (adding the reportId to the context)
-                ctx.put("reportId", _report.getDescriptor().getReportId());
-                ButtonBar bar = new ButtonBar();
-                populateReportButtonBar(bar);
+                if (!isPrintView())
+                {
+                    // not sure why this is necessary (adding the reportId to the context)
+                    ctx.put("reportId", _report.getDescriptor().getReportId());
+                    ButtonBar bar = new ButtonBar();
+                    populateReportButtonBar(bar);
 
-                dr.setButtonBar(bar);
+                    dr.setButtonBar(bar);
+                }
+                dr.render(ctx, request, response);
             }
-            dr.render(ctx, request, response);
+            catch (Exception e)
+            {
+                renderErrors(response.getWriter(), "Error rendering report :  " + _report.getDescriptor().getReportName(), Collections.singletonList(e));
+            }
         }
     }
 
