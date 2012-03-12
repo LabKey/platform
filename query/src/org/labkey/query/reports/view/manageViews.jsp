@@ -54,6 +54,7 @@
     {
         var gridConfig = {
             renderTo: 'viewsGrid',
+            border  : false,
             <% if (form.getSchemaName() != null && form.getQueryName() != null) { %>
                 baseQuery: {
                     schemaName: <%=PageFlowUtil.jsString(form.getSchemaName())%>,
@@ -67,7 +68,11 @@
         };
         
         var panel = new LABKEY.ViewsPanel(gridConfig);
-        panel.show();
+        var grid = panel.show();
+        var _resize = function(w,h) {
+            LABKEY.Utils.resizeToViewport(grid, w, -1); // don't fit to height
+        }
+        Ext.EventManager.onWindowResize(_resize);
     });
     
 </script>

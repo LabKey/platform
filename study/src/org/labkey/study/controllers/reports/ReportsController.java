@@ -233,12 +233,17 @@ public class ReportsController extends BaseStudyController
         public ModelAndView getView(StudyManageReportsBean form, BindException errors) throws Exception
         {
             setHelpTopic(new HelpTopic("manageReportsAndViews"));
-            return new StudyJspView<StudyManageReportsBean>(getStudy(), "manageViews.jsp", form, errors);
+            StudyJspView<StudyManageReportsBean> view = new StudyJspView<StudyManageReportsBean>(getStudy(), "manageViews.jsp", form, errors);
+
+            view.setTitle("Manage Views");
+            view.setFrame(WebPartView.FrameType.PORTAL);
+
+            return view;
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return _appendNavTrail(root, "Manage Views");
+            return null;
         }
     }
 

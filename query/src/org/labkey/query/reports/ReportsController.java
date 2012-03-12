@@ -21,6 +21,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
@@ -125,6 +126,7 @@ import javax.script.ScriptEngineManager;
 import javax.servlet.ServletException;
 import java.io.File;
 import java.io.PrintWriter;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -141,6 +143,7 @@ import java.util.Map;
  */
 public class ReportsController extends SpringActionController
 {
+    private static final Logger _log = Logger.getLogger(ReportsController.class);
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(ReportsController.class);
 
     public static final String TAB_SOURCE = "source";
@@ -968,10 +971,17 @@ public class ReportsController extends SpringActionController
             Report report = form.getReport();
             if (report instanceof RReport)
             {
-                File file = ((RReport)report).createInputDataFile(getViewContext());
-                if (file.exists())
+                try
                 {
-                    PageFlowUtil.streamFile(getViewContext().getResponse(), file, true);
+                    File file = ((RReport)report).createInputDataFile(getViewContext());
+                    if (file.exists())
+                    {
+                        PageFlowUtil.streamFile(getViewContext().getResponse(), file, true);
+                    }
+                }
+                catch (SQLException e)
+                {
+                    _log.error("failed trying to download input RReport data", e);
                 }
             }
             return null;
@@ -1282,12 +1292,17 @@ public class ReportsController extends SpringActionController
     {
         public ModelAndView getView(ViewsSummaryForm form, BindException errors) throws Exception
         {
-            return new JspView<ViewsSummaryForm>("/org/labkey/query/reports/view/manageViews.jsp", form, errors);
+            JspView view =  new JspView<ViewsSummaryForm>("/org/labkey/query/reports/view/manageViews.jsp", form, errors);
+
+            view.setTitle("Manage Views");
+            view.setFrame(WebPartView.FrameType.PORTAL);
+
+            return view;
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Manage Views");
+            return null;
         }
     }
 

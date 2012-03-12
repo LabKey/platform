@@ -233,7 +233,12 @@
                 return menu;
             }
         });
-        panel.show();
+
+        var grid = panel.show();
+        var _resize = function(w,h) {
+            LABKEY.Utils.resizeToViewport(grid, w, -1); // don't fit to height
+        }
+        Ext.EventManager.onWindowResize(_resize);
     }
 
     Ext.onReady(function(){renderViews();});

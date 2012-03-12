@@ -919,7 +919,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
                 selection.id = selection.uri;
                 files.push(selection);
             }
-            this.onCustomFileProperties({files: files});
+            this.onCustomFileProperties({files : files, showErrors : true});
         }
     },
 
@@ -930,7 +930,11 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
         // no file fields specified yet
         if (this.adminOptions.fileFields.length == 0)
+        {
+            if (options.showErrors)
+                Ext.Msg.alert("File Properties", "There are no file properties defined yet, please contact your administrator.");
             return;
+        }
 
         var fileDlg = new LABKEY.FilePropertiesPanel({fileFields: this.adminOptions.fileFields,
             files: options.files,

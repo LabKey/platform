@@ -1387,14 +1387,20 @@ public class SampleManager
 
             SQLFragment specimenTypeSummarySQL = new SQLFragment("SELECT\n" +
                 "\tPrimaryType,\n" +
+                "\tPrimaryTypeId,\n" +
                 "\tDerivative,\n" +
+                "\tDerivativeTypeId,\n" +
                 "\tAdditive,\n" +
+                "\tAdditiveTypeId,\n" +
                 "\tSUM(VialCount) AS VialCount\n" +
                 "FROM (\n" +
                 "\tSELECT\n" +
                 "\tstudy.SpecimenPrimaryType.PrimaryType AS PrimaryType,\n" +
+                "\tPrimaryTypeId,\n" +
                 "\tstudy.SpecimenDerivative.Derivative AS Derivative,\n" +
+                "\tDerivativeTypeId,\n" +
                 "\tstudy.SpecimenAdditive.Additive AS Additive,\n" +
+                "\tAdditiveTypeId,\n" +
                 "\tSpecimens.VialCount\n" +
                 "\tFROM\n" +
                 "\t\t(SELECT study.Specimen.PrimaryTypeId,\n" +
@@ -1445,7 +1451,7 @@ public class SampleManager
                 "\t\tstudy.SpecimenAdditive.RowId = Specimens.AdditiveTypeId AND\n" +
                 "\t\tstudy.SpecimenAdditive.Container = Specimens.Container\n" +
                 ") ContainerTotals\n" +
-                "GROUP BY PrimaryType, Derivative, Additive\n" +
+                "GROUP BY PrimaryType, PrimaryTypeId, Derivative, DerivativeTypeId, Additive, AdditiveTypeId\n" +
                 "ORDER BY PrimaryType, Derivative, Additive");
 
             SpecimenTypeSummaryRow[] rows = Table.executeQuery(StudySchema.getInstance().getSchema(), specimenTypeSummarySQL, SpecimenTypeSummaryRow.class);

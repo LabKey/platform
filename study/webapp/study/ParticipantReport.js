@@ -945,11 +945,18 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
     // get the grid fields in a form that the visualization getData api can understand
     getMeasures : function() {
 
-        var measures = [];
+        var gridMeasures = [];
+        var demMeasures = [];
         for (var i=0; i < this.gridFieldStore.getCount(); i++) {
-            measures.push({measure : this.gridFieldStore.getAt(i).data, time : 'visit'});
+            var item = this.gridFieldStore.getAt(i).data;
+
+            if (item.isDemographic)
+                demMeasures.push({measure : item, time : 'visit'});
+            else
+                gridMeasures.push({measure : item, time : 'visit'});
         }
-        return measures;
+        // make sure the non-demographic measures are first
+        return gridMeasures.concat(demMeasures);
     },
 
     getSorts : function() {

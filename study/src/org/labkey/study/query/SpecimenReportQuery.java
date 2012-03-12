@@ -36,6 +36,7 @@ import java.util.List;
 public class SpecimenReportQuery
 {
     public static final String PIVOT_BY_PRIMARY_TYPE = "SpecimenSummary_PivotByPrimaryType";
+    public static final String PIVOT_BY_DERIVATIVE_TYPE = "SpecimenSummary_PivotByDerivativeType";
 
     private static final String sql_pivotByPrimaryType = "SELECT\n" +
             "  Container,\n" +
@@ -55,14 +56,13 @@ public class SpecimenReportQuery
             "\n" +
             "PIVOT VialCount, AvailableCount, AtRepositoryCount, LockedInRequestCount, ExpectedAvailableCount\n" +
             "  BY PrimaryType\n" +
-            "  IN (SELECT RowId, Description FROM SpecimenPrimaryType)";
-
+            "  IN (SELECT RowId FROM SpecimenPrimaryType)";
 
     private static final String sql_pivotByDerivativeType =
             "SELECT\n" +
             "  Container,\n" +
             "  %s,\n" +
-            "  SequenceNum,\n" +
+            "  Visit,\n" +
             "  %s,\n" +
             "  PivotColumn,\n" +
             "  SUM(VialCount) AS VialCount,\n" +
@@ -71,9 +71,9 @@ public class SpecimenReportQuery
             "  SUM(AvailableCount) AS AvailableCount,\n" +
             "  SUM(ExpectedAvailableCount) AS ExpectedAvailableCount\n" +
             "\n" +
-            "FROM (SELECT Container, %s, SequenceNum, %s, ('' || PrimaryType || '-' || DerivativeType) AS PivotColumn, VialCount, LockedInRequestCount, AtRepositoryCount, AvailableCount, ExpectedAvailableCount FROM SpecimenSummary) X\n" +
+            "FROM (SELECT Container, %s, Visit, %s, ('' || PrimaryType || '-' || DerivativeType) AS PivotColumn, VialCount, LockedInRequestCount, AtRepositoryCount, AvailableCount, ExpectedAvailableCount FROM SpecimenSummary) X\n" +
             "\n" +
-            "GROUP BY Container, %s, SequenceNum, %s, PivotColumn\n" +
+            "GROUP BY Container, %s, Visit, %s, PivotColumn\n" +
             "\n" +
             "PIVOT VialCount, AvailableCount, AtRepositoryCount, LockedInRequestCount, ExpectedAvailableCount\n" +
             "  BY PivotColumn\n" +
@@ -94,8 +94,39 @@ public class SpecimenReportQuery
 
         QueryDefinition qdef = QueryService.get().createQueryDef(user, container, StudyQuerySchema.SCHEMA_NAME, PIVOT_BY_PRIMARY_TYPE);
         qdef.setSql(query);
-        qdef.setDescription("Contains up to one row of Specimen Primary Type totals for each " + StudyService.get().getSubjectNounSingular(container) +
-            "/visit combination.");
+        qdef.setIsHidden(true);
+
+        List<QueryException> errors = new ArrayList<QueryException>();
+        TableInfo tinfo = qdef.getTable(errors, true);
+
+        if (!errors.isEmpty())
+        {
+            StringBuilder sb = new StringBuilder();
+
+            for (QueryException qe : errors)
+            {
+                sb.append(qe.getMessage()).append('\n');
+            }
+            throw new IllegalStateException(sb.toString());
+        }
+        return tinfo;
+    }
+
+    public static TableInfo getPivotByDerivativeType(Container container, User user)
+    {
+        Study study = StudyService.get().getStudy(container);
+
+        if (study == null)
+            throw new IllegalStateException("A study does not exist for this folder");
+
+        String subjectCol = StudyService.get().getSubjectColumnName(container);
+        String visitCol = StudyService.get().getSubjectVisitColumnName(container);
+
+        String query = String.format(sql_pivotByDerivativeType, subjectCol, visitCol, subjectCol, visitCol, subjectCol, visitCol);
+
+        QueryDefinition qdef = QueryService.get().createQueryDef(user, container, StudyQuerySchema.SCHEMA_NAME, PIVOT_BY_DERIVATIVE_TYPE);
+        qdef.setSql(query);
+        qdef.setIsHidden(true);
 
         List<QueryException> errors = new ArrayList<QueryException>();
         TableInfo tinfo = qdef.getTable(errors, true);

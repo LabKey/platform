@@ -117,8 +117,8 @@ LABKEY.ViewsPanel.prototype = {
         var gridConfig = {
             el: this.renderTo,
             autoScroll:false,
+            border : false,
             autoHeight:true,
-            width:800,
             plugins: this.expander,
             loadMask:{msg:"Loading, please wait..."},
             store: this.getStore(),
@@ -311,6 +311,8 @@ LABKEY.ViewsPanel.prototype = {
         this.dataConnection.extraParams = this.baseQuery;
         this.grid = new Ext.grid.GridPanel(this.getGridConfig());
         this.grid.render();
+
+        return this.grid;
     },
 
     renderFilterMsg : function(allViews) {
