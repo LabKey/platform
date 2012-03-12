@@ -214,13 +214,23 @@ public class DavController extends SpringActionController
     }
 
 
-    public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws MultipartException
+    public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response)
     {
         _webdavresponse = new WebdavResponse(response);
 
         String contentType = request.getContentType();
         if (null != contentType && contentType.startsWith("multipart"))
-            request = (new CommonsMultipartResolver()).resolveMultipart(request);
+        {
+            try
+            {
+                request = (new CommonsMultipartResolver()).resolveMultipart(request);
+            }
+            catch (MultipartException x)
+            {
+                _webdavresponse.sendError(WebdavStatus.SC_BAD_REQUEST, x);
+                return null;
+            }
+        }
 
         ViewContext context = getViewContext();
         context.setRequest(request);
