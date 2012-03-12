@@ -104,7 +104,7 @@ public class DateUtil
         if (cal.get(Calendar.YEAR) != year ||
             cal.get(Calendar.MONTH) != mon ||
             cal.get(Calendar.DAY_OF_MONTH) != mday ||
-            cal.get(Calendar.HOUR) != hour ||
+            cal.get(Calendar.HOUR_OF_DAY) != hour ||
             cal.get(Calendar.MINUTE) != min ||
             cal.get(Calendar.SECOND) != sec)
             throw new IllegalArgumentException();
@@ -714,10 +714,10 @@ validNum:       {
     // Lenient parsing using a variety of standard formats
     public static long parseDateTime(String s)
     {
+        int ms = 0;
         try
         {
             // strip off trailing decimal :00:00.000
-            int ms = 0;
             int len = s.length();
             int period = s.lastIndexOf('.');
             if (period > 6 && period >= len - 4 && period < len - 1 &&
@@ -740,7 +740,7 @@ validNum:       {
             ;
         }
 
-        return parseStringJava(s);
+        return parseStringJava(s) + ms;
     }
 
 
@@ -812,9 +812,10 @@ validNum:       {
 
     public static String getJsonDateTimeFormatString()
     {
-        return "d MMM yyyy HH:mm:ss";
-        // MAB: I think this would be better, shouldn't use text month in json format
-        // return "yyyy/MM/dd HH:mm:ss";
+        //return "d MMM yyyy HH:mm:ss";
+        // MAB: I think this is better, shouldn't use text month in json format
+        // strangely yyyy/MM/dd parses in more browsers than yyyy-MM-dd
+        return "yyyy/MM/dd HH:mm:ss";
     }
 
 
@@ -863,6 +864,7 @@ validNum:       {
     {
         return jsonDateFormat.format(date);
     }
+
 
     public static long parseJsonDateTime(String s)
     {
