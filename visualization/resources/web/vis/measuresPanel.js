@@ -304,14 +304,43 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
 
     filterMeasures : function (txt) {
         if (txt) {
+           //NOTE: this attempts to balance the need for flexible searching (ie. partial words, random ordering of terms)
+            // and the need to get a reasonably small set of results.  the code should:
+            //
+            // 1) remove/ignore punctuation from search term
+            // 2) split term on whitespace
+            // 3) return any record where ALL tokens appear at least once in any of the fields.  order does not matter.  the token must begin on a word boundary
+
+            txt = txt.replace(/[^a-z0-9 ]+/, ' ');
+            txt = Ext.util.Format.trim(txt);
+            txt = Ext.escapeRe(txt);
+
+            var tokens = txt.split(/\s/g);
+            var matches = [];
+            for(var i=0;i<tokens.length;i++){
+                matches.push(new RegExp('\\b' + tokens[i], 'i'));
+            }
+
+            //NOTE: if ever split into a standalone component, we would want a config option specifying these fields
+            var fields = ['queryName', 'label', 'description'];
+
             this.measuresStore.filter([{
                 fn: function(record){
-                        // for multi-select don't clear selections on filter
-                        if (this.selModel.isSelected(record))
-                            return true;
-                    
-                        var tester = new RegExp(Ext.escapeRe(txt), 'i');
-                        return tester.test(record.data.label + record.data.queryName + record.data.description);
+                    // for multi-select don't clear selections on filter
+                    if (this.selModel.isSelected(record))
+                        return true;
+
+                    //test presence of term in any field
+                    var term = '';
+                    for(var i=0; i<fields.length;i++){
+                        term += record.get(fields[i]) + ' ';
+                    }
+
+                    for(i=0;i<matches.length;i++){
+                        if(!term.match(matches[i]))
+                            return false;
+                    }
+                    return true;
                 },
                 scope : this
             }]);
