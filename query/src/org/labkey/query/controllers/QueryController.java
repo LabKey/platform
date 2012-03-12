@@ -1707,6 +1707,9 @@ public class QueryController extends SpringActionController
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
         {
             JSONObject json = form.getJsonObject();
+            if (json == null)
+                throw new IllegalArgumentException("Empty request");
+
             String schemaName = json.getString(QueryParam.schemaName.toString());
             String queryName = json.getString(QueryParam.queryName.toString());
             if (schemaName == null || queryName == null)
@@ -2328,11 +2331,6 @@ public class QueryController extends SpringActionController
     {
         public ApiResponse execute(APIQueryForm form, BindException errors) throws Exception
         {
-            //TODO: remove once we can send maxRows=0 down to the table layer
-            //currently Query and the table layer interprets maxRows=0 as meaning "all rows"
-            String maxRowsParam = StringUtils.trimToNull(getViewContext().getRequest().getParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.maxRows.name()));
-            boolean metaDataOnly = "0".equals(maxRowsParam);
-
             ensureQueryExists(form);
 
             // Issue 12233: add implicit maxRows=100k when using client API
@@ -2364,8 +2362,6 @@ public class QueryController extends SpringActionController
             }
 
             QueryView view = QueryView.create(form, errors);
-            if (metaDataOnly)
-                view.getSettings().setMaxRows(1); //query assumes that 0 means all rows!
 
             view.setShowPagination(form.isIncludeTotalCount());
 
@@ -2378,6 +2374,7 @@ public class QueryController extends SpringActionController
             }
 
             boolean isEditable = isQueryEditable(view.getTable());
+            boolean metaDataOnly = form.getQuerySettings().getMaxRows() == 0;
 
             //if requested version is >= 9.1, use the extended api query response
             if (getRequestedApiVersion() >= 9.1)
@@ -2859,6 +2856,9 @@ public class QueryController extends SpringActionController
             Container container = getViewContext().getContainer();
             User user = getViewContext().getUser();
 
+            if (json == null)
+                throw new IllegalArgumentException("Empty request");
+
             JSONArray rows = json.getJSONArray(PROP_ROWS);
             if (null == rows || rows.length() < 1)
                 throw new IllegalArgumentException("No 'rows' array supplied!");
@@ -3010,6 +3010,9 @@ public class QueryController extends SpringActionController
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
             JSONObject json = apiSaveRowsForm.getJsonObject();
+            if (json == null)
+                throw new IllegalArgumentException("Empty request");
+
             JSONArray commands = (JSONArray)json.get("commands");
             JSONArray result = new JSONArray();
             if (commands == null || commands.length() == 0)
