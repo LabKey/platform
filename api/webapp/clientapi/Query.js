@@ -273,7 +273,7 @@ LABKEY.Query = new function()
          * @param config An object which contains the following configuration properties.
          * @param {String} config.schemaName name of the schema to query.
          * @param {String} config.sql The LabKey SQL to execute.
-         * @param {String} config.format The desired export format. May be either 'excel' or 'tsv'.
+         * @param {String} [config.format] The desired export format. May be either 'excel' or 'tsv'. Defaults to 'excel'.
          * @param {String} [config.containerPath] The path to the container in which the schema and query are defined,
          *       if different than the current container. If not supplied, the current container's path will be used.
          * @param {String} [config.containerFilter] One of the values of {@link LABKEY.Query.containerFilter} that sets
