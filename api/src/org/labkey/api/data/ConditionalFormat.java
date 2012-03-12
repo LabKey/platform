@@ -31,6 +31,7 @@ import org.labkey.data.xml.queryCustomView.OperatorType;
 import java.awt.*;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -59,7 +60,7 @@ public class ConditionalFormat extends GWTConditionalFormat
             URLHelper url = new URLHelper("/?" + getFilter());
             result.addUrlFilters(url, DATA_REGION_NAME);
         }
-        catch (URISyntaxException e) {}
+        catch (URISyntaxException ignored) {}
         return result;
     }
 
@@ -111,13 +112,15 @@ public class ConditionalFormat extends GWTConditionalFormat
         return sb.toString();
     }
 
+    /** Converts from the XMLBean representation to our standard class. Does not save to the database */
+    @NotNull
     public static List<ConditionalFormat> convertFromXML(ConditionalFormatsType conditionalFormats)
     {
-        List<ConditionalFormat> result = new ArrayList<ConditionalFormat>();
         if (conditionalFormats == null)
         {
-            return result;
+            return Collections.emptyList();
         }
+        List<ConditionalFormat> result = new ArrayList<ConditionalFormat>();
         for (ConditionalFormatType xmlFormat : conditionalFormats.getConditionalFormatArray())
         {
             ConditionalFormat format = new ConditionalFormat();

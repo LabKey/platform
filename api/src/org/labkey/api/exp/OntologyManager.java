@@ -30,6 +30,7 @@ import org.labkey.api.collections.RowMap;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DatabaseCache;
@@ -2242,7 +2243,8 @@ public class OntologyManager
 	}
 
 
-    public static PropertyDescriptor[] importOneType(final String domainURI, List<Map<String, Object>> maps, Collection<String> errors, Container container)
+    /** @return whether the import was successful or not. Check the errors collection for details */
+    public static boolean importOneType(final String domainURI, List<Map<String, Object>> maps, Collection<String> errors, Container container, User user)
             throws SQLException
     {
         return importTypes(new DomainURIFactory()
@@ -2251,11 +2253,12 @@ public class OntologyManager
                 {
                     return domainURI;
                 }
-            }, null, maps, errors, container, false);
+            }, null, maps, errors, container, false, user);
     }
 
 
-    public static @NotNull PropertyDescriptor[] importTypes(DomainURIFactory uriFactory, String typeColumn, List<Map<String, Object>> maps, Collection<String> errors, Container container, boolean ignoreDuplicates)
+    /** @return whether the import was successful or not. Check the errors collection for details */
+    public static @NotNull boolean importTypes(DomainURIFactory uriFactory, String typeColumn, List<Map<String, Object>> maps, Collection<String> errors, Container container, boolean ignoreDuplicates, User user)
             throws SQLException
     {
         //_log.debug("importTypes(" + vocabulary + "," + typeColumn + "," + maps.length + ")");
@@ -2265,6 +2268,8 @@ public class OntologyManager
         // Case insensitive set since we don't want property names that differ only by case
         Map<String, Set<String>> newPropertyURIsByDomain = new HashMap<String, Set<String>>();
         Map<String, PropertyDescriptor> pdNewMap;
+        // propertyURI -> ConditionalFormats
+        Map<String, List<ConditionalFormat>> allConditionalFormats = new HashMap<String, List<ConditionalFormat>>();
 
         Map<String, DomainDescriptor> domainMap = new HashMap<String, DomainDescriptor>();
 
@@ -2397,6 +2402,12 @@ public class OntologyManager
                 pd.setLookupContainer(lookupContainerId);
                 pd.setLookupSchema(lookupSchema);
                 pd.setLookupQuery(lookupQuery);
+
+                List<ConditionalFormat> conditionalFormats = (List<ConditionalFormat>) m.get("ConditionalFormats");
+                if (conditionalFormats != null && !conditionalFormats.isEmpty())
+                {
+                    allConditionalFormats.put(pd.getPropertyURI(), conditionalFormats);
+                }
             }
 
             if (null != allProps.put(pd.getPropertyURI(), pd))
@@ -2446,7 +2457,7 @@ public class OntologyManager
         }
 
         if (!errors.isEmpty())
-            return new PropertyDescriptor[0];
+            return false;
 
         //
         //  Find any PropertyDescriptors that exist already
@@ -2492,9 +2503,13 @@ public class OntologyManager
             list.add(pdInserted);
         }
 
-        return list.toArray(new PropertyDescriptor[list.size()]);
-    }
+        for (Map.Entry<String, List<ConditionalFormat>> entry : allConditionalFormats.entrySet())
+        {
+            PropertyService.get().saveConditionalFormats(user, getPropertyDescriptor(entry.getKey(), container), entry.getValue());
+        }
 
+        return true;
+    }
 
     private static String convertNumberFormatChars(String format)
     {
