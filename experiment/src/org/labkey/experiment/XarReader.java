@@ -719,8 +719,18 @@ public class XarReader extends AbstractXarImporter
                                          ExperimentRun experimentRun,
                                          XarContext context, boolean firstApp) throws SQLException, ExperimentException
     {
-        InputOutputRefsType.MaterialLSID[] inputMaterialLSIDs = xmlProtocolApp.getInputRefs().getMaterialLSIDArray();
-        InputOutputRefsType.DataLSID[] inputDataLSIDs = xmlProtocolApp.getInputRefs().getDataLSIDArray();
+        InputOutputRefsType.MaterialLSID[] inputMaterialLSIDs;
+        InputOutputRefsType.DataLSID[] inputDataLSIDs;
+        if (xmlProtocolApp.getInputRefs() == null)
+        {
+            inputMaterialLSIDs = new InputOutputRefsType.MaterialLSID[0];
+            inputDataLSIDs = new InputOutputRefsType.DataLSID[0];
+        }
+        else
+        {
+            inputMaterialLSIDs = xmlProtocolApp.getInputRefs().getMaterialLSIDArray();
+            inputDataLSIDs = xmlProtocolApp.getInputRefs().getDataLSIDArray();
+        }
 
         TableInfo tiProtApp = ExperimentServiceImpl.get().getTinfoProtocolApplication();
         TableInfo tiMaterialInput = ExperimentServiceImpl.get().getTinfoMaterialInput();
