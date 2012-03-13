@@ -34,7 +34,8 @@ abstract public class ScriptReportDescriptor extends ReportDescriptor
         script,
         scriptExtension,
         includedReports,
-        runInBackground
+        runInBackground,
+        sourceTabVisible
     }
 
     public void setIncludedReports(List<String> reports)

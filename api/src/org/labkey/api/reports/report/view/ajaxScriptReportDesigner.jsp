@@ -28,7 +28,6 @@
 <%@ page import="org.labkey.api.reports.report.view.AjaxScriptReportView.Mode" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportDesignerSessionCache" %>
 <%@ page import="org.labkey.api.reports.report.view.ScriptReportBean" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -45,10 +44,9 @@
     List<Report> sharedReports = report.getAvailableSharedScripts(ctx, bean);
     List<String> includedReports = bean.getIncludedReports();
     String helpHtml = report.getDesignerHelpHtml();
-    boolean readOnly = bean.isReadOnly();
+    boolean readOnly = bean.isReadOnly() || !ctx.getUser().isDeveloper();
     Mode mode = bean.getMode();
-    boolean isAdmin = c.hasPermission(ctx.getUser(), AdminPermission.class);
-    boolean sourceAndHelp = mode.showSourceAndHelp(ctx.getUser());
+    boolean sourceAndHelp = mode.showSourceAndHelp(ctx.getUser()) || bean.isSourceTabVisible();
     boolean canEdit = report.getReportId() != null ? report.getDescriptor().canEdit(ctx.getUser(), c) : true;
 
     // Mode determines whether we need unique IDs on all the HTML elements
@@ -524,6 +522,12 @@ var f_scope<%=uid%> = new (function() {
         }
     };
 });
+
+function setDisabled(checkbox, label, disabled)
+{
+    checkbox.disabled = disabled;
+    label.className = disabled ? "labkey-disabled" : "";
+}
 </script>
 
 <%!
@@ -569,19 +573,22 @@ var f_scope<%=uid%> = new (function() {
 
             if (!readOnly)
             {
-                if (isAdmin)
-                {
             %>
+            <tr>
+                <td>
+                    <input type="checkbox" name="shareReport"<%=bean.isShareReport() ? " checked" : ""%> onchange="LABKEY.setDirty(true);setDisabled(document.getElementById('sourceTab'), document.getElementById('sourceTabLabel'), !this.checked);return true;"> Make this view available to all users&nbsp;
+                </td>
+            </tr>
+            <tr >
+                <td style="padding-left:19px;">
+                    <input id="sourceTab" type="checkbox" name="<%=ScriptReportDescriptor.Prop.sourceTabVisible%>"<%=bean.isSourceTabVisible() ? " checked" : ""%><%=bean.isShareReport() ? "" : " disabled"%> onchange="LABKEY.setDirty(true);return true;"><span <%=bean.isSourceTabVisible() ? "" : " class=\"labkey-disabled\""%> id="sourceTabLabel"> Show source tab to all users</span>
+                </td>
+            </tr>
             <tr><td>
-                <input type="checkbox" name="shareReport"<%=bean.isShareReport() ? " checked" : ""%> onchange="LABKEY.setDirty(true);return true;"> Make this view available to all users
-            </td></tr>
-            <tr><td>
-                <input type="checkbox" name="inheritable"<%=bean.isInheritable() ? " checked" : ""%> onchange="LABKEY.setDirty(true);return true;"> Make this view available in child folders
-                    <%=helpPopup("Available in child folders", "If this check box is selected, this view will be available in data grids of child folders " +
+                <input type="checkbox" name="inheritable"<%=bean.isInheritable() ? " checked" : ""%> onchange="LABKEY.setDirty(true);return true;"> Make this view
+                available in child folders<%=helpPopup("Available in child folders", "If this check box is selected, this view will be available in data grids of child folders " +
                 "where the schema and table are the same as this data grid.")%>
             </td></tr><%
-                }
-            }
 
                 if (report.supportsPipeline())
                 {
@@ -590,12 +597,8 @@ var f_scope<%=uid%> = new (function() {
                 <input type="checkbox" id="runInBackground" name="<%=ScriptReportDescriptor.Prop.runInBackground.name()%>"<%=bean.isRunInBackground() ? " checked" : ""
                     %> onchange="LABKEY.setDirty(true);return true;"> Run this view in the background as a pipeline job
             </td></tr><%
-                }
-
-                if (isAdmin || report.supportsPipeline())
-                { %>
+                } %>
             <tr><td>&nbsp;</td></tr><%
-                }
 
                 if (!sharedReports.isEmpty())
                 {
@@ -619,6 +622,7 @@ var f_scope<%=uid%> = new (function() {
                     if (null != extraFormHtml)
                         out.print(extraFormHtml);
                 }
+            }
 
                 if (!ctx.getUser().isGuest())
                 { %>

@@ -47,6 +47,7 @@ public class ScriptReportBean extends ReportDesignBean
     private boolean _inherited;
     private List<String> _includedReports = Collections.emptyList();
     private Mode _mode = Mode.create;  // TODO: setting value for backward compatibility -- remove
+    private boolean _sourceTabVisible;
 
     public ScriptReportBean()
     {
@@ -115,6 +116,8 @@ public class ScriptReportBean extends ReportDesignBean
             if (getScriptExtension() != null)
                 descriptor.setProperty(ScriptReportDescriptor.Prop.scriptExtension, getScriptExtension());
 
+            descriptor.setProperty(ScriptReportDescriptor.Prop.sourceTabVisible, isSourceTabVisible());
+
             if (!isShareReport())
                 descriptor.setOwner(getUser().getUserId());
             else
@@ -143,6 +146,8 @@ public class ScriptReportBean extends ReportDesignBean
             list.add(new Pair<String, String>(ScriptReportDescriptor.Prop.runInBackground.toString(), String.valueOf(_runInBackground)));
         if (_isDirty)
             list.add(new Pair<String, String>("isDirty", String.valueOf(_isDirty)));
+        if (_sourceTabVisible)
+            list.add(new Pair<String, String>(ScriptReportDescriptor.Prop.sourceTabVisible.toString(), String.valueOf(_sourceTabVisible)));
 
         list.add(new Pair<String, String>(ScriptReportDescriptor.Prop.scriptExtension.toString(), _scriptExtension));
 
@@ -158,6 +163,7 @@ public class ScriptReportBean extends ReportDesignBean
 
         setScriptExtension(descriptor.getProperty(ScriptReportDescriptor.Prop.scriptExtension));
         setScript(descriptor.getProperty(ScriptReportDescriptor.Prop.script));
+        setSourceTabVisible(BooleanUtils.toBoolean(descriptor.getProperty(ScriptReportDescriptor.Prop.sourceTabVisible)));
 
         ScriptReportDescriptor srDescriptor = (ScriptReportDescriptor)descriptor;
 
@@ -240,5 +246,15 @@ public class ScriptReportBean extends ReportDesignBean
     public void setMode(Mode mode)
     {
         _mode = mode;
+    }
+
+    public boolean isSourceTabVisible()
+    {
+        return _sourceTabVisible;
+    }
+
+    public void setSourceTabVisible(boolean sourceTabVisible)
+    {
+        _sourceTabVisible = sourceTabVisible;
     }
 }

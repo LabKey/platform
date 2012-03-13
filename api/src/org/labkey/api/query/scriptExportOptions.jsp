@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="java.util.Iterator" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Map<String, ActionURL>> me = (JspView<Map<String, ActionURL>>) HttpView.currentView();
@@ -28,16 +29,32 @@
     boolean first = true;
 %>
 <table class="labkey-export-tab-contents">
-    <% for (Map.Entry<String, ActionURL> entry : map.entrySet())
-    { %>
-        <tr>
-            <td valign="center"><input type="radio" <%= first ? "id=\"" + guid + "\"" : "" %> name="scriptExportType" <%= first ? "checked=\"true\"" : "" %> value="<%=h(entry.getValue()) %>"/></td>
-            <td valign="center"><%= h(entry.getKey())%></td>
-        </tr>
-    <%  first = false;
-    }%>
+    <%
+    int columns = (int)Math.round(map.size() / 2.0);    // Put all the script languages into two rows, and use as many columns as needed
+    Iterator<Map.Entry<String, ActionURL>> iter = map.entrySet().iterator();
+
+    for (int i = 0; i < 2; i++)
+    {
+        out.print("<tr>");
+
+        for (int j = 0; j < columns; j++)
+        {
+            if (iter.hasNext())
+            {
+                Map.Entry<String, ActionURL> entry = iter.next();
+            %>
+                <td valign="center"><input type="radio" <%= first ? "id=\"" + guid + "\"" : "" %> name="scriptExportType" <%= first ? "checked=\"true\"" : "" %> value="<%=h(entry.getValue()) %>"/></td>
+                <td valign="center"><%= h(entry.getKey())%></td><%
+
+                first = false;
+            }
+        }
+
+        out.print("</tr>");
+    } %>
     <tr>
         <td colspan="2">
+            <br>
             <%=generateButton("Create Script", "", "var _scriptUrl = getRadioButtonValue(document.getElementById(\"" + guid + "\")); window.open(_scriptUrl, \"_newtab\"); return false;") %>
         </td>
     </tr>
