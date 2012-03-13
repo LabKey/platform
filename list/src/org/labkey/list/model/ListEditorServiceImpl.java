@@ -70,15 +70,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         {
             //NOTE: should we look for possible optimistic concurrency (ie. double-deleting)?
 
-            throw new RuntimeException(x);
-        }
-        catch (RuntimeSQLException x)
-        {
-            throw x;
-        }
-        catch (RuntimeException x)
-        {
-            throw x;
+            throw new RuntimeSQLException(x);
         }
         catch (Exception x)
         {
