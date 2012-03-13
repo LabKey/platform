@@ -94,13 +94,13 @@ public class JxlRow implements Row
     @Override
     public short getLastCellNum()
     {
-        return (short)(_cells.length - 1);
+        return (short)_cells.length;
     }
 
     @Override
     public int getPhysicalNumberOfCells()
     {
-        return _cells.length;
+        return getLastCellNum();
     }
 
     @Override

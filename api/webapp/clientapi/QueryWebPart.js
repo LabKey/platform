@@ -43,13 +43,6 @@
  * @param {Mixed} [config.renderTo] The element id, DOM element, or Ext element inside of which the part should be rendered. This is typically a &lt;div&gt;.
  * If not supplied in the configuration, you must call the render() method to render the part into the page.
  * @param {Mixed} [config.maskEl] A element id, DOM element, or Ext element that should be masked while the part is rendered. (default renderTo).
- * @param {Object} [config.metadata] Metadata that can be applied to the properties of the table fields. For full documentation on
- * available properties, see <a href="https://www.labkey.org/download/schema-docs/xml-schemas/schemas/tableInfo_xsd/schema-summary.html">LabKey XML Schema Reference</a>.
- * This object may contain the following properties:
- * <ul>
- *  <li><b>type</b>: The type of metadata being specified. Currently, only 'xml' is supported.</li>
- *  <li><b>value</b>: The metadata XML value as a string. For example: <code>'&lt;tables xmlns=&quot;http://labkey.org/data/xml&quot;&gt;&lt;table tableName=&quot;Announcement&quot; tableDbType=&quot;NOT_IN_DB&quot;&gt;&lt;columns&gt;&lt;column columnName=&quot;Title&quot;&gt;&lt;columnTitle&gt;Custom Title&lt;/columnTitle&gt;&lt;/column&gt;&lt;/columns&gt;&lt;/table&gt;&lt;/tables&gt;'</code></li>
- * </ul>
  * @param {String} [config.errorType] A parameter to specify how query parse errors are returned. (default 'html'). Valid
  * values are either 'html' or 'json'. If 'html' is specified the error will be rendered to an HTML view, if 'json' is specified
  * the errors will be returned to the callback handlers as an array of objects named 'parseErrors' with the following properties:
@@ -60,6 +53,14 @@
  *  <li><b>errorStr</b>: The line from the source query that caused the error (optional).</li>
  * </ul>
  * @param {String} [config.sql] A SQL query that can be used instead of an existing schema name/query name combination.
+ * @param {Object} [config.metadata] Metadata that can be applied to the properties of the table fields. Currently, this option is only
+ * available if the query has been specified through the config.sql option. For full documentation on
+ * available properties, see <a href="https://www.labkey.org/download/schema-docs/xml-schemas/schemas/tableInfo_xsd/schema-summary.html">LabKey XML Schema Reference</a>.
+ * This object may contain the following properties:
+ * <ul>
+ *  <li><b>type</b>: The type of metadata being specified. Currently, only 'xml' is supported.</li>
+ *  <li><b>value</b>: The metadata XML value as a string. For example: <code>'&lt;tables xmlns=&quot;http://labkey.org/data/xml&quot;&gt;&lt;table tableName=&quot;Announcement&quot; tableDbType=&quot;NOT_IN_DB&quot;&gt;&lt;columns&gt;&lt;column columnName=&quot;Title&quot;&gt;&lt;columnTitle&gt;Custom Title&lt;/columnTitle&gt;&lt;/column&gt;&lt;/columns&gt;&lt;/table&gt;&lt;/tables&gt;'</code></li>
+ * </ul>
  * @param {String} [config.title] A title for the web part. If not supplied, the query name will be used as the title.
  * @param {String} [config.titleHref] If supplied, the title will be rendered as a hyperlink with this value as the href attribute.
  * @param {String} [config.buttonBarPosition] DEPRECATED--see config.buttonBar.position
@@ -468,6 +469,9 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
 
         if (this.metadata)
         {
+            if (!this.sql)
+                Ext.Msg.alert("Configuration Error", "Specifying column metadata is only available if the query is specified through the 'sql' config option.");
+
             json.metadata = this.metadata;   
         }
 

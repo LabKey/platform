@@ -124,7 +124,7 @@ public class ExcelLoader extends DataLoader
             boolean foundData = false;
             if (currentRow.getPhysicalNumberOfCells() != 0)
             {
-                for (int column = 0; column <= currentRow.getLastCellNum(); column++)
+                for (int column = 0; column < currentRow.getLastCellNum(); column++)
                 {
                     Cell cell = currentRow.getCell(column);
                     if (cell != null)
@@ -203,7 +203,7 @@ public class ExcelLoader extends DataLoader
             Row row = sheet.getRow(lineNum());
             if (row != null)
             {
-                int numCols = row.getLastCellNum() + 1;
+                int numCols = row.getLastCellNum();
                 for (int columnIndex = 0, fieldIndex = 0; columnIndex < allColumns.length; columnIndex++)
                 {
                     boolean loadThisColumn = ((columnIter.hasNext() && columnIter.next().load));
