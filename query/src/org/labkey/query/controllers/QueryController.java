@@ -17,6 +17,7 @@
 package org.labkey.query.controllers;
 
 import org.antlr.runtime.tree.Tree;
+import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
@@ -2941,7 +2942,12 @@ public class QueryController extends SpringActionController
             catch (Table.OptimisticConflictException e)
             {
                 //issue 13967: provide better message for OptimisticConflictException
-                errors.reject(e.getMessage());
+                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+            }
+            catch (ConversionException e)
+            {
+                //Issue 14294: improve handling of ConversionException
+                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
             }
             finally
             {
