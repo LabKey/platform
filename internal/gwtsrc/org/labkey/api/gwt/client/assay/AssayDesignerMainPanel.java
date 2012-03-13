@@ -597,7 +597,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
         table.setWidget(row++, 1, new BoundCheckBox("id_editable_run_properties", "editableRunProperties", _editableRuns, this));
 
-        _editableResults.setBool(assay.isEditableRuns());
+        _editableResults.setBool(assay.isEditableResults());
         if ("true".equals(PropertyUtil.getServerProperty("supportsEditableResults")))
         {
             FlowPanel editableResultsPanel = new FlowPanel();
