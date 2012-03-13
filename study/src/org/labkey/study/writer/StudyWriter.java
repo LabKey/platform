@@ -20,6 +20,8 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.study.model.StudyImpl;
 
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.util.Set;
 
 /**
@@ -48,10 +50,30 @@ public class StudyWriter implements Writer<StudyImpl, StudyExportContext>
         // Call all the writers defined in the study module.
         for (Writer<StudyImpl, StudyExportContext> writer : StudySerializationRegistryImpl.get().getInternalStudyWriters())
         {
-            String text = writer.getSelectionText();
+            try
+            {
+                String text = writer.getSelectionText();
 
-            if (null == text || dataTypes.contains(text) || exportDatasets && text.endsWith("Datasets"))
-                writer.write(study, ctx, vf);
+                if (null == text || dataTypes.contains(text) || exportDatasets && text.endsWith("Datasets"))
+                    writer.write(study, ctx, vf);
+            }
+            catch (Exception e)
+            {
+                OutputStream out = null;
+                try
+                {
+                    // Try to get some error information to the client instead of creating a completely invalid archive
+                    out = vf.getOutputStream("error.log");
+                    PrintWriter errorWriter = new PrintWriter(out);
+                    e.printStackTrace(errorWriter);
+                    errorWriter.flush();
+                }
+                finally
+                {
+                    if (out != null) { out.close(); }
+                }
+                throw e;
+            }
         }
 
         LOG.info("Done exporting study to " + vf.getLocation());

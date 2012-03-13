@@ -45,15 +45,15 @@ public class JobStatusLogView extends ReaderView
         if (tokens.length > 4)
         {
             String type = tokens[4];
-            if (!_highlightingError && type.equals("ERROR:"))
+            if (!_highlightingError && (type.equals("ERROR:") || type.equals("FATAL:")))
             {
                 _highlightingError = true;
-                out.write("<font class=\"labkey-error\">");
+                out.write("<span class=\"labkey-error\" style=\"font-weight: bold\">");
             }
             else if (_highlightingError && (type.equals("INFO") || type.equals("DEBUG:") || type.equals("WARN")))
             {
                 _highlightingError = false;
-                out.write("</font>");
+                out.write("</span>");
             }
         }
         super.outputLine(out, line);

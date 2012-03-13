@@ -36,6 +36,7 @@ import org.labkey.study.dataset.DatasetAuditViewFactory;
 import gwt.client.org.labkey.study.dataset.client.DatasetImporter;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.query.DataSetTableImpl;
 import org.labkey.study.view.StudyGWTView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -512,14 +513,10 @@ public class DatasetController extends BaseStudyController
 
             // need a comma-separated list of base columns
             Set<String> baseColumnNames = def.getDefaultFieldNames();
-            StringBuilder sb = new StringBuilder();
-            boolean needComma = false;
+            StringBuilder sb = new StringBuilder(DataSetTableImpl.QCSTATE_LABEL_COLNAME);
             for (String baseColumnName : baseColumnNames)
             {
-                if (needComma)
-                    sb.append(",");
-                else
-                    needComma = true;
+                sb.append(",");
                 sb.append(baseColumnName);
             }
             props.put("baseColumnNames", sb.toString());

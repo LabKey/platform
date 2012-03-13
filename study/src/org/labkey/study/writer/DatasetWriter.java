@@ -264,6 +264,16 @@ public class DatasetWriter implements InternalStudyWriter
             }
         }
 
+        // Check if we already have a column named "QCStateLabel"
+        ColumnInfo qcStateLabelColumn = null;
+        for (ColumnInfo inColumn : inColumns)
+        {
+            if (DataSetTableImpl.QCSTATE_LABEL_COLNAME.equalsIgnoreCase(inColumn.getName()))
+            {
+                qcStateLabelColumn = inColumn;
+            }
+        }
+
         for (ColumnInfo in : inColumns)
         {
             if (shouldExport(in, metaData) || (metaData && in.getName().equals(def.getKeyPropertyName())))
@@ -276,11 +286,16 @@ public class DatasetWriter implements InternalStudyWriter
 
                 if (null != qcStateColumn && in.equals(qcStateColumn))
                 {
-                    // Need to replace QCState column (containing rowId) with QCStateLabel (containing the label)
-                    FieldKey qcFieldKey = FieldKey.fromParts("QCState", "Label");
-                    Map<FieldKey, ColumnInfo> select = QueryService.get().getColumns(tinfo, Collections.singletonList(qcFieldKey));
-                    ColumnInfo qcAlias = new AliasedColumn(tinfo, "QCStateLabel", select.get(qcFieldKey));   // Change the caption to QCStateLabel
-                    outColumns.add(qcAlias);
+                    // Need to replace QCState column (containing rowId) with QCStateLabel (containing the label), but
+                    // only if the dataset don't already have a property named "QCStateLabel"
+                    if (qcStateLabelColumn == null)
+                    {
+                        FieldKey qcFieldKey = FieldKey.fromParts(DataSetTableImpl.QCSTATE_ID_COLNAME, "Label");
+                        Map<FieldKey, ColumnInfo> select = QueryService.get().getColumns(tinfo, Collections.singletonList(qcFieldKey));
+                        ColumnInfo qcAlias = new AliasedColumn(tinfo, DataSetTableImpl.QCSTATE_LABEL_COLNAME, select.get(qcFieldKey));   // Change the caption to QCStateLabel
+                        outColumns.add(qcAlias);
+                        qcStateLabelColumn = qcAlias;
+                    }
                 }
                 else
                 {

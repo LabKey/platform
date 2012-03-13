@@ -4396,10 +4396,16 @@ public class StudyController extends BaseStudyController
                 }
                 case 2:
                 {
-
-                    ZipFile zip = new ZipFile(getViewContext().getResponse(), FileUtil.makeFileNameWithTimestamp(study.getLabel(), "study.zip"));
-                    writer.write(study, ctx, zip);
-                    zip.close();
+                    ZipFile zip = null;
+                    try
+                    {
+                        zip = new ZipFile(getViewContext().getResponse(), FileUtil.makeFileNameWithTimestamp(study.getLabel(), "study.zip"));
+                        writer.write(study, ctx, zip);
+                    }
+                    finally
+                    {
+                        if (zip != null) { zip.close(); }
+                    }
                     break;
                 }
             }
