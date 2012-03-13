@@ -31,6 +31,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.MetadataException;
+import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QuerySchema;
@@ -41,6 +42,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.script.ScriptReference;
 import org.labkey.api.script.ScriptService;
+import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -1069,4 +1071,4 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     {
         return null;
     }
-}
+    }

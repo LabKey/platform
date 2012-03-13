@@ -69,4 +69,6 @@ public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
     ColumnInfo addColumns(Domain domain, @Nullable String legacyName);
 
     public void setDescription(String description);
+
+    public void setDomain(Domain domain);
 }

@@ -27,6 +27,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -473,6 +474,31 @@ abstract public class UserSchema extends AbstractSchema
     @Nullable
     public String getDomainURI(String queryName)
     {
+        return null;
+    }
+
+    /**
+     * Finds a TableInfo with the given domain URI.
+     * This is expensive as each TableInfo and Domain in the schema is created just to ask for the Domain's URI.
+     *
+     * @param domainURI
+     * @return The TableInfo if found.
+     */
+    @Nullable
+    public TableInfo getTableForDomain(String domainURI)
+    {
+        Set<String> names = getTableNames();
+        for (String name : names)
+        {
+            TableInfo table = getTable(name);
+            if (table != null)
+            {
+                Domain domain = table.getDomain();
+                if (domain != null && domainURI.equals(domain.getTypeURI()))
+                    return table;
+            }
+        }
+
         return null;
     }
 

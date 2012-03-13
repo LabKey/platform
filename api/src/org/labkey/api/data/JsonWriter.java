@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RowIdForeignKey;
@@ -72,6 +73,14 @@ public class JsonWriter
         props.put("jsonType", dc.getJsonTypeName());
         props.put("sqlType", cinfo == null ? null : cinfo.getSqlTypeName());
 
+        // for compatibility with AssayController.serializeDomain() format
+        PropertyType propertyType = PropertyType.getFromClass(dc.getValueClass());
+        if (propertyType != null)
+        {
+            props.put("typeName", propertyType.getXmlName());
+            props.put("typeURI", propertyType.getTypeUri());
+        }
+
         FieldKey fieldKey;
         if (cinfo != null && null != cinfo.getFieldKey())
             fieldKey = cinfo.getFieldKey();
@@ -98,6 +107,7 @@ public class JsonWriter
         boolean nullable = cinfo != null && cinfo.isNullable();
         props.put("isNullable", nullable);
         props.put("nullable", nullable);
+        props.put("required", !nullable); // for compatibility with AssayController.serializeDomain() format
         boolean readOnly = cinfo != null && cinfo.isReadOnly();
         props.put("isReadOnly", readOnly);
         props.put("readOnly", readOnly);
@@ -140,6 +150,7 @@ public class JsonWriter
             {
                 String format = cinfo.getFormat();
                 props.put("format", format);
+                props.put("formatString", format); // for compatibility with AssayController.serializeDomain() format
                 String extFormat = null;
                 String extFormatFn = null;
                 if (cinfo.getJdbcType().isDateOrTime())
@@ -187,6 +198,7 @@ public class JsonWriter
         }
 
         props.put("caption", dc.getCaption());
+        props.put("label", dc.getCaption()); // for compatibility with AssayController.serializeDomain() format
 
         if (includeLookup && cinfo != null)
         {
@@ -217,7 +229,10 @@ public class JsonWriter
                 {
                     Container fkContainer = ContainerManager.getForId(fk.getLookupContainerId());
                     if (null != fkContainer)
+                    {
                         lookupInfo.put("containerPath", fkContainer.getPath());
+                        lookupInfo.put("container", fkContainer.getPath()); // for compatibility with AssayController.serializeDomain() format
+                    }
                 }
 
                 boolean isPublic = lookupTable.isPublic() && null != lookupTable.getPublicName() && null != lookupTable.getPublicSchemaName();
@@ -243,8 +258,13 @@ public class JsonWriter
                 lookupInfo.put("schema", schemaName);
 
                 lookupInfo.put("displayColumn", lookupTable.getTitleColumn());
-                if (lookupTable.getPkColumns().size() > 0)
-                    lookupInfo.put("keyColumn", lookupTable.getPkColumns().get(0).getName());
+                String key = null;
+                List<String> pks = lookupTable.getPkColumnNames();
+                if (null != pks && pks.size() > 0)
+                    key = pks.get(0);
+                if (null != pks && pks.size() == 2 && ("container".equalsIgnoreCase(key) || "containerid".equalsIgnoreCase(key)))
+                    key = pks.get(1);
+                lookupInfo.put("keyColumn", key);
 
                 if (fk instanceof MultiValuedForeignKey)
                 {

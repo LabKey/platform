@@ -41,7 +41,7 @@ import java.util.TimeZone;
  */
 public enum PropertyType
 {
-    BOOLEAN("http://www.w3.org/2001/XMLSchema#boolean", "Boolean", 'f', JdbcType.BOOLEAN, 10, null, Cell.CELL_TYPE_BOOLEAN, Boolean.class)
+    BOOLEAN("http://www.w3.org/2001/XMLSchema#boolean", "Boolean", 'f', JdbcType.BOOLEAN, 10, null, Cell.CELL_TYPE_BOOLEAN, Boolean.class, Boolean.TYPE)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException
         {
@@ -126,7 +126,7 @@ public enum PropertyType
             return SimpleTypeNames.STRING;
         }
     },
-    INTEGER("http://www.w3.org/2001/XMLSchema#int", "Integer", 'f', JdbcType.INTEGER, 10, null, Cell.CELL_TYPE_NUMERIC, Integer.class, Long.class)
+    INTEGER("http://www.w3.org/2001/XMLSchema#int", "Integer", 'f', JdbcType.INTEGER, 10, null, Cell.CELL_TYPE_NUMERIC, Integer.class, Integer.TYPE, Long.class, Long.TYPE)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException
         {
@@ -233,7 +233,7 @@ public enum PropertyType
             return SimpleTypeNames.DATE_TIME;
         }
     },
-    DOUBLE("http://www.w3.org/2001/XMLSchema#double", "Double", 'f', JdbcType.DOUBLE, 20, null, Cell.CELL_TYPE_NUMERIC, Double.class, Float.class)
+    DOUBLE("http://www.w3.org/2001/XMLSchema#double", "Double", 'f', JdbcType.DOUBLE, 20, null, Cell.CELL_TYPE_NUMERIC, Double.class, Double.TYPE, Float.class, Float.TYPE)
     {
         protected Object convertExcelValue(Cell cell) throws ConversionException
         {
