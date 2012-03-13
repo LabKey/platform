@@ -977,7 +977,7 @@ public class StudyController extends BaseStudyController
             if (qcStateSet != null)
                 sb.append("<br/><span><b>QC States:</b> ").append(filter(qcStateSet.getLabel())).append("</span>");
             if (ReportPropsManager.get().getPropertyValue(def.getEntityId(), getContainer(), "refreshDate") != null)
-                sb.append("<br/><span><b>Refresh Date:</b> ").append(ReportPropsManager.get().getPropertyValue(def.getEntityId(), getContainer(), "refreshDate"));
+                sb.append("<br/><span><b>Data Cut Date:</b> ").append(ReportPropsManager.get().getPropertyValue(def.getEntityId(), getContainer(), "refreshDate"));
             HtmlView header = new HtmlView(sb.toString());
 
             HtmlView script = new HtmlView("<script type=\"text/javascript\">LABKEY.requiresScript('study/ParticipantGroup.js');</script>");
@@ -7030,7 +7030,7 @@ public class StudyController extends BaseStudyController
             columns.put("Status", Collections.singletonMap("checked", getCheckedState("Status", props, false)));
             columns.put("Access", Collections.singletonMap("checked", getCheckedState("Access", props, true)));
             columns.put("Details", Collections.singletonMap("checked", getCheckedState("Details", props, true)));
-            columns.put("Refresh Date", Collections.singletonMap("checked", getCheckedState("Refresh Date", props, false)));
+            columns.put("Data Cut Date", Collections.singletonMap("checked", getCheckedState("Data Cut Date", props, false)));
 
             response.put("visibleColumns", columns);
 
@@ -7143,7 +7143,12 @@ public class StudyController extends BaseStudyController
                         view.setEntityId(ds.getEntityId());
                         view.setDataType(ViewInfo.DataType.datasets);
                         view.setIcon(getViewContext().getContextPath() + "/reports/grid.gif");
-                        view.setRunUrl(new ActionURL(DefaultDatasetReportAction.class, getContainer()).addParameter("datasetId", ds.getDataSetId()));
+
+                        // run url and details url are the same for now
+                        ActionURL runUrl = new ActionURL(DefaultDatasetReportAction.class, getContainer()).addParameter("datasetId", ds.getDataSetId());
+                        view.setRunUrl(runUrl);
+                        view.setDetailsUrl(runUrl);
+
                         view.setContainer(ds.getContainer());
                         view.setHidden(!ds.isShowByDefault());
                         view.setThumbnailUrl(new ActionURL(ThumbnailAction.class, getContainer()));

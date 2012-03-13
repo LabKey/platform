@@ -28,6 +28,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;
@@ -52,6 +53,7 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public abstract class BaseStudyTable extends FilteredTable
 {
@@ -218,7 +220,49 @@ public abstract class BaseStudyTable extends FilteredTable
         visitFK.addJoin(getColumn("Container"), "Folder");
         visitColumn.setFk(visitFK);
         visitColumn.setKeyField(true);
+
+        visitColumn.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            @Override
+            public DisplayColumn createRenderer(ColumnInfo col)
+            {
+                return new VisitDisplayColumn(col, FieldKey.fromParts("Visit", "SequenceNumMin"));
+            }
+        });
+
         return visitColumn;
+    }
+
+    public static class VisitDisplayColumn extends DataColumn
+    {
+        private FieldKey _seqNumMinFieldKey;
+
+        public VisitDisplayColumn(ColumnInfo col, FieldKey seqNumMinFieldKey)
+        {
+            super(col);
+            _seqNumMinFieldKey = seqNumMinFieldKey;
+        }
+
+        @Override
+        public String getFormattedValue(RenderContext ctx)
+        {
+            Object value = ctx.get(getDisplayColumn().getFieldKey());
+            if (value == null)
+            {
+                value = ctx.get(_seqNumMinFieldKey);
+
+                if (value == null)
+                    return super.getFormattedValue(ctx);
+            }
+            return PageFlowUtil.filter(value);
+        }
+
+        @Override
+        public void addQueryFieldKeys(Set<FieldKey> keys)
+        {
+            super.addQueryFieldKeys(keys);
+            keys.add(_seqNumMinFieldKey);
+        }
     }
 
     private static class ParticipantVisitColumn extends ExprColumn

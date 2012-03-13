@@ -355,7 +355,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 '<tr><td>Status:</td><td>{data.status}</td></tr>' +
                 '</tpl>' +
                 '<tpl if="data.refreshDate != undefined && data.refreshDate.length">' +
-                '<tr><td valign="top">Refresh Date:</td><td>{data.refreshDate}</td></tr>' +
+                '<tr><td valign="top">Data Cut Date:</td><td>{data.refreshDate}</td></tr>' +
                 '</tpl>' +
                 '<tpl if="data.description != undefined && data.description.length">' +
                 '<tr><td valign="top">Description:</td><td>{data.description}</td></tr>' +
@@ -584,9 +584,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             });
         }
 
-        if(visibleColumns['Refresh Date'] && visibleColumns['Refresh Date'].checked){
+        if(visibleColumns['Data Cut Date'] && visibleColumns['Data Cut Date'].checked){
              _columns.push({
-                 text     : 'Refresh Date',
+                 text     : 'Data Cut Date',
                  width    : 100,
                  sortable : true,
                  dataIndex: 'refreshDate',
@@ -1165,7 +1165,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         formItems.push({
                 xtype       : 'datefield',
-                fieldLabel  : 'Refresh Date',
+                fieldLabel  : 'Data Cut Date',
                 name        : 'refreshDate',
                 value       : record.data.refreshDate != null ? new Date(record.data.refreshDate) : '',
                 blankText   : 'Date of last refresh',

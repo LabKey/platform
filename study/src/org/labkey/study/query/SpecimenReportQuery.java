@@ -71,13 +71,13 @@ public class SpecimenReportQuery
             "  SUM(AvailableCount) AS AvailableCount,\n" +
             "  SUM(ExpectedAvailableCount) AS ExpectedAvailableCount\n" +
             "\n" +
-            "FROM (SELECT Container, %s, Visit, %s, ('' || PrimaryType || '-' || DerivativeType) AS PivotColumn, VialCount, LockedInRequestCount, AtRepositoryCount, AvailableCount, ExpectedAvailableCount FROM SpecimenSummary) X\n" +
+            "FROM (SELECT Container, %s, Visit, %s, ('' || CAST(PrimaryType AS VARCHAR) || '-' || CAST(DerivativeType AS VARCHAR)) AS PivotColumn, VialCount, LockedInRequestCount, AtRepositoryCount, AvailableCount, ExpectedAvailableCount FROM SpecimenSummary) X\n" +
             "\n" +
             "GROUP BY Container, %s, Visit, %s, PivotColumn\n" +
             "\n" +
             "PIVOT VialCount, AvailableCount, AtRepositoryCount, LockedInRequestCount, ExpectedAvailableCount\n" +
             "  BY PivotColumn\n" +
-            "  IN (SELECT ('' || PrimaryType || '-' || DerivativeType) FROM (SELECT DISTINCT PrimaryType, DerivativeType FROM SpecimenSummary) X)";
+            "  IN (SELECT ('' || CAST(PrimaryType AS VARCHAR) || '-' || CAST(DerivativeType AS VARCHAR)) FROM (SELECT DISTINCT PrimaryType, DerivativeType FROM SpecimenSummary) X)";
 
 
     public static TableInfo getPivotByPrimaryType(Container container, User user)

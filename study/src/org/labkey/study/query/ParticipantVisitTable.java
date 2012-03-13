@@ -17,9 +17,12 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.study.Study;
@@ -58,11 +61,20 @@ public class ParticipantVisitTable extends FilteredTable
             else if ("VisitRowId".equalsIgnoreCase(col.getName()))
             {
                 ColumnInfo visitColumn = new AliasedColumn(this, "Visit", col);
-                visitColumn.setFk(new LookupForeignKey("RowId")
+                LookupForeignKey visitFK = new LookupForeignKey("RowId")
                 {
                     public TableInfo getLookupTableInfo()
                     {
                         return new VisitTable(_schema);
+                    }
+                };
+                visitColumn.setFk(visitFK);
+                visitColumn.setDisplayColumnFactory(new DisplayColumnFactory()
+                {
+                    @Override
+                    public DisplayColumn createRenderer(ColumnInfo col)
+                    {
+                        return new BaseStudyTable.VisitDisplayColumn(col, FieldKey.fromParts("ParticipantVisit", "Visit", "SequenceNumMin"));
                     }
                 });
                 addColumn(visitColumn);
