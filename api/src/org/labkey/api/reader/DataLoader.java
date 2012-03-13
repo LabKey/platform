@@ -369,7 +369,9 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             String[] fields = lineFields[0];
             for (int f = 0; f < nCols; f++)
             {
-                if ("".equals(fields[f]))
+                //Issue 14295: **ArrayIndexOutOfBoundsException in org.labkey.api.reader.DataLoader.inferColumnInfo()
+                //if you have an irregularly shaped TSV a given row can have fewer than nCols elements
+                if (f >= fields.length || "".equals(fields[f]))
                     continue;
 
                 try

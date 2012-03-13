@@ -732,6 +732,18 @@ LABKEY.Security = new function()
         currentUser : LABKEY.user,
 
         /**
+         * Exposes limited information about the current container. This property returns a JavaScript object
+         * with the following properties:
+         * <ul>
+         * <li>id: the container's unique id (entityid)</li>
+         * <li>name: the name of the container</li>
+         * <li>path: the path of the current container</li>
+         * <li>type: the type of container, either project, folder or workbook</li>
+         * </ul>
+         */
+        currentContainer : LABKEY.container,
+
+        /**
          * Returns the set of groups the current user belongs to in the current container or specified containerPath.
          * This may be called by any user.
          * @param {object} config A configuration object with the following properties:

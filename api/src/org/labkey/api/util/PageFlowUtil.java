@@ -2070,7 +2070,7 @@ public class PageFlowUtil
 
             containerProps.put("id", container.getId());
             containerProps.put("name", container.getName());
-            containerProps.put("isWorkbook", container.isWorkbook());
+            containerProps.put("type", container.getContainerNoun());
             json.put("container", containerProps);
             json.put("demoMode", DemoMode.isDemoMode(container, user));
         }
