@@ -476,19 +476,16 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             Object value = row.get(col.getName());
             if (null != value)
             {
+                // Issue 13951: PSQLException from org.labkey.api.query.DefaultQueryUpdateService._update()
+                // improve handling of conversion errors
                 try
                 {
-                    switch (col.getSqlTypeInt())
-                    {
-                        case java.sql.Types.DATE:
-                        case java.sql.Types.TIME:
-                        case java.sql.Types.TIMESTAMP:
-                            row.put(col.getName(), value instanceof Date ? value : ConvertUtils.convert(value.toString(), Date.class));
-                    }
+                    value = ConvertUtils.convert(value.toString(), col.getJdbcType().getJavaClass());
                 }
-                catch (ConversionException x)
+                catch (ConversionException e)
                 {
-                    throw new QueryUpdateServiceException(x);
+                    String type = ColumnInfo.getFriendlyTypeName(col.getJdbcType().getJavaClass());
+                    throw new QueryUpdateServiceException("Unable to convert value \'" + value.toString() + "\' to " + type + " for column \'" + col.getLabel() + "\'");
                 }
             }
         }
