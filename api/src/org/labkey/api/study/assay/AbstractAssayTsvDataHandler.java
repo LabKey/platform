@@ -415,10 +415,14 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
         Map<String, DomainProperty> aliasMap = dataDomain.createImportMap(true);
 
+        // We want to share canonical casing between data rows, or we end up with an extra Map instance for each
+        // data row which can add up quickly
+        CaseInsensitiveHashMap<Object> caseMapping = new CaseInsensitiveHashMap<Object>();
+
         for (ListIterator<Map<String, Object>> iter = rawData.listIterator(); iter.hasNext();)
         {
             Map<String, Object> originalMap = iter.next();
-            Map<String, Object> map = new CaseInsensitiveHashMap<Object>();
+            Map<String, Object> map = new CaseInsensitiveHashMap<Object>(caseMapping);
             // Rekey the map, resolving aliases to the actual property names
             for (Map.Entry<String, Object> entry : originalMap.entrySet())
             {
@@ -548,12 +552,17 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         return materialInputs;
     }
 
+    /** Does not mutate the maps in the list, but does swap the content of the list to avoid needing to hold
+     * two complete copies of the data in memory at the same time. */
     protected List<Map<String, Object>> convertPropertyNamesToURIs(List<Map<String, Object>> dataMaps, Map<String, DomainProperty> propertyNamesToUris)
     {
-        List<Map<String, Object>> ret = new ArrayList<Map<String, Object>>(dataMaps.size());
-        for (Map<String, Object> dataMap : dataMaps)
+        // We want to share canonical casing between data rows, or we end up with an extra Map instance for each
+        // data row which can add up quickly
+        CaseInsensitiveHashMap<Object> caseMapping = new CaseInsensitiveHashMap<Object>();
+        for (ListIterator<Map<String, Object>> i = dataMaps.listIterator(); i.hasNext(); )
         {
-            CaseInsensitiveHashMap<Object> newMap = new CaseInsensitiveHashMap<Object>(dataMap.size());
+            Map<String, Object> dataMap = i.next();
+            CaseInsensitiveHashMap<Object> newMap = new CaseInsensitiveHashMap<Object>(dataMap.size(), caseMapping);
             for (Map.Entry<String, Object> entry : dataMap.entrySet())
             {
                 DomainProperty pd = propertyNamesToUris.get(entry.getKey().toLowerCase());
@@ -561,9 +570,10 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     throw new RuntimeException("Expected uri for datamap property '" + entry.getKey() + "'.");
                 newMap.put(pd.getPropertyURI(), entry.getValue());
             }
-            ret.add(newMap);
+            // Swap out the entry in the list with the transformed map
+            i.set(newMap);
         }
-        return ret;
+        return dataMaps;
     }
 
     public void deleteData(ExpData data, Container container, User user)

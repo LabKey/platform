@@ -34,6 +34,16 @@ public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implemen
         }
     }
 
+    public CaseInsensitiveMapWrapper(Map<String, V> map, CaseInsensitiveMapWrapper<V> caseMapping)
+    {
+        super(map);
+        _correctCaseMap = caseMapping._correctCaseMap;
+        for (Map.Entry<? extends String, ? extends V> entry : map.entrySet())
+        {
+            _correctCaseMap.put(entry.getKey().toLowerCase(), entry.getKey());
+        }
+    }
+
     public V get(Object key)
     {
         String correctKey = normalizeKey(key);

@@ -43,4 +43,19 @@ public class CaseInsensitiveHashMap<V> extends CaseInsensitiveMapWrapper<V> impl
         for (Map.Entry<String, V> entry : map.entrySet())
             put(entry.getKey(), entry.getValue());
     }
+
+    /** Share the canonical key casing with the caseMapping instance */
+    public CaseInsensitiveHashMap(Map<String, V> map, CaseInsensitiveMapWrapper<V> caseMapping)
+    {
+        this(map.size(), caseMapping);
+
+        for (Map.Entry<String, V> entry : map.entrySet())
+            put(entry.getKey(), entry.getValue());
+    }
+
+    /** Share the canonical key casing with the caseMapping instance */
+    public CaseInsensitiveHashMap(int size, CaseInsensitiveMapWrapper<V> caseMapping)
+    {
+        super(new HashMap<String, V>(size), caseMapping);
+    }
 }
