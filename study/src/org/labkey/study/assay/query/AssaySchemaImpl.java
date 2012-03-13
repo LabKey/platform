@@ -256,7 +256,6 @@ public class AssaySchemaImpl extends AssaySchema
         defaultCols.add(FieldKey.fromParts(ExpExperimentTable.Column.RunCount));
         result.setDefaultVisibleColumns(defaultCols);
 
-        // UNDONE: need to add batch domain to table.getDomain()
         Domain batchDomain = provider.getBatchDomain(protocol);
         if (batchDomain != null)
         {
@@ -266,6 +265,7 @@ public class AssaySchemaImpl extends AssaySchema
                 // Will be null if the domain doesn't have any properties
                 propsCol.setFk(new AssayPropertyForeignKey(batchDomain));
             }
+            result.setDomain(batchDomain);
         }
 
         for (ColumnInfo col : result.getColumns())
@@ -283,7 +283,6 @@ public class AssaySchemaImpl extends AssaySchema
         final ExpRunTable runTable = provider.createRunTable(this, protocol);
         runTable.setProtocolPatterns(protocol.getLSID());
 
-        // UNDONE: need to add run domain to table.getDomain()
         Domain runDomain = provider.getRunDomain(protocol);
         if (runDomain != null)
         {
@@ -293,6 +292,7 @@ public class AssaySchemaImpl extends AssaySchema
                 // Will be null if the domain doesn't have any properties
                 propsCol.setFk(new AssayPropertyForeignKey(runDomain));
             }
+            runTable.setDomain(runDomain);
         }
 
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>(runTable.getDefaultVisibleColumns());

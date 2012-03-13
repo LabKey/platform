@@ -30,6 +30,7 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.JsonWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.defaults.SetDefaultValuesAssayAction;
 import org.labkey.api.exp.ExperimentException;
@@ -44,6 +45,7 @@ import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.qc.DataExchangeHandler;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
@@ -58,6 +60,7 @@ import org.labkey.api.study.assay.AbstractAssayView;
 import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayRunsView;
+import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.assay.PipelineDataCollectorRedirectAction;
@@ -83,6 +86,7 @@ import org.labkey.study.assay.AssayServiceImpl;
 import org.labkey.study.assay.ModuleAssayProvider;
 import org.labkey.study.assay.TsvImportAction;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
+import org.labkey.study.assay.query.AssaySchemaImpl;
 import org.labkey.study.controllers.assay.actions.GetAssayBatchAction;
 import org.labkey.study.controllers.assay.actions.SaveAssayBatchAction;
 import org.springframework.validation.BindException;
@@ -101,6 +105,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -254,17 +259,40 @@ public class AssayController extends SpringActionController
         if (provider instanceof PlateBasedAssayProvider)
             assayProperties.put("plateTemplate", ((PlateBasedAssayProvider)provider).getPlateTemplate(c, protocol));
 
+        // XXX: UGLY: Get the TableInfo associated with the Domain -- loop over all tables and ask for the Domins.
+        String protocolPrefix = protocol.getName().toLowerCase() + " ";
+        AssaySchema schema = new AssaySchemaImpl(user, c);
+        Set<String> tableNames = schema.getTableNames();
+        Map<String, TableInfo> tableInfoMap = new HashMap<String, TableInfo>();
+        for (String tableName : tableNames)
+        {
+            if (tableName.toLowerCase().startsWith(protocolPrefix))
+            {
+                TableInfo table = schema.getTable(tableName, true);
+                if (table != null)
+                {
+                    Domain domain = table.getDomain();
+                    if (domain != null)
+                        tableInfoMap.put(domain.getTypeURI(), table);
+                }
+            }
+        }
+
         Map<String, List<Map<String, Object>>> domains = new HashMap<String, List<Map<String, Object>>>();
         for (Pair<Domain, Map<DomainProperty, Object>> domain : provider.getDomains(protocol))
         {
-            domains.put(domain.getKey().getName(), serializeDomain(domain.getKey(), user));
+            TableInfo table = tableInfoMap.get(domain.getKey().getTypeURI());
+            domains.put(domain.getKey().getName(), serializeDomain(domain.getKey(), table, user));
         }
         assayProperties.put("domains", domains);
         return assayProperties;
     }
 
-    private static List<Map<String, Object>> serializeDomain(Domain domain, User user)
+    private static List<Map<String, Object>> serializeDomain(Domain domain, TableInfo tableInfo, User user)
     {
+        if (tableInfo != null)
+            return JsonWriter.getNativeColProps(tableInfo, Collections.<FieldKey>emptyList(), null);
+
         List<Map<String, Object>> propertyList = new ArrayList<Map<String, Object>>();
         for (DomainProperty property : domain.getProperties())
         {

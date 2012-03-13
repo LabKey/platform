@@ -82,23 +82,22 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         //so it can display edit source, edit design links
         resp.put("name", form.getQueryName());
         resp.put("schemaName", form.getSchemaName());
-        Map<String,QueryDefinition> queryDefs = QueryService.get().getQueryDefs(user, container, form.getSchemaName());
-        boolean isUserDefined = (null != queryDefs && queryDefs.containsKey(form.getQueryName()));
+        QueryDefinition queryDef = QueryService.get().getQueryDef(user, container, form.getSchemaName(), form.getQueryName());
+        boolean isUserDefined = (null != queryDef);
         resp.put("isUserDefined", isUserDefined);
-        boolean canEdit = (null != queryDefs && queryDefs.containsKey(form.getQueryName()) && queryDefs.get(form.getQueryName()).canEdit(user));
+        boolean canEdit = (null != queryDef && queryDef.canEdit(user));
         resp.put("canEdit", canEdit);
         resp.put("canEditSharedViews", container.hasPermission(user, EditSharedViewPermission.class));
         resp.put("isMetadataOverrideable", canEdit); //for now, this is the same as canEdit(), but in the future we can support this for non-editable queries
 
-        QueryDefinition querydef = (null == queryDefs ? null : queryDefs.get(form.getQueryName()));
         if (isUserDefined)
-            resp.put("moduleName", querydef.getModuleName());
-        boolean isInherited = (null != querydef && querydef.canInherit() && !container.equals(querydef.getContainer()));
+            resp.put("moduleName", queryDef.getModuleName());
+        boolean isInherited = (null != queryDef && queryDef.canInherit() && !container.equals(queryDef.getContainer()));
         resp.put("isInherited", isInherited);
         if (isInherited)
-            resp.put("containerPath", querydef.getContainer().getPath());
+            resp.put("containerPath", queryDef.getContainer().getPath());
 
-        resp.put("isTemporary", null != querydef && querydef.isTemporary());
+        resp.put("isTemporary", null != queryDef && queryDef.isTemporary());
 
         TableInfo tinfo;
         try

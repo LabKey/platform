@@ -43,6 +43,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
     protected final UserSchema _schema;
     private final ExpObjectImpl _objectType;
     private Set<Class<? extends Permission>> _allowablePermissions = new HashSet<Class<? extends Permission>>();
+    private Domain _domain;
 
     protected ExpTableImpl(String name, TableInfo rootTable, UserSchema schema, ExpObjectImpl objectType)
     {
@@ -211,6 +212,18 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
         }
         setDefaultVisibleColumns(visibleColumns);
         return colProperty;
+    }
+
+    @Override
+    public Domain getDomain()
+    {
+        return _domain;
+    }
+
+    public void setDomain(Domain domain)
+    {
+        assert _domain == null;
+        _domain = domain;
     }
 
     public ExpSchema getExpSchema()

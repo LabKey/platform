@@ -58,7 +58,6 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
     protected boolean _runSpecified;
     protected ExpRun _run;
     protected DataType _type;
-    private Domain _domain;
 
     public ExpDataTableImpl(String name, UserSchema schema)
     {
@@ -103,23 +102,18 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
 
         if (dd != null)
         {
-            _domain = PropertyService.get().getDomain(dd.getDomainId());
-            if (_domain != null)
+            Domain domain = PropertyService.get().getDomain(dd.getDomainId());
+            if (domain != null)
             {
-                for (DomainProperty prop : _domain.getProperties())
+                for (DomainProperty prop : domain.getProperties())
                 {
                     // don't set container on property column so that inherited domain properties work
                     ColumnInfo projectColumn = new PropertyColumn(prop.getPropertyDescriptor(), lsidColumn, getContainer(), _schema.getUser(), false);
                     addColumn(projectColumn);
                 }
+                setDomain(domain);
             }
         }
-    }
-
-    @Override
-    public Domain getDomain()
-    {
-        return _domain;
     }
 
     @Override
