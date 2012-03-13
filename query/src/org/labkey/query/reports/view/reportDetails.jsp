@@ -128,7 +128,7 @@
 
     <tr>
         <td class="labkey-form-label">
-            Refresh Date:
+            Data Cut Date:
         </td>
         <td>
             <%=h(refreshDate)%>
