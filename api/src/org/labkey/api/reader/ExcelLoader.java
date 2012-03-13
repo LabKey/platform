@@ -115,38 +115,35 @@ public class ExcelLoader extends DataLoader
         Sheet sheet = getSheet();
 
         List<String[]> cells = new ArrayList<String[]>();
-        int numRows = Math.min(sheet.getLastRowNum(), n);
-        for (int row = 0; row < numRows; row++)
+        for (Row currentRow : sheet)
         {
             List<String> rowData = new ArrayList<String>();
 
             // Excel can report back more rows than exist. If we find no data at all,
             // we should not add a row.
             boolean foundData = false;
-            Row currentRow = sheet.getRow(row);
-            if (currentRow != null)
+            if (currentRow.getPhysicalNumberOfCells() != 0)
             {
-                if (currentRow.getPhysicalNumberOfCells() != 0)
+                for (int column = 0; column <= currentRow.getLastCellNum(); column++)
                 {
-                    for (int column = 0; column < currentRow.getLastCellNum(); column++)
+                    Cell cell = currentRow.getCell(column);
+                    if (cell != null)
                     {
-                        Cell cell = currentRow.getCell(column);
-                        if (cell != null)
-                        {
-                            String data = String.valueOf(PropertyType.getFromExcelCell(cell));
+                        String data = String.valueOf(PropertyType.getFromExcelCell(cell));
 
-                            if (data != null && !"".equals(data))
-                                foundData = true;
+                        if (data != null && !"".equals(data))
+                            foundData = true;
 
-                            rowData.add(data != null ? data : "");
-                        }
-                        else
-                            rowData.add("");
+                        rowData.add(data != null ? data : "");
                     }
-                    if (foundData)
-                        cells.add(rowData.toArray(new String[rowData.size()]));
+                    else
+                        rowData.add("");
                 }
+                if (foundData)
+                    cells.add(rowData.toArray(new String[rowData.size()]));
             }
+            if (--n == 0)
+                break;
         }
         return cells.toArray(new String[cells.size()][]);
     }
@@ -206,7 +203,7 @@ public class ExcelLoader extends DataLoader
             Row row = sheet.getRow(lineNum());
             if (row != null)
             {
-                int numCols = row.getLastCellNum();
+                int numCols = row.getLastCellNum() + 1;
                 for (int columnIndex = 0, fieldIndex = 0; columnIndex < allColumns.length; columnIndex++)
                 {
                     boolean loadThisColumn = ((columnIter.hasNext() && columnIter.next().load));

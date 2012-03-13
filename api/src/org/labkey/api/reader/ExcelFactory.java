@@ -335,7 +335,7 @@ public class ExcelFactory
                 JSONArray rowArray = new JSONArray();
                 if (row != null)
                 {
-                    for (int cellIndex = 0; cellIndex < row.getLastCellNum(); cellIndex++)
+                    for (int cellIndex = 0; cellIndex <= row.getLastCellNum(); cellIndex++)
                     {
                         Object value;
                         JSONObject metadataMap = new JSONObject();

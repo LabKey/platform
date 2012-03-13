@@ -589,7 +589,10 @@ public class ReportUtil
                     }
                 }
 
-                info.setRunUrl(filter.getViewRunURL(user, c, view));
+                // run url and details url are the same for now
+                ActionURL runUrl = filter.getViewRunURL(user, c, view);
+                info.setRunUrl(runUrl);
+                info.setDetailsUrl(runUrl);
                 // FIXME: see 10473: ModuleCustomViewInfo has no Container or Owner.
                 info.setContainer(view.getContainer());
                 info.setInherited(inherited);
