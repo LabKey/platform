@@ -213,6 +213,8 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         }
         finally
         {
+            if (null != file)
+                file.closeInputStream();
             if (null != tempFile)
                 tempFile.delete();
         }
