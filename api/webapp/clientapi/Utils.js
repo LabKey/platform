@@ -43,7 +43,8 @@ LABKEY.Utils = new function()
                         'n-j-y|n-j-Y|' +
                         'j-M-y|j-M-Y|' +
                         'Y-n-d H:i:s|Y-n-d|' +
-                        'j M Y G:i:s O|' + // 10 Sep 2009 11:24:12 -0700
+                        'Y/n/d H:i:s|Y/n/d|' +
+                        'j M Y G:i:s O|' +  // 10 Sep 2009 11:24:12 -0700
                         'j M Y H:i:s|c';
     // private functions
     function handleLoadError(This, o, arg, e)
