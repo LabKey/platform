@@ -57,12 +57,13 @@ public class DataColumn extends DisplayColumn
     //Careful, a renderer without a resultset is only good for input forms
     public DataColumn(ColumnInfo col)
     {
+        this(col,true);
+    }
+
+    public DataColumn(ColumnInfo col, boolean withLookups)
+    {
         _boundColumn = col;
-        _displayColumn = col.getDisplayField();
-        if (_displayColumn == null)
-        {
-            _displayColumn = _boundColumn;
-        }
+        _displayColumn = getDisplayField(col, withLookups);
         _nowrap = _displayColumn.isNoWrap();
         _sortColumn = _displayColumn.getSortField();
         _filterColumn = _displayColumn.getFilterField();
@@ -79,7 +80,7 @@ public class DataColumn extends DisplayColumn
         _inputType = _boundColumn.getInputType();
         try
         {
-            if (null != _displayColumn && null != _boundColumn.getFk() && null != _boundColumn.getFkTableInfo())
+            if (null != _displayColumn && _boundColumn != _displayColumn && null != _boundColumn.getFk() && null != _boundColumn.getFkTableInfo())
                 _inputType = "select";
         }
         catch (QueryParseException qpe)
@@ -94,6 +95,15 @@ public class DataColumn extends DisplayColumn
         _caption = StringExpressionFactory.create(_boundColumn.getLabel());
         _editable = !_boundColumn.isReadOnly() && _boundColumn.isUserEditable();
         _textAlign = _displayColumn.getTextAlign();
+    }
+
+
+    protected ColumnInfo getDisplayField(ColumnInfo col, boolean withLookups)
+    {
+        if (!withLookups)
+            return col;
+        ColumnInfo display = col.getDisplayField();
+        return null==display ? col : display;
     }
 
 
