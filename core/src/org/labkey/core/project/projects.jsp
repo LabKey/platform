@@ -19,11 +19,20 @@
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.json.JSONObject" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%
     JspView<Portal.WebPart> me = (JspView) HttpView.currentView();
     int webPartId = me.getModelBean().getRowId();
     JSONObject jsonProps = new JSONObject(me.getModelBean().getPropertyMap());
     String renderTarget = "project-" + me.getModelBean().getIndex();
+    ViewContext ctx = me.getViewContext();
+    boolean isAdmin = ctx.getUser().isAdministrator();
+
+    Container target = ContainerManager.getForPath((String)jsonProps.get("containerPath"));
+    boolean hasPermission = target.hasPermission(ctx.getUser(), ReadPermission.class);
 %>
 <div>
     <div id='<%=renderTarget%>'></div>
@@ -41,6 +50,11 @@ Ext4.onReady(function(){
     var config = '<%=jsonProps%>';
     config = Ext4.decode(config);
     config.hideCreateButton = config.hideCreateButton === 'true';
+
+    if(!<%=hasPermission%>){
+        Ext.get('<%=renderTarget%>').update('You do not have permission to view this folder');
+        return;
+    }
 
     Ext4.applyIf(config, {
         containerTypes: 'project',
@@ -66,7 +80,7 @@ Ext4.onReady(function(){
         return filterArray;
     }
 
-    var panel = Ext4.create('LABKEY.ext.IconPanel', {
+    var panelCfg = {
         id: 'projects-panel-<%=webPartId%>',
         iconField: 'iconurl',
         labelField: 'Name',
@@ -80,12 +94,6 @@ Ext4.onReady(function(){
         border: false,
         frame: false,
         buttonAlign: 'left',
-        buttons: [{
-            text: 'Create New ' + config.noun,
-            hidden: !LABKEY.Security.currentUser.isAdmin || config.hideCreateButton,
-            target: '_self',
-            href: LABKEY.ActionURL.buildURL('admin', 'createFolder', '/')
-        }],
         emptyText: 'No folder to display',
         deferEmptyText: false,
         store: Ext4.create('LABKEY.ext4.Store', {
@@ -115,7 +123,19 @@ Ext4.onReady(function(){
                 }
             }
         })
-    }).render('<%=renderTarget%>');
+    }
+
+    //NOTE: separated to differentiate site admins from those w/ admin permission in this container
+    if(<%=isAdmin%>){
+        panelCfg.buttons = [{
+            text: 'Create New ' + config.noun,
+            hidden: !LABKEY.Security.currentUser.isAdmin || config.hideCreateButton,
+            target: '_self',
+            href: LABKEY.ActionURL.buildURL('admin', 'createFolder', '/')
+        }]
+    }
+
+    var panel = Ext4.create('LABKEY.ext.IconPanel', panelCfg).render('<%=renderTarget%>');
 
     Ext4.apply(panel, config);
     panel.getFilterArray = getFilterArray;
