@@ -131,6 +131,7 @@ public class StudyQuerySchema extends UserSchema
             // specimen report pivots
             ret.add(SpecimenPivotByPrimaryType.PIVOT_BY_PRIMARY_TYPE);
             ret.add(SpecimenPivotByDerivativeType.PIVOT_BY_DERIVATIVE_TYPE);
+            ret.add(SpecimenPivotByRequestingLocation.PIVOT_BY_REQUESTING_LOCATION);
 
             // Add only datasets that the user can read
             User user = getUser();
@@ -343,6 +344,10 @@ public class StudyQuerySchema extends UserSchema
         if (SpecimenPivotByDerivativeType.PIVOT_BY_DERIVATIVE_TYPE.equalsIgnoreCase(name))
         {
             return new SpecimenPivotByDerivativeType(this);
+        }
+        if (SpecimenPivotByRequestingLocation.PIVOT_BY_REQUESTING_LOCATION.equalsIgnoreCase(name))
+        {
+            return new SpecimenPivotByRequestingLocation(this);
         }
 
         //might be a dataset--try getting by name first, then by label

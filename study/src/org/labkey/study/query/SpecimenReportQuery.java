@@ -37,6 +37,7 @@ public class SpecimenReportQuery
 {
     public static final String PIVOT_BY_PRIMARY_TYPE = "SpecimenSummary_PivotByPrimaryType";
     public static final String PIVOT_BY_DERIVATIVE_TYPE = "SpecimenSummary_PivotByDerivativeType";
+    public static final String PIVOT_BY_REQUESTING_LOCATION = "SpecimenSummary_PivotByRequestingLocation";
 
     private static final String sql_pivotByPrimaryType = "SELECT\n" +
             "  Container,\n" +
@@ -147,6 +148,38 @@ public class SpecimenReportQuery
         String query = String.format(sql_pivotByDerivativeType, subjectCol, visitCol, subjectCol, visitCol, subjectCol, visitCol);
 
         QueryDefinition qdef = QueryService.get().createQueryDef(user, container, StudyQuerySchema.SCHEMA_NAME, PIVOT_BY_DERIVATIVE_TYPE);
+        qdef.setSql(query);
+        qdef.setIsHidden(true);
+
+        List<QueryException> errors = new ArrayList<QueryException>();
+        TableInfo tinfo = qdef.getTable(errors, true);
+
+        if (!errors.isEmpty())
+        {
+            StringBuilder sb = new StringBuilder();
+
+            for (QueryException qe : errors)
+            {
+                sb.append(qe.getMessage()).append('\n');
+            }
+            throw new IllegalStateException(sb.toString());
+        }
+        return tinfo;
+    }
+
+    public static TableInfo getPivotByRequestingLocation(Container container, User user)
+    {
+        Study study = StudyService.get().getStudy(container);
+
+        if (study == null)
+            throw new IllegalStateException("A study does not exist for this folder");
+
+        String subjectCol = StudyService.get().getSubjectColumnName(container);
+        String visitCol = StudyService.get().getSubjectVisitColumnName(container);
+
+        String query = String.format(sql_pivotRequestedByLocation, subjectCol, visitCol, subjectCol, visitCol, subjectCol, visitCol);
+
+        QueryDefinition qdef = QueryService.get().createQueryDef(user, container, StudyQuerySchema.SCHEMA_NAME, PIVOT_BY_REQUESTING_LOCATION);
         qdef.setSql(query);
         qdef.setIsHidden(true);
 

@@ -21,33 +21,22 @@ import java.util.Map;
  * User: klum
  * Date: Mar 5, 2012
  */
-public class SpecimenPivotByPrimaryType extends FilteredTable
+public class SpecimenPivotByPrimaryType extends BaseSpecimenPivotTable
 {
     public static final String PIVOT_BY_PRIMARY_TYPE = "Primary Type Vial Counts";
-    private static final String AGGREGATE_DELIM = "::";
 
     public SpecimenPivotByPrimaryType(final StudyQuerySchema schema)
     {
-        super(SpecimenReportQuery.getPivotByPrimaryType(schema.getContainer(), schema.getUser()), schema.getContainer());
+        super(SpecimenReportQuery.getPivotByPrimaryType(schema.getContainer(), schema.getUser()), schema);
         setDescription("Contains up to one row of Specimen Primary Type totals for each " + StudyService.get().getSubjectNounSingular(getContainer()) +
             "/visit combination.");
 
-        addWrapColumn(_rootTable.getColumn(StudyService.get().getSubjectColumnName(getContainer())));
-        addWrapColumn(_rootTable.getColumn(StudyService.get().getSubjectVisitColumnName(getContainer())));
-        addWrapColumn(_rootTable.getColumn("Visit"));
-
         try {
-            Map<Integer, String> primaryTypeMap = new HashMap<Integer, String>();
+            Map<Integer, String> primaryTypeMap = getPrimaryTypeMap(getContainer());
             Map<Integer, String> allPrimaryTypes = new HashMap<Integer, String>();
             
             for (PrimaryType type : SampleManager.getInstance().getPrimaryTypes(getContainer()))
                 allPrimaryTypes.put(Long.valueOf(type.getRowId()).intValue(), type.getPrimaryType());
-
-            SpecimenTypeSummary summary = SampleManager.getInstance().getSpecimenTypeSummary(getContainer());
-
-            // need the map of row id's to labels for primary types
-            for (SpecimenTypeSummary.TypeCount type : summary.getPrimaryTypes())
-                primaryTypeMap.put(type.getId(), type.getLabel());
 
             for (ColumnInfo col : getRealTable().getColumns())
             {
@@ -60,18 +49,13 @@ public class SpecimenPivotByPrimaryType extends FilteredTable
 
                     if (primaryTypeMap.containsKey(primaryId))
                     {
-                        String colName = primaryTypeMap.get(primaryId) + "_" + parts[1];
-                        ColumnInfo colInfo = new AliasedColumn(this, ColumnInfo.labelFromName(colName), col);
-
-                        addColumn(colInfo);
+                        wrapPivotColumn(col, primaryTypeMap.get(primaryId), parts[1]);
                     }
                     else if (allPrimaryTypes.containsKey(primaryId))
                     {
-                        String colName = allPrimaryTypes.get(primaryId) + "_" + parts[1];
-                        ColumnInfo colInfo = new AliasedColumn(this, ColumnInfo.labelFromName(colName), col);
+                        ColumnInfo wrappedCol = wrapPivotColumn(col, allPrimaryTypes.get(primaryId), parts[1]);
 
-                        colInfo.setHidden(true);
-                        addColumn(colInfo);
+                        wrappedCol.setHidden(true);
                     }
                 }
             }

@@ -2915,6 +2915,7 @@ study/src/org/labkey/study/plate/view/plateTemplate.jsp -text
 study/src/org/labkey/study/plate/view/plateTemplateList.jsp -text
 study/src/org/labkey/study/query/AbstractSpecimenTable.java -text
 study/src/org/labkey/study/query/AdditiveTypeTable.java -text
+study/src/org/labkey/study/query/BaseSpecimenPivotTable.java -text
 study/src/org/labkey/study/query/BaseStudyQueryView.java -text
 study/src/org/labkey/study/query/BaseStudyTable.java -text
 study/src/org/labkey/study/query/CohortQueryView.java -text
@@ -2948,6 +2949,7 @@ study/src/org/labkey/study/query/SpecimenEventQueryView.java -text
 study/src/org/labkey/study/query/SpecimenEventTable.java -text
 study/src/org/labkey/study/query/SpecimenPivotByDerivativeType.java -text
 study/src/org/labkey/study/query/SpecimenPivotByPrimaryType.java -text
+study/src/org/labkey/study/query/SpecimenPivotByRequestingLocation.java -text
 study/src/org/labkey/study/query/SpecimenQueryView.java -text
 study/src/org/labkey/study/query/SpecimenReportQuery.java -text
 study/src/org/labkey/study/query/SpecimenRequestDisplayColumn.java -text

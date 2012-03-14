@@ -2265,6 +2265,12 @@ public class SampleManager
         return Table.executeQuery(StudySchema.getInstance().getSchema(), sql.getSQL(), sql.getParamsArray(), SiteImpl.class);
     }
 
+    public SiteImpl[] getSites(Container container) throws SQLException
+    {
+        SQLFragment sql = new SQLFragment("SELECT * FROM study.site WHERE Container = ? ORDER BY label", container.getId());
+        return Table.executeQuery(StudySchema.getInstance().getSchema(), sql.getSQL(), sql.getParamsArray(), SiteImpl.class);
+    }
+
     public Set<SiteImpl> getEnrollmentSitesWithRequests(Container container)
     {
         SQLFragment sql = new SQLFragment("SELECT Participant.EnrollmentSiteId FROM study.SpecimenDetail AS Specimen, " +

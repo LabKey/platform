@@ -279,7 +279,8 @@ public class StudyVisualizationProvider extends VisualizationProvider
                 for (String name : schema.getTableAndQueryNames(true))
                 {
                     if (!StringUtils.startsWithIgnoreCase(name, "Primary Type Vial Counts") &&
-                        !StringUtils.startsWithIgnoreCase(name, "Primary/Derivative Type Vial Counts"))
+                        !StringUtils.startsWithIgnoreCase(name, "Primary/Derivative Type Vial Counts") &&
+                        !StringUtils.startsWithIgnoreCase(name, "Vial Counts by Requesting Location"))
                         continue;
                     Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(context, schema, name, ColumnMatchType.All_VISIBLE, false);
                     if (entry != null)
