@@ -74,7 +74,7 @@ public class ParticipantVisitTable extends FilteredTable
                     @Override
                     public DisplayColumn createRenderer(ColumnInfo col)
                     {
-                        return new BaseStudyTable.VisitDisplayColumn(col, FieldKey.fromParts("ParticipantVisit", "Visit", "SequenceNumMin"));
+                        return new BaseStudyTable.VisitDisplayColumn(col, FieldKey.fromParts("SequenceNum"));
                     }
                 });
                 addColumn(visitColumn);

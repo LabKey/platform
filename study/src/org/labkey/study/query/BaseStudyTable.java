@@ -226,7 +226,7 @@ public abstract class BaseStudyTable extends FilteredTable
             @Override
             public DisplayColumn createRenderer(ColumnInfo col)
             {
-                return new VisitDisplayColumn(col, FieldKey.fromParts("Visit", "SequenceNumMin"));
+                return new VisitDisplayColumn(col, FieldKey.fromParts("SequenceNum"));
             }
         });
 

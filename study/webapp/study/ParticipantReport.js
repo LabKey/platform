@@ -26,7 +26,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                         '<tr><td colspan=2 style="padding:5px; font-weight:bold; font-size:1.3em; text-align:center;">{[ this.getHtml(values.headerValue) ]}</td></tr>',
         // note nested <tpl>, this will make values==datavalue and parent==field
                         '<tpl for="this.data.pageFields"><tpl for="parent.first.asArray[values.index]">',
-                            '<tr><td align=right data-qtip="{[parent.qtip]}">{[this.getCaptionHtml(parent)]}:&nbsp;</td><td align=left style="{parent.style}">{[this.getHtml(values)]}</td></tr>',
+                            '<tr><td align=right data-qtip="{[parent.qtip]}">{[this.getPageField(parent)]}:&nbsp;</td><td align=left style="{parent.style}">{[this.getPageFieldHtml(values)]}</td></tr>',
                         '</tpl></tpl>',
                     '</table>',
                     '</div>',
@@ -46,9 +46,23 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     '</tr>',
                 '</tpl>',
             '</tpl>',
-            '</table>',
-            '{[((new Date()).valueOf() - this.start)/1000.0]}'
+            '</table>'
+            //'{[((new Date()).valueOf() - this.start)/1000.0]}'
         ],
+        getPageField : function(field)
+        {
+            // don't wrap on the page field values
+            var value = this.getCaptionHtml(field);
+            if (value)
+                return value.replace(/\s/g, '&nbsp;');
+        },
+        getPageFieldHtml : function(value)
+        {
+            // don't wrap on the page field values
+            var html = this.getHtml(value);
+            if (html)
+                return html.replace(/\s/g, '&nbsp;');
+        },
         on :
         {
             dataload : function(rpt, data)
@@ -683,7 +697,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             for (i=0; i < qr.metaData.fields.length; i++) {
                 var field = qr.metaData.fields[i];
 
-                var rec = this.gridFieldStore.findRecord('name', columnToMeasure[field.name]);
+                var rec = this.gridFieldStore.findRecord('name', columnToMeasure[field.name], 0, false, true, true);
                 if (rec)
                 {
                     field.shortCaption = rec.data.label;
