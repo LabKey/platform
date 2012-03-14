@@ -58,6 +58,7 @@ public class QueryWebPart extends WebPartView
     // rendered in the webpart
     private String _errorType;
     private String _metadata;
+    private boolean _hasSql;
 
 
     public QueryWebPart(ViewContext context, Portal.WebPart part)
@@ -102,6 +103,7 @@ public class QueryWebPart extends WebPartView
                 // execute arbitrary sql
                 if (sql != null)
                 {
+                    _hasSql = true;
                     QueryDefinition def = QueryService.get().saveSessionQuery(context, context.getContainer(), _schemaName, sql, _metadata);
 
                     _settings.setQueryName(def.getName());
@@ -236,6 +238,9 @@ public class QueryWebPart extends WebPartView
                 out.write("Schema '" + PageFlowUtil.filter(_schemaName) + "' does not exist.");
             }
         }
+
+        if (_metadata != null && !_hasSql)
+            out.write("<div class='labkey-error'>Configuration error : specifying column metadata is only available if the query is specified through the 'sql' config option.</div><br/>");
 
         if (_schema != null && _settings != null)
         {

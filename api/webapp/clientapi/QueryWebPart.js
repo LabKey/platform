@@ -468,12 +468,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
             LABKEY.Filter.appendAggregateParams(json.filters, this.aggregates, this.dataRegionName);
 
         if (this.metadata)
-        {
-            if (!this.sql)
-                Ext.Msg.alert("Configuration Error", "Specifying column metadata is only available if the query is specified through the 'sql' config option.");
-
-            json.metadata = this.metadata;   
-        }
+            json.metadata = this.metadata;
 
         // re-open designer after update
         var customizeViewTab = this.showViewPanel;
