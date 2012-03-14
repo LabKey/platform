@@ -32,6 +32,7 @@ import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewContext;
@@ -73,7 +74,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
 
         DesignerInfoImpl di = new DesignerInfoImpl(AttachmentReport.TYPE, "Attachment Report", ReportsController.getAttachmentReportURL(context.getContainer(), context.getActionURL()));
         di.setId("create_attachment_report");
-        di.setDisabled(!context.hasPermission(AdminPermission.class));
+        di.setDisabled(!context.hasPermission(InsertPermission.class));
         designers.add(di);
 
         return designers;

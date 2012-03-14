@@ -87,6 +87,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
@@ -579,7 +580,7 @@ public class ReportsController extends SpringActionController
     }
 
 
-    @RequiresNoPermission
+    @RequiresPermissionClass(InsertPermission.class)  // Need insert AND developer (checked below)
     public class CreateScriptReportAction extends FormViewAction<ScriptReportBean>
     {
         private Report _report;
@@ -1155,7 +1156,7 @@ public class ReportsController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresPermissionClass(InsertPermission.class)
     public class UploadReportAction extends FormViewAction<UploadForm>
     {
         public ModelAndView getView(UploadForm form, boolean reshow, BindException errors) throws Exception
