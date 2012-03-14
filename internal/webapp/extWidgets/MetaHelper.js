@@ -3,12 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-
-
-
-LABKEY.requiresExt4Sandbox(true);
-
-Ext.namespace('LABKEY.ext4');
+Ext.namespace('LABKEY.ext', 'LABKEY.ext4');
 
 /**
  * A collection of static helper methods designed to interface between LabKey's metadata and Ext.
@@ -25,9 +20,6 @@ Ext.namespace('LABKEY.ext4');
  *           </p>
  *
  */
-
-
-LABKEY.requiresExt4Sandbox(true);
 
 LABKEY.ext.MetaHelper = {
     /**

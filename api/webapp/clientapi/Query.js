@@ -223,9 +223,12 @@ LABKEY.Query = new function()
 
             var dataObject = {
                 schemaName: config.schemaName,
-                sql: config.sql,
-                saveInSession: config.saveInSession
+                sql: config.sql
             };
+
+            // Work with Ext4.Ajax.request
+            if (config.saveInSession !== undefined && config.saveInSession !== null)
+                dataObject = config.saveInSession;
 
             //set optional parameters
             if (config.maxRows && config.maxRows >= 0)

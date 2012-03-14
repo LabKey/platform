@@ -1,6 +1,11 @@
 # $ext_path: This should be the path of the Ext JS SDK relative to this file
 $ext_path = "../../../ext-4.0.7"
 
+# This is the path relative to the webapp directory. In the standard case it will be
+# the same as $ext_path. If a theme is defined in a separate labkey module than
+# it should be set to "../../../ext-<most-recent-version>"
+$labkey_ext_path = $ext_path
+
 # sass_path: the directory your Sass files are in. THIS file should also be in the Sass folder
 # Generally this will be in a resources/sass folder
 # <root>/resources/sass

@@ -55,11 +55,11 @@ module ExtJS4
           else
             relative = false
           end
-          
+
           if relative
             image_path = File.join(relative_path, theme, path)
           else
-            images_path = File.join($ext_path, 'resources', 'themes', 'images', theme)
+            images_path = File.join($labkey_ext_path, 'resources', 'themes', 'images', theme)
             image_path = File.join(images_path, path)
           end
           
