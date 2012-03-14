@@ -2449,7 +2449,7 @@ public class StudyManager
     }
     
 
-    /** @Deprecated pass in a BatchValidationException, not List<String>  */
+    /** @deprecated pass in a BatchValidationException, not List<String>  */
     @Deprecated
     public List<String> importDatasetData(Study study, User user, DataSetDefinition def, List<Map<String,Object>> data, long lastModified, List<String> errors, boolean checkDuplicates, boolean ensureObjects, QCState defaultQCState, Logger logger,
         boolean forUpdate)
