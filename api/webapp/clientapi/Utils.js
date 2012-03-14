@@ -965,7 +965,7 @@ LABKEY.Utils.convertToExcel(
          */
         setWebpartTitle: function(title, webPartId)
         {
-           var titleEl = Ext.query('th[class=labkey-wp-title-left]:first', 'webpart_' + webPartId);
+           var titleEl = Ext.query('table#webpart_'+webPartId+' span[class=labkey-wp-title-text]');//, 'webpart_' + webPartId);
            if (titleEl && (titleEl.length >= 1))
            {
                titleEl[0].innerHTML = LABKEY.Utils.encodeHtml(title);
