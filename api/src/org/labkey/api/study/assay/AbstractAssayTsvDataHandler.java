@@ -154,8 +154,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             Set<ExpMaterial> inputMaterials = checkData(dataDomain, rawData, resolver);
 
-            Map<String, DomainProperty> propertyNameToDescriptor = dataDomain.createImportMap(true);
-            List<Map<String, Object>> fileData = convertPropertyNamesToURIs(rawData, propertyNameToDescriptor);
+            List<Map<String, Object>> fileData = convertPropertyNamesToURIs(rawData, dataDomain);
 
             insertRowData(data, user, container, dataDomain, fileData, provider.createDataTable(AssayService.get().createSchema(user, container), protocol, true));
 
@@ -552,24 +551,34 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         return materialInputs;
     }
 
-    /** Does not mutate the maps in the list, but does swap the content of the list to avoid needing to hold
-     * two complete copies of the data in memory at the same time. */
-    protected List<Map<String, Object>> convertPropertyNamesToURIs(List<Map<String, Object>> dataMaps, Map<String, DomainProperty> propertyNamesToUris)
+    /** Wraps each map in a version that can be queried based on on any of the aliases (name, property URI, import
+     * aliases, etc for a given property */
+    protected List<Map<String, Object>> convertPropertyNamesToURIs(List<Map<String, Object>> dataMaps, Domain domain)
     {
+        // Get the mapping of different names to the set of domain properties
+        final Map<String, DomainProperty> importMap = domain.createImportMap(true);
+
+        // For a given property, find all the potential names it by which it could be referenced
+        final Map<DomainProperty, Set<String>> propToNames = new HashMap<DomainProperty, Set<String>>();
+        for (Map.Entry<String, DomainProperty> entry : importMap.entrySet())
+        {
+            Set<String> allNames = propToNames.get(entry.getValue());
+            if (allNames == null)
+            {
+                allNames = new HashSet<String>();
+                propToNames.put(entry.getValue(), allNames);
+            }
+            allNames.add(entry.getKey());
+        }
+        
         // We want to share canonical casing between data rows, or we end up with an extra Map instance for each
         // data row which can add up quickly
         CaseInsensitiveHashMap<Object> caseMapping = new CaseInsensitiveHashMap<Object>();
         for (ListIterator<Map<String, Object>> i = dataMaps.listIterator(); i.hasNext(); )
         {
             Map<String, Object> dataMap = i.next();
-            CaseInsensitiveHashMap<Object> newMap = new CaseInsensitiveHashMap<Object>(dataMap.size(), caseMapping);
-            for (Map.Entry<String, Object> entry : dataMap.entrySet())
-            {
-                DomainProperty pd = propertyNamesToUris.get(entry.getKey().toLowerCase());
-                if (pd == null)
-                    throw new RuntimeException("Expected uri for datamap property '" + entry.getKey() + "'.");
-                newMap.put(pd.getPropertyURI(), entry.getValue());
-            }
+            CaseInsensitiveHashMap<Object> newMap = new PropertyLookupMap(dataMap, caseMapping, importMap, propToNames);
+
             // Swap out the entry in the list with the transformed map
             i.set(newMap);
         }
@@ -602,5 +611,51 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(container, protocol, run.getRowId());
         }
         return null;
+    }
+
+    /** Wrapper around a row's key->value map that can find the values based on any of the DomainProperty's potential
+     * aliases, like the property name, URI, import aliases, etc */
+    private static class PropertyLookupMap extends CaseInsensitiveHashMap<Object>
+    {
+        private final Map<String, DomainProperty> _importMap;
+        private final Map<DomainProperty, Set<String>> _propToNames;
+
+        public PropertyLookupMap(Map<String, Object> dataMap, CaseInsensitiveHashMap<Object> caseMapping, Map<String, DomainProperty> importMap, Map<DomainProperty, Set<String>> propToNames)
+        {
+            super(dataMap, caseMapping);
+            _importMap = importMap;
+            _propToNames = propToNames;
+        }
+
+        @Override
+        public Object get(Object key)
+        {
+            Object result = super.get(key);
+
+            // If we can't find the value based on the name that was passed in, try any of its alternatives
+            if (result == null && key instanceof String)
+            {
+                // Find the property that's associated with that name
+                DomainProperty property = _importMap.get(key);
+                if (property != null)
+                {
+                    // Find all of the potential synonyms
+                    Set<String> allNames = _propToNames.get(property);
+                    if (allNames != null)
+                    {
+                        for (String name : allNames)
+                        {
+                            // Look for a value under that name
+                            result = super.get(name);
+                            if (result != null)
+                            {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            return result;
+        }
     }
 }
