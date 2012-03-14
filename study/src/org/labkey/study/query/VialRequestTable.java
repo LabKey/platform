@@ -31,11 +31,18 @@ public class VialRequestTable extends FilteredTable
     {
         super(StudySchema.getInstance().getTableInfoSampleRequestSpecimen(), schema.getContainer());
         for (ColumnInfo baseColumn : _rootTable.getColumns())
-        {
+            {
             String name = baseColumn.getName();
             if ("SpecimenGlobalUniqueId".equalsIgnoreCase(name))
             {
-                AliasedColumn globalUniqueIdColumn = new AliasedColumn(this, "Vial", _rootTable.getColumn("SpecimenGlobalUniqueId"));
+                AliasedColumn globalUniqueIdColumn = new AliasedColumn(this, "Vial", _rootTable.getColumn("SpecimenGlobalUniqueId"))
+                {
+                    @Override
+                    public ColumnInfo getDisplayField()
+                    {
+                        return null;
+                    }
+                };
                 LookupForeignKey fk = new LookupForeignKey(null, (String) null, "GlobalUniqueId", "GlobalUniqueId")
                 {
                     public TableInfo getLookupTableInfo()
@@ -50,11 +57,7 @@ public class VialRequestTable extends FilteredTable
                 {
                     public DisplayColumn createRenderer(ColumnInfo colInfo)
                     {
-                        // return the column itself, rather than a lookup from the remote table.
-                        // this is because our vialrequest key value is the same as our specimendetail display value,
-                        // so we can skip the join entirely:
-                        colInfo.setFk(null);
-                        return new DataColumn(colInfo);
+                        return new DataColumn(colInfo, false);
                     }
                 });
 
