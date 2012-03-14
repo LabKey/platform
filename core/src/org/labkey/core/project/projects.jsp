@@ -30,9 +30,18 @@
     String renderTarget = "project-" + me.getModelBean().getIndex();
     ViewContext ctx = me.getViewContext();
     boolean isAdmin = ctx.getUser().isAdministrator();
+    boolean hasPermission;
 
-    Container target = ContainerManager.getForPath((String)jsonProps.get("containerPath"));
-    boolean hasPermission = target.hasPermission(ctx.getUser(), ReadPermission.class);
+    String containerPath = (String)jsonProps.get("containerPath");
+    if(containerPath == null || "".equals(containerPath))
+    {
+        hasPermission = true; //this means current container
+    }
+    else
+    {
+        Container target = ContainerManager.getForPath(containerPath);
+        hasPermission = target.hasPermission(ctx.getUser(), ReadPermission.class);
+    }
 %>
 <div>
     <div id='<%=renderTarget%>'></div>
