@@ -80,6 +80,28 @@ public class SpecimenReportQuery
             "  IN (SELECT ('' || CAST(PrimaryType AS VARCHAR) || '-' || CAST(DerivativeType AS VARCHAR)) FROM (SELECT DISTINCT PrimaryType, DerivativeType FROM SpecimenSummary) X)";
 
 
+    private static final String sql_pivotRequestedByLocation =
+            "SELECT \n" +
+            " Container, Visit, %s, %s, PivotColumn, COUNT(*) AS RequestedVials\n" +
+            "FROM\n" +
+            "\n" +
+            "(SELECT \n" +
+            "  Vial.Container, \n" +
+            "  Vial.SequenceNum AS Visit, \n" +
+            "  Vial.%s, \n" +
+            "  Vial.%s, \n" +
+            "  '' || CAST(Vial.PrimaryType AS VARCHAR) || '-' || CAST(Vial.DerivativeType AS VARCHAR) || '-' || CAST(Request.Destination AS VARCHAR) AS PivotColumn,\n" +
+            "  Vial.DerivativeType, \n" +
+            "  Request.Destination, \n" +
+            "FROM VialRequest) X\n" +
+            "\n" +
+            "GROUP BY\n" +
+            " Container, Visit, %s, %s, PivotColumn\n" +
+            "PIVOT RequestedVials BY PivotColumn\n";
+//            UNDONE: do we want a custom IN query?
+//            IN (SELECT ...)
+
+
     public static TableInfo getPivotByPrimaryType(Container container, User user)
     {
         Study study = StudyService.get().getStudy(container);
