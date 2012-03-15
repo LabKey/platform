@@ -175,7 +175,8 @@ public class Designer implements EntryPoint
                 String editURL = PropertyUtil.getRelativeURL("designer.view") + "?edit=true&studyId=" + definition.getCavdStudyId();
                 if (null != panelName)
                     editURL += "&panel=" + panelName;
-                editURL += "&finishURL=" + URL.encodeComponent(PropertyUtil.getCurrentURL());
+                //issue 14006: changed encodeComponent to encodePathSegment, b/c the former will convert spaces to '+'
+                editURL += "&finishURL=" + URL.encodePathSegment(PropertyUtil.getCurrentURL());
                 buttonPanel.add(new LinkButton("Edit", editURL));
 
                 if ("true".equals(PropertyUtil.getServerProperty("canCreateRepository")))
