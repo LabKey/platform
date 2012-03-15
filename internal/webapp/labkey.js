@@ -8,6 +8,11 @@
 
 if (typeof LABKEY == "undefined")
 {
+    /**
+     * @class LABKEY
+     * LabKey core API and utilities.
+     * @singleton
+     */
     var LABKEY = {};
     LABKEY.contextPath = (typeof __contextPath == "undefined") ? "UNDEFINED" : __contextPath;
     LABKEY.imagePath = (typeof __contextPath == "undefined") ? "UNDEFINED" : __contextPath + "/_images";
@@ -134,12 +139,15 @@ LABKEY.onReady = function(config)
 
 
 /**
- * Loads a javascript file from the server.
+ * Loads a javascript file from the server.  See also LABKEY.onReady()
  * @param file A single file or an Array of files.
  * @param immediate True to load the script immediately; false will defer script loading until the page has been downloaded.
  * @param callback Called after the script files have been loaded.
  * @param scope Callback scope.
  * @param inOrder True to load the scripts in the order they are passed in. Default is false.
+ * @example &lt;script type="text/javascript"&gt;
+    LABKEY.requiresScript("myModule/myScript.js");
+&lt;/script&gt;
  */
 LABKEY.requiresScript = function(file, immediate, callback, scope, inOrder)
 {
@@ -285,7 +293,13 @@ LABKEY.loadScripts = function()
     LABKEY.isDocumentClosed = true;
 };
 
-
+/**
+ * Loads a CSS file from the server.
+ * @param {String} [file] The path of the CSS file to load
+ * @example &lt;script type="text/javascript"&gt;
+    LABKEY.requiresCss("myModule/myFile.css");
+&lt;/script&gt;
+ */
 LABKEY.requiresCss = function(file)
 {
     var fullPath = LABKEY.contextPath + "/" + file;
@@ -389,7 +403,9 @@ LABKEY.requiresExt4ClientAPI = function(immediate)
     LABKEY.requiresScript("extWidgets/Ext4GridPanel.js", immediate);
 };
 
-/** Pull in the required JS files and invoke the callback when they're loaded */
+
+//private
+//Pull in the required JS files and invoke the callback when they're loaded
 LABKEY.initializeViewDesigner = function(dependenciesCallback, scope)
 {
     var dependencies = [
