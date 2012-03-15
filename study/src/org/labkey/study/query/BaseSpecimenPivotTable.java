@@ -43,14 +43,17 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable
 
         for (String part : parts)
         {
-            name.append(delim).append(part);
-            label.append(labelDelim).append(part);
+            if (part != null)
+            {
+                name.append(delim).append(part);
+                label.append(labelDelim).append(part);
 
-            delim = "_";
-            labelDelim = ":";
+                delim = "_";
+                labelDelim = ":";
+            }
         }
         ColumnInfo colInfo = new AliasedColumn(this, ColumnInfo.legalNameFromName(name.toString()), col);
-        colInfo.setLabel(label.toString());
+        colInfo.setLabel(ColumnInfo.labelFromName(label.toString()));
 
         return addColumn(colInfo);
     }
