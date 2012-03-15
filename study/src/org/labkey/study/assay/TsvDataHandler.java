@@ -31,6 +31,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.ExcelLoader;
+import org.labkey.api.reader.FastaDataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.study.assay.AbstractAssayTsvDataHandler;
 import org.labkey.api.study.assay.AssayProvider;
@@ -54,7 +55,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
     public static final AssayDataType DATA_TYPE;
     static
     {
-        FileType fileType = new FileType(Arrays.asList(".tsv", ".xls", ".xlsx", ".txt"), ".tsv");
+        FileType fileType = new FileType(Arrays.asList(".tsv", ".xls", ".xlsx", ".txt", ".fna", ".fasta"), ".tsv");
         fileType.setExtensionsMutuallyExclusive(false);
         DATA_TYPE = new AssayDataType("AssayRunTSVData", fileType);
     }
@@ -115,6 +116,10 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
                 dataFile.getName().toLowerCase().endsWith(".xlsx"))
             {
                 loader = new ExcelLoader(dataFile, true);
+            }
+            else if (FastaDataLoader.isFastaFile(dataFile.getName()))
+            {
+                loader = new FastaDataLoader(dataFile, true);
             }
             else
             {
