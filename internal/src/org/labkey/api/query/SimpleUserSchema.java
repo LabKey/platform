@@ -168,8 +168,8 @@ public class SimpleUserSchema extends UserSchema
                         wrap.setLabel("Modified By");
                 }
                 // also add FK to container field
-                else if ((col.getJdbcType().getJavaClass() == String.class)&&
-                   colName.equalsIgnoreCase("container") &&
+                else if ((col.getJdbcType() != null && col.getJdbcType().getJavaClass() == String.class)&&
+                   "container".equalsIgnoreCase(colName) &&
                    (_userSchema.getDbSchema().getScope().isLabKeyScope()))
                 {
                     wrap.setLabel("Folder");

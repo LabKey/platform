@@ -57,7 +57,8 @@ public class ServiceUtil
         {
             url += separator;
             separator = "&";
-            url += URL.encodeComponent(key) + "=" + URL.encodeComponent(urlParams.get(key));
+            //issue 14006: changed encodeComponent to encodePathSegment, b/c the former will convert spaces to '+'
+            url += URL.encodePathSegment(key) + "=" + URL.encodePathSegment(urlParams.get(key));
         }
         endpoint.setServiceEntryPoint(url);
         return remoteService;

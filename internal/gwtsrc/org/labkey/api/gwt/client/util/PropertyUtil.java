@@ -100,8 +100,8 @@ public class PropertyUtil
         {
             if (pathPart.length() > 0)
             {
-                String part = URL.encodeComponent(pathPart);
-                part = part.replaceAll("\\+", "%20");
+                //issue 14006: changed encodeComponent to encodePathSegment, b/c the former will convert spaces to '+'
+                String part = URL.encodePathSegment(pathPart);
                 encodedPath += part + "/";
             }
         }

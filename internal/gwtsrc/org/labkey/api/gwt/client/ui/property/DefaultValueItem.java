@@ -117,7 +117,8 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
                         public void saveSuccessful(GWTDomain domain, String designerUrl)
                         {
                             String actionURL = domain.getDefaultValuesURL();
-                            String queryString = "returnUrl=" + URL.encodeComponent(designerUrl) + "&domainId=" + domain.getDomainId();
+                            //issue 14006: changed encodeComponent to encodePathSegment, b/c the former will convert spaces to '+'
+                            String queryString = "returnUrl=" + URL.encodePathSegment(designerUrl) + "&domainId=" + domain.getDomainId();
                             boolean hasQueryString = actionURL.indexOf('?') > 0;
                             final String url = actionURL + (hasQueryString ? "&" : "?") + queryString;
                             WindowUtil.setLocation(url);
@@ -129,7 +130,8 @@ public class DefaultValueItem<DomainType extends GWTDomain<FieldType>, FieldType
             {
                 String actionURL = _domain.getDefaultValuesURL();
                 String currentURL = _owner.getCurrentURL();
-                String queryString = "returnUrl=" + URL.encodeComponent(currentURL) + "&domainId=" +  _propertyPane.getDomainId();
+                //issue 14006: changed encodeComponent to encodePathSegment, b/c the former will convert spaces to '+'
+                String queryString = "returnUrl=" + URL.encodePathSegment(currentURL) + "&domainId=" +  _propertyPane.getDomainId();
                 boolean hasQueryString = actionURL.indexOf('?') > 0;
                 final String url = actionURL + (hasQueryString ? "&" : "?") + queryString;
                 WindowUtil.setLocation(url);
