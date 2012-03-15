@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.reports.model.ReportPropsManager" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%
     JspView<ReportDesignBean> me = (JspView<ReportDesignBean>) HttpView.currentView();
     ReportDesignBean bean = me.getModelBean();
@@ -113,7 +114,7 @@
             Date Created:
         </td>
         <td>
-             <%=h(createdDate.toString())%>
+             <%=h(DateUtil.formatDateTime(createdDate, DateUtil.getStandardDateFormatString()))%>
         </td>
     </tr>
 
@@ -122,7 +123,7 @@
             Last Modified:
         </td>
         <td>
-            <%=h(modifiedDate)%>
+            <%=h(DateUtil.formatDateTime(modifiedDate, DateUtil.getStandardDateFormatString()))%>
         </td>
     </tr>
 
@@ -131,7 +132,7 @@
             Data Cut Date:
         </td>
         <td>
-            <%=h(refreshDate)%>
+            <%=h(DateUtil.formatDateTime(refreshDate, DateUtil.getStandardDateFormatString()))%>
         </td>
     </tr>
 

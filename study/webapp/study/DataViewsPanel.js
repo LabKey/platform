@@ -31,7 +31,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         var fields = [
             {name : 'category'},
             {name : 'categoryDisplayOrder', type : 'int'},
-            {name : 'created',              type : 'date'},
+            {name : 'created',              type : 'string'},
             {name : 'createdBy'},
             {name : 'createdByUserId',      type : 'int'},
             {name : 'authorUserId',         type : 'int', mapping : 'author.userId'},
@@ -46,9 +46,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             {name : 'hidden',               type : 'boolean'},
             {name : 'icon'},
             {name : 'inherited',            type : 'boolean'},
-            {name : 'modified',             type : 'date'},
+            {name : 'modified',             type : 'string'},
             {name : 'modifiedBy'},
-            {name : 'refreshDate',              type : 'date'},
+            {name : 'refreshDate',              type : 'string'},
             {name : 'name'},
             {name : 'permissions'},
             {name : 'reportId'},
@@ -70,11 +70,11 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         Ext4.define('Dataset.Browser.Category', {
             extend : 'Ext.data.Model',
             fields : [
-                {name : 'created',      type : 'date'},
+                {name : 'created',      type : 'string'},
                 {name : 'createdBy'                  },
                 {name : 'displayOrder', type : 'int' },
                 {name : 'label'                      },
-                {name : 'modfied',      type : 'date'},
+                {name : 'modfied',      type : 'string'},
                 {name : 'modifiedBy'                 },
                 {name : 'rowid',        type : 'int' }
             ]
@@ -590,7 +590,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                  width    : 100,
                  sortable : true,
                  dataIndex: 'refreshDate',
-                 renderer : Ext.util.Format.dateRenderer('Y-m-d'),
                  scope    : this
              });
         }
@@ -627,8 +626,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 text     : 'Modified',
                 width    : 100,
                 sortable : true,
-                dataIndex: 'modified',
-                renderer : Ext.util.Format.dateRenderer('Y-m-d')
+                dataIndex: 'modified'
             });
         }
 
@@ -1167,8 +1165,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 xtype       : 'datefield',
                 fieldLabel  : 'Data Cut Date',
                 name        : 'refreshDate',
-                value       : record.data.refreshDate != null ? new Date(record.data.refreshDate) : '',
+                value       : record.data.refreshDate != null && record.data.refreshDate != '' ? new Date(record.data.refreshDate) : '',
                 blankText   : 'Date of last refresh',
+                format      : 'Y-m-d',
                 editable    : false
             });
 

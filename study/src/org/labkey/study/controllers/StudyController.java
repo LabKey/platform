@@ -977,7 +977,25 @@ public class StudyController extends BaseStudyController
             if (qcStateSet != null)
                 sb.append("<br/><span><b>QC States:</b> ").append(filter(qcStateSet.getLabel())).append("</span>");
             if (ReportPropsManager.get().getPropertyValue(def.getEntityId(), getContainer(), "refreshDate") != null)
-                sb.append("<br/><span><b>Data Cut Date:</b> ").append(ReportPropsManager.get().getPropertyValue(def.getEntityId(), getContainer(), "refreshDate"));
+            {
+                sb.append("<br/><span><b>Data Cut Date:</b> ");
+                Object refreshDate = (ReportPropsManager.get().getPropertyValue(def.getEntityId(), getContainer(), "refreshDate"));
+                if(refreshDate instanceof Date)
+                {
+                    if(StudyManager.getInstance().getDefaultDateFormatString(getContainer()) != null)
+                    {
+                        sb.append(DateUtil.formatDateTime((Date)refreshDate, StudyManager.getInstance().getDefaultDateFormatString(getContainer())));
+                    }
+                    else
+                    {
+                        sb.append(DateUtil.formatDateTime((Date)refreshDate, DateUtil.getStandardDateFormatString()));
+                    }
+                }
+                else
+                {
+                    sb.append(ReportPropsManager.get().getPropertyValue(def.getEntityId(), getContainer(), "refreshDate").toString());
+                }
+            }
             HtmlView header = new HtmlView(sb.toString());
 
             HtmlView script = new HtmlView("<script type=\"text/javascript\">LABKEY.requiresScript('study/ParticipantGroup.js');</script>");
@@ -7096,7 +7114,7 @@ public class StudyController extends BaseStudyController
                 {
                     if (info.getCategoryDisplayOrder() == ReportUtil.DEFAULT_CATEGORY_DISPLAY_ORDER && defaultCategoryMap.containsKey(info.getCategory()))
                         info.setCategoryDisplayOrder(defaultCategoryMap.get(info.getCategory()));
-                    data.put(info.toJSON(getUser()));
+                    data.put(info.toJSON(getUser(), StudyManager.getInstance().getDefaultDateFormatString(getViewContext().getContainer())));
                 }
                 response.put("data", data);
             }
