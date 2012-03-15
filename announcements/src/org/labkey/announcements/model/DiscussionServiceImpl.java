@@ -99,6 +99,11 @@ public class DiscussionServiceImpl implements DiscussionService.Service
         return AnnouncementManager.getBareAnnouncements(c, filter, new Sort("Created"));
     }
 
+    public AnnouncementModel[] getDiscussions(Container c, String[] identifiers)
+    {
+        SimpleFilter filter = new SimpleFilter("discussionSrcIdentifier", identifiers, CompareType.IN);
+        return AnnouncementManager.getBareAnnouncements(c, filter, new Sort("Created"));
+    }
 
     public WebPartView getDiscussion(Container c, URLHelper currentURL, AnnouncementModel ann, User user)
     {
@@ -223,9 +228,9 @@ public class DiscussionServiceImpl implements DiscussionService.Service
     }
 
 
-    public void deleteDiscussions(Container c, String identifier, User user)
+    public void deleteDiscussions(Container c, User user, String... identifiers)
     {
-        AnnouncementModel[] anns = getDiscussions(c, identifier);
+        AnnouncementModel[] anns = getDiscussions(c, identifiers);
         for (AnnouncementModel ann : anns)
         {
             try

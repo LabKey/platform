@@ -403,18 +403,21 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
 
     @Override
-    public void deleteAttachments(AttachmentParent parent) throws SQLException
+    public void deleteAttachments(AttachmentParent... parents) throws SQLException
     {
-        List<Attachment> atts = getAttachments(parent);
-        SearchService ss = ServiceRegistry.get(SearchService.class);
+        for(AttachmentParent parent : parents)
+        {
+            List<Attachment> atts = getAttachments(parent);
+            SearchService ss = ServiceRegistry.get(SearchService.class);
 
-        for (Attachment att : atts)
-            ss.deleteResource(makeDocId(parent, att.getName()));
+            for (Attachment att : atts)
+                ss.deleteResource(makeDocId(parent, att.getName()));
 
-        Table.execute(coreTables().getSchema(), sqlCascadeDelete(), parent.getEntityId());
-        if (parent instanceof AttachmentDirectory)
-            ((AttachmentDirectory)parent).deleteAttachment(HttpView.currentContext().getUser(), null);
-        AttachmentCache.removeAttachments(parent);
+            Table.execute(coreTables().getSchema(), sqlCascadeDelete(), parent.getEntityId());
+            if (parent instanceof AttachmentDirectory)
+                ((AttachmentDirectory)parent).deleteAttachment(HttpView.currentContext().getUser(), null);
+            AttachmentCache.removeAttachments(parent);
+        }
     }
 
 

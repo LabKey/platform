@@ -152,7 +152,7 @@ public class ListItemImpl implements ListItem
     // Used by single item delete as well as entire list delete
     static void deleteListItemContents(ListItm itm, Container c, User user) throws SQLException
     {
-        DiscussionService.get().deleteDiscussions(c, itm.getEntityId(), user);
+        DiscussionService.get().deleteDiscussions(c, user, itm.getEntityId());
         AttachmentService.get().deleteAttachments(new ListItemAttachmentParent(itm, c));
         if (itm.getObjectId() != null)
         {

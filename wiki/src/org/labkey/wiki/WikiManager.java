@@ -290,7 +290,7 @@ public class WikiManager implements WikiService
             getAttachmentService().deleteAttachments(wiki);
 
             if (null != getDiscussionService())
-                getDiscussionService().deleteDiscussions(c, wiki.getEntityId(), user);
+                getDiscussionService().deleteDiscussions(c, user, wiki.getEntityId());
 
             scope.commitTransaction();
         }

@@ -18,6 +18,9 @@ package org.labkey.list.model;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.announcements.DiscussionService;
+import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -26,6 +29,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -36,6 +40,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExperimentService;
@@ -57,10 +62,12 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.list.client.ListEditorService;
 import org.labkey.list.view.ListController;
 import org.labkey.list.view.ListImportHelper;
+import org.labkey.list.view.ListItemAttachmentParent;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -328,15 +335,66 @@ public class ListDefinitionImpl implements ListDefinition
         {
             ExperimentService.get().ensureTransaction();
 
+            //new approach
             SimpleFilter lstItemFilter = new SimpleFilter("ListId", getListId());
+
+            //we make the assumption that big lists will have relatively few discussions and attachments
+            //we find and delete these in batches of 1000, then delete the rows below
+            int offset = 0;
+            int step = 1000;
+            while(1==1)
+            {
+                final List entityIds = new ArrayList<String>();
+                final List attachmentParents = new ArrayList<AttachmentParent>();
+
+                TableSelector ts = new TableSelector(getIndexTable(), Table.ALL_COLUMNS, lstItemFilter, null);
+                ts.setRowCount(step);
+                ts.setOffset(offset);
+
+                ts.forEach(new Selector.ForEachBlock<ResultSet>() {
+                    @Override
+                    public void exec(ResultSet rs) throws SQLException
+                    {
+                        entityIds.add(rs.getString("EntityId"));
+                        attachmentParents.add(new ListItemAttachmentParent(rs.getString("EntityId"), getContainer()));
+                    }
+                });
+
+                String[] distinctIDs = (String[])entityIds.toArray(new String[entityIds.size()]);
+                if(distinctIDs.length > 0)
+                    DiscussionService.get().deleteDiscussions(getContainer(), user, distinctIDs);
+
+                AttachmentParent[] distinctAttachments = (AttachmentParent[])attachmentParents.toArray(new AttachmentParent[attachmentParents.size()]);
+                if(distinctAttachments.length > 0)
+                    AttachmentService.get().deleteAttachments(distinctAttachments);
+
+                if(entityIds.size() < step)
+                {
+                    break;
+                }
+
+                offset += step;
+            }
+
+            //delete all list items
             ListItm[] itms = Table.select(getIndexTable(), Table.ALL_COLUMNS, lstItemFilter, null, ListItm.class);
             Table.delete(getIndexTable(), lstItemFilter);
-            for (ListItm itm : itms)
+
+            Set<String> ids = new HashSet<String>();
+            for(ListItm itm : itms)
             {
-                if (itm.getObjectId() == null)
-                    continue;
-                ListItemImpl.deleteListItemContents(itm, getContainer(), user);
+                if (itm.getObjectId() != null)
+                {
+                    OntologyObject object = OntologyManager.getOntologyObject(itm.getObjectId());
+                    if (object != null)
+                    {
+                        ids.add(object.getObjectURI());
+                    }
+                }
             }
+            OntologyManager.deleteOntologyObjects(getContainer(), ids.toArray(new String[ids.size()]));
+
+            //then delete the list itself
             Table.delete(ListManager.get().getTinfoList(), getListId());
             ServiceRegistry.get(SearchService.class).deleteResource("list:" + _def.getEntityId());
             Domain domain = getDomain();
