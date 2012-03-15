@@ -137,8 +137,17 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             loader.parseAsCSV();
             return loader;
         }
+        else if (FastaDataLoader.isFastaFile(filename))
+        {
+            File f = File.createTempFile("import", origName);
+            f.deleteOnExit();
+            file.transferTo(f);
 
-        throw new ServletException("Unknown file type. File must have a suffix of .xls, .xlsx, .txt, .tsv or .csv.");
+            FastaDataLoader loader = new FastaDataLoader(f, true);
+            return loader;
+        }
+
+        throw new ServletException("Unknown file type. File must have a suffix of .xls, .xlsx, .txt, .tsv, .csv, .fna or .fasta.");
     }
 
 
@@ -172,8 +181,17 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             loader.parseAsCSV();
             return loader;
         }
+        else if (FastaDataLoader.isFastaFile(filename))
+        {
+            File f = File.createTempFile("import", origName);
+            f.deleteOnExit();
+            IOUtils.copy(r.getInputStream(),new FileOutputStream(f));
 
-        throw new ServletException("Unknown file type. File must have a suffix of .xls, .xlsx, .txt, .tsv or .csv.");
+            FastaDataLoader loader = new FastaDataLoader(f, true);
+            return loader;
+        }
+
+        throw new ServletException("Unknown file type. File must have a suffix of .xls, .xlsx, .txt, .tsv, .csv, .fna or .fasta.");
     }
 
 
@@ -195,8 +213,13 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             loader.parseAsCSV();
             return loader;
         }
+        else if (FastaDataLoader.isFastaFile(filename))
+        {
+            FastaDataLoader loader = new FastaDataLoader(file, true, mvIndicatorContainer);
+            return loader;
+        }
 
-        throw new ServletException("Unknown file type. File must have a suffix of .xls, .xlsx, .txt, .tsv or .csv.");
+        throw new ServletException("Unknown file type. File must have a suffix of .xls, .xlsx, .txt, .tsv, .csv, .fna or .fasta.");
     }
 
 

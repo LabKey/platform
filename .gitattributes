@@ -714,6 +714,7 @@ api/src/org/labkey/api/reader/ColumnDescriptor.java -text
 api/src/org/labkey/api/reader/DataLoader.java -text
 api/src/org/labkey/api/reader/ExcelFactory.java -text
 api/src/org/labkey/api/reader/ExcelLoader.java -text
+api/src/org/labkey/api/reader/FastaDataLoader.java -text
 api/src/org/labkey/api/reader/FastaLoader.java -text
 api/src/org/labkey/api/reader/Loader.java -text
 api/src/org/labkey/api/reader/MapLoader.java -text
