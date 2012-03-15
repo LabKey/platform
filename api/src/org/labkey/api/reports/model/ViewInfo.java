@@ -19,6 +19,7 @@ import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.security.User;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.view.ActionURL;
 
 import java.util.Date;
@@ -396,7 +397,17 @@ public class ViewInfo
 
     public JSONObject toJSON(User user)
     {
+        return toJSON(user, null);
+    }
+
+    public JSONObject toJSON(User user, String dateFormat)
+    {
         JSONObject o = new JSONObject();
+
+        if(dateFormat == null)
+        {
+            dateFormat = DateUtil.getStandardDateFormatString();
+        }
 
         o.put("name", getName());
         o.put("type", getType());
@@ -433,11 +444,11 @@ public class ViewInfo
         o.put("author", createUserObject(getAuthor(), user));
 
         if (getCreated() != null)
-            o.put("created", getCreated());
+            o.put("created", DateUtil.formatDateTime(getCreated(), dateFormat));
         if (getModified() != null)
-            o.put("modified", getModified());
+            o.put("modified", DateUtil.formatDateTime(getModified(), dateFormat));
         if (getRefreshDate() != null)
-            o.put("refreshDate", getRefreshDate());
+            o.put("refreshDate", DateUtil.formatDateTime(getRefreshDate(), dateFormat));
         
         if (getVersion() != null)
             o.put("version", getVersion());
