@@ -69,7 +69,7 @@ public class AttachmentService
         public HttpView getErrorView(List<AttachmentFile> files, BindException errors, URLHelper returnUrl);
 
         public void addAttachments(AttachmentParent parent, List<AttachmentFile> files, @NotNull User user) throws IOException;
-        public void deleteAttachments(AttachmentParent parent) throws SQLException;
+        public void deleteAttachments(AttachmentParent... parent) throws SQLException;
 
         /**
          * @param auditUser set to null to skip audit

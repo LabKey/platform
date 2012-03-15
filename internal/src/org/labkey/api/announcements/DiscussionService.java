@@ -62,7 +62,7 @@ public class DiscussionService
 
         public DiscussionView getDisussionArea(Container c, User user, URLHelper currentURL, String objectId, ActionURL pageURL, String newDiscussionTitle, boolean allowMultipleDiscussions, boolean displayFirstDiscussionByDefault);
 
-        public void deleteDiscussions(Container container, String identifier, User user);
+        public void deleteDiscussions(Container container, User user, String... identifier);
 
         public boolean hasDiscussions(Container container, String identifier);
 
