@@ -29,25 +29,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.action.ApiAction;
-import org.labkey.api.action.ApiQueryResponse;
-import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ApiVersion;
-import org.labkey.api.action.ConfirmAction;
-import org.labkey.api.action.ExportAction;
-import org.labkey.api.action.ExportException;
-import org.labkey.api.action.ExtendedApiQueryResponse;
-import org.labkey.api.action.FormHandlerAction;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
-import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.NullSafeBindException;
-import org.labkey.api.action.SimpleApiJsonForm;
-import org.labkey.api.action.SimpleErrorView;
-import org.labkey.api.action.SimpleRedirectAction;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
@@ -2345,7 +2327,10 @@ public class QueryController extends SpringActionController
             }
 
             if (form.getLimit() != null)
+            {
+                form.getQuerySettings().setShowRows(ShowRows.PAGINATED);
                 form.getQuerySettings().setMaxRows(form.getLimit().intValue());
+            }
             if (form.getStart() != null)
                 form.getQuerySettings().setOffset(form.getStart().intValue());
             if (form.getSort() != null)
@@ -3073,6 +3058,10 @@ public class QueryController extends SpringActionController
                 {
                     JSONObject commandObject = commands.getJSONObject(i);
                     String commandName = commandObject.getString(PROP_COMMAND);
+                    if (commandName == null)
+                    {
+                        throw new ApiUsageException(PROP_COMMAND + " is required but was missing");
+                    }
                     CommandType command = CommandType.valueOf(commandName);
 
                     // Copy the top-level 'extraContext' and merge in the command-level extraContext.
