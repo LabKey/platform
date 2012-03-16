@@ -145,6 +145,14 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
                     success      : function(measures, response){
                         this.isLoading = false;
                         this.measuresStoreData = Ext.util.JSON.decode(response.responseText);
+                        if(this.hideDemographicMeasures){
+                            // Remove demographic measures in some cases (i.e. time charts).
+                            for(var i = this.measuresStoreData.measures.length; i--;){
+                                if(this.measuresStoreData.measures[i].isDemographic === true){
+                                    this.measuresStoreData.measures.splice(i, 1);
+                                }
+                            }
+                        }
                         this.fireEvent('beforeMeasuresStoreLoad', this, this.measuresStoreData);
                         this.measuresStore.loadData(this.measuresStoreData);
                     },

@@ -980,7 +980,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
     hasDisplayOrder: function(data){
         var rows = data.rows;
         for(var i = 0; i < rows.length; i++){
-            if(rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder"]].value != 0){
+            if(rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder"]].value &&
+               rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder"]].value != 0){
                 return true;
             }
         }
@@ -997,15 +998,21 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         this.displayLabels = {};
         var rows = data.rows;
         for(var i = 0; i < rows.length; i++){
-            if(sequenceNums.indexOf(rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/sequencenum"]].value) == -1){
-                sequenceNums.push(rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/sequencenum"]].value);
+            var sequenceNum = rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/sequencenum"]].value,
+                visitLabel = rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/Label"]].value;
+
+            if(visitLabel == null || visitLabel == ""){
+                visitLabel = sequenceNum;
+            }
+
+            if(sequenceNums.indexOf(sequenceNum) == -1){
+                sequenceNums.push(sequenceNum);
                 seqAndLabels.push({
-                    displayLabel: rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/Label"]].value,
-                    sequenceNumber: rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/sequencenum"]].value
+                    displayLabel: visitLabel,
+                    sequenceNumber: sequenceNum
                 });
             }
-            if(rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/Label"]].value &&
-               rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/Label"]].value.length > 4){
+            if(visitLabel.length > 4){
                 this.longLabels = true;
             }
         }

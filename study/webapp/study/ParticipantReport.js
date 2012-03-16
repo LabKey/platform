@@ -951,8 +951,14 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
     onFailure : function(resp) {
         var o = Ext4.decode(resp.responseText);
-        var msg = o.exception || o;
 
+        var msg = "";
+        if(o != undefined){
+            msg = o || o.exception;
+        } else {
+            msg = "There was a failure requesting the data. If the problem persists please contact your administrator.";
+        }
+        this.unmask();
         Ext4.Msg.alert('Failure', msg);
     },
 

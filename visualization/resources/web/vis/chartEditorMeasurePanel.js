@@ -520,6 +520,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
             modal: true,
             closeAction:'hide',
             items: new LABKEY.vis.MeasuresPanel({
+                hideDemographicMeasures: true,
                 axis: [{
                     multiSelect: false,
                     name: "y-axis",
