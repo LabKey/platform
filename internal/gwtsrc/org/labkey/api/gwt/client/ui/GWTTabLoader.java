@@ -65,6 +65,7 @@ public class GWTTabLoader
             prop.setRangeURI(getRangeURI(row));
             prop.setFormat(row.get("format"));
             prop.setMvEnabled(isMvEnabled(row));
+            prop.setHidden(isHidden(row));
             properties.add(prop);
         }
         propertiesEditor.setPropertyDescriptors(properties);
@@ -78,15 +79,21 @@ public class GWTTabLoader
         return reqString != null && reqString.equalsIgnoreCase("TRUE");
     }
 
-    private boolean isMvEnabled(Map<String,String> map)
+    private boolean isMvEnabled(Map<String, String> map)
     {
         String mvString = map.get("mvenabled");
         return mvString != null && mvString.equalsIgnoreCase("TRUE");
     }
 
-    private String getRangeURI(Map map)
+    private boolean isHidden(Map<String, String> map)
     {
-        String rangeString = (String) map.get("rangeuri");
+        String hiddenString = map.get("hidden");
+        return hiddenString != null && hiddenString.equalsIgnoreCase("TRUE");
+    }
+
+    private String getRangeURI(Map<String, String> map)
+    {
+        String rangeString = map.get("rangeuri");
         if (rangeString != null)
         {
             PropertyType t = PropertyType.fromName(rangeString);

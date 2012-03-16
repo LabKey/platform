@@ -50,6 +50,7 @@ class ImportSchemaWizard extends DialogBox
                 "<b>RangeURI</b> - Required. Values: xsd:int, xsd:string, xsd:double, xsd:boolean, xsd:dateTime<br>\n" +
                 "<b>Label</b> - Optional. Name that users will see for the field<br>\n" +
                 "<b>NotNull</b> - Optional. Set to TRUE if this value is required<br>\n" +
+                "<b>Hidden</b> - Optional. Set to TRUE if this field should not be shown in default grid views<br>\n" +
                 "<b>Description</b> - Optional. Description of the field</p>");
         vPanel.add(html);
 
