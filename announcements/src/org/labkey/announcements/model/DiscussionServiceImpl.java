@@ -34,6 +34,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 
@@ -101,7 +102,7 @@ public class DiscussionServiceImpl implements DiscussionService.Service
 
     public AnnouncementModel[] getDiscussions(Container c, String[] identifiers)
     {
-        SimpleFilter filter = new SimpleFilter("discussionSrcIdentifier", identifiers, CompareType.IN);
+        SimpleFilter filter = new SimpleFilter("discussionSrcIdentifier", Arrays.asList(identifiers), CompareType.IN);
         return AnnouncementManager.getBareAnnouncements(c, filter, new Sort("Created"));
     }
 
