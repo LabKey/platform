@@ -193,10 +193,14 @@ public class SimpleUserSchema extends UserSchema
                             lookupSchemaName = _userSchema.getName();
 
                         boolean joinWithContainer = false;
+                        String displayColumn = null;
                         if (fk instanceof ColumnInfo.SchemaForeignKey)
+                        {
                             joinWithContainer = ((ColumnInfo.SchemaForeignKey)fk).isJoinWithContainer();
+                            displayColumn = ((ColumnInfo.SchemaForeignKey)fk).getDisplayColumnName();
+                        }
 
-                        ForeignKey wrapFk = new SimpleForeignKey(_userSchema, wrap, lookupSchemaName, fk.getLookupTableName(), pkColName, joinWithContainer);
+                        ForeignKey wrapFk = new SimpleForeignKey(_userSchema, wrap, lookupSchemaName, fk.getLookupTableName(), pkColName, joinWithContainer, displayColumn);
                         if (fk instanceof MultiValuedForeignKey)
                         {
                             wrapFk = new MultiValuedForeignKey(wrapFk, ((MultiValuedForeignKey)fk).getJunctionLookup());
@@ -407,9 +411,9 @@ public class SimpleUserSchema extends UserSchema
     {
         UserSchema _userSchema;
 
-        public SimpleForeignKey(UserSchema userSchema, ColumnInfo foreignKey, String dbSchemaName, String tableName, String lookupKey, boolean joinWithContainer)
+        public SimpleForeignKey(UserSchema userSchema, ColumnInfo foreignKey, String dbSchemaName, String tableName, String lookupKey, boolean joinWithContainer, String displayColumnName)
         {
-            super(foreignKey, dbSchemaName, tableName, lookupKey, joinWithContainer);
+            super(foreignKey, dbSchemaName, tableName, lookupKey, joinWithContainer, displayColumnName);
             _userSchema = userSchema;
         }
 

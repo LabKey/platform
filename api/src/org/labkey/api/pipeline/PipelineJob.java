@@ -194,9 +194,9 @@ abstract public class PipelineJob extends Job implements Serializable
     private RecordedActionSet _actionSet = new RecordedActionSet();
 
     private String _loggerLevel = Level.DEBUG.toString();
-    protected transient Logger _logger;
 
     // Don't save these
+    protected transient Logger _logger;
     private transient boolean _settingStatus;
     private transient PipelineQueue _queue;
 
@@ -1323,7 +1323,8 @@ abstract public class PipelineJob extends Job implements Serializable
         return _log;
     }
 
-    public Logger getLogger()
+    // Multiple threads log messages, so synchronize to make sure that no one gets a partially intitialized logger
+    public synchronized Logger getLogger()
     {
         if (_logger == null)
         {

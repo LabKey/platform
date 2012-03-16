@@ -791,7 +791,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
             if (!xfk.isSetFkMultiValued())
             {
-                fk = new SchemaForeignKey(this, xfk.getFkDbSchema(), xfk.getFkTable(), xfk.getFkColumnName(), false);
+                fk = new SchemaForeignKey(this, xfk.getFkDbSchema(), xfk.getFkTable(), xfk.getFkColumnName(), false, xfk.getFkDisplayColumnName());
             }
             else
             {
@@ -1069,15 +1069,22 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         private final String _dbSchemaName;
         private final String _tableName;
         private final String _lookupKey;
+        private final String _displayColumnName;
         private final boolean _joinWithContainer;
 
         public SchemaForeignKey(ColumnInfo foreignKey, String dbSchemaName, String tableName, String lookupKey, boolean joinWithContainer)
+        {
+            this(foreignKey, dbSchemaName, tableName, lookupKey, joinWithContainer, null);
+        }
+
+        public SchemaForeignKey(ColumnInfo foreignKey, String dbSchemaName, String tableName, String lookupKey, boolean joinWithContainer, String displayColumnName)
         {
             _scope = foreignKey.getParentTable().getSchema().getScope();
             _dbSchemaName = dbSchemaName == null ? foreignKey.getParentTable().getSchema().getName() : dbSchemaName;
             _tableName = tableName;
             _lookupKey = lookupKey;
             _joinWithContainer = joinWithContainer;
+            _displayColumnName = displayColumnName;
         }
 
         public ColumnInfo createLookupColumn(ColumnInfo foreignKey, String displayField)
@@ -1087,7 +1094,20 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             {
                 return null;
             }
-            ColumnInfo lookupColumn = lookupTable.getColumn(displayField == null ? lookupTable.getTitleColumn() : displayField);
+            ColumnInfo lookupColumn;
+            if (displayField != null)
+            {
+                lookupColumn = lookupTable.getColumn(displayField);
+            }
+            else if (_displayColumnName != null)
+            {
+                lookupColumn = lookupTable.getColumn(_displayColumnName);
+            }
+            else
+            {
+                lookupColumn = lookupTable.getColumn(lookupTable.getTitleColumn());
+            }
+
             if (lookupColumn == null)
             {
                 return null;
@@ -1104,6 +1124,11 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                 result.addJoin(fkContainer, lookupContainer);
             }
             return result;
+        }
+
+        public String getDisplayColumnName()
+        {
+            return _displayColumnName;
         }
 
         public TableInfo getLookupTableInfo()
