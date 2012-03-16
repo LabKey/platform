@@ -31,7 +31,7 @@ import java.util.*;
  */
 public class JsonWriter
 {
-    public static List<Map<String,Object>> getNativeColProps(TableInfo tinfo, Collection<FieldKey> fields, FieldKey fieldKeyPrefix)
+    public static List<Map<String,Object>> getNativeColProps(TableInfo tinfo, Collection<FieldKey> fields, FieldKey fieldKeyPrefix, boolean includeDomainFormat)
     {
         List<ColumnInfo> columns = new ArrayList<ColumnInfo>(tinfo.getColumns());
         LinkedHashMap<FieldKey, ColumnInfo> allColumns = QueryService.get().getColumns(tinfo, fields, columns);
@@ -41,20 +41,20 @@ public class JsonWriter
             displayColumns.add(cinfo.getDisplayColumnFactory().createRenderer(cinfo));
         }
 
-        return getNativeColProps(displayColumns, fieldKeyPrefix);
+        return getNativeColProps(displayColumns, fieldKeyPrefix, includeDomainFormat);
     }
 
-    public static List<Map<String,Object>> getNativeColProps(Collection<DisplayColumn> columns, FieldKey fieldKeyPrefix)
+    public static List<Map<String,Object>> getNativeColProps(Collection<DisplayColumn> columns, FieldKey fieldKeyPrefix, boolean includeDomainFormat)
     {
         List<Map<String,Object>> colProps = new ArrayList<Map<String,Object>>();
         for (DisplayColumn column : columns)
         {
-            colProps.add(JsonWriter.getMetaData(column, fieldKeyPrefix, true, true));
+            colProps.add(JsonWriter.getMetaData(column, fieldKeyPrefix, true, true, includeDomainFormat));
         }
         return colProps;
     }
 
-    public static Map<String, Object> getMetaData(DisplayColumn dc, FieldKey fieldKeyPrefix, boolean useFriendlyAsType, boolean includeLookup)
+    public static Map<String, Object> getMetaData(DisplayColumn dc, FieldKey fieldKeyPrefix, boolean useFriendlyAsType, boolean includeLookup, boolean includeDomainFormat)
     {
         ColumnInfo cinfo = dc.getColumnInfo();
         Map<String, Object> props = new LinkedHashMap<String, Object>();
@@ -73,12 +73,14 @@ public class JsonWriter
         props.put("jsonType", dc.getJsonTypeName());
         props.put("sqlType", cinfo == null ? null : cinfo.getSqlTypeName());
 
-        // for compatibility with AssayController.serializeDomain() format
-        PropertyType propertyType = PropertyType.getFromClass(dc.getValueClass());
-        if (propertyType != null)
+        if (includeDomainFormat)
         {
-            props.put("typeName", propertyType.getXmlName());
-            props.put("typeURI", propertyType.getTypeUri());
+            PropertyType propertyType = PropertyType.getFromClass(dc.getValueClass());
+            if (propertyType != null)
+            {
+                props.put("typeName", propertyType.getXmlName());
+                props.put("typeURI", propertyType.getTypeUri());
+            }
         }
 
         FieldKey fieldKey;
@@ -107,7 +109,8 @@ public class JsonWriter
         boolean nullable = cinfo != null && cinfo.isNullable();
         props.put("isNullable", nullable);
         props.put("nullable", nullable);
-        props.put("required", !nullable); // for compatibility with AssayController.serializeDomain() format
+        if (includeDomainFormat)
+            props.put("required", !nullable);
         boolean readOnly = cinfo != null && cinfo.isReadOnly();
         props.put("isReadOnly", readOnly);
         props.put("readOnly", readOnly);
@@ -150,7 +153,8 @@ public class JsonWriter
             {
                 String format = cinfo.getFormat();
                 props.put("format", format);
-                props.put("formatString", format); // for compatibility with AssayController.serializeDomain() format
+                if (includeDomainFormat)
+                    props.put("formatString", format);
                 String extFormat = null;
                 String extFormatFn = null;
                 if (cinfo.getJdbcType().isDateOrTime())
@@ -198,11 +202,12 @@ public class JsonWriter
         }
 
         props.put("caption", dc.getCaption());
-        props.put("label", dc.getCaption()); // for compatibility with AssayController.serializeDomain() format
+        if (includeDomainFormat)
+            props.put("label", dc.getCaption());
 
         if (includeLookup && cinfo != null)
         {
-            Map<String, Object> lookupJSON = getLookupInfo(cinfo);
+            Map<String, Object> lookupJSON = getLookupInfo(cinfo, includeDomainFormat);
             if (lookupJSON != null)
             {
                 props.put("lookup", lookupJSON);
@@ -212,7 +217,7 @@ public class JsonWriter
         return props;
     }
     
-    private static JSONObject getLookupInfo(ColumnInfo columnInfo)
+    private static JSONObject getLookupInfo(ColumnInfo columnInfo, boolean includeDomainFormat)
     {
         ForeignKey fk = columnInfo.getFk();
 
@@ -231,7 +236,8 @@ public class JsonWriter
                     if (null != fkContainer)
                     {
                         lookupInfo.put("containerPath", fkContainer.getPath());
-                        lookupInfo.put("container", fkContainer.getPath()); // for compatibility with AssayController.serializeDomain() format
+                        if (includeDomainFormat)
+                            lookupInfo.put("container", fkContainer.getPath());
                     }
                 }
 

@@ -1713,7 +1713,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                 success: function (win, o) {
                     var timerId = function () {
                         timerId = 0;
-                        self.showLoadingMessage("Saving custom view...");
+                        Ext.Msg.progress("Saving...", "Saving custom view...");
                     }.defer(500, self);
 
                     var jsonData = {
@@ -1736,13 +1736,16 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                         success: LABKEY.Utils.getCallbackWrapper(function (json, response, options) {
                             if (timerId > 0)
                                 clearTimeout(timerId);
+                            win.close();
+                            Ext.Msg.hide();
                             self.showSuccessMessage();
                             self.changeView({type:'view', viewName:o.name});
                         }, self),
                         failure: LABKEY.Utils.getCallbackWrapper(function (json, response, options) {
                             if (timerId > 0)
                                 clearTimeout(timerId);
-                            self.showErrorMessage(json.exception);
+                            Ext.Msg.hide();
+                            Ext.Msg.alert("Error saving view", json.exception);
                         }, self, true)
                     });
                 },
@@ -1956,8 +1959,11 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function (config)
         var inherit = config.inherit;
         var shared = config.shared;
         var containerPath = config.containerPath;
-        var canEdit = config.canEdit;
+        // User can save this view if it is editable and the shadowed view is editable if present.
+        var shadowedViewEditable = config.session && config.shadowed && config.shadowed.editable;
+        var canEdit = config.canEdit && (!config.session || shadowedViewEditable);
         var canEditSharedViews = config.canEditSharedViews;
+
         var targetContainers = config.targetContainers;
         var allowableContainerFilters = config.allowableContainerFilters;
         var containerFilterable = (allowableContainerFilters && allowableContainerFilters.length > 1);
@@ -2056,7 +2062,7 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function (config)
             },{
                 xtype: "box",
                 style: "padding-left: 122px; padding-bottom: 8px",
-                html: "<em>The current view is not editable.<br>Please enter an alternate view name.</em>",
+                html: "<em>The " + (!config.canEdit ? "current" : "shadowed") + " view is not editable.<br>Please enter an alternate view name.</em>",
                 hidden: canEdit
             },{
                 xtype: "spacer",
@@ -2115,7 +2121,7 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function (config)
                     var nameField = win.nameCompositeField.items.get(1);
                     if (!canEdit && viewName == nameField.getValue())
                     {
-                        Ext.Msg.alert("Error saving", "You must save this view with an alternate name.");
+                        Ext.Msg.alert("Error saving", "This view is not editable.  You must save this view with an alternate name.");
                         return;
                     }
 
@@ -2148,8 +2154,8 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function (config)
                         o.containerPath = win.targetContainer.getValue();
                     }
 
+                    // Callback is responsible for closing the save dialog window on success.
                     success.call(scope, win, o);
-                    win.close();
                 },
                 scope: this
             },{

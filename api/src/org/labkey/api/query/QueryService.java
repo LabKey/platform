@@ -87,6 +87,13 @@ abstract public class QueryService
     abstract public void updateCustomViewsAfterRename(@NotNull Container c, @NotNull String schema,
             @NotNull String oldQueryName, @NotNull String newQueryName);
 
+    /**
+     * Get CustomView properties as a JSON map.
+     * @param view The view to be serialized or null.
+     * @param user The current user or null. For user display name rendering.
+     * @return null if view is null otherwise a map of the CustomView properties.
+     */
+    abstract public Map<String, Object> getCustomViewProperties(@Nullable CustomView view, @Nullable User user);
 
     /**
      * Loops through the field keys and turns them into ColumnInfos based on the base table

@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiJsonWriter;
@@ -958,22 +959,7 @@ public class DataRegion extends AbstractDataRegion
 
         if (ctx.getView() != null)
         {
-            JSONObject customViewJSON = new JSONObject();
-            dataRegionJSON.put("view", customViewJSON);
-            CustomView view = ctx.getView();
-            // UNDONE: use CustomViewUtil.propertyMap()
-            customViewJSON.put("name", view.getName());
-            customViewJSON.put("default", view.getName() == null);
-            if (view.getOwner() != null)
-                customViewJSON.put("owner", view.getOwner().getDisplayName(ctx.getViewContext().getUser()));
-            customViewJSON.put("shared", view.isShared());
-            customViewJSON.put("inherit", view.canInherit());
-            customViewJSON.put("session", view.isSession());
-            customViewJSON.put("editable", view.isEditable());
-            customViewJSON.put("hidden", view.isHidden());
-            customViewJSON.put("savable", !view.getQueryDefinition().isTemporary());
-            // module custom views have no container
-            customViewJSON.put("containerPath", view.getContainer() != null ? view.getContainer().getPath() : "");
+            dataRegionJSON.put("view", QueryService.get().getCustomViewProperties(ctx.getView(), ctx.getViewContext().getUser()));
         }
 
         //permissions
@@ -999,7 +985,7 @@ public class DataRegion extends AbstractDataRegion
         dataRegionJSON.put("selectionKey", getSelectionKey());
         dataRegionJSON.put("requestURL", ctx.getViewContext().getActionURL().toString());
         dataRegionJSON.put("selectorCols", _recordSelectorValueColumns == null ? null : _recordSelectorValueColumns.toString());
-        JSONArray columnsJSON = new JSONArray((List)JsonWriter.getNativeColProps(getColumnsForMetadata(), null));
+        JSONArray columnsJSON = new JSONArray((List)JsonWriter.getNativeColProps(getColumnsForMetadata(), null, false));
         // Write out a pretty-printed version in dev mode
         dataRegionJSON.put("columns", columnsJSON);
 
@@ -1673,7 +1659,7 @@ public class DataRegion extends AbstractDataRegion
         ctx.setResults(new ResultsImpl(null, selectKeyMap));
         if (null == valueMap)
         {
-            //For updates, the rowMap is the OLD version of the data.
+            //For updates, the valueMap is the OLD version of the data.
             //If there is no old data, we reselect to get it
             if (null != viewForm.getOldValues())
             {

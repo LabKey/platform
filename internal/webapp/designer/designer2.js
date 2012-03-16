@@ -277,7 +277,6 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
                 text: "View Grid",
                 tooltip: "Apply changes to the view and reshow grid",
                 tooltipType: "title",
-                disabled: !canEdit,
                 handler: this.onApplyClick,
                 scope: this
             };
@@ -599,6 +598,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             canEdit: this.getEditableErrors().length == 0,
             success: function (win, o) {
                 this.save(o, function () {
+                    win.close();
                     this.setVisible(false);
                 }, this);
             },
@@ -664,10 +664,13 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             schemaName: this.schemaName,
             queryName: this.queryName,
             views: [ edited ],
-            successCallback: function (savedViewsInfo) {
+            success: function (savedViewsInfo) {
                 if (callback)
                     callback.call(scope || this, savedViewsInfo, urlParameters);
                 this.fireEvent("viewsave", this, savedViewsInfo, urlParameters);
+            },
+            failure: function (errorInfo) {
+                Ext.Msg.alert("Error saving view", errorInfo.exception);
             },
             scope: this
         });
@@ -2009,6 +2012,7 @@ LABKEY.DataRegion.PropertiesTab = Ext.extend(Ext.Panel, {
     },
 
     validate : function () {
+        // UNDONE: if view name is different, we should check that the target view is editable
         if (!this.customView.editable)
         {
             if (!this.nameField.isDirty())

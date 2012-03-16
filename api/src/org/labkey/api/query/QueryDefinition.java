@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
@@ -43,9 +44,9 @@ public interface QueryDefinition
     void setIsTemporary(boolean temporary);
     boolean isTemporary();
 
-    CustomView getCustomView(User user, HttpServletRequest request, String name);
-    Map<String, CustomView> getCustomViews(User user, HttpServletRequest request);
-    CustomView createCustomView(User user, String name);
+    CustomView getCustomView(@Nullable User owner, @Nullable HttpServletRequest request, String name);
+    Map<String, CustomView> getCustomViews(@Nullable User owner, @Nullable HttpServletRequest request);
+    CustomView createCustomView(@Nullable User owner, String name);
     List<ColumnInfo> getColumns(CustomView view, TableInfo table);
     List<DisplayColumn> getDisplayColumns(CustomView view, TableInfo table);
 

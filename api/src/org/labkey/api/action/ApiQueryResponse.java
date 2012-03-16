@@ -220,7 +220,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         {
             if (dc.isQueryColumn())
             {
-                Map<String,Object> fmdata = JsonWriter.getMetaData(dc, null, false, includeLookupInfo);
+                Map<String,Object> fmdata = JsonWriter.getMetaData(dc, null, false, includeLookupInfo, false);
                 //if the column type is file, include an extra column for the url
                 if ("file".equalsIgnoreCase(dc.getColumnInfo().getInputType()))
                 {
