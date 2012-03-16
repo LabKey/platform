@@ -405,7 +405,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
         if (!isEditable())
         {
             if (errors != null)
-                errors.reject(null, "The view '" + (getName() == null ? "<default>" : getName()) + "' is read-only and cannot be edited");
+                errors.reject(null, "The view '" + (getName() == null ? "<default>" : getName()) + "' is read-only and cannot be edited.");
             return false;
         }
         return true;
@@ -418,7 +418,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
 
     public Map<String, Object> toMap()
     {
-        return CustomViewUtil.toMap(this, true);
+        return CustomViewUtil.toMap(this, null, true);
     }
 
     public void update(org.json.JSONObject jsonView, boolean saveFilterAndSort)

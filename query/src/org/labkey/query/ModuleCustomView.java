@@ -81,6 +81,8 @@ public class ModuleCustomView extends ModuleCustomViewInfo implements CustomView
     @Override
     public boolean canEdit(Container c, Errors errors)
     {
+        if (errors != null)
+            errors.reject(null, "The module-based custom view '" + (getName() == null ? "<default>" : getName()) + "' is read-only and cannot be edited.");
         return false;
     }
 

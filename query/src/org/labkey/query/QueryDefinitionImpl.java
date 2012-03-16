@@ -22,6 +22,7 @@ import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -143,27 +144,27 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         return getContainer().hasPermission(user, AdminPermission.class);
     }
 
-    public CustomView getCustomView(User user, HttpServletRequest request, String name)
+    public CustomView getCustomView(@Nullable User owner, @Nullable HttpServletRequest request, String name)
     {
-        return getAllCustomViews(user, request, true, false).get(name);
+        return getAllCustomViews(owner, request, true, false).get(name);
     }
 
-    public CustomView createCustomView(User user, String name)
+    public CustomView createCustomView(@Nullable User owner, String name)
     {
-        return new CustomViewImpl(this, user, name);
+        return new CustomViewImpl(this, owner, name);
     }
 
-    public Map<String, CustomView> getCustomViews(User user, HttpServletRequest request)
+    public Map<String, CustomView> getCustomViews(@Nullable User owner, @Nullable HttpServletRequest request)
     {
-        return getAllCustomViews(user, request, true);
+        return getAllCustomViews(owner, request, true);
     }
 
-    private Map<String, CustomView> getAllCustomViews(User user, HttpServletRequest request, boolean inheritable)
+    private Map<String, CustomView> getAllCustomViews(@Nullable User owner, @Nullable HttpServletRequest request, boolean inheritable)
     {
-        return getAllCustomViews(user, request, inheritable, false);
+        return getAllCustomViews(owner, request, inheritable, false);
     }
 
-    private Map<String, CustomView> getAllCustomViews(User user, HttpServletRequest request, boolean inheritable, boolean allModules)
+    private Map<String, CustomView> getAllCustomViews(@Nullable User owner, @Nullable HttpServletRequest request, boolean inheritable, boolean allModules)
     {
         Map<String, CustomView> ret = new LinkedHashMap<String, CustomView>();
 
@@ -172,10 +173,10 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             Container container = getContainer();
 
             // Database custom view and module custom views.
-            ret.putAll(((QueryServiceImpl)QueryService.get()).getCustomViewMap(user, container, this, inheritable));
+            ret.putAll(((QueryServiceImpl)QueryService.get()).getCustomViewMap(owner, container, this, inheritable));
 
             // Session views have highest precedence.
-            if (user != null && request != null)
+            if (owner != null && request != null)
             {
                 for (CstmView view : CustomViewSetKey.getCustomViewsFromSession(request, this).values())
                 {

@@ -291,7 +291,7 @@ public class AssayController extends SpringActionController
     private static List<Map<String, Object>> serializeDomain(Domain domain, TableInfo tableInfo, User user)
     {
         if (tableInfo != null)
-            return JsonWriter.getNativeColProps(tableInfo, Collections.<FieldKey>emptyList(), null);
+            return JsonWriter.getNativeColProps(tableInfo, Collections.<FieldKey>emptyList(), null, true);
 
         List<Map<String, Object>> propertyList = new ArrayList<Map<String, Object>>();
         for (DomainProperty property : domain.getProperties())

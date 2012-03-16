@@ -352,7 +352,7 @@ public class QueryServiceImpl extends QueryService
         return Collections.emptyMap();
     }
 
-    protected Map<String, CustomView> getCustomViewMap(User user, Container container, QueryDefinition qd, boolean inheritable) throws SQLException
+    protected Map<String, CustomView> getCustomViewMap(@Nullable User user, Container container, QueryDefinition qd, boolean inheritable) throws SQLException
     {
         Map<String, CustomView> views = new HashMap<String, CustomView>();
 
@@ -570,6 +570,41 @@ public class QueryServiceImpl extends QueryService
             @NotNull String oldQueryName, @NotNull String newQueryName)
     {
         QueryManager.get().updateViewsAfterRename(c,schema,oldQueryName,newQueryName);
+    }
+
+    public Map<String, Object> getCustomViewProperties(@Nullable CustomView view, @Nullable User currentUser)
+    {
+        return getCustomViewProperties(view, currentUser, true);
+    }
+
+    private Map<String, Object> getCustomViewProperties(@Nullable CustomView view, @Nullable User currentUser, boolean includeShadowed)
+    {
+        if (view == null)
+            return null;
+
+        Map<String, Object> ret = new LinkedHashMap<String, Object>();
+        ret.put("name", view.getName() == null ? "" : view.getName());
+        ret.put("default", view.getName() == null);
+        if (null != view.getOwner())
+            ret.put("owner", view.getOwner().getDisplayName(currentUser));
+        ret.put("shared", view.isShared());
+        ret.put("inherit", view.canInherit());
+        ret.put("session", view.isSession());
+        ret.put("editable", view.isEditable());
+        ret.put("hidden", view.isHidden());
+        // XXX: This is a query property and not a custom view property!
+        ret.put("savable", !view.getQueryDefinition().isTemporary());
+        // module custom views have no container
+        ret.put("containerPath", view.getContainer() != null ? view.getContainer().getPath() : "");
+
+        // Include view information about shadowed view
+        if (includeShadowed && view.isSession())
+        {
+            CustomView shadowedView = view.getQueryDefinition().getCustomView(currentUser, null, view.getName());
+            ret.put("shadowed", getCustomViewProperties(shadowedView, currentUser, false));
+        }
+
+        return ret;
     }
 
 

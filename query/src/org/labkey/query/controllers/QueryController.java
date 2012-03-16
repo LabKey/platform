@@ -1536,17 +1536,12 @@ public class QueryController extends SpringActionController
         }
     }
 
-    public interface UpdateViewCallback
-    {
-        void update(CustomView view, boolean saveFilter);
-    }
-
     // Uck. Supports the old and new view designer.
     protected Map<String, Object> saveCustomView(Container container, QueryDefinition queryDef,
                                                  String regionName, String viewName,
                                                  boolean share, boolean inherit,
                                                  boolean session, boolean saveFilter,
-                                                 UpdateViewCallback updateCallback,
+                                                 JSONObject jsonView,
                                                  ActionURL srcURL,
                                                  BindException errors)
     {
@@ -1564,6 +1559,9 @@ public class QueryController extends SpringActionController
         // 11179: Allow editing the view if we're saving to session.
         // NOTE: Check for session flag first otherwise the call to canEdit() will add errors to the errors collection.
         boolean canEdit = view == null || session || view.canEdit(container, errors);
+        if (errors.hasErrors())
+            return null;
+        
         if (canEdit)
         {
             // Issue 13594: Disallow setting of the customview inherit bit for query views
@@ -1613,12 +1611,28 @@ public class QueryController extends SpringActionController
                 {
                     // Remove the session view and call saveCustomView again to either create a new view or update an existing view.
                     assert view.isSession();
-                    view.delete(getUser(), getViewContext().getRequest());
-                    return saveCustomView(container, queryDef, regionName, viewName, share, inherit, session, saveFilter, updateCallback, srcURL, errors);
+                    boolean success = false;
+                    try
+                    {
+                        view.delete(getUser(), getViewContext().getRequest());
+                        Map<String, Object> ret = saveCustomView(container, queryDef, regionName, viewName, share, inherit, session, saveFilter, jsonView, srcURL, errors);
+                        success = !errors.hasErrors() && ret != null;
+                        return success ? ret : null;
+                    }
+                    finally
+                    {
+                        if (!success)
+                        {
+                            // dirty the view then save the deleted session view back in session state
+                            view.setName(view.getName());
+                            view.save(getUser(), getViewContext().getRequest());
+                        }
+                    }
                 }
             }
 
-            updateCallback.update(view, saveFilter);
+            // NOTE: Updaing, saving, and deleting the view may throw an exception
+            ((CustomViewImpl)view).update(jsonView, saveFilter);
             if (canSaveForAllUsers && !session)
             {
                 view.setCanInherit(inherit);
@@ -1667,8 +1681,8 @@ public class QueryController extends SpringActionController
         Map<String, Object> ret = new HashMap<String, Object>();
         ret.put("redirect", returnURL);
         if (view != null)
-            ret.put("view", CustomViewUtil.toMap(view, true));
-        return new ApiSimpleResponse(ret);
+            ret.put("view", CustomViewUtil.toMap(view, getViewContext().getUser(), true));
+        return ret;
     }
 
     private boolean isFilterOrSort(String dataRegionName, String param)
@@ -1746,12 +1760,7 @@ public class QueryController extends SpringActionController
 
                 Map<String, Object> savedView = saveCustomView(
                         container, queryDef, QueryView.DATAREGIONNAME_DEFAULT, viewName,
-                        shared, inherit, session, true, new UpdateViewCallback() {
-                            public void update(CustomView view, boolean saveFilter)
-                            {
-                                ((CustomViewImpl)view).update(jsonView, saveFilter);
-                            }
-                        }, null, errors);
+                        shared, inherit, session, true, jsonView, null, errors);
 
                 if (savedView != null)
                 {
@@ -3723,7 +3732,7 @@ public class QueryController extends SpringActionController
             {
                 QueryManager.get().getDbSchema().getScope().ensureTransaction();
 
-                // Delete the session view.
+                // Delete the session view.  The view will be restored if an exception is thrown.
                 view.delete(getUser(), getViewContext().getRequest());
 
                 // Get any previously existing non-session view.
@@ -4429,13 +4438,13 @@ public class QueryController extends SpringActionController
                 // Get info for a named view or the default view (null)
                 CustomView view = views.get(form.getViewName());
                 if (view != null)
-                    viewInfos = Collections.singletonList(CustomViewUtil.toMap(view, form.isMetadata()));
+                    viewInfos = Collections.singletonList(CustomViewUtil.toMap(view, getViewContext().getUser(), form.isMetadata()));
             }
             else
             {
                 viewInfos = new ArrayList<Map<String, Object>>(views.size());
                 for (CustomView view : views.values())
-                    viewInfos.add(CustomViewUtil.toMap(view, form.isMetadata()));
+                    viewInfos.add(CustomViewUtil.toMap(view, getViewContext().getUser(), form.isMetadata()));
             }
 
             ApiSimpleResponse response = new ApiSimpleResponse();

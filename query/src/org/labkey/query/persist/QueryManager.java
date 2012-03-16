@@ -171,7 +171,7 @@ public class QueryManager
         return view;
     }
 
-    public List<CstmView> getAllCstmViews(Container container, String schemaName, String queryName, User user, boolean inheritable) throws SQLException
+    public List<CstmView> getAllCstmViews(Container container, String schemaName, String queryName, @Nullable User user, boolean inheritable) throws SQLException
     {
         List<CstmView> views = new ArrayList<CstmView>();
 

@@ -36,6 +36,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -180,36 +181,16 @@ public class CustomViewUtil
             }
         }
 
-        Map<String, Object> ret = toMap(view, includeFieldMeta);
+        Map<String, Object> ret = toMap(view, context.getUser(), includeFieldMeta);
         if (newView)
             ret.put("doesNotExist", true);
 
         return ret;
     }
 
-    // UNDONE: Move to API so DataRegion can use this
-    public static Map<String, Object> propertyMap(CustomView view)
+    public static Map<String, Object> toMap(CustomView view, User user, boolean includeFieldMeta)
     {
-        Map<String, Object> ret = new LinkedHashMap<String, Object>();
-        ret.put("name", view.getName() == null ? "" : view.getName());
-        ret.put("default", view.getName() == null);
-        if (null != view.getOwner())
-            ret.put("owner", view.getOwner().getDisplayName(null));
-        ret.put("shared", view.isShared());
-        ret.put("inherit", view.canInherit());
-        ret.put("session", view.isSession());
-        ret.put("editable", view.isEditable());
-        ret.put("hidden", view.isHidden());
-        if (view.getContainer() != null)
-        {
-            ret.put("containerPath", view.getContainer().getPath());
-        }
-        return ret;
-    }
-
-    public static Map<String, Object> toMap(CustomView view, boolean includeFieldMeta)
-    {
-        Map<String, Object> ret = propertyMap(view);
+        Map<String, Object> ret = QueryService.get().getCustomViewProperties(view, user);
 
         ActionURL gridURL = view.getQueryDefinition().urlFor(QueryAction.executeQuery);
         if (gridURL != null)
@@ -308,7 +289,7 @@ public class CustomViewUtil
                 if (col != null)
                 {
                     DisplayColumn dc = col.getDisplayColumnFactory().createRenderer(col);
-                    allColMaps.add(JsonWriter.getMetaData(dc, null, false, true));
+                    allColMaps.add(JsonWriter.getMetaData(dc, null, false, true, false));
                 }
             }
             // property name "fields" matches LABKEY.Query.ExtendedSelectRowsResults (ie, metaData.fields)

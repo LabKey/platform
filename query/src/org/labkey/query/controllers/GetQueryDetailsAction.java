@@ -156,7 +156,7 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
             }
 
             //now the native columns plus any additional fields requested
-            resp.put("columns", JsonWriter.getNativeColProps(tinfo, fields, fk));
+            resp.put("columns", JsonWriter.getNativeColProps(tinfo, fields, fk, false));
         }
         catch (QueryParseException e)
         {
@@ -263,7 +263,7 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
         for (DisplayColumn dc : view.getDisplayColumns())
         {
             if (dc.isQueryColumn() && null != dc.getColumnInfo())
-                colProps.add(JsonWriter.getMetaData(dc, null, true, true));
+                colProps.add(JsonWriter.getMetaData(dc, null, true, true, false));
         }
         return colProps;
     }
