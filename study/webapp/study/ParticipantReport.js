@@ -953,10 +953,10 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         var o = Ext4.decode(resp.responseText);
 
         var msg = "";
-        if(o != undefined){
-            msg = o || o.exception;
+        if(o != undefined && o.exception){
+            msg = o.exception;
         } else {
-            msg = "There was a failure requesting the data. If the problem persists please contact your administrator.";
+            msg = "There was a failure. If the problem persists please contact your administrator.";
         }
         this.unmask();
         Ext4.Msg.alert('Failure', msg);

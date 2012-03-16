@@ -189,12 +189,8 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
                     {name   :'type'}]
             ),
             remoteSort: false,
-            sortInfo: {
-                field: 'queryName',
-                direction: 'ASC'
-            },
             listeners : {
-                load : function() {
+                load : function(store) {
 
                     this.loaded = true;
                     //Prefilter list
@@ -209,6 +205,7 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
                     if (this.rendered)
                         this.getEl().unmask();
 
+                    store.sort([{field: 'queryName', direction: 'ASC'},{field: 'label', direction: 'ASC'}]);
                     this.fireEvent('measuresStoreLoaded', this);
                 },
                 exception : function(proxy, type, action, options, resp) {
@@ -255,8 +252,17 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
         // enable disable toolbar actions on selection change
         this.selModel.on('selectionchange', this.onListViewSelectionChanged, this);
 
+        var tbarItems = [{xtype:'tbspacer'}];
+
+        this.searchDisplayField = new Ext.form.DisplayField({
+            width: 30,
+            value: "Filter: "
+        });
+
+        tbarItems.push(this.searchDisplayField);
+        tbarItems.push({xtype:'tbspacer'});
+
         this.searchBox = new Ext.form.TextField({
-            fieldLabel: 'Search data types',
             width: 200,
             enableKeyEvents: true,
             emptyText : 'Search',
@@ -267,9 +273,17 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
             }
         });
 
-        var tbarItems = [{xtype:'tbspacer'}];
+
 
         tbarItems.push(this.searchBox);
+
+        this.errorField = new Ext.form.DisplayField({
+            hideLabel: true,
+            style: "color: red;",
+            value: ''
+        });
+        tbarItems.push({xtype:'tbspacer'});
+        tbarItems.push(this.errorField);
 
         // create a toolbar button for each of the axis types
         if (this.hasBtnSelection) {
@@ -319,7 +333,7 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
             // 2) split term on whitespace
             // 3) return any record where ALL tokens appear at least once in any of the fields.  order does not matter.  the token must begin on a word boundary
 
-            txt = txt.replace(/[^a-z0-9 ]+/, ' ');
+            txt = txt.replace(/[^a-z0-9 ]+/gi, ' ');
             txt = Ext.util.Format.trim(txt);
             txt = Ext.escapeRe(txt);
 
@@ -355,6 +369,12 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
         }
         else
             this.measuresStore.clearFilter();
+
+        if(this.measuresStore.getCount() == 0){
+            this.errorField.setValue("No results found for current filter.");
+        } else {
+            this.errorField.setValue("");
+        }
     },
 
     onListViewSelectionChanged : function(cmp, selections) {
@@ -410,18 +430,28 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
                 continue;
 
             var field = new Ext.form.DisplayField({
-                width:500,
-                fieldLabel: axis.label,
-                labelStyle: {
-                    style: 'italic'
-                }
+                width:400,
+                hideLabel: true
+            });
+
+            var labelField = new Ext.form.DisplayField({
+                width:200,
+                value: axis.label + ":",
+                hideLabel: true
+            });
+
+            var compositeField = new Ext.form.CompositeField({
+                width: 555,
+                hideLabel: true,
+                items: [
+                        labelField, field
+                ]
             });
 
             // stash the textfield id so we can update it later from the listview
             this.axisMap[axis.name] = {labelId: field.id};
             this.axisId = axis.name;
-
-            items.push(field);
+            items.push(compositeField);
         }
 
         // if we have more than one axis, use a tbar button selection model
