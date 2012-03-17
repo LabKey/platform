@@ -19,6 +19,8 @@ package org.labkey.study.assay.query;
 import org.apache.log4j.Logger;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
+import org.labkey.api.audit.data.ProtocolColumn;
+import org.labkey.api.audit.data.RunColumn;
 import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyType;
@@ -118,27 +120,39 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
         columns.add(FieldKey.fromParts("Date"));
         columns.add(FieldKey.fromParts("CreatedBy"));
         columns.add(FieldKey.fromParts("ImpersonatedBy"));
+        columns.add(FieldKey.fromParts("IntKey1"));
+        columns.add(FieldKey.fromParts("Run"));
         columns.add(FieldKey.fromParts("Key1"));
         columns.add(FieldKey.fromParts("Comment"));
 
         return columns;
     }
 
-    public void setupTable(FilteredTable table)
+    public void setupTable(final FilteredTable table)
     {
         super.setupTable(table);
+        final ColumnInfo containerId = table.getColumn("ContainerId");
         ColumnInfo col = table.getColumn("Key1");
 
         if (col != null)
         {
-            col.setLabel("Target Study");
-            col.setDisplayColumnFactory(new DisplayColumnFactory()
+            ColumnInfo propCol = table.getColumn("Property");
+            if (propCol != null)
             {
-                public DisplayColumn createRenderer(ColumnInfo colInfo)
+                final List<FieldKey> keys = new ArrayList<FieldKey>();
+                keys.add(FieldKey.fromParts("Property", "sourceLsid"));
+                keys.add(FieldKey.fromParts("Property", "datasetId"));
+                keys.add(FieldKey.fromParts("Property", "recordCount"));
+
+                col.setLabel("Target Study");
+                col.setDisplayColumnFactory(new DisplayColumnFactory()
                 {
-                    return new TargetStudyColumn(colInfo);
-                }
-            });
+                    public DisplayColumn createRenderer(ColumnInfo colInfo)
+                    {
+                        return new TargetStudyColumn(colInfo, QueryService.get().getColumns(table, keys));
+                    }
+                });
+            }
         }
 
         col = table.getColumn("Property");
@@ -147,6 +161,32 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
             col.setHidden(true);
             col.setIsUnselectable(true);
         }
+
+        // protocol column
+        ColumnInfo protocolCol = table.getColumn("IntKey1");
+        protocolCol.setLabel("Assay/Protocol");
+        protocolCol.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new ProtocolColumn(colInfo, containerId, null);
+            }
+        });
+
+        // assay run column
+        FieldKey lsidField = FieldKey.fromParts("Property", "sourceLsid");
+        Map<FieldKey, ColumnInfo> entry = QueryService.get().getColumns(table, Collections.singletonList(lsidField));
+
+        ColumnInfo runCol = entry.get(lsidField);
+        runCol.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new RunColumn(colInfo, containerId, null);
+            }
+        });
+
+        table.addColumn(new AliasedColumn(runCol.getParentTable(), "Run", runCol));
     }
 
     private void addDetailsColumn(AuditLogQueryView view)
@@ -174,9 +214,11 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
 
     public static class TargetStudyColumn extends DataColumn
     {
-        public TargetStudyColumn(ColumnInfo col)
+        Map<FieldKey, ColumnInfo> _params;
+        public TargetStudyColumn(ColumnInfo col, Map<FieldKey, ColumnInfo> params)
         {
             super(col);
+            _params = params;
         }
 
         public String getName()
@@ -187,19 +229,31 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             String id = (String)getBoundColumn().getValue(ctx);
-            Integer datasetId = (Integer)ctx.get("property_datasetId");
-            Container c = ContainerManager.getForId(id);
-            if (c != null && datasetId != null)
+            ColumnInfo datasetCol = _params.get(FieldKey.fromParts("Property", "datasetId"));
+
+            if (datasetCol != null)
             {
-                Study s = StudyManager.getInstance().getStudy(c);
-                if (s != null)
+                Integer datasetId = (Integer)ctx.get(datasetCol.getAlias());
+                Container c = ContainerManager.getForId(id);
+                if (c != null && datasetId != null)
                 {
-                    out.write("<a href=\"" +
-                            new ActionURL(StudyController.DatasetAction.class, c).addParameter(DataSetDefinition.DATASETKEY, datasetId) + "\">");
-                    out.write(s.getLabel().replaceAll(" ", "&nbsp;") + "</a>");
+                    Study s = StudyManager.getInstance().getStudy(c);
+                    if (s != null)
+                    {
+                        out.write("<a href=\"" +
+                                new ActionURL(StudyController.DatasetAction.class, c).addParameter(DataSetDefinition.DATASETKEY, datasetId) + "\">");
+                        out.write(s.getLabel().replaceAll(" ", "&nbsp;") + "</a>");
+                    }
                 }
             }
             out.write("&nbsp;");
+        }
+
+        @Override
+        public void addQueryFieldKeys(Set<FieldKey> keys)
+        {
+            super.addQueryFieldKeys(keys);
+            keys.addAll(_params.keySet());
         }
     }
 

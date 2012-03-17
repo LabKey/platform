@@ -983,6 +983,15 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         var sorts = [];
         var firstMeasure = this.gridFieldStore.getAt(0).data;
 
+        // if we can help it, the sort should use the first non-demographic measure
+        for (var i=0; i < this.gridFieldStore.getCount(); i++) {
+            var item = this.gridFieldStore.getAt(i).data;
+            if (!item.isDemographic) {
+                firstMeasure = item;
+                break;
+            }
+        }
+
         var sort = {name : this.subjectColumn, queryName : firstMeasure.queryName,  schemaName : firstMeasure.schemaName};
         if (this.filteredSubjects) {
             sort.values = this.filteredSubjects;

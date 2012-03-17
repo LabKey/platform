@@ -38,6 +38,8 @@ import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.gwt.server.BaseRemoteService;
@@ -60,6 +62,10 @@ import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.model.DataViewEditForm;
+import org.labkey.api.reports.model.ReportPropsManager;
+import org.labkey.api.reports.model.ViewCategory;
+import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.model.ViewInfo;
 import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.ChartReport;
@@ -105,6 +111,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GWTView;
 import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpRedirectView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -725,7 +732,7 @@ public class ReportsController extends SpringActionController
 
             HttpView ret = _report.getRunReportView(getViewContext());
 
-            if (!isPrint())
+            if (!isPrint() && !(ret instanceof HttpRedirectView))
             {
                 VBox box = new VBox(ret);
                 DiscussionService.Service service = DiscussionService.get();
@@ -1061,46 +1068,11 @@ public class ReportsController extends SpringActionController
     }
 
 
-    public static class UploadForm extends ReturnUrlForm
+    public static class UploadForm extends DataViewEditForm
     {
-        private ReportIdentifier _reportId;
-        private String label;
-        private String reportDate;
         private String filePath;
-        private String description;
-        private Integer category;
         private Boolean shared;
         private BindException _errors;
-
-        public String getReportDateString()
-        {
-            return reportDate;
-        }
-
-        public void setReportDateString(String reportDate)
-        {
-            this.reportDate = reportDate;
-        }
-
-        public ReportIdentifier getReportId()
-        {
-            return _reportId;
-        }
-
-        public void setReportId(ReportIdentifier reportId)
-        {
-            _reportId = reportId;
-        }
-
-        public String getLabel()
-        {
-            return label;
-        }
-
-        public void setLabel(String label)
-        {
-            this.label = label;
-        }
 
         public String getFilePath()
         {
@@ -1110,26 +1082,6 @@ public class ReportsController extends SpringActionController
         public void setFilePath(String filePath)
         {
             this.filePath = filePath;
-        }
-
-        public String getDescription()
-        {
-            return description;
-        }
-
-        public void setDescription(String description)
-        {
-            this.description = description;
-        }
-
-        public Integer getCategory()
-        {
-            return category;
-        }
-
-        public void setCategory(Integer category)
-        {
-            this.category = category;
         }
 
         public Boolean getShared()
@@ -1170,7 +1122,7 @@ public class ReportsController extends SpringActionController
 
                 if (report != null)
                 {
-                    form.setLabel(report.getDescriptor().getReportName());
+                    form.setViewName(report.getDescriptor().getReportName());
                     form.setReportId(form.getReportId());
                 }
             }
@@ -1183,7 +1135,7 @@ public class ReportsController extends SpringActionController
             Map<String, MultipartFile> fileMap = getFileMap();
             MultipartFile[] formFiles = fileMap.values().toArray(new MultipartFile[fileMap.size()]);
 
-            if (null == StringUtils.trimToNull(form.getLabel()))
+            if (null == StringUtils.trimToNull(form.getViewName()))
                 errors.reject("uploadForm", "You must enter a report name.");
 
             String filePath = null;
@@ -1192,6 +1144,7 @@ public class ReportsController extends SpringActionController
             if (null == filePath && (0 == formFiles.length || formFiles[0].isEmpty()))
                 errors.reject("uploadForm", "You must specify a file");
 
+/*
             String dateStr = form.getReportDateString();
             if (dateStr != null && dateStr.length() > 0)
             {
@@ -1205,37 +1158,69 @@ public class ReportsController extends SpringActionController
                     errors.reject("uploadForm", "You must enter a legal report date");
                 }
             }
+*/
         }
 
         public boolean handlePost(UploadForm form, BindException errors) throws Exception
         {
-            AttachmentReport report = (AttachmentReport)ReportService.get().createReportInstance(AttachmentReport.TYPE);
+            DbScope scope = CoreSchema.getInstance().getSchema().getScope();
 
-            report.getDescriptor().setContainer(getContainer().getId());
-            report.getDescriptor().setReportName(form.getLabel());
-            if (!StringUtils.isEmpty(form.getReportDateString()))
-                report.setModified(new Date(DateUtil.parseDateTime(form.getReportDateString())));
-            report.setFilePath(form.getFilePath());
-            report.setDescription(form.getDescription());
-            report.setCategory(form.getCategory());
-            if(!form.getShared())
-            {
-                report.setOwner(getUser().getUserId());
-            } else {
-                report.setOwner(null);
+            try {
+                scope.ensureTransaction();
+
+                ViewCategory category = null;
+
+                // save the category information then the report
+                if (form.getCategory() != null)
+                    category = ViewCategoryManager.getInstance().ensureViewCategory(getContainer(), getUser(), form.getCategory());
+
+                // author field
+                User author = UserManager.getUser(form.getAuthor());
+                ViewInfo.Status status = form.getStatus();
+
+                AttachmentReport report = (AttachmentReport)ReportService.get().createReportInstance(AttachmentReport.TYPE);
+
+                report.getDescriptor().setContainer(getContainer().getId());
+                report.getDescriptor().setReportName(form.getViewName());
+                if (form.getModifiedDate() != null)
+                    report.setModified(form.getModifiedDate());
+                report.setFilePath(form.getFilePath());
+                report.setDescription(form.getDescription());
+                
+                if (category != null)
+                    report.getDescriptor().setCategory(category);
+
+                if(!form.getShared())
+                    report.setOwner(getUser().getUserId());
+                else
+                    report.setOwner(null);
+
+                int id = ReportService.get().saveReport(getViewContext(), form.getViewName(), report);
+
+                report = (AttachmentReport)ReportService.get().getReport(id);
+                AttachmentService.get().addAttachments(report, getAttachmentFileList(), getViewContext().getUser());
+
+                ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
+
+                if (null != svc)
+                    svc.queueThumbnailRendering(report);
+
+                // additional properties
+                String entityId = report.getEntityId();
+                if (author != null)
+                    ReportPropsManager.get().setPropertyValue(entityId, getContainer(), "author", author.getUserId());
+                if (status != null)
+                    ReportPropsManager.get().setPropertyValue(entityId, getContainer(), "status", status.name());
+                if (form.getRefreshDate() != null)
+                    ReportPropsManager.get().setPropertyValue(entityId, getContainer(), "refreshDate", form.getRefreshDate());
+
+                scope.commitTransaction();
+                return true;
             }
-
-            int id = ReportService.get().saveReport(getViewContext(), form.getLabel(), report);
-
-            report = (AttachmentReport)ReportService.get().getReport(id);
-            AttachmentService.get().addAttachments(report, getAttachmentFileList(), getViewContext().getUser());
-
-            ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
-
-            if (null != svc)
-                svc.queueThumbnailRendering(report);
-
-            return true;
+            finally
+            {
+                scope.closeConnection();
+            }
         }
 
         public ActionURL getSuccessURL(UploadForm uploadForm)

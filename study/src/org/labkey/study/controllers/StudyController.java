@@ -84,6 +84,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.model.DataViewEditForm;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
@@ -7372,116 +7373,13 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class EditViewsForm
-    {
-        ReportIdentifier _reportId;
-        String _entityId;
-        String _category;
-        String _description;
-        boolean _hidden;
-        ViewInfo.DataType _dataType;
-        int _author;
-        ViewInfo.Status _status;
-        Date _refreshDate;
-
-        public Date getRefreshDate()
-        {
-            return _refreshDate;
-        }
-
-        public void setRefreshDate(Date refreshDate)
-        {
-            _refreshDate = refreshDate;
-        }
-
-        public ReportIdentifier getReportId()
-        {
-            return _reportId;
-        }
-
-        public void setReportId(ReportIdentifier reportId)
-        {
-            _reportId = reportId;
-        }
-
-        public String getCategory()
-        {
-            return _category;
-        }
-
-        public void setCategory(String category)
-        {
-            _category = category;
-        }
-
-        public String getDescription()
-        {
-            return _description;
-        }
-
-        public void setDescription(String description)
-        {
-            _description = description;
-        }
-
-        public boolean isHidden()
-        {
-            return _hidden;
-        }
-
-        public void setHidden(boolean hidden)
-        {
-            _hidden = hidden;
-        }
-
-        public ViewInfo.DataType getDataType()
-        {
-            return _dataType;
-        }
-
-        public void setDataType(ViewInfo.DataType dataType)
-        {
-            _dataType = dataType;
-        }
-
-        public String getEntityId()
-        {
-            return _entityId;
-        }
-
-        public void setEntityId(String entityId)
-        {
-            _entityId = entityId;
-        }
-
-        public int getAuthor()
-        {
-            return _author;
-        }
-
-        public void setAuthor(int author)
-        {
-            _author = author;
-        }
-
-        public ViewInfo.Status getStatus()
-        {
-            return _status;
-        }
-
-        public void setStatus(ViewInfo.Status status)
-        {
-            _status = status;
-        }
-    }
-
     @RequiresPermissionClass(ReadPermission.class)
-    public class EditViewAction extends MutatingApiAction<EditViewsForm>
+    public class EditViewAction extends MutatingApiAction<DataViewEditForm>
     {
         private Report _report;
 
         @Override
-        public void validateForm(EditViewsForm form, Errors errors)
+        public void validateForm(DataViewEditForm form, Errors errors)
         {
             String id = form.getEntityId();
             ViewInfo.DataType dataType = form.getDataType();
@@ -7519,7 +7417,7 @@ public class StudyController extends BaseStudyController
                 errors.reject(ERROR_MSG, "Unable to find the specified data view");
         }
 
-        public ApiResponse execute(EditViewsForm form, BindException errors) throws Exception
+        public ApiResponse execute(DataViewEditForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             DbScope scope = StudySchema.getInstance().getSchema().getScope();

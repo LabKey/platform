@@ -4,6 +4,7 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 LABKEY.requiresExt4Sandbox(true);
+LABKEY.requiresScript("study/DataViewPropertiesPanel.js");
 
 Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
@@ -1110,121 +1111,47 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             value : record.data.dataType
         });
 
-        // displayed items
-        formItems.push({
-            xtype      : (record.data.type.toLowerCase() == 'report' ? 'textfield' : 'displayfield'),
-            fieldLabel : 'Name',
-            value      : record.data.name
-        });
-
         var hasAuthorField = record.data.type.toLowerCase() != 'dataset';
 
-        // 11.3 hack: author & staus field not supported for datasets
-        if (hasAuthorField)
-        {
-            formItems.push({
-                xtype       : 'combo',
-                fieldLabel  : 'Author',
-                name        : 'author',
-                store       : this.initializeUserStore(),
-                editable    : false,
-                readOnly    : !editable,
-                value       : record.data.authorUserId,
-                queryMode      : 'local',
-                displayField   : 'displayName',
-                valueField     : 'userId',
-                emptyText      : 'Unknown'
-            });
-        }
-
-        var statusStore = Ext4.create('Ext.data.Store', {
-            fields: ['value', 'label'],
-            data : [
-                {value: 'None', label: 'None'},
-                {value: 'Draft', label: 'Draft'},
-                {value: 'Final', label: 'Final'},
-                {value: 'Locked', label: 'Locked'},
-                {value: 'Unlocked', label: 'Unlocked'}
-            ]
+        var viewForm = Ext4.create('LABKEY.study.DataViewPropertiesPanel', {
+            record          : record,
+            extraItems      : formItems,
+            visibleFields   : {
+                author  : hasAuthorField,
+                status  : true,
+                datacutdate : true,
+                category    : true,
+                description : true,
+                type        : true,
+                visibility  : true,
+                created     : true,
+                modified    : true
+            },
+            buttons     : [{
+                text : 'Save',
+                formBind: true,
+                handler : function(btn) {
+                    var form = btn.up('form').getForm();
+                    if (form.isValid())
+                    {
+                        Ext4.Ajax.request({
+                            url     : LABKEY.ActionURL.buildURL('study', 'editView.api'),
+                            method  : 'POST',
+                            params  : form.getValues(),
+                            success : function(){
+                                this.onEditSave(record, form.getValues());
+                                editWindow.close();
+                            },
+                            failure : function(response){
+                                Ext4.Msg.alert('Failure', Ext4.decode(response.responseText).exception);
+                            },
+                            scope : this
+                        });
+                    }
+                },
+                scope   : this
+            }]
         });
-
-        formItems.push({
-                xtype       : 'combo',
-                fieldLabel  : 'Status',
-                name        : 'status',
-                store       : statusStore,
-                editable    : false,
-                value       : record.data.status,
-                queryMode      : 'local',
-                displayField   : 'label',
-                valueField     : 'value',
-                emptyText      : 'Status'
-            });
-
-        formItems.push({
-                xtype       : 'datefield',
-                fieldLabel  : 'Data Cut Date',
-                name        : 'refreshDate',
-                value       : record.data.refreshDate != null && record.data.refreshDate != '' ? new Date(record.data.refreshDate) : '',
-                blankText   : 'Date of last refresh',
-                format      : 'Y-m-d',
-                editable    : false
-            });
-
-        formItems.push({
-            xtype       : 'combo',
-            fieldLabel  : 'Category',
-            name        : 'category',
-            store       : this.initializeCategoriesStore(),
-            typeAhead   : true,
-            hideTrigger : true,
-            readOnly    : !editable,
-            typeAheadDelay : 75,
-            minChars       : 1,
-            autoSelect     : false,
-            queryMode      : 'remote',
-            displayField   : 'label',
-            valueField     : 'label',
-            emptyText      : 'Uncategorized',
-            listeners      : {
-                render     : function(combo) {
-                    combo.setRawValue(record.data.category);
-                }
-            }
-        },{
-            xtype      : (editable == true ? 'textarea' : 'displayfield'), // TODO: Should hook editable to model editable
-            fieldLabel : 'Description',
-            name       : 'description',
-            value      : record.data.description
-        },{
-            xtype      : 'displayfield',
-            fieldLabel : 'Type',
-            value      : record.data.type,
-            readOnly   : true
-        },{
-            xtype      : 'radiogroup',
-            fieldLabel : 'Visibility',
-            items      : [{boxLabel : 'Visible',  name : 'hidden', checked : !record.data.hidden, inputValue : false},
-                {boxLabel : 'Hidden',   name : 'hidden', checked : record.data.hidden,  inputValue : true}]
-        });
-
-        if (record.data.created) {
-            formItems.push({
-                xtype      : 'displayfield',
-                fieldLabel : 'Created On',
-                value      : record.data.created,
-                readOnly   : true
-            });
-        }
-
-        if (record.data.modified) {
-            formItems.push({
-                xtype      : 'displayfield',
-                fieldLabel : 'Last Modified',
-                value      : record.data.modified,
-                readOnly   : true
-            });
-        }
 
         var editWindow = Ext4.create('Ext.window.Window', {
             width  : 450,
@@ -1237,41 +1164,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 border: false, frame: false
             },
             bodyPadding : 20,
-            items  : [{
-                xtype : 'form',
-                fieldDefaults  : {
-                    labelWidth : 100,
-                    width      : 375,
-                    style      : 'padding: 4px 0',
-                    labelSeparator : ''
-                },
-                items       : formItems,
-                buttonAlign : 'left',
-                buttons     : [{
-                    text : 'Save',
-                    formBind: true,
-                    handler : function(btn) {
-                        var form = btn.up('form').getForm();
-                        if (form.isValid())
-                        {
-                            Ext4.Ajax.request({
-                                url     : LABKEY.ActionURL.buildURL('study', 'editView.api'),
-                                method  : 'POST',
-                                params  : form.getValues(),
-                                success : function(){
-                                    this.onEditSave(record, form.getValues());
-                                    editWindow.close();
-                                },
-                                failure : function(response){
-                                    Ext4.Msg.alert('Failure', Ext4.decode(response.responseText).exception);
-                                },
-                                scope : this
-                            });
-                        }
-                    },
-                    scope   : this
-                }]
-            }],
+            items : viewForm,
             scope : this
         });
 

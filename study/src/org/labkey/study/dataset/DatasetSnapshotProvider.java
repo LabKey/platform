@@ -260,19 +260,19 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     {
         TableInfo tinfo = view.getTable();
         SimpleFilter filter = createParticipantGroupFilter(context, qsDef);
-        Map<String, ColumnInfo> colMap = new HashMap<String, ColumnInfo>();
+        Map<FieldKey, ColumnInfo> colMap = new HashMap<FieldKey, ColumnInfo>();
 
         for (ColumnInfo column : DatasetWriter.getColumnsToExport(tinfo, def, false))
         {
-            colMap.put(column.getPropertyURI(), column);
+            colMap.put(column.getFieldKey(), column);
         }
 
         for (DisplayColumn dc : view.getDisplayColumns())
         {
             ColumnInfo col = dc.getColumnInfo();
-            if (col != null && !colMap.containsKey(col.getPropertyURI()))
+            if (col != null && !colMap.containsKey(col.getFieldKey()))
             {
-                colMap.put(col.getPropertyURI(), col);
+                colMap.put(col.getFieldKey(), col);
             }
         }
         return QueryService.get().select(tinfo, colMap.values(), filter, null);

@@ -18,28 +18,24 @@ package org.labkey.experiment;
 
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
+import org.labkey.api.audit.data.ExperimentAuditColumn;
+import org.labkey.api.audit.data.ProtocolColumn;
+import org.labkey.api.audit.data.RunColumn;
 import org.labkey.api.audit.query.AuditLogQueryView;
-import org.labkey.api.data.*;
-import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.Sort;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.study.assay.AssayProvider;
-import org.labkey.api.study.assay.AssayUrls;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
  * User: Britt Piehler
@@ -109,21 +105,9 @@ public class ExperimentAuditViewFactory extends SimpleAuditViewFactory
         return columns;
     }
 
-    private static final String KEY_SEPARATOR = "~~KEYSEP~~";
-
     public static String getKey3(ExpProtocol protocol, ExpRun run)
     {
-        return protocol.getName() + KEY_SEPARATOR + (run != null ? run.getName() : "");
-    }
-
-    protected static Pair<String, String> splitKey3(Object value)
-    {
-        if (value == null)
-            return null;
-        String[] parts = value.toString().split(KEY_SEPARATOR);
-        if (parts == null || parts.length != 2)
-            return null;
-        return new Pair<String, String>(parts[0], parts[1].length() > 0 ? parts[1] : null);
+        return protocol.getName() + ExperimentAuditColumn.KEY_SEPARATOR + (run != null ? run.getName() : "");
     }
 
     public void setupTable(final FilteredTable table)
@@ -151,126 +135,5 @@ public class ExperimentAuditViewFactory extends SimpleAuditViewFactory
                 return new RunColumn(colInfo, containerId, table.getColumn("Key3"));
             }
         });
-    }
-
-    private static class ExperimentAuditColumn extends DataColumn
-    {
-        protected ColumnInfo _containerId;
-        protected ColumnInfo _defaultName;
-
-        public ExperimentAuditColumn(ColumnInfo col, ColumnInfo containerId, ColumnInfo defaultName)
-        {
-            super(col);
-            _containerId = containerId;
-            _defaultName = defaultName;
-        }
-
-        public String getName()
-        {
-            return getColumnInfo().getLabel();
-        }
-
-        public void addQueryColumns(Set<ColumnInfo> columns)
-        {
-            super.addQueryColumns(columns);
-            if (_containerId != null)
-                columns.add(_containerId);
-            if (_defaultName != null)
-                columns.add(_defaultName);
-        }
-
-        public boolean isFilterable()
-        {
-            return false;
-        }
-    }
-
-    private static class ProtocolColumn extends ExperimentAuditColumn
-    {
-
-        public ProtocolColumn(ColumnInfo col, ColumnInfo containerId, ColumnInfo defaultName)
-        {
-            super(col, containerId, defaultName);
-        }
-
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
-        {
-            String protocolLsid = (String)getBoundColumn().getValue(ctx);
-            String cId = (String)ctx.get("ContainerId");
-            if (protocolLsid != null && cId != null)
-            {
-                Container c = ContainerManager.getForId(cId);
-                if (c != null)
-                {
-                    ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolLsid);
-                    AssayProvider provider = null;
-                    if (protocol != null)
-                        provider = AssayService.get().getProvider(protocol);
-
-                    ActionURL url = null;
-                    if (provider != null)
-                        url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(c, protocol);
-                    else if (protocol != null)
-                        url = PageFlowUtil.urlProvider(ExperimentUrls.class).getProtocolDetailsURL(protocol);
-
-                    if (url != null)
-                    {
-                        out.write("<a href=\"" + url.getLocalURIString() + "\">" + PageFlowUtil.filter(protocol.getName()) + "</a>");
-                        return;
-                    }
-                }
-            }
-
-            if (_defaultName != null)
-            {
-                Pair<String, String> key3 = splitKey3(_defaultName.getValue(ctx));
-                out.write(key3 != null ? PageFlowUtil.filter(key3.getKey()) : "&nbsp;");
-            }
-            else
-                out.write("&nbsp;");
-        }
-
-    }
-
-    private static class RunColumn extends ExperimentAuditColumn
-    {
-        public RunColumn(ColumnInfo col, ColumnInfo containerId, ColumnInfo defaultName)
-        {
-            super(col, containerId, defaultName);
-        }
-
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
-        {
-            String runLsid = (String)getBoundColumn().getValue(ctx);
-            String cId = (String)ctx.get("ContainerId");
-            if (runLsid != null && cId != null)
-            {
-                Container c = ContainerManager.getForId(cId);
-                if (c != null)
-                {
-                    ExpRun run = ExperimentService.get().getExpRun(runLsid);
-                    ExpProtocol protocol = null;
-                    if (run != null)
-                        protocol = run.getProtocol();
-                    AssayProvider provider = null;
-                    if (protocol != null)
-                        provider = AssayService.get().getProvider(protocol);
-
-                    ActionURL url = null;
-                    if (provider != null)
-                        url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(c, protocol, run.getRowId());
-                    else if (run != null)
-                        url = PageFlowUtil.urlProvider(ExperimentUrls.class).getRunGraphURL(run);
-
-                    if (url != null)
-                    {
-                        out.write("<a href=\"" + url.getLocalURIString() + "\">" + PageFlowUtil.filter(run.getName()) + "</a>");
-                        return;
-                    }
-                }
-            }
-            Pair<String, String> key3 = splitKey3(_defaultName.getValue(ctx));
-            out.write(key3 != null && key3.getValue() != null ? PageFlowUtil.filter(key3.getValue()) : "&nbsp;");
-        }
     }
 }
