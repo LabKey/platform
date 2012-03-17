@@ -501,7 +501,7 @@ public class ActionURL extends URLHelper implements Cloneable
     @Deprecated
     public String getPageFlow()
     {
-        return _controller;
+        return getController();
     }
 
 

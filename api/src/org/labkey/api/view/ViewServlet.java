@@ -133,7 +133,7 @@ public class ViewServlet extends HttpServlet
                 return;
             }
             request.setAttribute(REQUEST_ACTION, url.getAction());
-            request.setAttribute(REQUEST_CONTROLLER, url.getPageFlow());
+            request.setAttribute(REQUEST_CONTROLLER, url.getController());
             request.setAttribute(REQUEST_CONTAINER, url.getExtraPath());
         }
         catch (RedirectException e)
@@ -147,10 +147,10 @@ public class ViewServlet extends HttpServlet
             return;
         }
 
-        Module module = ModuleLoader.getInstance().getModuleForController(url.getPageFlow());
+        Module module = ModuleLoader.getInstance().getModuleForController(url.getController());
         if (module == null)
         {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND, "No LabKey Server module registered to handle request for controller: " + url.getPageFlow());
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "No LabKey Server module registered to handle request for controller: " + url.getController());
             return;
         }
 
@@ -170,7 +170,7 @@ public class ViewServlet extends HttpServlet
     public static void forwardActionURL(HttpServletRequest request, HttpServletResponse response, ActionURL url)
             throws IOException, ServletException
     {
-        Module module = ModuleLoader.getInstance().getModuleForController(url.getPageFlow());
+        Module module = ModuleLoader.getInstance().getModuleForController(url.getController());
         if (module == null)
         {
             throw new IllegalArgumentException(url.toString());
@@ -489,10 +489,10 @@ public class ViewServlet extends HttpServlet
 
         try
         {
-            Module module = ModuleLoader.getInstance().getModuleForController(url.getPageFlow());
+            Module module = ModuleLoader.getInstance().getModuleForController(url.getController());
             if (module == null)
             {
-                throw new NotFoundException("Unknown controller: " + url.getPageFlow());
+                throw new NotFoundException("Unknown controller: " + url.getController());
             }
             module.dispatch(request, mockResponse, url);
             return mockResponse;

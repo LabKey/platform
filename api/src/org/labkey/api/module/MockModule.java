@@ -301,4 +301,10 @@ public class MockModule implements Module
     public void runDeferredUpgradeTasks(ModuleContext context)
     {
     }
+
+    @Override
+    public Controller getController(HttpServletRequest request, String name)
+    {
+        throw new UnsupportedOperationException();
+    }
 }

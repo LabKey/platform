@@ -255,6 +255,7 @@ public interface Module extends Comparable<Module>
      */
     public void dispatch(HttpServletRequest request, HttpServletResponse response, ActionURL url) throws ServletException, IOException;
 
+    public Controller getController(HttpServletRequest request, String name);
 
     /**
      * return a list of locations to look for static website files.  Files in these directories have no security.

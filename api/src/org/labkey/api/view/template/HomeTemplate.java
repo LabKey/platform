@@ -135,7 +135,7 @@ public class HomeTemplate extends PrintTemplate
             navTrail = new ArrayList<NavTree>(navTrail);
             navTrail.add(0, new NavTree(context.getContainer().getTitle(), context.getContainer().getStartURL(context.getUser())));
         }
-        page.setNavTrail(appBar.setNavTrail(navTrail, context.getActionURL()));
+        page.setNavTrail(appBar.setNavTrail(navTrail, context));
 
         return new AppBarView(appBar);
     }

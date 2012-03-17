@@ -15,13 +15,18 @@
  */
 package org.labkey.api.view;
 
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.util.PageFlowUtil;
+import org.springframework.web.servlet.mvc.Controller;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -37,6 +42,9 @@ public abstract class FolderTab
 
     private final String _name;
     private final String _caption;
+
+    /** Controllers and their child actions (both are Spring Controller classes) claimed by this tab */
+    private Set<Class<? extends Controller>> _controllersAndActions = new HashSet<Class<? extends Controller>>();
 
     protected FolderTab(String name)
     {
@@ -68,9 +76,13 @@ public abstract class FolderTab
 
         public boolean isSelectedPage(ViewContext viewContext)
         {
+            if (super.isSelectedPage(viewContext))
+            {
+                return true;
+            }
             ActionURL currentURL = viewContext.getActionURL();
             ActionURL tabURL = PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(ContainerManager.getHomeContainer(), getName());
-            if (currentURL.getPageFlow().equalsIgnoreCase(tabURL.getPageFlow()) &&
+            if (currentURL.getController().equalsIgnoreCase(tabURL.getController()) &&
                 currentURL.getAction().equalsIgnoreCase(tabURL.getAction()))
             {
                 String pageName = currentURL.getParameter("pageId");
@@ -105,7 +117,38 @@ public abstract class FolderTab
 
     }
 
-    public abstract boolean isSelectedPage(ViewContext viewContext);
+    protected void addController(Class<? extends Controller> controller)
+    {
+        _controllersAndActions.add(controller);
+    }
+
+    public boolean isSelectedPage(ViewContext viewContext)
+    {
+        if (_controllersAndActions.isEmpty())
+        {
+            return false;
+        }
+
+        // Map the current URL to the controller
+        Module module = ModuleLoader.getInstance().getModuleForController(viewContext.getActionURL().getController());
+        Controller controller = module.getController(viewContext.getRequest(), viewContext.getActionURL().getController());
+        if (controller != null && _controllersAndActions.contains(controller.getClass()))
+        {
+            return true;
+        }
+        
+        if (controller instanceof SpringActionController)
+        {
+            // Map the current URL to an action in the already resolved controller
+            SpringActionController springController = (SpringActionController)controller;
+            Controller action = springController.getActionResolver().resolveActionName(springController, viewContext.getActionURL().getAction());
+            if (action != null && _controllersAndActions.contains(action.getClass()))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public abstract ActionURL getURL(ViewContext viewContext);
 

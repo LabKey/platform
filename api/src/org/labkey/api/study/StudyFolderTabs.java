@@ -53,7 +53,7 @@ public class StudyFolderTabs
             // Actual container we use doesn't matter, we just care about the controller and action names
             ActionURL defaultURL = PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(ContainerManager.getHomeContainer());
             ActionURL currentURL = viewContext.getActionURL();
-            return currentURL.getPageFlow().equalsIgnoreCase(defaultURL.getPageFlow()) && currentURL.getAction().equalsIgnoreCase(defaultURL.getAction()) && currentURL.getParameter("pageId") == null;
+            return currentURL.getController().equalsIgnoreCase(defaultURL.getController()) && currentURL.getAction().equalsIgnoreCase(defaultURL.getAction()) && currentURL.getParameter("pageId") == null;
         }
     }
 
@@ -70,7 +70,7 @@ public class StudyFolderTabs
         public boolean isSelectedPage(ViewContext viewContext)
         {
             return super.isSelectedPage(viewContext) ||
-                   "study-samples".equals(viewContext.getActionURL().getPageFlow());
+                   "study-samples".equals(viewContext.getActionURL().getController());
         }
 
         @Override
@@ -107,10 +107,10 @@ public class StudyFolderTabs
         {
             ActionURL currentURL = viewContext.getActionURL();
             return super.isSelectedPage(viewContext) ||
-                    currentURL.getPageFlow().equalsIgnoreCase("study-reports") ||
-                    currentURL.getPageFlow().equalsIgnoreCase("reports") ||
-                    currentURL.getPageFlow().equalsIgnoreCase("dataset") ||
-                    currentURL.getPageFlow().equalsIgnoreCase("visualization") ||
+                    currentURL.getController().equalsIgnoreCase("study-reports") ||
+                    currentURL.getController().equalsIgnoreCase("reports") ||
+                    currentURL.getController().equalsIgnoreCase("dataset") ||
+                    currentURL.getController().equalsIgnoreCase("visualization") ||
                     currentURL.getAction().equalsIgnoreCase("dataset");
         }
 
@@ -195,9 +195,9 @@ public class StudyFolderTabs
         public boolean isSelectedPage(ViewContext viewContext)
         {
             ActionURL currentURL = viewContext.getActionURL();
-            return currentURL.getPageFlow().equalsIgnoreCase("study-definition") ||
-                    currentURL.getPageFlow().equalsIgnoreCase("cohort") ||
-                    currentURL.getPageFlow().equalsIgnoreCase("study-properties");
+            return currentURL.getController().equalsIgnoreCase("study-definition") ||
+                    currentURL.getController().equalsIgnoreCase("cohort") ||
+                    currentURL.getController().equalsIgnoreCase("study-properties");
         }
 
         @Override

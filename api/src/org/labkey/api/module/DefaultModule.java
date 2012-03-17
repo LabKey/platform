@@ -856,11 +856,11 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             throws ServletException, IOException
     {
         int stackSize = -1;
-        Controller controller = getController(request, url.getPageFlow());
+        Controller controller = getController(request, url.getController());
 
         if (controller == null)
         {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND, "No LabKey Server controller registered to handle request: " + url.getPageFlow());
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "No LabKey Server controller registered to handle request: " + url.getController());
             return;
         }
 
