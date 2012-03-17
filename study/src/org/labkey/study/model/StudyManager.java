@@ -61,6 +61,7 @@ import org.labkey.api.etl.DataIteratorUtil;
 import org.labkey.api.etl.ListofMapsDataIterator;
 import org.labkey.api.etl.Pump;
 import org.labkey.api.etl.StandardETL;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.DomainURIFactory;
 import org.labkey.api.exp.Lsid;
@@ -2498,7 +2499,16 @@ public class StudyManager
                 }
             };
 
-            boolean success = OntologyManager.importTypes(factory, reader.getTypeNameColumn(), mapsImport, importErrors, c, true, user);
+            boolean success;
+            try
+            {
+                success = OntologyManager.importTypes(factory, reader.getTypeNameColumn(), mapsImport, importErrors, c, true, user);
+            }
+            catch (ChangePropertyDescriptorException e)
+            {
+                errors.reject("importDatasetSchemas", e.getMessage() == null ? e.toString() : e.getMessage());
+                return false;
+            }
 
             if (!importErrors.isEmpty())
             {

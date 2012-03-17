@@ -147,7 +147,7 @@ public class StatusController extends SpringActionController
 
             setHelpTopic(getHelpTopic("pipeline"));
 
-            QueryView gridView = new PipelineQueryView(getViewContext(), errors, ShowListRegionAction.class, PipelineService.PipelineButtonOption.Standard);
+            QueryView gridView = new PipelineQueryView(getViewContext(), errors, ShowListRegionAction.class, PipelineService.PipelineButtonOption.Standard, getViewContext().getActionURL());
             gridView.setTitle("Data Pipeline");
 
             VBox result = new VBox();
@@ -243,13 +243,13 @@ public class StatusController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class ShowListRegionAction extends ApiAction
+    public class ShowListRegionAction extends ApiAction<ReturnUrlForm>
     {
-        public ApiResponse execute(Object o, BindException errors) throws Exception
+        public ApiResponse execute(ReturnUrlForm form, BindException errors) throws Exception
         {
             Container c = getContainerCheckAdmin();
             
-            QueryView gridView = new PipelineQueryView(getViewContext(), errors, null, PipelineService.PipelineButtonOption.Standard);
+            QueryView gridView = new PipelineQueryView(getViewContext(), errors, null, PipelineService.PipelineButtonOption.Standard, form.getReturnActionURL(new ActionURL(ShowListAction.class, c)));
             if (c.isRoot())
                 gridView.disableContainerFilterSelection();
             gridView.render(getViewContext().getRequest(), getViewContext().getResponse());
@@ -258,11 +258,11 @@ public class StatusController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class ShowPartRegionAction extends ApiAction
+    public class ShowPartRegionAction extends ApiAction<ReturnUrlForm>
     {
-        public ApiResponse execute(Object o, BindException errors) throws Exception
+        public ApiResponse execute(ReturnUrlForm form, BindException errors) throws Exception
         {
-            PipelineQueryView gridView = new PipelineQueryView(getViewContext(), errors, null, PipelineService.PipelineButtonOption.Minimal);
+            PipelineQueryView gridView = new PipelineQueryView(getViewContext(), errors, null, PipelineService.PipelineButtonOption.Minimal, form.getReturnActionURL(new ActionURL(ShowListAction.class, getContainer())));
             gridView.render(getViewContext().getRequest(), getViewContext().getResponse());
             return null;
         }

@@ -22,7 +22,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
@@ -130,55 +129,48 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
     }
 
 
-    public List updateDatasetDefinition(GWTDataset ds, GWTDomain orig, GWTDomain update)
+    public List<String> updateDatasetDefinition(GWTDataset ds, GWTDomain orig, GWTDomain update)
     {
-        try
+        assert orig.getDomainURI().equals(update.getDomainURI());
+        List<String> errors = new ArrayList<String>();
+
+        if (!getContainer().hasPermission(getUser(), AdminPermission.class))
         {
-            assert orig.getDomainURI().equals(update.getDomainURI());
-            List<String> errors = new ArrayList<String>();
-
-            if (!getContainer().hasPermission(getUser(), AdminPermission.class))
-            {
-                errors.add("Unauthorized");
-                return errors;
-            }
-
-            Domain d = PropertyService.get().getDomain(getContainer(), update.getDomainURI());
-            if (null == d)
-            {
-                errors.add("Domain not found: " + update.getDomainURI());
-                return errors;
-            }
-
-            if (!ds.getTypeURI().equals(orig.getDomainURI()) ||
-                !ds.getTypeURI().equals(update.getDomainURI()))
-            {
-                errors.add("Illegal Argument");
-                return errors;
-            }
-
-            // Remove any fields that are duplicates of the default dataset fields.
-            // e.g. participantid, etc.
-
-            List<GWTPropertyDescriptor> updatedProps = update.getFields();
-            for (Iterator<GWTPropertyDescriptor> iter = updatedProps.iterator(); iter.hasNext();)
-            {
-                GWTPropertyDescriptor prop = iter.next();
-                if (DataSetDefinition.isDefaultFieldName(prop.getName(), study))
-                    iter.remove();
-            }
-            update.setFields(updatedProps);
-
-            errors = updateDomainDescriptor(orig, update);
-            if (errors == null)
-                errors = updateDataset(ds, orig.getDomainURI());
-
-            return errors.isEmpty() ? null : errors;
+            errors.add("Unauthorized");
+            return errors;
         }
-        catch (ChangePropertyDescriptorException e)
+
+        Domain d = PropertyService.get().getDomain(getContainer(), update.getDomainURI());
+        if (null == d)
         {
-            throw UnexpectedException.wrap(e);
+            errors.add("Domain not found: " + update.getDomainURI());
+            return errors;
         }
+
+        if (!ds.getTypeURI().equals(orig.getDomainURI()) ||
+            !ds.getTypeURI().equals(update.getDomainURI()))
+        {
+            errors.add("Illegal Argument");
+            return errors;
+        }
+
+        // Remove any fields that are duplicates of the default dataset fields.
+        // e.g. participantid, etc.
+
+        List<GWTPropertyDescriptor> updatedProps = update.getFields();
+        for (Iterator<GWTPropertyDescriptor> iter = updatedProps.iterator(); iter.hasNext();)
+        {
+            GWTPropertyDescriptor prop = iter.next();
+            if (DataSetDefinition.isDefaultFieldName(prop.getName(), study))
+                iter.remove();
+        }
+        update.setFields(updatedProps);
+
+        errors = updateDomainDescriptor(orig, update);
+        if (errors == null)
+            errors = updateDataset(ds, orig.getDomainURI());
+
+        return errors.isEmpty() ? null : errors;
     }
 
     private List updateDataset(GWTDataset ds, String domainURI)
@@ -298,12 +290,19 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
                 maps = loader.load();
             }
 
-            boolean success = OntologyManager.importOneType(domain.getDomainURI(), maps, errors, getContainer(), getUser());
-            if (!success)
-                errors.add("No properties were successfully imported.");
+            try
+            {
+                boolean success = OntologyManager.importOneType(domain.getDomainURI(), maps, errors, getContainer(), getUser());
+                if (!success)
+                    errors.add("No properties were successfully imported.");
 
-            if (errors.isEmpty())
-                errors = updateDataset(ds, domain.getDomainURI());
+                if (errors.isEmpty())
+                    errors = updateDataset(ds, domain.getDomainURI());
+            }
+            catch (ChangePropertyDescriptorException e)
+            {
+                errors.add(e.getMessage() == null ? e.toString() : e.getMessage());
+            }
 
             return errors.isEmpty() ? null : errors;
         }

@@ -2941,7 +2941,7 @@ public class QueryController extends SpringActionController
             catch (ConversionException e)
             {
                 //Issue 14294: improve handling of ConversionException
-                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                errors.reject(SpringActionController.ERROR_MSG, e.getMessage() == null ? e.toString() : e.getMessage());
             }
             finally
             {

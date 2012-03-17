@@ -49,7 +49,7 @@ public class PipelineWebPart extends WebPartView
         }
         else
         {
-            PipelineQueryView gridView = new PipelineQueryView(getViewContext(), null, StatusController.ShowPartRegionAction.class, PipelineService.PipelineButtonOption.Minimal);
+            PipelineQueryView gridView = new PipelineQueryView(getViewContext(), null, StatusController.ShowPartRegionAction.class, PipelineService.PipelineButtonOption.Minimal, getViewContext().getActionURL());
             gridView.setPortalLinks(getPortalLinks());
             include(gridView);
         }

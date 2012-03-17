@@ -24,10 +24,12 @@ Ext.namespace('LABKEY', 'LABKEY.pipeline');
   * @description Status class for retrieving pipeline status data region.
   * @class Status class for retrieving pipeline status data region.
   * @constructor
-  * @param {String} url Supplies the URL for the data region update.
+  * @param {String} controller The controller in which the region should update itself.
+  * @param {String} action The action in the specified controller in which the region should update itself.
+  * @param {String} returnURL The URL to which operations (cancel, delete, etc requests) should return after they've been processed.
   */
 
-LABKEY.pipeline.StatusUpdate = function(controller, action)
+LABKEY.pipeline.StatusUpdate = function(controller, action, returnURL)
 {
     //private data
     var _controller = controller;
@@ -77,8 +79,15 @@ LABKEY.pipeline.StatusUpdate = function(controller, action)
             return;
         }
 
+        var url = LABKEY.ActionURL.buildURL(_controller, _action, null, {returnUrl: returnURL });
+        if (document.location.search && document.location.search.length > 0)
+        {
+            // Strip off the leading ? on search
+            url = url + "&" + document.location.search.substring(1);
+        }
+
         Ext.Ajax.request({
-            url : LABKEY.ActionURL.buildURL(_controller, _action) + document.location.search,
+            url : url,
             method : 'GET',
             success: onUpdateSuccess,
             failure: onUpdateFailure

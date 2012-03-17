@@ -634,11 +634,11 @@ public class PipelineStatusManager
         }
         if (failed == 1)
         {
-            throw new PipelineProvider.HandlerException("Unable to cancel job");
+            throw new PipelineProvider.HandlerException("Unable to cancel job - it may already be COMPLETE, ERROR, or CANCELLED");
         }
         else if (failed > 1)
         {
-            throw new PipelineProvider.HandlerException("Unable to cancel " + failed + " jobs");
+            throw new PipelineProvider.HandlerException("Unable to cancel " + failed + " jobs - they may already be COMPLETE, ERROR, or CANCELLED");
         }
     }
 

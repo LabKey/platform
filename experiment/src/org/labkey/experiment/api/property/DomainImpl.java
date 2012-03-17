@@ -320,7 +320,7 @@ public class DomainImpl implements Domain
                     boolean hasRows = kind.hasNullValues(this, prop);
                     if (hasRows)
                     {
-                        throw new IllegalStateException("The required property cannot be changed when rows already exist.");
+                        throw new IllegalStateException("The property \"" + prop.getName() + "\" cannot be set to required when rows with blank values already exist.");
                     }
                 }
             }

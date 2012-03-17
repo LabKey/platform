@@ -81,9 +81,5 @@ public class FilePropertiesServiceImpl extends DomainEditorServiceBase implement
         {
             throw UnexpectedException.wrap(e);
         }
-        catch (ChangePropertyDescriptorException e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
     }
 }

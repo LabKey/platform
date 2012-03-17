@@ -43,8 +43,9 @@ public class PipelineQueryView extends QueryView
     private final ViewContext _context;
     private final Class<? extends ApiAction> _apiAction;
     private final PipelineService.PipelineButtonOption _buttonOption;
+    private final ActionURL _returnURL;
 
-    public PipelineQueryView(ViewContext context, BindException errors, Class<? extends ApiAction> apiAction, PipelineService.PipelineButtonOption buttonOption)
+    public PipelineQueryView(ViewContext context, BindException errors, Class<? extends ApiAction> apiAction, PipelineService.PipelineButtonOption buttonOption, ActionURL returnURL)
     {
         super(new PipelineQuerySchema(context.getUser(), context.getContainer()), null, errors);
         _buttonOption = buttonOption;
@@ -52,6 +53,7 @@ public class PipelineQueryView extends QueryView
         getSettings().setAllowChooseQuery(false);
         _context = context;
         _apiAction = apiAction;
+        _returnURL = returnURL;
 
         setShadeAlternatingRows(true);
         setShowBorders(true);
@@ -67,9 +69,8 @@ public class PipelineQueryView extends QueryView
     @Override
     protected DataRegion createDataRegion()
     {
-        StatusDataRegion rgn = new StatusDataRegion();
+        StatusDataRegion rgn = new StatusDataRegion(_apiAction, _returnURL);
         configureDataRegion(rgn);
-        rgn.setApiAction(_apiAction);
         return rgn;
     }
 
@@ -126,7 +127,7 @@ public class PipelineQueryView extends QueryView
         if (_buttonOption == PipelineService.PipelineButtonOption.Standard)
         {
             ActionURL retryURL = new ActionURL(StatusController.RunActionAction.class, getContainer());
-            retryURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+            retryURL.addParameter(ActionURL.Param.returnUrl, _returnURL.toString());
             retryURL.addParameter("action", PipelineProvider.CAPTION_RETRY_BUTTON);
             ActionButton retryStatus = new ActionButton(retryURL, PipelineProvider.CAPTION_RETRY_BUTTON);
             retryStatus.setRequiresSelection(true);
@@ -138,7 +139,7 @@ public class PipelineQueryView extends QueryView
         if (_buttonOption != PipelineService.PipelineButtonOption.Minimal)
         {
             ActionURL deleteURL = new ActionURL(StatusController.DeleteStatusAction.class, getContainer());
-            deleteURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+            deleteURL.addParameter(ActionURL.Param.returnUrl, _returnURL.toString());
             ActionButton deleteStatus = new ActionButton(deleteURL, "Delete");
             deleteStatus.setRequiresSelection(true);
             deleteStatus.setActionType(ActionButton.Action.POST);
@@ -146,7 +147,7 @@ public class PipelineQueryView extends QueryView
             bar.add(deleteStatus);
 
             ActionURL cancelURL = new ActionURL(StatusController.CancelStatusAction.class, getContainer());
-            cancelURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+            cancelURL.addParameter(ActionURL.Param.returnUrl, _returnURL.toString());
             ActionButton cancelButton = new ActionButton(cancelURL, "Cancel");
             cancelButton.setRequiresSelection(true);
             cancelButton.setActionType(ActionButton.Action.POST);
@@ -166,7 +167,7 @@ public class PipelineQueryView extends QueryView
         if (_buttonOption == PipelineService.PipelineButtonOption.Standard)
         {
             ActionURL completeURL = new ActionURL(StatusController.CompleteStatusAction.class, getContainer());
-            completeURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+            completeURL.addParameter(ActionURL.Param.returnUrl, _returnURL.toString());
             ActionButton completeStatus = new ActionButton(completeURL, "Complete");
             completeStatus.setRequiresSelection(true);
             completeStatus.setActionType(ActionButton.Action.POST);

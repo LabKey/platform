@@ -505,18 +505,6 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         return result;
     }
 
-    public List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain update)
-    {
-        try
-        {
-            return super.updateDomainDescriptor(orig, update);
-        }
-        catch (ChangePropertyDescriptorException e)
-        {
-            throw UnexpectedException.wrap(e);
-        }
-    }
-
     public boolean canUpdateProtocols()
     {
         Container c = getContainer();

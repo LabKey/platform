@@ -22,6 +22,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.pipeline.api.PipelineStatusManager;
 
@@ -40,16 +41,15 @@ import java.util.List;
 public class StatusDataRegion extends DataRegion
 {
     private Class<? extends ApiAction> _apiAction;
+    private ActionURL _returnURL;
 
-    public StatusDataRegion()
+    public StatusDataRegion(Class<? extends ApiAction> apiAction, ActionURL returnURL)
     {
         setShowPagination(false);
         _allowHeaderLock = false; // 13731: disabling header locking due to async rendering issues
-    }
-
-    public void setApiAction(Class<? extends ApiAction> apiAction)
-    {
         _apiAction = apiAction;
+        _returnURL = returnURL.clone();
+        _returnURL.deleteParameter(ActionURL.Param.returnUrl);
     }
 
     private void renderTab(Writer out, String text, ActionURL url, boolean selected) throws IOException
@@ -81,7 +81,7 @@ public class StatusDataRegion extends DataRegion
         String controller = SpringActionController.getPageFlowName(_apiAction);
         String action = SpringActionController.getActionName(_apiAction);
         out.write("<script type=\"text/javascript\">\n" +
-                "var su = new LABKEY.pipeline.StatusUpdate('" + controller + "', '" + action + "');\n" +
+                "var su = new LABKEY.pipeline.StatusUpdate(" + PageFlowUtil.jsString(controller) + ", " + PageFlowUtil.jsString(action) + ", " + PageFlowUtil.jsString(_returnURL.toString()) + ");\n" +
                 "su.start();\n" +
                 "</script>\n");
 
@@ -125,5 +125,10 @@ public class StatusDataRegion extends DataRegion
         super._renderTable(ctx, out);
 
         out.write("</div>");
+    }
+
+    public void setReturnURL(ActionURL returnURL)
+    {
+        
     }
 }

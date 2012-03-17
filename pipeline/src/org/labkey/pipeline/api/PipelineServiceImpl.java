@@ -303,7 +303,7 @@ public class PipelineServiceImpl extends PipelineService
 
     public QueryView getPipelineQueryView(ViewContext context, PipelineButtonOption buttonOption)
     {
-        return new PipelineQueryView(context, null, null, buttonOption);
+        return new PipelineQueryView(context, null, null, buttonOption, context.getActionURL());
     }
 
     public HttpView getSetupView(SetupForm form)
