@@ -260,21 +260,17 @@ public class AssayController extends SpringActionController
             assayProperties.put("plateTemplate", ((PlateBasedAssayProvider)provider).getPlateTemplate(c, protocol));
 
         // XXX: UGLY: Get the TableInfo associated with the Domain -- loop over all tables and ask for the Domins.
-        String protocolPrefix = protocol.getName().toLowerCase() + " ";
-        AssaySchema schema = new AssaySchemaImpl(user, c);
-        Set<String> tableNames = schema.getTableNames();
+        AssaySchemaImpl schema = new AssaySchemaImpl(user, c);
+        Set<String> tableNames = schema.getTableNames(provider, protocol);
         Map<String, TableInfo> tableInfoMap = new HashMap<String, TableInfo>();
         for (String tableName : tableNames)
         {
-            if (tableName.toLowerCase().startsWith(protocolPrefix))
+            TableInfo table = schema.getTable(tableName, true);
+            if (table != null)
             {
-                TableInfo table = schema.getTable(tableName, true);
-                if (table != null)
-                {
-                    Domain domain = table.getDomain();
-                    if (domain != null)
-                        tableInfoMap.put(domain.getTypeURI(), table);
-                }
+                Domain domain = table.getDomain();
+                if (domain != null)
+                    tableInfoMap.put(domain.getTypeURI(), table);
             }
         }
 

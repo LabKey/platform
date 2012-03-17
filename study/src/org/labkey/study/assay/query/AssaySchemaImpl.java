@@ -69,6 +69,7 @@ import org.labkey.study.model.StudyManager;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -125,15 +126,23 @@ public class AssaySchemaImpl extends AssaySchema
             AssayProvider provider = entry.getValue();
             if (provider != null)
             {
-                names.add(getBatchesTableName(protocol));
-                names.add(getRunsTableName(protocol));
-                names.add(getResultsTableName(protocol));
-                names.add(getQCFlagTableName(protocol));
-                AssaySchema providerSchema = provider.getProviderSchema(getUser(), getContainer(), protocol);
-                if (providerSchema != null)
-                    names.addAll(providerSchema.getTableNames());
+                names.addAll(getTableNames(provider, protocol));
             }
         }
+        return names;
+    }
+
+    public Set<String> getTableNames(AssayProvider provider, ExpProtocol protocol)
+    {
+        Set<String> names = new HashSet<String>();
+        names.add(getBatchesTableName(protocol));
+        names.add(getRunsTableName(protocol));
+        names.add(getResultsTableName(protocol));
+        names.add(getQCFlagTableName(protocol));
+        AssaySchema providerSchema = provider.getProviderSchema(getUser(), getContainer(), protocol);
+        if (providerSchema != null)
+            names.addAll(providerSchema.getTableNames());
+
         return names;
     }
 
