@@ -505,7 +505,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
                 }
                 else
                 {
-                    throw new ConversionException(e);
+                    throw new ConversionException("Could not convert '" + s + "' to an integer", e);
                 }
             }
         }

@@ -18,6 +18,7 @@ package org.labkey.api.exp.property;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
@@ -61,7 +62,7 @@ public class SystemProperty
         return _pd;
     }
 
-    private void register() throws SQLException
+    private void register() throws SQLException, ChangePropertyDescriptorException
     {
         _pd = OntologyManager.getPropertyDescriptor(_propertyURI, getContainer());
         assert MemTracker.remove(_pd);  // these are globals now, so don't track
@@ -94,7 +95,7 @@ public class SystemProperty
             {
                 property.register();
             }
-            catch (SQLException e)
+            catch (Exception e)
             {
                 _log.error("Error", e);
             }

@@ -184,19 +184,5 @@ public abstract class DomainImporterServiceBase extends DomainEditorServiceBase 
     }
 
     public abstract ImportStatus importData(GWTDomain domain, Map<String, String> mappedColumnNames) throws ImportException;
-
-    public List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain update)
-    {
-        try
-        {
-            return DomainUtil.updateDomainDescriptor(orig, update, getContainer(), getUser());
-        }
-        catch (ChangePropertyDescriptorException e)
-        {
-            // for GWT serialization don't use Collections.singleList()
-            return new ArrayList<String>(Arrays.asList(e.getMessage()));
-        }
-    }
-
     
 }

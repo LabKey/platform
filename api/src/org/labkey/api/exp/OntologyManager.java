@@ -105,6 +105,7 @@ public class OntologyManager
 	private static final DatabaseCache<Integer> objectIdCache = new DatabaseCache<Integer>(getExpSchema().getScope(), 1000, "ObjectIds");
     private static final DatabaseCache<PropertyDescriptor> propDescCache = new DatabaseCache<PropertyDescriptor>(getExpSchema().getScope(), 10000, "Property descriptors");
 	private static final DatabaseCache<DomainDescriptor> domainDescCache = new DatabaseCache<DomainDescriptor>(getExpSchema().getScope(), 2000, "Domain descriptors");
+	private static final DatabaseCache<List<Pair<String, Boolean>>> domainPropertiesCache = new DatabaseCache<List<Pair<String, Boolean>>>(getExpSchema().getScope(), 2000, "Domain properties");
     private static final Container _sharedContainer = ContainerManager.getSharedContainer();
 
     static
@@ -1125,10 +1126,11 @@ public class OntologyManager
                 {
                     propUri = rsMyProps.getString(1);
                     domUri =  rsMyProps.getString(2);
-                    PropertyDescriptor pd = getPropertyDescriptor(propUri,c );
+                    PropertyDescriptor pd = getPropertyDescriptor(propUri, c);
                     if (pd.getContainer().getId().equals(c.getId()))
                     {
                         propDescCache.remove(getCacheKey(pd));
+                        domainPropertiesCache.clear();
                         pd.setContainer(project);
                         pd.setProject(project);
                         pd.setPropertyId(0);
@@ -1140,6 +1142,7 @@ public class OntologyManager
                         if (dd.getContainer().getId().equals(c.getId()))
                         {
                             domainDescCache.remove(getCacheKey(dd));
+                            domainPropertiesCache.clear();
                             dd.setContainer(project);
                             dd.setProject(project);
                             dd.setDomainId(0);
@@ -1580,6 +1583,7 @@ public class OntologyManager
             sqlUpdate.add(dd.getDomainId());
             Table.execute(getExpSchema(), sqlUpdate);
         }
+        domainPropertiesCache.remove(getCacheKey(dd));
         return pd;
     }
 
@@ -1774,6 +1778,7 @@ public class OntologyManager
             Table.execute(getExpSchema(), deletePropDomSql, propId);
             Table.execute(getExpSchema(), deletePropSql, propId);
             propDescCache.remove(key);
+            domainPropertiesCache.clear();
             getExpSchema().getScope().commitTransaction();
         }
         finally
@@ -2002,6 +2007,12 @@ public class OntologyManager
     //
     public static PropertyDescriptor[] getPropertiesForType(String typeURI, Container c)
 	{
+        PropertyDescriptor[] pdArray = getCachedPropertyDescriptorsForDomain(typeURI, c);
+        if (pdArray != null)
+        {
+            return pdArray;
+        }
+
         try
 		{
             String sql = " SELECT PD.*,Required " +
@@ -2017,12 +2028,15 @@ public class OntologyManager
                 c.getProject() == null ? _sharedContainer.getProject().getId() : c.getProject().getId(),
                 _sharedContainer.getProject().getId()
             };
-            PropertyDescriptor[] pdArray = Table.executeQuery(getExpSchema(), sql, params, PropertyDescriptor.class);
+            pdArray = Table.executeQuery(getExpSchema(), sql, params, PropertyDescriptor.class);
             //NOTE: cached descriptors may have differing values of isRequired() as that is a per-domain setting
             //Descriptors returned from this method come direct from DB and have correct values.
+            List<Pair<String, Boolean>> propertyURIs = new ArrayList<Pair<String, Boolean>>(pdArray.length);
             for (PropertyDescriptor pd : pdArray) {
 				propDescCache.put(getCacheKey(pd), pd);
+                propertyURIs.add(new Pair<String, Boolean>(pd.getPropertyURI(), pd.isRequired()));
 			}
+            domainPropertiesCache.put(getCacheKey(typeURI, c), propertyURIs);
 
 			return pdArray;
 		}
@@ -2032,7 +2046,34 @@ public class OntologyManager
 		}
 	}
 
-	public static void deleteType(String domainURI, Container c) throws DomainNotFoundException
+    private static PropertyDescriptor[] getCachedPropertyDescriptorsForDomain(String typeURI, Container c)
+    {
+        List<Pair<String, Boolean>> propertyURIs = domainPropertiesCache.get(getCacheKey(typeURI, c));
+        if (propertyURIs != null)
+        {
+            PropertyDescriptor[] result = new PropertyDescriptor[propertyURIs.size()];
+            int index = 0;
+            for (Pair<String, Boolean> propertyURI : propertyURIs)
+            {
+                PropertyDescriptor pd = propDescCache.get(getCacheKey(propertyURI.getKey(), c));
+                if (pd == null)
+                {
+                    return null;
+                }
+                // NOTE: cached descriptors may have differing values of isRequired() as that is a per-domain setting
+                // Descriptors returned from this method will have their required bit set as appropriate for this domain 
+
+                // Clone so we nobody else messes up our copy
+                pd = pd.clone();
+                pd.setRequired(propertyURI.getValue().booleanValue());
+                result[index++] = pd;
+            }
+            return result;
+        }
+        return null;
+    }
+
+    public static void deleteType(String domainURI, Container c) throws DomainNotFoundException
 	{
         if (null==domainURI)
             return;
@@ -2067,8 +2108,9 @@ public class OntologyManager
 	}
 
 	public static PropertyDescriptor insertOrUpdatePropertyDescriptor(PropertyDescriptor pd, DomainDescriptor dd, int sortOrder)
-			throws SQLException
-	{
+            throws SQLException, ChangePropertyDescriptorException
+    {
+        validatePropertyDescriptor(pd);
         DbScope scope = getExpSchema().getScope();
         scope.ensureTransaction();
         try
@@ -2194,9 +2236,10 @@ public class OntologyManager
     }
 
 
-    public static PropertyDescriptor insertPropertyDescriptor(PropertyDescriptor pd) throws SQLException
-	{
+    public static PropertyDescriptor insertPropertyDescriptor(PropertyDescriptor pd) throws SQLException, ChangePropertyDescriptorException
+    {
 		assert pd.getPropertyId() == 0;
+        validatePropertyDescriptor(pd);
 		pd = Table.insert(null, getTinfoPropertyDescriptor(), pd);
 		propDescCache.put(getCacheKey(pd), pd);
 		return pd;
@@ -2209,6 +2252,8 @@ public class OntologyManager
 		assert pd.getPropertyId() != 0;
 		pd = Table.update(null, getTinfoPropertyDescriptor(), pd, pd.getPropertyId());
 		propDescCache.put(getCacheKey(pd), pd);
+        // It's possible that the propertyURI has changed, thus breaking our reference
+        domainPropertiesCache.clear();
 		return pd;
 	}
 
@@ -2218,6 +2263,7 @@ public class OntologyManager
         assert dd.getDomainId() != 0;
         dd = Table.update(null, getTinfoDomainDescriptor(), dd, dd.getDomainId());
         domainDescCache.remove(getCacheKey(dd));
+        domainPropertiesCache.remove(getCacheKey(dd));
         return dd;
     }
 
@@ -2225,6 +2271,7 @@ public class OntologyManager
 	{
 		ExperimentService.get().clearCaches();
         domainDescCache.clear();
+        domainPropertiesCache.clear();
         propDescCache.clear();
 		mapCache.clear();
 		objectIdCache.clear();
@@ -2245,7 +2292,7 @@ public class OntologyManager
 
     /** @return whether the import was successful or not. Check the errors collection for details */
     public static boolean importOneType(final String domainURI, List<Map<String, Object>> maps, Collection<String> errors, Container container, User user)
-            throws SQLException
+            throws SQLException, ChangePropertyDescriptorException
     {
         return importTypes(new DomainURIFactory()
             {
@@ -2258,8 +2305,8 @@ public class OntologyManager
 
 
     /** @return whether the import was successful or not. Check the errors collection for details */
-    public static @NotNull boolean importTypes(DomainURIFactory uriFactory, String typeColumn, List<Map<String, Object>> maps, Collection<String> errors, Container container, boolean ignoreDuplicates, User user)
-            throws SQLException
+    public static boolean importTypes(DomainURIFactory uriFactory, String typeColumn, List<Map<String, Object>> maps, Collection<String> errors, Container container, boolean ignoreDuplicates, User user)
+            throws SQLException, ChangePropertyDescriptorException
     {
         //_log.debug("importTypes(" + vocabulary + "," + typeColumn + "," + maps.length + ")");
         LinkedHashMap<String, PropertyDescriptor> propsWithoutDomains = new LinkedHashMap<String, PropertyDescriptor>();
@@ -3397,6 +3444,7 @@ public class OntologyManager
                     throw new ChangePropertyDescriptorException("This property type cannot be changed because there are existing values.");
                 }
             }
+            validatePropertyDescriptor(pdNew);
             PropertyDescriptor update = Table.update(user, getTinfoPropertyDescriptor(), pdNew, pdOld.getPropertyId());
 
             ensurePropertyDomain(pdNew, dd, sortOrder);
@@ -3405,7 +3453,30 @@ public class OntologyManager
         }
         catch (SQLException e)
         {
-            throw new ChangePropertyDescriptorException(e);
+            throw new RuntimeSQLException(e);
+        }
+    }
+
+    private static void validatePropertyDescriptor(PropertyDescriptor pd)
+            throws ChangePropertyDescriptorException
+    {
+        validateValue(pd.getName(), "Name", null);
+        validateValue(pd.getPropertyURI(), "PropertyURI", "Please use a shorter field name.");
+        validateValue(pd.getLabel(), "Label", null);
+        validateValue(pd.getImportAliases(), "ImportAliases", null);
+        validateValue(pd.getURL() != null ? pd.getURL().getSource() : null, "URL", null);
+        validateValue(pd.getOntologyURI(), "OntologyURI", null);
+        validateValue(pd.getConceptURI(), "ConceptURI", null);
+        validateValue(pd.getSemanticType(), "SemanticType", null);
+        validateValue(pd.getRangeURI(), "RangeURI", null);
+    }
+
+    private static void validateValue(String value, String columnName, String extraMessage) throws ChangePropertyDescriptorException
+    {
+        int maxLength = getTinfoPropertyDescriptor().getColumn(columnName).getScale();
+        if (value != null && value.length() > maxLength)
+        {
+            throw new ChangePropertyDescriptorException(columnName + " cannot exceed " + maxLength + " characters, but was " + value.length() + " characters long. " + (extraMessage == null ? "" : extraMessage));
         }
     }
 

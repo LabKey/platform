@@ -95,16 +95,7 @@ public abstract class AbstractDomainKind extends DomainKind
 
     public List<String> updateDomain(GWTDomain original, GWTDomain update, Container container, User user)
     {
-        try
-        {
-            return DomainUtil.updateDomainDescriptor(original, update, container, user);
-        }
-        catch (ChangePropertyDescriptorException e)
-        {
-            // Collections.singletonList() is not GWT serializeable
-            //return Collections.singletonList(e.getMessage());
-            return new ArrayList<String>(Arrays.asList(e.getMessage()));
-        }
+        return DomainUtil.updateDomainDescriptor(original, update, container, user);
     }
 
     @Override

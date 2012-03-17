@@ -232,7 +232,7 @@ public class DomainUtil
     }
 
     @SuppressWarnings("unchecked")
-    public static List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain update, Container container, User user) throws ChangePropertyDescriptorException
+    public static List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain update, Container container, User user)
     {
         assert orig.getDomainURI().equals(update.getDomainURI());
         List<String> errors = new ArrayList<String>();
@@ -400,6 +400,10 @@ public class DomainUtil
         catch (IllegalStateException x)
         {
             errors.add(x.getMessage());
+        }
+        catch (ChangePropertyDescriptorException x)
+        {
+            errors.add(x.getMessage() == null ? x.toString() : x.getMessage());
         }
 
         return errors.size() > 0 ? errors : null;
