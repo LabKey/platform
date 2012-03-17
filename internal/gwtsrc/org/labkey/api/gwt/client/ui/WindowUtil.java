@@ -176,6 +176,7 @@ public class WindowUtil
     public static void showConfirmDialog(String title, String message, ImageButton... buttons)
     {
         final DialogBox confirmDialog = new DialogBox(false, true);
+        confirmDialog.getElement().getStyle().setZIndex(50000);
         for (ImageButton button : buttons)
         {
             button.addClickHandler(new ClickHandler()
