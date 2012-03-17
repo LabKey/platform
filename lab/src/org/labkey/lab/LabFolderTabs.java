@@ -47,7 +47,7 @@ public class LabFolderTabs
             ActionURL tabURL = getURL(viewContext);
             ActionURL curURL = viewContext.getActionURL();
 
-            return tabURL.getAction().equals(curURL.getAction()) && tabURL.getPageFlow().equals(curURL.getPageFlow()) && (curURL.getParameter("pageId") == null);
+            return tabURL.getAction().equals(curURL.getAction()) && tabURL.getController().equals(curURL.getController()) && (curURL.getParameter("pageId") == null);
 
         }
 
