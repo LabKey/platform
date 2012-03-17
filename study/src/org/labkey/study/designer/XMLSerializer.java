@@ -176,6 +176,15 @@ public class XMLSerializer
         def.setAssaySchedule(gAssaySchedule);
 
         GWTImmunizationSchedule gImmunizationSchedule = new GWTImmunizationSchedule();
+        ImmunizationSchedule.Timepoints immunizationTimepoints = xdesign.getImmunizationSchedule().getTimepoints();
+        if (null != immunizationTimepoints)
+            for (Timepoint tp : immunizationTimepoints.getTimepointArray())
+            {
+                GWTTimepoint.Unit unit = GWTTimepoint.Unit.fromString(tp.getDisplayUnit());
+                GWTTimepoint gtp = new GWTTimepoint(tp.getName(), tp.getDays()/unit.daysPerUnit, unit);
+                gImmunizationSchedule.addTimepoint(gtp);
+            }
+
         for (ImmunizationEvent evt : xdesign.getImmunizationSchedule().getImmunizationEventArray())
         {
 
@@ -284,6 +293,13 @@ public class XMLSerializer
 
             ImmunizationSchedule xImmunizationSchedule = x.addNewImmunizationSchedule();
             GWTImmunizationSchedule gSchedule = def.getImmunizationSchedule();
+
+            ImmunizationSchedule.Timepoints timepointsElem = xImmunizationSchedule.addNewTimepoints();
+            List<Timepoint> immunizationTimepoints = new ArrayList<Timepoint>();
+            for (GWTTimepoint gtp : gSchedule.getTimepoints())
+                immunizationTimepoints.add(createTimepoint(gtp));
+            timepointsElem.setTimepointArray(immunizationTimepoints.toArray(new Timepoint[immunizationTimepoints.size()]));
+
             for (GWTCohort gCohort : (List<GWTCohort>) def.getGroups())
             {
                 for (GWTTimepoint gtp : (List<GWTTimepoint>) gSchedule.getTimepoints())
