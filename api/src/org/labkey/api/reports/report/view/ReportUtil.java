@@ -52,6 +52,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
@@ -325,7 +326,8 @@ public class ReportUtil
 
     public static boolean canCreateScript(ViewContext context)
     {
-        return context.getUser().isDeveloper();
+        return context.getUser().isDeveloper() &&
+               context.getContainer().hasPermission(context.getUser(), InsertPermission.class);
     }
 
     public static interface ReportFilter

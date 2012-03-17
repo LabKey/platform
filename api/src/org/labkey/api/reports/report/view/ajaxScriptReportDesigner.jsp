@@ -33,6 +33,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -47,7 +48,9 @@
     boolean readOnly = bean.isReadOnly() || !ctx.getUser().isDeveloper();
     Mode mode = bean.getMode();
     boolean sourceAndHelp = mode.showSourceAndHelp(ctx.getUser()) || bean.isSourceTabVisible();
-    boolean canEdit = report.getReportId() != null ? report.getDescriptor().canEdit(ctx.getUser(), c) : true;
+
+    // a report is inherited if it has been shared from a parent (or shared) folder
+    boolean inherited = report.getReportId() != null ? report.getDescriptor().isInherited(c) : false;
 
     // Mode determines whether we need unique IDs on all the HTML elements
     String uid = mode.getUniqueID();
@@ -108,6 +111,11 @@ var f_scope<%=uid%> = new (function() {
     var dataRegionName    = <%=q(report.getDescriptor().getProperty(ReportDescriptor.Prop.dataRegionName))%>;
     var dataTabRegionName = <%=q(report.getDescriptor().getProperty(ReportDescriptor.Prop.dataRegionName) + "_report")%>;
 
+    // inherited warning message
+    var inheritedWarningMsg = <%=inherited ? "'<div class=\"labkey-warning-messages\">This view has been made available" +
+        " from a different folder and cannot be edited here. The view can only be edited from the folder it was " +
+        " created in.</div>'" : "undefined"%>;
+
     Ext.onReady(function(){
         scriptText = document.getElementById("<%=scriptId%>");
         viewDivExtElement = Ext.get("<%=viewDivId%>");
@@ -144,7 +152,18 @@ var f_scope<%=uid%> = new (function() {
             frame: true,
             plain: true,
             defaults: {autoScroll: true, autoHeight: true},
-            listeners: {beforetabchange: beforeTabChange},
+            listeners: {
+                beforetabchange: beforeTabChange,
+                tabchange : function(cmp, tab) {
+                    // display a warning message if the report is inherited (and cannot be edited)
+                    if (tab.title == 'Source' && inheritedWarningMsg) {
+                        var dr = LABKEY.DataRegions[dataRegionName];
+                        if (dr) {
+                            dr.addMessage(inheritedWarningMsg, 'info');
+                        }
+                    }
+                }
+            },
             boxMinWidth: 500,
             items: items
         });
@@ -576,16 +595,16 @@ function setDisabled(checkbox, label, disabled)
             %>
             <tr>
                 <td>
-                    <input type="checkbox" name="shareReport"<%=bean.isShareReport() ? " checked" : ""%> onchange="LABKEY.setDirty(true);setDisabled(document.getElementById('sourceTab'), document.getElementById('sourceTabLabel'), !this.checked);return true;"> Make this view available to all users&nbsp;
+                    <input type="checkbox" <%=inherited ? "disabled" : ""%> name="shareReport"<%=bean.isShareReport() ? " checked" : ""%> onchange="LABKEY.setDirty(true);setDisabled(document.getElementById('sourceTab'), document.getElementById('sourceTabLabel'), !this.checked);return true;"> Make this view available to all users&nbsp;
                 </td>
             </tr>
             <tr >
                 <td style="padding-left:19px;">
-                    <input id="sourceTab" type="checkbox" name="<%=ScriptReportDescriptor.Prop.sourceTabVisible%>"<%=bean.isSourceTabVisible() ? " checked" : ""%><%=bean.isShareReport() ? "" : " disabled"%> onchange="LABKEY.setDirty(true);return true;"><span <%=bean.isSourceTabVisible() ? "" : " class=\"labkey-disabled\""%> id="sourceTabLabel"> Show source tab to all users</span>
+                    <input id="sourceTab" type="checkbox" name="<%=ScriptReportDescriptor.Prop.sourceTabVisible%>"<%=bean.isSourceTabVisible() ? " checked" : ""%><%=bean.isShareReport() && !inherited ? "" : " disabled"%> onchange="LABKEY.setDirty(true);return true;"><span <%=bean.isSourceTabVisible() ? "" : " class=\"labkey-disabled\""%> id="sourceTabLabel"> Show source tab to all users</span>
                 </td>
             </tr>
             <tr><td>
-                <input type="checkbox" name="inheritable"<%=bean.isInheritable() ? " checked" : ""%> onchange="LABKEY.setDirty(true);return true;"> Make this view
+                <input type="checkbox" <%=inherited ? "disabled" : ""%> name="inheritable"<%=bean.isInheritable() ? " checked" : ""%> onchange="LABKEY.setDirty(true);return true;"> Make this view
                 available in child folders<%=helpPopup("Available in child folders", "If this check box is selected, this view will be available in data grids of child folders " +
                 "where the schema and table are the same as this data grid.")%>
             </td></tr><%
@@ -594,7 +613,7 @@ function setDisabled(checkbox, label, disabled)
                 {
             %>
             <tr><td>
-                <input type="checkbox" id="runInBackground" name="<%=ScriptReportDescriptor.Prop.runInBackground.name()%>"<%=bean.isRunInBackground() ? " checked" : ""
+                <input type="checkbox" id="runInBackground" <%=inherited ? "disabled" : ""%> name="<%=ScriptReportDescriptor.Prop.runInBackground.name()%>"<%=bean.isRunInBackground() ? " checked" : ""
                     %> onchange="LABKEY.setDirty(true);return true;"> Run this view in the background as a pipeline job
             </td></tr><%
                 } %>
@@ -640,7 +659,9 @@ function setDisabled(checkbox, label, disabled)
                 <input type="hidden" name="showDebug" value="true">
                 <input type="hidden" name="<%=ScriptReportDescriptor.Prop.scriptExtension%>" value="<%=StringUtils.trimToEmpty(bean.getScriptExtension())%>">
                 <input type="hidden" name="reportName" id="reportName" value="<%=StringUtils.trimToEmpty(bean.getReportName())%>">
-                <% if (canEdit) { %>
+                <% if (inherited) { %>
+                <a class="labkey-disabled-button">Save</a>
+                <% } else { %>
                 <%=generateButton("Save", "javascript:void(0)", "javascript:f_scope" + uid + ".saveReport()")%>
                 <% } %>
             </td></tr>
