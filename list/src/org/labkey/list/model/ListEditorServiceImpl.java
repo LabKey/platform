@@ -19,7 +19,6 @@ import org.apache.axis.utils.StringUtils;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
@@ -233,19 +232,9 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
 
         try
         {
-            try
+            List<String> errors = super.updateDomainDescriptor(orig, dd);
+            if (errors != null && !errors.isEmpty())
             {
-                List<String> errors = super.updateDomainDescriptor(orig, dd);
-                if (errors != null && !errors.isEmpty())
-                {
-                    return errors;
-                }
-            }
-            catch (ChangePropertyDescriptorException e)
-            {
-                List<String> errors = new ArrayList<String>();
-
-                errors.add(e.getMessage());
                 return errors;
             }
 
