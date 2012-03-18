@@ -375,13 +375,16 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             delete this.dataRegion;
     },
 
+    // group may be true, group index, group name, or the group tab instance.
     translateGroupName : function (group) {
-        // translate group tab name into index or 0 (default) if not found.
+        // translate group tab name into index.
+        if (Ext.isBoolean(group))
+            return 0;
         if (Ext.isNumber(group))
             return group;
-        else if (Ext.isString(group))
+        if (Ext.isString(group))
             return this.groupNames[group];
-        return 0;
+        return group;
     },
 
     // Issue 11188: Translate friendly group tab name into item index.
