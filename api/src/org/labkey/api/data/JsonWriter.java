@@ -263,7 +263,17 @@ public class JsonWriter
                 lookupInfo.put("schemaName", schemaName);
                 lookupInfo.put("schema", schemaName);
 
-                lookupInfo.put("displayColumn", lookupTable.getTitleColumn());
+                ColumnInfo displayColumn = fk.createLookupColumn(columnInfo, null);
+                if (displayColumn != null && displayColumn.getFieldKey() != null)
+                {
+                    lookupInfo.put("displayColumn", displayColumn.getFieldKey().getName());
+                }
+                else
+                {
+                    // In this case, we likely won't be able to resolve the column when executing the query, but
+                    // it's the best guess that we have
+                    lookupInfo.put("displayColumn", lookupTable.getTitleColumn());
+                }
                 String key = null;
                 List<String> pks = lookupTable.getPkColumnNames();
                 if (null != pks && pks.size() > 0)
