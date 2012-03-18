@@ -34,7 +34,9 @@ public class EditorRole extends AbstractRole
         super("Editor", "Editors may read, add, update and delete information.",
                 ReadPermission.class, ReadSomePermission.class, 
                 InsertPermission.class, UpdatePermission.class,
-                DeletePermission.class, SharedParticipantGroupPermission.class);
+                DeletePermission.class,
+                EditSharedViewPermission.class,
+                SharedParticipantGroupPermission.class);
     }
 
     @Override

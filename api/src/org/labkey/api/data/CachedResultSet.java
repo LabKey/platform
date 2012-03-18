@@ -452,6 +452,13 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
             return null;
         if (o instanceof byte[])
             return (byte[]) o;
+        if (o instanceof Blob)
+        {
+            long length = ((Blob)o).length();
+            if (length > Integer.MAX_VALUE)
+                throwConversionError("Blob too long: " + length);
+            return ((Blob)o).getBytes(1, (int)length);
+        }
         throwConversionError("Can't convert '" + o.getClass() + "' to byte[]");
         return null;
     }

@@ -154,7 +154,7 @@
  * QueryWebPart. If not supplied, links will generally be opened in the same browser window/tab where the QueryWebPart. 
  * @param {String} [config.frame] The frame style to use for the web part. This may be one of the following:
  * 'div', 'portal', 'none', 'dialog', 'title', 'left-nav'.
- * @param {String} [config.showViewPanel] Open the customize view panel after rendering.  The value of this option can be one of "ColumnsTab", "FilterTab", or "SortTab".
+ * @param {String} [config.showViewPanel] Open the customize view panel after rendering.  The value of this option can be "true" or one of "ColumnsTab", "FilterTab", or "SortTab".
  * @param {String} [config.bodyClass] A CSS style class that will be added to the enclosing element for the web part.
  * @param {Function} [config.success] A function to call after the part has been rendered. It will be passed two arguments:
  * <ul>

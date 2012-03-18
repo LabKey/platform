@@ -376,10 +376,12 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
     },
 
     translateGroupName : function (group) {
-        // translate group tab name into index.
-        if (Ext.isString(group))
+        // translate group tab name into index or 0 (default) if not found.
+        if (Ext.isNumber(group))
+            return group;
+        else if (Ext.isString(group))
             return this.groupNames[group];
-        return group;
+        return 0;
     },
 
     // Issue 11188: Translate friendly group tab name into item index.
@@ -1324,6 +1326,24 @@ LABKEY.DataRegion.FilterTab = Ext.extend(LABKEY.DataRegion.Tab, {
                 filters.push(g);
             }
             g.items.push(filter);
+
+            // Issue 14318: Migrate non-date filter ops to their date equivalents
+            // CONSIDER: Perhaps we should do this on the server as the CustomView is constructed
+            var fieldMetaRecord = fieldMetaStore.getById(filter.fieldKey.toUpperCase());
+            if (fieldMetaRecord)
+            {
+                var jsonType = fieldMetaRecord.data.jsonType;
+                if (jsonType == "date" &&
+                       (filter.op == LABKEY.Filter.Types.EQUAL.getURLSuffix() ||
+                        filter.op == LABKEY.Filter.Types.NOT_EQUAL.getURLSuffix() ||
+                        filter.op == LABKEY.Filter.Types.GREATER_THAN.getURLSuffix() ||
+                        filter.op == LABKEY.Filter.Types.GREATER_THAN_OR_EQUAL.getURLSuffix() ||
+                        filter.op == LABKEY.Filter.Types.LESS_THAN.getURLSuffix() ||
+                        filter.op == LABKEY.Filter.Types.LESS_THAN_OR_EQUAL.getURLSuffix()))
+                {
+                    filter.op = "date" + filter.op;
+                }
+            }
         }
         this.filterStore = new Ext.data.JsonStore({
             fields: ['fieldKey', 'items', 'urlParameter'],
