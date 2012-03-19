@@ -165,6 +165,8 @@ public class QuerySettings
         if (pv == null)
             return null;
         Object v = pv.getValue();
+        if (v == null)
+            return null;
         if (v.getClass().isArray())
         {
             Object[] a = (Object[])v;
