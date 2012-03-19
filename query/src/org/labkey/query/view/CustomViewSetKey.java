@@ -17,8 +17,10 @@
 package org.labkey.query.view;
 
 import org.apache.commons.lang3.ObjectUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.SessionHelper;
 import org.labkey.query.persist.CstmView;
 
 import javax.servlet.http.HttpServletRequest;
@@ -54,17 +56,17 @@ public class CustomViewSetKey implements Serializable
                 ObjectUtils.hashCode(_queryName);
     }
 
-    static private Map<CustomViewSetKey, Map<String, CstmView>> getMap(HttpServletRequest request)
+    static private Map<CustomViewSetKey, Map<String, CstmView>> getMap(@NotNull HttpServletRequest request)
     {
-        return (Map<CustomViewSetKey, Map<String, CstmView>>) request.getSession().getAttribute(KEY);
+        return (Map<CustomViewSetKey, Map<String, CstmView>>)SessionHelper.getAttribute(request, KEY, null);
     }
 
     static private void setMap(HttpServletRequest request, Map<CustomViewSetKey, Map<String, CstmView>> map)
     {
-        request.getSession().setAttribute(KEY, map);
+        SessionHelper.setAttribute(request, KEY, map, true);
     }
 
-    static public Map<String, CstmView> getCustomViewsFromSession(HttpServletRequest request, QueryDefinition queryDef)
+    static public Map<String, CstmView> getCustomViewsFromSession(@NotNull HttpServletRequest request, QueryDefinition queryDef)
     {
         Map<CustomViewSetKey, Map<String, CstmView>> fullMap = getMap(request);
         if (fullMap == null)
