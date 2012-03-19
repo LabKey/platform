@@ -61,7 +61,7 @@ public class SessionHelper
         synchronized (getSessionLock(s))
         {
             Object value = s.getAttribute(key);
-            if (null == value)
+            if (null == value && initializeValue != null)
             {
                 try
                 {
