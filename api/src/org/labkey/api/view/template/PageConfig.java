@@ -314,6 +314,8 @@ public class PageConfig
         if (null == current)
             return null;
         URLHelper u = null;
+        if (current instanceof ActionURL && !((ActionURL)current).isCanonical())
+            u = current.clone();
         for (String p : ignoreParameters)
         {
             if (null != current.getParameter(p))

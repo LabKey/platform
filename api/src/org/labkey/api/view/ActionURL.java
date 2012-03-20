@@ -55,6 +55,7 @@ public class ActionURL extends URLHelper implements Cloneable
 
     private String _controller = "project";
     private String _action = "begin";
+    private boolean _isCanonical = true;    // e.g. not using GUID or __r1 syntax or #!
 
     
     /**
@@ -472,17 +473,39 @@ public class ActionURL extends URLHelper implements Cloneable
     {
         if (_readOnly)
             throw new java.lang.IllegalStateException();
-        Path path = Path.parse(pathStr);
-        if (path.size() < 2)
-            throw new IllegalArgumentException(pathStr);
 
-        String action = path.get(path.size()-1);
+        String action = null;
+        String controller = null;
+        Path path = Path.parse(pathStr);
+
+        if (path.size() < 1)
+            throw new IllegalArgumentException(pathStr);
+        action = path.get(path.size()-1);
+        path = path.getParent();
+
+        // parse action.view or controller-action.view
         int i = action.lastIndexOf('.');
         action = -1==i ? action : action.substring(0, i);
+        i = action.lastIndexOf('-');
+        if (i > 0)
+        {
+            controller = action.substring(0, i);
+            action = action.substring(i+1);
+            setIsCanonical(false);
+        }
 
-        _controller = path.get(0).toLowerCase();
+        // parse controller
+        if (null == controller)
+        {
+            if (path.size() < 1)
+                throw new IllegalArgumentException(pathStr);
+            controller = path.get(0);
+            path = path.subpath(1, path.size());
+        }
+
+        _path = path;
         _action = action;
-        _path = path.subpath(1,path.size()-1);
+        _controller = controller.toLowerCase();
     }
 
 
@@ -556,6 +579,17 @@ public class ActionURL extends URLHelper implements Cloneable
         return _contextPath.append(_controller).append(_path).append(_action + ".view");
     }
 
+
+    public void setIsCanonical(boolean b)
+    {
+        if (_readOnly) throw new java.lang.IllegalStateException();
+        _isCanonical = b;
+    }
+
+    public boolean isCanonical()
+    {
+        return _isCanonical;
+    }
 
     @Override
     public ActionURL clone()

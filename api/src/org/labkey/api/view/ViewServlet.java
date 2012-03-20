@@ -286,6 +286,8 @@ public class ViewServlet extends HttpServlet
         // canonicalize container
         Path path = url.getParsedPath();
         Container c = ContainerManager.getForPath(path);
+        if (null == c)
+            url.setIsCanonical(false);
 
         // We support two types of permanent link encoding for containers:
         // 1) for backwards compatibility, long container ids (37 chars long, including the first "/"
