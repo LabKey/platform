@@ -99,10 +99,6 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         {
             throw new RuntimeException(x);
         }
-        catch (RuntimeSQLException x)
-        {
-            throw x;
-        }
         catch (ListImportException x)
         {
             //issue 12162.  known exceptions should throw ListImportException, which will be handled more appropriately downstream

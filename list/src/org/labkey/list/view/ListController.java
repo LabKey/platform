@@ -44,6 +44,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UrlColumn;
@@ -494,17 +495,13 @@ public class ListController extends SpringActionController
             }
             catch (SQLException e)
             {
-                if (SqlDialect.isConstraintException(e))
-                {
-                    if (null != item && null != item.getKey())
-                        errors.reject(ERROR_MSG, "Error: A record having key \"" + item.getKey() + "\" already exists.");
-                    else
-                        errors.reject(ERROR_MSG, "Error: A record with that key already exists.");
-                }
-				else if (e instanceof Table.OptimisticConflictException)
-                {
-                    errors.reject(ERROR_MSG, "Error: The record was updated prior to your changes.  It is recommended that you refresh the page to ensure the values are accurate.");
-                }
+                handleSqlException(e, errors, item);
+            }
+            catch (RuntimeSQLException re)
+            {
+                //issue 14368: SQL errors getting rethrown as RuntimeSQLException should be caught
+                SQLException e = re.getSQLException();
+                handleSqlException(e, errors, item);
             }
             catch (IOException e)
             {
@@ -523,6 +520,25 @@ public class ListController extends SpringActionController
             }
 
             return false;
+        }
+
+        private void handleSqlException (SQLException e, BindException errors, ListItem item)
+        {
+            if (SqlDialect.isConstraintException(e))
+            {
+                if (null != item && null != item.getKey())
+                    errors.reject(ERROR_MSG, "Error: A record having key \"" + item.getKey() + "\" already exists.");
+                else
+                    errors.reject(ERROR_MSG, "Error: A record with that key already exists.");
+            }
+            else if (e instanceof Table.OptimisticConflictException)
+            {
+                errors.reject(ERROR_MSG, "Error: The record was updated prior to your changes.  It is recommended that you refresh the page to ensure the values are accurate.");
+            }
+            else
+            {
+                throw new RuntimeSQLException(e);
+            }
         }
 
         public URLHelper getSuccessURL(ListDefinitionForm listDefinitionForm)

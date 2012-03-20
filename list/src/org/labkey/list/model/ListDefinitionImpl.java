@@ -470,7 +470,7 @@ public class ListDefinitionImpl implements ListDefinition
 
             if (property == null && !isKeyField)
             {
-                errors.add((columnName != "" ? "The field '" + columnName + "' could not be matched to a field in this list." : "The import cannot have blank column headers"));
+                errors.add((!"".equals(columnName) ? "The field '" + columnName + "' could not be matched to a field in this list." : "The import cannot have blank column headers"));
                 continue;
             }
 
