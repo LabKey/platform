@@ -266,6 +266,7 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
             width: 200,
             enableKeyEvents: true,
             emptyText : 'Search',
+            name : 'filterSearch',
             listeners : {
                 // filter the listview using both the label and category names
                 keyup : function(cmp, e){ this.filterMeasures(cmp.getValue()); },
