@@ -719,6 +719,7 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
     },
 
     addPrincipalComboBox : null,
+    focusPrincipalComboBox : false,
 
     onRender : function(ct, where)
     {
@@ -866,6 +867,14 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
             this.addPrincipalComboBox.on("change",this.Combo_onChange,this);
             this.addPrincipalComboBox.on("specialkey",this.Combo_onKeyPress,this);
             this.addPrincipalComboBox.render(principalWrapper);
+
+            // issue 14310 
+            if (this.focusPrincipalComboBox)
+            {
+                this.addPrincipalComboBox.focus();
+                this.focusPrincipalComboBox = false;
+            }
+
             for (i=0 ; i<users.length ; i++)
             {
                 user = users[i];
@@ -894,10 +903,10 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
         {
             var groupid = this.user.UserId;
             var userid = record.data.UserId;
+            this.focusPrincipalComboBox = true;
             this.cache.addMembership(groupid,userid,this._redraw.createDelegate(this));
         }
         combo.selectText();
-        combo.clearValue();
     },
 
     Combo_onKeyPress : function(combo, e)

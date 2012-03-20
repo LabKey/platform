@@ -661,7 +661,14 @@ public class SecurityApiActions
             MutableSecurityPolicy policy = MutableSecurityPolicy.fromMap(form.getProps(), resource);
 
             //save it
-            SecurityManager.savePolicy(policy);
+            try
+            {
+                SecurityManager.savePolicy(policy);    
+            }
+            catch (Exception e)
+            {
+                errors.reject(null, e.getMessage());
+            }
 
             //audit log
             writeToAuditLog(resource, oldPolicy, policy);
