@@ -819,8 +819,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                                 for(var fieldIndex = 0; fieldIndex < this.individualData.metaData.fields.length; fieldIndex++){
                                     var meta = this.individualData.metaData.fields[fieldIndex];
                                     if(meta.fieldKey == this.individualData.measureToColumn[s.name]){
-                                        if(meta.extFormat){
-                                            dataValue.value = Ext.util.Format.number(dataValue.value, meta.extFormat);
+                                        if(meta.extFormatFn != null && meta.extFormatFn != undefined){
+                                            dataValue.value = eval(meta.extFormatFn)(dataValue.value);
                                         }
                                     }
                                 }

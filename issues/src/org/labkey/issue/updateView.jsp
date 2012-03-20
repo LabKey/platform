@@ -163,9 +163,18 @@
                                     resolutionSelect.attachEvent('onchange', updateDuplicateInput);
                                 Ext.EventManager.on(duplicateInput, 'keypress', filterNumber);
                             </script>
-                        <% } else { %>
+                        <%
+                            }
+                            else
+                            {
+                                if(issue.getDuplicate() != null)
+                                {
+                        %>
                             <a href="<%=IssuesController.getDetailsURL(context.getContainer(), issue.getDuplicate(), false)%>"><%=issue.getDuplicate()%></a>
-                        <% } %>
+                        <%
+                                }
+                            }
+                        %>
                         </td></tr>
         <% } %>
                         <%=bean.writeCustomColumn(c, new HString("int1", false), HString.valueOf(issue.getInt1()), IssuesController.ISSUE_NONE, 10)%>
