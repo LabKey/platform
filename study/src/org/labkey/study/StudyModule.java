@@ -431,6 +431,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             view.setTitle("Data Views");
             view.setFrame(WebPartView.FrameType.PORTAL);
             Container c = portalCtx.getContainer();
+            NavTree menu = new NavTree();
 
             if (portalCtx.hasPermission(AdminPermission.class))
             {
@@ -438,12 +439,16 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 customize.setScript("customizeDataViews(" + webPart.getRowId() + ", \'" + webPart.getPageId() + "\', " + webPart.getIndex() + ");");
                 view.setCustomize(customize);
 
-                NavTree menu = new NavTree();
                 menu.addChild("Manage Datasets", new ActionURL(StudyController.ManageTypesAction.class, c));
                 menu.addChild("Manage Queries", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(c));
-                menu.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(c));
-                view.setNavMenu(menu);
             }
+
+            if(portalCtx.hasPermission(ReadPermission.class))
+            {
+                menu.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(c));
+            }
+
+            view.setNavMenu(menu);
 
             return view;
         }

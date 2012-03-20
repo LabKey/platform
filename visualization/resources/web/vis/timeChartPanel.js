@@ -815,6 +815,16 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                                     dataValue = {value: dataValue};
                                 }
 
+                                //Now format the dataValue if we know the desired format.
+                                for(var fieldIndex = 0; fieldIndex < this.individualData.metaData.fields.length; fieldIndex++){
+                                    var meta = this.individualData.metaData.fields[fieldIndex];
+                                    if(meta.fieldKey == this.individualData.measureToColumn[s.name]){
+                                        if(meta.extFormat){
+                                            dataValue.value = Ext.util.Format.number(dataValue.value, meta.extFormat);
+                                        }
+                                    }
+                                }
+
                                 // record that this measure has data
                                 if (dataValue.value) this.individualHasData[s.name] = true;
 
