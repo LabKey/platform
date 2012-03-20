@@ -3611,6 +3611,12 @@ body.print, table.labkey-main.print
     background-color:#ffffff;
 }
 
+/* Get rid of the space to the left of radio buttons and checkboxes so that they match the spacing on other form elements */
+input[type="checkbox"], input[type="radio"] {
+    margin: 0 4px 0 0;
+    padding: 0;
+}
+
 /* Ext 4 styling */
 .x4-reset .x4-message-box .x4-window-body,
 .x4-reset .x4-toolbar-footer {

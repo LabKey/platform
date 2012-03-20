@@ -70,7 +70,7 @@ for (Thread t : bean.threads)
             }
         }
 
-        for (StackTraceElement e : t.getStackTrace())
+        for (StackTraceElement e : bean.stackTraces.get(t))
         {
             %><%= "    at " + e  + "\n" %><%
         }

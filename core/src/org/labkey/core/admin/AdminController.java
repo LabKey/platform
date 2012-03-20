@@ -1728,14 +1728,14 @@ public class AdminController extends SpringActionController
     public static class ThreadsBean
     {
         public Map<Thread, Set<Integer>> spids = new HashMap<Thread, Set<Integer>>();
-        public Thread[] threads;
+        public List<Thread> threads;
+        public Map<Thread, StackTraceElement[]> stackTraces;
 
         ThreadsBean()
         {
-            int threadCount = Thread.activeCount();
-            threads = new Thread[threadCount];
-            Thread.enumerate(threads);
-            Arrays.sort(threads, new Comparator<Thread>()
+            stackTraces =  Thread.getAllStackTraces();
+            threads = new ArrayList<Thread>(stackTraces.keySet());
+            Collections.sort(threads, new Comparator<Thread>()
             {
                 public int compare(Thread o1, Thread o2)
                 {
