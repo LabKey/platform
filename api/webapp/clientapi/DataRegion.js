@@ -2049,6 +2049,7 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function (config)
                     allowBlank: false,
                     emptyText: "Name is required",
                     maxLength: 50,
+                    width: 280,
                     autoCreate: {tag: 'input', type: 'text', size: '50'},
                     validator: function (value) {
                         if ("default" === value.trim())
