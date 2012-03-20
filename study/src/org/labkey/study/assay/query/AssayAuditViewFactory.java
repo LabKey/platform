@@ -177,16 +177,19 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
         FieldKey lsidField = FieldKey.fromParts("Property", "sourceLsid");
         Map<FieldKey, ColumnInfo> entry = QueryService.get().getColumns(table, Collections.singletonList(lsidField));
 
-        ColumnInfo runCol = entry.get(lsidField);
-        runCol.setDisplayColumnFactory(new DisplayColumnFactory()
+        if (entry.containsKey(lsidField))
         {
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            ColumnInfo runCol = entry.get(lsidField);
+            runCol.setDisplayColumnFactory(new DisplayColumnFactory()
             {
-                return new RunColumn(colInfo, containerId, null);
-            }
-        });
+                public DisplayColumn createRenderer(ColumnInfo colInfo)
+                {
+                    return new RunColumn(colInfo, containerId, null);
+                }
+            });
 
-        table.addColumn(new AliasedColumn(runCol.getParentTable(), "Run", runCol));
+            table.addColumn(new AliasedColumn(runCol.getParentTable(), "Run", runCol));
+        }
     }
 
     private void addDetailsColumn(AuditLogQueryView view)
