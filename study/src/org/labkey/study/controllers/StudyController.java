@@ -7442,6 +7442,13 @@ public class StudyController extends BaseStudyController
                     case reports:
                         if (category != null)
                             _report.getDescriptor().setCategory(category);
+
+                        // shared status
+                        if(!form.getShared())
+                            _report.getDescriptor().setOwner(getUser().getUserId());
+                        else
+                            _report.getDescriptor().setOwner(null);
+
                         ReportService.get().saveReport(getViewContext(), _report.getDescriptor().getReportKey(), _report);
                         break;
                     case datasets:

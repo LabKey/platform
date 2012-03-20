@@ -1071,7 +1071,6 @@ public class ReportsController extends SpringActionController
     public static class UploadForm extends DataViewEditForm
     {
         private String filePath;
-        private Boolean shared;
         private BindException _errors;
 
         public String getFilePath()
@@ -1082,16 +1081,6 @@ public class ReportsController extends SpringActionController
         public void setFilePath(String filePath)
         {
             this.filePath = filePath;
-        }
-
-        public Boolean getShared()
-        {
-            return shared;
-        }
-
-        public void setShared(Boolean shared)
-        {
-            this.shared = shared;
         }
 
         public void setErrors(BindException errors){_errors = errors;}

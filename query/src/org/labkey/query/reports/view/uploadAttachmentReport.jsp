@@ -50,25 +50,6 @@
 
     Ext4.onReady(function(){
 
-        var shared = {
-            xtype: 'checkbox',
-            value: false,
-            inputValue: false,
-            boxLabel: 'Share this report with all users?',
-            name: "shared",
-            fieldLabel: "Shared",
-            listeners: {
-                change: function(cmp, newVal, oldVal){
-                    cmp.inputValue = newVal;
-                }
-            }
-        };
-
-        var hiddenShared = {
-            xtype: 'hidden',
-            name: "@shared"
-        };
-
         var localFileUploadRadio = {
             boxLabel: 'Upload File',
             name: 'fileUploadRadio',
@@ -148,11 +129,10 @@
                 modifieddate: true,
                 datacutdate : true,
                 category    : true,
-                description : true
+                description : true,
+                shared      : true
             },
             extraItems : [
-                shared,
-                hiddenShared,
                 fileUploadRadioGroup,
                 fileUploadField,
                 serverFileTextField

@@ -151,6 +151,27 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
             });
         }
 
+        if (this.visibleFields['shared']) {
+
+            formItems.push({
+                xtype   : 'checkbox',
+                value   : false,
+                inputValue  : false,
+                boxLabel    : 'Share this report with all users?',
+                name        : "shared",
+                fieldLabel  : "Shared",
+                checked     : this.data.shared,
+                listeners: {
+                    change: function(cmp, newVal, oldVal){
+                        cmp.inputValue = newVal;
+                    }
+                }
+            },{
+                xtype: 'hidden',
+                name: "@shared"
+            });
+        }
+
         if (this.visibleFields['type']) {
 
             formItems.push({

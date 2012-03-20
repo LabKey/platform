@@ -45,6 +45,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             {name : 'description'},
             {name : 'displayOrder',         type : 'int'},
             {name : 'hidden',               type : 'boolean'},
+            {name : 'shared',               type : 'boolean'},
             {name : 'icon'},
             {name : 'inherited',            type : 'boolean'},
             {name : 'modified',             type : 'string'},
@@ -1111,13 +1112,13 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             value : record.data.dataType
         });
 
-        var hasAuthorField = record.data.type.toLowerCase() != 'dataset';
+        var isReportView = record.data.type.toLowerCase() != 'dataset';
 
         var viewForm = Ext4.create('LABKEY.study.DataViewPropertiesPanel', {
             record          : record,
             extraItems      : formItems,
             visibleFields   : {
-                author  : hasAuthorField,
+                author  : isReportView,
                 status  : true,
                 datacutdate : true,
                 category    : true,
@@ -1125,6 +1126,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 type        : true,
                 visibility  : true,
                 created     : true,
+                shared      : isReportView,
                 modified    : true
             },
             buttons     : [{
@@ -1155,7 +1157,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         var editWindow = Ext4.create('Ext.window.Window', {
             width  : 450,
-            height : hasAuthorField ? 510 : 425,
+            height : isReportView ? 510 : 425,
             layout : 'fit',
             draggable : false,
             modal  : true,
