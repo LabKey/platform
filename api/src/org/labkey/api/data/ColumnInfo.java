@@ -294,6 +294,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setInputRows(col.getInputRows());
         if (!isKeyField() && !col.isNullable())
             setNullable(col.isNullable());
+        setReadOnly(col.isReadOnly);
         setDisplayColumnFactory(col.getDisplayColumnFactory());
         setTextAlign(col.getTextAlign());
         setWidth(col.getWidth());
