@@ -243,12 +243,14 @@ Ext4.define('LABKEY.ext.LinkButton', {
     renderTpl:
         '<em id="{id}-btnWrap" class="{splitCls}">' +
             '{linkPrefix}' +
-            '<a id="{id}-btnEl" href="{href}" class="{linkCls}" target="{target}"<tpl if="tabIndex"> tabIndex="{tabIndex}"</tpl> role="link">' +
-                '<span id="{id}-btnInnerEl" class="{baseCls}-inner">' +
-                    '{text}' +
-                '</span>' +
-                '<tpl if="linkCls==\'labkey-text-link\'"><span class="css-arrow-right"></span></tpl>' +
-                '<span id="{id}-btnIconEl" class="{baseCls}-icon"></span>' +
+            '<a id="{id}-btnEl" class="{linkCls}" target="{target}" role="link" ' +
+                '<tpl if="href">href="{href}" </tpl>' +
+                '<tpl if="tabIndex"> tabIndex="{tabIndex}"</tpl>' +
+            '>' +
+            '<span id="{id}-btnInnerEl" class="{baseCls}-inner">{text}</span>' +
+            //TODO: would be better if this image were just part of the CSS
+            '<tpl if="linkCls==\'labkey-text-link\'"><span class="css-arrow-right"></span></tpl>' +
+            '<span id="{id}-btnIconEl" class="{baseCls}-icon"></span>' +
             '</a>' +
             '{linkSuffix}' +
         '</em>'

@@ -291,9 +291,10 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
         errorArea.add({html: html});
         Ext4.Msg.hide();
 
-        if(!response.success){
-            alert(response.exception || 'There was a problem with the upload');
-            console.log(response.errors)
+        if(!response || !response.success){
+            var msg = response ? response.exception || response.message : null;
+            alert(msg || 'There was a problem with the upload');
+            console.log(response)
             this.fireEvent('uploadexception', response);
         }
         else {

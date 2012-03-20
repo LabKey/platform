@@ -186,11 +186,26 @@ LABKEY.ext.MetaHelper = {
             name: meta.name,
             dataIndex: meta.dataIndex || meta.name,
             value: meta.value || meta.defaultValue,
-            helpPopup: ['Type: ' + meta.friendlyType],
+            helpPopup: [
+                'Type: ' + meta.friendlyType,
+                'Required: ' + meta.allowBlank,
+                'Description: ' + (meta.description || '')
+            ],
             width: meta.width,
             height: meta.height,
             msgTarget: 'qtip',
             labelableRenderTpl: LABKEY.ext.MetaHelper.labelableRenderTpl,
+            getLabelableRenderData: function(){
+                var data = Ext4.form.Labelable.prototype.getLabelableRenderData.apply(this, arguments);
+                data.allowBlank = this.allowBlank;
+                if(this.allowBlank === false){
+                    data.labelStyle = data.labelStyle || '';
+                    data.labelStyle = data.labelStyle.split(';');
+                    data.labelStyle.push('font-weight:bold');
+                    data.labelStyle = data.labelStyle.join(';');
+                }
+                return data;
+            },
             validateOnChange: true
         };
 
@@ -763,9 +778,10 @@ LABKEY.ext.MetaHelper = {
         '<tpl if="!hideLabel && !(!fieldLabel && hideEmptyLabel)">',
             '<label id="{id}-labelEl"<tpl if="inputId"> for="{inputId}"</tpl> class="{labelCls}"',
                 '<tpl if="labelStyle"> style="{labelStyle}"</tpl>>',
-                '<tpl if="fieldLabel">{fieldLabel:htmlEncode}' +
+                '<tpl if="fieldLabel">{fieldLabel:htmlEncode}',
                     '{labelSeparator}' +
-                    '<tpl if="helpPopup"> <a href="#" data-qtip="{helpPopup:htmlEncode}"><span class="labkey-help-pop-up">?</span></a></tpl>' +
+                    //'<tpl if="!allowBlank"> *</tpl>',
+                    '<tpl if="helpPopup"><a href="#" data-qtip="{helpPopup:htmlEncode}"><span class="labkey-help-pop-up">?</span></a></tpl>',
                 '</tpl>',
             '</label>',
         '</tpl>',
@@ -801,12 +817,13 @@ LABKEY.ext.MetaHelper = {
      * @name shouldShowInDetailsView
      * @function
      * @param (object) metadata The field metadata object
-     * @returns {boolean} Returns whether the field show appear
+     * @returns {boolean} Returns whether the field show appear in the default details view
      * @memberOf LABKEY.ext.MetaHelper#
      *
      */
     shouldShowInDetailsView: function(meta){
-        return meta.shownInDetailsView || (!meta.isHidden && !meta.hidden && meta.shownInDetailsView!==false)
+        return Ext4.isDefined(meta.shownInDetailsView) ? meta.shownInDetailsView :
+            (!meta.isHidden && !meta.hidden && meta.shownInDetailsView!==false);
     },
 
     /**
@@ -815,15 +832,16 @@ LABKEY.ext.MetaHelper = {
      * If any of the follow are true, it will not appear: hidden, isHidden
      * If shownInInsertView is defined, this will take priority over all
      *
-     * @name shouldShowInDetailsView
+     * @name shouldShowInInsertView
      * @function
      * @param (object) metadata The field metadata object
-     * @returns {boolean} Returns whether the field show appear
+     * @returns {boolean} Returns whether the field show appear in the default insert view
      * @memberOf LABKEY.ext.MetaHelper#
      *
      */
     shouldShowInInsertView: function(meta){
-        return meta.shownInInsertView || (!meta.isHidden && !meta.hidden && meta.shownInInsertView!==false && meta.userEditable!==false && !meta.autoIncrement)
+        return Ext4.isDefined(meta.shownInInsertView) ?  meta.shownInInsertView :
+            (!meta.isHidden && !meta.hidden && meta.userEditable!==false && !meta.autoIncrement);
     },
 
     /**
@@ -840,7 +858,8 @@ LABKEY.ext.MetaHelper = {
      *
      */
     shouldShowInUpdateView: function(meta){
-        return meta.shownInUpdateView || (!meta.isHidden && !meta.hidden && meta.shownInUpdateView!==false && meta.userEditable!==false && !meta.autoIncrement && meta.readOnly!==false)
+        return Ext4.isDefined(meta.shownInUpdateView) ? meta.shownInUpdateView :
+            (!meta.isHidden && !meta.hidden && meta.userEditable!==false && !meta.autoIncrement && meta.readOnly!==false)
     },
 
     //private
@@ -858,6 +877,5 @@ LABKEY.ext.MetaHelper = {
 
         return LABKEY.ext.MetaHelper.getLookupStore(c);
     }
-
 };
 

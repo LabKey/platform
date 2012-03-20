@@ -5,7 +5,7 @@
  */
 
 LABKEY.requiresExt4ClientAPI();
-LABKEY.NavTrail.setTrail(window.document.title, []);
+//LABKEY.NavTrail.setTrail(window.document.title, []);
 
 Ext4.namespace('LABKEY.ext');
 /**

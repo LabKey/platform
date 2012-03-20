@@ -192,6 +192,7 @@ public interface Module extends Comparable<Module>
     public String getSvnUrl();
     public Map<String, String> getProperties();
     public Set<String> getModuleDependenciesAsSet();
+    public Set<Module> getResolvedModuleDependencies();
 
     /** Get a list of attributions (in HTML) that should be shown before users can log in. */
     public List<String> getAttributions();

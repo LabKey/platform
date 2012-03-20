@@ -303,6 +303,23 @@ public class MockModule implements Module
     }
 
     @Override
+    public Set<Module> getResolvedModuleDependencies()
+    {
+        Set<Module> modules = new HashSet<Module>();
+        Module module;
+        for(String m : _dependencies)
+        {
+            module = ModuleLoader.getInstance().getModule(m);
+            if(module != null)
+            {
+                modules.add(module);
+                modules.addAll(module.getResolvedModuleDependencies());
+            }
+        }
+        return modules;
+    }
+
+    @Override
     public Controller getController(HttpServletRequest request, String name)
     {
         throw new UnsupportedOperationException();

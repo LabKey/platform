@@ -1104,4 +1104,21 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             }
         }
     }
+
+    @Override
+    public Set<Module> getResolvedModuleDependencies()
+    {
+        Set<Module> modules = new HashSet<Module>();
+        Module module;
+        for(String m : getModuleDependenciesAsSet())
+        {
+            module = ModuleLoader.getInstance().getModule(m);
+            if(module != null)
+            {
+                modules.add(module);
+                modules.addAll(module.getResolvedModuleDependencies());
+            }
+        }
+        return modules;
+    }
 }
