@@ -518,7 +518,8 @@ public class ReportUtil
                             security = "custom"; // 13571: Explicit is a bad name for custom permissions
                         else
                             security = "public";
-
+                        
+                        info.setShared(descriptor.getOwner() == null);
                         info.setPermissions(security);
 
                         // This icon is the small icon -- not the same as thumbnail

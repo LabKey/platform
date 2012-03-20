@@ -49,6 +49,7 @@ public class ViewInfo
     private Boolean _editable;
     private Boolean _inherited;
     private Boolean _queryView;
+    private boolean _shared;
     private String _version;
 
     private ActionURL _editUrl;
@@ -395,6 +396,16 @@ public class ViewInfo
         _refreshDate = refreshDate;
     }
 
+    public boolean isShared()
+    {
+        return _shared;
+    }
+
+    public void setShared(boolean shared)
+    {
+        _shared = shared;
+    }
+
     public JSONObject toJSON(User user)
     {
         return toJSON(user, null);
@@ -413,6 +424,7 @@ public class ViewInfo
         o.put("type", getType());
         o.put("dataType", getDataType());
         o.put("hidden", isHidden());
+        o.put("shared", isShared());
         o.put("displayOrder", getDisplayOrder());
         o.put("status", getStatus().name());
 

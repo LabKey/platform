@@ -288,7 +288,7 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
     public Thumbnail getStaticThumbnail()
     {
         InputStream is = RReport.class.getResourceAsStream("Rlogo.jpg");
-        return new Thumbnail(is, "image/jpg");
+        return new Thumbnail(is, "image/jpeg");
     }
 
     @Override

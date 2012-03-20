@@ -23,6 +23,7 @@ public class DataViewEditForm extends ReturnUrlForm
     ViewInfo.Status _status;
     Date _refreshDate;
     Date _modifiedDate;
+    private Boolean _shared;
 
     public String getViewName()
     {
@@ -132,5 +133,15 @@ public class DataViewEditForm extends ReturnUrlForm
     public void setStatus(ViewInfo.Status status)
     {
         _status = status;
+    }
+
+    public Boolean getShared()
+    {
+        return _shared;
+    }
+
+    public void setShared(Boolean shared)
+    {
+        _shared = shared;
     }
 }
