@@ -28,6 +28,20 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
         this.visibleFields = config.visibleFields || {};
         this.extraItems = config.extraItems || [];
 
+        // define data models
+        Ext4.define('Dataset.Browser.Category', {
+            extend : 'Ext.data.Model',
+            fields : [
+                {name : 'created',      type : 'string'},
+                {name : 'createdBy'                  },
+                {name : 'displayOrder', type : 'int' },
+                {name : 'label'                      },
+                {name : 'modfied',      type : 'string'},
+                {name : 'modifiedBy'                 },
+                {name : 'rowid',        type : 'int' }
+            ]
+        });
+
         Ext4.define('LABKEY.data.User', {
             extend : 'Ext.data.Model',
             fields : [
