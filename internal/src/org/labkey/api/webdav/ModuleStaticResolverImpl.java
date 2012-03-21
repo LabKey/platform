@@ -223,37 +223,37 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         }
 
         @Override
-        public boolean canRead(User user)
+        public boolean canRead(User user, boolean forRead)
         {
             return true;
         }
 
         @Override
-        public boolean canList(User user)
+        public boolean canList(User user, boolean forRead)
         {
             return true;
         }
 
         @Override
-        public boolean canRename(User user)
+        public boolean canRename(User user, boolean forRename)
         {
             return false;
         }
 
         @Override
-        public boolean canDelete(User user)
+        public boolean canDelete(User user, boolean forDelete)
         {
             return false;
         }
 
         @Override
-        public boolean canCreate(User user)
+        public boolean canCreate(User user, boolean forCreate)
         {
             return false;
         }
 
         @Override
-        public boolean canWrite(User user)
+        public boolean canWrite(User user, boolean forWrite)
         {
             return false;
         }
@@ -295,7 +295,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         }
 
         @Override
-        public boolean canList(User user)
+        public boolean canList(User user, boolean forRead)
         {
             return true;
         }
