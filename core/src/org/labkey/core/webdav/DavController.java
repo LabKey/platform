@@ -605,7 +605,7 @@ public class DavController extends SpringActionController
                 return notFound();
             if (resource.isCollection() && !allowHtmlListing(resource))
                 return notFound(resource.getPath());
-            if (!(resource.isCollection() ? resource.canList(getUser()) : resource.canRead(getUser())))
+            if (!(resource.isCollection() ? resource.canList(getUser(), true) : resource.canRead(getUser(), true)))
                 return unauthorized(resource);
             if (!resource.exists())
                 return notFound(resource.getPath());
@@ -697,7 +697,7 @@ public class DavController extends SpringActionController
         private void addResource(WebdavResource resource, ZipOutputStream out, User user, WebdavResource rootResource, int depth, Set<String> includeNames)
                 throws IOException, DavException
         {
-            if (!resource.canRead(user))
+            if (!resource.canRead(user, true))
                 return;
 
             if (resource.isCollection())
@@ -935,7 +935,7 @@ public class DavController extends SpringActionController
             if (root == null || !root.exists())
                 return notFound();
 
-            if (!root.canList(getUser()))
+            if (!root.canList(getUser(), true))
                 return unauthorized(root);
 
             List<String> properties = null;
@@ -1091,7 +1091,7 @@ public class DavController extends SpringActionController
                         Path currentPath = stack.removeFirst();
                         resource = resolvePath(currentPath);
 
-                        if (null == resource || !resource.canList(getUser()))
+                        if (null == resource || !resource.canList(getUser(), true))
                             continue;
 
                         if (isTempFile(resource))
@@ -1563,7 +1563,7 @@ public class DavController extends SpringActionController
 						else if (property.equals("isreadonly"))
 						{
 							xml.writeElement(null, "isreadonly", XMLWriter.OPENING);
-							xml.writeText(resource.canWrite(getUser()) ? "0" : "1");
+							xml.writeText(resource.canWrite(getUser(),false) ? "0" : "1");
 							xml.writeElement(null, "isreadonly", XMLWriter.CLOSING);
 						}
                         else if (property.equals("resourcetype"))
@@ -2047,7 +2047,7 @@ public class DavController extends SpringActionController
             if (null == parent || !parent.isCollection())
                 throw new DavException(WebdavStatus.SC_CONFLICT, String.valueOf(path.getParent()) + " is not a collection");
 
-            if (!resource.canCreate(getUser()))
+            if (!resource.canCreate(getUser(),true))
                 return unauthorized(resource);
 
             boolean result = resource.getFile() != null && resource.getFile().mkdirs();
@@ -2174,7 +2174,7 @@ public class DavController extends SpringActionController
             boolean deleteFileOnFail = false;
             boolean temp = false;
 
-            if (exists && !resource.canWrite(getUser()) || !exists && !resource.canCreate(getUser()))
+            if (exists && !resource.canWrite(getUser(),true) || !exists && !resource.canCreate(getUser(),true))
                 return unauthorized(resource);
             if (exists && resource.isCollection())
                 throw new DavException(WebdavStatus.SC_METHOD_NOT_ALLOWED, "Cannot overwrite folder");
@@ -2313,7 +2313,7 @@ public class DavController extends SpringActionController
         if (!exists)
             return notFound();
 
-        if (!resource.canDelete(getUser()))
+        if (!resource.canDelete(getUser(),true))
             return unauthorized(resource);
 
         if (!resource.isCollection())
@@ -2452,7 +2452,7 @@ public class DavController extends SpringActionController
             }
             else
             {
-                if (!child.canDelete(getUser()))
+                if (!child.canDelete(getUser(),true))
                 {
                     errorList.put(childName, WebdavStatus.SC_FORBIDDEN);
                     continue;
@@ -2601,9 +2601,9 @@ public class DavController extends SpringActionController
             boolean overwrite = getOverwriteParameter();
             boolean exists = dest.exists();
 
-            if (!src.canRead(getUser()))
+            if (!src.canRead(getUser(), true))
                 return unauthorized(src);
-            if (exists && !dest.canWrite(getUser()) || !exists && !dest.canCreate(getUser()))
+            if (exists && !dest.canWrite(getUser(),true) || !exists && !dest.canCreate(getUser(),true))
                 return unauthorized(dest);
 
             if (destinationPath.isDirectory() && src.isFile())
@@ -2893,7 +2893,7 @@ public class DavController extends SpringActionController
         boolean isStatic = isStaticContent(resource.getPath());
         if (isStatic)
         {
-            assert resource.canRead(User.guest);
+            assert resource.canRead(User.guest,true);
 
             if (-1 == resource.getName().indexOf(".nocache."))
             {
@@ -3132,8 +3132,8 @@ public class DavController extends SpringActionController
         User user = getUser();
         StringBuilder methodsAllowed = new StringBuilder("OPTIONS");
 
-        boolean createResource = resource.canCreate(user);
-        boolean createCollection = resource.canCreateCollection(user);
+        boolean createResource = resource.canCreate(user,false);
+        boolean createCollection = resource.canCreateCollection(user,false);
 
         if (!resource.exists())
         {
@@ -3146,8 +3146,8 @@ public class DavController extends SpringActionController
         }
         else
         {
-            boolean read = resource.canRead(user);
-            boolean delete = resource.canDelete(user);
+            boolean read = resource.canRead(user,false);
+            boolean delete = resource.canDelete(user,false);
 
             if (read)
                 methodsAllowed.append(", GET, HEAD, COPY");
@@ -3981,7 +3981,7 @@ public class DavController extends SpringActionController
         WebdavResource resource = resolvePath();
         if (null == resource || !resource.exists())
            throw new DavException(WebdavStatus.SC_NOT_FOUND);
-        if (!resource.canRead(getUser()))
+        if (!resource.canRead(getUser(),true))
            unauthorized(resource);
 
         WebdavResource destination = resolvePath(destinationPath);
@@ -3994,7 +3994,7 @@ public class DavController extends SpringActionController
         Resource parent = destination.parent();
         if (parent == null || !parent.exists())
             throw new DavException(WebdavStatus.SC_CONFLICT);
-        if (destination.exists() && !destination.canWrite(getUser()))
+        if (destination.exists() && !destination.canWrite(getUser(),true))
             return unauthorized(destination);
 
         if (destination.exists())

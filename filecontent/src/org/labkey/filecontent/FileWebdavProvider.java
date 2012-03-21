@@ -191,7 +191,7 @@ public class FileWebdavProvider implements WebdavService.Provider
         }
 
         @Override
-        public boolean canCreateCollection(User user)
+        public boolean canCreateCollection(User user, boolean canCreate)
         {
             return false;
         }

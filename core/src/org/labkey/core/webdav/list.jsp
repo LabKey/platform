@@ -104,11 +104,11 @@ if (plainHtml)
     TreeMap<String, WebdavResource> files = new TreeMap<String, WebdavResource>();
     WebdavResource parent = (WebdavResource)resource.parent();
 
-    if (resource.canList(user))
+    if (resource.canList(user, true))
     {
         for (WebdavResource info : resource.list())
         {
-            if (!info.canList(user))
+            if (!info.canList(user, true))
                 continue;
             else if (info.isCollection())
                 dirs.put(info.getName(), info);
@@ -146,7 +146,7 @@ if (plainHtml)
         WebdavResource info = entry.getValue();
         shade = !shade;
         long modified = info.getLastModified();
-        if (info.canRead(user))
+        if (info.canRead(user,false))
         {
             %><tr class="<%=shade?"labkey-alternate-row":"labkey-row"%>"><td align="left"><a href="<%=h(info.getLocalHref(context))%>?listing=html"><%=h(name)%></a></td><%
         }
@@ -167,10 +167,10 @@ if (plainHtml)
 This is a WebDav enabled directory.<br>
 <%
     ArrayList<String> can = new ArrayList<String>();
-    if (resource.canRead(user)) can.add("read");
-    if (resource.canWrite(user)) can.add("update");
-    if (resource.canCreate(user)) can.add("create");
-    if (resource.canDelete(user)) can.add("delete");
+    if (resource.canRead(user,false)) can.add("read");
+    if (resource.canWrite(user,false)) can.add("update");
+    if (resource.canCreate(user,false)) can.add("create");
+    if (resource.canDelete(user,false)) can.add("delete");
     if (!can.isEmpty())
     {
         %>You have permission to <%

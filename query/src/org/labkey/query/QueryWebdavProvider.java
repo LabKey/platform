@@ -236,31 +236,31 @@ public class QueryWebdavProvider implements WebdavService.Provider
 		}
 
 		@Override
-		public boolean canRead(User user)
+		public boolean canRead(User user, boolean forRead)
 		{
-			return super.canRead(user);
+			return super.canRead(user, forRead);
 		}
 
 		@Override
-		public boolean canWrite(User user)
+		public boolean canWrite(User user, boolean forWrite)
 		{
-			return super.canWrite(user);
+			return super.canWrite(user, forWrite);
 		}
 
 		@Override
-		public boolean canRename(User user)
-		{
-			return false;
-		}
-
-		@Override
-		public boolean canCreate(User user)
+		public boolean canRename(User user, boolean forRename)
 		{
 			return false;
 		}
 
 		@Override
-		public boolean canDelete(User user)
+		public boolean canCreate(User user, boolean forCreate)
+		{
+			return false;
+		}
+
+		@Override
+		public boolean canDelete(User user, boolean forDelete)
 		{
 			return false;
 		}

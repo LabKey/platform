@@ -106,7 +106,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
         }
 
         @Override
-        public boolean canDelete(User user)
+        public boolean canDelete(User user, boolean forDelete)
         {
             return false;
         }
@@ -118,7 +118,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
         }
 
         @Override
-        public boolean canList(User user)
+        public boolean canList(User user, boolean forRead)
         {
             return hasAccess(user);
         }

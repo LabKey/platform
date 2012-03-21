@@ -161,20 +161,20 @@ public class WikiWebdavProvider implements WebdavService.Provider
         }
 
         @Override
-        public boolean canCreate(User user)
+        public boolean canCreate(User user, boolean forCreate)
         {
             // create children NYI
             return false;
         }
 
         @Override
-        public boolean canRename(User user)
+        public boolean canRename(User user, boolean forRename)
         {
             return false;
         }
         
         @Override
-        public boolean canDelete(User user)
+        public boolean canDelete(User user, boolean forDelete)
         {
             return false;
         }
@@ -217,7 +217,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
         }
 
         @Override
-        public boolean canDelete(User user)
+        public boolean canDelete(User user, boolean forDelete)
         {
             return false;
         }
@@ -229,7 +229,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
         }
 
         @Override
-        public boolean canWrite(User user)
+        public boolean canWrite(User user, boolean forWrite)
         {
             return false;
         }
@@ -320,20 +320,20 @@ public class WikiWebdavProvider implements WebdavService.Provider
 
 
         @Override
-        public boolean canDelete(User user)
+        public boolean canDelete(User user, boolean forDelete)
         {
             return false;   // NYI
         }
 
 
         @Override
-        public boolean canRename(User user)
+        public boolean canRename(User user, boolean forRename)
         {
             return false;   // NYI
         }
 
         @Override
-        public boolean canCreateCollection(User user)
+        public boolean canCreateCollection(User user, boolean forCreate)
         {
             return false;
         }
@@ -609,7 +609,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
         // so pretend we deleted it.
         public boolean delete(User user) throws IOException
         {
-            if (user != null && !canDelete(user))
+            if (user != null && !canDelete(user, true))
                 return false;
             copyFrom(user, FileStream.EMPTY);
             return true;

@@ -1143,7 +1143,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         }
 
         @Override
-        public boolean canRename(User user)
+        public boolean canRename(User user, boolean forRename)
         {
             return false;
         }
@@ -1151,7 +1151,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         @Override
         public boolean delete(User user) throws IOException
         {
-            if (user != null && !canDelete(user))
+            if (user != null && !canDelete(user, true))
                 return false;
             AttachmentService.get().deleteAttachment(_parent, _name, user);
             return true;
