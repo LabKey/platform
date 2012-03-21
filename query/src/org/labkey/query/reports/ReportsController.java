@@ -16,7 +16,6 @@
 
 package org.labkey.query.reports;
 
-import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -30,7 +29,6 @@ import org.labkey.api.action.ExtFormAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
@@ -107,7 +105,6 @@ import org.labkey.api.thumbnail.BaseThumbnailAction;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.StaticThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.IdentifierString;
 import org.labkey.api.util.PageFlowUtil;
@@ -144,7 +141,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1200,7 +1196,8 @@ public class ReportsController extends SpringActionController
         {
             DbScope scope = CoreSchema.getInstance().getSchema().getScope();
 
-            try {
+            try
+            {
                 scope.ensureTransaction();
 
                 ViewCategory category = null;
