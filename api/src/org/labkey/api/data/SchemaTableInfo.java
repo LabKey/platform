@@ -42,6 +42,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.ContainerContext;
+import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.SimpleNamedObject;
@@ -348,6 +349,10 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
                 }
                 catch (SQLException e)
                 {
+                    // See #14374
+                    if ("com.mysql.jdbc.exceptions.jdbc4.MySQLSyntaxErrorException".equals(e.getClass().getName()) && e.getMessage().startsWith("SELECT command denied to user"))
+                        throw new MinorConfigurationException("The LabKey database user doesn't have permissions to access this table", e);
+
                     throw new RuntimeSQLException(e);
                 }
             }
