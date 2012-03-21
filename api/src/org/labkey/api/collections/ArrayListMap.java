@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003-2011 Fred Hutchinson Cancer Research Center
+ * Copyright (c) 2003-2012 Fred Hutchinson Cancer Research Center
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
