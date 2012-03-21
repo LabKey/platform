@@ -1566,6 +1566,7 @@ pipeline/resources/schemas/dbscripts/sqlserver/pipeline-10.20-10.30.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-9.30-10.10.sql -text
 pipeline/src/META-INF/pipeline/jars.txt -text
 pipeline/src/org/labkey/pipeline/AbstractPipelineStartup.java -text
+pipeline/src/org/labkey/pipeline/PipelineCommandTestCase.java -text
 pipeline/src/org/labkey/pipeline/PipelineController.java -text
 pipeline/src/org/labkey/pipeline/PipelineDirectoryImpl.java -text
 pipeline/src/org/labkey/pipeline/PipelineGWTServiceImpl.java -text

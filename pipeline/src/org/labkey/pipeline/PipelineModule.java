@@ -189,7 +189,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     {
         return new HashSet<Class>(Arrays.asList(
             PipelineQueueImpl.TestCase.class, PathMapperImpl.TestCase.class, GlobusClientPropertiesImpl.TestCase.class,
-            GlobusJobWrapper.TestCase.class));
+            GlobusJobWrapper.TestCase.class, PipelineCommandTestCase.class));
     }
 
     @Override
