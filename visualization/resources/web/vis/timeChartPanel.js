@@ -828,10 +828,13 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                                 // record that this measure has data
                                 if (dataValue.value) this.individualHasData[s.name] = true;
 
+                                var measureIntervalKey;
+                                var measureIntervalKeyNoLabel;
+
                                 // if more than one measure, the interval column will be dependent on the measure name
                                 if (this.editorXAxisPanel.getTime() == "date")
                                 {
-                                    var measureIntervalKey = this.individualData.measureToColumn[this.chartInfo.measures[s.measureIndex].dateOptions.dateCol.name]
+                                    measureIntervalKey = this.individualData.measureToColumn[this.chartInfo.measures[s.measureIndex].dateOptions.dateCol.name]
                                             + "_" + this.chartInfo.measures[s.measureIndex].dateOptions.interval;
                                     if (!row[measureIntervalKey])
                                         measureIntervalKey = this.chartInfo.measures[s.measureIndex].dateOptions.interval;
@@ -845,11 +848,19 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                                         gridSortCols.push(measureIntervalKey);
                                 } else {
                                     var intervalValue;
+                                    measureIntervalKey = this.individualData.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/Label"];
+                                    measureIntervalKeyNoLabel = this.individualData.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/sequencenum"]; //Sometimes visits don't have a label, sad but true.
+
                                     if(displayOrder == false){
-                                        intervalValue = this.displayOrder[row[this.individualData.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/Label"]].value];
+                                        intervalValue = this.displayOrder[row[measureIntervalKey].value] ? this.displayOrder[row[measureIntervalKey].value] : this.displayOrder[row[measureIntervalKeyNoLabel].value];
                                     } else{
-                                        intervalValue = row[data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder"]].value;
+                                        intervalValue = row[data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder"]];
                                     }
+
+                                    if(typeof intervalValue != "object"){
+                                        intervalValue = {value: intervalValue};
+                                    }
+                                    
                                     this.individualChartSubjectData[rowSubject][s.name].push({
                                         interval: intervalValue,
                                         dataValue: dataValue
@@ -939,7 +950,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                             var stdDev = row[this.aggregateData.measureToColumn[s.name] + "_STDDEV"];
                             var stdErr = row[this.aggregateData.measureToColumn[s.name] + "_STDERR"];
                             var measureIntervalKey;
-                            
+                            var measureIntervalKeyNoLabel; //Not all visits have a label, these require a different key.
+
                             if(typeof dataValue != "object") {
                                 dataValue = {value: dataValue};
                             }
@@ -948,12 +960,13 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
                             if (this.editorXAxisPanel.getTime() == "visit"){
                                 measureIntervalKey = this.aggregateData.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/Label"];
+                                measureIntervalKeyNoLabel = this.aggregateData.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/sequencenum"];
                             } else {
                                 measureIntervalKey = this.chartInfo.measures[s.measureIndex].dateOptions.interval;
                             }
 
                             this.aggregateChartSubjectData[rowSubject][s.name].push({
-                                interval: row[measureIntervalKey],
+                                interval: row[measureIntervalKey].value != null ? row[measureIntervalKey] : row[measureIntervalKeyNoLabel],
                                 dataValue: dataValue,
                                 stdDev: stdDev,
                                 stdErr: stdErr
@@ -1042,16 +1055,20 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         var rows = data.rows;
         var currentDisplayOrder = [];
         var newDisplayOrderMap = {};
+        var displayOrderKey = data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder"];
+        var visitLabelKey = data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/Label"];
+        var sequenceNumKey = data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/sequencenum"];
         this.displayLabels = {};
         this.displayOrder = {};
 
         // re-map display order to be from 0 to n-1 so it plays nicely with protovis.
         for(var i = 0; i < rows.length; i++){
             //Store all of the unique display order values.
-            if(currentDisplayOrder.indexOf(rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder"]].value) == -1){
-                currentDisplayOrder.push(rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder"]].value);
+            if(currentDisplayOrder.indexOf(rows[i][displayOrderKey].value) == -1){
+                currentDisplayOrder.push(rows[i][displayOrderKey].value);
             }
-            if(rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/Label"]].value.length > 12){
+            if(rows[i][visitLabelKey].value &&
+               rows[i][visitLabelKey].value.length > 12){
                 this.longLabels = true;
             }
         }
@@ -1063,9 +1080,10 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         }
         // generate displayLabels and displayOrder maps.
         for(var i = 0; i < rows.length; i++){
-            rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder"]].value = newDisplayOrderMap[rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder"]].value];
-            this.displayLabels[rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder"]].value] = rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/Label"]].value;
-            this.displayOrder[rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/Label"]].value] = rows[i][data.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit/DisplayOrder"]].value;
+            var visitLabel = rows[i][visitLabelKey].value != null ? rows[i][visitLabelKey].value : rows[i][sequenceNumKey].value;
+            rows[i][displayOrderKey].value = newDisplayOrderMap[rows[i][displayOrderKey].value];
+            this.displayLabels[rows[i][displayOrderKey].value] = visitLabel;
+            this.displayOrder[rows[i][visitLabelKey].value] = rows[i][displayOrderKey].value;
         }
         
     },
