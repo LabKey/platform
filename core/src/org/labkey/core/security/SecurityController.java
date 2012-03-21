@@ -42,7 +42,6 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.ExcelColumn;
 import org.labkey.api.data.ExcelWriter;
-import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.security.CSRF;
@@ -566,19 +565,6 @@ public class SecurityController extends SpringActionController
         public void setObjectId(String objectId)
         {
             _objectId = objectId;
-        }
-    }
-
-
-    public static class GroupResponse extends ApiSimpleResponse
-    {
-        GroupResponse(Group group)
-        {
-            Map<String, Object> map = ObjectFactory.Registry.getFactory(Group.class).toMap(group, new HashMap<String, Object>());
-            List<Pair<Integer, String>> members = SecurityManager.getGroupMemberNamesAndIds(group.getUserId());
-            map.put("members",members);
-            put("success", true);
-            put("group",map);
         }
     }
 
