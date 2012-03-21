@@ -232,7 +232,7 @@ public class FileSystemResource extends AbstractWebdavResource
 
     public FileStream getFileStream(User user) throws IOException
     {
-        if (!canRead(user))
+        if (!canRead(user, true))
             return null;
         if (null == _files || !exists())
             return null;
@@ -242,7 +242,7 @@ public class FileSystemResource extends AbstractWebdavResource
 
     public InputStream getInputStream(User user) throws IOException
     {
-        if (!canRead(user))
+        if (!canRead(user, true))
             return null;
         if (null == _files || !exists())
             return null;
@@ -423,45 +423,60 @@ public class FileSystemResource extends AbstractWebdavResource
         return _length;
     }
 
-    public boolean canRead(User user)
+    public boolean canRead(User user, boolean forRead)
     {
-        if (!super.canRead(user))
+        if (!super.canRead(user, forRead))
             return false;
         File f = getFile();
-        return null==f || f.canRead();
-    }
-
-    public boolean canWrite(User user)
-    {
-        return super.canWrite(user) && hasFileSystem();
-    }
-
-
-    public boolean canCreate(User user)
-    {
-        return super.canCreate(user) && hasFileSystem();
-    }
-
-
-    public boolean canDelete(User user)
-    {
-        if (super.canDelete(user) && hasFileSystem())
+        if (null == f)
+            return false;
+        if (!f.canRead())
         {
-            // can't delete if already processed
-            return getActions(user).isEmpty();
+            if (forRead)
+                _log.warn(user.getEmail() + " attempted to read file that is not readable by LabKey Server.  This may be a configuration problem. file: " + f.getPath());
+            return false;
         }
-        return false;
+        return true;
+    }
+
+    public boolean canWrite(User user, boolean forWrite)
+    {
+        return super.canWrite(user, forWrite) && hasFileSystem();
     }
 
 
-    public boolean canRename(User user)
+    public boolean canCreate(User user, boolean forCreate)
     {
-        return super.canRename(user);
+        return super.canCreate(user, forCreate) && hasFileSystem();
     }
 
-    public boolean canList(User user)
+
+    public boolean canDelete(User user, boolean forDelete)
     {
-        return super.canRead(user) || (null != _folder && _folder.canList(user));
+        if (!super.canDelete(user, forDelete) || !hasFileSystem())
+            return false;
+        File f = getFile();
+        if (null == f)
+            return false;
+        if (!f.canWrite())
+        {
+            if (forDelete)
+                _log.warn(user.getEmail() + " attempted to delete file that is not writable by LabKey Server.  This may be a configuration problem. file: " + f.getPath());
+            return false;
+        }
+        // can't delete if already processed
+        return getActions(user).isEmpty();
+    }
+
+
+    public boolean canRename(User user, boolean forRename)
+    {
+        return super.canRename(user, forRename);
+    }
+
+    public boolean canList(User user, boolean forRead)
+    {
+        return super.canRead(user, forRead) || (null != _folder && _folder.canList(user, forRead));
     }    
 
     private boolean hasFileSystem()
@@ -473,7 +488,7 @@ public class FileSystemResource extends AbstractWebdavResource
     public boolean delete(User user)
     {
         File file = getFile();
-        if (file == null || (null != user && !canDelete(user)))
+        if (file == null || (null != user && !canDelete(user, true)))
             return false;
 
         try {

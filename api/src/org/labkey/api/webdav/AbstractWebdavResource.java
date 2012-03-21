@@ -246,13 +246,13 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
 
 
 
-    public boolean canList(User user)
+    public boolean canList(User user, boolean forRead)
     {
-        return canRead(user);
+        return canRead(user, forRead);
     }
 
 
-    public boolean canRead(User user)
+    public boolean canRead(User user, boolean forRead)
     {
         if ("/".equals(getPath()))
             return true;
@@ -262,23 +262,23 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     }
 
 
-    public boolean canWrite(User user)
+    public boolean canWrite(User user, boolean forWrite)
     {
         return hasAccess(user) && !user.isGuest() && getPermissions(user).contains(UpdatePermission.class);
     }
 
 
-    public boolean canCreate(User user)
+    public boolean canCreate(User user, boolean forCreate)
     {
         return hasAccess(user) && !user.isGuest() && getPermissions(user).contains(InsertPermission.class);
     }
 
-    public boolean canCreateCollection(User user)
+    public boolean canCreateCollection(User user, boolean forCreate)
     {
-        return canCreate(user);
+        return canCreate(user, forCreate);
     }
 
-    public boolean canDelete(User user)
+    public boolean canDelete(User user, boolean forDelete)
     {
         if (user.isGuest() || !hasAccess(user))
             return false;
@@ -287,9 +287,9 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     }
 
 
-    public boolean canRename(User user)
+    public boolean canRename(User user, boolean forRename)
     {
-        return hasAccess(user) && !user.isGuest() && canCreate(user) && canDelete(user);
+        return hasAccess(user) && !user.isGuest() && canCreate(user, forRename) && canDelete(user, forRename);
     }
 
 
@@ -301,7 +301,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
 
     public boolean delete(User user) throws IOException
     {
-        assert null == user || canDelete(user);
+        assert null == user || canDelete(user, true);
         return false;
     }
     

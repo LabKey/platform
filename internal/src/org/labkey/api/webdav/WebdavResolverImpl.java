@@ -383,32 +383,32 @@ public class WebdavResolverImpl implements WebdavResolver
 
 
         @Override 
-        public boolean canCreateCollection(User user)
+        public boolean canCreateCollection(User user, boolean forCreate)
         {
             return false;
         }
 
         @Override
-        public boolean canCreate(User user)
+        public boolean canCreate(User user, boolean forCreate)
         {
             return false;
 //            return null != _attachmentResource && _attachmentResource.canCreate(user);
         }
 
         @Override
-        public boolean canRename(User user)
+        public boolean canRename(User user, boolean forRename)
         {
             return false;
         }
 
         @Override
-        public boolean canDelete(User user)
+        public boolean canDelete(User user, boolean forDelete)
         {
             return false;
         }
 
         @Override
-        public boolean canWrite(User user)
+        public boolean canWrite(User user, boolean forWrite)
         {
             return false;
         }
@@ -637,8 +637,8 @@ public class WebdavResolverImpl implements WebdavResolver
             WebdavResource root = resolver.lookup(rootPath);
             assertNotNull(root);
             assertTrue(root.isCollection());
-            assertTrue(root.canRead(user));
-            assertFalse(root.canCreate(user));
+            assertTrue(root.canRead(user,true));
+            assertFalse(root.canCreate(user,true));
 
             WebdavResource junit = resolver.lookup(rootPath.append(c.getParsedPath()));
             assertNotNull(junit);
@@ -654,8 +654,8 @@ public class WebdavResolverImpl implements WebdavResolver
 
             WebdavResource rTest = resolver.lookup(rootPath.append(pathTest));
             assertNotNull(rTest);
-            assertTrue(rTest.canRead(user));
-            assertFalse(rTest.canWrite(user));
+            assertTrue(rTest.canRead(user,true));
+            assertFalse(rTest.canWrite(user,true));
             assertNotNull(rTest.parent());
             assertTrue(rTest.parent().isCollection());
 
@@ -668,7 +668,7 @@ public class WebdavResolverImpl implements WebdavResolver
             policyRead.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), ReaderRole.class);
             SecurityManager.savePolicy(policyRead);
             rTest = resolver.lookup(rootPath.append(pathTest));
-            assertTrue(rTest.canRead(guest));
+            assertTrue(rTest.canRead(guest,true));
 
             ContainerManager.rename(cTest, "webdav");
             Path pathNew = c.getParsedPath().append("webdav");

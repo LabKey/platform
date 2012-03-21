@@ -110,17 +110,50 @@ public interface WebdavResource extends Resource
     @NotNull
     Collection<NavTree> getActions(User user);
 
-    /** user may read properties of this resource */
-    boolean canList(User user);
+    /**
+     * @param user authenticated user
+     * @param forRead  true if user wants to read, false if checking capabilities
+     * @return true if the user has permission and server has capability
+     */
+    boolean canList(User user, boolean forRead);
 
-    /** user may read file stream of this resource */
-    boolean canRead(User user);
+    /**
+     * @param user authenticated user
+     * @param forRead  true if user wants to read, false if checking capabilities
+     * @return true if the user has permission and server has capability
+     */
+    boolean canRead(User user, boolean forRead);
 
-    boolean canWrite(User user);
-    boolean canCreate(User user);
-    boolean canCreateCollection(User user); // only on collection can create sub collection
-    boolean canDelete(User user);
-    boolean canRename(User user);
+    /**
+     * @param user authenticated user
+     * @param forWrite  true if user wants to delete, false if checking capabilities
+     * @return true if the user has permission and server has capability
+     */
+    boolean canWrite(User user, boolean forWrite);
+    /**
+     * @param user authenticated user
+     * @param forCreate  true if user wants to create, false if checking capabilities (affects logging)
+     * @return true if the user has permission and server has capability
+     */
+    boolean canCreate(User user, boolean forCreate);
+    /**
+     * @param user authenticated user
+     * @param forCreate  true if user wants to create, false if checking capabilities (affects logging)
+     * @return true if the user has permission and server has capability
+     */
+    boolean canCreateCollection(User user, boolean forCreate); // only on collection can create sub collection
+    /**
+     * @param user authenticated user
+     * @param forDelete  true if user wants to delete, false if checking capabilities (affects logging)
+     * @return true if the user has permission and server has capability
+     */
+    boolean canDelete(User user, boolean forDelete);
+    /**
+     * @param user authenticated user
+     * @param forRename  true if user wants to rename, false if checking capabilities (affects logging)
+     * @return true if the user has permission and server has capability
+     */
+    boolean canRename(User user, boolean forRename);
 
     // dav methods
     boolean delete(User user) throws IOException;

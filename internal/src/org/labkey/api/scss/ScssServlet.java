@@ -93,7 +93,7 @@ public class ScssServlet extends HttpServlet
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
-        if (!scss.canRead((User)request.getUserPrincipal()))
+        if (!scss.canRead((User)request.getUserPrincipal(),true))
         {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
             return;
