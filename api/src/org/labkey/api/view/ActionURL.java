@@ -41,6 +41,8 @@ import java.util.Map;
  */
 public class ActionURL extends URLHelper implements Cloneable
 {
+    private static final boolean _useCombinedPageFlowAction = false;
+
     public static enum Param
     {
         returnUrl,
@@ -170,11 +172,31 @@ public class ActionURL extends URLHelper implements Cloneable
 
     private static String toPathString(Path contextPath, String pageFlow, String action, Path extraPath, boolean encode)
     {
+        if (_useCombinedPageFlowAction)
+            return toPathStringNew(contextPath, pageFlow, action, extraPath, encode);
+        else
+            return toPathStringOld(contextPath, pageFlow, action, extraPath, encode);
+    }
+
+    private static String toPathStringOld(Path contextPath, String pageFlow, String action, Path extraPath, boolean encode)
+    {
         Path path = contextPath.append(pageFlow).append(extraPath);
         if (null != action)
         {
             if (-1 == action.indexOf('.'))
                 action = action + ".view";
+            path = path.append(action, false);
+        }
+        String str = encode ? path.encode() : path.toString();
+        return str;
+    }
+
+    private static String toPathStringNew(Path contextPath, String pageFlow, String action, Path extraPath, boolean encode)
+    {
+        Path path = contextPath.append(extraPath);
+        if (null != action && null != pageFlow)
+        {
+            action = pageFlow + "-" + action + (-1 == action.indexOf('.') ? ".view" : "");
             path = path.append(action, false);
         }
         String str = encode ? path.encode() : path.toString();
@@ -486,12 +508,16 @@ public class ActionURL extends URLHelper implements Cloneable
         // parse action.view or controller-action.view
         int i = action.lastIndexOf('.');
         action = -1==i ? action : action.substring(0, i);
-        i = action.lastIndexOf('-');
-        if (i > 0)
+        int dash = action.lastIndexOf('-');
+        if (dash > 0)
         {
-            controller = action.substring(0, i);
-            action = action.substring(i+1);
-            setIsCanonical(false);
+            controller = action.substring(0, dash);
+            action = action.substring(dash+1);
+            setIsCanonical(_useCombinedPageFlowAction);
+        }
+        else
+        {
+            setIsCanonical(!_useCombinedPageFlowAction);
         }
 
         // parse controller
