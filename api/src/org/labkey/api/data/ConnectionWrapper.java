@@ -1399,7 +1399,7 @@ public class ConnectionWrapper implements java.sql.Connection
             ResultSet ret =  _md.getColumns(catalog, schemaPattern, tableNamePattern, columnNamePattern);
             long duration = System.currentTimeMillis() - start;
             if (getLogger().isDebugEnabled())
-                getLogger().debug("getColumns("+catalog+","+schemaPattern+","+tableNamePattern+","+columnNamePattern+") " + DateUtil.formatDuration(duration));
+                getLogger().debug("getColumns(" + catalog + "," + schemaPattern + "," + tableNamePattern + "," + columnNamePattern + ") " + DateUtil.formatDuration(duration));
             return ret;
         }
 

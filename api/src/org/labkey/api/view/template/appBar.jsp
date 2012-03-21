@@ -38,7 +38,7 @@
 <div class="labkey-folder-header">
 <table class="labkey-folder-header" id="labkey-app-bar-table">
     <tr>
-        <td class="labkey-folder-title"><a href="<%=h(bean.getValue())%>"><%=h(bean.getFolderTitle())%></a></td>
+        <td class="labkey-folder-title"><a href="<%=h(bean.getHref())%>"><%=h(bean.getFolderTitle())%></a></td>
         <td class="button-bar">
             <ul class="labkey-tab-strip">
                 <table cellpadding="0" cellspacing="0">
@@ -47,7 +47,7 @@
                     for (NavTree navTree : bean.getButtons())
                     {
                 %>
-                        <td><li class="<%=navTree.isSelected() ? "labkey-tab-active" : "labkey-tab-inactive"%>"><a href="<%=h(navTree.getValue())%>" id="<%=h(navTree.getKey())%>Tab"><%=h(navTree.getKey())%></a></td>
+                        <td><li class="<%=navTree.isSelected() ? "labkey-tab-active" : "labkey-tab-inactive"%>"><a href="<%=h(navTree.getHref())%>" id="<%=h(navTree.getText())%>Tab"><%=h(navTree.getText())%></a></td>
                 <%
                     }
                     if (context.getContainer().getFolderType().hasConfigurableTabs() && context.hasPermission(org.labkey.api.security.permissions.AdminPermission.class))
@@ -58,7 +58,7 @@
                         for (NavTree tab : bean.getButtons())
                         {
                             ActionURL url = PageFlowUtil.urlProvider(ProjectUrls.class).getDeleteWebPartURL(context.getContainer(), FolderTab.FOLDER_TAB_PAGE_ID, index++, getViewContext().getActionURL());
-                            NavTree removeTab = new NavTree(tab.getKey(), url);
+                            NavTree removeTab = new NavTree(tab.getText(), url);
                             removeNode.addChild(removeTab);
                         }
                         link.addChild(removeNode);
@@ -88,7 +88,7 @@
         <tr>
             <td colspan=1 class="labkey-crumb-trail"><span id="navTrailAncestors" style="visibility:hidden">
                 <% for(NavTree curLink : bean.getNavTrail()) {%>
-                    <% if (curLink.getValue() != null) { %><a href="<%=curLink.getValue()%>"><% } %><%=h(curLink.getKey())%><% if (curLink.getValue() != null) { %></a><% } %>&nbsp;&gt;&nbsp;
+                    <% if (curLink.getHref() != null) { %><a href="<%=curLink.getHref()%>"><% } %><%=h(curLink.getText())%><% if (curLink.getHref() != null) { %></a><% } %>&nbsp;&gt;&nbsp;
                 <%
                     }%>
             </span></td></tr>

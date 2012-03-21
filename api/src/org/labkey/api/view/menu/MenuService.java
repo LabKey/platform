@@ -77,7 +77,7 @@ public class MenuService
         {
             NavTree navTree = new NavTree(menu.getTitle());
             if (menu.getTitleHref() != null)
-                navTree.setValue(menu.getTitleHref());
+                navTree.setHref(menu.getTitleHref());
             navTree.addChildren(menu.getElements());
             return navTree;
         }

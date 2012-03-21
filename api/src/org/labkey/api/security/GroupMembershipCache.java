@@ -21,6 +21,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlSelector;
 
 import java.beans.PropertyChangeEvent;
@@ -37,8 +38,9 @@ import java.util.Set;
  */
 public class GroupMembershipCache
 {
-    private static final String ALL_GROUPS_PREFIX = "AllGroups=";
-    private static final String IMMEDIATE_GROUPS_PREFIX = "ImmGroups=";
+    private static final String ALL_GROUP_MEMBERSHIPS_PREFIX = "AllMemShip=";
+    private static final String IMMEDIATE_GROUP_MEMBERSHIPS_PREFIX = "ImmMemShip=";
+    private static final String GROUP_MEMBERS_PREFIX = "Members=";
     private static final CoreSchema CORE = CoreSchema.getInstance();
     private static final StringKeyCache<int[]> CACHE = CacheManager.getStringKeyCache(10000, CacheManager.DAY, "Group Memberships");
 
@@ -48,7 +50,7 @@ public class GroupMembershipCache
     }
 
 
-    private final static CacheLoader<String, int[]> ALL_GROUPS_LOADER = new CacheLoader<String, int[]>()
+    private final static CacheLoader<String, int[]> ALL_GROUP_MEMBERSHIPS_LOADER = new CacheLoader<String, int[]>()
     {
         @Override
         public int[] load(String key, Object argument)
@@ -59,7 +61,7 @@ public class GroupMembershipCache
     };
 
 
-    private final static CacheLoader<String, int[]> IMMEDIATE_GROUPS_LOADER = new CacheLoader<String, int[]>()
+    private final static CacheLoader<String, int[]> IMMEDIATE_GROUP_MEMBERSHIPS_LOADER = new CacheLoader<String, int[]>()
     {
         @Override
         public int[] load(String key, Object argument)
@@ -72,17 +74,41 @@ public class GroupMembershipCache
     };
 
 
-    // Returns the FLATTENED group list for this principal
-    static int[] getAllGroupsForPrincipal(@NotNull UserPrincipal user)
+    private final static CacheLoader<String, int[]> GROUP_MEMBERS_LOADER = new CacheLoader<String, int[]>()
     {
-        return CACHE.get(ALL_GROUPS_PREFIX + user.getUserId(), user, ALL_GROUPS_LOADER);
+        @Override
+        public int[] load(String key, Object argument)
+        {
+            Group group = (Group)argument;
+            Selector selector = new SqlSelector(CORE.getSchema(), new SQLFragment(
+                "SELECT Members.UserId FROM " + CORE.getTableInfoMembers() + " Members" +
+                " JOIN " + CORE.getTableInfoPrincipals() + " Users ON Members.UserId = Users.UserId\n" +
+                " WHERE Members.GroupId = ?" +
+                " ORDER BY Users.Type, Users.Name", group.getUserId()));
+
+            return _toIntArray(selector.getArray(Integer.class));
+        }
+    };
+
+
+    // Return FLATTENED array of groups to which this principal belongs (recursive)
+    static int[] getAllGroupMemberships(@NotNull UserPrincipal user)
+    {
+        return CACHE.get(ALL_GROUP_MEMBERSHIPS_PREFIX + user.getUserId(), user, ALL_GROUP_MEMBERSHIPS_LOADER);
     }
 
 
-    // Returns the immediate group membership for this principal (non-recursive)
-    static int[] getGroupsForPrincipal(int groupId)
+    // Return array of groups to which this principal belongs (non-recursive)
+    static int[] getGroupMemberships(int principalId)
     {
-        return CACHE.get(IMMEDIATE_GROUPS_PREFIX + groupId, groupId, IMMEDIATE_GROUPS_LOADER);
+        return CACHE.get(IMMEDIATE_GROUP_MEMBERSHIPS_PREFIX + principalId, principalId, IMMEDIATE_GROUP_MEMBERSHIPS_LOADER);
+    }
+
+
+    // Return array of principals that directly belong to this group (non-recursive)
+    static int[] getGroupMembers(Group group)
+    {
+        return CACHE.get(GROUP_MEMBERS_PREFIX + group.getUserId(), group, GROUP_MEMBERS_LOADER);
     }
 
 
@@ -94,14 +120,15 @@ public class GroupMembershipCache
 
         // invalidate all computed group lists (getAllGroups())
         if (principal instanceof Group)
-            CACHE.removeUsingPrefix(ALL_GROUPS_PREFIX);
+            CACHE.removeUsingPrefix(ALL_GROUP_MEMBERSHIPS_PREFIX);
     }
 
 
     private static void uncache(UserPrincipal principal)
     {
-        CACHE.remove(ALL_GROUPS_PREFIX + principal.getUserId());
-        CACHE.remove(IMMEDIATE_GROUPS_PREFIX + principal.getUserId());
+        CACHE.remove(ALL_GROUP_MEMBERSHIPS_PREFIX + principal.getUserId());
+        CACHE.remove(IMMEDIATE_GROUP_MEMBERSHIPS_PREFIX + principal.getUserId());
+        CACHE.remove(GROUP_MEMBERS_PREFIX + principal.getUserId());
     }
 
 
@@ -155,7 +182,7 @@ public class GroupMembershipCache
         {
             int id = principals.removeFirst();
             groupSet.add(id);
-            int[] groups = getGroupsForPrincipal(id);
+            int[] groups = getGroupMemberships(id);
 
             for (int g : groups)
                 if (!groupSet.contains(g))

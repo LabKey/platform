@@ -917,7 +917,7 @@ public class ContainerManager
             if (policy.hasPermission(user, ReadPermission.class))
             {
                 ActionURL url = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(f);
-                t.second = (url.getEncodedLocalURIString());
+                t.setHref(url.getEncodedLocalURIString());
             }
             containersInTree.add(f);
             m.put(f.getId(), t);

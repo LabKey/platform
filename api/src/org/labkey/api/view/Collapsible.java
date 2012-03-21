@@ -16,6 +16,7 @@
 
 package org.labkey.api.view;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -27,7 +28,7 @@ public interface Collapsible
 {
     void setCollapsed(boolean collapsed);
     boolean isCollapsed();
-    Collapsible[] getChildren();
+    @NotNull Collapsible[] getChildren();
     Collapsible findSubtree(@Nullable String path);
     String getId();
 }

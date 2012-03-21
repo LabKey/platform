@@ -21,7 +21,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
@@ -157,12 +156,12 @@ public class HomeTemplate extends PrintTemplate
     }
 
 
-    private String formatLink(Pair tree)
+    private String formatLink(NavTree tree)
     {
         if (null == tree)
             return null;
-        String display = null == tree.getKey() ? null : PageFlowUtil.filter(String.valueOf(tree.getKey()));
-        String href = null == tree.getValue() ? null : PageFlowUtil.filter(String.valueOf(tree.getValue()));
+        String display = null == tree.getText() ? null : PageFlowUtil.filter(String.valueOf(tree.getText()));
+        String href = null == tree.getHref() ? null : PageFlowUtil.filter(String.valueOf(tree.getHref()));
         return formatLink(display, href);
     }
 

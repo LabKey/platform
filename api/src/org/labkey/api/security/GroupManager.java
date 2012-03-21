@@ -69,7 +69,7 @@ public class GroupManager
         if (user == null)
             return EMPTY_INT_ARRAY;
 
-        return GroupMembershipCache.getAllGroupsForPrincipal(user);
+        return GroupMembershipCache.getAllGroupMemberships(user);
     }
 
     // Create an initial group; warn if userId of created group does not match desired userId.

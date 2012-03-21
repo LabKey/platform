@@ -22,14 +22,13 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
 
 
@@ -41,16 +40,12 @@ import java.util.List;
  * 3) as a tree, may be rendered as an tree, or menu
  */
 
-public class NavTree extends Pair<String, String> implements Collapsible
+public class NavTree implements Collapsible
 {
-    public static final NavTree MENU_SEPARATOR = new NavTree("-");
+    private static final NavTree MENU_SEPARATOR = new NavTree("-");
 
-    static final List<NavTree> EMPTY_LIST = Collections.emptyList();
-
-    String _imageSrc = null;
-    Integer _imageHeight;
-    Integer _imageWidth;
-    
+    private String _text;  // TODO: Change to "display"... but there's already a "display" property (??)
+    private String _href;
     private boolean _selected = false;
     private boolean _collapsed = false;
     private boolean _canCollapse = true;
@@ -62,9 +57,12 @@ public class NavTree extends Pair<String, String> implements Collapsible
     private String _display;
     private String _description;
     private boolean _nofollow = false;
+    private String _imageSrc = null;
+    private Integer _imageHeight;
+    private Integer _imageWidth;
     private String _target = null;
 
-    private ArrayList<NavTree> children = null;
+    private final @NotNull List<NavTree> _children = new LinkedList<NavTree>();
 
     public static String escapeKey(String key)
     {
@@ -73,43 +71,44 @@ public class NavTree extends Pair<String, String> implements Collapsible
 
     public NavTree()
     {
-        super(null, null);
+        this(null, (String)null);
     }
 
 
-    public NavTree(String display, String href, boolean collapsed)
+    public NavTree(String text, String href, boolean collapsed)
     {
-        super(display, href);
+        _text = text;
+        _href = href;
         _collapsed = collapsed;
     }
 
-    public NavTree(String display, String href)
+    public NavTree(String text, String href)
     {
-        this(display, href, false);
+        this(text, href, false);
     }
 
-    public NavTree(String display, String href, String imageSrc)
+    public NavTree(String text, String href, String imageSrc)
     {
-        this(display, href, false);
+        this(text, href, false);
         _imageSrc = imageSrc;
     }
 
 
-    public NavTree(String display, URLHelper urlhelp)
+    public NavTree(String text, URLHelper urlhelp)
     {
-        this(display, urlhelp, false);
+        this(text, urlhelp, false);
     }
 
 
-    public NavTree(String display, URLHelper urlhelp, boolean collapsed)
+    public NavTree(String text, URLHelper urlhelp, boolean collapsed)
     {
-        this(display, urlhelp != null ? urlhelp.getLocalURIString() : null, collapsed);
+        this(text, urlhelp != null ? urlhelp.getLocalURIString() : null, collapsed);
     }
 
 
-    public NavTree(String display)
+    public NavTree(String text)
     {
-        this(display, (String) null);
+        this(text, (String) null);
     }
 
     /**
@@ -118,7 +117,7 @@ public class NavTree extends Pair<String, String> implements Collapsible
      */
     public NavTree(NavTree source)
     {
-        super(source.first, source.second);
+        this(source._text, source._href);
         _imageSrc = source._imageSrc;
         _selected = source._selected;
         _collapsed = source._collapsed;
@@ -132,20 +131,34 @@ public class NavTree extends Pair<String, String> implements Collapsible
         _imageWidth = source._imageWidth;
         _target = source._target;
 
-        children = new ArrayList<NavTree>();
-        if (source.children != null)
-        {
-            for (NavTree child : source.children)
-            {
-                children.add(new NavTree(child));
-            }
-        }
+        for (NavTree child : source._children)
+            _children.add(new NavTree(child));
     }
 
 
+    public void setText(String text)
+    {
+        _text = text;
+    }
+
+    public String getText()
+    {
+        return _text;
+    }
+
+    public void setHref(String href)
+    {
+        _href = href;
+    }
+
+    public String getHref()
+    {
+        return _href;
+    }
+
     public String getEscapedKey()
     {
-        return escapeKey(getKey());
+        return escapeKey(getText());
     }
 
 
@@ -156,21 +169,16 @@ public class NavTree extends Pair<String, String> implements Collapsible
 
     public NavTree addChild(NavTree child)
     {
-        if (null == children)
-            children = new ArrayList<NavTree>();
-
-        if (null != child.first)
-            children.add(child);
-        else if (null != child.children)
-            addChildren(child.children);
+        if (null != child._text)
+            _children.add(child);
+        else if (child.hasChildren())
+            addChildren(child._children);
         return child;
     }
 
     public NavTree addChild(int pos, NavTree child)
     {
-        if (null == children)
-            children = new ArrayList<NavTree>();
-        children.add(pos, child);
+        _children.add(pos, child);
         return child;
     }
 
@@ -218,9 +226,7 @@ public class NavTree extends Pair<String, String> implements Collapsible
 
     public void addChildren(Collection<NavTree> list)
     {
-        if (null == children)
-            children = new ArrayList<NavTree>();
-        children.addAll(list);
+        _children.addAll(list);
     }
 
 
@@ -229,40 +235,33 @@ public class NavTree extends Pair<String, String> implements Collapsible
         addChildren(Arrays.asList(list));
     }
 
+    @NotNull
     public NavTree[] getChildren()
     {
-        if (null == children)
-            return new NavTree[0];
-        return children.toArray(new NavTree[children.size()]);
+        return _children.toArray(new NavTree[_children.size()]);
     }
 
     @NotNull
     public List<NavTree> getChildList()
     {
-        if (null == children)
-            //noinspection unchecked
-            return EMPTY_LIST;
-        return Collections.unmodifiableList(children);
+        return Collections.unmodifiableList(_children);
     }
 
     public boolean hasChildren()
     {
-        return null != children && !children.isEmpty();
+        return !_children.isEmpty();
     }
 
     // Sort children by name, case-insensitive
     public void sort()
     {
-        if (null != children)
+        Collections.sort(_children, new Comparator<NavTree>()
         {
-            Collections.sort(children, new Comparator<NavTree>()
+            public int compare(NavTree a, NavTree b)
             {
-                public int compare(NavTree a, NavTree b)
-                {
-                    return a.getKey().compareToIgnoreCase(b.getKey());
-                }
-            });
-        }
+                return a.getText().compareToIgnoreCase(b.getText());
+            }
+        });
     }
 
 
@@ -316,7 +315,7 @@ public class NavTree extends Pair<String, String> implements Collapsible
 
     public int getChildCount()
     {
-        return null == children ? 0 : children.size();
+        return _children.size();
     }
 
 
@@ -438,11 +437,6 @@ public class NavTree extends Pair<String, String> implements Collapsible
         _display = display;
     }
 
-    public void setKey(String key)
-    {
-        first = key;
-    }
-
     /** Get the description text for this item.  Menu items will render this as a tooltip. */
     public String getDescription()
     {
@@ -477,9 +471,7 @@ public class NavTree extends Pair<String, String> implements Collapsible
 
     public String childrenToJS()
     {
-        if (null == children)
-            return "[]";
-        return toJS(children, new StringBuilder(), false).toString();
+        return toJS(_children, new StringBuilder(), false).toString();
     }
 
     public String toJS()
@@ -497,26 +489,26 @@ public class NavTree extends Pair<String, String> implements Collapsible
     public JSONObject toJSON(boolean recursive, String items)
     {
         JSONObject o = new JSONObject();
-        o.put("text",getKey());
+        o.put("text", getText());
         if (StringUtils.isNotEmpty(getId()))
             o.put("id", getId());
         if (StringUtils.isNotEmpty(getDescription()))
             o.put("description", getDescription());
         if (isSelected())
-            o.put("checked",true);
+            o.put("checked", true);
         if (null != getImageSrc())
             o.put("icon", getImageSrc());
         if (isDisabled())
             o.put("disabled", true);
-        if (null != getValue())
-            o.put("href", getValue());
+        if (null != getHref())
+            o.put("href", getHref());
         if (null != getTarget())
             o.put("hrefTarget", getTarget());
         if (null != getScript())
             o.put("handler", "function(){" + getScript() + "}");
         if (null != getDisplay())
             o.put("display", getDisplay());
-        if (recursive && null != getChildren() && getChildren().length > 0)
+        if (recursive && hasChildren())
         {
             JSONArray a = new JSONArray();
             for (NavTree c : getChildren())
@@ -533,7 +525,7 @@ public class NavTree extends Pair<String, String> implements Collapsible
     
     protected StringBuilder toJS(StringBuilder sb, boolean asMenu)
     {
-        String title = getKey();
+        String title = getText();
         sb.append("{").append("text:").append(PageFlowUtil.qh(title));
         if (isStrong() || isEmphasis())
         {
@@ -554,16 +546,16 @@ public class NavTree extends Pair<String, String> implements Collapsible
             sb.append(",icon:").append(PageFlowUtil.qh(getImageSrc()));
         if (isDisabled())
             sb.append(",disabled:true");
-        sb.append(",href:").append(null != getValue() ? PageFlowUtil.qh(getValue()) : "'javascript: void(0)'");
+        sb.append(",href:").append(null != getHref() ? PageFlowUtil.qh(getHref()) : "'javascript: void(0)'");
         if (null != getTarget())
             sb.append(",hrefTarget:").append(PageFlowUtil.qh(getTarget()));
         if (null != getScript())
             sb.append(",handler:function(){").append(getScript()).append("}");
-        if (null != getChildren() && getChildren().length > 0)
+        if (hasChildren())
         {
             sb.append(",hideOnClick:false");
             sb.append(",\n").append(asMenu ? "menu:" : "children:");
-            toJS(children, sb, asMenu);
+            toJS(_children, sb, asMenu);
         }
         else
         {

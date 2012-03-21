@@ -53,7 +53,7 @@ public class AppBar extends NavTree
 
     public String getFolderTitle()
     {
-        return getKey();
+        return getText();
     }
 
     public NavTree[] getButtons()
@@ -107,7 +107,7 @@ public class AppBar extends NavTree
         {
             for (NavTree button : buttons)
             {
-                if (button.getValue().equals(actionURL.toString()))
+                if (button.getHref().equals(actionURL.toString()))
                 {
                     selected = button;
                     hideTitle = true;
@@ -121,7 +121,7 @@ public class AppBar extends NavTree
             for (NavTree crumb : crumbTrail)
             {
                 for (NavTree button : buttons)
-                    if (button.getValue().equalsIgnoreCase(crumb.getValue()) || button.getKey().equalsIgnoreCase(crumb.getKey()))
+                    if (button.getHref().equalsIgnoreCase(crumb.getHref()) || button.getText().equalsIgnoreCase(crumb.getText()))
                         selected = button;
             }
         }
@@ -136,7 +136,7 @@ public class AppBar extends NavTree
                 // See if we have a previously active tab that we can select
                 for (NavTree button : buttons)
                 {
-                    if (button.getKey().equals(lastTab))
+                    if (button.getText().equals(lastTab))
                     {
                         // Found a match
                         selected = button;
@@ -153,7 +153,7 @@ public class AppBar extends NavTree
         else if (selected != null)
         {
             // If a tab was recognized as being the active tab for this URL, remember it
-            lastTabs.put(context.getContainer().getId(), selected.getKey());
+            lastTabs.put(context.getContainer().getId(), selected.getText());
         }
 
         if (null != selected)
@@ -167,26 +167,26 @@ public class AppBar extends NavTree
         else if (crumbTrail.size() >= 1)
         {
             // Last item is page title, strip it off the crumb trail
-            setPageTitle(crumbTrail.get(crumbTrail.size() - 1).getKey());
+            setPageTitle(crumbTrail.get(crumbTrail.size() - 1).getText());
 
             List<NavTree> result = new ArrayList<NavTree>();
             boolean stopLooking = false;
 
             for (int i = 0; i < crumbTrail.size() - 1; i++)
             {
-                String link = crumbTrail.get(i).getValue();
+                String link = crumbTrail.get(i).getHref();
                 boolean foundMatch = false;
                 if (!stopLooking)
                 {
                     // First check the folder title's link
-                    if (ObjectUtils.equals(getValue(), link))
+                    if (ObjectUtils.equals(getHref(), link))
                     {
                         foundMatch = true;
                     }
                     // Then look at all of the tabs
                     for (NavTree button : buttons)
                     {
-                        if (ObjectUtils.equals(button.getValue(), link) || (actionURL != null && ObjectUtils.equals(actionURL.getLocalURIString(), link)))
+                        if (ObjectUtils.equals(button.getHref(), link) || (actionURL != null && ObjectUtils.equals(actionURL.getLocalURIString(), link)))
                         {
                             foundMatch = true;
                         }

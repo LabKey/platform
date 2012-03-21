@@ -29,10 +29,10 @@
     {
         if (link.getChildCount() == 0)
         {
-            String url = link.getValue();
+            String url = link.getHref();
             boolean active = current.getLocalURIString().equals(url);
 %>
-            <%= active ? "<strong>" : "" %><%= textLink(link.getKey(), url) %><%= active ? "</strong>" : "" %>
+            <%= active ? "<strong>" : "" %><%= textLink(link.getText(), url) %><%= active ? "</strong>" : "" %>
 <%
         }
         else

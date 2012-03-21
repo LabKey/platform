@@ -111,7 +111,7 @@ public class MenuButton extends ActionButton
     public void setCaption(String caption)
     {
         super.setCaption(caption);
-        popupMenu.getNavTree().setKey(caption);
+        popupMenu.getNavTree().setText(caption);
     }
 
     public PopupMenu getPopupMenu()

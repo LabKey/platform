@@ -17,6 +17,7 @@
 package org.labkey.api.view.menu;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.util.PageFlowUtil;
@@ -93,9 +94,10 @@ public class NavTreeMenu extends WebPartView implements Collapsible
         NavTreeManager.applyExpandState(this, context);
     }
 
+    @NotNull
     public NavTree[] getChildren()
     {
-        return null;
+        return new NavTree[0];
     }
 
     public NavTree[] getElements()
@@ -149,7 +151,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
         ActionURL startURL = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
         String pattern = startURL.getLocalURIString();
 
-        String link = nav.getValue() == null ? null : nav.getValue();
+        String link = nav.getHref() == null ? null : nav.getHref();
         String onClickScript = (null != nav.getScript()) ? PageFlowUtil.filter(nav.getScript()) : null;
         if(null == onClickScript && null != link)
         {
@@ -161,11 +163,11 @@ public class NavTreeMenu extends WebPartView implements Collapsible
                 onClickScript = "window.location='" + PageFlowUtil.filter(link) + "'; return false;";
         }
         boolean selected = _highlightSelection && null != link && matchPath(link, currentUrl, pattern);
-        if (level == 0 && null != nav.getKey())
+        if (level == 0 && null != nav.getText())
             level = 1;
 
-        boolean hasChildren = nav.getChildren() != null && nav.getChildren().length > 0;
-        if (null != nav.getKey())
+        boolean hasChildren = nav.hasChildren();
+        if (null != nav.getText())
             //When we post the expanded path, we need to use the escaped key so that embedded
             // '/' characters in the key are not confused with path separators
             pathToHere = pathToHere + "/" + nav.getEscapedKey();
@@ -198,7 +200,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
             out.println(">");
 
             if (null == link)
-                out.print(filter(nav.getKey()));
+                out.print(filter(nav.getText()));
             else
             {
                 if (!StringUtils.isEmpty(nav.getId()))
@@ -226,7 +228,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
                     out.print("\"");
                 }
                 out.print(">");
-                out.print(filter(nav.getKey()));
+                out.print(filter(nav.getText()));
                 out.print("</a>");
             }
 

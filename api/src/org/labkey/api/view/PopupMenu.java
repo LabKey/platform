@@ -98,7 +98,7 @@ public class PopupMenu extends DisplayElement
 
     public void renderMenuButton(Writer out, String dataRegionName, boolean requiresSelection) throws IOException
     {
-        if (null == _navTree.getKey())
+        if (null == _navTree.getText())
             return;
 
         // Issue 11392: DataRegion name escaping in button menus.  Menu id is double-escaped.  Once here, once when rendering.
@@ -107,7 +107,7 @@ public class PopupMenu extends DisplayElement
         if (_buttonStyle == ButtonStyle.TEXTBUTTON)
         {
             assert !requiresSelection : "Only button-style popups can require selection.";
-            String link = PageFlowUtil.textLink(_navTree.getKey(), "javascript:void(0)", "showMenu(this, " + jsStringFilteredMenuId + ",'" + _align.getExtPosition() + "');", "");
+            String link = PageFlowUtil.textLink(_navTree.getText(), "javascript:void(0)", "showMenu(this, " + jsStringFilteredMenuId + ",'" + _align.getExtPosition() + "');", "");
             out.append(link);
         }
         else if (_buttonStyle == ButtonStyle.MENUBUTTON)
@@ -115,20 +115,20 @@ public class PopupMenu extends DisplayElement
             Map<String, String> attributes = null;
             if (requiresSelection)
                 attributes = Collections.singletonMap("labkey-requires-selection", PageFlowUtil.filter(dataRegionName));
-            out.append(PageFlowUtil.generateDropDownButton(_navTree.getKey(), "javascript:void(0)",
+            out.append(PageFlowUtil.generateDropDownButton(_navTree.getText(), "javascript:void(0)",
                     "showMenu(this, " + jsStringFilteredMenuId + ",'" + _align.getExtPosition() + "');", attributes));
         }
         else if (_buttonStyle == ButtonStyle.TEXT || _buttonStyle == ButtonStyle.BOLDTEXT)
         {
             assert !requiresSelection : "Only button-style popups can require selection.";
-            out.append(PageFlowUtil.generateDropDownTextLink(_navTree.getKey(), "javascript:void(0)",
+            out.append(PageFlowUtil.generateDropDownTextLink(_navTree.getText(), "javascript:void(0)",
                     "showMenu(this, " + jsStringFilteredMenuId + ",'" + _align.getExtPosition() + "');", _buttonStyle == ButtonStyle.BOLDTEXT, _offset, _navTree.getId()));
         }
         else if (_buttonStyle == ButtonStyle.IMAGE)
         {
             assert !requiresSelection : "Only button-style popups can require selection.";
             assert _navTree.getImageSrc() != null && _navTree.getImageSrc().length() > 0 : "Must provide an image source for image based popups.";
-            out.append(PageFlowUtil.generateDropDownImage(_navTree.getKey(),  "javascript:void(0)",
+            out.append(PageFlowUtil.generateDropDownImage(_navTree.getText(),  "javascript:void(0)",
                     "showMenu(this, " + jsStringFilteredMenuId + ",'" + _align.getExtPosition() + "');", _navTree.getImageSrc(), _imageId, _navTree.getImageHeight(), _navTree.getImageWidth()));
         }
     }
@@ -199,7 +199,7 @@ public class PopupMenu extends DisplayElement
         }
         if (dataRegionName != null)
         {
-            return dataRegionName + ".Menu." + _navTree.getKey();
+            return dataRegionName + ".Menu." + _navTree.getText();
         }
         return String.valueOf(System.identityHashCode(this));
     }

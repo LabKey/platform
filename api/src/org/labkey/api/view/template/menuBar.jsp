@@ -84,7 +84,7 @@
         {
             if (!folderMenu) //Make sure you can always get back to project home
             {%> 
-                <a href="<%=h(homeLink.getValue())%>"><%=h(homeLink.getKey())%></a><%
+                <a href="<%=h(homeLink.getHref())%>"><%=h(homeLink.getText())%></a><%
             }
             for (Portal.WebPart part : menus)
             {

@@ -105,7 +105,7 @@ public class NavTrailView extends HttpView
         out.print(" class=\"labkey-nav-page-header-container\">");
         String lastCaption = _title;
         if (_crumbTrail.size() > 0)
-            lastCaption = _crumbTrail.get(_crumbTrail.size()-1).getKey();
+            lastCaption = _crumbTrail.get(_crumbTrail.size()-1).getText();
         if (lastCaption != null)
         {
             _out.print("<span class=\"labkey-nav-page-header\" id=\"labkey-nav-trail-current-page\" style=\"visibility:hidden\">");_out.print(filter(_title));_out.print("</span>");
@@ -116,8 +116,8 @@ public class NavTrailView extends HttpView
 
     void drawTab(NavTree tab)
     {
-        String link = tab.getValue();
-        String name = tab.getKey();
+        String link = tab.getHref();
+        String name = tab.getText();
         boolean active = link != null;
         String className = tab.isSelected() ? "labkey-tab-selected" : active ? "labkey-tab" : "labkey-tab-inactive";
         _out.print("<td class=\"labkey-tab-space\"><img width=\"5\" src=\"");
@@ -126,7 +126,7 @@ public class NavTrailView extends HttpView
         if (active)
         {
             _out.print("<td style=\"margin-bottom:0px\" class=");_out.print(className);_out.print(">");
-            _out.print("<a href=\"");_out.print(filter(link));_out.print("\" id=\"");_out.print(tab.getKey());_out.print("Tab\">");
+            _out.print("<a href=\"");_out.print(filter(link));_out.print("\" id=\"");_out.print(tab.getText());_out.print("Tab\">");
             _out.print(filter(name));_out.print("</a></td>");
         }
         else
@@ -145,7 +145,7 @@ public class NavTrailView extends HttpView
 
     private String formatLink(NavTree tree)
     {
-        return formatLink(tree.getKey(), tree.getValue());
+        return formatLink(tree.getText(), tree.getHref());
     }
 
     private String formatLink(String display, String href)

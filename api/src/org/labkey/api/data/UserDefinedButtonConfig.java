@@ -161,8 +161,8 @@ public class UserDefinedButtonConfig implements ButtonConfig
 
     private void processURLs(RenderContext ctx, NavTree tree)
     {
-        if (tree.getValue() != null && tree.getValue().length() > 0)
-            tree.setValue(processURL(ctx, tree.getValue()));
+        if (tree.getHref() != null && tree.getHref().length() > 0)
+            tree.setHref(processURL(ctx, tree.getHref()));
         for (NavTree child : tree.getChildList())
             processURLs(ctx, child);
     }

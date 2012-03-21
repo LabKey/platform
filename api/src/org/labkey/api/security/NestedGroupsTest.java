@@ -90,7 +90,7 @@ public class NestedGroupsTest extends Assert
         assertTrue(!siteGroup2.isProjectGroup());
 
         addMember(projectX, user);
-        int[] groups = GroupMembershipCache.getGroupsForPrincipal(user.getUserId());
+        int[] groups = GroupMembershipCache.getGroupMemberships(user.getUserId());
         expected(groups, projectX);
         notExpected(groups, user, all, divB, divC, testers, writers, siteGroup1, coders, divA);
 
@@ -182,7 +182,7 @@ public class NestedGroupsTest extends Assert
         expected(all, divA, divB, divC, coders, testers, writers);
         notExpected(all, cycleTest);
 
-        groups = GroupMembershipCache.getGroupsForPrincipal(user.getUserId());
+        groups = GroupMembershipCache.getGroupMemberships(user.getUserId());
         expected(groups, projectX, coders, divA);
         notExpected(groups, user, all, divB, divC, testers, writers, siteGroup1);
 

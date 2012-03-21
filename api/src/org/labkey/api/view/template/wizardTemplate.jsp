@@ -57,7 +57,7 @@
                 <div class="labkey-fullscreen-wizard-background">
                     <ol class="labkey-fullscreen-wizard-steps">
                         <% for (NavTree navTree : pageConfig.getNavTrail()) { %>
-                            <li <%= navTree.getKey().equals(pageConfig.getTitle()) ? "class=\"labkey-fullscreen-wizard-active-step\"" : ""%>><%= navTree.getKey() %></li>
+                            <li <%= navTree.getText().equals(pageConfig.getTitle()) ? "class=\"labkey-fullscreen-wizard-active-step\"" : ""%>><%= navTree.getText() %></li>
                         <% } %>
                     </ol>
                 </div>

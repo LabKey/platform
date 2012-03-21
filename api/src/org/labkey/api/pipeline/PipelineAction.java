@@ -60,7 +60,7 @@ public class PipelineAction
 
     public String getLabel()
     {
-        return _links.getKey();
+        return _links.getText();
     }
 
     public File[] getFiles()

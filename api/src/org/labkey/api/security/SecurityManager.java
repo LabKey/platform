@@ -1247,7 +1247,7 @@ public class SecurityManager
         {
             int id = recurse.removeFirst();
             groupSet.add(id);
-            int[] groups = GroupMembershipCache.getGroupsForPrincipal(id);
+            int[] groups = GroupMembershipCache.getGroupMemberships(id);
 
             for (int g : groups)
             {
@@ -1474,9 +1474,9 @@ public class SecurityManager
     public static Set<UserPrincipal> getGroupMembers(Group group, GroupMemberType memberType)
     {
         Set<UserPrincipal> principals = new LinkedHashSet<UserPrincipal>();
-        Integer[] ids = getGroupMemberIds(group);
+        int[] ids = GroupMembershipCache.getGroupMembers(group);
 
-        for (Integer id : ids)
+        for (int id : ids)
         {
             UserPrincipal principal = getPrincipal(id);
             if (null != principal && (GroupMemberType.Both == memberType

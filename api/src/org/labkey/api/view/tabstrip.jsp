@@ -39,18 +39,18 @@
             %>
             <li class="<%=(tab.getId().equals(tabId) ? "labkey-tab-active" : "labkey-tab-inactive")%>" id="<%=view._prefix%>tab<%=tab.getId()%>"><%
 
-            if (tab.getScript() == null && tab.getValue() == null)
+            if (tab.getScript() == null && tab.getHref() == null)
             {
-                %><%=h(tab.getKey())%><%
+                %><%=h(tab.getText())%><%
             }
             else if (tab.getScript() == null)
             {
-                %><a href="<%=h(tab.getValue())%>"><%=h(tab.getKey())%>&nbsp;</a><%
+                %><a href="<%=h(tab.getHref())%>"><%=h(tab.getText())%>&nbsp;</a><%
             }
             else
             {
-                String href = StringUtils.defaultString(tab.getValue(), "javascript:void(0);");
-                %><a href="<%=h(href)%>" onclick="<%=h(tab.getScript())%>"><%=h(tab.getKey())%>&nbsp;</a><%
+                String href = StringUtils.defaultString(tab.getHref(), "javascript:void(0);");
+                %><a href="<%=h(href)%>" onclick="<%=h(tab.getScript())%>"><%=h(tab.getText())%>&nbsp;</a><%
             }
             %></li><%
         }

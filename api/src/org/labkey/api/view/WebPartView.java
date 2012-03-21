@@ -17,6 +17,7 @@ package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.util.ErrorRenderer;
 import org.labkey.api.util.ExceptionUtil;
@@ -511,7 +512,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                     if (getCustomize() != null)
                     {
                         NavTree customize = getCustomize();
-                        customize.setKey("Customize");
+                        customize.setText("Customize");
                         nMenu.addChild(customize);
                     }
                     
@@ -555,8 +556,8 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                                     renderMenu(link, out);
                                 }
                                 out.print(sep);
-                                String linkHref = link.second;
-                                String linkText = link.first;
+                                String linkHref = link.getHref();
+                                String linkText = link.getText();
 
                                 if (null != linkHref && 0 < linkHref.length())
                                 {
@@ -597,8 +598,8 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                                 }
                                 else
                                 {
-                                    String linkHref = current.second;
-                                    String linkText = current.first;
+                                    String linkHref = current.getHref();
+                                    String linkText = current.getText();
 
                                     if (null != linkHref && 0 < linkHref.length())
                                     {
@@ -632,8 +633,8 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                         for (NavTree link : links)
                         {
                             out.print(sep);
-                            String linkHref = link.second;
-                            String linkText = link.first;
+                            String linkHref = link.getHref();
+                            String linkText = link.getText();
 
                             if (null != linkHref && 0 < linkHref.length())
                             {
@@ -870,6 +871,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
             return _collapsed;
         }
 
+        @NotNull
         public Collapsible[] getChildren()
         {
             return new Collapsible[0];
@@ -890,7 +892,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
     {
         try
         {
-            menu.setKey(menu.getKey());
+            menu.setText(menu.getText());
             PopupMenu more = new PopupMenu(menu, PopupMenu.Align.RIGHT, PopupMenu.ButtonStyle.TEXT);
             more.setOffset("-7");
             more.render(out);
@@ -905,7 +907,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
     {
         try
         {
-            menu.setKey("More");
+            menu.setText("More");
             PopupMenu more = new PopupMenu(menu, PopupMenu.Align.RIGHT, PopupMenu.ButtonStyle.IMAGE);
             menu.setImage(imageSrc, 24, 24);
             more.setImageId("more-" + PageFlowUtil.filter(getTitle().toLowerCase()));
