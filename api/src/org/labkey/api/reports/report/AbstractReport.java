@@ -15,9 +15,17 @@
  */
 package org.labkey.api.reports.report;
 
+import org.labkey.api.data.Container;
+import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.permissions.EditSharedReportPermission;
+import org.labkey.api.reports.permissions.ShareReportPermission;
 import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -31,6 +39,8 @@ import org.labkey.api.writer.ContainerUser;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * User: migra
@@ -173,4 +183,112 @@ public abstract class AbstractReport implements Report
         return "Reports:ReportStatic";
     }
 
+    public boolean canEdit(User user, Container container, List<ValidationError> errors)
+    {
+        if (getDescriptor().isInherited(container))
+        {
+            errors.add(new SimpleValidationError("An inherited report can only be edited from it's source folder."));
+            return false;
+        }
+
+        // public or private report
+        if (isPrivate())
+        {
+            if (!isOwner(user))
+                errors.add(new SimpleValidationError("You must be the owner of a private report in order to edit it."));
+        }
+        else if (!container.hasPermission(user, EditSharedReportPermission.class))
+        {
+            errors.add(new SimpleValidationError("You must be in the Editor role to update a shared report."));
+        }
+
+/*
+        if (container.hasPermission(user, AdminPermission.class))
+            return true;
+        if (getCreatedBy() != 0)
+            return (getCreatedBy() == user.getUserId());
+        return false;
+*/
+        return errors.isEmpty();
+    }
+
+    public boolean canEdit(User user, Container container)
+    {
+        return canEdit(user, container, new ArrayList<ValidationError>());
+    }
+
+    public boolean canShare(User user, Container container, List<ValidationError> errors)
+    {
+        if (getDescriptor().isInherited(container))
+        {
+            errors.add(new SimpleValidationError("An inherited report can only be modified from it's source folder."));
+            return false;
+        }
+
+        // public or private report
+        if (isPrivate())
+        {
+            if (!isOwner(user))
+                errors.add(new SimpleValidationError("You must be the owner of a private report in order to edit it."));
+            else if (!container.hasPermission(user, ShareReportPermission.class))
+                errors.add(new SimpleValidationError("You must be in the Author role to share a private report."));
+        }
+        else if (!container.hasPermission(user, EditSharedReportPermission.class))
+        {
+            errors.add(new SimpleValidationError("You must be in the Editor role to share a public report."));
+        }
+        return errors.isEmpty();
+    }
+
+    public boolean canShare(User user, Container container)
+    {
+        return canShare(user, container, new ArrayList<ValidationError>());
+    }
+
+    public boolean canDelete(User user, Container container)
+    {
+        return canDelete(user, container, new ArrayList<ValidationError>());
+    }
+
+    public boolean canDelete(User user, Container container, List<ValidationError> errors)
+    {
+        if (getDescriptor().isInherited(container))
+        {
+            errors.add(new SimpleValidationError("An inherited report can only be deleted from it's source folder."));
+            return false;
+        }
+
+        // public or private report
+        if (isPrivate())
+        {
+            if (!isOwner(user))
+                errors.add(new SimpleValidationError("You must be the owner of a private report in order to delete it."));
+        }
+        else if (!container.hasPermission(user, DeletePermission.class))
+        {
+            errors.add(new SimpleValidationError("You must be in the Editor role to delete a public report."));
+        }
+        return errors.isEmpty();
+    }
+
+    /**
+     * Is this a new unsaved report
+     */
+    protected boolean isNew()
+    {
+        return getDescriptor().isNew();
+    }
+
+    /**
+     * Is this a private report
+     */
+    protected boolean isPrivate()
+    {
+        return isNew() || getDescriptor().getOwner() != null;
+    }
+    
+    protected boolean isOwner(User user)
+    {
+        return isNew() || (getDescriptor().getOwner() != null && getDescriptor().getOwner().equals(user.getUserId()));
+    }
 }

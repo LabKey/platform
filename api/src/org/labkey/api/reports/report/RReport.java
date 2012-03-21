@@ -18,12 +18,15 @@ package org.labkey.api.reports.report;
 
 import org.jetbrains.annotations.Nullable;
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
+import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
@@ -232,7 +235,7 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
 
     public ActionURL getEditReportURL(ViewContext context)
     {
-        if (getDescriptor().canEdit(context.getUser(), context.getContainer()))
+        if (canEdit(context.getUser(), context.getContainer()))
         {
             return ReportUtil.getRunReportURL(context, this).addParameter(TabStripView.TAB_PARAM, TAB_SOURCE);
         }
@@ -310,6 +313,17 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
     public String getDynamicThumbnailCacheKey()
     {
         return "Reports:" + getReportId();
+    }
+
+    @Override
+    public boolean canEdit(User user, Container container, List<ValidationError> errors)
+    {
+        // hack : prevent editing on module R reports, but for long term we probably want
+        // to create a module R report and handle the permission checking directly.
+        if (getDescriptorType().equals(ModuleRReportDescriptor.TYPE))
+            return false;
+        
+        return super.canEdit(user, container, errors);    //To change body of overridden methods use File | Settings | File Templates.
     }
 }
 

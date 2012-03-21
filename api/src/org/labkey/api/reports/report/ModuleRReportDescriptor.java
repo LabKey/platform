@@ -42,6 +42,7 @@ import java.util.List;
  */
 public class ModuleRReportDescriptor extends RReportDescriptor
 {
+    public static final String TYPE = "moduleRReportDescriptor";
     public static final String FILE_EXTENSION = ".r";
     protected static final String REPORT_METADATA_EXTENSION = ".report.xml";
 
@@ -63,6 +64,7 @@ public class ModuleRReportDescriptor extends RReportDescriptor
 
         setReportKey(reportKey);
         setReportName(name);
+        setDescriptorType(TYPE);
         setReportType(getDefaultReportType(reportKey));
         Resource dir = sourceFile.parent();
         _metaDataFile = dir.find(getReportName() + REPORT_METADATA_EXTENSION);
@@ -204,12 +206,5 @@ public class ModuleRReportDescriptor extends RReportDescriptor
     public ReportIdentifier getReportId()
     {
         return new ModuleReportIdentifier(getModule(), getReportPath());
-    }
-
-    @Override
-    public boolean canEdit(ViewContext context)
-    {
-        //module reports are always un-editable.
-        return false;
     }
 }

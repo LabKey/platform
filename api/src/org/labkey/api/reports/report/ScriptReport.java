@@ -18,17 +18,24 @@ package org.labkey.api.reports.report;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BooleanFormat;
+import org.labkey.api.data.Container;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.Report;
+import org.labkey.api.reports.permissions.ShareReportPermission;
 import org.labkey.api.reports.report.view.AjaxRunScriptReportView;
 import org.labkey.api.reports.report.view.AjaxScriptReportView.Mode;
 import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.TabStripView;
@@ -109,7 +116,7 @@ public abstract class ScriptReport extends AbstractReport
     @Override
     public ActionURL getEditReportURL(ViewContext context)
     {
-        if (getDescriptor().canEdit(context.getUser(), context.getContainer()))
+        if (canEdit(context.getUser(), context.getContainer()))
         {
             return ReportUtil.getRunReportURL(context, this).addParameter(TabStripView.TAB_PARAM, TAB_SOURCE);
         }
@@ -133,5 +140,45 @@ public abstract class ScriptReport extends AbstractReport
         Mode mode = (TAB_SOURCE.equals(tabId) ? Mode.update : (webpart ? Mode.view : Mode.viewAndUpdate));
 
         return new AjaxRunScriptReportView(this, mode);
+    }
+
+    public boolean canEdit(User user, Container container, List<ValidationError> errors)
+    {
+        super.canEdit(user, container, errors);
+
+        if (errors.isEmpty())
+        {
+            if (user.isDeveloper())
+            {
+                if (isPrivate())
+                {
+                    if (!container.hasPermission(user, InsertPermission.class))
+                        errors.add(new SimpleValidationError("You must be in the Author role to update a private script report."));
+                }
+            }
+            else
+                errors.add(new SimpleValidationError("You must be in the Developers groups to update a script report."));
+        }
+        return errors.isEmpty();
+    }
+
+    public boolean canShare(User user, Container container, List<ValidationError> errors)
+    {
+        super.canShare(user, container, errors);
+
+        if (errors.isEmpty())
+        {
+            if (isPrivate())
+            {
+                if (user.isDeveloper())
+                {
+                    if (!container.hasPermission(user, ShareReportPermission.class))
+                        errors.add(new SimpleValidationError("You must be in the Author role to share a private script report."));
+                }
+                else
+                    errors.add(new SimpleValidationError("You must be in the Developers groups to share a private script report."));
+            }
+        }
+        return errors.isEmpty();
     }
 }

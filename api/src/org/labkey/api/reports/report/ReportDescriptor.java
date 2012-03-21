@@ -27,6 +27,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.Entity;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.ValidationError;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
@@ -510,22 +513,9 @@ public class ReportDescriptor extends Entity implements SecurableResource
         SecurityManager.savePolicy(policy);
     }
 
-    public boolean canRead(User u)
+    public boolean isNew()
     {
-        return SecurityManager.getPolicy(this).hasPermission(u, ReadPermission.class);
-    }
-
-    public boolean canEdit(User user, Container container)
-    {
-        if (isInherited(container))
-            return false;
-        if (getOwner() != null && !getOwner().equals(user.getUserId()))
-            return false;
-        if (container.hasPermission(user, AdminPermission.class))
-            return true;
-        if (getCreatedBy() != 0)
-            return (getCreatedBy() == user.getUserId());
-        return false;
+        return getReportId() == null;
     }
 
     public boolean isInherited(Container c)

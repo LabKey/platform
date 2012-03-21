@@ -17,8 +17,11 @@
 package org.labkey.api.reports;
 
 import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.Results;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.security.User;
 import org.labkey.api.thumbnail.StaticThumbnailProvider;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -28,6 +31,7 @@ import org.labkey.api.writer.VirtualFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * User: Mark Igra
@@ -59,6 +63,24 @@ public interface Report extends AttachmentParent, StaticThumbnailProvider
 
     ReportDescriptor getDescriptor();
     void setDescriptor(ReportDescriptor descriptor);
+
+    /**
+     * Determines whether the user can edit this report
+     */
+    boolean canEdit(User user, Container container);
+    boolean canEdit(User user, Container container, List<ValidationError> errors);
+
+    /**
+     * Determines whether the user can modify the shared state of a report
+     */
+    boolean canShare(User user, Container container);
+    boolean canShare(User user, Container container, List<ValidationError> errors);
+
+    /**
+     * Determines whether the user can delete this report
+     */
+    boolean canDelete(User user, Container container);
+    boolean canDelete(User user, Container container, List<ValidationError> errors);
 
     /**
      * Called before the report is saved to allow any additional save tasks by

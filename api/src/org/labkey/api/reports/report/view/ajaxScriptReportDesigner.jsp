@@ -45,7 +45,7 @@
     List<Report> sharedReports = report.getAvailableSharedScripts(ctx, bean);
     List<String> includedReports = bean.getIncludedReports();
     String helpHtml = report.getDesignerHelpHtml();
-    boolean readOnly = bean.isReadOnly() || !ctx.getUser().isDeveloper();
+    boolean readOnly = bean.isReadOnly() || !report.canEdit(ctx.getUser(), c);
     Mode mode = bean.getMode();
     boolean sourceAndHelp = mode.showSourceAndHelp(ctx.getUser()) || bean.isSourceTabVisible();
 
@@ -659,7 +659,7 @@ function setDisabled(checkbox, label, disabled)
                 <input type="hidden" name="showDebug" value="true">
                 <input type="hidden" name="<%=ScriptReportDescriptor.Prop.scriptExtension%>" value="<%=StringUtils.trimToEmpty(bean.getScriptExtension())%>">
                 <input type="hidden" name="reportName" id="reportName" value="<%=StringUtils.trimToEmpty(bean.getReportName())%>">
-                <% if (inherited) { %>
+                <% if (inherited || readOnly) { %>
                 <a class="labkey-disabled-button">Save</a>
                 <% } else { %>
                 <%=generateButton("Save", "javascript:void(0)", "javascript:f_scope" + uid + ".saveReport()")%>

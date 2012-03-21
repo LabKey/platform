@@ -60,14 +60,4 @@ abstract public class ScriptReportDescriptor extends ReportDescriptor
         }
         return true;
     }
-
-
-    public boolean canEdit(ViewContext context)
-    {
-        if (ReportUtil.canCreateScript(context))
-        {
-            return super.canEdit(context.getUser(), context.getContainer());
-        }
-        return false;
-    }
 }

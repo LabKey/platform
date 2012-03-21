@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
@@ -35,6 +36,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ReportPropsManager;
@@ -49,10 +51,13 @@ import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.ScriptReport;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
@@ -60,6 +65,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.ViewContext;
+import org.springframework.validation.Errors;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -74,6 +80,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -330,6 +337,29 @@ public class ReportUtil
                context.getContainer().hasPermission(context.getUser(), InsertPermission.class);
     }
 
+    public static boolean isInRole(User user, Container container, Class<? extends Role> roleCls)
+    {
+        Role role = RoleManager.getRole(roleCls);
+
+        if (role != null)
+        {
+            SecurityPolicy policy = container.getPolicy();
+            Set<Role> roles = policy.getEffectiveRoles(user);
+
+            return roles.contains(role);
+        }
+        return false;
+    }
+
+    /**
+     * Transfer list of validation errors to the spring error object
+     */
+    public static void addErrors(List<ValidationError> reportErrors, Errors errors)
+    {
+        for (ValidationError error : reportErrors)
+            errors.reject(SpringActionController.ERROR_MSG, error.getMessage());
+    }
+
     public static interface ReportFilter
     {
         public boolean accept(Report report, Container c, User user);
@@ -345,7 +375,7 @@ public class ReportUtil
     {
         public boolean accept(Report report, Container c, User user)
         {
-            return report.getDescriptor().canEdit(user, c);
+            return report.canEdit(user, c);
         }
 
         public ActionURL getViewRunURL(User user, Container c, CustomViewInfo view)
@@ -474,7 +504,7 @@ public class ReportUtil
                         info.setModifiedBy(modifiedBy);
                         info.setAuthor(author);
                         info.setModified(descriptor.getModified());
-                        info.setEditable(descriptor.canEdit(user, c));
+                        info.setEditable(r.canEdit(user, c));
                         info.setInherited(inherited);
                         info.setVersion(descriptor.getVersionString());
                         info.setHidden(descriptor.isHidden());
