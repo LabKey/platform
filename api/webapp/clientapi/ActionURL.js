@@ -30,6 +30,7 @@
 LABKEY.ActionURL = new function()
 {
     // private member variables
+    var _parsedPathName = parsePathName(window.location.pathname);
 
     // private functions
     function buildParameterMap(paramString)
@@ -83,6 +84,38 @@ LABKEY.ActionURL = new function()
         return a.join('/');
     }
 
+    function parsePathName(path)
+    {
+        var start = LABKEY.contextPath.length;
+        var end = path.lastIndexOf("/");
+        var action = path.substring(end+1);
+        path = path.substring(start,end);
+        var controller = null;
+        var dash = action.indexOf('-');
+        if (0 < dash)
+        {
+            controller = action.substring(0,dash);
+            action = action.substring(dash+1);
+        }
+        else
+        {
+            var slash = path.indexOf('/',1);
+            controller = path.substring(1,slash);
+            path = path.substring(slash);
+        }
+        var dot = action.indexOf('.');
+        if (0 < dot)
+            action = action.substring(0,dot);
+        var o =
+        {
+            controller: decodeURIComponent(controller),
+            action: decodeURIComponent(action),
+            containerPath: decodeURI(path)
+        };
+        return o;
+    }
+
+
     /** @scope LABKEY.ActionURL */
     return {
         // public functions
@@ -102,11 +135,7 @@ LABKEY.ActionURL = new function()
 		*/
         getAction : function()
         {
-            var path = window.location.pathname;
-            i = path.lastIndexOf("/");
-            path = path.substring(i + 1);
-            i = path.indexOf('.');
-            return path.substring(0, i);
+            return _parsedPathName.action;
         },
 
 		/**
@@ -117,10 +146,7 @@ LABKEY.ActionURL = new function()
         {
             if (LABKEY.container && LABKEY.container.path)
                 return LABKEY.container.path;
-            var path = window.location.pathname;
-            var start = path.indexOf("/", LABKEY.contextPath.length + 1);
-            var end = path.lastIndexOf("/");
-            return LABKEY.ActionURL.decodePath(path.substring(start, end));
+            return _parsedPathName.containerPath;
         },
 
         /**
@@ -142,10 +168,7 @@ LABKEY.ActionURL = new function()
          */
         getController : function()
         {
-            var path = window.location.pathname;
-            var start = LABKEY.contextPath.length + 1;
-            var end = path.indexOf("/", start);
-            return path.substring(start, end);
+            return _parsedPathName.controller;
         },
 
         /**
