@@ -88,7 +88,7 @@ public class SpecimenReportQuery
             "\n" +
             "(SELECT \n" +
             "  Vial.Container, \n" +
-            "  Vial.SequenceNum AS Visit, \n" +
+            "  Vial.Visit AS Visit, \n" +
             "  Vial.%s, \n" +
             "  Vial.%s, \n" +
             "  '' || CAST(Vial.PrimaryType AS VARCHAR) || '-' || CAST(Vial.DerivativeType AS VARCHAR) || '-' || CAST(Request.Destination AS VARCHAR) AS PivotColumn,\n" +

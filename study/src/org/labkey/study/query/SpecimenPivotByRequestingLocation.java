@@ -35,6 +35,7 @@ import java.util.Map;
 public class SpecimenPivotByRequestingLocation extends BaseSpecimenPivotTable
 {
     public static final String PIVOT_BY_REQUESTING_LOCATION = "Vial Counts by Requesting Location";
+    private static final String COLUMN_DESCRIPTION_FORMAT = "Number of vials of primary & derivative type %s/%s requested by %s";
 
     public SpecimenPivotByRequestingLocation(final StudyQuerySchema schema)
     {
@@ -66,6 +67,7 @@ public class SpecimenPivotByRequestingLocation extends BaseSpecimenPivotTable
                         if (primaryTypeMap.containsKey(primaryId) && derivativeTypeMap.containsKey(derivativeId) && siteMap.containsKey(siteId))
                         {
                             wrapPivotColumn(col,
+                                    COLUMN_DESCRIPTION_FORMAT,
                                     primaryTypeMap.get(primaryId),
                                     derivativeTypeMap.get(derivativeId),
                                     siteMap.get(siteId));

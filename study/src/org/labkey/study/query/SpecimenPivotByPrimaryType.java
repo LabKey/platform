@@ -39,6 +39,7 @@ import java.util.Map;
 public class SpecimenPivotByPrimaryType extends BaseSpecimenPivotTable
 {
     public static final String PIVOT_BY_PRIMARY_TYPE = "Primary Type Vial Counts";
+    private static final String COLUMN_DESCRIPTION_FORMAT = "Number of vials of primary type %s";
 
     public SpecimenPivotByPrimaryType(final StudyQuerySchema schema)
     {
@@ -64,11 +65,11 @@ public class SpecimenPivotByPrimaryType extends BaseSpecimenPivotTable
 
                     if (primaryTypeMap.containsKey(primaryId))
                     {
-                        wrapPivotColumn(col, primaryTypeMap.get(primaryId), parts[1]);
+                        wrapPivotColumn(col, COLUMN_DESCRIPTION_FORMAT, primaryTypeMap.get(primaryId), parts[1]);
                     }
                     else if (allPrimaryTypes.containsKey(primaryId))
                     {
-                        ColumnInfo wrappedCol = wrapPivotColumn(col, allPrimaryTypes.get(primaryId), parts[1]);
+                        ColumnInfo wrappedCol = wrapPivotColumn(col, COLUMN_DESCRIPTION_FORMAT, allPrimaryTypes.get(primaryId), parts[1]);
 
                         wrappedCol.setHidden(true);
                     }

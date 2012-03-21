@@ -216,6 +216,13 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
             }
         });
 
+        // tooltip for description text
+        var ttRenderer = function(value, p, record) {
+            var msg = Ext.util.Format.htmlEncode(value);
+            p.attr = 'ext:qtip="' + msg + '"';
+            return msg;
+        };
+
         if (this.multiSelect) {
 
             this.selModel = new Ext.grid.CheckboxSelectionModel();
@@ -230,7 +237,7 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
                     this.selModel,
                     {header:'Dataset', dataIndex:'queryName'},
                     {header:'Measure', dataIndex:'label'},
-                    {header:'Description', dataIndex:'description', cls : 'normal-wrap'}
+                    {header:'Description', dataIndex:'description', cls : 'normal-wrap', renderer : ttRenderer}
                 ]
             });
         }
@@ -243,7 +250,7 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
                 columns: [
                     {header:'Dataset', dataIndex:'queryName', width: .4},
                     {header:'Measure', dataIndex:'label', width:.25},
-                    {header:'Description', dataIndex:'description', cls : 'normal-wrap'}
+                    {header:'Description', dataIndex:'description', cls : 'normal-wrap', renderer : ttRenderer}
                 ]
             });
             this.selModel = this.view;

@@ -49,7 +49,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable
         addWrapColumn(_rootTable.getColumn("Visit"));
     }
 
-    protected ColumnInfo wrapPivotColumn(ColumnInfo col, String ...parts)
+    protected ColumnInfo wrapPivotColumn(ColumnInfo col, String descriptionFormat, String ...parts)
     {
         StringBuilder name = new StringBuilder();
         StringBuilder label = new StringBuilder();
@@ -69,6 +69,8 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable
         }
         ColumnInfo colInfo = new AliasedColumn(this, ColumnInfo.legalNameFromName(name.toString()), col);
         colInfo.setLabel(ColumnInfo.labelFromName(label.toString()));
+        if (descriptionFormat != null)
+            colInfo.setDescription(String.format(descriptionFormat, parts));
 
         return addColumn(colInfo);
     }

@@ -37,6 +37,7 @@ import java.util.Map;
 public class SpecimenPivotByDerivativeType extends BaseSpecimenPivotTable
 {
     public static final String PIVOT_BY_DERIVATIVE_TYPE = "Primary/Derivative Type Vial Counts";
+    private static final String COLUMN_DESCRIPTION_FORMAT = "Number of vials of primary & derivative type %s/%s";
 
     public SpecimenPivotByDerivativeType(final StudyQuerySchema schema)
     {
@@ -64,6 +65,7 @@ public class SpecimenPivotByDerivativeType extends BaseSpecimenPivotTable
                     if (primaryTypeMap.containsKey(primaryId) && derivativeTypeMap.containsKey(derivativeId))
                     {
                         wrapPivotColumn(col,
+                                COLUMN_DESCRIPTION_FORMAT,
                                 primaryTypeMap.get(primaryId),
                                 derivativeTypeMap.get(derivativeId),
                                 parts[1]);
