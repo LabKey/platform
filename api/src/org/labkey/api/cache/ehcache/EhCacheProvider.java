@@ -41,8 +41,7 @@ public class EhCacheProvider implements CacheProvider, ShutdownListener
     private static final Logger LOG = Logger.getLogger(EhCacheProvider.class);
     private static final EhCacheProvider INSTANCE = new EhCacheProvider();
     private static final AtomicLong cacheCount = new AtomicLong(0);
-
-    static final CacheManager MANAGER;
+    private static final SafeCacheManager MANAGER;
 
     static
     {
@@ -51,7 +50,7 @@ public class EhCacheProvider implements CacheProvider, ShutdownListener
         try
         {
             is = EhCacheProvider.class.getResourceAsStream("ehcache.xml");
-            MANAGER = new CacheManager(is);
+            MANAGER = new SafeCacheManager(new CacheManager(is));
         }
         finally
         {
@@ -61,7 +60,7 @@ public class EhCacheProvider implements CacheProvider, ShutdownListener
         ContextListener.addShutdownListener(INSTANCE);
     }
 
-    public static CacheProvider getInstance()
+    public static EhCacheProvider getInstance()
     {
         return INSTANCE;
     }
@@ -111,5 +110,12 @@ public class EhCacheProvider implements CacheProvider, ShutdownListener
             assert MemTracker.put(ehCache);
 
         return new EhSimpleCache<K, V>(ehCache);
+    }
+
+    void closeCache(Cache cache)
+    {
+        EhCacheProvider.MANAGER.removeCache(cache.getName());
+
+        LOG.debug("Closing \"" + cache.getName() + "\".  Ehcaches: " + MANAGER.getCacheNames().length);
     }
 }

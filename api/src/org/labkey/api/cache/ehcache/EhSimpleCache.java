@@ -126,8 +126,6 @@ class EhSimpleCache<K, V> implements SimpleCache<K, V>
     @Override
     public void close()
     {
-        EhCacheProvider.MANAGER.removeCache(_cache.getName());
-
-        LOG.debug("Closing \"" + _cache.getName() + "\".  Ehcaches: " + EhCacheProvider.MANAGER.getCacheNames().length);
+        EhCacheProvider.getInstance().closeCache(_cache);
     }
 }
