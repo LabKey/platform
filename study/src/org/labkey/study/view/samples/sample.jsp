@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page import="org.labkey.study.model.Specimen" %>
 <%@ page import="org.labkey.study.model.SpecimenComment" %>
+<%@ page import="org.labkey.study.security.permissions.SetSpecimenCommentsPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenController.SpecimenEventBean> me = (JspView<SpecimenController.SpecimenEventBean>) HttpView.currentView();
@@ -62,7 +63,12 @@
     </tr>
     <tr>
         <th align="right">Comments and QC</th>
-        <td><%= h(comment != null ? comment.getComment() : null) %> <%= textLink("update", commentsLink) %></td>
+        <td>
+            <%= h(comment != null ? comment.getComment() : null) %>
+            <% if (sample.getContainer().hasPermission(getViewContext().getUser(), SetSpecimenCommentsPermission.class)) { %>
+                <%= textLink("update", commentsLink) %>
+            <% } %>
+        </td>
     </tr>
 </table>
 <br>

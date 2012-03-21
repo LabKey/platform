@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.study.SampleManager" %>
 <%@ page import="org.labkey.study.samples.SamplesWebPart" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.study.security.permissions.RequestSpecimensPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ViewContext currentContext = HttpView.currentContext();
@@ -196,9 +197,11 @@
                     <td style="padding-left:1em">
                         <table class="labkey-nav-tree-child">
                             <tbody>
+                            <% if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), RequestSpecimensPermission.class)) { %>
                             <tr class="labkey-nav-tree-row labkey-header">
                                 <td class="labkey-nav-tree-text"><a href="#" onclick="return clickLink('study-samples', 'showCreateSampleRequest')">Create New Request</a></td>
                             </tr>
+                            <% } %>
                             <tr class="labkey-nav-tree-row labkey-header">
                                 <td class="labkey-nav-tree-text"><a href="#" onclick="return clickLink('study-samples', 'viewRequests')">View Current Requests</a></td>
                             </tr>

@@ -1213,10 +1213,9 @@ public class SpecimenController extends BaseStudyController
             SpecimenRequestQueryView grid = SpecimenRequestQueryView.createView(getViewContext());
             grid.setExtraLinks(true);
             grid.setShowCustomizeLink(false);
-            if (SampleManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()))
+            if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), RequestSpecimensPermission.class))
             {
-                ActionButton insertButton = new ActionButton("showCreateSampleRequest.view", "Create New Request", DataRegion.MODE_GRID, ActionButton.Action.LINK);
-                insertButton.setDisplayPermission(InsertPermission.class);
+                ActionButton insertButton = new ActionButton(SpecimenController.ShowCreateSampleRequestAction.class, "Create New Request", DataRegion.MODE_GRID, ActionButton.Action.LINK);
                 grid.setButtons(Collections.singletonList((DisplayElement) insertButton));
             }
             else
