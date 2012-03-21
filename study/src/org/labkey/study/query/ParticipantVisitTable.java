@@ -16,10 +16,10 @@
 
 package org.labkey.study.query;
 
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
@@ -34,17 +34,19 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
 
+import java.util.Map;
+
 public class ParticipantVisitTable extends FilteredTable
 {
     StudyQuerySchema _schema;
-    SqlDialect _dialect;
+    Map<String, ColumnInfo> _demographicsColumns;
 
     public ParticipantVisitTable(StudyQuerySchema schema)
     {
         super(StudySchema.getInstance().getTableInfoParticipantVisit(), schema.getContainer());
         setName(StudyService.get().getSubjectVisitTableName(schema.getContainer()));
         _schema = schema;
-        _dialect = _schema.getDbSchema().getSqlDialect();
+        _demographicsColumns = new CaseInsensitiveHashMap<ColumnInfo>();
         Study study = StudyService.get().getStudy(schema.getContainer());
 
         /*
@@ -125,10 +127,6 @@ public class ParticipantVisitTable extends FilteredTable
 //            if (dataset.getDataSetId() == foreignDatasetId)
 //                continue;
 
-            // Don't add demographics datasets -- doesn't make sense for ParticipantVisitTable
-            if (dataset.isDemographicData())
-                continue;
-
             // verify that the current user has permission to read this dataset (they may not if
             // advanced study security is enabled).
             if (!dataset.canRead(schema.getUser()))
@@ -147,7 +145,12 @@ public class ParticipantVisitTable extends FilteredTable
                 continue;
 
             ColumnInfo datasetColumn = createDataSetColumn(name, dataset, participantSequenceKeyColumn);
-            addColumn(datasetColumn);
+
+            // Don't add demographics datasets, but stash it for backwards compatibility with <11.3 queries if needed.
+            if (dataset.isDemographicData())
+                _demographicsColumns.put(name, datasetColumn);
+            else
+                addColumn(datasetColumn);
         }
     }
 
@@ -161,6 +164,19 @@ public class ParticipantVisitTable extends FilteredTable
         return ret;
     }
 
+    @Override
+    protected ColumnInfo resolveColumn(String name)
+    {
+        ColumnInfo col = super.resolveColumn(name);
+        if (col != null)
+            return col;
+
+        col = _demographicsColumns.get(name);
+        if (col != null)
+            return addColumn(col);
+
+        return null;
+    }
 
     private class PVForeignKey extends LookupForeignKey
     {
