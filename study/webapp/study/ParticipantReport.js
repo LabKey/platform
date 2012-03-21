@@ -187,6 +187,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             this.saveButton = Ext4.create('Ext.button.Button', {
                 text    : 'Save',
                 disabled: this.isNew(),
+                hidden  : this.hideSave,
                 handler : function() {
                     var form = this.northPanel.getComponent('selectionForm').getForm();
 
@@ -213,7 +214,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
             this.saveAsButton = Ext4.create('Ext.button.Button', {
                 text    : 'Save As',
-                hidden  : this.isNew(),
+                hidden  : this.isNew() || this.hideSave,
                 handler : function() {
                     this.onSaveAs();
                 },
@@ -318,9 +319,10 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             this.reportPermission = Ext4.create('Ext.form.RadioGroup', {
                 xtype      : 'radiogroup',
                 width      : 300,
+                hidden     : !this.allowShare,
                 fieldLabel : 'Viewable By',
                 items      : [
-                    {boxLabel : 'All readers',  width : 100, name : 'public', checked : true, inputValue : true},
+                    {boxLabel : 'All readers',  width : 100, name : 'public', checked : this.allowShare, inputValue : true},
                     {boxLabel : 'Only me',   width : 100, name : 'public', inputValue : false}]
             });
             formItems.push(this.reportName, this.reportDescription, this.reportPermission);
@@ -328,6 +330,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             this.formPanel = Ext4.create('Ext.form.Panel', {
                 bodyPadding : 20,
                 itemId      : 'selectionForm',
+                hidden      : this.hideSave,
                 flex        : 1,
                 items       : formItems,
                 border      : false, frame : false,
@@ -1168,9 +1171,10 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         var permissions = Ext4.create('Ext.form.RadioGroup', {
             xtype      : 'radiogroup',
             width      : 300,
+            hidden     : !this.allowShare,
             fieldLabel : 'Viewable By',
             items      : [
-                {boxLabel : 'All readers',  width : 100, name : 'public', checked : true, inputValue : true},
+                {boxLabel : 'All readers',  width : 100, name : 'public', checked : this.allowShare, inputValue : true},
                 {boxLabel : 'Only me',   width : 100, name : 'public', inputValue : false}]
         });
         formItems.push(permissions);

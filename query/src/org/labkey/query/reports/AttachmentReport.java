@@ -22,9 +22,14 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
+import org.labkey.api.reports.permissions.EditSharedReportPermission;
 import org.labkey.api.reports.report.RedirectReport;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
@@ -383,5 +388,32 @@ public class AttachmentReport extends RedirectReport implements DynamicThumbnail
     public String getDynamicThumbnailCacheKey()
     {
         return "Reports:" + getReportId();
+    }
+
+    public boolean canEdit(User user, Container container, List<ValidationError> errors)
+    {
+        super.canEdit(user, container, errors);
+
+        if (errors.isEmpty() && getDescriptor().getOwner() != null)
+        {
+            if (!container.hasPermission(user, InsertPermission.class))
+                errors.add(new SimpleValidationError("You must be in the Author role to update a private attachment report."));
+        }
+        return errors.isEmpty();
+    }
+
+    public boolean canDelete(User user, Container container, List<ValidationError> errors)
+    {
+        super.canDelete(user, container, errors);
+
+        if (errors.isEmpty())
+        {
+            if (isPrivate())
+            {
+                if (!container.hasPermission(user, InsertPermission.class))
+                    errors.add(new SimpleValidationError("You must be in the Author role to delete a private attachment report."));
+            }
+        }
+        return errors.isEmpty();
     }
 }

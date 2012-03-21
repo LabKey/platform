@@ -69,7 +69,7 @@ public class ParticipantReport extends AbstractReport
         view.setTitle(getDescriptor().getReportName());
         view.setFrame(WebPartView.FrameType.PORTAL);
 
-        if (getDescriptor().canEdit(context.getUser(), context.getContainer()))
+        if (canEdit(context.getUser(), context.getContainer()))
         {
             String script = String.format("javascript:customizeParticipantReport('%s');", form.getComponentId());
             NavTree edit = new NavTree("Edit", script, AppProps.getInstance().getContextPath() + "/_images/partedit.png");

@@ -185,6 +185,6 @@
 
     boolean isOwner(Report report, ViewContext context)
     {
-        return report.getDescriptor().canEdit(context.getUser(), context.getContainer());
+        return report.canEdit(context.getUser(), context.getContainer());
     }
 %>

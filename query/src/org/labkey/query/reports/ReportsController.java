@@ -29,6 +29,7 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ExtFormAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -55,7 +56,9 @@ import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ViewOptions;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
@@ -95,6 +98,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
@@ -430,7 +434,7 @@ public class ReportsController extends SpringActionController
 
             if (report != null)
             {
-                if (!report.getDescriptor().canEdit(getViewContext().getUser(), getViewContext().getContainer()))
+                if (!report.canDelete(getViewContext().getUser(), getViewContext().getContainer()))
                     throw new UnauthorizedException();
                 ReportService.get().deleteReport(getViewContext(), report);
             }
@@ -598,10 +602,21 @@ public class ReportsController extends SpringActionController
 
         public ModelAndView getView(ScriptReportBean form, boolean reshow, BindException errors) throws Exception
         {
-            validatePermissions();
             _report = form.getReport();
+            List<ValidationError> reportErrors = new ArrayList<ValidationError>();
+            validatePermissions(getViewContext(), _report, reportErrors);
 
-            return new AjaxScriptReportView(null, form, Mode.create);
+            if (reportErrors.isEmpty())
+                return new AjaxScriptReportView(null, form, Mode.create);
+            else
+            {
+                StringBuilder sb = new StringBuilder();
+
+                for (ValidationError error : reportErrors)
+                    sb.append(error.getMessage()).append("<br>");
+
+                return new HtmlView(sb.toString());
+            }
         }
 
         public boolean handlePost(ScriptReportBean form, BindException errors) throws Exception
@@ -835,16 +850,49 @@ public class ReportsController extends SpringActionController
     }
 
 
-    protected void validatePermissions() throws Exception
+    protected void validatePermissions(ViewContext context, Report report, List<ValidationError> errors)
     {
-        if (!ReportUtil.canCreateScript(getViewContext()))
-            throw new UnauthorizedException("Only members of the Site Admin and Site Developers groups are allowed to create script views.");
+        if (report.getDescriptor().isNew())
+        {
+            if (!ReportUtil.canCreateScript(context))
+                errors.add(new SimpleValidationError("Only members of the Site Admin and Site Developers groups are allowed to create script views."));
+        }
+        else
+            report.canEdit(context.getUser(), context.getContainer(), errors);
     }
 
 
     @RequiresNoPermission
-    public class AjaxSaveScriptReportAction extends ApiAction<RReportBean>
+    public class AjaxSaveScriptReportAction extends MutatingApiAction<RReportBean>
     {
+        @Override
+        public void validateForm(RReportBean form, Errors errors)
+        {
+            try
+            {
+                ReportIdentifier id = form.getReportId();
+                Report report;
+
+                if (id != null)
+                    report = id.getReport();
+                else
+                    report = form.getReport();
+
+                List<ValidationError> reportErrors = new ArrayList<ValidationError>();
+                validatePermissions(getViewContext(), report, reportErrors);
+
+                if (!reportErrors.isEmpty())
+                {
+                    for (ValidationError error : reportErrors)
+                        errors.reject(ERROR_MSG, error.getMessage());
+                }
+            }
+            catch (Exception e)
+            {
+                errors.reject(ERROR_MSG, e.getMessage());
+            }
+        }
+
         @Override
         public ApiResponse execute(RReportBean form, BindException errors) throws Exception
         {
@@ -882,7 +930,8 @@ public class ReportsController extends SpringActionController
             if (errors.hasErrors())
                 return null;
 
-            validatePermissions();
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
             ReportService.get().saveReport(getViewContext(), ReportUtil.getReportQueryKey(report.getDescriptor()), report);
 
             if (report instanceof DynamicThumbnailProvider)
@@ -895,9 +944,6 @@ public class ReportsController extends SpringActionController
                     svc.replaceThumbnail(provider, getViewContext());
                 }
             }
-
-            ApiSimpleResponse response = new ApiSimpleResponse();
-
             response.put("success", true);
             response.put("redirect", form.getRedirectUrl());
 
@@ -1471,10 +1517,11 @@ public class ReportsController extends SpringActionController
     {
         public ApiResponse execute(ViewsSummaryForm form, BindException errors) throws Exception
         {
-            boolean isAdmin = getViewContext().getContainer().hasPermission(getViewContext().getUser(), AdminPermission.class);
+            boolean showQueries = getContainer().hasPermission(getUser(), AdminPermission.class) ||
+                    ReportUtil.isInRole(getUser(), getContainer(), EditorRole.class);
             JSONArray views = new JSONArray();
 
-            for (ViewInfo info :  ReportUtil.getViews(getViewContext(), form.getSchemaName(), form.getQueryName(), isAdmin))
+            for (ViewInfo info :  ReportUtil.getViews(getViewContext(), form.getSchemaName(), form.getQueryName(), showQueries))
                 views.put(info.toJSON(getUser()));
 
             return new ApiSimpleResponse("views", views);
@@ -1492,7 +1539,7 @@ public class ReportsController extends SpringActionController
 
                 if (report != null)
                 {
-                    if (!report.getDescriptor().canEdit(getViewContext().getUser(), getViewContext().getContainer()))
+                    if (!report.canDelete(getViewContext().getUser(), getViewContext().getContainer()))
                         throw new UnauthorizedException();
                     ReportService.get().deleteReport(getViewContext(), report);
                 }
@@ -1565,7 +1612,7 @@ public class ReportsController extends SpringActionController
 
                 if (_report != null)
                 {
-                    if (!_report.getDescriptor().canEdit(getViewContext().getUser(), getViewContext().getContainer()))
+                    if (!_report.canEdit(getViewContext().getUser(), getViewContext().getContainer()))
                         errors.rejectValue("viewName", ERROR_MSG, "You are not allowed to edit this view.");
 
                     if (!StringUtils.equals(_report.getDescriptor().getReportName(), form.getViewName()))
@@ -1737,7 +1784,7 @@ public class ReportsController extends SpringActionController
 
                     if (_report != null)
                     {
-                        if (!_report.getDescriptor().canEdit(getViewContext().getUser(), getViewContext().getContainer()))
+                        if (!_report.canEdit(getViewContext().getUser(), getViewContext().getContainer()))
                         {
                             errors.reject("renameReportAction", "Unauthorized operation");
                             return;
@@ -1818,7 +1865,7 @@ public class ReportsController extends SpringActionController
 
                 if (_report != null)
                 {
-                    if (!_report.getDescriptor().canEdit(getViewContext().getUser(), getViewContext().getContainer()))
+                    if (!_report.canEdit(getViewContext().getUser(), getViewContext().getContainer()))
                         errors.reject("reportDescription", "Unauthorized operation");
                 }
             }
@@ -1970,10 +2017,7 @@ public class ReportsController extends SpringActionController
         {
             Report report = form.getReportId().getReport();
 
-            if (null != report && report.getDescriptor().canRead(getUser()))
-                return report;
-            else
-                return null;
+            return report;
         }
     }
 

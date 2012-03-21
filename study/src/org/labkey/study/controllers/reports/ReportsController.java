@@ -49,6 +49,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ViewInfo;
@@ -61,6 +62,7 @@ import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.ReportDesignBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
+import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -68,6 +70,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -116,6 +119,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -278,10 +282,11 @@ public class ReportsController extends BaseStudyController
     {
         public ApiResponse execute(ViewsSummaryForm form, BindException errors) throws Exception
         {
-            boolean isAdmin = getContainer().hasPermission(getUser(), AdminPermission.class);
+            boolean showQueries = getContainer().hasPermission(getUser(), AdminPermission.class) ||
+                    ReportUtil.isInRole(getUser(), getContainer(), EditorRole.class);
             JSONArray views = new JSONArray();
 
-            for (ViewInfo info : ReportManager.get().getViews(getViewContext(), form.getSchemaName(), form.getQueryName(), isAdmin, true))
+            for (ViewInfo info : ReportManager.get().getViews(getViewContext(), form.getSchemaName(), form.getQueryName(), showQueries, !showQueries))
                 views.put(info.toJSON(getUser()));
 
             return new ApiSimpleResponse("views", views);
@@ -623,7 +628,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresLogin @RequiresPermissionClass(ReadPermission.class)
     /**
      * Action for non-query based views (static, xls export, advanced)
      */
@@ -667,6 +672,7 @@ public class ReportsController extends BaseStudyController
         return HttpView.redirect(url);
     }
 
+    @RequiresLogin
     @RequiresPermissionClass(ReadPermission.class)
     public class SaveReportViewAction extends FormViewAction<SaveReportViewForm>
     {
@@ -749,10 +755,6 @@ public class ReportsController extends BaseStudyController
             {
                 String message = "Report " + (form.getReportId() != -1 ? form.getReportId() : form.getReportView()) + " not found";
                 throw new NotFoundException(message);
-            }
-            if (!report.getDescriptor().canRead(getUser()))
-            {
-                throw new UnauthorizedException();
             }
 
             return report.renderReport(getViewContext());
@@ -874,8 +876,11 @@ public class ReportsController extends BaseStudyController
                     bean.setViewName(form.getViewName());
                     bean.setRedirectUrl(form.getRedirectUrl());
 
-                    JspView<SaveReportViewForm> saveWidget = new JspView<SaveReportViewForm>("/org/labkey/study/view/saveReportView.jsp", bean);
-                    v.addView(saveWidget);
+                    if (!getUser().isGuest())
+                    {
+                        JspView<SaveReportViewForm> saveWidget = new JspView<SaveReportViewForm>("/org/labkey/study/view/saveReportView.jsp", bean);
+                        v.addView(saveWidget);
+                    }
                 }
             }
             return v;
@@ -2056,12 +2061,14 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresLogin @RequiresPermissionClass(ReadPermission.class)
     public class SaveParticipantReportAction extends ApiAction<ParticipantReportForm>
     {
         @Override
         public void validateForm(ParticipantReportForm form, Errors errors)
         {
+            List<ValidationError> reportErrors = new ArrayList<ValidationError>();
+
             if (form.getName() == null)
                 errors.reject(ERROR_MSG, "A report name is required");
 
@@ -2088,13 +2095,22 @@ public class ReportsController extends BaseStudyController
                         if (form.getName().equalsIgnoreCase(report.getDescriptor().getReportName()))
                             errors.reject(ERROR_MSG, "Another report with the same name already exists.");
                     }
+
+                    if (form.isPublic())
+                    {
+                        Report report = getParticipantReport(form);
+                        if (!report.canShare(getUser(), getContainer(), reportErrors))
+                            ReportUtil.addErrors(reportErrors, errors);
+                    }
                 }
                 else
                 {
                     Report report = form.getReportId().getReport();
 
-                    if (report != null && !report.getDescriptor().canEdit(getUser(), getContainer()))
+                    if (report != null && !report.canEdit(getUser(), getContainer()))
                         errors.reject(ERROR_MSG, "You are not allowed to edit the specified report.");
+                    if (report != null && !report.canShare(getUser(), getContainer(), reportErrors))
+                        ReportUtil.addErrors(reportErrors, errors);
                 }
             }
             catch (Exception e)
@@ -2325,7 +2341,7 @@ public class ReportsController extends BaseStudyController
             json.put("schemaName", descriptor.getProperty(ReportDescriptor.Prop.schemaName));
             json.put("queryName", descriptor.getProperty(ReportDescriptor.Prop.queryName));
 
-            json.put("editable", descriptor.canEdit(user, container));
+            json.put("editable", report.canEdit(user, container));
             json.put("public", descriptor.getOwner() == null);
 
             String measuresConfig = descriptor.getProperty(ParticipantReport.MEASURES_PROP);

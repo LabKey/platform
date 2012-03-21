@@ -23,6 +23,8 @@
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.reports.permissions.ShareReportPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<org.labkey.study.controllers.reports.ReportsController.ParticipantReportForm> me = (JspView<ParticipantReportForm>) HttpView.currentView();
@@ -33,6 +35,7 @@
         reportId = bean.getReportId().toString();
 
     Container c = me.getViewContext().getContainer();
+    User user = me.getViewContext().getUser();
     Study s = StudyManager.getInstance().getStudy(c);
 
     String renderId = "participant-report-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
@@ -72,6 +75,8 @@
             id              : '<%= bean.getComponentId() %>',
             reportId        : <%=q(reportId)%>,
             allowCustomize  : true,
+            allowShare      : <%=c.hasPermission(user, ShareReportPermission.class)%>,
+            hideSave        : <%=user.isGuest()%>,
             fitted          : <%=bean.isExpanded()%>,
             openCustomize   : true
         });

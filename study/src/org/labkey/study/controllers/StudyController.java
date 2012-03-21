@@ -7394,7 +7394,7 @@ public class StudyController extends BaseStudyController
 
                             if (_report != null)
                             {
-                                if (!_report.getDescriptor().canEdit(getUser(), getContainer()))
+                                if (!_report.canEdit(getUser(), getContainer()))
                                     errors.reject(ERROR_MSG, "Unauthorized operation");
 
                                 _report.getDescriptor().setReportDescription(StringUtils.trimToNull(form.getDescription()));

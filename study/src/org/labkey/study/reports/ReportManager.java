@@ -334,7 +334,7 @@ public class ReportManager implements StudyManager.DataSetListener
         @Override
         public boolean accept(Report report, Container c, User user)
         {
-            if (_editOnly && !report.getDescriptor().canEdit(user, c))
+            if (_editOnly && !report.canEdit(user, c))
                 return false;
             return ReportManager.get().canReadReport(user, c, report);
         }
