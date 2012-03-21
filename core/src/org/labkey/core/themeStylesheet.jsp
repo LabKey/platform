@@ -131,7 +131,7 @@ th.labkey-header a:hover
     color: #<%= text %>;
 }
 
-.labkey-announcement-title a
+.labkey-announcement-title a.announcement-title-link
 {
 	color:#<%= link %>;
 }
@@ -208,18 +208,6 @@ a.labkey-button:active,
 span.labkey-button:active
 {
     background-color: #<%= second %>;
-}
-
-span.css-arrow-right
-{
-    border-left: 6px solid #<%= link %>;
-}
-
-span.css-arrow-down
-{
-    border-top: 6px solid #<%= link %>;
-    border-left: 4px solid #<%= webpart %>;
-    border-right: 4px solid #<%= webpart %>;
 }
 
 /* This is used in simple cases to give an area the same background as the
@@ -664,6 +652,11 @@ li.labkey-tab-inactive a
     background-color: #<%= grid %>;
 }
 
+.tool-icon a,
+.tool-icon a:visited {
+    color : #<%= link %>
+}
+
 .tool-icon:hover img {
 	cursor: pointer;
     background: rgb(<%= toolIconBackgroundColor.getRed() %>, <%= toolIconBackgroundColor.getGreen()%>, <%= toolIconBackgroundColor.getBlue() %>); /* no RGBa */
@@ -680,10 +673,6 @@ li.labkey-tab-inactive a
     background: rgba(<%= toolIconBackgroundColor.getRed() %>, <%= toolIconBackgroundColor.getGreen()%>, <%= toolIconBackgroundColor.getBlue() %>, 0.7); /* FF, Safari, Chrome, IE9 */
     filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#b2<%= toolIconBackgroundHex %>, endColorstr=#b2<%= toolIconBackgroundHex %>); /* IE 5.5 - 7 */
     -ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#b2<%= toolIconBackgroundHex %>, endColorstr=#b2<%= toolIconBackgroundHex %>)"; /* IE 8 */
-}
-
-.tool-icon:hover a {
-	color: #<%= toolIconBackgroundHex %>;
 }
 
 .study-schedule-container .x4-reset .x4-grid-header-ct {

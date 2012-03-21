@@ -14,7 +14,8 @@ function addOption(selectEl, text, value)
     var option = document.createElement("option");
     option.text = text;
     option.value = value != null ? value : text;
-    selectEl.add(option, null);
+    if (selectEl != null && selectEl.options != null)    // IE7 compatible
+        selectEl.options[selectEl.options.length] = option;
 }
 
 function getDropDownPopulator(elementId, defaultOptionText, defaultOptionValue, optionCallback)

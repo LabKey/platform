@@ -428,6 +428,11 @@ table.labkey-button-bar
                     turn enables relative positioning of our menu button arrow gif. */
 }
 
+.labkey-button-bar .labkey-menu-button,
+.labkey-button-bar .labkey-menu-button:visited {
+    background: url(./_images/arrow_down.png) right no-repeat !important;
+}
+
 .labkey-button-bar .labkey-button:hover,
 .labkey-button-bar .labkey-menu-button:hover {
 	background-color: #FFFFFF;
@@ -459,6 +464,17 @@ table.labkey-button-bar
 	-ms-filter: "progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#ffffff, endColorstr=#e5e5e5)";
 }
 
+.labkey-button-bar .labkey-menu-button:hover {
+    background: #fff url(./_images/arrow_down.png) right no-repeat !important;
+    /* For WebKit (Safari, Google Chrome etc) */
+    background: url(./_images/arrow_down.png) right no-repeat, -webkit-gradient(linear, left top, left bottom, from(#fff), to(#e5e5e5)) !important;
+    /* For Mozilla/Gecko (Firefox etc) */
+    background: url(./_images/arrow_down.png) right no-repeat, -moz-linear-gradient(top, #fff, #e5e5e5) !important;
+    /* For IE */
+    filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#ffffff, endColorstr=#e5e5e5) !important;
+    -ms-filter: "progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#ffffff, endColorstr=#e5e5e5)" !important;
+}
+
 /*Darker background when it's being clicked on, or it's the parent of an expanded menu or panel on the ribbon.*/
 .labkey-button-bar .labkey-menu-button-active,
 .labkey-button-bar .labkey-menu-button:active {
@@ -482,13 +498,14 @@ table.labkey-button-bar
     white-space: nowrap;
     *display: inline;
 
-	/* For WebKit (Safari, Google Chrome etc) */
-    background: -webkit-gradient(linear, left top, left bottom, from(#e5e5e5), to(#c5c5c5));
+	background: #fff url(./_images/arrow_down.png) right no-repeat !important;
+    /* For WebKit (Safari, Google Chrome etc) */
+    background: url(./_images/arrow_down.png) right no-repeat, -webkit-gradient(linear, left top, left bottom, from(#fff), to(#e5e5e5)) !important;
     /* For Mozilla/Gecko (Firefox etc) */
-    background: -moz-linear-gradient(top, #e5e5e5, #c5c5c5);
+    background: url(./_images/arrow_down.png) right no-repeat, -moz-linear-gradient(top, #fff, #e5e5e5) !important;
 	/* For IE */
-	filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#e5e5e5, endColorstr=#c5c5c5);
-	-ms-filter: "progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#e5e5e5, endColorstr=#c5c5c5)";
+	filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#ffffff, endColorstr=#e5e5e5) !important;
+	-ms-filter: "progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#ffffff, endColorstr=#e5e5e5)" !important;
 }
 
 .labkey-button-bar .labkey-disabled-button,
@@ -2168,15 +2185,15 @@ a.no-arrow {
 a.labkey-text-link, a.labkey-text-link:visited {
     color: #126495;
     font-family: Verdana,Arial,Helvetica,sans-serif;
-    /*font-size: 10px;*/
     font-weight: bold;
-    padding: 2px 12px 2px 0;
+    padding: .3em 14px 2px 0;
     text-transform: uppercase;
 	border: none;
     position: relative;
     vertical-align: middle;
     white-space: nowrap;
     margin: 0.1em 0.8em 0.5em 0;
+    background: url(./_images/arrow_right.png) right no-repeat;
 }
 
 /* Data Region Header Locking */
@@ -2185,79 +2202,15 @@ table.labkey-data-region a.labkey-text-link:visited {
     position: static;
 }
 
-table.labkey-data-region .css-arrow-right {
-    display: none;
-}
-
 a.labkey-text-link:hover {
     text-transform: uppercase;
     /*font-size: 10px;*/
     font-family: Verdana, Arial, Helvetica, sans serif;
     font-weight: bold;
-    padding: 2px 12px 2px 0;
+    padding: .3em 14px 2px 0;
 	border: none;
 	color: #000000;
 }
-
-
-.css-arrow-right {
-	position: absolute;
-	top: 5px;
-	right: 3px;
-	font-size: 0px; line-height: 0%; width: 0px;
-	border-top: 4px solid #fff;
-	border-left: 6px solid #126495;
-	border-bottom: 4px solid #fff;
-	opacity: 0.4;
-    filter: alpha(opacity=40);
-    -moz-opacity: 0.4;
-    *top: 6px;
-}
-
-a.labkey-text-link:hover .css-arrow-right {
-	position: absolute;
-	top: 5px;
-	right: 3px;
-	font-size: 0px; line-height: 0%; width: 0px;
-	border-top: 4px solid #fff;
-	border-left: 6px solid #000;
-	border-bottom: 4px solid #fff;
-	opacity: 0.4;
-    filter: alpha(opacity=40);
-    -moz-opacity: 0.4;
-    *top: 6px;
-}
-
-.css-arrow-down {
-	position: absolute;
-	top: 7px;
-	right: 6px;
-	font-size: 0px; line-height: 0%; width: 0px;
-	border-top: 6px solid #126495;
-	border-left: 4px solid #fff;
-	border-right: 4px solid #fff;
-	opacity: 0.4;
-    filter: alpha(opacity=40);
-    -moz-opacity: 0.4;
-    *top: 12px;
-}
-
-a.labkey-disabled-button .css-arrow-down {
-    position: absolute;
-	top: 7px;
-	right: 6px;
-    font-size: 0px; line-height: 0%; width: 0px;
-    border-top: 6px solid gray;
-    border-left: 4px solid transparent;
-    border-bottom: 4px solid transparent;
-    opacity: 0.4;
-    filter: alpha(opacity=40);
-    -moz-opacity: 0.4;
-    *top: 12px;
-}
-
-
-
 
 div.x-tree-node-leaf IMG.x-tree-node-icon.labkey-tree-error-icon
 {
@@ -3591,13 +3544,19 @@ ul.x-tab-strip-top li {
 	text-align: center;
 }
 
-.tool-icon a {
+.tool-icon a,
+.tool-icon a:visited {
 	text-transform: uppercase;
 	text-decoration: none;
 	font-family: Verdana, Arial, Helvetica, sans serif;
 	color: #999;
 	font-size: 10px;
 	font-weight: bold;
+}
+
+.tool-icon:hover a,
+.tool-icon:hover a:visited {
+    color: #000000;
 }
 
 .study-schedule-container .x4-reset .x4-grid-header-ct {
@@ -3622,4 +3581,9 @@ input[type="checkbox"], input[type="radio"] {
 .x4-reset .x4-toolbar-footer {
     background-color: #ffffff;
     margin-top: 0px;
+}
+
+/* ext dropdown menu arrows */
+.x-menu-item-arrow {
+    background-image: url(./_images/arrow_right.png);
 }

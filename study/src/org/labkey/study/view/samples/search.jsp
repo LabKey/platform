@@ -277,8 +277,8 @@ select {
 <!-- webpart footer -->
 <div class="labkey-wp-footer">
 <span class="labkey-advanced-search">Advanced Search:</span>
-<a class="labkey-text-link" href="#" onClick="return clickLink('study-samples', 'showSearch', {showAdvanced: 'true', showVials: 'true'});">Individual Vials<span class="css-arrow-right"></span></a>
-    <a class="labkey-text-link" href="#" onClick="return clickLink('study-samples', 'showSearch', {showAdvanced: 'true', showVials: 'false'});">Grouped Vials<span class="css-arrow-right"></span></a>
+<a class="labkey-text-link" href="#" onClick="return clickLink('study-samples', 'showSearch', {showAdvanced: 'true', showVials: 'true'});">Individual Vials</a>
+    <a class="labkey-text-link" href="#" onClick="return clickLink('study-samples', 'showSearch', {showAdvanced: 'true', showVials: 'false'});">Grouped Vials</a>
 </div>
 <!-- end webpart footer -->
 </span>
