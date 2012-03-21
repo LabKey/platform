@@ -17,14 +17,29 @@ package org.labkey.pipeline;
 
 import junit.framework.Assert;
 import org.junit.Test;
+import org.labkey.api.data.Container;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.cmd.BooleanToSwitch;
+import org.labkey.api.pipeline.cmd.ListToCommandArgs;
 import org.labkey.api.pipeline.cmd.RequiredSwitch;
+import org.labkey.api.pipeline.cmd.TaskToCommandArgs;
 import org.labkey.api.pipeline.cmd.UnixCompactSwitchFormat;
 import org.labkey.api.pipeline.cmd.UnixNewSwitchFormat;
 import org.labkey.api.pipeline.cmd.UnixSwitchFormat;
 import org.labkey.api.pipeline.cmd.ValueToMultiCommandArgs;
 import org.labkey.api.pipeline.cmd.ValueToSwitch;
 import org.labkey.api.pipeline.cmd.ValueWithSwitch;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.pipeline.analysis.CommandTaskImpl;
+
+import java.sql.SQLException;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 
 /**
  * User: cnathe
@@ -100,9 +115,102 @@ public class PipelineCommandTestCase extends Assert
         @Test
         public void testPipelineCombinedCmds() throws Exception
         {
-            // TODO
-            //ListToCommandArgs
-            //CommandTaskFactorySettings settings = new CommandTaskFactorySettings("UnitTestCommand");
-            //settings.setSwitchFormat(new UnixSwitchFormat());
+            // test stringing together a set of command parameters to view the resulting command args
+
+            RequiredSwitch test1 = new RequiredSwitch();
+            test1.setSwitchFormat(new UnixSwitchFormat());
+            test1.setSwitchName("a");
+            test1.setValue("100");
+
+            BooleanToSwitch test2 = new BooleanToSwitch();
+            test2.setSwitchFormat(new UnixSwitchFormat());
+            test2.setParameter("test, boolean to switch");
+            test2.setSwitchName("b");
+
+            ValueWithSwitch test3 = new ValueWithSwitch();
+            test3.setSwitchFormat(new UnixSwitchFormat());
+            test3.setParameter("test, value with switch");
+            test3.setSwitchName("c");
+
+            ValueToSwitch test4 = new ValueToSwitch();
+            test4.setSwitchFormat(new UnixCompactSwitchFormat());
+            test4.setParameter("test, value to switch with multi args");
+            test4.setSwitchName("d");
+
+            ValueToMultiCommandArgs test5 = new ValueToMultiCommandArgs();
+            test5.setParameter("test, value to switch with multi args");
+            test5.setDelimiter(" ");
+
+            ListToCommandArgs l = new ListToCommandArgs();
+            l.addConverter(test1);
+            l.addConverter(test2);
+            l.addConverter(test3);
+
+            Container root = new FakeContainer(null, null);
+            Container test = new FakeContainer("test", root);
+
+            // expected param args to be : -a 100 -b -c testing -d testing2 100 -999
+            TestJob j = new TestJob(test);
+            j.addParameter("test, boolean to switch", "yes");
+            j.addParameter("test, value with switch", "testing");
+            j.addParameter("test, value to switch with multi args", "testing2 100 -999");
+            String[] args = l.toArgs(new CommandTaskImpl(j, new CommandTaskImpl.Factory()), new HashSet<TaskToCommandArgs>());
+            assertEquals("Unexpected length for args", 5, args.length);
+            assertEquals("Unexpected arg for RequiredSwitch", "-a", args[0]);
+            assertEquals("Unexpected arg for RequiredSwitch", "100", args[1]);
+            assertEquals("Unexpected arg for BooleanToSwitch", "-b", args[2]);
+            assertEquals("Unexpected arg for ValueWithSwitch", "-c", args[3]);
+            assertEquals("Unexpected arg for ValueWithSwitch", "testing", args[4]);
+
+            // expected param args to be : -a 100
+            TestJob j2 = new TestJob(test);
+            j2.addParameter("test, boolean to switch", "no");
+            j2.addParameter("test, value with switch", null);
+            j2.addParameter("test, value to switch with multi args", "");
+            String[] args2 = l.toArgs(new CommandTaskImpl(j2, new CommandTaskImpl.Factory()), new HashSet<TaskToCommandArgs>());
+            assertEquals("Unexpected length for args2", 2, args2.length);
+            assertEquals("Unexpected arg for RequiredSwitch", "-a", args2[0]);
+            assertEquals("Unexpected arg for RequiredSwitch", "100", args2[1]);
         }
+
+    private static class TestJob extends PipelineJob
+    {
+        Map<String, String> _testParams = new HashMap<String, String>();
+
+        TestJob(Container c) throws SQLException
+        {
+            super(null, new ViewBackgroundInfo(c, null, null), PipelineService.get().findPipelineRoot(c));
+        }
+
+        public void addParameter(String key, String value)
+        {
+            _testParams.put(key, value);
+        }
+
+        @Override
+        public Map<String, String> getParameters()
+        {
+            return _testParams;
+        }
+
+        @Override
+        public String getDescription()
+        {
+            return "test job";
+        }
+
+        @Override
+        public URLHelper getStatusHref()
+        {
+            return null;
+        }
+    }
+
+    static class FakeContainer extends Container
+    {
+        FakeContainer(String name, Container parent)
+        {
+            super(parent, name, GUID.makeGUID(), 1, 0, new Date(), false);
+        }
+    }
 }
