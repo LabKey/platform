@@ -18,18 +18,19 @@
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.core.admin.AdminController.ContainerIdAction" %>
 <%@ page import="org.labkey.core.admin.AdminController.CreateFolderAction" %>
 <%@ page import="org.labkey.core.admin.AdminController.DeleteFolderAction" %>
 <%@ page import="org.labkey.core.admin.AdminController.ExportFolderAction" %>
 <%@ page import="org.labkey.core.admin.AdminController.FolderAliasesAction" %>
 <%@ page import="org.labkey.core.admin.AdminController.ManageFoldersAction" %>
 <%@ page import="org.labkey.core.admin.AdminController.RenameFolderAction" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.core.admin.FolderSettingsAction" %>
-<%@ page import="org.labkey.core.security.SecurityController" %>
 <%@ page import="org.labkey.core.admin.ProjectSettingsAction" %>
+<%@ page import="org.labkey.core.security.SecurityController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -88,6 +89,11 @@
         <th align="left">Manage Subfolders</th>
         <td>Manage and organize subfolders (move, reorder, etc.)</td>
         <td><%= textLink("Manage Subfolders", ManageFoldersAction.class) %></td>
+    </tr>
+    <tr>
+        <th align="left">Folder Information</th>
+        <td>Display this folder's unique identifiers, which are used by the client API</td>
+        <td><%= textLink("Folder Information", ContainerIdAction.class) %></td>
     </tr>
     <%
     }
