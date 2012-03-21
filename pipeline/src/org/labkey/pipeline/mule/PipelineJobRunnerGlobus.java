@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.globus.axis.util.Util;
 import org.globus.exec.client.GramJob;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.settings.AppProps;
@@ -47,6 +48,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
 {
@@ -85,11 +87,18 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
             {
                 TaskJmsSelectorFilter filter = (TaskJmsSelectorFilter) endpoint.getFilter();
                 final Map<String, List<PipelineStatusFileImpl>> allLocations = new HashMap<String, List<PipelineStatusFileImpl>>();
+                Set<String> configuredGlobusLocations = new CaseInsensitiveHashSet();
+                for (PipelineJobService.GlobusClientProperties globusConfig : PipelineJobService.get().getGlobusClientPropertiesList())
+                {
+                    configuredGlobusLocations.add(globusConfig.getLocation());
+                }
                 for (String location : filter.getLocations())
                 {
-                    // Grab the list of jobs to check synchronously, but don't block waiting to ping them all
-                    allLocations.put(location, PipelineStatusManager.getStatusFilesForLocation(location, false));
-
+                    if (configuredGlobusLocations.contains(location))
+                    {
+                        // Grab the list of jobs to check synchronously, but don't block waiting to ping them all
+                        allLocations.put(location, PipelineStatusManager.getStatusFilesForLocation(location, false));
+                    }
                 }
                 JobRunner.getDefault().execute(new Runnable()
                 {

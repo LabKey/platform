@@ -633,7 +633,7 @@ String normalizeHref(Container c, Path contextPath, String href)
                     afterrender : function(group)
                     {
                         // Check the option button associated with the current scope
-                        var scope = params['scope'];
+                        var scope = <%= PageFlowUtil.jsString(form.getScope()) %>;
 
                         if (!(scope in {"Project":1, "Folder":1, "FolderAndSubfolders":1}))
                         {
