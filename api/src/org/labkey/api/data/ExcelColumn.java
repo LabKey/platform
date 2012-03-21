@@ -438,18 +438,20 @@ public class ExcelColumn extends RenderColumn
         for (int row = startRow; row <= endRow; row++)
         {
             Cell cell = getRow(sheet, row).getCell(column);
+            if (cell != null)
+            {
+                String formatted;
 
-            String formatted;
+                if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC && org.apache.poi.ss.usermodel.DateUtil.isCellDateFormatted(cell) && null != format)
+                    formatted = format.format(cell.getDateCellValue());
+                else if (Cell.CELL_TYPE_NUMERIC == cell.getCellType() && null != format)
+                    formatted = format.format(cell.getNumericCellValue());
+                else
+                    formatted = cell.getStringCellValue();
 
-            if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC && org.apache.poi.ss.usermodel.DateUtil.isCellDateFormatted(cell) && null != format)
-                formatted = format.format(cell.getDateCellValue());
-            else if (Cell.CELL_TYPE_NUMERIC == cell.getCellType() && null != format)
-                formatted = format.format(cell.getNumericCellValue());
-            else
-                formatted = cell.getStringCellValue();
-
-            if (formatted.length() > _autoSizeWidth)
-                _autoSizeWidth = formatted.length();
+                if (formatted.length() > _autoSizeWidth)
+                    _autoSizeWidth = formatted.length();
+            }
         }
     }
 
