@@ -38,6 +38,7 @@
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page import="org.labkey.api.security.roles.ProjectAdminRole" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ScriptReportBean> me = (JspView<ScriptReportBean>)HttpView.currentView();
@@ -54,6 +55,7 @@
 
     // a report is inherited if it has been shared from a parent (or shared) folder
     boolean inherited = report.getReportId() != null ? report.getDescriptor().isInherited(c) : false;
+    boolean isSharedFolder = c.equals(ContainerManager.getSharedContainer());
 
     // Mode determines whether we need unique IDs on all the HTML elements
     String uid = mode.getUniqueID();
@@ -611,7 +613,7 @@ function setDisabled(checkbox, label, disabled)
                 {
             %>
             <tr><td>
-                <input type="checkbox" <%=inherited ? "disabled" : ""%> name="inheritable"<%=bean.isInheritable() ? " checked" : ""%> onchange="LABKEY.setDirty(true);return true;"> Make this view
+                <input type="checkbox" <%=inherited || isSharedFolder ? "disabled" : ""%> name="inheritable"<%=bean.isInheritable() || isSharedFolder ? " checked" : ""%> onchange="LABKEY.setDirty(true);return true;"> Make this view
                 available in child folders<%=helpPopup("Available in child folders", "If this check box is selected, this view will be available in data grids of child folders " +
                 "where the schema and table are the same as this data grid.")%>
             </td></tr><%
