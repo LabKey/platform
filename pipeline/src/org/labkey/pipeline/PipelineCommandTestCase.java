@@ -141,33 +141,39 @@ public class PipelineCommandTestCase extends Assert
             test5.setParameter("test, value to switch with multi args");
             test5.setDelimiter(" ");
 
-            ListToCommandArgs l = new ListToCommandArgs();
-            l.addConverter(test1);
-            l.addConverter(test2);
-            l.addConverter(test3);
+            ListToCommandArgs commandList = new ListToCommandArgs();
+            commandList.addConverter(test1);
+            commandList.addConverter(test2);
+            commandList.addConverter(test3);
+            commandList.addConverter(test4);
+            commandList.addConverter(test5);
 
             Container root = new FakeContainer(null, null);
-            Container test = new FakeContainer("test", root);
+            Container c = new FakeContainer("test", root);
 
             // expected param args to be : -a 100 -b -c testing -d testing2 100 -999
-            TestJob j = new TestJob(test);
+            TestJob j = new TestJob(c);
             j.addParameter("test, boolean to switch", "yes");
             j.addParameter("test, value with switch", "testing");
             j.addParameter("test, value to switch with multi args", "testing2 100 -999");
-            String[] args = l.toArgs(new CommandTaskImpl(j, new CommandTaskImpl.Factory()), new HashSet<TaskToCommandArgs>());
-            assertEquals("Unexpected length for args", 5, args.length);
+            String[] args = commandList.toArgs(new CommandTaskImpl(j, new CommandTaskImpl.Factory()), new HashSet<TaskToCommandArgs>());
+            assertEquals("Unexpected length for args", 9, args.length);
             assertEquals("Unexpected arg for RequiredSwitch", "-a", args[0]);
             assertEquals("Unexpected arg for RequiredSwitch", "100", args[1]);
             assertEquals("Unexpected arg for BooleanToSwitch", "-b", args[2]);
             assertEquals("Unexpected arg for ValueWithSwitch", "-c", args[3]);
             assertEquals("Unexpected arg for ValueWithSwitch", "testing", args[4]);
+            assertEquals("Unexpected arg for ValueToSwitch", "-d", args[5]);
+            assertEquals("Unexpected arg for ValueToMultiCommandArgs", "testing2", args[6]);
+            assertEquals("Unexpected arg for ValueToMultiCommandArgs", "100", args[7]);
+            assertEquals("Unexpected arg for ValueToMultiCommandArgs", "-999", args[8]);
 
             // expected param args to be : -a 100
-            TestJob j2 = new TestJob(test);
+            TestJob j2 = new TestJob(c);
             j2.addParameter("test, boolean to switch", "no");
             j2.addParameter("test, value with switch", null);
             j2.addParameter("test, value to switch with multi args", "");
-            String[] args2 = l.toArgs(new CommandTaskImpl(j2, new CommandTaskImpl.Factory()), new HashSet<TaskToCommandArgs>());
+            String[] args2 = commandList.toArgs(new CommandTaskImpl(j2, new CommandTaskImpl.Factory()), new HashSet<TaskToCommandArgs>());
             assertEquals("Unexpected length for args2", 2, args2.length);
             assertEquals("Unexpected arg for RequiredSwitch", "-a", args2[0]);
             assertEquals("Unexpected arg for RequiredSwitch", "100", args2[1]);
