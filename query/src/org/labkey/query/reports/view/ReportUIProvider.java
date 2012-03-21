@@ -156,6 +156,8 @@ public class ReportUIProvider extends DefaultReportUIProvider
             return context.getContextPath() + "/reports/chart.gif";
         if (JavaScriptReport.TYPE.equals(reportType))
             return context.getContextPath() + "/reports/js.png";
+        if (AttachmentReport.TYPE.equals(reportType))
+            return context.getContextPath() + "/reports/attachment.png";
 
         return super.getReportIcon(context, reportType);
     }

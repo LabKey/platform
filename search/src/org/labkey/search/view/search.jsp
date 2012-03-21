@@ -227,7 +227,7 @@
                 NavTree nav = getDocumentContext(documentContainer, hit);
                 if (null != nav)
                 {
-                    %><a style='color:green;' href="<%=h(nav.getValue())%>"><%=h(nav.getKey())%></a><%
+                    %><a style='color:green;' href="<%=h(nav.getHref())%>"><%=h(nav.getText())%></a><%
                 }
 
                 if (!StringUtils.isEmpty(hit.navtrail))
@@ -333,7 +333,7 @@ String formatNavTrail(Collection<NavTree> list)
         for (NavTree n : list)
         {
             sb.append(connector);
-            sb.append("<a style='text-decoration:underline; color:#808080;' href='").append(h(n.getValue())).append("'>").append(h(n.getKey())).append("</a>");
+            sb.append("<a style='text-decoration:underline; color:#808080;' href='").append(h(n.getHref())).append("'>").append(h(n.getText())).append("</a>");
             connector = " - ";
         }
         sb.append("</span>");

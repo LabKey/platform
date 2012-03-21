@@ -1313,7 +1313,7 @@ public class ReportsController extends SpringActionController
     {
         public ModelAndView getView(ViewsSummaryForm form, BindException errors) throws Exception
         {
-            JspView view =  new JspView<ViewsSummaryForm>("/org/labkey/query/reports/view/manageViews.jsp", form, errors);
+            JspView view = new JspView<ViewsSummaryForm>("/org/labkey/query/reports/view/manageViews.jsp", form, errors);
 
             view.setTitle("Manage Views");
             view.setFrame(WebPartView.FrameType.PORTAL);

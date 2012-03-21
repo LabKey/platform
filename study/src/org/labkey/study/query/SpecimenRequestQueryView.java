@@ -100,7 +100,7 @@ public class SpecimenRequestQueryView extends BaseStudyQueryView
             if (_extraLinks != null)
             {
                 for (NavTree link : _extraLinks)
-                    content.append(PageFlowUtil.generateButton(link.getKey(), link.getValue())).append(" ");
+                    content.append(PageFlowUtil.generateButton(link.getText(), link.getHref())).append(" ");
             }
 
             if (_showOptionLinks)

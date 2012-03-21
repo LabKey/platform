@@ -2677,14 +2677,13 @@ public class WikiController extends SpringActionController
             for (NavTree page : pages)
             {
                 Map<String, Object> props = new HashMap<String,Object>();
-                ActionURL pageLink = new ActionURL(page.getValue());
+                ActionURL pageLink = new ActionURL(page.getHref());
                 props.put("name", pageLink.getParameter("name"));
-                props.put("title", page.getKey());
-                props.put("pageLink", page.getValue());
+                props.put("title", page.getText());
+                props.put("pageLink", page.getHref());
 
-                NavTree[] children = page.getChildren();
-                if (null != children && children.length > 0)
-                    props.put("children", getChildrenProps(children));
+                if (page.hasChildren())
+                    props.put("children", getChildrenProps(page.getChildren()));
 
                 ret.add(props);
             }

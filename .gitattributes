@@ -2195,9 +2195,11 @@ query/webapp/query/moveup.gif -text
 query/webapp/query/queryDesigner.js -text
 query/webapp/query/sql.gif -text
 query/webapp/query/validateQueries.js -text
+query/webapp/reports/attachment.png -text
 query/webapp/reports/chart.gif -text
 query/webapp/reports/crosstab.png -text
 query/webapp/reports/details.png -text
+query/webapp/reports/enrollment.png -text
 query/webapp/reports/grid.gif -text
 query/webapp/reports/grid_shared.gif -text
 query/webapp/reports/icon_draft.png -text

@@ -166,7 +166,7 @@ public class CohortManager
                 MenuButton button = new MenuButton("Cohorts");
                 ActionURL allCohortsURL = CohortFilter.clearURLParameters(context.cloneActionURL());
                 NavTree item = new NavTree("All", allCohortsURL.toString());
-                item.setId(button.getCaption() + ":" + item.getKey());
+                item.setId(button.getCaption() + ":" + item.getText());
                 if (currentCohortFilter == null)
                     item.setSelected(true);
                 button.addMenuItem(item);
@@ -216,7 +216,7 @@ public class CohortManager
                         ActionURL url = filter.addURLParameters(baseURL.clone());
 
                         NavTree typeItem = new NavTree(type.getTitle(), url.toString());
-                        typeItem.setId(cohort.getLabel() + ":" + typeItem.getKey());
+                        typeItem.setId(cohort.getLabel() + ":" + typeItem.getText());
                         if (filter.equals(currentCohortFilter))
                             typeItem.setSelected(true);
 
@@ -232,7 +232,7 @@ public class CohortManager
                     CohortFilter filter = new CohortFilter(CohortFilter.Type.PTID_CURRENT, cohort.getRowId());
                     ActionURL url = filter.addURLParameters(baseURL.clone());
                     NavTree item = new NavTree(cohort.getLabel(), url.toString());
-                    item.setId(caption + ":" + item.getKey());
+                    item.setId(caption + ":" + item.getText());
                     if (filter.equals(currentCohortFilter))
                         item.setSelected(true);
                     tree.addChild(item);

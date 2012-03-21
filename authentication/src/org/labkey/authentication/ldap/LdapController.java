@@ -20,9 +20,13 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.*;
+import org.labkey.api.security.AdminConsoleAction;
+import org.labkey.api.security.CSRF;
+import org.labkey.api.security.LoginUrls;
+import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.User;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -33,8 +37,6 @@ import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
-
-import java.util.Collections;
 
 public class LdapController extends SpringActionController
 {

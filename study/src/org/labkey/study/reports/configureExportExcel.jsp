@@ -35,7 +35,7 @@
  %>
 
 <div width="600px">
-Spreadheet Export allows you to export data from one site exclusively, or to export all data from all sites simultaneously.
+Spreadsheet Export allows you to export data from one site exclusively, or to export all data from all sites simultaneously.
 Before you export, you can select the source site or sites using the "Site" drop-down menu.
 <ul>
 <li><b>All Sites</b>. If you select "All Sites" from the dropdown "Site" menu, you will export all data for all

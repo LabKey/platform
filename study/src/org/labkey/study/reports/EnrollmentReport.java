@@ -96,7 +96,8 @@ public class EnrollmentReport extends ChartReport implements Report.ImageReport
         ReportDescriptor reportDescriptor = getDescriptor();
         if (reportDescriptor instanceof ChartReportDescriptor)
         {
-            try {
+            try
+            {
                 ChartReportDescriptor descriptor = (ChartReportDescriptor)reportDescriptor;
                 HttpServletResponse response = viewContext.getResponse();
 
@@ -284,7 +285,7 @@ public class EnrollmentReport extends ChartReport implements Report.ImageReport
         }
     }
 
-    public static org.labkey.api.reports.Report getEnrollmentReport(User user, Study study, boolean create) throws Exception
+    public static Report getEnrollmentReport(User user, Study study, boolean create) throws Exception
     {
         if (study != null)
         {

@@ -77,7 +77,8 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
 
         if (study != null)
         {
-            try {
+            try
+            {
                 DesignerInfoImpl gridInfo = new DesignerInfoImpl(StudyQueryReport.TYPE, "Grid View", new ActionURL(ReportsController.CreateQueryReportAction.class, context.getContainer()));
                 gridInfo.setId("create_gridView");
                 gridInfo.setDisabled(!context.hasPermission(AdminPermission.class));
@@ -191,6 +192,8 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
             return context.getContextPath() + "/reports/participantReport.png";
         if (StudyCrosstabReport.TYPE.equals(reportType))
             return context.getContextPath() + "/reports/crosstab.png";
+        if (EnrollmentReport.TYPE.equals(reportType))
+            return context.getContextPath() + "/reports/enrollment.png";
 
         return super.getReportIcon(context, reportType);
     }

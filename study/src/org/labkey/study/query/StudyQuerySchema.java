@@ -31,6 +31,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
@@ -60,6 +61,15 @@ public class StudyQuerySchema extends UserSchema
         super(SCHEMA_NAME, SCHEMA_DESCRIPTION, user, study.getContainer(), StudySchema.getInstance().getSchema());
         _study = study;
         _mustCheckPermissions = mustCheckPermissions;
+    }
+
+    // Quick fix for all the places that don't bother to check if the study exists... throw NotFound instead of NPE
+    private static StudyImpl throwIfNull(StudyImpl study)
+    {
+        if (null == study)
+            throw new NotFoundException("This folder does not contain a study");
+
+        return study;
     }
 
     /**

@@ -148,14 +148,14 @@ public abstract class BaseStudyController extends SpringActionController
                         for (NavTree nt : root.getChildren())
                         {
                             out.print(c);c = ",";
-                            out.print("{title:");out.print(jsString(nt.getKey()));out.print(',');
-                            out.print("url:");out.print(jsString(nt.getValue()));out.print('}');
+                            out.print("{title:");out.print(jsString(nt.getText()));out.print(',');
+                            out.print("url:");out.print(jsString(nt.getHref()));out.print('}');
                             last = nt;
                         }
                         out.print("]");
                         if (null != last)
                         {
-                            out.print(",title:");out.println(jsString(last.getKey()));
+                            out.print(",title:");out.println(jsString(last.getText()));
                         }
                     }
                     out.println("});</script>");

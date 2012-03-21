@@ -1023,7 +1023,7 @@ public class SecurityController extends SpringActionController
         {
             Group[] allGroups = SecurityManager.getGroups(getContainer().getProject(), true);
             Collection<Group> groups = new ArrayList<Group>();
-            // dont' suggest groups that will results in errors (i.e. circulate relation, already member, etc.)
+            // don't suggest groups that will result in errors (i.e. circular relation, already member, etc.)
             for (Group group : allGroups)
             {
                 if (null == SecurityManager.getAddMemberError(form.getGroup(), group))
@@ -1033,7 +1033,7 @@ public class SecurityController extends SpringActionController
             Collection<User> allUsers = UserManager.getActiveUsers();
             Collection<User> users = new ArrayList<User>();
 
-            // don't suggest users that will results in errors (i.e. already member, etc.)
+            // don't suggest users that will result in errors (i.e. already member, etc.)
             for (User user : allUsers)
             {
                 if (null == SecurityManager.getAddMemberError(form.getGroup(), user))

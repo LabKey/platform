@@ -1428,13 +1428,13 @@ public class DavController extends SpringActionController
                             for (NavTree action : actions)
                             {
                                 xml.writeElement(null, "action", XMLWriter.OPENING);
-                                if (action.getKey() != null)
+                                if (action.getText() != null)
                                 {
-                                    xml.writeProperty(null, "message", action.getKey());
+                                    xml.writeProperty(null, "message", action.getText());
                                 }
-                                if (action.getValue() != null)
+                                if (action.getHref() != null)
                                 {
-                                    xml.writeProperty(null, "href", PageFlowUtil.filter(action.getValue()));
+                                    xml.writeProperty(null, "href", PageFlowUtil.filter(action.getHref()));
                                 }
                                 xml.writeElement(null, "action", XMLWriter.CLOSING);
                             }

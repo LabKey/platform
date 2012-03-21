@@ -157,10 +157,9 @@
                 sort = new Sort("-SequenceNum");
             }
 
-
             Map<String, Object> result = new TableSelector(datasetTable, new CsvSet("lsid," + StudyService.get().getSubjectColumnName(dataSet.getContainer()) + ",Date,SequenceNum"), filter, sort).getObject(Map.class);
             String lsid = result != null ? (String)result.get("lsid") : null;
-            Map<String,Object> datasetRow = null;
+            Map<String, Object> datasetRow = null;
 
             if (lsid != null)
             {

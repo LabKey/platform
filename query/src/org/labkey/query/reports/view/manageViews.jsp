@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.json.JSONArray" %>
 <%@ page import="org.labkey.api.reports.report.RReport" %>
 <%@ page import="org.labkey.api.reports.report.view.RReportBean" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
@@ -43,9 +43,7 @@
     bean.setReportType(RReport.TYPE);
     bean.setRedirectUrl(context.getActionURL().getLocalURIString());
 
-    ActionURL newRView = ReportUtil.getRReportDesignerURL(context, bean);
-    ActionURL newAttachmentReport = ReportsController.getAttachmentReportURL(context.getContainer(), context.getActionURL());
-    org.json.JSONArray reportButtons = ReportUtil.getCreateReportButtons(context);
+    JSONArray reportButtons = ReportUtil.getCreateReportButtons(context);
 %>
 
 <script type="text/javascript">
@@ -71,7 +69,7 @@
         var grid = panel.show();
         var _resize = function(w,h) {
             LABKEY.Utils.resizeToViewport(grid, w, -1); // don't fit to height
-        }
+        };
         Ext.EventManager.onWindowResize(_resize);
     });
     
