@@ -35,6 +35,9 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
+<%@ page import="org.labkey.api.security.roles.ProjectAdminRole" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ScriptReportBean> me = (JspView<ScriptReportBean>)HttpView.currentView();
@@ -602,12 +605,17 @@ function setDisabled(checkbox, label, disabled)
                 <td style="padding-left:19px;">
                     <input id="sourceTab" type="checkbox" name="<%=ScriptReportDescriptor.Prop.sourceTabVisible%>"<%=bean.isSourceTabVisible() ? " checked" : ""%><%=bean.isShareReport() && !inherited ? "" : " disabled"%> onchange="LABKEY.setDirty(true);return true;"><span <%=bean.isSourceTabVisible() ? "" : " class=\"labkey-disabled\""%> id="sourceTabLabel"> Show source tab to all users</span>
                 </td>
-            </tr>
+            </tr> <%
+                // must be project admin (or above to to share a report to child folders            
+                if (ctx.getUser().isAdministrator() || ReportUtil.isInRole(ctx.getUser(), c, ProjectAdminRole.class))
+                {
+            %>
             <tr><td>
                 <input type="checkbox" <%=inherited ? "disabled" : ""%> name="inheritable"<%=bean.isInheritable() ? " checked" : ""%> onchange="LABKEY.setDirty(true);return true;"> Make this view
                 available in child folders<%=helpPopup("Available in child folders", "If this check box is selected, this view will be available in data grids of child folders " +
                 "where the schema and table are the same as this data grid.")%>
             </td></tr><%
+                }
 
                 if (report.supportsPipeline())
                 {

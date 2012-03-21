@@ -24,6 +24,7 @@ import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Entity;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -522,9 +523,14 @@ public class ReportDescriptor extends Entity implements SecurableResource
     {
         if (null != getReportId())
         {
-            if ((getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0)
+            Container srcContainer = ContainerManager.getForId(getContainerId());
+
+            // if the report has been configured to be shared to child folders or is in the shared folder then
+            // flag it as inherited.
+            //
+            if (((getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0) || (ContainerManager.getSharedContainer().equals(srcContainer)))
             {
-                return !c.getId().equals(getContainerId());
+                return !c.equals(srcContainer);
             }
         }
         return false;

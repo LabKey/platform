@@ -81,7 +81,8 @@ public class ReportDataRegion extends AbstractDataRegion
 
             // for now set the width to 100%, but we want to be smarter about calculating the viewport width less scroll
             out.write("\n<table width=\"100%\" class=\"labkey-data-region");
-            out.write(" labkey-show-borders\"");
+            // Issue 12961: Extra lines at bottom of R report designer
+            //out.write(" labkey-show-borders\"");
             out.write(" id=\"");
             out.write(PageFlowUtil.filter("dataregion_" + getName()));
             out.write("\">\n");
