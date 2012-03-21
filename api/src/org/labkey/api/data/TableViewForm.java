@@ -696,7 +696,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         _selectedRows = request.getParameterValues(DataRegion.SELECT_CHECKBOX_NAME);
 
         String pkString = request.getParameter("pk");
-        if (null != StringUtils.trimToNull(pkString))
+        if (null != StringUtils.trimToNull(pkString) && null != _tinfo)
             setPkVals(pkString);
 
         try
