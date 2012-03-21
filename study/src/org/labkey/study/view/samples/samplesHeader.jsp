@@ -79,9 +79,10 @@
         // get the first visit label:
         StringBuilder filterString = new StringBuilder();
         filterString.append("<b>This view is displaying specimens only from ");
+        boolean usePlural = bean.getFilteredPtidVisits().size() != 1;
         if (bean.isSingleVisitFilter())
         {
-            filterString.append(subjectNounPlural.toLowerCase()).append(" ");
+            filterString.append((usePlural?subjectNounPlural:subjectNounSingle).toLowerCase()).append(" ");
             for (Iterator<Pair<String, String>> it = bean.getFilteredPtidVisits().iterator(); it.hasNext();)
             {
                 String ptid = it.next().getKey();
@@ -96,7 +97,7 @@
         }
         else
         {
-            filterString.append(" the following ").append(h(subjectNounSingle.toLowerCase())).append("/visit pairs:</b><br>");
+            filterString.append(" the following ").append(h(subjectNounSingle.toLowerCase())).append("/visit ").append(usePlural?"pairs":"pair").append(":</b><br>");
             for (Iterator<Pair<String, String>> it = bean.getFilteredPtidVisits().iterator(); it.hasNext();)
             {
                 Pair<String, String> ptidVisit = it.next();
