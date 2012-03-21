@@ -44,7 +44,7 @@ public class LabKeyLinkHTML extends HTML
         {
             href = "javascript: void(0)";
         }
-        setHTML("<a class='labkey-text-link' href=\"" + href + "\">" + linkText + "<span class='css-arrow-right'></span></a>");
+        setHTML("<a class='labkey-text-link' href=\"" + href + "\">" + linkText + "</a>");
     }
 }
 

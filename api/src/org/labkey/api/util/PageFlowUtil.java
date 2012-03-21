@@ -1228,7 +1228,7 @@ public class PageFlowUtil
         }
         sb.append("><span>");
         sb.append(filter(text));
-        sb.append("</span>&nbsp;<span class=\"css-arrow-down\"></span></a>");
+        sb.append("</span></a>");
 
         return sb.toString();
     }
@@ -1309,7 +1309,7 @@ public class PageFlowUtil
         return "<a class='labkey-text-link' href=\"" + filter(href) + "\"" +
                 (id != null ? " id=\"" + id + "\"" : "") +
                 (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                ">" + filter(text) + "<span class='css-arrow-right'></span></a>";
+                ">" + filter(text) + "</a>";
     }
 
     @Deprecated
@@ -1336,7 +1336,7 @@ public class PageFlowUtil
         return "<a class='labkey-text-link' " + additions + "href=\"" + filter(href) + "\"" +
                 (id != null ? " id=\"" + id + "\"" : "") +
                 (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                ">" + filter(text) + "<span class='css-arrow-right'></span></a>";
+                ">" + filter(text) + "</a>";
     }
 
     public static String textLink(String text, ActionURL url, String onClickScript, String id, Map<String, String> properties)
@@ -1351,7 +1351,7 @@ public class PageFlowUtil
         return "<a class='labkey-text-link' " + additions + "href=\"" + filter(url) + "\"" +
                 (id != null ? " id=\"" + id + "\"" : "") +
                 (onClickScript != null ? " onClick=\"" + onClickScript + "\"" : "") +
-                ">" + filter(text) + "<span class='css-arrow-right'></span></a>";
+                ">" + filter(text) + "</a>";
     }
 
     public static String textLink(String text, ActionURL url)

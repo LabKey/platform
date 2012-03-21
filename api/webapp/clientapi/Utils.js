@@ -754,7 +754,7 @@ LABKEY.Utils.convertToExcel(
                     }
                 }
 
-                return '<a class="labkey-text-link"' + attrs + '>' + (config.text != null ? config.text : "") + '<span class="css-arrow-right"></span></a>';
+                return '<a class="labkey-text-link"' + attrs + '>' + (config.text != null ? config.text : "") + '</a>';
             }
             throw "Config object not found for textLink.";
         },

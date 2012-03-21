@@ -249,7 +249,7 @@ Ext4.define('LABKEY.ext.LinkButton', {
             '>' +
             '<span id="{id}-btnInnerEl" class="{baseCls}-inner">{text}</span>' +
             //TODO: would be better if this image were just part of the CSS
-            '<tpl if="linkCls==\'labkey-text-link\'"><span class="css-arrow-right"></span></tpl>' +
+            '<tpl if="linkCls==\'labkey-text-link\'"></tpl>' +
             '<span id="{id}-btnIconEl" class="{baseCls}-icon"></span>' +
             '</a>' +
             '{linkSuffix}' +
