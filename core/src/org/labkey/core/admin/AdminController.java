@@ -594,12 +594,19 @@ public class AdminController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            getPageConfig().setTemplate(Template.None);
-            return new HtmlView(
-                getContainer().getName() + "<br>" +
-                getContainer().getId() + "<br>" +
-                getContainer().getRowId()
+            Container c = getContainer();
+//            getPageConfig().setTemplate(Template.None);
+            HtmlView v = new HtmlView(
+                "<table>" +
+                "<tr><td>Path</td><td>" + PageFlowUtil.filter(c.getPath()) + "</td></tr>" +
+                "<tr><td>Name</td><td>" + c.getName() + "</td></tr>" +
+                "<tr><td>EntityId</td><td>" + c.getId() + "</td></tr>" +
+                "<tr><td>RowId</td><td>" + c.getRowId() + "</td></tr>" +
+                "<tr><td>FolderType</td><td>" + c.getFolderType().getName() + "</td></tr>" +
+                "</table>"
                 );
+            v.setTitle("Container details: " + StringUtils.defaultIfEmpty(c.getName(),"/"));
+            return v;
         }
 
         public NavTree appendNavTrail(NavTree root)
