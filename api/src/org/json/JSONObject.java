@@ -1178,7 +1178,8 @@ public class JSONObject extends HashMap<String, Object>
      * @throws JSONException If the value is or contains an invalid number.
      */
     public static String valueToString(Object value) throws JSONException {
-        if (value == null || value.equals(null)) {
+        if (value == null)
+        {
             return "null";
         }
         if (value instanceof JSONString) {
