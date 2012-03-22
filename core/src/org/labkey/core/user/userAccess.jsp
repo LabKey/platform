@@ -153,7 +153,7 @@ However, If this account is re-enabled, it would have the following permissions.
                                     for (Group group : accessGroups.get(roleName))
                                     {
                                         Container groupContainer = group.isAdministrators() ? ContainerManager.getRoot() : row.getContainer().getProject();
-                                        String displayName = (group.isProjectGroup() ? groupContainer.getName() + "/" : "Site ") + group.getName();
+                                        String displayName = (group.isProjectGroup() ? groupContainer.getName() + "/" : "Site: ") + group.getName();
 
                                         Set<List<UserPrincipal>> membershipPaths = SecurityManager.getMembershipPathways(row.getUser(), group);
                                         String hoverExpanation = SecurityManager.getMembershipPathwayHTMLDisplay(membershipPaths, userColDisplay, roleName);

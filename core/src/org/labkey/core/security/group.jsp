@@ -168,17 +168,22 @@ else
             Group g = (Group)member;
             if (g.isProjectGroup())
             {
-                %><a href="<%= urlProvider(SecurityUrls.class).getManageGroupURL(c, c.getPath() + "/" + h(memberName)) %>"><%
-            }
-            else
-            {
-                %><a href="<%= urlProvider(SecurityUrls.class).getManageGroupURL(ContainerManager.getRoot(), h(memberName)) %>"><%
-            }
-            %>
+                %><a href="<%= urlProvider(SecurityUrls.class).getManageGroupURL(c, c.getPath() + "/" + h(memberName)) %>">
                 <span style="font-weight:bold;">
                     <%= h(memberName) %>
                 </span>
-              </a>
+                </a><%
+            }
+            else
+            {
+                %><a href="<%= urlProvider(SecurityUrls.class).getManageGroupURL(ContainerManager.getRoot(), h(memberName)) %>">
+                <span style="font-weight:bold;">
+                  Site: <%= h(memberName) %>
+                </span>
+              </a><%
+            }
+            %>
+
             <%
         }
         else

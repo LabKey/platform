@@ -1191,7 +1191,7 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
         PrincipalComboBox.superclass.constructor.call(this, config);
     },
 
-    tpl : new Ext.XTemplate('<tpl for="."><div class="x-combo-list-item {[this.extraClass(values)]}">{Name}</div></tpl>',
+    tpl : new Ext.XTemplate('<tpl for="."><div class="x-combo-list-item {[this.extraClass(values)]}">{[this.prefixSite(values)]}</div></tpl>',
     {
         extraClass : function(values)
         {
@@ -1201,6 +1201,13 @@ var PrincipalComboBox = Ext.extend(Ext.form.ComboBox,{
             else if (!values.Container)
                 c = 'pSite';
             return c;
+        },
+
+        prefixSite : function(values)
+        {
+            if (values.Type == 'g' && !values.Container)
+                return "Site: " + values.Name;
+            return values.Name;
         }
     }),
 
