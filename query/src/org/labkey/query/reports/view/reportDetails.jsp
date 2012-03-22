@@ -38,11 +38,11 @@
 
     String reportName = reportDescriptor.getReportName();
     String description = reportDescriptor.getReportDescription();
-    Integer authorId = reportDescriptor.getAuthor();
+    Integer authorId = null;
     Integer createdBy = reportDescriptor.getCreatedBy();
     Date createdDate = reportDescriptor.getCreated();
     Date modifiedDate = reportDescriptor.getModified();
-    Date refreshDate = (Date) ReportPropsManager.get().getPropertyValue(reportDescriptor.getEntityId(), bean.getContainer(), "refreshDate");
+    Date refreshDate = null;
     ActionURL reportURL = bean.getReport().getRunReportURL(context);
     ActionURL thumbnailUrl = PageFlowUtil.urlProvider(ReportUrls.class).urlThumbnail(bean.getContainer(), bean.getReport());
     String type = bean.getReport().getTypeDescription();
@@ -51,6 +51,8 @@
     try {
         category = reportDescriptor.getCategory().getLabel();
         status =  ReportPropsManager.get().getPropertyValue(reportDescriptor.getEntityId(), bean.getContainer(), "status").toString();
+        authorId = ((Double) ReportPropsManager.get().getPropertyValue(reportDescriptor.getEntityId(), bean.getContainer(), "author")).intValue();
+        refreshDate = (Date) ReportPropsManager.get().getPropertyValue(reportDescriptor.getEntityId(), bean.getContainer(), "refreshDate");
     }
     catch (Exception e)
     {

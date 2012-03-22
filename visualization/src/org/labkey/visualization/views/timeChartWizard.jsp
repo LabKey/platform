@@ -20,11 +20,10 @@
 <%@ page import="org.labkey.api.reports.Report" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.visualization.VisualizationController" %>
 <%@ page import="org.labkey.api.reports.report.ReportIdentifier" %>
 <%@ page import="org.labkey.api.reports.report.AbstractReportIdentifier" %>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<VisualizationController.GetVisualizationForm> me = (JspView<VisualizationController.GetVisualizationForm>) HttpView.currentView();
@@ -39,6 +38,8 @@
     {
         timechart = id.getReport();
         canEdit = timechart.canEdit(ctx.getUser(), ctx.getContainer());
+    } else {
+        canEdit = ctx.hasPermission(ReadPermission.class) && ! ctx.getUser().isGuest();
     }
 
     String elementId = "vis-wizard-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
