@@ -1005,59 +1005,59 @@ public class DavController extends SpringActionController
                 {
                     close(is, "propfind request stream");
                 }
+            }
 
-                if (type == null)
+            if (type == null)
+            {
+                // No XML posted, check for HTTP parameters
+                String typeParam = getRequest().getParameter("type");
+                if ("propname".equalsIgnoreCase(typeParam))
                 {
-                    // No XML posted, check for HTTP parameters
-                    String typeParam = getRequest().getParameter("type");
-                    if ("propname".equalsIgnoreCase(typeParam))
+                    type = Find.FIND_PROPERTY_NAMES;
+                }
+                else
+                {
+                    String[] propNames = getRequest().getParameterValues("propname");
+                    if ("prop".equalsIgnoreCase(typeParam) || (propNames != null && propNames.length > 0))
                     {
-                        type = Find.FIND_PROPERTY_NAMES;
+                        type = Find.FIND_BY_PROPERTY;
+                        if (propNames != null && propNames.length > 0)
+                        {
+                            properties = new Vector<String>();
+                            properties.addAll(Arrays.asList(getRequest().getParameterValues("propname")));
+                        }
                     }
                     else
                     {
-                        String[] propNames = getRequest().getParameterValues("propname");
-                        if ("prop".equalsIgnoreCase(typeParam) || (propNames != null && propNames.length > 0))
-                        {
-                            type = Find.FIND_BY_PROPERTY;
-                            if (propNames != null && propNames.length > 0)
-                            {
-                                properties = new Vector<String>();
-                                properties.addAll(Arrays.asList(getRequest().getParameterValues("propname")));
-                            }
-                        }
-                        else
-                        {
-                            type = Find.FIND_ALL_PROP;
-                        }
+                        type = Find.FIND_ALL_PROP;
                     }
                 }
-                else if (type == Find.FIND_BY_PROPERTY)
-                {
-                    properties = new Vector<String>();
-                    NodeList childList = propNode.getChildNodes();
+            }
+            else if (Find.FIND_BY_PROPERTY == type && null != propNode)
+            {
+                properties = new Vector<String>();
+                NodeList childList = propNode.getChildNodes();
 
-                    for (int i = 0; i < childList.getLength(); i++)
+                for (int i = 0; i < childList.getLength(); i++)
+                {
+                    Node currentNode = childList.item(i);
+                    switch (currentNode.getNodeType())
                     {
-                        Node currentNode = childList.item(i);
-                        switch (currentNode.getNodeType())
-                        {
-                            case Node.TEXT_NODE:
-                                break;
-                            case Node.ELEMENT_NODE:
-                                String nodeName = currentNode.getNodeName();
-                                String propertyName;
-                                if (nodeName.indexOf(':') != -1)
-                                {
-                                    propertyName = nodeName.substring(nodeName.indexOf(':') + 1);
-                                }
-                                else
-                                {
-                                    propertyName = nodeName;
-                                }
-                                properties.add(propertyName);
-                                break;
-                        }
+                        case Node.TEXT_NODE:
+                            break;
+                        case Node.ELEMENT_NODE:
+                            String nodeName = currentNode.getNodeName();
+                            String propertyName;
+                            if (nodeName.indexOf(':') != -1)
+                            {
+                                propertyName = nodeName.substring(nodeName.indexOf(':') + 1);
+                            }
+                            else
+                            {
+                                propertyName = nodeName;
+                            }
+                            properties.add(propertyName);
+                            break;
                     }
                 }
             }
