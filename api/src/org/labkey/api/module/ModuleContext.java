@@ -38,7 +38,7 @@ public class ModuleContext implements Cloneable
 
     // These three fields are effectively "final" -- they are set on construction (new module) or when loaded from DB,
     // then never changed.
-    private volatile double _originalVersion = 0.0;
+    private volatile double _originalVersion = -1.0;
     private volatile String _className;
     private volatile String _name;
 
