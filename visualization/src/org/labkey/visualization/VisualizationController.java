@@ -1240,7 +1240,7 @@ public class VisualizationController extends SpringActionController
         @Override
         public ModelAndView getView(GetVisualizationForm form, BindException errors) throws Exception
         {
-            JspView timeChartWizard = new JspView<GetVisualizationForm>("/org/labkey/visualization/views/timeChartWizard.jsp");
+            JspView timeChartWizard = new JspView<GetVisualizationForm>("/org/labkey/visualization/views/timeChartWizard.jsp", form);
 
             timeChartWizard.setTitle(TITLE);
             timeChartWizard.setFrame(WebPartView.FrameType.PORTAL);

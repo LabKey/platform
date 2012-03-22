@@ -124,6 +124,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             this.editorOverviewPanel = new LABKEY.vis.ChartEditorOverviewPanel({
                 reportInfo: this.saveReportInfo,
                 saveThumbnail: this.chartInfo.saveThumbnail == undefined ? true : this.chartInfo.saveThumbnail,
+                canEdit: this.canEdit,
                 listeners: {
                     scope: this,
                     'initialMeasuresStoreLoaded': function(data) {
@@ -1135,7 +1136,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     this.markDirty(false);
                 } else {
                     //Don't mark dirty if the user can't edit the report, that's just mean.
-                    if(this.editorOverviewPanel.canSaveChanges())
+                    if(this.canEdit)
                         this.markDirty(true);
                 }
         }
@@ -1876,7 +1877,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             name: config.reportName,
             success: function(result, request, options){
                 // a report by that name already exists within the container, if the user can update, ask if they would like to replace
-                if(this.editorOverviewPanel.canSaveChanges()){
+                if(this.canEdit){
                     Ext.Msg.show({
                         title:'Warning',
                         msg: 'A report by the name \'' + $h(config.reportName) + '\' already exists. Would you like to replace it?',

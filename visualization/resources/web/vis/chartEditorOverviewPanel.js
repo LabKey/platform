@@ -231,28 +231,15 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
     {
         return (typeof this.reportInfo == "object");
     },
-
-    isChartCreator : function()
-    {
-        return (!this.isSavedReport() || this.reportInfo.createdBy == LABKEY.Security.currentUser.id);
-    },
-
-    isChartOwner : function()
-    {
-        return (!this.isSavedReport() || this.reportInfo.ownerId == LABKEY.Security.currentUser.id);
-    },
-
+    
     canSaveChanges : function()
     {
-        if (LABKEY.Security.currentUser.isGuest)
-            return false;
-        // Note that the following check means that Readers are allowed to save new charts (readers own new charts they're creating)- this is by design.
-        return (LABKEY.Security.currentUser.isAdmin || this.isChartCreator());
+        return this.canEdit;
     },
 
     canSaveSharedCharts : function()
     {
-        return LABKEY.Security.currentUser.canInsert && this.canSaveChanges();
+        return this.canEdit;
     },
 
     showMeasureSelectionWindow: function() {

@@ -46,6 +46,16 @@
     ActionURL reportURL = bean.getReport().getRunReportURL(context);
     ActionURL thumbnailUrl = PageFlowUtil.urlProvider(ReportUrls.class).urlThumbnail(bean.getContainer(), bean.getReport());
     String type = bean.getReport().getTypeDescription();
+    String category = "";
+    String status = "";
+    try {
+        category = reportDescriptor.getCategory().getLabel();
+        status =  ReportPropsManager.get().getPropertyValue(reportDescriptor.getEntityId(), bean.getContainer(), "status").toString();
+    }
+    catch (Exception e)
+    {
+        // do nothing, status already set to blank.
+    }
 %>
 
 <table name="reportDetails" id="reportDetails">
@@ -70,6 +80,27 @@
             <%=h(description)%>
         </td>
     </tr>
+
+    <tr>
+        <td class="labkey-form-label">
+            Category:
+        </td>
+
+        <td>
+            <%=h(category)%>
+        </td>
+    </tr>
+
+    <tr>
+        <td class="labkey-form-label">
+            Status:
+        </td>
+
+        <td>
+            <%=h(status)%>
+        </td>
+    </tr>
+
     <%
         if(authorId != null)
         {
@@ -150,7 +181,7 @@
             Report URL:
         </td>
         <td>
-            <a href="<%=reportURL.getURIString()%>"><%=reportURL.getURIString()%></a>
+            <a href="<%=reportURL.getURIString()%>">View Report</a>
         </td>
     </tr>
 </table>

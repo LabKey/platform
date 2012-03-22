@@ -20,14 +20,26 @@
 <%@ page import="org.labkey.api.reports.Report" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.visualization.VisualizationController" %>
+<%@ page import="org.labkey.api.reports.report.ReportIdentifier" %>
+<%@ page import="org.labkey.api.reports.report.AbstractReportIdentifier" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<Report> me = (JspView<Report>) HttpView.currentView();
-    Report bean = me.getModelBean();
+    JspView<VisualizationController.GetVisualizationForm> me = (JspView<VisualizationController.GetVisualizationForm>) HttpView.currentView();
+    ViewContext ctx = me.getViewContext();
+    VisualizationController.GetVisualizationForm bean = me.getModelBean();
     String reportId = "";
+    boolean canEdit = false;
+    ReportIdentifier id = AbstractReportIdentifier.fromString(bean.getReportId());
+    Report timechart = null;
 
-    if (bean != null)
-        reportId = bean.getDescriptor().getReportId().toString();
+    if(id != null)
+    {
+        timechart = id.getReport();
+        canEdit = timechart.canEdit(ctx.getUser(), ctx.getContainer());
+    }
 
     String elementId = "vis-wizard-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
@@ -115,11 +127,12 @@
                     border: false,
                     viewInfo: viewTypes['line'],
                     chartInfo: chartInfo,
-                    saveReportInfo: saveReportInfo
+                    saveReportInfo: saveReportInfo,
+                    canEdit: <%=canEdit%>
                 })
             ]
         });
     }
 </script>
 
-<div id="<%=elementId%>" class="extContainer" style="width:100%"/>
+<div id="<%=elementId%>" class="extContainer" style="width:100%"></div>
