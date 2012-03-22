@@ -606,7 +606,10 @@ public class UserManager
             for (Group group : groups)
             {
                 if (group.getName() != null && group.getName().toLowerCase().startsWith(lowerPrefix))
-                    completions.add(new AjaxCompletion("<b>" + group.getName() + "</b>", group.getName()));
+                {
+                    String display = "<b>" + (group.getContainer() == null ? "Site: " : "") + group.getName() + "</b>"; 
+                    completions.add(new AjaxCompletion(display, group.getName()));
+                }
             }
 
             for (User user : users)
@@ -630,7 +633,7 @@ public class UserManager
                         display = user.getEmail();
                     }
 
-                    completions.add(new AjaxCompletion(display, user.getEmail()));
+                    completions.add(new AjaxCompletion(PageFlowUtil.filter(display), user.getEmail()));
                 }
                 else if (user.getDisplayName(currentUser).compareToIgnoreCase(user.getEmail()) != 0 &&
                         user.getDisplayName(currentUser).toLowerCase().startsWith(lowerPrefix))
@@ -638,7 +641,7 @@ public class UserManager
                     StringBuilder builder = new StringBuilder();
                     builder.append(user.getDisplayName(currentUser)).append(" ");
                     builder.append(" (").append(user.getEmail()).append(")");
-                    completions.add(new AjaxCompletion(builder.toString(), user.getEmail()));
+                    completions.add(new AjaxCompletion(PageFlowUtil.filter(builder.toString()), user.getEmail()));
                 }
                 else if (user.getEmail() != null && user.getEmail().toLowerCase().startsWith(lowerPrefix))
                 {

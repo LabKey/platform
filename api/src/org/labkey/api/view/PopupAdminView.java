@@ -127,8 +127,11 @@ public class PopupAdminView extends PopupMenuView
                     if (!ImpersonateGroupContextFactory.canImpersonateGroup(c, user, group))
                         continue;
 
+                    String display = group.getName();
+
                     if (!group.isProjectGroup())
                     {
+                        display = "Site: " + display;
                         // We have at least one site group... so add a separator (if we also have project groups)
                         addSeparator = true;
                     }
@@ -139,7 +142,7 @@ public class PopupAdminView extends PopupMenuView
                         addSeparator = false;
                     }
 
-                    groupMenu.addChild(group.getName(), userURLs.getImpersonateGroupURL(c, group.getUserId(), currentURL));
+                    groupMenu.addChild(display, userURLs.getImpersonateGroupURL(c, group.getUserId(), currentURL));
                 }
 
                 impersonateMenu.addChild(groupMenu);
