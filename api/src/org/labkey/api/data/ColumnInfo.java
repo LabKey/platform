@@ -195,6 +195,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     /** use setFieldKey() avoid ambiguity when columns have "/" */
     public void setName(String name)
     {
+        checkLocked();
         assert !_lockName;
         this.fieldKey = new FieldKey(null, name);
         this.name = null;
@@ -216,6 +217,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public void setFieldKey(FieldKey key)
     {
+        checkLocked();
         this.fieldKey = key;
         this.name = null;
     }
@@ -244,12 +246,14 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public void setAlias(String alias)
     {
+        checkLocked();
         this.alias = alias;
     }
 
 
     public void copyAttributesFrom(ColumnInfo col)
     {
+        checkLocked();
         setExtraAttributesFrom(col);
 
         // and the remaining
@@ -273,6 +277,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
      */
     public void setExtraAttributesFrom(ColumnInfo col)
     {
+        checkLocked();
         if (col.label != null)
             setLabel(col.getLabel());
         if (col.shortLabel != null)
@@ -336,6 +341,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
      */
     public void copyURLFrom(ColumnInfo col, FieldKey parent, Map<FieldKey,FieldKey> remap)
     {
+        checkLocked();
         StringExpression url = col.getURL();
         if (null != url)
         {
@@ -352,6 +358,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     /* only copy if all field keys are in the map */
     public void copyURLFromStrict(ColumnInfo col, Map<FieldKey,FieldKey> remap)
     {
+        checkLocked();
         StringExpression url = col.getURL();
         if (url instanceof StringExpressionFactory.FieldKeyStringExpression)
         {
@@ -367,6 +374,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public void setMetaDataName(String metaDataName)
     {
+        checkLocked();
         this.metaDataName = metaDataName;
     }
 
@@ -403,6 +411,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public void setPropertyURI(String propertyURI)
     {
+        checkLocked();
         this.propertyURI = propertyURI;
     }
 
@@ -413,6 +422,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     protected void setConceptURI(String conceptURI)
     {
+        checkLocked();
         this.conceptURI = conceptURI;
     }
 
@@ -491,6 +501,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public void setTextAlign(String textAlign)
     {
+        checkLocked();
         this.textAlign = textAlign;
     }
 
@@ -547,6 +558,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public void setDisplayField(ColumnInfo field)
     {
+        checkLocked();
         displayField = field;
     }
 
@@ -557,6 +569,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public void setWidth(String width)
     {
+        checkLocked();
         this.displayWidth = width;
     }
 
@@ -598,12 +611,14 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public void setUserEditable(boolean editable)
     {
+        checkLocked();
         this.isUserEditable = editable;
     }
 
 
     public void setDisplayColumnFactory(DisplayColumnFactory factory)
     {
+        checkLocked();
         _displayColumnFactory = factory;
     }
 
@@ -680,6 +695,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public void setAutoIncrement(boolean autoIncrement)
     {
+        checkLocked();
         isAutoIncrement = autoIncrement;
     }
 
@@ -690,6 +706,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public void setReadOnly(boolean readOnly)
     {
+        checkLocked();
         isReadOnly = readOnly;
     }
 
@@ -781,6 +798,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public void loadFromXml(ColumnType xmlCol, boolean merge)
     {
+        checkLocked();
         //Following things would exist from meta data...
         if (! merge)
         {
@@ -1396,6 +1414,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public void setSqlTypeName(String sqlTypeName)
     {
+        checkLocked();
         this.sqlTypeName = sqlTypeName;
         this.jdbcType = null;
     }
@@ -1403,6 +1422,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public void setJdbcType(JdbcType type)
     {
+        checkLocked();
         this.jdbcType = type;
         this.sqlTypeName = null;
     }
@@ -1432,18 +1452,21 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public void setFk(ForeignKey fk)
     {
+        checkLocked();
         this.fk = fk;
     }
 
 
     public void setDefaultValue(String defaultValue)
     {
+        checkLocked();
         this.defaultValue = defaultValue;
     }
 
 
     public void setScale(int scale)
     {
+        checkLocked();
         this.scale = scale;
     }
 
@@ -1456,6 +1479,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public void setKeyField(boolean keyField)
     {
+        checkLocked();
         isKeyField = keyField;
     }
 
@@ -1471,6 +1495,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public void setMvColumnName(String mvColumnName)
     {
+        checkLocked();
         this._mvColumnName = mvColumnName;
     }
 
@@ -1481,6 +1506,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public void setMvIndicatorColumn(boolean mvIndicatorColumn)
     {
+        checkLocked();
         _isMvIndicatorColumn = mvIndicatorColumn;
     }
 
@@ -1491,6 +1517,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public void setRawValueColumn(boolean rawColumn)
     {
+        checkLocked();
         _isRawValueColumn = rawColumn;
     }
 
@@ -1505,6 +1532,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public void setIsUnselectable(boolean b)
     {
+        checkLocked();
         isUnselectable = b;
     }
 
@@ -1517,6 +1545,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public void setParentTable(TableInfo parentTable)
     {
+        checkLocked();
         this.parentTable = parentTable;
     }
 
@@ -1565,6 +1594,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public void setDefaultValueType(DefaultValueType defaultValueType)
     {
+        checkLocked();
         _defaultValueType = defaultValueType;
     }
 
@@ -1581,6 +1611,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
     public void setConditionalFormats(List<ConditionalFormat> conditionalFormats)
     {
+        checkLocked();
         this.conditionalFormats = conditionalFormats;
     }
 
@@ -1588,5 +1619,25 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     public List<? extends IPropertyValidator> getValidators()
     {
         return validators;
+    }
+
+
+
+    private void checkLocked()
+    {
+        if (_locked)
+            throw new IllegalStateException("ColumnInfo is locked: " + (null!=getParentTable()?getParentTable().getName()+".":"") + getName());
+    }
+
+    boolean _locked;
+
+    public void setLocked(boolean b)
+    {
+        _locked = b;
+    }
+
+    public boolean isLocked()
+    {
+        return _locked;
     }
 }

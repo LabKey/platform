@@ -169,6 +169,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
     public void setAggregateRowConfig(AggregateRowConfig config)
     {
+        checkLocked();
         _aggregateRowConfig = config;
     }
 
@@ -422,6 +423,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
     void loadTablePropertiesFromXml(TableType xmlTable)
     {
+        checkLocked();
         //Override with the table name from the schema so casing is nice...
         _name = xmlTable.getTableName();
         _description = xmlTable.getDescription();
@@ -572,6 +574,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
     public void setDefaultVisibleColumns(Iterable<FieldKey> keys)
     {
+        checkLocked();
         _defaultVisibleColumns = new ArrayList<FieldKey>();
         for (FieldKey key : keys)
             _defaultVisibleColumns.add(key);
@@ -617,12 +620,14 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     @Override
     public void overlayMetadata(String tableName, UserSchema schema, Collection<QueryException> errors)
     {
+        checkLocked();
         // no-op, we don't support metadata overrides
     }
 
     @Override
     public void overlayMetadata(TableType metadata, UserSchema schema, Collection<QueryException> errors)
     {
+        checkLocked();
         // no-op, we don't support metadata overrides
     }
 
@@ -646,6 +651,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
     public void setDescription(String description)
     {
+        checkLocked();
         _description = description;
     }
 
@@ -778,22 +784,26 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
     protected void addColumn(ColumnInfo c)
     {
+        checkLocked();
         getColumnMetaData().addColumn(c);
     }
 
     // Move an existing column to a different spot in the ordered list
     public void setColumnIndex(ColumnInfo c, int i)
     {
+        checkLocked();
         getColumnMetaData().setColumnIndex(c, i);
     }
 
     public void setPkColumnNames(@NotNull List<String> pkColumnNames)
     {
+        checkLocked();
         getColumnMetaData().setPkColumnNames(pkColumnNames);
     }
 
     void setSequence(String sequence)
     {
+        checkLocked();
         assert isValidSequence(sequence);
         _sequence = sequence;
     }
@@ -823,5 +833,31 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     public String getDefaultNumberFormat()
     {
         return null;
+    }
+
+
+    private void checkLocked()
+    {
+        if (_locked)
+            throw new IllegalStateException("TableInfo is locked: " + getName());
+    }
+
+    boolean _locked;
+
+    @Override
+    public void setLocked(boolean b)
+    {
+        if (_locked && !b)
+            throw new IllegalStateException("Can't unlock table: " + getName());
+        List<ColumnInfo> cols = getColumns(); // may have side-effects
+        _locked = b;
+        for (ColumnInfo c : cols)
+            c.setLocked(b);
+    }
+
+    @Override
+    public boolean isLocked()
+    {
+        return _locked;
     }
 }

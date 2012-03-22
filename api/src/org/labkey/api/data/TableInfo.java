@@ -369,4 +369,8 @@ public interface TableInfo extends HasPermission
     /* for internal use by ColumnInfo.getFormat() */
     public String getDefaultDateFormat();
     public String getDefaultNumberFormat();
+
+    /* for asserting that tableinfo is not changed unexpectedly */
+    public void setLocked(boolean b);
+    public boolean isLocked();
 }

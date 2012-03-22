@@ -31,7 +31,6 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.MetadataException;
-import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QuerySchema;
@@ -320,12 +319,14 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 
     public void setTitleColumn(String titleColumn)
     {
+        checkLocked();
         setTitleColumn(titleColumn, null == titleColumn);
     }
 
     // Passing in defaultTitleColumn helps with export & serialization
     public void setTitleColumn(String titleColumn, boolean defaultTitleColumn)
     {
+        checkLocked();
         _titleColumn = titleColumn;
         _hasDefaultTitleColumn = defaultTitleColumn;
     }
@@ -374,16 +375,19 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 
     public void setDescription(String description)
     {
+        checkLocked();
         _description = description;
     }
 
     public boolean removeColumn(ColumnInfo column)
     {
+        checkLocked();
         return _columnMap.remove(column.getName()) != null;
     }
 
     public ColumnInfo addColumn(ColumnInfo column)
     {
+        checkLocked();
         // Not true if this is a VirtualTableInfo
         // assert column.getParentTable() == this;
         if (_columnMap.containsKey(column.getName()))
@@ -413,6 +417,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 
     public void setName(String name)
     {
+        checkLocked();
         _name = name;
     }
 
@@ -525,26 +530,31 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 
     public void setGridURL(DetailsURL gridURL)
     {
+        checkLocked();
         _gridURL = gridURL;
     }
 
     public void setInsertURL(DetailsURL insertURL)
     {
+        checkLocked();
         _insertURL = insertURL;
     }
 
     public void setImportURL(DetailsURL importURL)
     {
+        checkLocked();
         _importURL = importURL;
     }
 
     public void setDeleteURL(DetailsURL deleteURL)
     {
+        checkLocked();
         _deleteURL = deleteURL;
     }
 
     public void setUpdateURL(DetailsURL updateURL)
     {
+        checkLocked();
         _updateURL = updateURL;
     }
 
@@ -560,11 +570,13 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 
     public void setAggregateRowConfig(AggregateRowConfig config)
     {
+        checkLocked();
         _aggregateRowConfig = config;
     }
 
     public void setDefaultVisibleColumns(Iterable<FieldKey> list)
     {
+        checkLocked();
         _defaultVisibleColumns = list;
     }
 
@@ -589,6 +601,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 
     public boolean safeAddColumn(ColumnInfo column)
     {
+        checkLocked();
         if (getColumn(column.getName()) != null)
             return false;
         addColumn(column);
@@ -620,6 +633,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 
     protected void initColumnFromXml(QuerySchema schema, ColumnInfo column, ColumnType xbColumn, Collection<QueryException> qpe)
     {
+        checkLocked();
         column.loadFromXml(xbColumn, true);
         
         if (xbColumn.getFk() != null)
@@ -655,6 +669,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 
     public void loadFromXML(QuerySchema schema, TableType xmlTable, Collection<QueryException> errors)
     {
+        checkLocked();
         if (xmlTable.getTitleColumn() != null)
             setTitleColumn(xmlTable.getTitleColumn());
         if (xmlTable.getDescription() != null)
@@ -758,6 +773,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 
     private void setAggregateRowConfig(TableType xmlTable)
     {
+        checkLocked();
         _aggregateRowConfig = new AggregateRowConfig(false, false);
 
         PositionTypeEnum.Enum position = xmlTable.getAggregateRowOptions().getPosition();
@@ -809,6 +825,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 
     public void overlayMetadata(String tableName, UserSchema schema, Collection<QueryException> errors)
     {
+        checkLocked();
         if (isMetadataOverrideable())
         {
             TableType metadata = QueryService.get().findMetadataOverride(schema, tableName, false, false, errors, null);
@@ -818,6 +835,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 
     public void overlayMetadata(TableType metadata, UserSchema schema, Collection<QueryException> errors)
     {
+        checkLocked();
         if (metadata != null && isMetadataOverrideable())
         {
             loadFromXML(schema, metadata, errors);
@@ -1071,4 +1089,30 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     {
         return null;
     }
+
+
+    private void checkLocked()
+    {
+        if (_locked)
+            throw new IllegalStateException("TableInfo is locked: " + getName());
     }
+
+    boolean _locked;
+
+    @Override
+    public void setLocked(boolean b)
+    {
+        if (_locked && !b)
+            throw new IllegalStateException("Can't unlock table: " + getName());
+        _locked = b;
+        // set columns in the column list as locked, lookup columns created later are not locked
+        for (ColumnInfo c : getColumns())
+            c.setLocked(b);
+    }
+
+    @Override
+    public boolean isLocked()
+    {
+        return _locked;
+    }
+}
