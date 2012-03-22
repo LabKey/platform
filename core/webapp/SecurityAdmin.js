@@ -1944,10 +1944,14 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         var policy = this.getPolicy();
         this.disable();
         if (!policy)
+        {
             S.deletePolicy({resourceId:this.resource.id, successCallback:success, errorCallback:this.saveFail, scope:scope});
+        }
         else
         {
             this._removeInvalidRoles(policy, this.roles);
+            if (policy.isEmpty())
+                policy.addRoleAssignment(this.cache.groupGuests, this.policy.noPermissionsRole);
             if (overwrite)
                 policy.setModified(null);
             S.savePolicy({policy:policy, successCallback:success, errorCallback:this.saveFail, scope:scope});
