@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
@@ -29,6 +30,7 @@ import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -86,6 +88,28 @@ public class StudyQuerySchema extends UserSchema
     static StudyQuerySchema createSchemaWithoutStudy(Container c, User u)
     {
         return new StudyQuerySchema(c, u);
+    }
+
+
+    // TODO remove this when UserSchema implements caching
+    // see https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=14369
+    // we're not quite ready for general table caching, so just cache BaseSpecimenPivotTable
+    Map<Pair<String,Boolean>,Object> pivotCache = new HashMap<Pair<String, Boolean>, Object>();
+
+    @Override
+    public Object _getTableOrQuery(String name, boolean includeExtraMetadata, Collection<QueryException> errors)
+    {
+        Pair<String,Boolean> key = new Pair(name.toLowerCase(),includeExtraMetadata);
+        Object torq = pivotCache.get(key);
+        if (null != torq)
+            return torq;
+        Object o = super._getTableOrQuery(name, includeExtraMetadata, errors);
+        if (o instanceof BaseSpecimenPivotTable && errors.isEmpty())
+        {
+            ((TableInfo)o).setLocked(true);
+            pivotCache.put(key, o);
+        }
+        return o;
     }
 
 

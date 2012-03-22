@@ -15,12 +15,12 @@
  */
 package org.labkey.study.query;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FilteredTable;
-import org.labkey.api.study.Site;
 import org.labkey.api.study.StudyService;
 import org.labkey.study.SampleManager;
 import org.labkey.study.model.SiteImpl;
@@ -43,6 +43,12 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable
     public BaseSpecimenPivotTable(final TableInfo tinfo, final StudyQuerySchema schema)
     {
         super(tinfo, schema.getContainer());
+
+        Logger.getInstance(BaseSpecimenPivotTable.class).debug("creating specimen pivot\n" +
+                "SCHEMA=" + schema.getName() + " " + schema.getClass().getSimpleName()+"@"+System.identityHashCode(schema) + "\n" +
+                "TABLE=" + tinfo.getName() + " " + this.getClass().getSimpleName() + "@" + System.identityHashCode(this),
+                new Throwable("stack trace")
+        );
 
         addWrapColumn(_rootTable.getColumn(StudyService.get().getSubjectColumnName(getContainer())));
         addWrapColumn(_rootTable.getColumn(StudyService.get().getSubjectVisitColumnName(getContainer())));
