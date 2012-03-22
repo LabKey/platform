@@ -438,6 +438,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 getQueryTable().fireRowTrigger(container, TableInfo.TriggerType.DELETE, false, i, null, updatedRow, extraScriptContext);
                 result.add(updatedRow);
             }
+            catch (InvalidKeyException ex)
+            {
+                ValidationException vex = new ValidationException(ex.getMessage());
+                errors.addRowError(vex.fillIn(getQueryTable().getPublicSchemaName(), getQueryTable().getName(), key, i));
+            }
             catch (ValidationException vex)
             {
                 errors.addRowError(vex.fillIn(getQueryTable().getPublicSchemaName(), getQueryTable().getName(), key, i));

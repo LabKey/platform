@@ -448,7 +448,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         TableInfo table = getDbTable();
         List<ColumnInfo> pks = table.getPkColumns();
         Object[] pkVals = new Object[pks.size()];
-        for(int idx = 0; idx < pks.size(); ++idx)
+        for (int idx = 0; idx < pks.size(); ++idx)
         {
             ColumnInfo pk = pks.get(idx);
             Object pkValue = map.get(pk.getName());
@@ -462,7 +462,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 catch (ConversionException ignored) { /* Maybe the database can do the conversion */ }
             }
             pkVals[idx] = pkValue;
-            if(null == pkVals[idx])
+            if (null == pkVals[idx])
                 throw new InvalidKeyException("Value for key field '" + pk.getName() + "' was null or not supplied!", map);
         }
         return pkVals;
