@@ -19,7 +19,9 @@ package org.labkey.api.attachments;
 import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.data.ContainerManager.RootContainer;
 import org.labkey.api.settings.TemplateResourceHandler;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.NotFoundException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -69,12 +71,12 @@ public class ImageServlet extends HttpServlet
             }
             else
             {
-                throw new ServletException("Unknown image requested - " + imageName);
+                throw new NotFoundException("Unknown image requested - " + imageName);
             }
         }
-        catch (SQLException e)
+        catch (Throwable e)
         {
-            throw new ServletException(e);
+            ExceptionUtil.handleException(request, response, e, null, false);
         }
     }
 

@@ -392,7 +392,8 @@ public class ExcelColumn extends RenderColumn
         if (_autoSize)
         {
             calculateAutoSize(sheet, column, startRow, endRow);
-            sheet.setColumnWidth(column, (_autoSizeWidth + 1) * 256);
+            // Maximum allowed is 255 characters. Width is in 1/256 of a character, so multiply by 256
+            sheet.setColumnWidth(column, Math.min(_autoSizeWidth + 1, 255) * 256);
         }
         else
         {
