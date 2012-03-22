@@ -131,10 +131,11 @@ public class JsonWriter
         props.put("dimension", cinfo != null && cinfo.isDimension());
         props.put("measure", cinfo != null && cinfo.isMeasure());
 
-        if (cinfo != null && cinfo.getDisplayField() != null && cinfo.getDisplayField() != cinfo)
+        ColumnInfo displayField = cinfo != null ? cinfo.getDisplayField() : null;
+        if (displayField != null && displayField != cinfo)
         {
-            props.put("displayField", cinfo.getDisplayField().getFieldKey().toString());
-            props.put("displayFieldSqlType", cinfo.getDisplayField().getSqlTypeName());
+            props.put("displayField", displayField.getFieldKey().toString());
+            props.put("displayFieldSqlType", displayField.getSqlTypeName());
         }
 
         if (cinfo != null)
@@ -222,77 +223,74 @@ public class JsonWriter
         ForeignKey fk = columnInfo.getFk();
 
         //lookup info
+        TableInfo lookupTable = columnInfo.getFkTableInfo();
         if (null != fk
-                && null != columnInfo.getFkTableInfo()
+                && null != lookupTable
                 && (!(fk instanceof RowIdForeignKey) || !(((RowIdForeignKey)fk).getOriginalColumn().equals(columnInfo))))
         {
-            TableInfo lookupTable = columnInfo.getFkTableInfo();
-            if(lookupTable != null)
+            JSONObject lookupInfo = new JSONObject();
+            if (null != fk.getLookupContainerId())
             {
-                JSONObject lookupInfo = new JSONObject();
-                if (null != fk.getLookupContainerId())
+                Container fkContainer = ContainerManager.getForId(fk.getLookupContainerId());
+                if (null != fkContainer)
                 {
-                    Container fkContainer = ContainerManager.getForId(fk.getLookupContainerId());
-                    if (null != fkContainer)
-                    {
-                        lookupInfo.put("containerPath", fkContainer.getPath());
-                        if (includeDomainFormat)
-                            lookupInfo.put("container", fkContainer.getPath());
-                    }
+                    lookupInfo.put("containerPath", fkContainer.getPath());
+                    if (includeDomainFormat)
+                        lookupInfo.put("container", fkContainer.getPath());
                 }
-
-                boolean isPublic = lookupTable.isPublic() && null != lookupTable.getPublicName() && null != lookupTable.getPublicSchemaName();
-                // Duplicate with alternate property name for backwards compatibility
-                lookupInfo.put("isPublic", isPublic);
-                lookupInfo.put("public", isPublic);
-                String queryName;
-                String schemaName;
-                if (isPublic)
-                {
-                    queryName = lookupTable.getPublicName();
-                    schemaName = lookupTable.getPublicSchemaName();
-                }
-                else
-                {
-                    queryName = lookupTable.getName();
-                    schemaName = lookupTable.getSchema().getName();
-                }
-                // Duplicate info with different property names for backwards compatibility
-                lookupInfo.put("queryName", queryName);
-                lookupInfo.put("table", queryName);
-                lookupInfo.put("schemaName", schemaName);
-                lookupInfo.put("schema", schemaName);
-
-                ColumnInfo displayColumn = fk.createLookupColumn(columnInfo, null);
-                if (displayColumn != null && displayColumn.getFieldKey() != null)
-                {
-                    lookupInfo.put("displayColumn", displayColumn.getFieldKey().getName());
-                }
-                else
-                {
-                    // In this case, we likely won't be able to resolve the column when executing the query, but
-                    // it's the best guess that we have
-                    lookupInfo.put("displayColumn", lookupTable.getTitleColumn());
-                }
-                String key = null;
-                List<String> pks = lookupTable.getPkColumnNames();
-                if (null != pks && pks.size() > 0)
-                    key = pks.get(0);
-                if (null != pks && pks.size() == 2 && ("container".equalsIgnoreCase(key) || "containerid".equalsIgnoreCase(key)))
-                    key = pks.get(1);
-                lookupInfo.put("keyColumn", key);
-
-                if (fk instanceof MultiValuedForeignKey)
-                {
-                    MultiValuedForeignKey mvfk = (MultiValuedForeignKey)fk;
-                    String junctionLookup = mvfk.getJunctionLookup();
-                    lookupInfo.put("multiValued", junctionLookup != null ? "junction" : "value");
-                    if (junctionLookup != null)
-                        lookupInfo.put("junctionLookup", junctionLookup);
-                }
-
-                return lookupInfo;
             }
+
+            boolean isPublic = lookupTable.isPublic() && null != lookupTable.getPublicName() && null != lookupTable.getPublicSchemaName();
+            // Duplicate with alternate property name for backwards compatibility
+            lookupInfo.put("isPublic", isPublic);
+            lookupInfo.put("public", isPublic);
+            String queryName;
+            String schemaName;
+            if (isPublic)
+            {
+                queryName = lookupTable.getPublicName();
+                schemaName = lookupTable.getPublicSchemaName();
+            }
+            else
+            {
+                queryName = lookupTable.getName();
+                schemaName = lookupTable.getSchema().getName();
+            }
+            // Duplicate info with different property names for backwards compatibility
+            lookupInfo.put("queryName", queryName);
+            lookupInfo.put("table", queryName);
+            lookupInfo.put("schemaName", schemaName);
+            lookupInfo.put("schema", schemaName);
+
+            ColumnInfo displayColumn = fk.createLookupColumn(columnInfo, null);
+            if (displayColumn != null && displayColumn.getFieldKey() != null)
+            {
+                lookupInfo.put("displayColumn", displayColumn.getFieldKey().getName());
+            }
+            else
+            {
+                // In this case, we likely won't be able to resolve the column when executing the query, but
+                // it's the best guess that we have
+                lookupInfo.put("displayColumn", lookupTable.getTitleColumn());
+            }
+            String key = null;
+            List<String> pks = lookupTable.getPkColumnNames();
+            if (null != pks && pks.size() > 0)
+                key = pks.get(0);
+            if (null != pks && pks.size() == 2 && ("container".equalsIgnoreCase(key) || "containerid".equalsIgnoreCase(key)))
+                key = pks.get(1);
+            lookupInfo.put("keyColumn", key);
+
+            if (fk instanceof MultiValuedForeignKey)
+            {
+                MultiValuedForeignKey mvfk = (MultiValuedForeignKey)fk;
+                String junctionLookup = mvfk.getJunctionLookup();
+                lookupInfo.put("multiValued", junctionLookup != null ? "junction" : "value");
+                if (junctionLookup != null)
+                    lookupInfo.put("junctionLookup", junctionLookup);
+            }
+
+            return lookupInfo;
         }
 
         return null;
