@@ -2309,9 +2309,12 @@ public class WikiController extends SpringActionController
             {
                 //get web part referenced by page id and index
                 Portal.WebPart webPart = Portal.getPart(c, pageId, index);
-                webPart.setProperty("webPartContainer", c.getId());
-                webPart.setProperty("name", wikiname.getSource());
-                Portal.updatePart(getUser(), webPart);
+                if (null != webPart && webPart.getName().equals("Wiki"))
+                {
+                    webPart.setProperty("webPartContainer", c.getId());
+                    webPart.setProperty("name", wikiname.getSource());
+                    Portal.updatePart(getUser(), webPart);
+                }
             }
 
             //save the user's new page format so we can use it
