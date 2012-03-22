@@ -4875,7 +4875,16 @@ public class AdminController extends SpringActionController
 
             private ModulesView(Collection<ModuleContext> contexts, String type, String description, String noModulesDescription)
             {
-                _contexts = contexts;
+                List<ModuleContext> sorted = new ArrayList<ModuleContext>(contexts);
+                Collections.sort(sorted, new Comparator<ModuleContext>(){
+                    @Override
+                    public int compare(ModuleContext mc1, ModuleContext mc2)
+                    {
+                        return mc1.getName().compareToIgnoreCase(mc2.getName());
+                    }
+                });
+
+                _contexts = sorted;
                 _type = type;
                 _description = description;
                 _noModulesDescription = noModulesDescription;
@@ -4963,18 +4972,7 @@ public class AdminController extends SpringActionController
         private ModuleContext getModuleContext()
         {
             ModuleLoader ml = ModuleLoader.getInstance();
-            Module module = ml.getModule(getName());
-            ModuleContext ctx;
-
-            if (null != module)
-            {
-                ctx = ml.getModuleContext(module);
-
-                if (null != ctx)
-                    return ctx;
-            }
-
-            ctx = ml.getUnknownModuleContexts().get(getName());
+            ModuleContext ctx = ml.getModuleContext(getName());
 
             if (null == ctx)
                 throw new NotFoundException("Module not found");
