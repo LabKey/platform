@@ -459,7 +459,6 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         {
             super(col);
             _fk = fk;
-            col.setWidth(null);
             setWidth("200");
         }
 
