@@ -480,7 +480,16 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 // improve handling of conversion errors
                 try
                 {
-                    value = ConvertUtils.convert(value.toString(), col.getJdbcType().getJavaClass());
+                    switch (col.getSqlTypeInt())
+                    {
+                        case java.sql.Types.DATE:
+                        case java.sql.Types.TIME:
+                        case java.sql.Types.TIMESTAMP:
+                            row.put(col.getName(), value instanceof Date ? value : ConvertUtils.convert(value.toString(), Date.class));
+                            break;
+                        default:
+                            row.put(col.getName(), ConvertUtils.convert(value.toString(), col.getJdbcType().getJavaClass()));
+                    }
                 }
                 catch (ConversionException e)
                 {
