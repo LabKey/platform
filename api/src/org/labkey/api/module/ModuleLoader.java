@@ -337,26 +337,25 @@ public class ModuleLoader implements Filter
         ModuleContext coreCtx = contextMap.get(DefaultModule.CORE_MODULE_NAME);
         assert (ModuleState.ReadyToRun == coreCtx.getModuleState());
 
-        boolean upgradeRequired = false;
+        List<String> modulesRequiringUpgrade = new LinkedList<String>();
 
         for (Module m : _modules)
         {
             ModuleContext ctx = getModuleContext(m);
             if (ctx.getInstalledVersion() < m.getVersion())
             {
-                upgradeRequired = true;
-                break;
+                modulesRequiringUpgrade.add(ctx.getName());
             }
         }
 
-        if (upgradeRequired)
+        if (modulesRequiringUpgrade.isEmpty())
         {
-            setUpgradeState(UpgradeState.UpgradeRequired);
-            _log.info("Module upgrade is required");
+            completeUpgrade(coreRequiredUpgrade);
         }
         else
         {
-            completeUpgrade(coreRequiredUpgrade);
+            setUpgradeState(UpgradeState.UpgradeRequired);
+            _log.info("Module upgrade is required: " + modulesRequiringUpgrade.toString());
         }
 
         _log.info("Core LabKey Server startup is complete, modules will be initialized after the first HTTP/HTTPS request");
@@ -834,6 +833,7 @@ public class ModuleLoader implements Filter
         }
         catch (SQLException e)
         {
+            _log.error("Error attempting to delete module " + context.getName());
             ExceptionUtil.logExceptionToMothership(null, e);
         }
     }
@@ -1279,7 +1279,7 @@ public class ModuleLoader implements Filter
     }
 
 
-    private ModuleContext getModuleContext(String name)
+    public ModuleContext getModuleContext(String name)
     {
         try
         {
