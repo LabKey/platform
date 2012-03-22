@@ -83,7 +83,6 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
     }
 
 
-
     private WritableIndexManagerImpl(IndexWriter iw, SearcherWarmer warmer, Directory directory) throws IOException
     {
         super(new SearcherManager(iw, true, warmer, null), directory);
@@ -152,6 +151,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
     }
 
 
+    // If this throws then re-initialize the index manager
     public void commit()
     {
         synchronized (_writerLock)
@@ -192,19 +192,21 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
                 }
                 finally
                 {
-                    Directory directory = _iw.getDirectory();
-
                     try
                     {
-                        if (IndexWriter.isLocked(directory))
-                            IndexWriter.unlock(directory);
+                        _directory.close();
+
+                        if (IndexWriter.isLocked(_directory))
+                            IndexWriter.unlock(_directory);
                     }
                     catch (IOException e1)
                     {
                         ExceptionUtil.logExceptionToMothership(null, e1);
                     }
-
-                    throw e;
+                    finally
+                    {
+                        throw e;
+                    }
                 }
             }
         }

@@ -208,7 +208,17 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     public void clearIndex()
     {
-        _indexManager.clear();
+        try
+        {
+            _indexManager.clear();
+        }
+        catch (Throwable t)
+        {
+            // If any exceptions happen during commit() the IndexManager will attempt to close the IndexWriter, making
+            // the IndexManager unusable.  Attempt to reset the index.
+            ExceptionUtil.logExceptionToMothership(null, t);
+            initializeIndex();
+        }
     }
 
 
@@ -875,7 +885,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
     protected void commitIndex()
     {
-
         try
         {
             _indexManager.commit();
