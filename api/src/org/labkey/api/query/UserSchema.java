@@ -31,7 +31,9 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.Portal;
@@ -44,6 +46,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -56,6 +59,7 @@ abstract public class UserSchema extends AbstractSchema
 {
     protected String _name;
     protected String _description;
+    protected boolean _cacheTableInfos = false;
 
     public UserSchema(String name, String description, User user, Container container, DbSchema dbSchema)
     {
@@ -103,6 +107,8 @@ abstract public class UserSchema extends AbstractSchema
     }
 
 
+    Map<Pair<String,Boolean>,Object> cache = new HashMap<Pair<String, Boolean>, Object>();
+
     public Object _getTableOrQuery(String name, boolean includeExtraMetadata, Collection<QueryException> errors)
     {
         if (name == null)
@@ -111,25 +117,39 @@ abstract public class UserSchema extends AbstractSchema
         if (!canReadSchema())
             throw new UnauthorizedException("Cannot read query " + getSchemaName() + "." + name + " in " + getContainer().getPath());
 
+        Pair<String,Boolean> key = new Pair(name.toLowerCase(),includeExtraMetadata);
+        Object torq = cache.get(key);
+        if (null != torq)
+            return torq;
+
         TableInfo table = createTable(name);
         if (table != null)
         {
             if (includeExtraMetadata)
                 overlayMetadata(table, name, errors);
             afterConstruct(table);
-            return table;
+            if (_cacheTableInfos)
+                table.setLocked(true);
+            torq = table;
+        }
+        else
+        {
+            QueryDefinition def = QueryService.get().getQueryDef(getUser(), getContainer(), getSchemaName(), name);
+
+            if (def == null)
+                return null;
+
+            if (!includeExtraMetadata)
+                def.setMetadataXml(null);
+            torq = def;
         }
 
-        QueryDefinition def = QueryService.get().getQueryDef(getUser(), getContainer(), getSchemaName(), name);
+//        cache.put(key,torq);
+        assert MemTracker.put(torq);
 
-        if (def == null)
-            return null;
-
-        if (!includeExtraMetadata)
-            def.setMetadataXml(null);
-
-        return def;
+        return torq;
     }
+
 
     protected void overlayMetadata(TableInfo table, String name, Collection<QueryException> errors)
     {
