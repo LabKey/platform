@@ -608,14 +608,12 @@ public class StorageProvisioner
             if (hasDrops)
                 for (String sql : scope.getSqlDialect().getChangeStatements(drops))
                 {
-                    errors.reject(SpringActionController.ERROR_MSG, sql);
                     log.debug("Will issue: " + sql);
                     conn.prepareStatement(sql).execute();
                 }
             if (hasAdds)
                 for (String sql : scope.getSqlDialect().getChangeStatements(adds))
                 {
-                    errors.reject(SpringActionController.ERROR_MSG, sql);
                     log.debug("Will issue: " + sql);
                     conn.prepareStatement(sql).execute();
                 }
