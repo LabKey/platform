@@ -1754,7 +1754,7 @@ public class DataRegion extends AbstractDataRegion
         TableInfo t = viewForm.getTable();
         ApiQueryResponse json = new ApiQueryResponse();
         ApiJsonWriter jsonOut = new ApiJsonWriter(out);
-        json.initialize(new ResultsImpl(null, ctx.getFieldMap()), t, _displayColumns, null);
+        json.initialize(this, t, _displayColumns);
 
         out.write("<script type='text/javascript'>\n");
         out.write("Ext.namespace('DataRegionForm');\n");

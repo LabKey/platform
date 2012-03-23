@@ -15,7 +15,6 @@
  */
 package org.labkey.api.action;
 
-import org.json.JSONObject;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyColumn;
@@ -24,8 +23,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.view.ViewContext;
 
-import java.sql.ResultSet;
-import java.text.SimpleDateFormat;
+import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -40,7 +38,6 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
 {
     private static final String URL_COL_PREFIX = "_labkeyurl_";
     private TableInfo _tinfo = null;
-    private ResultSet _rs = null;
     private List<DisplayColumn> _displayColumns = null;
     private long _rowCount = 0;
     private RenderContext _ctx = null;
@@ -54,6 +51,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
     private List<FieldKey> _fieldKeys = null;
     private boolean _metaDataOnly = false;
     private Map<String, Object> _extraReturnProperties;
+    private DataRegion _dataRegion;
 
     public ApiQueryResponse(QueryView view, ViewContext viewContext, boolean schemaEditable, boolean includeLookupInfo,
                             String schemaName, String queryName, long offset, List<FieldKey> fieldKeys, boolean metaDataOnly) throws Exception
@@ -127,17 +125,16 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         return _fieldKeys;
     }
 
-    public void initialize(Results rs, TableInfo table, List<DisplayColumn> displayColumns, Long rowCount)
+    public void initialize(DataRegion dataRegion, TableInfo table, List<DisplayColumn> displayColumns)
     {
-        _rs = rs;
+        _dataRegion = dataRegion;
         _tinfo = table;
         _displayColumns = displayColumns;
-        if (null != rowCount)
-            _rowCount = rowCount;
+        if (null != dataRegion.getTotalRows())
+            _rowCount = dataRegion.getTotalRows();
 
         _ctx = new RenderContext(_viewContext);
-        _ctx.setResults(rs);
-
+        _ctx.setCache(false);
     }
 
 
@@ -320,13 +317,23 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         writer.startList("rows");
         if (!_metaDataOnly)
         {
-            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(_rs);
-
-            while(_rs.next())
+            Results results = null;
+            try
             {
-                _ctx.setRow(factory.getRowMap(_rs));
-                writer.writeListEntry(getRow());
-                ++_numRespRows;
+                results = _dataRegion.getResultSet(_ctx);
+                _ctx.setResults(results);
+                ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(results);
+
+                while(results.next())
+                {
+                    _ctx.setRow(factory.getRowMap(results));
+                    writer.writeListEntry(getRow());
+                    ++_numRespRows;
+                }
+            }
+            finally
+            {
+                if (results != null) { try { results.close(); } catch (SQLException ignored) {} }
             }
         }
         writer.endList();

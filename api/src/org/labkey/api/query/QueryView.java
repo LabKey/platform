@@ -1826,13 +1826,10 @@ public class QueryView extends WebPartView<Object>
 
             //force the pk column(s) into the default list of columns
             List<ColumnInfo> pkCols = table.getPkColumns();
-            if (null != pkCols)
+            for (ColumnInfo pkCol : pkCols)
             {
-                for (ColumnInfo pkCol : pkCols)
-                {
-                    if (null == rgn.getDisplayColumn(pkCol.getName()))
-                        rgn.addColumn(pkCol);
-                }
+                if (null == rgn.getDisplayColumn(pkCol.getName()))
+                    rgn.addColumn(pkCol);
             }
 
             Results rs = null;
@@ -1840,9 +1837,7 @@ public class QueryView extends WebPartView<Object>
             try
             {
                 rgn.setAllowAsync(false);
-                RenderContext rc = view.getRenderContext();
-                rs = rgn.getResultSet(rc);
-                response.initialize(rs, table, getExportColumns(rgn.getDisplayColumns()), rgn.getTotalRows());
+                response.initialize(rgn, table, getExportColumns(rgn.getDisplayColumns()));
             }
             finally
             {

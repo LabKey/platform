@@ -25,6 +25,7 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.File;
@@ -70,18 +71,28 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
     @Override
     protected void renderIconAndFilename(RenderContext ctx, Writer out, String filename, boolean link) throws IOException
     {
-        if (isDirectory(getValue(ctx)))
-            super.renderIconAndFilename(ctx, out, filename, Attachment.getFileIcon(".folder"), link);
-        else
-            super.renderIconAndFilename(ctx, out, filename, link);
-    }
-
-    private boolean isDirectory(Object value)
-    {
-        if (value == null)
+        Object value = getValue(ctx);
+        if (value != null)
         {
-            return false;
+            File f = new File(value.toString());
+            // It's probably a file, so check that first
+            if (f.isFile())
+            {
+                super.renderIconAndFilename(ctx, out, filename, link);
+            }
+            else if (f.isDirectory())
+            {
+                super.renderIconAndFilename(ctx, out, filename, Attachment.getFileIcon(".folder"), link);
+            }
+            else
+            {
+                // It's not on the file system anymore, so don't offer a link and tell the user it's unavailable
+                super.renderIconAndFilename(ctx, out, filename + " (unavailable)", Attachment.getFileIcon(filename), false);
+            }
         }
-        return new File(value.toString()).isDirectory();
+        else
+        {
+            super.renderIconAndFilename(ctx, out, filename, link);
+        }
     }
 }
