@@ -17,6 +17,7 @@
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.reports.Report" %>
 <%@ page import="org.labkey.api.reports.ReportService" %>
 <%@ page import="org.labkey.api.reports.report.RReport" %>
@@ -27,18 +28,15 @@
 <%@ page import="org.labkey.api.reports.report.ScriptReportDescriptor" %>
 <%@ page import="org.labkey.api.reports.report.view.AjaxScriptReportView.Mode" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportDesignerSessionCache" %>
+<%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page import="org.labkey.api.reports.report.view.ScriptReportBean" %>
+<%@ page import="org.labkey.api.security.roles.ProjectAdminRole" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
-<%@ page import="org.labkey.api.security.roles.ProjectAdminRole" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ScriptReportBean> me = (JspView<ScriptReportBean>)HttpView.currentView();
@@ -90,7 +88,13 @@
 <script type="text/javascript">LABKEY.requiresScript("/editarea/edit_area_full.js");</script>
 <script type="text/javascript">
     if (<%=!readOnly%>)
-        window.onbeforeunload = LABKEY.beforeunload();
+    {
+        window.onbeforeunload = function(dirtyCallback, scope) {
+            var ret = LABKEY.beforeunload.call(dirtyCallback, scope).call();
+            LABKEY.setSubmit(false); // Data download sets "submit=true" to defeat the navigate message... this resets it
+            return ret;
+        };
+    }
 
 // Since multiple reports could be rendered on the same page, use an anonymous function to provide a separate namespace
 // for all the properties and methods.  The Save button needs to call saveReport(), so new up a class and return an
@@ -428,14 +432,30 @@ var f_scope<%=uid%> = new (function() {
     {
         if (downloadLink)
         {
-            downloadLink.href = success ? <%=q(report.getDownloadDataURL(ctx).toString())%> : "";
-            downloadLink.innerHTML = success ? "Download input data" : "";
-
-            if (downloadHelp)
+            if (success)
             {
-                downloadHelp.innerHTML = <%=q(helpPopup("Download input data", report.getDownloadDataHelpMessage()))%>;
+                downloadLink.onclick = function() {
+                        LABKEY.setSubmit(true);
+                        window.location.href = <%=q(report.getDownloadDataURL(ctx).toString())%>;
+                    };
+                downloadLink.innerHTML = "Download input data";
+
+                if (downloadHelp)
+                {
+                    downloadHelp.innerHTML = <%=q(helpPopup("Download input data", report.getDownloadDataHelpMessage()))%>;
+                }
+            }
+            else
+            {
+                downloadLink.innerHTML = "";
+                downloadHelp.innerHTML = "";
             }
         }
+    }
+
+    function downloadData()
+    {
+        window.location.href = <%=q(report.getDownloadDataURL(ctx).toString())%>;
     }
 
     function updateScript()
@@ -569,7 +589,7 @@ function setDisabled(checkbox, label, disabled)
             {
             %>
             <tr><td width="100%">
-                <a href="" id="downloadLink<%=uid%>"></a><span id="downloadHelp<%=uid%>"></span>
+                <a href="javascript:void(0)" id="downloadLink<%=uid%>"></a><span id="downloadHelp<%=uid%>"></span>
             </td></tr><%
             }
             %>
