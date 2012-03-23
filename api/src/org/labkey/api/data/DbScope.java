@@ -511,6 +511,12 @@ public class DbScope
         _tableCache.removeAllTables(schemaName);
     }
 
+    // Invalidates all tables in this schema
+    public void invalidateTable(DbSchema schema, String table)
+    {
+        _tableCache.remove(schema, table);
+    }
+
 
     // Invalidates all incomplete schemas in this scope (see below for details)
     public void invalidateIncompleteSchemas()

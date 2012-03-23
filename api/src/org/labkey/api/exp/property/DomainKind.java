@@ -101,4 +101,7 @@ abstract public class DomainKind implements Handler<String>
      * Perhaps DomainKind should have getTableInfo() method.
      */
     abstract public boolean hasNullValues(Domain domain, DomainProperty prop);
+
+    /** ask the domain to clear caches related to this domain */
+    abstract public void invalidate(Domain domain);
 }

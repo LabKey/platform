@@ -91,7 +91,7 @@ public class ReaderView extends WebPartView
     {
         if (isHtmlEncode())
         {
-            out.println(PageFlowUtil.filter(line));
+            out.println(PageFlowUtil.filter(line, true, true));
         }
         else
         {

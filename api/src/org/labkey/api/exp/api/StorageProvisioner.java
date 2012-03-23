@@ -617,8 +617,7 @@ public class StorageProvisioner
                     log.debug("Will issue: " + sql);
                     conn.prepareStatement(sql).execute();
                 }
-// TODO
-//          kind.invalidateDomain(domain);
+            kind.invalidate(domain);
             scope.commitTransaction();
             return !errors.hasErrors();
         }

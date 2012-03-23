@@ -17,6 +17,7 @@ package org.labkey.api.exp.property;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
@@ -121,6 +122,19 @@ public abstract class AbstractDomainKind extends DomainKind
     {
         return null;
     }
+
+
+    @Override
+    public void invalidate(Domain domain)
+    {
+        String schemaName = getStorageSchemaName();
+        if (null == schemaName)
+            return;
+        DbSchema schema = DbSchema.get(schemaName);
+        if (null != schema)
+            schema.getScope().invalidateTable(schema, domain.getStorageTableName());
+    }
+
 
     @Override
     public boolean hasNullValues(Domain domain, DomainProperty prop)
