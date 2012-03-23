@@ -190,7 +190,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
             return context.getContextPath() + "/reports/xls.gif";
         if (ParticipantReport.TYPE.equals(reportType))
             return context.getContextPath() + "/reports/participantReport.png";
-        if (StudyCrosstabReport.TYPE.equals(reportType))
+        if (StudyCrosstabReport.TYPE.equals(reportType) || CrosstabReport.TYPE.equals(reportType))
             return context.getContextPath() + "/reports/crosstab.png";
         if (EnrollmentReport.TYPE.equals(reportType))
             return context.getContextPath() + "/reports/enrollment.png";

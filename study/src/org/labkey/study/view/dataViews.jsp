@@ -42,11 +42,12 @@
     function init()
     {
         var dataViewsPanel = Ext4.create('LABKEY.ext4.DataViewsPanel', {
-            id       : 'data-views-panel-<%= webPartId %>',
-            renderTo : 'dataset-browsing-<%= me.getModelBean().getIndex() %>',
-            pageId   : <%= PageFlowUtil.jsString(me.getModelBean().getPageId()) %>,
-            index    : <%= me.getModelBean().getIndex() %>,
-            webpartId: <%= webPartId %>,
+            id          : 'data-views-panel-<%= webPartId %>',
+            renderTo    : 'dataset-browsing-<%= me.getModelBean().getIndex() %>',
+            pageId      : <%= PageFlowUtil.jsString(me.getModelBean().getPageId()) %>,
+            index       : <%= me.getModelBean().getIndex() %>,
+            webpartId   : <%= webPartId %>,
+            returnUrl   : '<%= me.getViewContext().getActionURL().getLocalURIString()%>',
             allowCustomize : <%= me.getViewContext().getContainer().hasPermission(u, AdminPermission.class) %>
         });
 

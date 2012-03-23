@@ -7076,6 +7076,8 @@ public class StudyController extends BaseStudyController
                     }
                 });
 
+                getViewContext().put("returnUrl", form.getReturnUrl());
+
                 // get reports and queries
                 if (includeReports || includeQueries)
                 {
@@ -7191,7 +7193,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class BrowseDataForm
+    public static class BrowseDataForm extends ReturnUrlForm
     {
         private int index;
         private String pageId;

@@ -151,8 +151,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 url    : LABKEY.ActionURL.buildURL('study', 'browseData.api'),
                 extraParams : {
                     // These parameters are required for specific webpart filtering
-                    pageId : this.pageId,
-                    index  : this.index
+                    pageId      : this.pageId,
+                    index       : this.index,
+                    returnUrl   : this.returnUrl
                 },
                 reader : {
                     type : 'json',

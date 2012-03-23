@@ -381,7 +381,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     private Report[] _getReports(User user, SimpleFilter filter) throws SQLException
     {
         if (filter != null && user != null)
-            filter.addWhereClause("ReportOwner IS NULL OR ReportOwner = ?", new Object[]{user.getUserId()});
+            filter.addWhereClause("ReportOwner IS NULL OR CreatedBy = ?", new Object[]{user.getUserId()});
 
         return getReports(filter);
     }
