@@ -37,7 +37,10 @@ LABKEY.Visualization = new function() {
 
         if (config.allColumns !== undefined)
             params.allColumns = config.allColumns;
-        
+
+        if (config.showHidden !== undefined)
+            params.showHidden = config.showHidden;
+
         return params;
     }
 

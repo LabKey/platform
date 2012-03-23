@@ -80,23 +80,26 @@ public class ChartQueryReport extends ChartReport implements Report.ImageMapGene
         {
             UserSchema schema = (UserSchema)DefaultSchema.get(context.getUser(), context.getContainer()).getSchema(schemaName);
 
-            QuerySettings settings = schema.getSettings(context, dataRegionName, queryName);
-            settings.setViewName(viewName);
-            settings.setMaxRows(Table.ALL_ROWS);
-            // need to reset the report id since we want to render the data grid, not the report
-            settings.setReportId(null);
-
-            ReportQueryView view = new ReportQueryView(schema, settings);
-            final String filterParam = descriptor.getProperty("filterParam");
-            if (!StringUtils.isEmpty(filterParam))
+            if (schema != null)
             {
-                final String filterValue = context.getActionURL().getParameter(filterParam);
-                if (filterValue != null)
+                QuerySettings settings = schema.getSettings(context, dataRegionName, queryName);
+                settings.setViewName(viewName);
+                settings.setMaxRows(Table.ALL_ROWS);
+                // need to reset the report id since we want to render the data grid, not the report
+                settings.setReportId(null);
+
+                ReportQueryView view = new ReportQueryView(schema, settings);
+                final String filterParam = descriptor.getProperty("filterParam");
+                if (!StringUtils.isEmpty(filterParam))
                 {
-                    view.setFilter(new SimpleFilter(filterParam, filterValue));
+                    final String filterValue = context.getActionURL().getParameter(filterParam);
+                    if (filterValue != null)
+                    {
+                        view.setFilter(new SimpleFilter(filterParam, filterValue));
+                    }
                 }
+                return view;
             }
-            return view;
         }
         return null;
     }
