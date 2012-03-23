@@ -31,6 +31,7 @@ Domain domain = form.domain;
 DomainKind kind = domain ==null ? null : domain.getDomainKind();
 StorageProvisioner.ProvisioningReport.DomainReport report = form.report;
 ActionURL edit = null==kind ? null : kind.urlEditDefinition(domain);
+ActionURL show = null==kind ? null : kind.urlShowData(domain);
 boolean hasFix = false;
 if (report != null)
 {
@@ -44,13 +45,17 @@ for (StorageProvisioner.ProvisioningReport.ColumnStatus st : report.getColumns()
         <tr><th align=right>Database Table</th><td><%=toCell(null==report?"":report.getSchemaName() + "." +report.getTableName())%></td></tr>
     <tr><td colspan=2><table><tr>
 <%
+    if (null != show)
+    {
+        %><td><%=generateButton("View data",show)%></td><%
+    }
     if (null != edit)
     {
-        %><td><%=generateButton("Edit",edit)%></td><%
+        %><td><%=generateButton("Edit definition",edit)%></td><%
     }
     if (hasFix)
     {
-        %><td><form method=POST><%=generateSubmitButton("Fix")%></form></td><%
+        %><td><form method=POST><%=generateSubmitButton("Fix!")%></form></td><%
     }
 %></tr></table></td></tr></table>
 <labkey:errors/>
