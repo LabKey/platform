@@ -443,7 +443,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
                 menu.addChild("Manage Queries", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(c));
             }
 
-            if(portalCtx.hasPermission(ReadPermission.class))
+            if(portalCtx.hasPermission(ReadPermission.class) && !portalCtx.getUser().isGuest())
             {
                 menu.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(c));
             }

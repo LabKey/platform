@@ -1143,9 +1143,6 @@ public class VisualizationController extends SpringActionController
             if (form.getName() == null)
                 errors.reject(ERROR_MSG, "Name must be specified when saving a report.");
 
-            if (!getContainer().hasPermission(getUser(), InsertPermission.class) && form.isShared())
-                errors.reject(ERROR_MSG, "Only users with insert permissions can save shared reports.");
-
             try
             {
                 _currentReport = getReport(form);
@@ -1157,17 +1154,15 @@ public class VisualizationController extends SpringActionController
 
             if (_currentReport != null)
             {
+                if(!_currentReport.canEdit(getUser(), getContainer()))
+                {
+                    errors.reject(ERROR_MSG, "You do not have permission to save shared reports.");
+                }
+
                 if (!form.isReplace())
                 {
                     errors.reject(ERROR_MSG, "A report by the name \"" + form.getName() + "\" already exists.  " +
                             "To update, set the 'replace' parameter to true.");
-                }
-
-                boolean reportOwner = getContainer().hasPermission(getUser(), AdminPermission.class) ||
-                                      _currentReport.getDescriptor().getCreatedBy() == getUser().getUserId();
-                if (!reportOwner)
-                {
-                    errors.reject(ERROR_MSG, "Only Administrators can change reports created by other users.");
                 }
             }
             else
