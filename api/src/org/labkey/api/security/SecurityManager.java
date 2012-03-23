@@ -1263,6 +1263,24 @@ public class SecurityManager
     }
 
 
+    // TODO: getAddMemberError() now caches (see #14383), but this is still an n^2 algorithm.  Better would be for this
+    // method to validate an entire collection of candidates at once, and switch getAddMemberError() to call getValidPrincipals()
+    // with a singleton.
+    public static <K extends UserPrincipal> Collection<K> getValidPrincipals(Group group, Collection<K> candidates)
+    {
+        Collection<K> valid = new LinkedList<K>();
+
+        // don't suggest groups that will result in errors (i.e. circular relation, already member, etc.)
+        for (K candidate : candidates)
+        {
+            if (null == SecurityManager.getAddMemberError(group, candidate))
+                valid.add(candidate);
+        }
+
+        return valid;
+    }
+
+
     // Return an error message if principal can't be added to the group, otherwise return null
     public static String getAddMemberError(Group group, UserPrincipal principal)
     {
