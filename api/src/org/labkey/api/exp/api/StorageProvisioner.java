@@ -16,6 +16,7 @@
 package org.labkey.api.exp.api;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -49,6 +50,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.view.ActionURL;
+import org.springframework.validation.BindException;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -523,11 +526,28 @@ public class StorageProvisioner
         }
     }
 
+
+    public static boolean repairDomain(String domainUri, BindException errors)
+    {
+        return true;
+    }
+
+
     public static ProvisioningReport getProvisioningReport() throws SQLException
     {
+        return getProvisioningReport(null);
+    }
+
+    public static ProvisioningReport getProvisioningReport(@Nullable String domainuri) throws SQLException
+    {
         ProvisioningReport report = new ProvisioningReport();
-        SQLFragment sql = new SQLFragment("select domainid, name, storageschemaname, storagetablename from " +
+        SQLFragment sql = new SQLFragment("SELECT domainid, name, storageschemaname, storagetablename FROM " +
                 OntologyManager.getTinfoDomainDescriptor().getFromSQL("dd"));
+        if (null != domainuri)
+        {
+            sql.append(" WHERE domainuri=?");
+            sql.add(domainuri);
+        }
         ResultSet rs = null;
 
         try
@@ -579,7 +599,7 @@ public class StorageProvisioner
             TableInfo table = schema.getTable(domainReport.getTableName());
             if (table == null)
             {
-                domainReport.addError(String.format("metadata for domain %s specifies a hard table at %s.%s but that table is not present",
+                domainReport.addError(String.format("metadata for domain %s specifies a database table at %s.%s but that table is not present",
                         domainReport.getName(), domainReport.getSchemaName(), domainReport.getTableName()));
                 continue;
             }
@@ -589,34 +609,89 @@ public class StorageProvisioner
             {
                 domainReport.addError(String.format("Could not find a domain for %s.%s",
                         domainReport.getSchemaName(), domainReport.getTableName()));
+                continue;
             }
-            else
+            DomainKind kind = domain.getDomainKind();
+            if (kind == null)
             {
-                for (DomainProperty domainProp : domain.getProperties())
+                domainReport.addError(String.format("Could not find a domain kind for %s.%s",
+                        domainReport.getSchemaName(), domainReport.getTableName()));
+                continue;
+            }
+            for (DomainProperty domainProp : domain.getProperties())
+            {
+                ProvisioningReport.ColumnStatus status = new ProvisioningReport.ColumnStatus();
+                domainReport.columns.add(status);
+                status.prop = domainProp;
+                if (hardColumnNames.remove(domainProp.getName()))
+                    status.colName = domainProp.getName();
+                else
                 {
-                    String expectedColumnName = domainProp.getName();
-                    if (hardColumnNames.contains(expectedColumnName))
-                    {
-                        if (domainProp.isMvEnabled() && !hardColumnNames.contains(PropertyStorageSpec.getMvIndicatorColumnName(expectedColumnName)))
-                        {
-                            domainReport.addError(String.format("hard table %s.%s has mvindicator enabled but expected %s column wasn't present",
-                                    domainReport.getSchemaName(), domainReport.getTableName(), PropertyStorageSpec.getMvIndicatorColumnName(expectedColumnName)));
-                        }
-
-                    }
+                    domainReport.addError(String.format("database table %s.%s did not contain expected column '%s'", domainReport.getSchemaName(), domainReport.getTableName(), domainProp.getName()));
+                    status.fix = "Delete property descriptor '" + domainProp.getName() + "'";
+                    status.hasProblem = true;
+                }
+                if (domainProp.isMvEnabled())
+                {
+                    if (hardColumnNames.remove(PropertyStorageSpec.getMvIndicatorColumnName(domainProp.getName())))
+                        status.mvColName = PropertyStorageSpec.getMvIndicatorColumnName(domainProp.getName());
                     else
                     {
-                        domainReport.addError(String.format("hard table %s.%s did not contain expected column %s",
-                                domainReport.getSchemaName(), domainReport.getTableName(), expectedColumnName));
+                        domainReport.addError(String.format("database table %s.%s has mvindicator enabled but expected '%s' column wasn't present",
+                                domainReport.getSchemaName(), domainReport.getTableName(), PropertyStorageSpec.getMvIndicatorColumnName(domainProp.getName())));
+                        if (null == status.fix)
+                            status.fix = "Turn of mv enabled flag for property '" + domainProp.getName() + "'";
+                        status.hasProblem = true;
                     }
                 }
             }
-
+            for (PropertyStorageSpec spec : kind.getBaseProperties())
+            {
+                ProvisioningReport.ColumnStatus status = new ProvisioningReport.ColumnStatus();
+                domainReport.columns.add(status);
+                status.spec = spec;
+                if (hardColumnNames.remove(spec.getName()))
+                    status.colName = spec.getName();
+                else
+                {
+                    domainReport.addError(String.format("database table %s.%s did not contain expected column '%s'", domainReport.getSchemaName(), domainReport.getTableName(), spec.getName()));
+                    status.fix = "'" + spec.getName() + "' is a built-in column.  Contact LabKey support.";
+                    status.hasProblem = true;
+                }
+                if (spec.isMvEnabled())
+                {
+                    if (hardColumnNames.remove(spec.getMvIndicatorColumnName()))
+                        status.mvColName = spec.getMvIndicatorColumnName();
+                    else
+                    {
+                        domainReport.addError(String.format("database table %s.%s has mvindicator enabled but expected '%s' column wasn't present",
+                                domainReport.getSchemaName(), domainReport.getTableName(), spec.getMvIndicatorColumnName()));
+                        status.fix = "'" + spec.getName() + "' is a built-in column.  Contact LabKey support.";
+                        status.hasProblem = true;
+                    }
+                }
+            }
+            for (String name : hardColumnNames)
+            {
+                domainReport.addError(String.format("database table %s.%s has column '%s' without a property descriptor",
+                        domainReport.getSchemaName(), domainReport.getTableName(), name));
+                ProvisioningReport.ColumnStatus status = new ProvisioningReport.ColumnStatus();
+                domainReport.columns.add(status);
+                status.colName = name;
+                status.fix = "Delete column '" + name + "'";
+                status.hasProblem = true;
+            }
+            if (!domainReport.errors.isEmpty())
+            {
+                ActionURL fix = new ActionURL("experiment-types", "repair", domain.getContainer());
+                fix.addParameter("domainUri", domain.getTypeURI());
+                domainReport.addError("See this page for more info: " + fix.getURIString());
+            }
         }
-
 
         return report;
     }
+
 
     public static class ProvisioningReport
     {
@@ -654,6 +729,27 @@ public class StorageProvisioner
             return errors;
         }
 
+        public static class ColumnStatus
+        {
+            public String colName, mvColName;
+            public DomainProperty prop;            // propertydescriptor column
+            public PropertyStorageSpec spec;       // domainkind/reserved column
+            public boolean hasProblem;
+            public String fix = null;
+            public String getName()
+            {
+                if (null != prop) return prop.getName();
+                if (null != spec) return spec.getName();
+                return null;
+            }
+            public boolean hasMv()
+            {
+                if (null != prop) return prop.isMvEnabled();
+                if (null != spec) return spec.isMvEnabled();
+                return false;
+            }
+        }
+
         public static class DomainReport
         {
             Integer id;
@@ -661,6 +757,7 @@ public class StorageProvisioner
             String schemaName;
             String tableName;
             List<String> errors = new ArrayList<String>();
+            List<ColumnStatus> columns = new ArrayList<ColumnStatus>();
 
             public Integer getId()
             {
@@ -710,6 +807,11 @@ public class StorageProvisioner
             public List<String> getErrors()
             {
                 return errors;
+            }
+
+            public List<ColumnStatus> getColumns()
+            {
+                return columns;
             }
         }
     }
