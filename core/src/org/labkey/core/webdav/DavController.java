@@ -1927,7 +1927,9 @@ public class DavController extends SpringActionController
             json.key("href").value(resource.getHref(getViewContext()));
             json.key("text").value(displayName);
 
-            json.key("creationdate").value(new Date(resource.getCreated()));
+            long created = resource.getCreated();
+            if (Long.MIN_VALUE != created)
+                json.key("creationdate").value(new Date(created));
             if (resource.isFile())
             {
                 json.key("lastmodified").value(new Date(resource.getLastModified()));
