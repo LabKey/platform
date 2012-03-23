@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2011 LabKey Corporation
+ * Copyright (c) 2011-2012 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,15 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.reports.Report" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.util.UniqueID" %>
-<%@ page import="org.labkey.visualization.VisualizationController" %>
-<%@ page import="org.labkey.api.reports.report.ReportIdentifier" %>
 <%@ page import="org.labkey.api.reports.report.AbstractReportIdentifier" %>
+<%@ page import="org.labkey.api.reports.report.ReportIdentifier" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="org.labkey.api.util.UniqueID" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.visualization.VisualizationController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<VisualizationController.GetVisualizationForm> me = (JspView<VisualizationController.GetVisualizationForm>) HttpView.currentView();
@@ -34,11 +34,13 @@
     ReportIdentifier id = AbstractReportIdentifier.fromString(bean.getReportId());
     Report timechart = null;
 
-    if(id != null)
+    if (id != null)
     {
         timechart = id.getReport();
         canEdit = timechart.canEdit(ctx.getUser(), ctx.getContainer());
-    } else {
+    }
+    else
+    {
         canEdit = ctx.hasPermission(ReadPermission.class) && ! ctx.getUser().isGuest();
     }
 
