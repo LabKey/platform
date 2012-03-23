@@ -460,8 +460,10 @@ public class ListDefinitionImpl implements ListDefinition
         ColumnDescriptor[] columns = columnList.toArray((new ColumnDescriptor[columnList.size()]));
         loader.setColumns(columns);
 
+        int colIdx = 0; //used to report the column number to the user for errors, 1-based
         for (ColumnDescriptor cd : columns)
         {
+            colIdx++;
             String columnName = cd.name;
             DomainProperty property = propertiesByName.get(columnName);
             cd.errorValues = errorValue;
@@ -470,7 +472,7 @@ public class ListDefinitionImpl implements ListDefinition
 
             if (property == null && !isKeyField)
             {
-                errors.add((!"".equals(columnName) ? "The field '" + columnName + "' could not be matched to a field in this list." : "The import cannot have blank column headers"));
+                errors.add((!"".equals(columnName) ? "The field '" + columnName + "' could not be matched to a field in this list." : "The import cannot have blank column headers (Column " + colIdx + ")"));
                 continue;
             }
 
