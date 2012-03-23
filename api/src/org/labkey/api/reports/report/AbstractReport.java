@@ -197,7 +197,7 @@ public abstract class AbstractReport implements Report
             if (!isOwner(user))
                 errors.add(new SimpleValidationError("You must be the owner of a private report in order to edit it."));
         }
-        else if (!container.hasPermission(user, EditSharedReportPermission.class))
+        else if (!isOwner(user) && !container.hasPermission(user, EditSharedReportPermission.class))
         {
             errors.add(new SimpleValidationError("You must be in the Editor role to update a shared report."));
         }
@@ -280,7 +280,9 @@ public abstract class AbstractReport implements Report
     }
 
     /**
-     * Is this a private report
+     * Is this a private report.
+     * Consider : moving away from the owner field to determine public/private and replacing with a simple
+     * boolean check
      */
     protected boolean isPrivate()
     {
@@ -289,6 +291,6 @@ public abstract class AbstractReport implements Report
     
     protected boolean isOwner(User user)
     {
-        return isNew() || (getDescriptor().getOwner() != null && getDescriptor().getOwner().equals(user.getUserId()));
+        return isNew() || (getDescriptor().getCreatedBy() != 0 && (getDescriptor().getCreatedBy() == user.getUserId()));
     }
 }

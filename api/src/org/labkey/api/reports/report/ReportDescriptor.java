@@ -92,6 +92,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
         viewName,
         dataRegionName,
         redirectUrl,
+        returnUrl,
         cached,
         version,
         author,         // author is treated as metadata instead of a first-class field

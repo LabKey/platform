@@ -412,11 +412,6 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
             return new HtmlView("No Data view available for this report");
     }
 
-    public ActionURL getRunReportURL(ViewContext context)
-    {
-        return ReportUtil.getRunReportURL(context, this);
-    }
-
     public static synchronized String getDefaultPerlPath()
     {
         if (DEFAULT_PERL_PATH == null)
