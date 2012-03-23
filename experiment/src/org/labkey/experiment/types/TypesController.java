@@ -144,6 +144,7 @@ public class TypesController extends SpringActionController
         @Override
         public ModelAndView getView(RepairForm form, boolean reshow, BindException errors) throws Exception
         {
+            validateCommand(form, errors);
             StorageProvisioner.ProvisioningReport report = StorageProvisioner.getProvisioningReport(form.getDomainUri());
             if (report.getProvisionedDomains().size() == 1)
                 form.report = report.getProvisionedDomains().iterator().next();
@@ -163,7 +164,7 @@ public class TypesController extends SpringActionController
         @Override
         public boolean handlePost(RepairForm form, BindException errors) throws Exception
         {
-            return StorageProvisioner.repairDomain(form.getDomainUri(), errors);
+            return StorageProvisioner.repairDomain(form.domain.getContainer(), form.getDomainUri(), errors);
         }
 
         @Override

@@ -19,23 +19,53 @@
 <%@ page import="org.labkey.experiment.types.TypesController" %>
 <%@ page import="org.labkey.api.exp.api.StorageProvisioner" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.api.exp.property.DomainKind" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.exp.property.Domain" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<labkey:errors/>
+
 <%
 TypesController.RepairForm form = (TypesController.RepairForm) HttpView.currentModel();
+Domain domain = form.domain;
+DomainKind kind = domain ==null ? null : domain.getDomainKind();
 StorageProvisioner.ProvisioningReport.DomainReport report = form.report;
-
+ActionURL edit = null==kind ? null : kind.urlEditDefinition(domain);
+boolean hasFix = false;
+if (report != null)
+{
+for (StorageProvisioner.ProvisioningReport.ColumnStatus st : report.getColumns())
+    if (!StringUtils.isEmpty(st.fix))
+        hasFix = true;
+}
+%><table>
+        <tr><th align=right>DomainKind</th><td><%=toCell(null==kind?"":kind.getKindName())%></td></tr>
+        <tr><th align=right>DomainURI</th><td><%=toCell(form.uri)%></td></tr>
+        <tr><th align=right>Database Table</th><td><%=toCell(null==report?"":report.getSchemaName() + "." +report.getTableName())%></td></tr>
+    <tr><td colspan=2><table><tr>
+<%
+    if (null != edit)
+    {
+        %><td><%=generateButton("Edit",edit)%></td><%
+    }
+    if (hasFix)
+    {
+        %><td><form method=POST><%=generateSubmitButton("Fix")%></form></td><%
+    }
+%></tr></table></td></tr></table>
+<labkey:errors/>
+<p></p>
+<%
 if (null == report)
 {
     %>Could not generate report.  Contact LabKey support for more help.<%
 }
 else
 {
-    %><table><tr style="background-color:#cccccc;"><th align=left>Property</th><th align=left>mv</th><th align=left>Column</th><th align=left>mv Column</th><th>Proposed fix</th></tr><%
+
+    %><table><tr style="background-color:#cccccc;"><th>&nbsp;</th><th align=left>Property</th><th align=left>mv</th><th align=left>Column</th><th align=left>mv Column</th><th>Proposed fix</th></tr><%
     for (StorageProvisioner.ProvisioningReport.ColumnStatus st : report.getColumns())
     {
-        String fix = null;
         if (st.hasProblem)
         {
             %><tr style="background-color:#ffcccc;"><%
@@ -48,7 +78,8 @@ else
         {
             %><tr style=""><%
         }
-        %><td><%=toCell(st.getName())%></td>
+        %><td align=right><span style="font-size:7pt;"><%=null!=st.prop?""+st.prop.getPropertyId():"&nbsp;"%></span></td>
+        <td><%=toCell(st.getName())%></td>
         <td><%=st.hasMv()?"X":"&nbsp;"%></td>
         <td><%=toCell(st.colName)%></td>
         <td><%=toCell(st.mvColName)%></td>
@@ -56,17 +87,19 @@ else
         </tr><%
     }
     %></table>
-
-    <form method=POST><input type=submit name=submit value="FIX (NYI)"></form>
-
     <p></p>
-    <div stype="border:solid 1px #888888;"><span class="labkey-error">errors</span><ul style="margin:0;"><%
+<%
+if (!report.getErrors().isEmpty())
+{
+    %><div><span class="labkey-error">errors</span><ul style="margin:0;"><%
     for (String error : report.getErrors())
     {
-        if (-1 != error.indexOf("repair.view?")) continue;
+        if (error.contains("repair.view?"))
+            continue;
         %><li><%=h(error)%></li><%
     }
     %></ul></div><%
+}
 }
 %>
 <%!
