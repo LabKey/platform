@@ -198,4 +198,11 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
     {
         return StudySchema.getInstance().getDatasetSchemaName();
     }
+
+    @Override
+    public void invalidate(Domain domain)
+    {
+        super.invalidate(domain);
+        StudyManager.getInstance().uncache(getDatasetDefinition(domain.getTypeURI()));
+    }
 }

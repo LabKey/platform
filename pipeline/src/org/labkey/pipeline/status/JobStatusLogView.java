@@ -33,9 +33,9 @@ public class JobStatusLogView extends ReaderView
 
     public JobStatusLogView(InputStream in, boolean htmlEncodeContent, @Nullable String prefix, @Nullable String suffix)
     {
-
         super(in, htmlEncodeContent, prefix, suffix);
     }
+
 
     @Override
     public void outputLine(PrintWriter out, String line)
@@ -48,7 +48,7 @@ public class JobStatusLogView extends ReaderView
             if (!_highlightingError && (type.equals("ERROR:") || type.equals("FATAL:")))
             {
                 _highlightingError = true;
-                out.write("<span class=\"labkey-error\" style=\"font-weight: bold\">");
+                out.write("<span class=\"labkey-error\">");
             }
             else if (_highlightingError && (type.equals("INFO") || type.equals("DEBUG:") || type.equals("WARN")))
             {
