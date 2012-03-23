@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.HString;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.Portal;
 
 import java.util.Map;
 
@@ -30,11 +31,10 @@ import java.util.Map;
  */
 public class WikiWebPart extends BaseWikiView
 {
-    public WikiWebPart(String pageId, int index, Map<String, String> props)
+    public WikiWebPart(int webPartId, Map<String, String> props)
     {
         super();
-        _pageId = pageId;
-        _index = index;
+        _webPartId = webPartId;
 
         // webPartContainer and name will be null in the new webpart case
         String containerId = props.get("webPartContainer");

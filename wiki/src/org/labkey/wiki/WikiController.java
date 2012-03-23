@@ -1939,8 +1939,7 @@ public class WikiController extends SpringActionController
         private String _cancel;
         private String _format;
         private String _defName;
-        private String _pageId;
-        private int _index;
+        private int _webPartId;
 
         public HString getName()
         {
@@ -1996,26 +1995,15 @@ public class WikiController extends SpringActionController
             _defName = defName;
         }
 
-        public String getPageId()
+        public int getWebPartId()
         {
-            return _pageId;
+            return _webPartId;
         }
 
         @SuppressWarnings({"UnusedDeclaration"})
-        public void setPageId(String pageId)
+        public void setWebPartId(int webPartId)
         {
-            _pageId = pageId;
-        }
-
-        public int getIndex()
-        {
-            return _index;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setIndex(int index)
-        {
-            _index = index;
+            _webPartId = webPartId;
         }
     }
 
@@ -2072,7 +2060,7 @@ public class WikiController extends SpringActionController
 
             WikiEditModel model = new WikiEditModel(container, wiki, curVersion,
                     form.getRedirect(), form.getCancel(), form.getFormat(), form.getDefName(), useVisualEditor,
-                    form.getPageId(), form.getIndex(), user);
+                    form.getWebPartId(), user);
 
             //stash the wiki so we can build the nav trail
             _wiki = wiki;
@@ -2104,6 +2092,7 @@ public class WikiController extends SpringActionController
         private String _rendererType;
         private String _pageId;
         private int _index = -1;
+        private int _webPartId = -1;
         private boolean _showAttachments = true;
 
         public GUID getEntityId()
@@ -2205,6 +2194,17 @@ public class WikiController extends SpringActionController
             _index = index;
         }
 
+        public int getWebPartId()
+        {
+            return _webPartId;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setWebPartId(int webPartId)
+        {
+            _webPartId = webPartId;
+        }
+
         public boolean isShowAttachments()
         {
             return _showAttachments;
@@ -2300,15 +2300,14 @@ public class WikiController extends SpringActionController
             //insert new wiki and new version
             getWikiManager().insertWiki(getUser(), c, wiki, wikiversion, null);
 
-            //if page id and index were sent, update the corresponding
+            //if webPartId was sent, update the corresponding
             //web part to show the newly inserted page
-            String pageId = StringUtils.trimToEmpty(form.getPageId());
-            int index = form.getIndex();
+            int webPartId = form.getWebPartId();
 
-            if (pageId != null && index > 0)
+            if (webPartId > 0)
             {
-                //get web part referenced by page id and index
-                Portal.WebPart webPart = Portal.getPart(c, pageId, index);
+                //get web part referenced by webPartId
+                Portal.WebPart webPart = Portal.getPart(c, webPartId);
                 if (null != webPart && webPart.getName().equals("Wiki"))
                 {
                     webPart.setProperty("webPartContainer", c.getId());

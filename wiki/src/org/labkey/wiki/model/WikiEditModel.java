@@ -42,13 +42,12 @@ public class WikiEditModel
     private final String _format;
     private final String _defName;
     private final boolean _useVisualEditor;
-    private final String _pageId;
-    private final int _index;
+    private final int _webPartId;
     private final User _user;
 
     public WikiEditModel(Container container, Wiki wiki, WikiVersion wikiVersion, String redir,
                          String cancelRedir, String format, String defName, boolean useVisualEditor,
-                         String pageId, int index, User user)
+                         int webPartId, User user)
     {
         _container = container;
         _wiki = wiki;
@@ -58,8 +57,7 @@ public class WikiEditModel
         _format = format;
         _defName = defName;
         _useVisualEditor = useVisualEditor;
-        _pageId = pageId;
-        _index = index;
+        _webPartId = webPartId;
         _user = user;
     }
     
@@ -137,14 +135,9 @@ public class WikiEditModel
         return _useVisualEditor;
     }
 
-    public String getPageId()
+    public int getWebPartId()
     {
-        return null == _pageId ? "null" : PageFlowUtil.jsString(_pageId);
-    }
-
-    public int getIndex()
-    {
-        return _index;
+        return _webPartId;
     }
 
     public boolean canUserDelete()

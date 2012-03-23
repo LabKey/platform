@@ -29,7 +29,7 @@
     Container currentContainer = getViewContext().getContainer();
     List<Container> containerList = WikiController.populateWikiContainerList(getViewContext());
 %>
-<% // Post to current action; URL includes pageId and index parameters %>
+<% // Post to current action; URL includes pageId and index (or webPartId) parameters %>
 <form name="frmCustomize" method="post">
 <table>
     <tr>

@@ -52,8 +52,7 @@
         body: <%=model.getBody()%>,
         parent: <%=model.getParent()%>,
         rendererType: <%=model.getRendererType()%>,
-        pageId: <%=model.getPageId()%>,
-        index: <%=model.getIndex()%>,
+        webPartId: <%=model.getWebPartId()%>,
         showAttachments: <%=model.isShowAttachments()%>,
         isDirty: false
     };

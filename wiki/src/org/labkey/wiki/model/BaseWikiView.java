@@ -25,6 +25,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.wiki.BaseWikiPermissions;
@@ -58,8 +59,7 @@ public abstract class BaseWikiView extends JspView<Object>
 
     protected WikiVersion wikiVersion = null; // TODO: Used internally only?  Pass to init()?
 
-    protected String _pageId = null;
-    protected int _index = 0;
+    protected int _webPartId = 0;
 
     protected BaseWikiView()
     {
@@ -158,8 +158,7 @@ public abstract class BaseWikiView extends JspView<Object>
             if (isWebPart())
             {
                 insertURL.addParameter("redirect", url.getLocalURIString());
-                insertURL.addParameter("pageId", _pageId);
-                insertURL.addParameter("index", Integer.toString(_index));
+                insertURL.addParameter("webPartId", Integer.toString(_webPartId));
             }
 
             if (null != wiki)
@@ -183,8 +182,7 @@ public abstract class BaseWikiView extends JspView<Object>
         {
             // the customize URL should always be for the current container (not the wiki webpart's container)
             customizeURL = PageFlowUtil.urlProvider(ProjectUrls.class).getCustomizeWebPartURL(getViewContext().getContainer());
-            customizeURL.addParameter("pageId", _pageId);
-            customizeURL.addParameter("index", _index);
+            customizeURL.addParameter("webPartId", _webPartId);
             customizeURL.addReturnURL(getViewContext().getActionURL());
 
             setTitleHref(WikiController.getPageURL(wiki, c));

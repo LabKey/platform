@@ -138,8 +138,7 @@ public class ProjectController extends SpringActionController
         public ActionURL getCustomizeWebPartURL(Container c, Portal.WebPart webPart, ActionURL returnURL)
         {
             ActionURL url = getCustomizeWebPartURL(c);
-            url.addParameter("pageId", webPart.getPageId());
-            url.addParameter("index", String.valueOf(webPart.getIndex()));
+            url.addParameter("webPartId", String.valueOf(webPart.getRowId()));
             url.addReturnURL(returnURL);
             return url;
         }
@@ -451,7 +450,8 @@ public class ProjectController extends SpringActionController
 
         public boolean handlePost(MovePortletForm form, BindException errors) throws Exception
         {
-            return handleMoveWebPart(form.getPageId(), form.getIndex(), form.getDirection());
+            Portal.WebPart webPart = Portal.getPart(getContainer(), form.getWebPartId());
+            return handleMoveWebPart(webPart.getPageId(), webPart.getIndex(), form.getDirection());
         }
 
         public URLHelper getSuccessURL(MovePortletForm movePortletForm)
@@ -729,7 +729,8 @@ public class ProjectController extends SpringActionController
 
         public boolean handlePost(CustomizePortletForm form, BindException errors) throws Exception
         {
-            return handleDeleteWebPart(getViewContext().getContainer(), form.getPageId(), form.getIndex());
+            Portal.WebPart webPart = Portal.getPart(getContainer(), form.getWebPartId());
+            return handleDeleteWebPart(getViewContext().getContainer(), webPart.getPageId(), webPart.getIndex());
         }
 
         public URLHelper getSuccessURL(CustomizePortletForm customizePortletForm)
@@ -806,6 +807,7 @@ public class ProjectController extends SpringActionController
     {
         private int index;
         private String pageId;
+        private int webPartId;
         private ViewContext _viewContext;
 
         public int getIndex()
@@ -827,6 +829,16 @@ public class ProjectController extends SpringActionController
         {
             this.pageId = pageId;
         }
+
+        public int getWebPartId()
+        {
+            return webPartId;
+        }
+
+        public void setWebPartId(int webPartId)
+        {
+            this.webPartId = webPartId;
+        }        
     }
 
     @RequiresPermissionClass(AdminPermission.class)
@@ -864,7 +876,12 @@ public class ProjectController extends SpringActionController
 
         public ModelAndView getView(CustomizePortletForm form, boolean reshow, BindException errors) throws Exception
         {
-            _webPart = Portal.getPart(getViewContext().getContainer(), form.getPageId(), form.getIndex());
+            // lookup the webpart by webpartId OR pageId/index
+            if (form.getWebPartId() > 0)
+                _webPart = Portal.getPart(getViewContext().getContainer(), form.getWebPartId());
+            else
+                _webPart = Portal.getPart(getViewContext().getContainer(), form.getPageId(), form.getIndex());
+
             ActionURL returnUrl = null != form.getReturnActionURL() ? form.getReturnActionURL() : beginURL();
             if (null == _webPart)
             {
@@ -888,7 +905,13 @@ public class ProjectController extends SpringActionController
 
         public boolean handlePost(CustomizePortletForm form, BindException errors) throws Exception
         {
-            Portal.WebPart webPart = Portal.getPart(getViewContext().getContainer(), form.getPageId(), form.getIndex());
+            // lookup the webpart by webpartId OR pageId/index
+            Portal.WebPart webPart;
+            if (form.getWebPartId() > 0)
+                webPart = Portal.getPart(getViewContext().getContainer(), form.getWebPartId());
+            else
+                webPart = Portal.getPart(getViewContext().getContainer(), form.getPageId(), form.getIndex());
+            
             if (null == webPart)
             {
                 //the web part no longer exists--probably because another admin has deleted it
@@ -952,7 +975,7 @@ public class ProjectController extends SpringActionController
             while (params.hasMoreElements())
             {
                 String s = (String) params.nextElement();
-                if (!"index".equals(s) && !"pageId".equals(s) && !"x".equals(s) && !"y".equals(s) && !ActionURL.Param.returnUrl.name().equals(s))
+                if (!"webPartId".equals(s) && !"index".equals(s) && !"pageId".equals(s) && !"x".equals(s) && !"y".equals(s) && !ActionURL.Param.returnUrl.name().equals(s))
                 {
                     String value = request.getParameter(s);
                     if (value != null && !"".equals(value.trim()))

@@ -42,7 +42,7 @@ public class MenuWikiWebPartFactory extends WikiWebPartFactory
         Map<String, String> props = new HashMap<String,String>(webPart.getPropertyMap());
         if (null == props.get("webPartContainer"))
             props.put("webPartContainer", portalCtx.getContainer().getProject().getId());
-        WikiWebPart v = new WikiWebPart(webPart.getPageId(), webPart.getIndex(), props);
+        WikiWebPart v = new WikiWebPart(webPart.getRowId(), props);
         v.setEmbedded(true);
         return v;
     }

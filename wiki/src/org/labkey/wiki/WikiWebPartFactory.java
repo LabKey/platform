@@ -47,7 +47,7 @@ public class WikiWebPartFactory extends AlwaysAvailableWebPartFactory
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
     {
         Map<String, String> props = webPart.getPropertyMap();
-        return new WikiWebPart(webPart.getPageId(), webPart.getIndex(), props);
+        return new WikiWebPart(webPart.getRowId(), props);
     }
 
     @Override
