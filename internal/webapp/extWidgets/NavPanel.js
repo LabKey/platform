@@ -130,6 +130,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
                 layout: 'hbox',
                 defaults: {
                     style: 'padding-left:5px;padding-bottom:5px;',
+                    bodyStyle: 'padding-bottom:5px;',
                     border: false,
                     target: '_self',
                     linkCls: 'labkey-text-link'
@@ -178,6 +179,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
                 layout: 'hbox',
                 defaults: {
                     style: 'padding-left:5px;padding-bottom:5px;',
+                    bodyStyle: 'padding-bottom:5px;',
                     border: false,
                     target: '_self',
                     linkCls: 'labkey-text-link'
@@ -195,6 +197,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
                 layout: 'hbox',
                 defaults: {
                     style: 'padding-left:5px;padding-bottom:5px;',
+                    bodyStyle: 'padding-bottom:5px;',
                     border: false,
                     target: '_self',
                     linkCls: 'labkey-text-link'
@@ -237,6 +240,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
                 layout: 'hbox',
                 defaults: {
                     style: 'padding-left:5px;padding-bottom:5px;',
+                    bodyStyle: 'padding-bottom:5px;',
                     border: false,
                     target: '_self',
                     linkCls: 'labkey-text-link'
@@ -270,6 +274,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
                 layout: 'hbox',
                 defaults: {
                     style: 'padding-left:5px;padding-bottom:5px;',
+                    bodyStyle: 'padding-bottom:5px;',
                     border: false,
                     target: '_self'
                 },

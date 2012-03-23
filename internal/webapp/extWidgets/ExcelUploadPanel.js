@@ -226,7 +226,7 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
 
         this.store.getFields().each(function(f){
             if (LABKEY.ext.MetaHelper.shouldShowInInsertView(f)){
-                header.push(f.name);
+                header.push(f.fieldLabel || f.name);
             }
         }, this);
 
@@ -280,7 +280,8 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
                             rowErrors.push(error.errors[field]);
                         }, this);
 
-                    html += '<tr><td style="color:red;padding-right: 10px;">Row '+(error.rowNumber+1)+':</td><td style="color:red;">'+rowErrors.join('<br>'+'</td></tr>')
+                    var hasRow = Ext4.isDefined(error.rowNumber);
+                    html += '<tr>' + (hasRow ? '<td style="color:red;padding-right: 10px;">Row '+(error.rowNumber+1) + ':</td>' : '')+'<td style="color:red;" '+(hasRow ? '' : ' colspan="2"')+'>'+rowErrors.join('<br>'+'</td></tr>')
                 }, this);
 
                 html += '</table>';

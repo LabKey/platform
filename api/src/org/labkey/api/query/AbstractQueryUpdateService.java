@@ -54,6 +54,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 {
     private TableInfo _queryTable = null;
     private boolean _bulkLoad = false;
+    private CaseInsensitiveHashMap<ColumnInfo> _columnImportMap = null;
 
     protected AbstractQueryUpdateService(TableInfo queryTable)
     {
@@ -272,6 +273,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         for (int i = 0; i < rows.size(); i++)
         {
             Map<String, Object> row = rows.get(i);
+            row = normalizeColumnNames(row);
             try
             {
                 row = coerceTypes(row);
@@ -312,6 +314,28 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return result;
     }
 
+    private Map<String, Object> normalizeColumnNames(Map<String, Object> row) throws QueryUpdateServiceException
+    {
+        if(_columnImportMap == null)
+        {
+            _columnImportMap = (CaseInsensitiveHashMap)ImportAliasable.Helper.createImportMap(getQueryTable().getColumns(), false);
+        }
+
+        Map<String, Object> newRow = new CaseInsensitiveHashMap<Object>();
+        for(String key : row.keySet())
+        {
+            if(_columnImportMap.containsKey(key))
+            {
+                newRow.put(_columnImportMap.get(key).getName(), row.get(key));
+            }
+            else
+            {
+                newRow.put(key, row.get(key));
+            }
+        }
+
+        return newRow;
+    }
 
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
             throws DuplicateKeyException, QueryUpdateServiceException, SQLException

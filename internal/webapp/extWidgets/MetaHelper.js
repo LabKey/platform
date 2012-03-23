@@ -188,7 +188,7 @@ LABKEY.ext.MetaHelper = {
             value: meta.value || meta.defaultValue,
             helpPopup: [
                 'Type: ' + meta.friendlyType,
-                'Required: ' + meta.allowBlank,
+                'Required: ' + !meta.allowBlank,
                 'Description: ' + (meta.description || '')
             ],
             width: meta.width,
