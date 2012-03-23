@@ -192,4 +192,17 @@ public class PropertyStorageSpec
         PrimaryKey
     }
 
+
+    /*** SPECIAL CASES for fixing broken tables ***/
+
+    /* FOR DROP COLUMN */
+    boolean _exactName=false;
+    public void setExactName(boolean b)
+    {
+        _exactName = b;
+    }
+    public boolean getExactName()
+    {
+        return _exactName;
+    }
 }

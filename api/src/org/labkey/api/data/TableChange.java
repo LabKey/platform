@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.labkey.api.exp.PropertyDescriptor;
 
+import java.sql.Types;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -77,6 +78,15 @@ public class TableChange
     public void addColumnRename(String oldName, String newName)
     {
         columnRenames.put(oldName, newName);
+    }
+
+    public void dropColumnExactName(String name)
+    {
+        if (type != ChangeType.DropColumns)
+            throw new IllegalStateException();
+        PropertyStorageSpec p = new PropertyStorageSpec(name, Types.VARCHAR);
+        p.setExactName(true);
+        columns.add(p);
     }
 
     /**

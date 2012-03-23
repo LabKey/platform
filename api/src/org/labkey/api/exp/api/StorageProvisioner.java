@@ -15,12 +15,14 @@
  */
 package org.labkey.api.exp.api;
 
+import com.google.gwt.storage.client.Storage;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -527,9 +529,110 @@ public class StorageProvisioner
     }
 
 
-    public static boolean repairDomain(String domainUri, BindException errors)
+    /**
+     * We are mostly makeing the storage table match the existing property descriptors, because that is easiest.
+     * Sometimes it would be better or more conservative to update the property descriptors instead
+     */
+
+    public static boolean repairDomain(Container c, String domainUri, BindException errors)
     {
-        return true;
+        SqlDialect dialect = DbSchema.get("core").getSqlDialect();
+        DbScope scope = DbSchema.get("core").getScope();
+
+        try
+        {
+            scope.ensureTransaction();
+            Connection conn = scope.getConnection();
+            Domain domain = PropertyService.get().getDomain(c, domainUri);
+            if (null == domain)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "Could not find domain: " + domainUri);
+                return false;
+            }
+            DomainKind kind = domain.getDomainKind();
+            if (null == kind)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "Could not find domain kind: " + domainUri);
+                return false;
+            }
+            ProvisioningReport preport = getProvisioningReport(domainUri);
+            if (preport.getProvisionedDomains().size() != 1)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "Could not generate report.");
+                return false;
+            }
+            ProvisioningReport.DomainReport report = preport.getProvisionedDomains().iterator().next();
+
+            TableChange drops = new TableChange(kind.getStorageSchemaName(), domain.getStorageTableName(), TableChange.ChangeType.DropColumns);
+            boolean hasDrops = false;
+            TableChange adds = new TableChange(kind.getStorageSchemaName(), domain.getStorageTableName(), TableChange.ChangeType.AddColumns);
+            boolean hasAdds = false;
+
+            for (ProvisioningReport.ColumnStatus st : report.getColumns())
+            {
+                if (!st.hasProblem)
+                    continue;
+                if (st.spec == null && st.prop == null)
+                {
+                    if (null != st.colName)
+                    {
+                        drops.dropColumnExactName(st.colName);
+                        hasDrops = true;
+                    }
+                    if (null != st.mvColName)
+                    {
+                        drops.dropColumnExactName(st.mvColName);
+                        hasDrops = true;
+                    }
+                }
+                else if (st.prop != null)
+                {
+                    if (st.colName == null)
+                    {
+                        adds.addColumn(st.prop.getPropertyDescriptor());
+                        hasAdds = true;
+                    }
+                    if (st.mvColName == null && st.prop.isMvEnabled())
+                    {
+                        adds.addColumn(makeMvColumn(st.prop));
+                        hasAdds = true;
+                    }
+                    if (st.mvColName != null && !st.prop.isMvEnabled())
+                    {
+                        drops.dropColumnExactName(st.mvColName);
+                        hasDrops = true;
+                    }
+                }
+            }
+
+            if (hasDrops)
+                for (String sql : scope.getSqlDialect().getChangeStatements(drops))
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, sql);
+                    log.debug("Will issue: " + sql);
+                    conn.prepareStatement(sql).execute();
+                }
+            if (hasAdds)
+                for (String sql : scope.getSqlDialect().getChangeStatements(adds))
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, sql);
+                    log.debug("Will issue: " + sql);
+                    conn.prepareStatement(sql).execute();
+                }
+// TODO
+//          kind.invalidateDomain(domain);
+            scope.commitTransaction();
+            return !errors.hasErrors();
+        }
+        catch (Exception x)
+        {
+            errors.reject(SpringActionController.ERROR_MSG, x.getMessage());
+            return false;
+        }
+        finally
+        {
+            scope.closeConnection();
+        }
     }
 
 
@@ -628,21 +731,24 @@ public class StorageProvisioner
                 else
                 {
                     domainReport.addError(String.format("database table %s.%s did not contain expected column '%s'", domainReport.getSchemaName(), domainReport.getTableName(), domainProp.getName()));
-                    status.fix = "Delete property descriptor '" + domainProp.getName() + "'";
+                    status.fix = "Create column '" + domainProp.getName() + "'";
                     status.hasProblem = true;
                 }
-                if (domainProp.isMvEnabled())
+                if (hardColumnNames.remove(PropertyStorageSpec.getMvIndicatorColumnName(domainProp.getName())))
+                    status.mvColName = PropertyStorageSpec.getMvIndicatorColumnName(domainProp.getName());
+                if (null == status.mvColName && domainProp.isMvEnabled())
                 {
-                    if (hardColumnNames.remove(PropertyStorageSpec.getMvIndicatorColumnName(domainProp.getName())))
-                        status.mvColName = PropertyStorageSpec.getMvIndicatorColumnName(domainProp.getName());
-                    else
-                    {
-                        domainReport.addError(String.format("database table %s.%s has mvindicator enabled but expected '%s' column wasn't present",
-                                domainReport.getSchemaName(), domainReport.getTableName(), PropertyStorageSpec.getMvIndicatorColumnName(domainProp.getName())));
-                        if (null == status.fix)
-                            status.fix = "Turn of mv enabled flag for property '" + domainProp.getName() + "'";
-                        status.hasProblem = true;
-                    }
+                    domainReport.addError(String.format("database table %s.%s has mvindicator enabled but expected '%s' column wasn't present",
+                            domainReport.getSchemaName(), domainReport.getTableName(), PropertyStorageSpec.getMvIndicatorColumnName(domainProp.getName())));
+                    status.fix += (status.fix.isEmpty() ? "C" : " and c") + "reate column '" + PropertyStorageSpec.getMvIndicatorColumnName(domainProp.getName()) + "'";
+                    status.hasProblem = true;
+                }
+                if (null != status.mvColName && !domainProp.isMvEnabled())
+                {
+                    domainReport.addError(String.format("database table %s.%s has mvindicator disabled but '%s' column is present",
+                            domainReport.getSchemaName(), domainReport.getTableName(), PropertyStorageSpec.getMvIndicatorColumnName(domainProp.getName())));
+                    status.fix += (status.fix.isEmpty() ? "D" : " and d") +  "rop column '" + status.mvColName + "'";
+                    status.hasProblem = true;
                 }
             }
             for (PropertyStorageSpec spec : kind.getBaseProperties())
@@ -658,18 +764,38 @@ public class StorageProvisioner
                     status.fix = "'" + spec.getName() + "' is a built-in column.  Contact LabKey support.";
                     status.hasProblem = true;
                 }
-                if (spec.isMvEnabled())
+                if (hardColumnNames.remove(spec.getMvIndicatorColumnName()))
+                    status.mvColName = spec.getMvIndicatorColumnName();
+                if (null == status.mvColName && spec.isMvEnabled())
                 {
-                    if (hardColumnNames.remove(spec.getMvIndicatorColumnName()))
-                        status.mvColName = spec.getMvIndicatorColumnName();
-                    else
-                    {
                         domainReport.addError(String.format("database table %s.%s has mvindicator enabled but expected '%s' column wasn't present",
                                 domainReport.getSchemaName(), domainReport.getTableName(), spec.getMvIndicatorColumnName()));
                         status.fix = "'" + spec.getName() + "' is a built-in column.  Contact LabKey support.";
                         status.hasProblem = true;
-                    }
                 }
+                if (null != status.mvColName && !spec.isMvEnabled())
+                {
+                        domainReport.addError(String.format("database table %s.%s has mvindicator disabled but '%s' column is present",
+                                domainReport.getSchemaName(), domainReport.getTableName(), spec.getMvIndicatorColumnName()));
+                        status.fix = "'" + spec.getName() + "' is a built-in column.  Contact LabKey support.";
+                        status.hasProblem = true;
+                }
+            }
+            for (String name : hardColumnNames.toArray(new String[0]))
+            {
+                if (name.endsWith("_" + MvColumn.MV_INDICATOR_SUFFIX))
+                    continue;
+                domainReport.addError(String.format("database table %s.%s has column '%s' without a property descriptor",
+                        domainReport.getSchemaName(), domainReport.getTableName(), name));
+                ProvisioningReport.ColumnStatus status = new ProvisioningReport.ColumnStatus();
+                domainReport.columns.add(status);
+
+                hardColumnNames.remove(name);
+                status.colName = name;
+                if (hardColumnNames.remove(PropertyStorageSpec.getMvIndicatorColumnName(name)))
+                    status.mvColName = PropertyStorageSpec.getMvIndicatorColumnName(name);
+                status.fix = "Delete column '" + name + "'" + (null == status.mvColName ? "" : " and column '" + status.mvColName + "'");
+                status.hasProblem = true;
             }
             for (String name : hardColumnNames)
             {
@@ -677,7 +803,7 @@ public class StorageProvisioner
                         domainReport.getSchemaName(), domainReport.getTableName(), name));
                 ProvisioningReport.ColumnStatus status = new ProvisioningReport.ColumnStatus();
                 domainReport.columns.add(status);
-                status.colName = name;
+                status.mvColName = name;
                 status.fix = "Delete column '" + name + "'";
                 status.hasProblem = true;
             }
@@ -735,7 +861,7 @@ public class StorageProvisioner
             public DomainProperty prop;            // propertydescriptor column
             public PropertyStorageSpec spec;       // domainkind/reserved column
             public boolean hasProblem;
-            public String fix = null;
+            public String fix = "";
             public String getName()
             {
                 if (null != prop) return prop.getName();
