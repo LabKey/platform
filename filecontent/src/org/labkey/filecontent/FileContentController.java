@@ -591,7 +591,6 @@ public class FileContentController extends SpringActionController
        {
            getPageConfig().setShowHeader(false);
            return new HtmlView("Delete file " + form.getName() + "?");
-           //return AttachmentService.get().getConfirmDeleteView(attachmentParent, form);
        }
 
        public boolean handlePost(AttachmentForm form, BindException errors) throws Exception

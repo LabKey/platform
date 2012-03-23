@@ -1008,25 +1008,11 @@ public class SecurityController extends SpringActionController
         public ModelAndView getView(CompleteMemberForm form, BindException errors) throws Exception
         {
             Group[] allGroups = SecurityManager.getGroups(getContainer().getProject(), true);
-            Collection<Group> groups = new ArrayList<Group>();
-            // don't suggest groups that will result in errors (i.e. circular relation, already member, etc.)
-            for (Group group : allGroups)
-            {
-                if (null == SecurityManager.getAddMemberError(form.getGroup(), group))
-                    groups.add(group);
-            }
+            Collection<Group> validGroups = SecurityManager.getValidPrincipals(form.getGroup(), Arrays.asList(allGroups));
 
-            Collection<User> allUsers = UserManager.getActiveUsers();
-            Collection<User> users = new ArrayList<User>();
+            Collection<User> validUsers = SecurityManager.getValidPrincipals(form.getGroup(), UserManager.getActiveUsers());
 
-            // don't suggest users that will result in errors (i.e. already member, etc.)
-            for (User user : allUsers)
-            {
-                if (null == SecurityManager.getAddMemberError(form.getGroup(), user))
-                    users.add(user);
-            }
-
-            List<AjaxCompletion> completions = UserManager.getAjaxCompletions(form.getPrefix(), groups, users, getViewContext().getUser());
+            List<AjaxCompletion> completions = UserManager.getAjaxCompletions(form.getPrefix(), validGroups, validUsers, getViewContext().getUser());
             PageFlowUtil.sendAjaxCompletions(getViewContext().getResponse(), completions);
             return null;
         }
