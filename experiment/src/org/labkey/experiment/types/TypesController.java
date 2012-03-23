@@ -31,6 +31,10 @@ import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.iterator.BeanIterator;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -41,11 +45,13 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -109,6 +115,68 @@ public class TypesController extends SpringActionController
         {
             root.addChild("Experiment", new ActionURL(ExperimentController.BeginAction.class, getViewContext().getContainer()));
             root.addChild("Types", new ActionURL(TypesController.BeginAction.class, getViewContext().getContainer()));
+            return root;
+        }
+    }
+
+
+    public static class RepairForm
+    {
+        public String uri;
+        public Domain domain;
+        public StorageProvisioner.ProvisioningReport.DomainReport report;
+
+        public String getDomainUri()
+        {
+            return uri;
+        }
+
+        public void setDomainUri(String uri)
+        {
+            this.uri = uri;
+        }
+    }
+
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public static class RepairAction extends FormViewAction<RepairForm>
+    {
+        @Override
+        public ModelAndView getView(RepairForm form, boolean reshow, BindException errors) throws Exception
+        {
+            StorageProvisioner.ProvisioningReport report = StorageProvisioner.getProvisioningReport(form.getDomainUri());
+            if (report.getProvisionedDomains().size() == 1)
+                form.report = report.getProvisionedDomains().iterator().next();
+            return new JspView<RepairForm>(this.getClass(), "repair.jsp", form, errors);
+        }
+
+        @Override
+        public void validateCommand(RepairForm form, Errors errors)
+        {
+            if (null == form.getDomainUri())
+                throw new NotFoundException();
+            form.domain = PropertyService.get().getDomain(getViewContext().getContainer(), form.getDomainUri());
+            if (null == form.domain)
+                throw new NotFoundException();
+        }
+
+        @Override
+        public boolean handlePost(RepairForm form, BindException errors) throws Exception
+        {
+            return StorageProvisioner.repairDomain(form.getDomainUri(), errors);
+        }
+
+        @Override
+        public URLHelper getSuccessURL(RepairForm repairForm)
+        {
+            ActionURL u = getViewContext().cloneActionURL();
+            u.replaceParameter("domainUri", repairForm.getDomainUri());
+            return u;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
             return root;
         }
     }

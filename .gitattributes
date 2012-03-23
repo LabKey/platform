@@ -1157,6 +1157,7 @@ experiment/src/org/labkey/experiment/types/TypesController.java -text
 experiment/src/org/labkey/experiment/types/begin.jsp -text
 experiment/src/org/labkey/experiment/types/findConcepts.jsp -text
 experiment/src/org/labkey/experiment/types/importVocabulary.jsp -text
+experiment/src/org/labkey/experiment/types/repair.jsp -text
 experiment/src/org/labkey/experiment/types/typeDetails.jsp -text
 experiment/src/org/labkey/experiment/types/types.jsp -text
 experiment/src/org/labkey/experiment/uploadMaterials.jsp -text
