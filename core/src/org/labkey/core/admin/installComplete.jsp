@@ -44,7 +44,7 @@
                 <li>perform mass spectrometry-based proteomics (MS1 and MS2)
                 <li>analyze flow cytometry data</li>
                 <li>import plate-based or other types of assay data</li>
-                <li>organize data in a logitudinal study</li>
+                <li>organize data in a longitudinal study</li>
                 <li>collaborate with tools like messages boards, wikis, and issue trackers</li>
             </ul>
         </li>

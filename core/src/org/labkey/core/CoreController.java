@@ -40,6 +40,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.ContainerParent;
 import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.exp.Identifiable;
+import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
@@ -355,7 +357,14 @@ public class CoreController extends SpringActionController
                 throw new NotFoundException();
             File file = new File(fileProperty.getStringValue());
             if (!file.exists())
-                throw new NotFoundException("File " + file.getPath() + " does not exist on the server file system.");
+            {
+                Identifiable identifiable = LsidManager.get().getObject(obj.getObjectURI());
+                if (identifiable != null && identifiable.getName() != null)
+                {
+                    throw new NotFoundException("The file '" + file.getName() + "' attached to the object '" + identifiable.getName() + "' cannot be found. It may have been deleted.");
+                }
+                throw new NotFoundException("File " + file.getPath() + " does not exist on the server file system. It may have been deleted.");
+            }
             if (file.isDirectory())
                 ZipUtil.zipToStream(getViewContext().getResponse(), file, false);
             else

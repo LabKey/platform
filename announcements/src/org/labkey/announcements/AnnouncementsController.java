@@ -35,6 +35,7 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleErrorView;
@@ -105,6 +106,7 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
@@ -1909,7 +1911,7 @@ public class AnnouncementsController extends SpringActionController
         }
     }
 
-    public static class EmailOptionsForm
+    public static class EmailOptionsForm extends ViewForm
     {
         private int _emailPreference = AnnouncementManager.EMAIL_PREFERENCE_NONE;
         private int _notificationType = 0;
@@ -1966,7 +1968,7 @@ public class AnnouncementsController extends SpringActionController
 
         public String getSrcIdentifier()
         {
-            return _srcIdentifier;
+            return _srcIdentifier == null ? getContainer().getEntityId().toString() : _srcIdentifier;
         }
 
         public void setSrcIdentifier(String srcIdentifier)
