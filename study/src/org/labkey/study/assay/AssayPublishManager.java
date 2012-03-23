@@ -16,6 +16,8 @@
 
 package org.labkey.study.assay;
 
+import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -931,7 +933,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                                     }
                                     else
                                     {
-                                        key = new AssayPublishKey(targetStudyContainer, ptid, DateUtil.parseDate(visit.toString()), objectId);
+                                        key = new AssayPublishKey(targetStudyContainer, ptid, (Date)ConvertUtils.convert(visit.toString(), Date.class), objectId);
                                     }
                                     keys.put(objectId, key);
                                 }

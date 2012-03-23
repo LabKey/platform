@@ -238,6 +238,7 @@ public class VisualizationController extends SpringActionController
         private String _name;
         private boolean _dateMeasures;
         private boolean _allColumns;
+        private boolean _showHidden;
 
         public String getName()
         {
@@ -297,6 +298,16 @@ public class VisualizationController extends SpringActionController
         public void setAllColumns(boolean allColumns)
         {
             _allColumns = allColumns;
+        }
+
+        public boolean isShowHidden()
+        {
+            return _showHidden;
+        }
+
+        public void setShowHidden(boolean showHidden)
+        {
+            _showHidden = showHidden;
         }
     }
 
@@ -431,9 +442,9 @@ public class VisualizationController extends SpringActionController
                     else if (form.isAllColumns())
                     {
                         if (mf.getQuery() != null)
-                            measures.putAll(provider.getAllColumns(getViewContext(), mf.getQuery()));
+                            measures.putAll(provider.getAllColumns(getViewContext(), mf.getQuery(), form.isShowHidden()));
                         else
-                            measures.putAll(provider.getAllColumns(getViewContext(), mf.getQueryType()));
+                            measures.putAll(provider.getAllColumns(getViewContext(), mf.getQueryType(), form.isShowHidden()));
                     }
                     else
                     {

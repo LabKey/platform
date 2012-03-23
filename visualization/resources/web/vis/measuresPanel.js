@@ -44,8 +44,9 @@ LABKEY.vis.MeasuresDialog = Ext.extend(Ext.Window, {
                 name: "y-axis",
                 label: "Choose a data measure"
             }],
-            filter      : this.filter,
-            allColumns  : this.allColumns,
+            filter        : this.filter,
+            allColumns    : this.allColumns,
+            canShowHidden : this.canShowHidden,
             multiSelect : this.multiSelect,
             forceQuery  : this.forceQuery,
             bubbleEvents: ['beforeMeasuresStoreLoad', 'measuresStoreLoaded'],
@@ -91,7 +92,7 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
                 'measuresStoreLoaded',
                 'measureChanged'
         );
-        Ext.apply(this, config, {isDateAxis : false, allColumns : false});
+        Ext.apply(this, config, {isDateAxis : false, allColumns : false, canShowHidden : false});
 
         LABKEY.vis.MeasuresPanel.superclass.constructor.call(this, config);
 
@@ -110,9 +111,9 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
         this.loaded = false;
 
         // load the store the first time after this component has rendered
-        this.on('afterrender', this.onAfterRender, this);
+        this.on('afterrender', this.getMeasures, this);
         if (this.forceQuery)
-            this.onAfterRender(this);
+            this.getMeasures(this);
 
         // Show the mask after the component size has been determined, as long as the
         // data is still loading:
@@ -124,7 +125,7 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
         LABKEY.vis.MeasuresPanel.superclass.initComponent.call(this);
     },
 
-    onAfterRender : function(cmp) {
+    getMeasures : function(cmp, clearCache) {
         var filter = this.filter || LABKEY.Visualization.Filter.create({schemaName: 'study'});
 
         if (this.selectedMeasure)
@@ -134,7 +135,7 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
         }
 
         // if the measure store data is not already loaded, get it. otherwise, use the cached data object
-        if (!this.measuresStoreData)
+        if (!this.measuresStoreData || clearCache)
         {
             if (!this.isLoading) {
                 this.isLoading = true;
@@ -142,6 +143,7 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
                     filters      : [filter],
                     dateMeasures : this.isDateAxis,
                     allColumns   : this.allColumns,
+                    showHidden   : this.showHidden,
                     success      : function(measures, response){
                         this.isLoading = false;
                         this.measuresStoreData = Ext.util.JSON.decode(response.responseText);
@@ -281,9 +283,22 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
             }
         });
 
-
-
         tbarItems.push(this.searchBox);
+
+        if (this.canShowHidden) {
+
+            tbarItems.push('->');
+            tbarItems.push({
+                xtype   : 'checkbox',
+                boxLabel: 'Show all',
+                handler : function(cmp, checked){
+                    this.showHidden = checked;
+                    this.getEl().mask("loading measures...", "x-mask-loading");
+                    this.getMeasures(cmp, true);
+                },
+                scope   : this
+            });
+        }
 
         this.errorField = new Ext.form.DisplayField({
             hideLabel: true,

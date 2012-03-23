@@ -256,7 +256,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
     /**
      * All columns for a study if builtIn types were requested would be constrained to datasets only
      */
-    public Map<ColumnInfo, QueryDefinition> getAllColumns(ViewContext context, VisualizationController.QueryType queryType)
+    public Map<ColumnInfo, QueryDefinition> getAllColumns(ViewContext context, VisualizationController.QueryType queryType, boolean showHidden)
     {
         if (queryType == VisualizationController.QueryType.builtIn)
         {
@@ -289,9 +289,9 @@ public class StudyVisualizationProvider extends VisualizationProvider
                     }
                 }
             }
-            return getMatchingColumns(context.getContainer(), queries, ColumnMatchType.All_VISIBLE);
+            return getMatchingColumns(context.getContainer(), queries, showHidden ? ColumnMatchType.All : ColumnMatchType.All_VISIBLE);
         }
         else
-            return super.getAllColumns(context, queryType);
+            return super.getAllColumns(context, queryType, showHidden);
     }
 }

@@ -73,7 +73,16 @@ public abstract class VisualizationProvider
                     {
                         return !col.isHidden();
                     }
+                },
+        All()
+                {
+                    @Override
+                    public boolean match(ColumnInfo col)
+                    {
+                        return true;
+                    }
                 };
+
 
         public abstract boolean match(ColumnInfo col);
     }
@@ -177,7 +186,13 @@ public abstract class VisualizationProvider
         {
             QueryDefinition query = entry.getKey();
             TableInfo table = entry.getValue();
-            for (ColumnInfo col : query.getColumns(null, table))
+            List<ColumnInfo> columns;
+            if (columnMatchType.equals(ColumnMatchType.All))
+                columns = table.getColumns();
+            else
+                columns = query.getColumns(null, table);
+
+            for (ColumnInfo col : columns)
             {
                 // ignore hidden columns
                 if (columnMatchType.match(col))
@@ -252,13 +267,13 @@ public abstract class VisualizationProvider
         return getMatchingColumns(context, ColumnMatchType.CONFIGURED_DIMENSIONS, queryName);
     }
 
-    public Map<ColumnInfo, QueryDefinition> getAllColumns(ViewContext context, String queryName)
+    public Map<ColumnInfo, QueryDefinition> getAllColumns(ViewContext context, String queryName, boolean hiddenColumns)
     {
-        return getMatchingColumns(context, ColumnMatchType.All_VISIBLE, queryName);
+        return getMatchingColumns(context, hiddenColumns ? ColumnMatchType.All : ColumnMatchType.All_VISIBLE, queryName);
     }
 
-    public Map<ColumnInfo, QueryDefinition> getAllColumns(ViewContext context, VisualizationController.QueryType queryType)
+    public Map<ColumnInfo, QueryDefinition> getAllColumns(ViewContext context, VisualizationController.QueryType queryType, boolean hiddenColumns)
     {
-        return getMatchingColumns(context, queryType, ColumnMatchType.All_VISIBLE);
+        return getMatchingColumns(context, queryType, hiddenColumns ? ColumnMatchType.All : ColumnMatchType.All_VISIBLE);
     }
 }

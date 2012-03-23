@@ -1011,7 +1011,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             name        : this.reportName.getValue(),
             reportId    : this.reportId,
             description : this.reportDescription.getValue(),
-            public      : this.reportPermission.getValue().public,
+            public      : this.reportPermission.getValue().public || false,
             schemaName  : 'study',
             measures    : this.getMeasures()
         };
@@ -1106,8 +1106,9 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 multiSelect : true,
                 closeAction :'hide',
                 filter : LABKEY.Visualization.Filter.create({schemaName: 'study', queryType: LABKEY.Visualization.Filter.QueryType.BUILT_IN}),
-                allColumns : true,
-                forceQuery : true,
+                allColumns    : true,
+                canShowHidden : true,
+                forceQuery    : true,
                 listeners : {
                     'measuresStoreLoaded' : this.onMeasuresStoreLoaded,
                     scope : this
