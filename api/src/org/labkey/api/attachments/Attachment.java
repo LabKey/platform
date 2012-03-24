@@ -46,13 +46,13 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class Attachment implements Serializable
 {
-    private String parent; // entityid
-    private String name;
-    private String container;   // container path
-    private int createdBy;
-    private long created;
-    private File file;
-    private Date lastIndexed;
+    private String _parent; // entityid
+    private String _name;
+    private String _container;   // container path
+    private int _createdBy;
+    private long _created;
+    private File _file;
+    private Date _lastIndexed;
 
     public Attachment()
     {
@@ -69,6 +69,11 @@ public class Attachment implements Serializable
 
     public String getFileExtension()
     {
+        return getFileExtension(_name);
+    }
+
+    public static String getFileExtension(String name)
+    {
         if (null == name)
             return "doc";
         int dotPos = name.lastIndexOf(".");
@@ -79,7 +84,7 @@ public class Attachment implements Serializable
 
     public String getFileIcon()
     {
-        return getFileIcon(name);
+        return getFileIcon(_name);
     }
     
 
@@ -178,92 +183,92 @@ public class Attachment implements Serializable
 
     public String getName()
     {
-        return name;
+        return _name;
     }
 
 
     public void setDocumentName(String name)
     {
-        this.name = name;
+        _name = name;
     }
 
 
     public void setName(String name)
     {
-        this.name = name;
+        _name = name;
     }
 
 
     public int getCreatedBy()
     {
-        return createdBy;
+        return _createdBy;
     }
 
 
     public void setCreatedBy(int createdBy)
     {
-        this.createdBy = createdBy;
+        _createdBy = createdBy;
     }
 
 
     public Date getLastIndexed()
     {
-        return lastIndexed;
+        return _lastIndexed;
     }
 
 
     public void setLastIndexed(Date lastIndexed)
     {
-        this.lastIndexed = lastIndexed;
+        _lastIndexed = lastIndexed;
     }
 
 
     public String getCreatedByName(User currentUser)
     {
-        return UserManager.getDisplayName(createdBy, currentUser);
+        return UserManager.getDisplayName(_createdBy, currentUser);
     }
 
 
     public Date getCreated()
     {
-        return new Date(created);
+        return new Date(_created);
     }
 
 
     public void setCreated(Date created)
     {
-        this.created = created.getTime();
+        _created = created.getTime();
     }
 
     public String getContainer()
     {
-        return container;
+        return _container;
     }
 
     public void setContainer(String container)
     {
-        this.container = container;
+        _container = container;
     }
 
 
     public String getParent()
     {
-        return parent;
+        return _parent;
     }
 
 
     public void setParent(String parent)
     {
-        this.parent = parent;
+        _parent = parent;
     }
 
     public File getFile()
     {
-        return file;
+        return _file;
     }
 
     public void setFile(File file)
     {
-        this.file = file;
+        _file = file;
     }
 }

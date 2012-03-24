@@ -562,8 +562,14 @@ public class ReportUtil
                         // No way for a report to offer a specific icon based on its content, so do this hack for attachment reports  TODO: fix
                         if ("Study.attachmentReport".equals(r.getType()))
                         {
-                            List<Attachment> list = AttachmentService.get().getAttachments(r);
-                            String filename = list.isEmpty() ? "" : list.get(0).getName();
+                            String filename = r.getDescriptor().getProperty("filePath");
+
+                            if (null == filename)
+                            {
+                                List<Attachment> list = AttachmentService.get().getAttachments(r);
+                                filename = list.isEmpty() ? "" : list.get(0).getName();
+                            }
+
                             iconPath = PageFlowUtil.urlProvider(CoreUrls.class).getAttachmentIconURL(c, filename).toString();
                         }
 
