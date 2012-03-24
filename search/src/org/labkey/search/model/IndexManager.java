@@ -43,10 +43,4 @@ abstract class IndexManager
     {
         _manager.release(searcher);
     }
-
-    public void close() throws IOException, InterruptedException
-    {
-        _manager.close();
-        _directory.close();
-    }
 }

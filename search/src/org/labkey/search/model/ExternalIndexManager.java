@@ -112,7 +112,8 @@ public class ExternalIndexManager extends IndexManager implements SecurableResou
     {
         synchronized (_swapLock)
         {
-            super.close();
+            _manager.close();
+            _directory.close();
         }
     }
 

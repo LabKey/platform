@@ -23,6 +23,7 @@ import org.apache.lucene.search.Query;
 import org.labkey.api.search.SearchMisconfiguredException;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicLong;
 
 /*
 * User: adam
@@ -32,6 +33,7 @@ import java.io.IOException;
 public class NoopWritableIndex implements WritableIndexManager
 {
     private final Logger _log;
+    private final AtomicLong _errors = new AtomicLong(0);
 
     public NoopWritableIndex(Logger log)
     {
@@ -91,6 +93,9 @@ public class NoopWritableIndex implements WritableIndexManager
 
     private void log(String action)
     {
-        _log.warn("Unable to " + action + "; the search index is misconfigured. Search is disabled and new documents are not being indexed. Correct the problem and restart your server.");
+        if (0 == (_errors.get() % 1000))
+            _log.warn("Unable to " + action + "; the search index is misconfigured. Search is disabled and new documents are not being indexed. Correct the problem and restart your server.");
+
+        _errors.incrementAndGet();
     }
 }

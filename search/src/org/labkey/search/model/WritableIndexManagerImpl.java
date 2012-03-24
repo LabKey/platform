@@ -58,26 +58,18 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
         };
 
         Directory directory = FSDirectory.open(indexPath);
+        IndexWriter iw = null;
 
         try
         {
-            if (IndexWriter.isLocked(directory))
-            {
-                _log.warn("Full-text search index directory is locked!!");
-                IndexWriter.unlock(directory);
-            }
+            // Consider: wrap analyzer with LimitTokenCountAnalyzer to limit indexed content?
+            iw = new IndexWriter(directory, new IndexWriterConfig(LuceneSearchServiceImpl.LUCENE_VERSION, analyzer));
         }
-        catch (Exception e)
+        finally
         {
-            // If isLocked() throws, try unlocking anyway.  This probably won't succeed, but it's worth a shot.
-            // Theory: this often occurs when Tomcat reloads the webapp without cleanly shutting down... the JVM is
-            // not shut down so it continues to hold the NIO lock.  This should not affect production servers, but
-            // it's annoying for devs.
-            IndexWriter.unlock(directory);
+            if (null == iw)
+                directory.close();
         }
-
-        // Consider: wrap analyzer with LimitTokenCountAnalyzer to limit indexed content?
-        IndexWriter iw = new IndexWriter(directory, new IndexWriterConfig(LuceneSearchServiceImpl.LUCENE_VERSION, analyzer));
 
         return new WritableIndexManagerImpl(iw, warmer, directory);
     }
@@ -150,6 +142,17 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
         }
     }
 
+
+    @Override
+    public void close() throws IOException, InterruptedException
+    {
+        synchronized (_writerLock)
+        {
+            _directory.close();
+            _iw.close();
+            _manager.close();
+        }
+    }
 
     // If this throws then re-initialize the index manager
     public void commit()
