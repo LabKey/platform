@@ -322,16 +322,22 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         }
 
         Map<String, Object> newRow = new CaseInsensitiveHashMap<Object>();
+        CaseInsensitiveHashSet columns = new CaseInsensitiveHashSet();
+        columns.addAll(row.keySet());
+
+        String newName;
         for(String key : row.keySet())
         {
             if(_columnImportMap.containsKey(key))
             {
-                newRow.put(_columnImportMap.get(key).getName(), row.get(key));
+                //it is possible for a normalized name to conflict with an existing property.  if so, defer to the original
+                newName = _columnImportMap.get(key).getName();
+                if(!columns.contains(newName)){
+                    newRow.put(newName, row.get(key));
+                    continue;
+                }
             }
-            else
-            {
-                newRow.put(key, row.get(key));
-            }
+            newRow.put(key, row.get(key));
         }
 
         return newRow;
