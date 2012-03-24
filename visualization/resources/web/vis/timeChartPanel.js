@@ -1044,8 +1044,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         //Sort the labels by sequence number.
         seqAndLabels.sort(function (a,b) { return a.sequenceNumber-b.sequenceNumber });
         for(var i = 0; i < seqAndLabels.length; i++){
-            this.displayOrder[seqAndLabels[i].displayLabel] = i; //Display Label to Order map.
-            this.displayLabels[i] = seqAndLabels[i].displayLabel; //Display Order to Label map.
+            this.displayOrder[seqAndLabels[i].displayLabel] = i+1; //Display Label to Order map.
+            this.displayLabels[i+1] = seqAndLabels[i].displayLabel; //Display Order to Label map.
         }
     },
 
