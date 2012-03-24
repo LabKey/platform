@@ -3089,6 +3089,7 @@ public class SpecimenController extends BaseStudyController
             else
             {
                 JspView<FormType> reportView = new JspView<FormType>("/org/labkey/study/view/samples/specimenVisitReport.jsp", specimenVisitReportForm);
+                reportView.setIsWebPart(false);
                 if (this.isPrint())
                     return reportView;
                 else
@@ -5200,10 +5201,7 @@ public class SpecimenController extends BaseStudyController
             WebPartView configView = new JspView<ReportConfigurationBean>("/org/labkey/study/view/samples/autoReportList.jsp", new ReportConfigurationBean(specimenVisitReportForm, false));
             HtmlView emptySpace = new HtmlView("<div id=\"specimenReportEmptySpace\">&nbsp;</div>");
 
-            HBox hbox = new HBox();
-            hbox.addView(configView,"400px");
-            hbox.addView(emptySpace,"100%");
-            VBox outer = new VBox(hbox, reportView);
+            VBox outer = new VBox(configView, reportView);
 
             outer.setFrame(WebPartView.FrameType.PORTAL);
             outer.setTitle("Specimen Report");

@@ -26,12 +26,13 @@
 <%@ page import="org.labkey.study.samples.report.SpecimenVisitReport" %>
 <%@ page import="org.labkey.study.samples.report.SpecimenVisitReportParameters" %>
 <%@ page import="java.util.Collection" %>
+<%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenVisitReportParameters> me = (JspView<SpecimenVisitReportParameters>) HttpView.currentView();
     SpecimenVisitReportParameters bean = me.getModelBean();
     Study study = StudyManager.getInstance().getStudy(me.getViewContext().getContainer());
-
+    int tableContainerId = UniqueID.getRequestScopedUID(HttpView.currentRequest());
     if (study == null)
     {
 %>
@@ -45,6 +46,7 @@ This folder does not contain a study.
         VisitImpl[] visits = report.getVisits();
         int colCount = visits.length + report.getLabelDepth();
 %>
+<div id="<%=tableContainerId%>" style="overflow-x:auto; min-width: 740px">
 <table class="labkey-data-region labkey-show-borders"><colgroup>
     <%
     for (int i = 0; i < colCount; i++)
@@ -135,6 +137,38 @@ This folder does not contain a study.
         }
 %>
         </table><br><br>
+</div>
+<%
+    if(me.isWebPart())
+    {
+
+%>
+    <script type="text/javascript">
+        function resizeSpecimenTable(){
+            if(Ext.query('labkey-wp-header')){
+                var listDiv = Ext.get('<%=tableContainerId%>');
+                if (!listDiv) return;
+                var rightAreaWidth = 15;
+                try {rightAreaWidth = Ext.fly(X.select(".labkey-side-panel").elements[0]).getWidth();} catch (x){}
+                var padding = 60;
+                var viewWidth = Ext.getBody().getViewSize().width;
+                var right = viewWidth - padding - rightAreaWidth;
+                var x = listDiv.getXY()[0];
+                var width = Math.max(740, (right-x));
+                listDiv.setWidth(width);
+            }
+        }
+        Ext.onReady(function(){
+           resizeSpecimenTable();
+        });
+
+        Ext.EventManager.onWindowResize(function(){
+            resizeSpecimenTable();
+        });
+    </script>
+<%
+    }
+%>
 <%
     }
 %>

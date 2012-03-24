@@ -121,7 +121,7 @@ li.ptid a.unhighlight
 
 
 </style>
-<script>
+<script type="text/javascript">
     LABKEY.requiresExt4Sandbox(true);
 <% if (bean.getWide()) { %>
     LABKEY.requiresCss('study/DataViewsPanel.css');
