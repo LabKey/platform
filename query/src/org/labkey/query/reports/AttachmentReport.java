@@ -26,7 +26,6 @@ import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
-import org.labkey.api.reports.permissions.EditSharedReportPermission;
 import org.labkey.api.reports.report.RedirectReport;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -46,6 +45,8 @@ import org.labkey.query.reports.ReportsController.DownloadReportFileAction;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
@@ -206,13 +207,13 @@ public class AttachmentReport extends RedirectReport implements DynamicThumbnail
             }
 
             @Override
-            Thumbnail getDynamicThumbnail(AttachmentReport report, String filename) throws IOException
+            Thumbnail getDynamicThumbnail(AttachmentReport report) throws IOException
             {
                 DocumentConversionService svc = ServiceRegistry.get().getService(DocumentConversionService.class);
 
                 if (null != svc)
                 {
-                    InputStream pdfStream = AttachmentService.get().getInputStream(report, filename);
+                    InputStream pdfStream = report.getInputStream();
                     BufferedImage image = svc.pdfToImage(pdfStream, 0);
 
                     return ImageUtil.renderThumbnail(image);
@@ -231,9 +232,9 @@ public class AttachmentReport extends RedirectReport implements DynamicThumbnail
             }
 
             @Override
-            Thumbnail getDynamicThumbnail(AttachmentReport report, String filename) throws IOException
+            Thumbnail getDynamicThumbnail(AttachmentReport report) throws IOException
             {
-                InputStream imageSteam = AttachmentService.get().getInputStream(report, filename);
+                InputStream imageSteam = report.getInputStream();
                 BufferedImage image = ImageIO.read(imageSteam);
 
                 return ImageUtil.renderThumbnail(image);
@@ -249,7 +250,7 @@ public class AttachmentReport extends RedirectReport implements DynamicThumbnail
             }
 
             @Override
-            Thumbnail getDynamicThumbnail(AttachmentReport report, String filename) throws IOException
+            Thumbnail getDynamicThumbnail(AttachmentReport report) throws IOException
             {
                 return null;
             }
@@ -264,7 +265,7 @@ public class AttachmentReport extends RedirectReport implements DynamicThumbnail
             }
 
             @Override
-            Thumbnail getDynamicThumbnail(AttachmentReport report, String filename) throws IOException
+            Thumbnail getDynamicThumbnail(AttachmentReport report) throws IOException
             {
                 return null;
             }
@@ -279,7 +280,7 @@ public class AttachmentReport extends RedirectReport implements DynamicThumbnail
             }
 
             @Override
-            Thumbnail getDynamicThumbnail(AttachmentReport report, String filename) throws IOException
+            Thumbnail getDynamicThumbnail(AttachmentReport report) throws IOException
             {
                 return null;
             }
@@ -294,14 +295,14 @@ public class AttachmentReport extends RedirectReport implements DynamicThumbnail
             }
 
             @Override
-            Thumbnail getDynamicThumbnail(AttachmentReport report, String filename) throws IOException
+            Thumbnail getDynamicThumbnail(AttachmentReport report) throws IOException
             {
                 return null;
             }
         };
 
         abstract String getStaticThumbnailName();
-        abstract Thumbnail getDynamicThumbnail(AttachmentReport report, String filename) throws IOException;
+        abstract Thumbnail getDynamicThumbnail(AttachmentReport report) throws IOException;
 
         private static Type getForContentType(String contentType)
         {
@@ -351,30 +352,45 @@ public class AttachmentReport extends RedirectReport implements DynamicThumbnail
     public Thumbnail generateDynamicThumbnail(ViewContext context)
     {
         Type type = Type.getForContentType(getContentType());
-        Attachment latest = getLatestVersion();
 
-        if (null != latest)
+        try
         {
-            try
-            {
-                return type.getDynamicThumbnail(this, latest.getName());
-            }
-            catch (Throwable e)
-            {
-                ExceptionUtil.logExceptionToMothership(null, e);
-            }
+            return type.getDynamicThumbnail(this);
+        }
+        catch (Throwable e)
+        {
+            ExceptionUtil.logExceptionToMothership(null, e);
         }
 
         return null;
     }
 
+    private InputStream getInputStream() throws FileNotFoundException
+    {
+        // TODO: Again, subclasses would be nice...
+        String filepath = getFilePath();
+
+        if (null != filepath)
+        {
+            return new FileInputStream(filepath);
+        }
+        else
+        {
+            Attachment latest = getLatestVersion();
+
+            if (null == latest)
+                throw new FileNotFoundException();
+
+            return AttachmentService.get().getInputStream(this, latest.getName());
+        }
+    }
+
     private String getContentType()
     {
-        Attachment latest = getLatestVersion();
+        String extension = getExtension();
 
-        if (null != latest)
+        if (null != extension)
         {
-            String extension = latest.getFileExtension();
             MimeMap mm = new MimeMap();
             return mm.getContentType(extension);
         }
@@ -382,6 +398,22 @@ public class AttachmentReport extends RedirectReport implements DynamicThumbnail
         {
             return null;
         }
+    }
+
+    // TODO: Should subclass AttachmentReport, one for actual attachment and one for server filepath
+    private @Nullable String getExtension()
+    {
+        String filePath = getFilePath();
+
+        if (null != filePath)
+            return Attachment.getFileExtension(getFilePath());
+
+        Attachment latest = getLatestVersion();
+
+        if (null != latest)
+            return latest.getFileExtension();
+
+        return null;
     }
 
     @Override

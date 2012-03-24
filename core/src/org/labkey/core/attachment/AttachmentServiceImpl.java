@@ -297,7 +297,6 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             }
         }
 
-
         try
         {
             if (null == files || files.isEmpty())
