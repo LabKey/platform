@@ -225,17 +225,15 @@ public abstract class AbstractReport implements Report
             return false;
         }
 
-        // public or private report
-        if (isPrivate())
+        if (isOwner(user))
         {
-            if (!isOwner(user))
-                errors.add(new SimpleValidationError("You must be the owner of a private report in order to edit it."));
-            else if (!container.hasPermission(user, ShareReportPermission.class))
-                errors.add(new SimpleValidationError("You must be in the Author role to share a private report."));
+            if(!container.hasPermission(user, ShareReportPermission.class))
+                errors.add(new SimpleValidationError("You must be in the Author role to share your report."));
         }
-        else if (!container.hasPermission(user, EditSharedReportPermission.class))
+        else
         {
-            errors.add(new SimpleValidationError("You must be in the Editor role to share a public report."));
+            if(!container.hasPermission(user, EditSharedReportPermission.class))
+                errors.add(new SimpleValidationError("You must be in the Editor role to share a public report."));
         }
         return errors.isEmpty();
     }
@@ -258,15 +256,13 @@ public abstract class AbstractReport implements Report
             return false;
         }
 
-        // public or private report
-        if (isPrivate())
+        if (!isOwner(user))
         {
-            if (!isOwner(user))
+            // public or private report
+            if (isPrivate())
                 errors.add(new SimpleValidationError("You must be the owner of a private report in order to delete it."));
-        }
-        else if (!container.hasPermission(user, DeletePermission.class))
-        {
-            errors.add(new SimpleValidationError("You must be in the Editor role to delete a public report."));
+            else if (!container.hasPermission(user, DeletePermission.class))
+                errors.add(new SimpleValidationError("You must be in the Editor role to delete a public report."));
         }
         return errors.isEmpty();
     }
