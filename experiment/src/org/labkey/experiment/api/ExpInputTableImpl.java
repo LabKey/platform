@@ -50,10 +50,11 @@ public abstract class ExpInputTableImpl<C extends Enum> extends ExpTableImpl<C> 
     {
         clearConditions("FolderRunType");
 
-        SQLFragment sqlFragment = new SQLFragment("(SELECT er.Container FROM " +
-            ExperimentServiceImpl.get().getTinfoExperimentRun() + " er, " +
-            ExperimentServiceImpl.get().getTinfoProtocolApplication() + " pa WHERE er.RowId = pa.RunId AND " +
-            "pa.RowId = " + "TargetApplicationId");
+        SQLFragment sqlFragment = new SQLFragment("(SELECT er.Container FROM ");
+        sqlFragment.append(ExperimentServiceImpl.get().getTinfoExperimentRun(), "er");
+        sqlFragment.append(", ");
+        sqlFragment.append(ExperimentServiceImpl.get().getTinfoProtocolApplication(), "pa");
+        sqlFragment.append(" WHERE er.RowId = pa.RunId AND pa.RowId = TargetApplicationId");
         if (_run != null)
         {
             sqlFragment.append(" AND er.RowId = ?");
