@@ -2023,7 +2023,7 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresLogin @RequiresPermissionClass(ReadPermission.class)
     public class ParticipantReportAction extends SimpleViewAction<ParticipantReportForm>
     {
         public ModelAndView getView(ParticipantReportForm form, BindException errors) throws Exception
@@ -2038,12 +2038,12 @@ public class ReportsController extends BaseStudyController
                 view.setTitle(StudyService.get().getSubjectNounSingular(getContainer()) + " Report");
                 view.setFrame(WebPartView.FrameType.PORTAL);
 
+                String script = String.format("javascript:customizeParticipantReport('%s');", form.getComponentId());
+                NavTree edit = new NavTree("Edit", script, getViewContext().getContextPath() + "/_images/partedit.png");
+                view.addCustomMenu(edit);
+
                 if (getViewContext().hasPermission(InsertPermission.class))
                 {
-                    String script = String.format("javascript:customizeParticipantReport('%s');", form.getComponentId());
-                    NavTree edit = new NavTree("Edit", script, getViewContext().getContextPath() + "/_images/partedit.png");
-                    view.addCustomMenu(edit);
-
                     NavTree menu = new NavTree();
                     menu.addChild("New " + StudyService.get().getSubjectNounSingular(getContainer()) + " Report", new ActionURL(this.getClass(), getContainer()));
                     menu.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
@@ -2107,10 +2107,14 @@ public class ReportsController extends BaseStudyController
                 {
                     Report report = form.getReportId().getReport();
 
-                    if (report != null && !report.canEdit(getUser(), getContainer()))
-                        errors.reject(ERROR_MSG, "You are not allowed to edit the specified report.");
-                    if (report != null && !report.canShare(getUser(), getContainer(), reportErrors))
-                        ReportUtil.addErrors(reportErrors, errors);
+                    if (report != null)
+                    {
+                        if (!report.canEdit(getUser(), getContainer(), reportErrors))
+                            ReportUtil.addErrors(reportErrors, errors);
+
+                        if (form.isPublic() && !report.canShare(getUser(), getContainer(), reportErrors))
+                            ReportUtil.addErrors(reportErrors, errors);
+                    }
                 }
             }
             catch (Exception e)

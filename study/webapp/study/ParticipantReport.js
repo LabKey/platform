@@ -1213,7 +1213,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
                             data.name = values.name;
                             data.description = values.description;
-                            data.public = values.public;
+                            data.public = values.public || false;
                             data.reportId = null;
 
                             this.saveReport(data);

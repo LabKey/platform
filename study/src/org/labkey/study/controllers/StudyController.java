@@ -137,6 +137,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
+import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.GridView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -6997,19 +6998,13 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            SubjectsWebPart.SubjectsBean bean = new SubjectsWebPart.SubjectsBean();
-            bean.setViewContext(getViewContext());
-            bean.setRows(15);
-            bean.setCols(8);
-            return new JspView<SubjectsWebPart.SubjectsBean>("/org/labkey/study/view/subjects.jsp", bean);
+            return new SubjectsWebPart(true, 0);
         }
 
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            String title = StudyService.get().getSubjectNounPlural(getViewContext().getContainer());
-            root.addChild(title);
-            return root;
+            return null;
         }
     }
 

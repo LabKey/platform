@@ -16,11 +16,13 @@
 
 package org.labkey.study.view;
 
+import org.labkey.api.study.StudyFolderTabs;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BaseWebPartFactory;
+import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
@@ -35,6 +37,7 @@ import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -104,13 +107,34 @@ public abstract class StudyToolsWebPartFactory extends BaseWebPartFactory
             String noun = StudyService.get().getSubjectNounSingular(portalCtx.getContainer());
 
             items.add(new StudyToolsWebPart.Item("New " + noun + " Report", iconBase + "participant_report.png", new ActionURL(ReportsController.ParticipantReportAction.class, portalCtx.getContainer())));
-            items.add(new StudyToolsWebPart.Item(noun + " List", iconBase + "participant_list.png", new ActionURL(StudyController.SubjectListAction.class, portalCtx.getContainer())));
-
+            items.add(getParticipantListItem(portalCtx, noun, iconBase));
+            
             items.add(new StudyToolsWebPart.Item("Study Navigator", iconBase + "study_overview.png", new ActionURL(StudyController.OverviewAction.class, portalCtx.getContainer())));
 
             if (portalCtx.getContainer().hasPermission(portalCtx.getUser(), ManageStudyPermission.class))
                 items.add(new StudyToolsWebPart.Item("Settings", iconBase + "settings.png", new ActionURL(StudyController.ManageStudyAction.class, portalCtx.getContainer() )));
             return items;
+        }
+
+        private StudyToolsWebPart.Item getParticipantListItem(ViewContext context, String noun, String iconBase)
+        {
+            // if the participants tab is showing, navigate to it
+            for (Portal.WebPart tab : Portal.getParts(context.getContainer(), FolderTab.FOLDER_TAB_PAGE_ID))
+            {
+                if (StudyFolderTabs.ParticipantsPage.PAGE_ID.equalsIgnoreCase(tab.getName()))
+                {
+                    for (FolderTab folderTab : context.getContainer().getFolderType().getDefaultTabs())
+                    {
+                        if (folderTab.getName().equalsIgnoreCase(tab.getName()))
+                        {
+                            ActionURL url = folderTab.getURL(context);
+                            return new StudyToolsWebPart.Item(noun + " List", iconBase + "participant_list.png", url);
+                        }
+                    }
+                }
+            }
+            // the participants tab isn't visible, just show the web part in the existing tab
+            return new StudyToolsWebPart.Item(noun + " List", iconBase + "participant_list.png", new ActionURL(StudyController.SubjectListAction.class, context.getContainer()));
         }
 
         @Override
