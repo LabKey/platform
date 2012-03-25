@@ -611,9 +611,9 @@ public class DataRegion extends AbstractDataRegion
         // no extra query columns added by default
     }
 
-    private void getAggregateResults(RenderContext ctx) throws SQLException, IOException
+    public Map<String, List<Aggregate.Result>> getAggregateResults(RenderContext ctx) throws SQLException, IOException
     {
-        ResultSet rs = ctx.getResultSet();
+        ResultSet rs = ctx.getResults();
         assert rs != null;
         if (rs instanceof Table.TableResultSet)
         {
@@ -645,6 +645,7 @@ public class DataRegion extends AbstractDataRegion
         // TODO: Move this into RenderContext?
         ActionURL url = ctx.getSortFilterURLHelper();
         PageFlowUtil.saveLastFilter(ctx.getViewContext(), url, "");
+        return _aggregateResults;
     }
 
     //TODO: total number of rows should be pushed down to a property of the TableResultSet
@@ -2347,11 +2348,6 @@ public class DataRegion extends AbstractDataRegion
     public void setAggregateRowConfig(AggregateRowConfig config)
     {
         _aggregateRowConfig = config;
-    }
-
-    public Map<String, List<Aggregate.Result>> getAggregateResults()
-    {
-        return _aggregateResults;
     }
 
     public void setGroupHeadings(List<String> headings)

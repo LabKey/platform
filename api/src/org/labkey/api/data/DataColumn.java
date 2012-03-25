@@ -17,16 +17,13 @@
 package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.NamedObject;
 import org.labkey.api.collections.NamedObjectList;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.IPropertyValidator;
-import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
-import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.util.PageFlowUtil;
@@ -37,12 +34,12 @@ import org.labkey.api.util.StringUtilsLabKey;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 public class DataColumn extends DisplayColumn
 {
+    private static final Logger LOG = Logger.getLogger(DataColumn.class);
+
     private ColumnInfo _boundColumn;
     private ColumnInfo _displayColumn;
     private ColumnInfo _sortColumn;
@@ -453,7 +450,17 @@ public class DataColumn extends DisplayColumn
         {
             String formatted;
             if (null != _format)
-                formatted = _format.format(value);
+            {
+                try
+                {
+                    formatted = _format.format(value);
+                }
+                catch (IllegalArgumentException e)
+                {
+                    LOG.warn("Unable to apply format, likely a SQL type mismatch between XML metadata and actual ResultSet");
+                    formatted = ConvertUtils.convert(value);
+                }
+            }
             else if (isHtmlFiltered())
                 formatted = PageFlowUtil.filter(ConvertUtils.convert(value));
             else

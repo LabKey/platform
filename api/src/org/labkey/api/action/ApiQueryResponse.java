@@ -110,10 +110,20 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
                 writer.writeProperty(entry.getKey(), entry.getValue());
         }
 
-        writeRowset(writer);
+        boolean complete = writeRowset(writer);
 
         if (!_metaDataOnly)
         {
+            // Figure out if we need to make a separate request to get the total row count (via the aggregates)
+            if (!complete && _rowCount == 0)
+            {
+                // Load the aggregates
+                _dataRegion.getAggregateResults(_ctx);
+                if (_dataRegion.getTotalRows() != null)
+                {
+                    _rowCount = _dataRegion.getTotalRows();
+                }
+            }
             writer.writeProperty("rowCount", _rowCount > 0 ? _rowCount : _offset + _numRespRows);
         }
 
@@ -312,8 +322,9 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
     }
 
 
-    protected void writeRowset(ApiResponseWriter writer) throws Exception
+    protected boolean writeRowset(ApiResponseWriter writer) throws Exception
     {
+        boolean complete = true;
         writer.startList("rows");
         if (!_metaDataOnly)
         {
@@ -330,6 +341,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
                     writer.writeListEntry(getRow());
                     ++_numRespRows;
                 }
+                complete = results.isComplete();
             }
             finally
             {
@@ -337,6 +349,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
             }
         }
         writer.endList();
+        return complete;
     }
 
     protected Map<String,Object> getRow() throws Exception

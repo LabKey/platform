@@ -1472,6 +1472,10 @@ public class Table
             boolean success = super.next();
             if (!success || ALL_ROWS == _maxRows)
                 return success;
+            if (getRow() == _maxRows + 1)
+            {
+                _isComplete = false;
+            }
             return getRow() <= _maxRows;
         }
 

@@ -113,33 +113,31 @@ public abstract class ContainerFilter
         SQLFragment result = new SQLFragment(containerColumnSQL);
         result.append(" IN (SELECT c.EntityId FROM ");
         result.append(CoreSchema.getInstance().getTableInfoContainers(), "c");
-        result.append(" INNER JOIN (");
+        result.append(" INNER JOIN (SELECT CAST(x.Id AS ");
+        result.append(schema.getSqlDialect().getGuidType());
+        result.append(") AS Id FROM (");
         String separator = "";
         for (String containerId : ids)
         {
             result.append(separator);
-            separator = " UNION ";
+            separator = " UNION\n\t\t";
             result.append("SELECT ");
             // Need to add casts to make Postgres happy
             if (useJDBCParameters)
             {
-                result.append("CAST(? AS ");
-                result.append(schema.getSqlDialect().getGuidType());
-                result.append(")");
+                result.append("?");
                 result.add(containerId);
             }
             else
             {
-                result.append("CAST ('");
+                result.append("'");
                 result.append(containerId);
-                result.append("'AS ");
-                result.append(schema.getSqlDialect().getGuidType());
-                result.append(")");
+                result.append("'");
             }
             result.append(" AS Id");
         }
         // Filter based on the container's ID, or the container is a child of the ID and of type workbook
-        result.append(") x ON c.EntityId = x.Id OR (c.Parent = x.Id AND c.Workbook = ?)) ");
+        result.append(") x) x ON c.EntityId = x.Id OR (c.Parent = x.Id AND c.Workbook = ?))");
         result.add(Boolean.TRUE);
         return result;
     }

@@ -178,7 +178,8 @@ public class RenderContext extends BoundMap // extends ViewContext
         return _rs;
     }
 
-    @Deprecated // use getResults()
+    /** use getResults() */
+    @Deprecated
     public ResultSet getResultSet()
     {
         return _rs;
