@@ -2430,6 +2430,8 @@ LABKEY.MessageArea = Ext.extend(Ext.util.Observable, {
 LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     forceAdvancedFilters: false,  //provides a mechanism to hide the faceting UI
     initComponent: function(){
+        Ext.QuickTips.init();
+
         this._fieldCaption = this.boundColumn.caption;
         this._fieldName = this.boundColumn.name;
         this._tableName = this.dataRegionName;
@@ -2450,13 +2452,13 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
         Ext.apply(this, {
             width: 410,
-            //autoHeight: true,
+            autoHeight: true,
             title: this.title || "Show Rows Where " + this.boundColumn.caption + "...",
             modal: true,
             resizable: false,
             closeAction: 'destroy',
             itemId: 'filterWindow',
-            bodyStyle: 'padding: 5px;',
+            cls: 'labkey-filter-dialog',
             defaults: this.itemDefaults,
             keys:[{
                  key:Ext.EventObject.ENTER,
@@ -2475,6 +2477,9 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                     if(this.focusTask){
                         Ext.TaskMgr.stop(this.focusTask);
                     }
+                },
+                resize: function(panel){
+                    panel.syncShadow();
                 }
             },
             buttons: [
@@ -2482,71 +2487,17 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 {text: 'CANCEL', handler: this.cancelHandler, scope: this},
                 {text: 'CLEAR FILTER', handler: this.clearFilter, scope: this},
                 {text: 'CLEAR ALL FILTERS', handler: this.clearAllFilters, scope: this}
-            ],
-            items: [{
-                xtype: 'radiogroup',
-                style: 'padding-left: 5px;',
-                itemId: 'filterType',
-                columns: 1,
-                hidden: this.filterType == 'default',
-                items: [{
-                    xtype: 'radio',
-                    name: 'filterType',
-                    inputValue: 'include',
-                    checked: this.filterType == 'include',
-                    boxLabel: 'Choose Values To Display'
-                },{
-                    xtype: 'radio',
-                    name: 'filterType',
-                    inputValue: 'default',
-                    checked: this.filterType == 'default',
-                    boxLabel: 'Advanced'
-                }],
-                listeners: {
-                    scope: this,
-                    change: function(bc, val){
-                        if(val.inputValue != 'default' && !this.shouldShowLookupUI(val.inputValue)){
-                            Ext.Msg.confirm('Confirm', 'This will cause one or more filters to be lost.  Are you sure you want to do this?', function(v){
-                                if(v == 'yes'){
-                                    this.filterType = val.inputValue;
-                                    this.configurePanel();
-                                    // Marker classes for tests
-                                    this.removeClass('filterTestMarker-' + this.prevValue);
-                                    this.addClass('filterTestMarker-' + val.inputValue);
-                                    this.prevValue = val.inputValue;
-                                }
-                            }, this);
-                        }
-                        else {
-                            this.filterType = val.inputValue;
-                            this.configurePanel();
-                            // Marker classes for tests
-                            this.removeClass('filterTestMarker-' +  this.prevValue);
-                            this.addClass('filterTestMarker-' + val.inputValue);
-                            this.prevValue = val.inputValue;
-                        }
-                        this.syncShadow();
-                    }
-                }
-            },{
-                xtype: 'form',
-                defaults: this.itemDefaults,
-                style: 'padding: 5px;',
-                itemId: 'filterArea',
-                monitorValid: true,
-                listeners: {
-                    scope: this,
-                    clientvalidation: function(form, val){
-                        var btn = this.buttons[0];  //kinda fragile...
-                        btn.setDisabled(!val);
-                    }
-                }
-                //autoScroll: true,
-                //boxMaxHeight: 200
-            }]
+            ]
         });
 
         LABKEY.FilterDialog.superclass.initComponent.call(this);
+
+        // HACK: when creating the confirm MessageBox, this window was always sitting above it.
+        // to get around, we make a WindowGroup and get the position slightly lower than the default
+        this.windowGroup = new Ext.WindowGroup({
+            zseed: 8999
+        });
+        this.windowGroup.register(this);
 
         //NOTE: we should just change the name of one of these
         if (!this.confirmCallback)
@@ -2569,14 +2520,32 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     },
 
     configurePanel: function(){
-        var panel = this.find('itemId', 'filterArea')[0];
-
-        //this seems to be an Ext3 bug.  ignoring since Ext4 will replace this soon enough
-        //panel.removeAll();
-        panel.items.each(function(item){
-            item.destroy();
-            panel.remove(item);
-        }, this);
+        var panelCfg = {
+            xtype: 'tabpanel',
+            //deferredRender: false,
+            bodyStyle: 'padding: 5px;',
+            //style: 'padding: 5px;',
+            width: this.width - 5,
+            autoHeight: true,
+            activeTab: 0,
+            defaults: this.itemDefaults,
+            itemId: 'filterArea',
+            border: true,
+            monitorValid: true,
+            listeners: {
+                scope: this,
+                clientvalidation: function(form, val){
+                    console.log('validation')
+                    var btn = this.buttons[0];  //kinda fragile...
+                    btn.setDisabled(!val);
+                },
+                beforetabchange: this.beforeTabChange
+            },
+            items: [
+                this.getDefaultFilterPanel(),
+                this.getLookupFilterPanel()
+            ]
+        };
 
         var dataRegion = LABKEY.DataRegions[this.dataRegionName];
 
@@ -2584,33 +2553,54 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             this.queryString = dataRegion ? dataRegion.requestURL : null;
         }
 
-        var items = [];
+        var panel = this.add(panelCfg);
+        this.configureLookupPanel();
+//        this.doLayout();
+//        this.setValuesFromParams();
+    },
 
-        //identify and render the correct UI
-        if(this.shouldShowLookupUI()){
-            //start loading the store
-            var store = this.getLookupStore();
+    beforeTabChange: function(panel, newTab, oldTab){
+        var filterArray = this.getParamsForField(this._fieldName);
 
-            if(store.fields && store.fields.length){
-                items.push(this.getLookupFilterPanel());
-            }
-            else {
-                store.on('load', this.configurePanel, this);
-                store.on('exception', function(){
-                    this.forceAdvancedFilters = true;
-                    this.configurePanel();
-                }, this);
-                items.push({
-                    html: 'Loading...'
-                });
-            }
+        //optimize filters
+        var newFilters = [];
+        var optimized;
+        var filterDef;
+
+        if(!this.allowFilterDiscard && oldTab && oldTab.filterType == 'default' && !this.shouldShowLookupUI(newTab.filterType)){
+            var msgBox = Ext.Msg.confirm('Confirm change', 'If you switch tabs you will loose one or more filters.  Do you want to continue?', function(input){
+                if(input == 'yes'){
+                    this.allowFilterDiscard = true;
+                    this.find('tabpanel')[0].setActiveTab(newTab)
+                }
+            }, this);
+            msgBox.getDialog().toFront(true);
+            return false;
         }
-        else
-            items.push(this.getDefaultFilterPanel());
+        this.allowFilterDiscard = null;
 
-        panel.add(items);
-        panel.doLayout();
-        this.setValuesFromParams();
+        if(this.shouldShowLookupUI()){
+            Ext.each(filterArray, function(filter){
+                var allowable = [];
+                this.getLookupStore().each(function(rec){
+                    allowable.push(rec.get('value'))
+                });
+                filterDef = LABKEY.Filter.getFilterTypeForURLSuffix(filter.operator);
+                optimized = this.optimizeFilter(filterDef, filter.value, allowable);
+                if(optimized){
+                    newFilters.push({operator: optimized[0], value: optimized[1]});
+                }
+                else {
+                    console.log('dropping filter');
+                    console.log(filter);
+                }
+            }, this);
+        }
+        else {
+            newFilters = filterArray;
+        }
+
+        this.setValuesFromParams(newTab, newFilters);
     },
 
     getInitialFilterType: function(){
@@ -2618,23 +2608,18 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         var dataRegion = LABKEY.DataRegions[this.dataRegionName];
         if (this.boundColumn.lookup && dataRegion && dataRegion.schemaName && dataRegion.queryName )
         {
-            if(!this.shouldShowLookupUI()){
-                filterType = 'default';
+            var paramValPairs = this.getParamsForField(this._fieldName);
+
+            if(!paramValPairs.length){
+                filterType = 'include';
             }
             else {
-                var paramValPairs = this.getParamsForField(this._fieldName);
-
-                if(!paramValPairs.length){
-                    filterType = 'include';
-                }
-                else {
-                    switch(paramValPairs[0].operator){
-                        case 'notin':
-                            filterType = 'include';
-                            break;
-                        default:
-                            filterType = 'include';
-                    }
+                switch(paramValPairs[0].operator){
+                    case 'notin':
+                        filterType = 'include';
+                        break;
+                    default:
+                        filterType = 'include';
                 }
             }
         }
@@ -2645,7 +2630,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         filterType = filterType || this.filterType;
 
         var paramValPairs = this.getParamsForField(this._fieldName);
-        if (filterType == 'default')
+        if (this.getInitialFilterType() == 'default')
             return false;
 
         if(paramValPairs.length > 1)
@@ -2661,21 +2646,19 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             }
 
             if(filter.isMultiValued() && ['in', 'notin'].indexOf(filter.getURLSuffix()) == -1 ){
+                console.log('different filter')
                 shouldShow = false;
             }
 
         }, this);
 
-        if(shouldShow){
+        if(shouldShow && !this.forceAdvancedFilters){
             var store = this.getLookupStore();
             if(
                 (!store || store.getCount() >= this.MAX_FILTER_CHOICES) ||
                 (store && store.fields && store.getCount() === 0) || //Issue 13946: faceted filtering: loading mask doesn't go away if the lookup returns zero rows
                 this.forceAdvancedFilters
             ){
-                var field = this.findByType('radiogroup')[0];
-                if(field)
-                    field.hide();
                 shouldShow = false;
                 console.log('either too many for zero filter options, switching to default UI');
             }
@@ -2699,7 +2682,14 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         }, scope: this, duration: 2000};
 
         var form = {
-            autoWidth: true,
+            //autoWidth: true,
+            autoHeight: true,
+            //deferredRender: false,
+            xtype: 'form',
+            title: 'Choose Filters',
+            bodyStyle: 'padding: 5px;',
+            filterType: 'default',
+            bubbleEvents: ['add', 'remove', 'clientvalidation'],
             defaults: {
                 border: false
             },
@@ -2714,107 +2704,135 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     },
 
     getLookupFilterPanel: function(){
-        var panel = {
+        return {
             border: false,
+            xtype: 'form',
+            title: 'Choose Values',
+            itemId: 'lookupPanel',
+            filterType: 'include',
+            //deferredRender: false,
+            bubbleEvents: ['add', 'remove', 'clientvalidation'],
+
             defaults: {
                 border: false
             },
-            //autoHeight: true,
+            disabled: true,
             items: [{
                 layout: 'hbox',
                 style: 'padding-bottom: 5px;',
                 defaults: {
                     border: false
                 },
-                items: [{
-                    html: 'Choose Items:',
-                    style: 'padding-right: 15px;'
-                }]
+                items: []
             }]
         };
+    },
 
-        var filterConfig = this.getComboConfig(0);
-        filterConfig.hidden = true;
-        if(this.filterType == 'include'){
+    configureLookupPanel: function(){
+        var panel = this.find('itemId', 'lookupPanel')[0];
+        //identify and render the correct UI
+        if(this.shouldShowLookupUI()){
+            //start loading the store
+            var store = this.getLookupStore();
+
+            if(!store.fields || !store.fields.length){
+                panel.setDisabled(true);
+                return;
+            }
+
+            var filterConfig = this.getComboConfig(0);
+            filterConfig.hidden = true;
             filterConfig.value = 'in';
+            filterConfig.initialValue = 'in';
+
+            var toAdd = [];
+            toAdd.push(filterConfig);
+            toAdd.push({
+                xtype: 'panel',
+                autoScroll: true,
+                height: 200,
+                //autoHeight: true,
+                bodyStyle: 'padding-left: 5px;',
+                items: [
+                    this.getCheckboxGroupConfig(0)
+                ]
+            });
+            panel.add(toAdd);
+            panel.doLayout();
+
+            panel.setDisabled(false);
+//            if(this.filterType == 'include')
+                panel.ownerCt.setActiveTab(panel);
         }
-        else{
-            filterConfig.value = 'notin';
+        else {
+            panel.setDisabled(true);
         }
-
-        panel.items.push(filterConfig);
-        panel.items.push({
-            xtype: 'panel',
-            autoScroll: true,
-            height: 200,
-            //autoHeight: true,
-            bodyStyle: 'padding-left: 5px;',
-            items: [{
-                xtype: 'checkbox',
-                name: 'toggleCheckbox',
-                itemId: 'toggleCheckbox',
-                boxLabel: 'Select All',
-                toggleMode: 'all',
-                checked: true,
-                listeners: {
-                    scope: this,
-                    check: function(cb, value){
-                        var window = cb.findParentBy(function(item){
-                            return item.itemId == 'filterWindow';
-                        });
-                        var field = window.findByType('labkey-remotecheckboxgroup')[0];
-                        if(field.getStore().getCount() == field.getValue().length){
-                            cb.suspendEvents();
-                            cb.setValue(false);
-                            cb.resumeEvents();
-
-                            field.suspendEvents();
-                            field.selectNone();
-                            field.resumeEvents();
-                        }
-                        else {
-                            field.selectAll();
-                        }
-                    }
-                }
-            },{
-                html: '',
-                border: false,
-                bodyStyle: 'padding-bottom: 3px;'
-            },
-                this.getCheckboxGroupConfig(0)
-            ]
-    });
-
-        return panel;
     },
 
-    getFilterCombos: function()
-    {
+    getFilterCombos: function(panel){
+        panel = panel || this.getActiveTab();
+        if(!panel){
+            return [];
+        }
         var re = /^filterComboBox/;
-        return this.findBy(function(item){
+        return panel.findBy(function(item){
             return item.itemId && re.test(item.itemId);
         });
     },
 
-    getInputFields: function()
-    {
+    getInputFields: function(panel){
+        panel = panel || this.getActiveTab();
+        if(!panel){
+            return [];
+        }
+
         var re = /^inputField/;
-        return this.findBy(function(item){
+        return panel.findBy(function(item){
             return item.itemId && re.test(item.itemId);
         });
     },
 
-    setValuesFromParams: function(){
-        var paramValPairs = this.getParamsForField(this._fieldName);
-        var combos = this.getFilterCombos();
-        var inputFields = this.getInputFields();
+    setValuesFromParams: function(target, values){
+        if(!this.rendered || !this.getActiveTab()){
+            this.setValuesFromParams.defer(100, this, [target, values]);
+            return;
+        }
+
+        target = target || this.getActiveTab();
+
+        this.filterType = target.filterType;
+
+        var paramValPairs = values || this.getParamsForField(this._fieldName);
+        this.hasLoaded = true;
+
+        var combos = this.getFilterCombos(target);
+        var inputFields = this.getInputFields(target);
 
         var filterIndex = 0;
+
+        //reset the form
+        if(this.filterType == 'default'){
+            Ext.each(combos, function(field){
+                field.reset();
+            });
+
+            Ext.each(inputFields, function(field){
+                field.reset();
+            });
+        }
+
+        if(this.filterType == 'include' && !paramValPairs.length){
+            inputFields[0].selectAll();
+            return;
+        }
+
         Ext.each(paramValPairs, function(pair, idx){
             var combo = combos[filterIndex];
-            if(!combo)
+            if(!combo){
+                console.log('no input found for idx: ' + idx)
+                this.hasLoaded = false;
                 return;
+            }
 
             var input = inputFields[filterIndex];
 
@@ -2849,13 +2867,14 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                     else {
                         if(filter.getURLSuffix() == 'in' && pair.value === ''){
                             input.defaultValue = true;
-                            input.selectAll();  //select all by default
+                            if(input.selectAll){
+                                input.selectAll();  //select all by default for grids
+                            }
                         }
                         else {
                             var values = pair.value.split(';');
-                            input.selectNone();
                             input.defaultValue = false;
-                            input.setValue(values.join(','));
+                            input.setValue(values.join(';'));
                         }
                     }
                 }
@@ -2961,7 +2980,8 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         }
     },
 
-    getFieldXtype: function(){
+    getFieldXtype: function()
+    {
         var xtype = this.getXtype();
         if(xtype == 'numberfield')
             xtype = 'textfield';
@@ -2973,40 +2993,153 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     {
         var dataRegion = LABKEY.DataRegions[this.dataRegionName];
 
-        return {
-            xtype: 'labkey-remotecheckboxgroup',
+        var sm = new Ext.grid.CheckboxSelectionModel({
+            listeners: {
+                selectionchange: {
+                    fn: function(sm){
+                        // NOTE: this will manually set the checked state of the header checkbox.  it would be better
+                        // to make this a real tri-state (ie. selecting some records is different then none), but since this is still Ext3
+                        // and ext4 will be quite different it doesnt seem worth the effort right now
+                        var selections = sm.getSelections();
+                        var headerCell = Ext.fly(sm.grid.getView().getHeaderCell(0)).first('div');
+                        if(selections.length == sm.grid.store.getCount()){
+                            headerCell.addClass('x-grid3-hd-checker-on');
+                        }
+                        else {
+                            headerCell.removeClass('x-grid3-hd-checker-on');
+                        }
+
+
+                    },
+                    buffer: 50
+                }
+            }
+        });
+
+        var grid = {
+            xtype: 'grid',
+            border : true,
+            bodyBorder: true,
+            frame : false,
+            //bodyStyle   : 'border: none;',
+            autoHeight: true,
             itemId: 'inputField' + (idx || 0),
             filterIndex: idx,
             msgTarget: 'title',
-            lookupNullCaption: '[blank]',
-            autoSelect: false,
             store: this.getLookupStore(),
-            displayField: 'value',
-            valueField: 'value',
-            defaultValue: this.filterType == 'include',
-            clearFilterOnReset: false,
+            viewConfig: {
+                headerTpl: new Ext.Template(
+                    '<table border="0" cellspacing="0" cellpadding="0" style="{tstyle}">',
+                        '<thead>',
+                            '<tr class="x-grid3-row-table">{cells}</tr>',
+                        '</thead>',
+                    '</table>'
+                )
+            },
+            sm: sm,
+            cls: 'x-grid-noborder',
+            columns: [
+                sm,
+                new Ext.grid.TemplateColumn({
+                    header: '<a href="javascript:void(0);">[All]</a>',
+                    dataIndex: 'value',
+                    menuDisabled: true,
+                    resizable: false,
+                    width: 340,
+                    tpl: new Ext.XTemplate('<tpl for=".">' +
+                        '<span class="labkey-link" ext:qtip="Click label to select only this row.  Click the checkbox to toggle this row and preserve other selections.">{[!Ext.isEmpty(values["value"]) ? values["value"] : "[Blank]"]}' +
+                        '</span></tpl>')
+                }
+            )],
             listeners: {
                 scope: this,
-                change: function(field, val){
-                    var window = field.findParentBy(function(item){
-                        return item.itemId == 'filterWindow';
+//                beforerender: function(grid){
+//                    grid.getSelectionModel().grid = grid;
+//                },
+                afterrender: function(grid){
+                    var headerCell = Ext.fly(grid.getView().getHeaderCell(1)).first('div');
+                    headerCell.on('click', grid.onHeaderCellClick, grid);
+                },
+                viewready: function(grid){
+                    var rows = grid.getSelectionModel().getSelections();
+                    if(rows && rows.length)
+                    grid.getSelectionModel().selectRecords(rows);
+                }
+            },
+            //this is a hack to extend toggle behavior to the header cell, not just the checkbox next to it
+            onHeaderCellClick: function(element){
+                var sm = this.getSelectionModel();
+                var selected = sm.getSelections();
+                if(selected.length == this.store.getCount()){
+                    this.selectNone();
+                }
+                else {
+                    sm.selectAll();
+                }
+            },
+            getValue: function(){
+                var values = [];
+                Ext.each(this.getSelectionModel().getSelections(), function(rec){
+                    values.push(rec.get('value'));
+                }, this);
+
+                if(values.indexOf('') != -1 && values.length == 1)
+                    values.push(''); //account for null-only filtering
+
+                return values.join(';');
+            },
+            setValue: function(values){
+                if(!this.rendered){
+                    this.on('render', function(){
+                        this.setValue(values);
+                    }, this, {single: true});
+                    return;
+                }
+
+                if(!Ext.isArray(values))
+                    values = values.split(';');
+
+                var records = [];
+                var recIdx;
+                Ext.each(values, function(val){
+                    recIdx = this.store.findBy(function(rec){
+                        return rec.get('value') === val
                     });
-                    var cb = window.find('itemId', 'toggleCheckbox')[0];
+                    if(recIdx != -1)
+                        records.push(recIdx);
+                    else
+                        console.log('unable to find record for: ' + val)
+                }, this);
 
-                    if(field.getStore().getCount() == val.length || val.length == 0){
-                        cb.getEl().removeClass('x-item-disabled');
-                    }
-                    else {
-                        cb.getEl().addClass('x-item-disabled');
-                    }
-
-                    cb.suspendEvents();
-                    cb.setValue(val.length > 0);
-                    cb.resumeEvents();
+                this.getSelectionModel().selectRows(records);
+            },
+            selectAll: function(){
+                if(this.rendered)
+                    this.getSelectionModel().selectAll();
+                else {
+                    this.on('render', this.selectAll, this, {single: true});
+                }
+            },
+            selectNone: function(){
+                if(this.rendered)
+                    this.getSelectionModel().selectRows([]);
+                else {
+                    this.on('render', this.selectNone, this, {single: true});
                 }
             }
-        }
+        };
 
+        return grid;
+
+    },
+
+    getActiveTab: function()
+    {
+        var panel = this.find('itemId', 'filterArea');
+        if(!panel || !panel.length){
+            return;
+        }
+        return panel[0].getActiveTab();
     },
 
     getComboConfig: function(idx)
@@ -3081,7 +3214,6 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                         }, this);
                         Ext.each(combos, function(combo, idx){
                             combo.enable();
-                            combo.enable();
                         }, this);
 
                         if(combos.length){
@@ -3111,7 +3243,10 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     getComboDefaultValue: function()
     {
         //afterRender of combobox we set the default value.
-        if(this._mappedType == 'LONGTEXT' || this._mappedType == 'TEXT'){
+        if(this.shouldShowLookupUI()){
+            return 'in';
+        }
+        else if(this._mappedType == 'LONGTEXT' || this._mappedType == 'TEXT'){
             return 'startswith';
         }
         else if(this._mappedType == 'DATE'){
@@ -3149,14 +3284,19 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 }
             },
             validator: function(value){
+                var idx = this.filterIndex;
                 var window = this.findParentBy(function(item){
                     return item.itemId == 'filterWindow';
                 });
 
-                var idx = this.filterIndex;
-                var combo = window.find('itemId', 'filterComboBox'+idx)[0];
+                if(!window)
+                    return;
 
-                return window.inputFieldValidator(this, combo)
+                var combos = window.find('itemId', 'filterComboBox'+idx);
+                if(!combos.length)
+                    return;
+
+                return window.inputFieldValidator(this, combos[0]);
             }
         };
 
@@ -3174,7 +3314,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     },
 
     getNextFilterIdx: function(){
-        return this.getFilterCombos().length;
+        return this.getFilterCombos() ? this.getFilterCombos().length : 0;
     },
 
     getFilterInputPairConfig: function(quantity)
@@ -3203,7 +3343,9 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
     okHandler: function(btn)
     {
-        if(!this.findByType('form')[0].getForm().isValid())
+        var panel = this.find('itemId', 'filterArea')[0];
+        var tab = panel.getActiveTab();
+        if(!tab.getForm().isValid())
             return;
 
         var inputFields = this.getInputFields();
@@ -3218,28 +3360,14 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 return false;
             }
             else {
-                var value;
                 var input = inputFields[idx];
-                if(input instanceof LABKEY.ext.RemoteCheckboxGroup){
-                    var cbks = input.getValue();
-                    var values = [];
-                    Ext.each(cbks, function(cb){
-                        values.push(cb.inputValue);
-                    }, this);
-
-                    if(values.indexOf('') != -1 && values.length == 1)
-                        values.push(''); //account for null-only filtering
-
-                    value = values.join(';');
-                }
-                else
-                    value = input.getValue();
+                var value = input.getValue();
 
                 var filter = LABKEY.Filter.getFilterTypeForURLSuffix(c.getValue());
 
                 if(!filter){
                     alert('filter not found: ' + c.getValue());
-                    return;  //'No Other Filter'
+                    return;
                 }
 
                 if(Ext.isEmpty(value) && filter.isDataValueRequired()){
@@ -3273,9 +3401,10 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         }
     },
 
-    optimizeFilter: function(filter, value, allowableValues){
+    optimizeFilter: function(filter, value, allowableValues)
+    {
         value = value.split(';');
-        if(filter.isMultiValued() && allowableValues){
+        if(filter.isMultiValued() && allowableValues && allowableValues.length){
             //determine if we should invert filter
             if(Ext.unique(value).length > (allowableValues.length / 2)){
                 var newValues = [];
@@ -3500,7 +3629,18 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             maxRows: this.MAX_FILTER_CHOICES, // Limit so that we don't overwhelm the user (or the browser itself) with too many checkboxes
             includeTotalCount: false,  // Don't bother getting the total row count, which might involve another query to the database
             containerFilter: dataRegion.containerFilter,
-            autoLoad: true
+            autoLoad: true,
+            listeners: {
+                scope: this,
+                delay: 50,
+                load: function(store){
+                    this.configureLookupPanel(store);
+                },
+                exception: function(){
+                    this.forceAdvancedFilters = true;
+                    this.configureLookupPanel();
+                }
+            }
         }));
 
         return store;
@@ -3543,22 +3683,44 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             this.queryString = dataRegion ? dataRegion.requestURL : null;
         }
 
-        var paramValPairs = LABKEY.DataRegion.getParamValPairsFromString(this.queryString, [this.getSkipPrefixes()]); //this._tableName + "." + this._fieldName + "~",
-
-        var results = [];
-        var re = new RegExp('^' + Ext.escapeRe(this._tableName) + '\.' + fieldName, 'i');
-        Ext.each(paramValPairs, function(pair){
-            if(pair[0].match(re)){
-                var operator = pair[0].split('~')[1];
-                if(LABKEY.Filter.getFilterTypeForURLSuffix(operator))
+        //NOTE: if the dialog has loaded, we use the values from the inputs.  otherwise we resort to the dataregion
+        var paramValPairs;
+        if(!this.hasLoaded){
+            paramValPairs = LABKEY.DataRegion.getParamValPairsFromString(this.queryString, [this.getSkipPrefixes()]); //this._tableName + "." + this._fieldName + "~",
+            var results = [];
+            var re = new RegExp('^' + Ext.escapeRe(this._tableName) + '\.' + fieldName, 'i');
+            Ext.each(paramValPairs, function(pair){
+                if(pair[0].match(re)){
+                    var operator = pair[0].split('~')[1];
+                    if(LABKEY.Filter.getFilterTypeForURLSuffix(operator))
+                        results.push({
+                            operator: operator,
+                            value: pair[1]
+                        });
+                    else
+                        console.log('Unrecognized filter: ' + operator)
+                }
+            }, this);
+        }
+        else {
+            var inputFields = this.getInputFields();
+            var combos = this.getFilterCombos();
+            var results = [];
+            var input;
+            var value;
+            var filter;
+            Ext.each(combos, function(c, idx){
+                input = inputFields[idx];
+                value = input.getValue();
+                filter = LABKEY.Filter.getFilterTypeForURLSuffix(c.getValue());
+                if(filter && filter.getURLSuffix() && (!filter.isDataValueRequired() || !Ext.isEmpty(value))){
                     results.push({
-                        operator: operator,
-                        value: pair[1]
+                        operator: c.getValue(),
+                        value: value
                     });
-                else
-                    console.log('Unrecognized filter: ' + operator)
-            }
-        }, this);
+                }
+            }, this);
+        }
 
         return results;
     },
@@ -3617,214 +3779,6 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     }
 
 });
-
-
-/**
- * Contructs a CheckboxGroup where each radio is populated from a LabKey store.
- * This is an alternative to a combobox.
- * @class
- * @augments Ext.form.CheckboxGroup
- * @param {object} config The configuation object.  Will accept all config options from Ext.form.CheckboxGroup along with those listed here.
- * @param {object} [config.store] A LABKEY.ext.Store.  Each record will be used to
- * @param {string} [config.valueField] The name of the field to use as the inputValue
- * @param {string} [config.displayField] The name of the field to use as the label
- */
-LABKEY.ext.RemoteCheckboxGroup = Ext.extend(Ext.form.CheckboxGroup,
-{
-    separator: ';',
-    defaultValue: false,
-    initComponent: function()
-    {
-        Ext.QuickTips.init();
-
-        Ext.apply(this, {
-            name: this.name || Ext.id(),
-            storeLoaded: false,
-            items: [
-                {name: 'placeholder', fieldLabel: 'Loading..'}
-            ],
-            buffered: true,
-//            data: {
-//                other: 't'
-//            },
-            tpl : new Ext.XTemplate('<tpl for=".">' +
-                '<span '+'{[values["qtip"] ? "ext:qtip=\'" + values["qtip"] + "\'" : ""]}>' +
-//                    '<span>' +
-                '{[values["' + this.valueField + '"] ? values["' + this.displayField + '"] : "'+ (this.lookupNullCaption ? this.lookupNullCaption : '[none]') +'"]}' +
-                //allow a flag to display both display and value fields
-                '<tpl if="'+this.showValueInList+'">{[values["' + this.valueField + '"] ? " ("+values["' + this.valueField + '"]+")" : ""]}</tpl>'+
-                '</span>' +
-                '</tpl>').compile()
-        });
-
-        if(this.value){
-            this.value = [this.value];
-        }
-
-        LABKEY.ext.RemoteCheckboxGroup.superclass.initComponent.call(this, arguments);
-
-        //we need to test whether the store has been created
-        if(!this.store){
-            console.log('LABKEY.ext.RemoteCheckboxGroup requires a store');
-            return;
-        }
-
-        if(this.store && !this.store.events){
-            this.store = Ext.create(this.store, 'labkey-store');
-        }
-
-        if(!this.store.getCount()) {
-            this.store.on('load', this.onStoreLoad, this, {single: true});
-            this.store.on('exception', this.onStoreException, this, {single: true});
-        }
-        else {
-            //NOTE: if this is called too quickly, the layout can be screwed up. this isnt a great fix, but we will convert to Ext4 shortly, so it'll change anyway
-            this.onStoreLoad.defer(10, this);
-        }
-    }
-
-    ,onStoreException : function() {
-        //remove the placeholder checkbox
-        if(this.rendered) {
-            var item = this.items.first();
-            this.items.remove(item);
-            this.panel.getComponent(0).remove(item, true);
-            this.ownerCt.doLayout();
-        }
-        else
-            this.items.remove(this.items[0]);
-    }
-
-    ,onStoreLoad : function() {
-        var item;
-        this.store.each(function(record, idx){
-            item = this.newItem(record);
-
-            if(this.rendered){
-                this.items.add(item);
-                var col = (idx+this.columns.length) % this.columns.length;
-                var chk = this.panel.getComponent(col).add(item);
-                this.fireEvent('add', this, chk);
-            }
-            else {
-                this.items.push(item)
-            }
-        }, this);
-
-        //remove the placeholder checkbox
-        if(this.rendered) {
-            var item = this.items.first();
-            this.items.remove(item);
-            this.panel.getComponent(0).remove(item, true);
-            this.ownerCt.doLayout();
-        }
-        else
-            this.items.remove(this.items[0]);
-
-        this.storeLoaded = true;
-        this.buffered = false;
-
-        if(this.bufferedValue){
-            this.setValue(this.bufferedValue);
-        }
-    }
-    ,newItem: function(record){
-        return new Ext.form.Checkbox({
-            xtype: 'checkbox',
-            boxLabel: (this.tpl ? this.tpl.apply(record.data) : record.get(this.displayField)),
-            inputValue: record.get(this.valueField),
-            name: record.get(this.valueField),
-            disabled: this.disabled,
-            readOnly: this.readOnly || false,
-            itemId: record.get(this.valueField),
-            checked: this.defaultValue,
-            listeners: {
-                scope: this,
-                change: function(self, val){
-                    this.fireEvent('change', this, this.getValue());
-                },
-                check: function(self, val){
-                    this.fireEvent('change', this, this.getValue());
-                },
-                afterrender: function(field){
-                    var id = field.wrap.query('label.x-form-cb-label')[0];
-
-                    var tooltip = new Ext.ToolTip({
-                        xtype: 'tooltip',
-                        target: id,
-                        items: [{
-                            html: '<a>Click here to select only: ' + field.boxLabel + '</a>',
-                            itemId: 'link',
-                            border: false
-                        }],
-                        listeners: {
-                            scope: this,
-                            render: function(panel){
-                                panel.getEl().on('click', function(){
-                                    this.selectNone();
-                                    this.setValue(field.inputValue);
-                                }, this);
-                            }
-                        },
-                        hideDelay: 800,
-                        trackMouse: false,
-                        dismissDelay: 2000,
-                        mouseOffset: [0,-20]
-                    }) ;
-                }
-            }
-        });
-
-    }
-    ,setValue: function(v)
-    {
-        //NOTE: we need to account for an initial value if store not loaded.
-        if(!this.storeLoaded){
-            //this.mon(this.store, 'load', this.setValue.createDelegate(this, arguments), null, {single: true, delay: 50});
-            this.buffered = true;
-            this.bufferedValue = v;
-        }
-        else {
-            LABKEY.ext.RemoteCheckboxGroup.superclass.setValue.apply(this, arguments);
-        }
-    }
-    ,setReadOnly : function(readOnly){
-        LABKEY.ext.RemoteCheckboxGroup.superclass.setReadOnly.apply(this, arguments);
-        this.setDisabled(readOnly);
-    }
-    ,getStore: function(){
-        return this.store;
-    }
-    ,getStringValue: function(){
-        var value = [];
-        Ext.each(this.getValue(), function(item){
-            value.push(item.inputValue);
-        }, this);
-        return value.join(this.separator);
-    }
-    ,selectAll: function(){
-        if(this.rendered)
-            this.items.each(function(item){
-                item.setValue(true);
-            });
-        else
-            this.defaultValue = true;
-    }
-    ,selectNone: function(){
-        if(this.rendered){
-            this.items.each(function(item){
-                item.setValue(false);
-            });
-            this.defaultValue = false;
-        }
-        else {
-            this.setValue([]);
-            this.defaultValue = false;
-        }
-    }
-});
-Ext.reg('labkey-remotecheckboxgroup', LABKEY.ext.RemoteCheckboxGroup);
-
 
 
 LABKEY.ext.BooleanTextField = Ext.extend(Ext.form.TextField,
