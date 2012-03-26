@@ -133,9 +133,7 @@
                 shared      : true
             },
             extraItems : [
-                fileUploadRadioGroup,
-                fileUploadField,
-                serverFileTextField
+                <%=canUseDiskFile ? "fileUploadRadioGroup, fileUploadField, serverFileTextField" : "fileUploadField"%>
             ],
             renderTo    : 'attachmentReportForm',
             buttons     : [{

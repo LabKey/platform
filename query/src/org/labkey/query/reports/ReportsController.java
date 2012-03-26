@@ -1169,11 +1169,18 @@ public class ReportsController extends SpringActionController
             if (null == StringUtils.trimToNull(form.getViewName()))
                 errors.reject("uploadForm", "You must enter a report name.");
 
-            String filePath = null;
-            if (null != form.getFilePath())
-                filePath = StringUtils.trimToNull(form.getFilePath());
-            if (null == filePath && (0 == formFiles.length || formFiles[0].isEmpty()))
+            String filePath = StringUtils.trimToNull(form.getFilePath());
+
+            // Only site administrators can specify a path, #14445
+            if (null != filePath)
+            {
+                if (!getUser().isAdministrator())
+                    throw new UnauthorizedException();
+            }
+            else if (0 == formFiles.length || formFiles[0].isEmpty())
+            {
                 errors.reject("uploadForm", "You must specify a file");
+            }
 
 /*
             String dateStr = form.getReportDateString();
@@ -1216,13 +1223,15 @@ public class ReportsController extends SpringActionController
                 report.getDescriptor().setReportName(form.getViewName());
                 if (form.getModifiedDate() != null)
                     report.setModified(form.getModifiedDate());
-                report.setFilePath(form.getFilePath());
+                // Only site administrators can specify a path, #14445
+                if (getUser().isAdministrator())
+                    report.setFilePath(form.getFilePath());
                 report.setDescription(form.getDescription());
                 
                 if (category != null)
                     report.getDescriptor().setCategory(category);
 
-                if(!form.getShared())
+                if (!form.getShared())
                     report.setOwner(getUser().getUserId());
                 else
                     report.setOwner(null);
