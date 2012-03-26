@@ -953,12 +953,22 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
     },
 
     onFailure : function(resp) {
-        var o = Ext4.decode(resp.responseText);
+        var o;
+        try {
+            o = Ext4.decode(resp.responseText);
+        }
+        catch (error) {
+
+        }
 
         var msg = "";
-        if(o != undefined && o.exception){
+        if(resp.status == 401){
+            msg = resp.statusText || "Unauthorized";
+        }
+        else if(o != undefined && o.exception){
             msg = o.exception;
-        } else {
+        }
+        else {
             msg = "There was a failure. If the problem persists please contact your administrator.";
         }
         this.unmask();
