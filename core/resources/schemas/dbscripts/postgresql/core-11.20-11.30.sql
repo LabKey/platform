@@ -29,6 +29,8 @@ UPDATE core.Modules SET AutoUninstall = TRUE, Schemas = 'cabig' WHERE ClassName 
 -- Lowercase version; PostgreSQL only
 UPDATE core.Modules SET AutoUninstall = TRUE WHERE Name = 'illumina' AND ClassName = 'org.labkey.api.module.SimpleModule';
 
+SELECT core.executeJavaUpgradeCode('handleUnknownModules');
+
 /* core-11.22-11.23.sql */
 
 -- represents a grouping category for views (reports etc.)

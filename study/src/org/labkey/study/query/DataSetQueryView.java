@@ -277,6 +277,25 @@ public class DataSetQueryView extends QueryView
         }
     }
 
+    @Override
+    protected ActionURL urlFor(QueryAction action)
+    {
+        ActionURL url = super.urlFor(action);
+
+        // need to add back the parameters that aren't added by the base urlFor, cohort and qc state
+        // don't get automatically added because they lack the proper dataregion prefix
+        //
+        if (url != null)
+        {
+            if (_cohortFilter != null)
+                _cohortFilter.addURLParameters(url);
+
+            if (_qcStateSet != null)
+                url.replaceParameter(BaseStudyController.SharedFormParameters.QCState, _qcStateSet.getFormValue());
+        }
+        return url;
+    }
+
     protected void populateReportButtonBar(ButtonBar bar)
     {
         Report report = getSettings().getReportView();

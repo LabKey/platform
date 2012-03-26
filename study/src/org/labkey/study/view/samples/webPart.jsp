@@ -67,7 +67,17 @@
     {
         if (allTypes.primaryTypes.length == 0)
         {
-            document.getElementById('specimen-browse-webpart-content').innerHTML = '<i>No specimens found.</i>';
+            var html = '<i>No specimens found.</i>';
+        <%
+            if (c.hasPermission(user, AdminPermission.class))
+            {
+        %>
+            var importUrl = LABKEY.ActionURL.buildURL('study-samples', 'showUploadSpecimens', LABKEY.ActionURL.getContainer());
+            html += '<p><a href="' + importUrl + '">Import Specimens</a></p>';
+        <%
+            }
+        %>
+            document.getElementById('specimen-browse-webpart-content').innerHTML = html;
         }
         else
         {

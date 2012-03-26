@@ -32,6 +32,8 @@ GO
 UPDATE core.Modules SET AutoUninstall = 1, Schemas = 'workbook' WHERE ClassName = 'org.labkey.workbook.WorkbookModule';
 UPDATE core.Modules SET AutoUninstall = 1, Schemas = 'cabig' WHERE ClassName = 'org.labkey.cabig.caBIGModule';
 
+EXEC core.executeJavaUpgradeCode 'handleUnknownModules';
+
 /* core-11.22-11.23.sql */
 
 -- represents a grouping category for views (reports etc.)

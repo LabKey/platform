@@ -26,6 +26,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
@@ -128,5 +129,12 @@ public class CoreUpgradeCode implements UpgradeCode
         {
             EmailTemplateService.get().upgradeTo102();
         }
+    }
+
+    // invoked by core-11.20-11.30.sql
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void handleUnknownModules(ModuleContext context)
+    {
+        ModuleLoader.getInstance().handleUnkownModules();
     }
 }

@@ -35,3 +35,10 @@ body, table.labkey-main
 {
     color:#ffffff;
 }
+
+/* These are set to 100% in stylesheet.css, which causes Firefox to print blank pages, #14002 */
+table.labkey-main
+{
+    height: auto !important;
+    width: auto !important;
+}

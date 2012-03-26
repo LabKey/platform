@@ -1663,7 +1663,7 @@ public class DavController extends SpringActionController
                             xml.writeElement(null, "custom", XMLWriter.OPENING);
                             for (Map.Entry<String, String> entry : resource.getCustomProperties(getUser()).entrySet())
                             {
-                                xml.writeProperty(null, entry.getKey(), entry.getValue());
+                                xml.writeProperty(null, entry.getKey(), h(entry.getValue()));
                             }
                             xml.writeElement(null, "custom", XMLWriter.CLOSING);
                         }
