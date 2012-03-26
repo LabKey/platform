@@ -877,7 +877,7 @@ public class ModuleLoader implements Filter
 
 
     // Remove all unknown modules that are marked as AutoUninstall
-    private void handleUnkownModules()
+    public void handleUnkownModules()
     {
         for (ModuleContext moduleContext : getUnknownModuleContexts().values())
             if (moduleContext.isAutoUninstall())
