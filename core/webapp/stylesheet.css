@@ -3587,3 +3587,36 @@ input[type="checkbox"], input[type="radio"] {
 .x-menu-item-arrow {
     background-image: url(./_images/arrow_right.png);
 }
+
+/* Used in FilterDialog */
+.x-grid-noborder * {
+    /*border-color: transparent !important;*/
+    border-width: 0px !important;
+}
+
+.x-grid-noborder td.x-grid3-td-checker {
+    background-image: none;
+}
+
+.x-grid-noborder .x-grid3-body .x-grid3-row-selected .x-grid3-td-checker {
+    background-image: none;
+}
+
+.labkey-filter-dialog ul.x-tab-strip-top {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
+.labkey-filter-dialog div.x-tab-panel-header {
+    padding-bottom: 0px;
+}
+
+.x-grid-noborder .x-grid3 div.x-grid3-row-selected,
+.x-grid-noborder .x-grid3 div.x-grid3-row-over {
+    background: none !important;
+}
+
+.x-grid-noborder .x-grid3 .x-grid3-row {
+    padding-top: 1px;
+}
+/* end of filter dialog*/
