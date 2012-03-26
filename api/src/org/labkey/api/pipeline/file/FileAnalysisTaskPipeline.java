@@ -15,13 +15,12 @@
  */
 package org.labkey.api.pipeline.file;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineActionConfig;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.data.Container;
 
-import java.io.File;
 import java.io.FileFilter;
 import java.util.List;
 import java.util.Map;

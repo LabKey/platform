@@ -565,7 +565,7 @@ public class NavTree implements Collapsible
         return sb;
     }
 
-    public static StringBuilder toJS(Collection<NavTree> list, StringBuilder sb, boolean asMenu)
+    public static StringBuilder toJS(Collection<NavTree> list, @Nullable StringBuilder sb, boolean asMenu)
     {
         if (null == sb)
             sb = new StringBuilder();

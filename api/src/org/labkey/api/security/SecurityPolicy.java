@@ -136,9 +136,9 @@ public class SecurityPolicy implements HasPermission
     public List<Role> getAssignedRoles(@NotNull UserPrincipal principal)
     {
         List<Role> roles = new ArrayList<Role>();
-        for(RoleAssignment assignment : _assignments)
+        for (RoleAssignment assignment : _assignments)
         {
-            if(assignment.getUserId() == principal.getUserId())
+            if (assignment.getUserId() == principal.getUserId())
                 roles.add(assignment.getRole());
         }
         return roles;
@@ -276,7 +276,7 @@ public class SecurityPolicy implements HasPermission
         //apply contextual roles if any
         if (null != contextualRoles)
         {
-            for(Role role : contextualRoles)
+            for (Role role : contextualRoles)
             {
                 perms.addAll(role.getPermissions());
             }
@@ -298,16 +298,16 @@ public class SecurityPolicy implements HasPermission
         RoleAssignment assignment = assignmentIter.hasNext() ? assignmentIter.next() : null;
         int principalsIdx = 0;
 
-        while(null != assignment && principalsIdx < principals.length)
+        while (null != assignment && principalsIdx < principals.length)
         {
-            if(assignment.getUserId() == principals[principalsIdx])
+            if (assignment.getUserId() == principals[principalsIdx])
             {
-                if(null != assignment.getRole())
+                if (null != assignment.getRole())
                     roles.add(assignment.getRole());
 
                 assignment = assignmentIter.hasNext() ? assignmentIter.next() : null;
             }
-            else if(assignment.getUserId() < principals[principalsIdx])
+            else if (assignment.getUserId() < principals[principalsIdx])
                 assignment = assignmentIter.hasNext() ? assignmentIter.next() : null;
             else
                 ++principalsIdx;
@@ -357,9 +357,9 @@ public class SecurityPolicy implements HasPermission
      * @return The serialized policy
      */
     @NotNull
-    public Map<String,Object> toMap()
+    public Map<String, Object> toMap()
     {
-        Map<String,Object> props = new HashMap<String,Object>();
+        Map<String, Object> props = new HashMap<String, Object>();
 
         //modified
         props.put("modified", getModified());
@@ -368,10 +368,10 @@ public class SecurityPolicy implements HasPermission
         props.put("resourceId", getResourceId());
 
         //role assignments
-        List<Map<String,Object>> assignments = new ArrayList<Map<String,Object>>();
-        for(RoleAssignment assignment : getAssignments())
+        List<Map<String, Object>> assignments = new ArrayList<Map<String, Object>>();
+        for (RoleAssignment assignment : getAssignments())
         {
-            Map<String,Object> assignmentProps = new HashMap<String,Object>();
+            Map<String, Object> assignmentProps = new HashMap<String, Object>();
             assignmentProps.put("userId", assignment.getUserId());
             assignmentProps.put("role", assignment.getRole().getUniqueName());
             assignments.add(assignmentProps);

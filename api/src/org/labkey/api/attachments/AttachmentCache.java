@@ -18,7 +18,6 @@ package org.labkey.api.attachments;
 
 import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.ContainerManager.ContainerParent;
 
 import java.sql.SQLException;

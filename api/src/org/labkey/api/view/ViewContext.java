@@ -302,7 +302,7 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
                 String path = url.getExtraPath();
                 c = ContainerManager.getForPath(path);
                 if (c == null)
-                    c = ContainerManager.getForId(StringUtils.strip(path,"/"));
+                    c = ContainerManager.getForId(StringUtils.strip(path, "/"));
             }
             _c = c;
         }

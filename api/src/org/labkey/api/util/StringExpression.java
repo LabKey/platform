@@ -20,11 +20,10 @@ import java.io.Writer;
 import java.io.IOException;
 
 /**
- * Created by IntelliJ IDEA.
-* User: matthewb
-* Date: Sep 16, 2009
-* Time: 12:14:49 PM
-*/
+ * User: matthewb
+ * Date: Sep 16, 2009
+ * Time: 12:14:49 PM
+ */
 public interface StringExpression extends Cloneable
 {
     public String eval(Map ctx);

@@ -973,8 +973,7 @@ public class Table
     }
 
 
-    public static void delete(TableInfo table, Object rowId)
-            throws SQLException
+    public static void delete(TableInfo table, Object rowId) throws SQLException
     {
         List<ColumnInfo> columnPK = table.getPkColumns();
         Object[] pkVals;
