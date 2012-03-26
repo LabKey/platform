@@ -415,7 +415,7 @@ LABKEY.Utils.convertToExcel(
          * and call another success function passing that parsed JSON.
          * @param fn The callback function to wrap
          * @param scope The scope for the callback function
-         * @param isErrorCallback Set to true if the function is an error callback
+         * @param isErrorCallback Set to true if the function is an error callback.  If true, and you do not provide a separate callback, alert will popup showing the error message
          */
         getCallbackWrapper : function(fn, scope, isErrorCallback) {
             return function(response, options)
@@ -425,8 +425,15 @@ LABKEY.Utils.convertToExcel(
                 {
                     //ensure response is JSON before trying to decode
                     if(response && response.getResponseHeader && response.getResponseHeader('Content-Type')
-                            && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
-                        json = Ext.util.JSON.decode(response.responseText);
+                            && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0){
+                        try {
+                            json = Ext.util.JSON.decode(response.responseText);
+                        }
+                        catch (error){
+                            //we still want to proceed even if we cannot decode the JSON
+                        }
+
+                    }
 
                     response.responseJSON = json;
                 }
