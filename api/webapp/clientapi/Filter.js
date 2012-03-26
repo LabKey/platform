@@ -41,8 +41,8 @@
  * @property {LABKEY.Filter.FilterDefinition} Types.DOES_NOT_CONTAIN Finds rows where the column value does not contain the filter value. Note that this may result in a slow query as this cannot use indexes.
  * @property {LABKEY.Filter.FilterDefinition} Types.DOES_NOT_START_WITH Finds rows where the column value does not start with the filter value.
  * @property {LABKEY.Filter.FilterDefinition} Types.STARTS_WITH Finds rows where the column value starts with the filter value.
- * @property {LABKEY.Filter.FilterDefinition} Types.EQUALS_ONE_OF Finds rows where the column value equals one of the supplied filter values. The values should be supplied as a semi-colon-delimited list (e.g., 'a;b;c').
- * @property {LABKEY.Filter.FilterDefinition} Types.EQUALS_NONE_OF Finds rows where the column value is not in any of the supplied filter values. The values should be supplied as a semi-colon-delimited list (e.g., 'a;b;c').
+ * @property {LABKEY.Filter.FilterDefinition} Types.IN Finds rows where the column value equals one of the supplied filter values. The values should be supplied as a semi-colon-delimited list (e.g., 'a;b;c').
+ * @property {LABKEY.Filter.FilterDefinition} Types.NOT_IN Finds rows where the column value is not in any of the supplied filter values. The values should be supplied as a semi-colon-delimited list (e.g., 'a;b;c').
  * @property {LABKEY.Filter.FilterDefinition} Types.CONTAINS_ONE_OF Finds rows where the column value contains any of the supplied filter values. The values should be supplied as a semi-colon-delimited list (e.g., 'a;b;c').
  * @property {LABKEY.Filter.FilterDefinition} Types.CONTAINS_NONE_OF Finds rows where the column value does not contain any of the supplied filter values. The values should be supplied as a semi-colon-delimited list (e.g., 'a;b;c').
  *
@@ -193,7 +193,8 @@ LABKEY.Filter = new function()
             //NOTE: for some reason IN is aliased as EQUALS_ONE_OF.  not sure if this is for legacy purposes or it was determined EQUALS_ONE_OF was a better phrase
             //to follow this pattern I did the same for IN_OR_MISSING
             EQUALS_ONE_OF : createFilterType("Equals One Of", "in", true, true),
-            NOT_IN : createFilterType("Does Not Equal Any Of", "notin", true, true),
+            EQUALS_NONE_OF: createFilterType("Does Not Equal Any Of", "notin", true, true),
+            NOT_IN: createFilterType("Does Not Equal Any Of", "notin", true, true),
             CONTAINS_ONE_OF : createFilterType("Contains One Of", "containsoneof", true, true),
             CONTAINS_NONE_OF : createFilterType("Does Not Contain Any Of", "containsnoneof", true, true),
             HAS_MISSING_VALUE : createFilterType("Has a missing value indicator", "hasmvvalue", false),
