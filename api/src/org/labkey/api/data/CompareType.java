@@ -289,7 +289,7 @@ public enum CompareType
                     return value != null && value.toString().startsWith((String)filterValues[0]);
                 }
             },
-    IN("Equals One Of (e.g. 'a;b;c')", "in", true, null, "EQUALS_ONE_OF", OperatorType.IN)
+    IN("Equals One Of (e.g. 'a;b;c')", "in", true, null, "IN", OperatorType.IN)
             {
                 // Each compare type uses CompareClause by default
                 FilterClause createFilterClause(String colName, Object value)
@@ -314,7 +314,7 @@ public enum CompareType
                 {
                     throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
                 }},
-    NOT_IN("Does Not Equal Any Of (e.g. 'a;b;c')", "notin", true, null, "EQUALS_NONE_OF", OperatorType.NOTIN)
+    NOT_IN("Does Not Equal Any Of (e.g. 'a;b;c')", "notin", true, null, "NOT_IN", OperatorType.NOTIN)
             {
                 // Each compare type uses CompareClause by default
                 FilterClause createFilterClause(String colName, Object value)
