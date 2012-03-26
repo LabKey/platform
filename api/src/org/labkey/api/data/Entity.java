@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.view.NotFoundException;
 
 import java.util.Date;
 
@@ -175,6 +176,7 @@ public class Entity implements java.io.Serializable, Ownable
         }
     }
 
+    @Nullable
     public Container lookupContainer()
     {
         if (null != containerId)

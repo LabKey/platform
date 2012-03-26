@@ -1960,7 +1960,7 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function (config)
         var shared = config.shared;
         var containerPath = config.containerPath;
         // User can save this view if it is editable and the shadowed view is editable if present.
-        var shadowedViewEditable = config.session && config.shadowed && config.shadowed.editable;
+        var shadowedViewEditable = config.session && (!config.shadowed || config.shadowed.editable);
         var canEdit = config.canEdit && (!config.session || shadowedViewEditable);
         var canEditSharedViews = config.canEditSharedViews;
 
@@ -2119,6 +2119,12 @@ LABKEY.DataRegion.saveCustomizeViewPrompt = function (config)
             buttons: [{
                 text: "Save",
                 handler: function () {
+                    if (!win.nameCompositeField.isValid())
+                    {
+                        Ext.Msg.alert("Invalid view name", "The view name must be less than 50 characters long and not 'default'.");
+                        return;
+                    }
+
                     var nameField = win.nameCompositeField.items.get(1);
                     if (!canEdit && viewName == nameField.getValue())
                     {

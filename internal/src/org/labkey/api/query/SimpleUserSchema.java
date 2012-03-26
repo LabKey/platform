@@ -147,7 +147,6 @@ public class SimpleUserSchema extends UserSchema
 
                 // ColumnInfo doesn't copy these attributes by default
                 wrap.setHidden(col.isHidden());
-                wrap.setReadOnly(col.isReadOnly());
 
                 final String colName = col.getName();
 

@@ -917,7 +917,7 @@ LABKEY.Query = new function()
                 params.schemaName = config.schemaName;
             if (config.queryName)
                 params.queryName = config.queryName;
-            if (config.viewName)
+            if (config.viewName != undefined)
                 params.viewName = config.viewName;
             if (config.metadata)
                 params.metadata = config.metadata;
@@ -1025,7 +1025,7 @@ LABKEY.Query = new function()
             if (config.queryName)
                 params.queryName = config.queryName;
 
-            if (config.viewName)
+            if (config.viewName != undefined)
                 params.viewName = config.viewName;
 
             if (config.fields)
