@@ -349,14 +349,14 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
 
     filterMeasures : function (txt) {
         if (txt) {
-           //NOTE: this attempts to balance the need for flexible searching (ie. partial words, random ordering of terms)
+           //Issue 14190: this attempts to balance the need for flexible searching (ie. partial words, random ordering of terms)
             // and the need to get a reasonably small set of results.  the code should:
             //
             // 1) remove/ignore punctuation from search term
             // 2) split term on whitespace
             // 3) return any record where ALL tokens appear at least once in any of the fields.  order does not matter.  the token must begin on a word boundary
 
-            txt = txt.replace(/[^a-z0-9 ]+/gi, ' ');
+            txt = txt.replace(/[^a-z0-9+\-]+/gi, ' ');
             txt = Ext.util.Format.trim(txt);
             txt = Ext.escapeRe(txt);
 
