@@ -52,7 +52,7 @@
     ExpProtocol protocol = bean.getProtocol();
     int batchId = bean.getBatchId() == null ? 0 : bean.getBatchId().intValue();
 
-    Map<String, Object> assay = AssayController.serializeAssayDefinition(protocol, provider, getViewContext().getContainer(), getViewContext().getUser());
+    Map<String, Object> assay = AssayController.serializeAssayDefinition(protocol, provider, getViewContext().getContainer(), getViewContext().getUser(), null);
 %>
 <script type="text/javascript">
     LABKEY.requiresClientAPI();

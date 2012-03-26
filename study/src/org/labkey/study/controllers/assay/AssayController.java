@@ -16,6 +16,7 @@
 
 package org.labkey.study.controllers.assay;
 
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.AbstractFileUploadAction;
 import org.labkey.api.action.ApiAction;
@@ -233,12 +234,13 @@ public class AssayController extends SpringActionController
 
     public static ApiResponse serializeAssayDefinitions(HashMap<ExpProtocol, AssayProvider> assayProtocols, Container c, User user)
     {
+        AssaySchemaImpl schema = new AssaySchemaImpl(user, c, assayProtocols);
         List<Map<String, Object>> assayList = new ArrayList<Map<String, Object>>();
         for (Map.Entry<ExpProtocol, AssayProvider> entry : assayProtocols.entrySet())
         {
             ExpProtocol protocol = entry.getKey();
             AssayProvider provider = entry.getValue();
-            Map<String, Object> assayProperties = serializeAssayDefinition(protocol, provider, c, user);
+            Map<String, Object> assayProperties = serializeAssayDefinition(protocol, provider, c, user, schema);
             assayList.add(assayProperties);
         }
         ApiSimpleResponse response = new ApiSimpleResponse();
@@ -246,7 +248,7 @@ public class AssayController extends SpringActionController
         return response;
     }
 
-    public static Map<String, Object> serializeAssayDefinition(ExpProtocol protocol, AssayProvider provider, Container c, User user)
+    public static Map<String, Object> serializeAssayDefinition(ExpProtocol protocol, AssayProvider provider, Container c, User user, @Nullable AssaySchemaImpl schema)
     {
         Map<String, Object> assayProperties = new HashMap<String, Object>();
         assayProperties.put("type", provider.getName());
@@ -260,7 +262,8 @@ public class AssayController extends SpringActionController
             assayProperties.put("plateTemplate", ((PlateBasedAssayProvider)provider).getPlateTemplate(c, protocol));
 
         // XXX: UGLY: Get the TableInfo associated with the Domain -- loop over all tables and ask for the Domins.
-        AssaySchemaImpl schema = new AssaySchemaImpl(user, c);
+        if (schema == null)
+            schema = new AssaySchemaImpl(user, c);
         Set<String> tableNames = schema.getTableNames(provider, protocol);
         Map<String, TableInfo> tableInfoMap = new HashMap<String, TableInfo>();
         for (String tableName : tableNames)

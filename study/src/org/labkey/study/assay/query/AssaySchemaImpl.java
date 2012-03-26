@@ -101,6 +101,14 @@ public class AssaySchemaImpl extends AssaySchema
         super(NAME, user, container, ExperimentService.get().getSchema(), null);
     }
 
+    /**
+     * Use this constructor to use a prefetched map of assay protocols in this AssaySchema.
+     */
+    public AssaySchemaImpl(User user, Container container, Map<ExpProtocol, AssayProvider> protocols)
+    {
+        this(user, container);
+        _protocols = protocols;
+    }
 
     // UNDONE: need to check permissions here 8449
     @Override

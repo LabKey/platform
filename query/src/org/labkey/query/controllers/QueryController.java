@@ -3384,7 +3384,7 @@ public class QueryController extends SpringActionController
                 defContainer = def.lookupContainer();
             }
 
-            if (!defContainer.equals(getContainer()))
+            if (!getContainer().equals(defContainer))
                 throw new UnauthorizedException();
 
             setHelpTopic(new HelpTopic("externalSchemas"));
@@ -3397,7 +3397,7 @@ public class QueryController extends SpringActionController
             ExternalSchemaDef fromDb = QueryManager.get().getExternalSchemaDef(def.getExternalSchemaId());
 
             // Unauthorized if def in the database reports a different container
-            if (!fromDb.lookupContainer().equals(getContainer()))
+            if (!getContainer().equals(fromDb.lookupContainer()))
                 throw new UnauthorizedException();
 
             try
@@ -4436,15 +4436,34 @@ public class QueryController extends SpringActionController
             if (getViewContext().getBindPropertyValues().contains("viewName"))
             {
                 // Get info for a named view or the default view (null)
-                CustomView view = views.get(form.getViewName());
+                String viewName = StringUtils.trimToNull(form.getViewName());
+                CustomView view = views.get(viewName);
                 if (view != null)
+                {
                     viewInfos = Collections.singletonList(CustomViewUtil.toMap(view, getViewContext().getUser(), form.isMetadata()));
+                }
+                else if (viewName == null)
+                {
+                    // The default view was requested but it hasn't been customized yet. Create the 'default default' view.
+                    viewInfos = Collections.singletonList(CustomViewUtil.toMap(getViewContext(), (UserSchema)qschema, form.getQueryName(), null, form.isMetadata(), true));
+                }
             }
             else
             {
+                boolean foundDefault = false;
                 viewInfos = new ArrayList<Map<String, Object>>(views.size());
                 for (CustomView view : views.values())
+                {
+                    if (view.getName() == null)
+                        foundDefault = true;
                     viewInfos.add(CustomViewUtil.toMap(view, getViewContext().getUser(), form.isMetadata()));
+                }
+
+                if (!foundDefault)
+                {
+                    // The default view hasn't been customized yet. Create the 'default default' view.
+                    viewInfos.add(CustomViewUtil.toMap(getViewContext(), (UserSchema)qschema, form.getQueryName(), null, form.isMetadata(), true));
+                }
             }
 
             ApiSimpleResponse response = new ApiSimpleResponse();

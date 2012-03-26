@@ -33,7 +33,7 @@
     ExpProtocol protocol = bean.expProtocol;
     ExpData data = bean.expData;
 
-    Map<String, Object> assay = AssayController.serializeAssayDefinition(bean.expProtocol, bean.provider, getViewContext().getContainer(), getViewContext().getUser());
+    Map<String, Object> assay = AssayController.serializeAssayDefinition(bean.expProtocol, bean.provider, getViewContext().getContainer(), getViewContext().getUser(), null);
     JSONArray dataRows = AbstractAssayAPIAction.serializeDataRows(data, provider, protocol, getViewContext().getUser(), bean.objectId);
     JSONObject result = dataRows.length() > 0 ? (JSONObject)dataRows.get(0) : new JSONObject();
 %>

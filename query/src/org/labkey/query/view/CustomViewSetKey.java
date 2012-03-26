@@ -18,6 +18,7 @@ package org.labkey.query.view;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.SessionHelper;
@@ -37,8 +38,13 @@ public class CustomViewSetKey implements Serializable
 
     public CustomViewSetKey(QueryDefinition queryDef)
     {
-        _containerId = queryDef.getContainer().getId();
-        _queryName = queryDef.getName();
+        this(queryDef.getContainer(), queryDef.getName());
+    }
+
+    public CustomViewSetKey(Container c, String queryName)
+    {
+        _containerId = c.getId();
+        _queryName = queryName;
     }
 
     public boolean equals(Object other)
@@ -68,10 +74,15 @@ public class CustomViewSetKey implements Serializable
 
     static public Map<String, CstmView> getCustomViewsFromSession(@NotNull HttpServletRequest request, QueryDefinition queryDef)
     {
+        return getCustomViewsFromSession(request, queryDef.getContainer(), queryDef.getName());
+    }
+
+    static public Map<String, CstmView> getCustomViewsFromSession(@NotNull HttpServletRequest request, Container c, String queryName)
+    {
         Map<CustomViewSetKey, Map<String, CstmView>> fullMap = getMap(request);
         if (fullMap == null)
             return Collections.EMPTY_MAP;
-        Map<String, CstmView> map = fullMap.get(new CustomViewSetKey(queryDef));
+        Map<String, CstmView> map = fullMap.get(new CustomViewSetKey(c, queryName));
         if (map == null)
         {
             return Collections.EMPTY_MAP;

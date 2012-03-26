@@ -28,9 +28,10 @@
 <%@ page import="java.util.*" %>
 <%@ page import="org.labkey.query.controllers.QueryController.*" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
+<%@ page import="org.labkey.query.view.CustomViewSetKey" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%! String userIdToString(Integer userId)
+<%! String userIdToString(Integer userId, User currentUser)
 {
     if (userId == null)
     {
@@ -38,26 +39,35 @@
     }
     User user = UserManager.getUser(userId);
     if (user == null)
-    {
         return "Unknown user #" + userId;
-    }
-    return user.getDisplayName(user);
+    if (user.isGuest())
+        return "Guest";
+    return user.getDisplayName(currentUser);
 }
 %>
 <%
     QueryForm form = (QueryForm) HttpView.currentModel();
     User user = getViewContext().getUser();
     Container c = getViewContext().getContainer();
+    String schemaName = form.getSchemaName().toString().equals("") ? null : form.getSchemaName().toString();
+    String queryName = form.getQueryName();
     QueryManager mgr = QueryManager.get();
     List<CstmView> views = new ArrayList<CstmView>();
     if (form.getViewContext().hasPermission(UpdatePermission.class))
     {
-        views.addAll(Arrays.asList(mgr.getCstmViews(c, null, null, null, null, false)));
+        views.addAll(Arrays.asList(mgr.getCstmViews(c, schemaName, queryName, null, null, false)));
     }
     if (!user.isGuest())
     {
-        views.addAll(Arrays.asList(mgr.getCstmViews(c, null, null, null, user, false)));
+        views.addAll(Arrays.asList(mgr.getCstmViews(c, schemaName, queryName, null, user, false)));
     }
+
+    // UNDONE: Requires queryName for now.  We need a method to get all session views in a container.
+    if (queryName != null)
+    {
+        views.addAll(CustomViewSetKey.getCustomViewsFromSession(getViewContext().getRequest(), c, queryName).values());
+    }
+
     Collections.sort(views, new Comparator<CstmView>()
     {
         public int compare(CstmView o1, CstmView o2)
@@ -84,7 +94,15 @@
         }
     });
 %>
-<p>This page is for troubleshooting custom grid views. It is not intended for general use.</p>
+<p>This page is for troubleshooting custom grid views. It is not intended for general use.
+<% if (schemaName != null) { %>
+<br>Filtered by schema: <b><%= schemaName %></b>
+<% } %>
+<% if (queryName != null) { %>
+<br>Filtered by query: <b><%= queryName %></b>
+<% } %>
+</p>
+
 <table>
     <tr>
         <th>Schema</th>
@@ -102,10 +120,14 @@
         for (CstmView view : views)
         {
             List<String> flags = new ArrayList<String>();
+            if (view.getCustomViewId() == 0)
+                flags.add("<em>session</em>");
             if (mgr.canInherit(view.getFlags()))
                 flags.add("inherit");
             if (mgr.isHidden(view.getFlags()))
                 flags.add("hidden");
+            if (mgr.isSnapshot(view.getFlags()))
+                flags.add("shapshot");
     %>
     <tr>
         <td><%=h(view.getSchema())%>
@@ -115,12 +137,12 @@
         <td><%=h(view.getName())%>
         </td>
         <td><%=StringUtils.join(flags, ",")%></td>
-        <td><%=userIdToString(view.getCustomViewOwner())%>
+        <td><%=userIdToString(view.getCustomViewOwner(), user)%>
         </td>
         <td><%=DateUtil.formatDateTime(view.getCreated()).replaceAll(" ", "&nbsp;")%></td>
-        <td><%=userIdToString(view.getCreatedBy())%></td>
+        <td><%=userIdToString(view.getCreatedBy(), user)%></td>
         <td><%=DateUtil.formatDateTime(view.getModified()).replaceAll(" ", "&nbsp;")%></td>
-        <td><%=userIdToString(view.getModifiedBy())%></td>
+        <td><%=userIdToString(view.getModifiedBy(), user)%></td>
         <td><% ActionURL urlDelete = new ActionURL(InternalDeleteView.class, c);
         urlDelete.addParameter("customViewId", Integer.toString(view.getCustomViewId())); %>
             <labkey:link href="<%=urlDelete%>" text="delete" />

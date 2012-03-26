@@ -25,7 +25,7 @@
 <%
     JspView<ModuleAssayProvider.BatchDetailsBean> me = (JspView<ModuleAssayProvider.BatchDetailsBean>) HttpView.currentView();
     ModuleAssayProvider.BatchDetailsBean bean = me.getModelBean();
-    Map<String, Object> assay = AssayController.serializeAssayDefinition(bean.expProtocol, bean.provider, getViewContext().getContainer(), getViewContext().getUser());
+    Map<String, Object> assay = AssayController.serializeAssayDefinition(bean.expProtocol, bean.provider, getViewContext().getContainer(), getViewContext().getUser(), null);
 %>
 <script type="text/javascript">
 LABKEY.page = LABKEY.page || {};
