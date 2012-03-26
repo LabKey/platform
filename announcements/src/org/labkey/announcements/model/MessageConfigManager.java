@@ -42,10 +42,10 @@ import java.util.List;
  */
 public class MessageConfigManager
 {
-    private static CommSchema _comm = CommSchema.getInstance();
-    public static final int EMAIL_PREFERENCE_DEFAULT = -1;
-    public static final int EMAIL_FORMAT_HTML = 1;
-    public static final int PAGE_TYPE_MESSAGE = 0;
+    private static final CommSchema _comm = CommSchema.getInstance();
+    private static final int EMAIL_PREFERENCE_DEFAULT = -1;
+    private static final int EMAIL_FORMAT_HTML = 1;
+    private static final int PAGE_TYPE_MESSAGE = 0;
 
     public static EmailPref getUserEmailPrefRecord(Container c, User user, String type, String srcIdentifier)
     {

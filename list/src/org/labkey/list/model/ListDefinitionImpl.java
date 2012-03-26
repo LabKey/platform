@@ -342,10 +342,11 @@ public class ListDefinitionImpl implements ListDefinition
             //we find and delete these in batches of 1000, then delete the rows below
             int offset = 0;
             int step = 1000;
+
             while(1==1)
             {
-                final List entityIds = new ArrayList<String>();
-                final List attachmentParents = new ArrayList<AttachmentParent>();
+                final List<String> entityIds = new ArrayList<String>();
+                final List<AttachmentParent> attachmentParents = new ArrayList<AttachmentParent>();
 
                 TableSelector ts = new TableSelector(getIndexTable(), Table.ALL_COLUMNS, lstItemFilter, null);
                 ts.setRowCount(step);
@@ -360,15 +361,15 @@ public class ListDefinitionImpl implements ListDefinition
                     }
                 });
 
-                String[] distinctIDs = (String[])entityIds.toArray(new String[entityIds.size()]);
-                if(distinctIDs.length > 0)
+                String[] distinctIDs = entityIds.toArray(new String[entityIds.size()]);
+                if (distinctIDs.length > 0)
                     DiscussionService.get().deleteDiscussions(getContainer(), user, distinctIDs);
 
-                AttachmentParent[] distinctAttachments = (AttachmentParent[])attachmentParents.toArray(new AttachmentParent[attachmentParents.size()]);
-                if(distinctAttachments.length > 0)
+                AttachmentParent[] distinctAttachments = attachmentParents.toArray(new AttachmentParent[attachmentParents.size()]);
+                if (distinctAttachments.length > 0)
                     AttachmentService.get().deleteAttachments(distinctAttachments);
 
-                if(entityIds.size() < step)
+                if (entityIds.size() < step)
                 {
                     break;
                 }
@@ -377,11 +378,12 @@ public class ListDefinitionImpl implements ListDefinition
             }
 
             //delete all list items
-            ListItm[] itms = Table.select(getIndexTable(), Table.ALL_COLUMNS, lstItemFilter, null, ListItm.class);
+            ListItm[] itms = new TableSelector(getIndexTable(), Table.ALL_COLUMNS, lstItemFilter, null).getArray(ListItm.class);
             Table.delete(getIndexTable(), lstItemFilter);
 
             Set<String> ids = new HashSet<String>();
-            for(ListItm itm : itms)
+
+            for (ListItm itm : itms)
             {
                 if (itm.getObjectId() != null)
                 {

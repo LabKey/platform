@@ -25,16 +25,15 @@ import org.labkey.audit.AuditSchema;
 import java.sql.SQLException;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Oct 4, 2007
  */
 public class LogManager
 {
     private static final Logger _log = Logger.getLogger(LogManager.class);
-    static private final LogManager _instance = new LogManager();
-    static final int COMMENT_MAX = 500;
-    static final int STRING_KEY_MAX = 1000;
+    private static final LogManager _instance = new LogManager();
+    private static final int COMMENT_MAX = 500;
+    private static final int STRING_KEY_MAX = 1000;
 
     private LogManager(){}
     static public LogManager get()

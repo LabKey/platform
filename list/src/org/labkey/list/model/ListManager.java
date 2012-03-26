@@ -68,12 +68,6 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
 
-    public ListDef[] getAllLists() throws SQLException
-    {
-        return Table.select(getTinfoList(), Table.ALL_COLUMNS, null, null, ListDef.class);
-    }
-
-
     public ListDef getList(Container container, int id)
     {
         try

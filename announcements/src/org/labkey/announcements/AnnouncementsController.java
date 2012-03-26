@@ -35,7 +35,6 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleErrorView;
@@ -60,7 +59,6 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -955,17 +953,8 @@ public class AnnouncementsController extends SpringActionController
     // AssignedTo == null => assigned to no one.
     private static String getAssignedToSelect(Container c, Integer assignedTo, String name, final User currentUser)
     {
-        List<User> possibleAssignedTo;
-
-        try
-        {
-            Set<Class<? extends Permission>> perms = Collections.<Class<? extends Permission>>singleton(InsertPermission.class);
-            possibleAssignedTo = SecurityManager.getUsersWithPermissions(c, perms);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        Set<Class<? extends Permission>> perms = Collections.<Class<? extends Permission>>singleton(InsertPermission.class);
+        List<User> possibleAssignedTo = SecurityManager.getUsersWithPermissions(c, perms);
 
         Collections.sort(possibleAssignedTo, new Comparator<User>()
         {

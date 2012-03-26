@@ -24,12 +24,11 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
 
-import java.sql.SQLException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -49,26 +48,17 @@ public class AttachmentCache
         {
             AttachmentParent parent = (AttachmentParent)attachmentParent;
 
-            try
-            {
-                Attachment[] attachments = Table.select(CoreSchema.getInstance().getTableInfoDocuments(),
-                        AttachmentServiceImpl.ATTACHMENT_COLUMNS,
-                        new SimpleFilter("Parent", parent.getEntityId()),
-                        new Sort("+RowId"),
-                        Attachment.class
-                );
+            Collection<Attachment> attachments = new TableSelector(CoreSchema.getInstance().getTableInfoDocuments(),
+                    AttachmentServiceImpl.ATTACHMENT_COLUMNS,
+                    new SimpleFilter("Parent", parent.getEntityId()),
+                    new Sort("+RowId")).getCollection(Attachment.class);
 
-                Map<String, Attachment> map = new LinkedHashMap<String, Attachment>(attachments.length);
+            Map<String, Attachment> map = new LinkedHashMap<String, Attachment>(attachments.size());
 
-                for (Attachment attachment : attachments)
-                    map.put(attachment.getName(), attachment);
+            for (Attachment attachment : attachments)
+                map.put(attachment.getName(), attachment);
 
-                return Collections.unmodifiableMap(map);
-            }
-            catch (SQLException x)
-            {
-                throw new RuntimeSQLException(x);
-            }
+            return Collections.unmodifiableMap(map);
         }
     };
 

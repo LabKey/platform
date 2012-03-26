@@ -148,8 +148,8 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
     {
         synchronized (_writerLock)
         {
-            _directory.close();
             _iw.close();
+            _directory.close();
             _manager.close();
         }
     }

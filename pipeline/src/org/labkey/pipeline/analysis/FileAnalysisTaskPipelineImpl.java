@@ -57,7 +57,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         return pipeline.configure(settings);
     }
 
-    private TaskPipeline configure(FileAnalysisTaskPipelineSettings settings)
+    private TaskPipeline<FileAnalysisTaskPipelineSettings> configure(FileAnalysisTaskPipelineSettings settings)
     {
         if (settings.getDescription() != null)
             _description = settings.getDescription();
@@ -145,7 +145,10 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         {
             try
             {
-                URLHelper result = new URLHelper(_analyzeURL.eval(HttpView.currentContext().getExtendedProperties()));
+                // Probably not the right way to push container in... see #14153
+                Map<String, Object> properties = new HashMap<String, Object>(HttpView.currentContext().getExtendedProperties());
+                properties.put("container", c);
+                URLHelper result = new URLHelper(_analyzeURL.eval(properties));
                 if (result.getParameter("path") == null)
                 {
                     result.addParameter("path", path);

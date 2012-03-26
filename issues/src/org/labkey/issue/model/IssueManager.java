@@ -246,20 +246,10 @@ public class IssueManager
 
     public static Keyword[] getKeywords(String container, int type)
     {
-        Keyword[] keywords = null;
         SimpleFilter filter = new SimpleFilter("Container", container).addCondition("Type", type);
         Sort sort = new Sort("Keyword");
 
-        try
-        {
-            keywords = Table.select(_issuesSchema.getTableInfoIssueKeywords(), PageFlowUtil.set("Keyword", "Default", "Container", "Type"), filter, sort, Keyword.class);
-        }
-        catch (SQLException e)
-        {
-            _log.error(e);
-        }
-
-        return keywords;
+        return new TableSelector(_issuesSchema.getTableInfoIssueKeywords(), PageFlowUtil.set("Keyword", "Default", "Container", "Type"), filter, sort).getArray(Keyword.class);
     }
 
 
