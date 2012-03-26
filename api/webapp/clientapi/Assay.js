@@ -294,7 +294,7 @@ LABKEY.Assay = new function()
                     if(successCallback)
                         successCallback.call(config.scope, data.runs);
                 }, this),
-                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config) || LABKEY.Utils.displayAjaxErrorResponse, config.scope, true),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 params : dataObject
             });
         },
