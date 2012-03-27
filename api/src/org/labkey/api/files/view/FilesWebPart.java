@@ -217,27 +217,17 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
         CustomizeFilesWebPartView.CustomizeWebPartForm form = new CustomizeFilesWebPartView.CustomizeWebPartForm(webPartDescriptor);
         getModelBean().setFolderTreeCollapsed(!form.isFolderTreeVisible());
+        if (null != form.getRootOffset())
+        {
+            String sep = getModelBean().getRootPath().endsWith("/") ? "" : "/";
+            getModelBean().setRootPath(getModelBean().getRootPath() + sep + form.getRootOffset());
+        }
+        getModelBean().setRootOffset(form.getRootOffset());
+
 
         setWide(null == webPartDescriptor.getLocation() || HttpView.BODY.equals(webPartDescriptor.getLocation()));
         setShowAdmin(container.hasPermission(ctx.getUser(), AdminPermission.class));
 
-        // apply any other client specified overrides
-        FilesForm bean = getModelBean();
-        if (bean != null)
-        {
-            try
-            {
-                BeanUtils.copyProperties(bean, ctx);
-            }
-            catch (IllegalAccessException e)
-            {
-                throw new RuntimeException(e);
-            }
-            catch (InvocationTargetException e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
 
         if (!isWide())
         {
@@ -388,6 +378,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         private boolean _enabled;
         private actions[] _buttonConfig;
         private String _rootPath;
+        private String _rootOffset; //path between root for container and _rootPath used for webdav (if rooted at subdir)
         private Path _directory;
         private String _contentId;
         private boolean _isPipelineRoot;
@@ -481,6 +472,16 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         public void setRootPath(String rootPath)
         {
             _rootPath = rootPath;
+        }
+
+        public String getRootOffset()
+        {
+            return _rootOffset;
+        }
+
+        public void setRootOffset(String rootOffset)
+        {
+            _rootOffset = rootOffset;
         }
 
         public void setDirectory(Path path)
