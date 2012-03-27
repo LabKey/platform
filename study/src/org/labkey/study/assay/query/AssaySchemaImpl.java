@@ -431,24 +431,6 @@ public class AssaySchemaImpl extends AssaySchema
                     return table;
                 }
             });
-            columnInfo.setDisplayColumnFactory(new DisplayColumnFactory()
-            {
-                public DisplayColumn createRenderer(ColumnInfo colInfo)
-                {
-                    return new DataColumn(colInfo)
-                    {
-                        public String getFormattedValue(RenderContext ctx)
-                        {
-                            Object value = getDisplayColumn().getValue(ctx);
-                            if (value == null)
-                            {
-                                return "";
-                            }
-                            return super.getFormattedValue(ctx);
-                        }
-                    };
-                }
-            });
         }
     }
 
