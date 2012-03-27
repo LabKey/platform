@@ -356,6 +356,8 @@ public class IssuesController extends SpringActionController
         {
             getPageConfig().setTemplate(PageConfig.Template.None);
             QueryView view = QueryView.create(form, errors);
+            HttpServletResponse response = getViewContext().getResponse();
+            response.setHeader("X-Robots-Tag", "noindex");
             final TSVGridWriter writer = view.getTsvWriter();
             return new HttpView()
             {

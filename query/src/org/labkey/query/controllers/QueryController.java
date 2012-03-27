@@ -1161,6 +1161,8 @@ public class QueryController extends SpringActionController
             ensureQueryExists(form);
             QueryView view = QueryView.create(form, errors);
             getPageConfig().setTemplate(PageConfig.Template.None);
+            HttpServletResponse response = getViewContext().getResponse();
+            response.setHeader("X-Robots-Tag", "noindex");
             try
             {
                 _export(form, view);
@@ -1282,7 +1284,7 @@ public class QueryController extends SpringActionController
     {
         void _export(QueryForm form, QueryView view) throws Exception
         {
-            view.exportToTsv(getViewContext().getResponse(), form.isExportAsWebPage());
+                view.exportToTsv(getViewContext().getResponse(), form.isExportAsWebPage());
         }
     }
 
@@ -2713,6 +2715,7 @@ public class QueryController extends SpringActionController
             //export it
             response.setHeader("Pragma", "private");
             response.setHeader("Cache-Control", "private");
+            response.setHeader("X-Robots-Tag", "noindex");
 
             if ("excel".equalsIgnoreCase(form.getFormat()))
                 view.exportToExcel(response);
