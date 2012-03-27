@@ -218,6 +218,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                 this.pagedColumns = this.schedule.timepoints.slice(0, 5);
                 this.initGrid(this.initColumns(this.pagedColumns), this.initScheduleStore(this.schedule, this.initFields()));
             } else {
+                this.enablePagingCheckbox.setValue(false);
                 this.initGrid(this.initColumns(this.schedule.timepoints), this.initScheduleStore(this.schedule, this.initFields()));
             }
         };
