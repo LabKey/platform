@@ -93,7 +93,7 @@ public class CustomFolderType implements FolderType
     @Override
     public List<FolderTab> getDefaultTabs()
     {
-        throw new UnsupportedOperationException();
+        return Collections.emptyList();
     }
 
     @NotNull
