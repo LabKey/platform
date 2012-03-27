@@ -32,7 +32,7 @@
 <script type="text/javascript">
 
     LABKEY.requiresExt4ClientAPI(true);
-    LABKEY.requiresCss('study/DataViewsPanel.css');
+//    LABKEY.requiresCss('study/DataViewsPanel.css');
 
 </script>
 <script type="text/javascript">
@@ -76,8 +76,8 @@ Ext4.onReady(function(){
             },
             CreatedBy: {
                 //NOTE: this is to reformat entries with a null user to be blank, instead of [0]
-                buildDisplayString: function(data){
-                    return data == '[0]' ? "" : data;
+                buildDisplayString: function(config){
+                    return config.displayValue == '[0]' ? "" : config.displayValue;
                 },
                 columnConfig: {
                     width: 100
