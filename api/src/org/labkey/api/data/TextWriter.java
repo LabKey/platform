@@ -90,8 +90,14 @@ public abstract class TextWriter
     // Prepare the writer to stream a file to the browser
     public void prepare(HttpServletResponse response) throws IOException
     {
+        // NOTE: reset() ALSO CLEAR HEADERS! such as cache pragmas
+        boolean noindex = response.containsHeader("X-Robots-Tag");
+
         // Flush any extraneous output (e.g., <CR><LF> from JSPs)
         response.reset();
+
+        if (noindex)
+            response.setHeader("X-Robots-Tag", "noindex");
 
         // Specify attachment and foil caching
         if (_exportAsWebPage)
@@ -100,9 +106,9 @@ public abstract class TextWriter
         }
         else
         {
-           // Set the content-type so the browser knows which application to launch
-           response.setContentType(getContentType());
-           response.setHeader("Content-disposition", "attachment; filename=\"" + getFilename() + "\"");
+            // Set the content-type so the browser knows which application to launch
+            response.setContentType(getContentType());
+            response.setHeader("Content-disposition", "attachment; filename=\"" + getFilename() + "\"");
         }
 
         // Get the outputstream of the servlet (BTW, always get the outputstream AFTER you've

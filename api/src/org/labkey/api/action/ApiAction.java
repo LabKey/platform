@@ -96,6 +96,8 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
     
     public ModelAndView handlePost() throws Exception
     {
+        getViewContext().getResponse().setHeader("X-Robots-Tag", "noindex");
+
         FORM form = null;
         BindException errors = null;
 

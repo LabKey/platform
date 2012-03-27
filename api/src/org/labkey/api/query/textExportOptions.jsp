@@ -17,6 +17,7 @@
 %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ActionURL url = (ActionURL)HttpView.currentModel();
@@ -29,7 +30,7 @@
     </tr>
     <tr>
         <td>
-            <%=generateButton("Export to Text", url) %>
+            <%=PageFlowUtil.generateButton("Export to Text", url, null, "rel=\"nofollow\"") %>
         </td>
     </tr>
 </table>
