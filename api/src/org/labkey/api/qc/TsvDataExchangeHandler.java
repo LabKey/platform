@@ -191,6 +191,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 // the original field value so the transform script can attempt to clean it up.
                 DataLoaderSettings settings = new DataLoaderSettings();
                 settings.setBestEffortConversion(true);
+                settings.setAllowEmptyData(true);
+                settings.setThrowOnErrors(false);
 
                 Map<DataType, List<Map<String, Object>>> dataMap = ((ValidationDataHandler)handler).getValidationDataMap(expData, data, info, LOG, xarContext, settings);
 

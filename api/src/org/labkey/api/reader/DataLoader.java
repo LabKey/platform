@@ -436,7 +436,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         Set<String> columnNames = new HashSet<String>();
         for (ColumnDescriptor colDesc : colDescs)
         {
-            if (!columnNames.add(colDesc.name))
+            if (!columnNames.add(colDesc.name) && isThrowOnErrors())
             {
                 // TODO: This should be refactored to not throw this here, but rather, have the callers check themselves. It
                 // is not in the interest of inferring columns that we validate duplicate columns.

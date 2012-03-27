@@ -24,6 +24,8 @@ package org.labkey.api.qc;
 public class DataLoaderSettings
 {
     private boolean _bestEffortConversion;      // if conversion fails, the original field value is returned
+    private boolean _allowEmptyData;
+    private boolean _throwOnErrors;
 
     public boolean isBestEffortConversion()
     {
@@ -33,5 +35,25 @@ public class DataLoaderSettings
     public void setBestEffortConversion(boolean bestEffortConversion)
     {
         _bestEffortConversion = bestEffortConversion;
+    }
+
+    public boolean isAllowEmptyData()
+    {
+        return _allowEmptyData;
+    }
+
+    public void setAllowEmptyData(boolean allowEmptyData)
+    {
+        _allowEmptyData = allowEmptyData;
+    }
+    
+    public boolean isThrowOnErrors()
+    {
+        return _throwOnErrors;
+    }
+
+    public void setThrowOnErrors(boolean throwOnErrors)
+    {
+        _throwOnErrors = throwOnErrors;
     }
 }
