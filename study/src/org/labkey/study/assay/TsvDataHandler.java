@@ -125,6 +125,8 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
             {
                 loader = new TabLoader(dataFile, true);
             }
+
+            loader.setThrowOnErrors(settings.isThrowOnErrors());
             for (ColumnDescriptor column : loader.getColumns())
             {
                 if (mvEnabledColumns.contains(column.name))
@@ -156,9 +158,10 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
             List<Map<String, Object>> dataRows = loader.load();
 
             // loader did not parse any rows
-            if (dataRows.isEmpty())
+            if (dataRows.isEmpty() && !settings.isAllowEmptyData())
                 throw new ExperimentException("Unable to load any rows from the input data. Please check the format of the input data to make sure it matches the assay data columns.");
-            adjustFirstRowOrder(dataRows, loader);
+            if (!dataRows.isEmpty())
+                adjustFirstRowOrder(dataRows, loader);
 
             datas.put(DATA_TYPE, dataRows);
             return datas;

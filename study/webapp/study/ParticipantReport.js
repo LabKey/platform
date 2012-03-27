@@ -823,6 +823,8 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 listeners : {
                     selectionchange : function(){
                         this.filterTask.delay(400);
+                        if (this.allowCustomize)
+                            this.markDirty(true);
                     },
                     scope : this
                 }
