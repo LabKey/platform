@@ -992,7 +992,7 @@ public class VisualizationController extends SpringActionController
         private String _schemaName;
         private String _queryName;
         private String _name;
-        private String _reportId;
+        private ReportIdentifier _reportId;
 
         public String getName()
         {
@@ -1024,12 +1024,12 @@ public class VisualizationController extends SpringActionController
             _queryName = queryName;
         }
 
-        public String getReportId()
+        public ReportIdentifier getReportId()
         {
             return _reportId;
         }
 
-        public void setReportId(String reportId)
+        public void setReportId(ReportIdentifier reportId)
         {
             _reportId = reportId;
         }
@@ -1048,28 +1048,37 @@ public class VisualizationController extends SpringActionController
 
     private Report getReport(GetVisualizationForm form) throws SQLException
     {
-        Report[] currentReports;
+        try {
 
-        if (form.getSchemaName() != null && form.getQueryName() != null)
-            currentReports = ReportService.get().getReports(getUser(), getContainer(), getReportKey(form));
-        else
-            currentReports = ReportService.get().getReports(getUser(), getContainer());
-
-        for (Report report : currentReports)
-        {
-            if (form.getReportId() != null)
+            ReportIdentifier reportId = form.getReportId();
+            if (reportId != null)
             {
-                ReportIdentifier requestedId = new DbReportIdentifier(form.getReportId());
-                if (report.getDescriptor().getReportId().equals(requestedId))
+                Report report = reportId.getReport();
+                if (report != null)
                     return report;
             }
-            else if (report.getDescriptor().getReportName() != null &&
-                     report.getDescriptor().getReportName().equals(form.getName()))
+
+            // try to match on report name if we don't have a valid report identifier
+            Report[] currentReports;
+
+            if (form.getSchemaName() != null && form.getQueryName() != null)
+                currentReports = ReportService.get().getReports(getUser(), getContainer(), getReportKey(form));
+            else
+                currentReports = ReportService.get().getReports(getUser(), getContainer());
+
+            for (Report report : currentReports)
             {
-                return report;
+                if (report.getDescriptor().getReportName() != null &&
+                    report.getDescriptor().getReportName().equals(form.getName()))
+                {
+                    return report;
+                }
             }
         }
-
+        catch (Exception e)
+        {
+            throw new SQLException(e);
+        }
         return null;
     }
 

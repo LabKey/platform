@@ -26,6 +26,7 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.visualization.TimeChartReport;
+import org.labkey.visualization.VisualizationController;
 import org.labkey.visualization.VisualizationUtil;
 
 import java.io.InputStream;
@@ -41,7 +42,10 @@ public class TimeChartReportImpl extends TimeChartReport implements DynamicThumb
     @Override
     public HttpView renderReport(ViewContext context) throws Exception
     {
-        JspView timeChartWizard = new JspView<Report>("/org/labkey/visualization/views/timeChartWizard.jsp", this);
+        VisualizationController.GetVisualizationForm form = new VisualizationController.GetVisualizationForm();
+
+        form.setReportId(getReportId());
+        JspView timeChartWizard = new JspView<VisualizationController.GetVisualizationForm>("/org/labkey/visualization/views/timeChartWizard.jsp", form);
 
         timeChartWizard.setFrame(WebPartView.FrameType.NONE);
         return new HBox(timeChartWizard);

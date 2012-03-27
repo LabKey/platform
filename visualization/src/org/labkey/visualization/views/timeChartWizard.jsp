@@ -28,16 +28,14 @@
 <%
     JspView<VisualizationController.GetVisualizationForm> me = (JspView<VisualizationController.GetVisualizationForm>) HttpView.currentView();
     ViewContext ctx = me.getViewContext();
-    VisualizationController.GetVisualizationForm bean = me.getModelBean();
-    String reportId = "";
-    boolean canEdit = false;
-    ReportIdentifier id = AbstractReportIdentifier.fromString(bean.getReportId());
-    Report timechart = null;
+    VisualizationController.GetVisualizationForm form = me.getModelBean();
+    boolean canEdit;
+    ReportIdentifier id = form.getReportId();
 
     if (id != null)
     {
-        timechart = id.getReport();
-        canEdit = timechart.canEdit(ctx.getUser(), ctx.getContainer());
+        Report report = id.getReport();
+        canEdit = report.canEdit(ctx.getUser(), ctx.getContainer());
     }
     else
     {
@@ -59,7 +57,7 @@
 
     Ext.onReady(function(){
         showTimeChartWizard({
-            reportId: '<%=reportId%>',
+            reportId: '<%=id != null ? id.toString() : ""%>',
             elementId: '<%=elementId%>',
             success: viewSavedChart
         })
