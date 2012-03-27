@@ -32,13 +32,13 @@ Ext4.define('LABKEY.ext.ImportWizard', {
                 width: 500,
                 itemId: 'inputType',
                 items: [{
-                    boxLabel: 'Create New Experiment',
+                    boxLabel: 'Create New Workbook',
                     inputValue: 'new',
                     width: 250,
                     name: 'inputType',
                     checked: true
                 },{
-                    boxLabel: 'Add To Existing Experiment',
+                    boxLabel: 'Add To Existing Workbook',
                     inputValue: 'existing',
                     width: 250,
                     name: 'inputType'

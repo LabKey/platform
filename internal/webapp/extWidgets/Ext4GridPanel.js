@@ -13,6 +13,7 @@ Ext4.namespace('LABKEY.ext4');
  *
  * @param (boolean) [config.noAlertOnError] If true, no dialog will appear on if the store fires a syncerror event
  * @param {boolean} [config.hideNonEditableColumns] If true, columns that are non-editable will be hidden
+ * @param {boolean} [config.showPagingToolbar] If true, an Ext PagingToolbar will be appended to the bottom of the grid
  */
 
 Ext4.define('LABKEY.ext4.GridPanel', {
@@ -37,21 +38,34 @@ Ext4.define('LABKEY.ext4.GridPanel', {
             columns: []
         });
 
+        if(this.showPagingToolbar){
+            this.dockedItems = this.dockedItems || [];
+            this.dockedItems.push({
+                xtype: 'pagingtoolbar',
+                store: this.store,   // same store GridPanel is using
+                dock: 'bottom',
+                displayInfo: true
+            });
+        }
+
         this.configurePlugins();
+
+        if(this.store && this.store.hasLoaded()){
+            this.columns = this.getColumnsConfig();
+        }
 
         this.callParent();
 
+        this.configureHeaders();
+
         //if we sort/filter remotely, we risk losing changes made on the client
-        this.remoteSort = !this.editable;
-        this.remoteFilter = !this.editable;
+        this.store.remoteSort = !this.editable;
+        this.store.remoteFilter = !this.editable;
 
         if(this.autoSave)
             this.store.autoSync = true;  //could we just obligate users to put this on the store directly?
 
-        if(this.store.hasLoaded()){
-            this.setupColumnModel.defer(10, this);
-        }
-        else {
+        if(!this.columns.length){
             this.mon(this.store, 'load', this.setupColumnModel, this, {single: true});
             this.store.load({ params : {
                 start: 0,
@@ -60,8 +74,19 @@ Ext4.define('LABKEY.ext4.GridPanel', {
         }
 
         this.mon(this.store, 'exception', this.onCommitException, this);
-        this.addEvents('beforesubmit', 'fieldconfiguration', 'recordchange', 'fieldvaluechange');
+        this.addEvents('beforesubmit', 'fieldconfiguration', 'recordchange', 'fieldvaluechange', 'lookupstoreload');
+
+        this.on('lookupstoreload', this.onLookupStoreEventFired, this, {buffer: 100});
     }
+
+    ,configureHeaders: function(){
+        if(!this.headerCt)
+            return;
+
+        this.mon(this.headerCt, 'menucreate', this.onMenuCreate, this);
+    }
+
+    ,onMenuCreate: Ext4.emptyFn
 
     ,createStore: function(){
         return Ext4.create('LABKEY.ext4.Store', {
@@ -124,8 +149,6 @@ Ext4.define('LABKEY.ext4.GridPanel', {
 
         var columns = LABKEY.ext.MetaHelper.getColumnsConfig(this.store, this, config);
 
-        var flexWidth = 0;
-        var fixedWidth = 0;
         Ext4.each(columns, function(col, idx){
             var meta = this.store.findFieldMetadata(col.dataIndex);
 
@@ -140,35 +163,80 @@ Ext4.define('LABKEY.ext4.GridPanel', {
             //listen for changes in underlying data in lookup store
             if(meta.lookup && meta.lookups !== false){
                 var lookupStore = LABKEY.ext.MetaHelper.getLookupStore(meta);
+
+                //this causes the whole grid to rerender, which is very expensive.  better solution?
                 if(lookupStore){
-                    this.mon(lookupStore, 'load', function(store){
-                        //this.store.fireEvent('datachanged', this.store);
-                        this.getView().refresh();
-                    }, this, {delay: 100});
+                    this.mon(lookupStore, 'load', this.onLookupStoreLoad, this, {delay: 100});
                 }
             }
 
             if(this.hideNonEditableColumns && !col.editable)
                 col.hidden = true;
-            else {
-                if(meta.fixedWidthColumn)
-                    fixedWidth += col.width || 0;
-                else
-                    flexWidth += col.width || 0;
-            }
         }, this);
 
-        //the intent is to distribute width proportionally across columns using the Ext4 flex property
-        Ext4.each(columns, function(col, idx){
-            var meta = this.store.findFieldMetadata(col.dataIndex);
+        this.inferColumnWidths(columns);
 
-            if(!col.hidden && !meta.fixedWidthColumn){
-                col.flex = (col.width / flexWidth);
-                col.width = null;
-            }
-        }, this);
         return columns;
     }
+
+    //private.  separated to allow buffering, since refresh is expensive
+    ,onLookupStoreLoad: function(lookupStore){
+        if(!this.rendered || !this.getView()){
+            return;
+        }
+        this.fireEvent('lookupstoreload');
+    }
+
+    //private
+    ,onLookupStoreEventFired: function(){
+        this.getView().refresh();
+    }
+
+    /*
+     * The intent of this method is to infer column widths based on the data being shown
+     */
+    ,_charWidth: 12 //TODO: this should be measured, but measuring is expensive so we only want to do it once
+    ,_colPadding: 10 //TODO: also should be calculated
+    ,_maxColWidth: 400
+
+    ,inferColumnWidths: function(columns){
+        var colMap = {};
+        var value;
+        var values;
+        var totalRequestedWidth = 0;
+        Ext4.each(columns, function(col){
+            var meta = this.store.findFieldMetadata(col.dataIndex);
+
+            if(!meta.fixedWidthCol){
+                values = [];
+                this.store.each(function(rec){
+                    value = LABKEY.ext.MetaHelper.getDisplayString(rec.get(meta.name), meta, rec, rec.store);
+                    if(!Ext4.isEmpty(value))
+                        values.push(value.length);
+                }, this);
+
+                //TODO: this should probably take into account mean vs max, and somehow account for line wrapping on really long text
+                var avgLen = values.length ? (Ext4.Array.sum(values) / values.length) : 1;
+
+                col.width = Math.max(avgLen, col.header.length) * this._charWidth + this._colPadding;
+                col.width = Math.min(col.width, this._maxColWidth);
+            }
+
+            if(!col.hidden)
+                totalRequestedWidth += col.width || 0;
+        }, this);
+
+        if(this.constraintColumnWidths){
+            console.log('resizing columns to fit');
+            Ext4.each(columns, function(col){
+                if(!col.hidden){
+                    col.flex = (col.width / totalRequestedWidth);
+                    col.width = null;
+                }
+            })
+        }
+    }
+
     ,getColumnById: function(colName){
         return this.getColumnModel().getColumnById(colName);
     }

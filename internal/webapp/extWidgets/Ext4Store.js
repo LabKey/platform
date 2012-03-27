@@ -124,6 +124,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
         this.proxy = {
             type: 'LabkeyProxy',
             store: this,
+            timeout: this.timeout,
             listeners: {
                 scope: this,
                 exception: this.onProxyException
@@ -145,7 +146,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
         this.on('update', this.onUpdate, this);
         this.on('add', this.onAdd, this);
 
-        this.proxy.reader.on('metadataload', this.onMetaDataLoad, this);
+        this.proxy.reader.on('dataload', this.onReaderLoad, this);
 
         //Add this here instead of allowing Ext.store to autoLoad to make sure above listeners are added before 1st load
         if(autoLoad){
@@ -227,7 +228,8 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
 
     //private
     //NOTE: the purpose of this is to provide a way to modify the server-supplied metadata and supplement with a client-supplied object
-    onMetaDataLoad: function(meta){
+    onReaderLoad: function(data){
+        var meta = data.metaData;
         this.model.prototype.idProperty = this.proxy.reader.idProperty;
 
         if(meta.fields && meta.fields.length){
@@ -740,13 +742,16 @@ Ext4.define('LABKEY.ext4.ExtendedJsonReader', {
     },
     constructor: function(){
         this.callParent(arguments);
-        this.addEvents('metadataload');
+        this.addEvents('dataload');
     },
     readRecords: function(data) {
         if(data.metaData){
             this.idProperty = data.metaData.id; //NOTE: normalize which field holds the PK.
             this.model.prototype.idProperty = this.idProperty;
 
+            //NOTE: it would be interesting to convert this JSON into a more functional object here
+            //for example, columns w/ lookups could actually reference their target
+            //we could add methods like getDisplayString(), which accept the ext record and return the appropriate display string
             Ext4.each(data.metaData.fields, function(meta){
                 if(meta.jsonType == 'int' || meta.jsonType=='float' || meta.jsonType=='boolean')
                     meta.useNull = true;  //prevents Ext from assigning 0's to field when record created
@@ -758,12 +763,13 @@ Ext4.define('LABKEY.ext4.ExtendedJsonReader', {
                     }
                     catch (ex)
                     {
+                        //this is potentially the sort of thing we'd want to log to mothership??
                     }
 
                 }
             });
 
-            this.fireEvent('metadataload', data.metaData); //NOTE: provide an event the store can consume in order to modify the server-supplied metadata
+            this.fireEvent('dataload', data); //NOTE: provide an event the store can consume in order to modify the server-supplied metadata
         }
 
         return this.callParent([data]);
@@ -1017,6 +1023,21 @@ Ext4.define('LABKEY.ext4.AjaxProxy', {
         }
         return data;
     },
+
+    getParams: function(operation){
+        var params = this.callParent(arguments);
+        if(params.filter && params.filter.length){
+            var val;
+            Ext4.each(params.filter, function(f){
+                val = f.split('=');
+                params[val[0]] = val[1];
+            }, this);
+            delete params.filter;
+        }
+        return params;
+    },
+
+    sortParam: 'query.sort',
     encodeSorters: function(sorters){
          var length   = sorters.length,
              sortStrs = [],
@@ -1029,9 +1050,16 @@ Ext4.define('LABKEY.ext4.AjaxProxy', {
          }
 
          return sortStrs.join(",");
+    },
+
+    encodeFilters: function(filters){
+        var result = [];
+        if(filters && filters.length){
+            Ext4.each(filters, function(filter){
+                if(filter.filterType)
+                    result.push(Ext4.htmlEncode('query.' + filter.property + '~' + filter.filterType.getURLSuffix()) + '=' + Ext4.htmlEncode(filter.value));
+            }, this);
+        }
+        return result;
     }
-    //NOTE: perhaps this could be used to translate Ext filters into the expected labkey filters?
-//    encodeFilters: function(filters){
-//        return this.callParent(arguments);
-//    }
 });

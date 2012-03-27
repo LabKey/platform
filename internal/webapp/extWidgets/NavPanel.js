@@ -165,6 +165,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
                             window.location = LABKEY.ActionURL.buildURL(btn.importController, btn.importAction, null, btn.urlParams);
                         else
                             Ext4.create('LABKEY.ext.ImportWizardWin', {
+                                title: 'Import Data',
                                 controller: btn.importController,
                                 action: btn.importAction,
                                 urlParams: btn.urlParams,
@@ -229,6 +230,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
                                 controller: 'query',
                                 action: 'importData',
                                 urlParams: btn.urlParams,
+                                title: 'Import Data',
                                 workbookFolderType: 'Expt Workbook'
                             }).show();
                     }
@@ -303,7 +305,8 @@ Ext4.define('LABKEY.ext.NavPanel', {
                                 controller: 'project',
                                 action: 'begin',
                                 urlParams: btn.urlParams,
-                                workbookFolderType: 'Expt Workbook'
+                                workbookFolderType: 'Expt Workbook',
+                                title: 'Import Data'
                             }).show();
                     }
                 }]

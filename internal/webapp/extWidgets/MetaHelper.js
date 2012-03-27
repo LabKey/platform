@@ -151,12 +151,12 @@ LABKEY.ext.MetaHelper = {
      * @param {object} [config.lookup.store] advanced! Pass in your own custom store for a lookup field
      * @param {boolean} [config.lazyCreateStore] If false, the store will be created immediately.  If true, the store will be created when the component is created. (default true)
      * @param {boolean} [config.createIfDoesNotExist] If true, this field will be created in the store, even if it does not otherwise exist on the server. Can be used to force custom fields to appear in a grid or form or to pass additional information to the server at time of import
-     * @param {function} [config.buildQtip] This function will be used to generate the qTip for the field when it appears in a grid instead of the default function.  It will be passed the following arguments: qtip, data, cellMetaData, meta, record, store. It should modify the qtip array.  For example:
-     * buildQtip: function(qtip, data, cellMetaData, meta, record){
+     * @param {function} [config.buildQtip] This function will be used to generate the qTip for the field when it appears in a grid instead of the default function.  It will be passed a single object as an argument.  This object has the following properties: qtip, data, cellMetaData, meta, record, store. Qtip is an array which will be merged to form the contents of the tooltip.  Your code should modify the array to alter the tooltip.  For example:
+     * buildQtip: function(config){
      *      qtip.push('I have a tooltip!');
-     *      qtip.push('This is my value: ' + data);
+     *      qtip.push('This is my value: ' + config.value);
      * }
-     * @param {function} [config.buildDisplayString] This function will be used to generate the display string for the field when it appears in a grid instead of the default function.  It will be passed the same arguments a buildQtip
+     * @param {function} [config.buildDisplayString] This function will be used to generate the display string for the field when it appears in a grid instead of the default function.  It will be passed the same argument as buildQtip()
      * @param {function} [config.buildUrl] This function will be used to generate the URL encapsulating the field
      * @param {string} [config.urlTarget] If the value is rendered in a LABKEY.ext4.EditorGridPanel (or any other component using this pathway), and it contains a URL, this will be used as the target of <a> tag.  For example, use _blank for a new window.
      * @param (boolean) [config.setValueOnLoad] If true, the store will attempt to set a value for this field on load.  This is determined by the defaultValue or getInitialValue function, if either is defined
@@ -165,6 +165,7 @@ LABKEY.ext.MetaHelper = {
      *  getInitialValue(val, rec, meta){
      *      return val || new Date()
      *  }
+     * @param {boolean} [config.wordWrap] If true, when displayed in an Ext grid the contents of the cell will use word wrapping, as opposed to being forced to a single line
      *
      * Note: the follow Ext params are automatically defined based on the specified Labkey metadata property:
      * dataIndex -> name
@@ -409,23 +410,6 @@ LABKEY.ext.MetaHelper = {
     },
 
     //private
-    //TODO: reconsider how this works.  maybe merge into buildQtip()?
-    setLongTextRenderer: function(col, meta){
-        if(col.multiline || (undefined === col.multiline && col.scale > 255 && meta.jsonType === "string"))
-        {
-            col.renderer = function(data, metadata, record, rowIndex, colIndex, store)
-            {
-                //set quick-tip attributes and let Ext QuickTips do the work
-                //Ext3
-                metadata.tdAttr = "ext:qtip=\"" + Ext4.util.Format.htmlEncode(data || '') + "\"";
-                //Ext4
-                metadata.tdAttr += " data-qtip=\"" + Ext4.util.Format.htmlEncode(data || '') + "\"";
-                return data;
-            };
-        }
-    },
-
-    //private
     getColumnsConfig: function(store, grid, config){
         config = config || {};
 
@@ -464,35 +448,15 @@ LABKEY.ext.MetaHelper = {
             col.hidden = true;
         }
 
-        //NOTE: java formats differ from ext
-//        col.format = meta.format;
+        col.format = meta.extFormat;
 
-        switch(meta.jsonType){
-            //TODO: Ext has xtypes for these column types.  In Ext3 they did not prove terribly useful, but we should revisit in Ext4;
-            // however, the fact that we utilize our own renderer might negate any value
-//            case "boolean":
-//                if(col.editable){
-//                    col.xtype = 'booleancolumn';
-//                }
-//                break;
-//            case "int":
-//                col.xtype = 'numbercolumn';
-//                col.format = '0';
-//                break;
-//            case "float":
-//                col.xtype = 'numbercolumn';
-//                break;
-//            case "date":
-//                col.xtype = 'datecolumn';
-//                col.format = meta.format || Date.patterns.ISO8601Long;
-        }
 
         //this.updatable can override col.editable
         col.editable = config.editable && col.editable && meta.userEditable;
 
-        //will use custom renderer
-        if(meta.lookup && meta.lookups!==false)
-            delete col.xtype;
+//        //will use custom renderer
+//        if(meta.lookup && meta.lookups!==false)
+//            delete col.xtype;
 
         if(col.editable && !col.editor)
             col.editor = LABKEY.ext.MetaHelper.getGridEditorConfig(meta);
@@ -517,72 +481,108 @@ LABKEY.ext.MetaHelper = {
 
     //private
     getDefaultRenderer : function(col, meta, grid) {
-        return function(data, cellMetaData, record, rowIndex, colIndex, store)
+        return function(value, cellMetaData, record, rowIndex, colIndex, store)
         {
-            LABKEY.ext.MetaHelper.buildQtip(data, cellMetaData, meta, record);
+            var displayValue = value;
+            var cellStyles = [];
 
-            var displayValue = data;
+            if(null === value || undefined === value || value.toString().length == 0)
+                return value;
 
-            if(null === data || undefined === data || data.toString().length == 0)
-                return data;
+            //format value into a string
+            displayValue = LABKEY.ext.MetaHelper.getDisplayString(value, meta, record, store);
 
-            //format data into a string
             if(meta.buildDisplayString){
-                displayValue = meta.buildDisplayString(data, col, meta, cellMetaData, record, store);
-            }
-            else {
-                displayValue = LABKEY.ext.MetaHelper.getDisplayString(data, meta, record, store);
+                displayValue = meta.buildDisplayString({
+                    displayValue: displayValue,
+                    value: value,
+                    col: col,
+                    meta: meta,
+                    cellMetaData: cellMetaData,
+                    record: record,
+                    store: store
+                });
             }
 
             displayValue = Ext4.util.Format.htmlEncode(displayValue);
 
             //if meta.file is true, add an <img> for the file icon
             if(meta.file){
-                displayValue = "<img src=\"" + LABKEY.Utils.getFileIconUrl(data) + "\" alt=\"icon\" title=\"Click to download file\"/>&nbsp;" + displayValue;
+                displayValue = "<img src=\"" + LABKEY.Utils.getFileIconUrl(value) + "\" alt=\"icon\" title=\"Click to download file\"/>&nbsp;" + displayValue;
                 //since the icons are 16x16, cut the default padding down to just 1px
-                cellMetaData.tdAttr += " style=\"padding: 1px 1px 1px 1px\"";
+                cellStyles.push('padding: 1px 1px 1px 1px');
             }
 
             //build the URL
             if(col.showLink !== false){
-                var url = LABKEY.ext.MetaHelper.getColumnUrl(displayValue, data, col, meta, record);
+                var url = LABKEY.ext.MetaHelper.getColumnUrl(displayValue, value, col, meta, record);
                 if(url){
                     displayValue = "<a " + (meta.urlTarget ? "target=\""+meta.urlTarget+"\"" : "") + " href=\"" + url + "\">" + displayValue + "</a>";
                 }
             }
 
 //            //TODO: consider supporting other attributes like style, class, align, etc.
+//            //possibly allow a cellStyles object?
 //            Ext4.each(['style', 'className', 'align', 'rowspan', 'width'], function(attr){
 //
 //            }, this);
+
+            if(meta.wordWrap){
+                cellStyles.push('white-space:normal !important');
+            }
+
+            if(record && record.errors && record.errors.length)
+                cellMetaData.css += ' x-grid3-cell-invalid';
+
+            if(cellStyles.length){
+                cellMetaData.tdAttr = cellMetaData.tdAttr || '';
+                cellMetaData.tdAttr += ' style="'+(cellStyles.join(';'))+'"';
+            }
+
+            LABKEY.ext.MetaHelper.buildQtip({
+                displayValue: displayValue,
+                value: value,
+                meta: meta,
+                col: col,
+                record: record,
+                store: store,
+                cellMetaData: cellMetaData
+            });
 
             return displayValue;
         };
     },
 
     //private
-    getDisplayString: function(data, meta, record, store){
+    getDisplayString: function(value, meta, record, store){
         var displayType = Ext4.isObject(meta.type) ? meta.type.type : meta.type;
-        var displayValue = data;
-
-        //NOTE: the labkey 9.1 API returns both the value of the field and the display value
-        //this is accessing the raw JSON object to obtain the latter
-        if(record && record.raw && record.raw[meta.name] && record.raw[meta.name].displayValue){
-            //console.log('using json displayValue: ' + record.raw[meta.name].displayValue);
-            //TODO: do we really want to circumvent the lookup renderer?
-            return record.raw[meta.name].displayValue;
-        }
+        var displayValue = value;
+        var shouldCache;
 
         //NOTE: this is substantially changed over LABKEY.ext.FormHelper
         if(meta.lookup && meta.lookups!==false){
-            displayValue = LABKEY.ext.MetaHelper.lookupRenderer(meta, displayValue, record, store);
+            displayValue = LABKEY.ext.MetaHelper.getLookupDisplayValue(meta, displayValue, record, store);
+            meta.usingLookup = true;
+            shouldCache = false;
             displayType = 'string';
+        }
+
+        //NOTE: the labkey 9.1 API returns both the value of the field and the display value
+        //this is accessing the raw JSON object to obtain the latter
+        if(record && record.raw && record.raw[meta.name] && record.raw[meta.name]){
+            //TODO: do we really want to circumvent the lookup renderer?
+            if(Ext4.isDefined(record.raw[meta.name].displayValue)){
+                return record.raw[meta.name].displayValue;
+            }
         }
 
         if(meta.extFormatFn && Ext4.isFunction(meta.extFormatFn)){
             displayValue = meta.extFormatFn(displayValue);
         }
         else {
+            if(!Ext4.isDefined(displayValue))
+                displayValue = '';
+
             switch (displayType){
                 case "date":
                     var date = new Date(displayValue);
@@ -620,55 +620,82 @@ LABKEY.ext.MetaHelper = {
             }
         }
 
+        //cache the calculated value, so we dont need to recalculate each time.  this should get cleared by the store on update like any server-generated value
+        if(shouldCache !== false){
+            if(!record.raw[meta.name])
+                record.raw[meta.name] = {};
+            record.raw[meta.name].displayValue = displayValue;
+        }
+
         return displayValue;
     },
 
     //private
-    getColumnUrl: function(displayValue, rawData, col, meta, record){
+    getColumnUrl: function(displayValue, value, col, meta, record){
         //wrap in <a> if url is present in the record's original JSON
-            var url;
-            if(meta.buildUrl)
-                url = meta.buildUrl(displayValue, rawData, col, meta, record);
-            else if(record.raw && record.raw[meta.name] && record.raw[meta.name].url)
-                url = record.raw[meta.name].url;
-            return Ext4.util.Format.htmlEncode(url);
+        var url;
+        if(meta.buildUrl)
+            url = meta.buildUrl({
+                displayValue: displayValue,
+                value: value,
+                col: col,
+                meta: meta,
+                record: record
+            });
+        else if(record.raw && record.raw[meta.name] && record.raw[meta.name].url)
+            url = record.raw[meta.name].url;
+        return Ext4.util.Format.htmlEncode(url);
     },
 
     //private
-    buildQtip: function(data, cellMetaData, meta, record){
+    buildQtip: function(config){
         var qtip = [];
         //NOTE: returned in the 9.1 API format
-        if(record && record.raw && record.raw[meta.name] && record.raw[meta.name].mvValue){
-            var mvValue = record.raw[meta.name].mvValue;
+        if(config.record && config.record.raw && config.record.raw[config.meta.name] && config.record.raw[config.meta.name].mvValue){
+            var mvValue = config.record.raw[config.meta.name].mvValue;
 
             //get corresponding message from qcInfo section of JSON and set up a qtip
-            if(record.store && record.store.reader.rawData && record.store.reader.rawData.qcInfo && record.store.reader.rawData.qcInfo[mvValue])
+            if(config.record.store && config.record.store.reader.rawData && config.record.store.reader.rawData.qcInfo && config.record.store.reader.rawData.qcInfo[mvValue])
             {
-                qtip.push(record.store.reader.rawData.qcInfo[mvValue]);
-                cellMetaData.css = "labkey-mv";
+                qtip.push(config.record.store.reader.rawData.qcInfo[mvValue]);
+                config.cellMetaData.css = "labkey-mv";
             }
             qtip.push(mvValue);
         }
 
-        if(record.errors && record.getErrors().length){
+        if(config.record.errors && config.record.getErrors().length){
 
-            Ext4.each(record.getErrors(), function(e){
+            Ext4.each(config.record.getErrors(), function(e){
                 if(e.field==meta.name){
                     qtip.push((e.severity || 'ERROR') +': '+e.message);
-                    cellMetaData.css += ' x-grid3-cell-invalid';
                 }
             }, this);
         }
 
-        if(meta.buildQtip){
-            meta.buildQtip(qtip, data, cellMetaData, meta, record);
+        //NOTE: the Ext3 API did this; however, i think a better solution is to support text wrapping in cells
+//        if(config.col.multiline || (undefined === config.col.multiline && config.col.scale > 255 && config.meta.jsonType === "string"))
+//        {
+//            //Ext3
+//            config.cellMetaData.tdAttr = "ext:qtip=\"" + Ext4.util.Format.htmlEncode(config.value || '') + "\"";
+//            //Ext4
+//            config.cellMetaData.tdAttr += " data-qtip=\"" + Ext4.util.Format.htmlEncode(config.value || '') + "\"";
+//        }
+
+        if(config.meta.buildQtip){
+            config.meta.buildQtip({
+                qtip: config.qtip,
+                value: config.value,
+                cellMetaData: config.cellMetaData,
+                meta: config.meta,
+                record: config.record
+            });
         }
 
         if(qtip.length){
             //ext3
-            cellMetaData.tdAttr = "ext:qtip=\"" + Ext4.util.Format.htmlEncode(qtip.join('<br>')) + "\"";
+            config.cellMetaData.tdAttr = "ext:qtip=\"" + Ext4.util.Format.htmlEncode(qtip.join('<br>')) + "\"";
             //ext4
-            cellMetaData.tdAttr += " data-qtip=\"" + Ext4.util.Format.htmlEncode(qtip.join('<br>')) + "\"";
+            config.cellMetaData.tdAttr += " data-qtip=\"" + Ext4.util.Format.htmlEncode(qtip.join('<br>')) + "\"";
         }
     },
 
@@ -676,7 +703,7 @@ LABKEY.ext.MetaHelper = {
     //NOTE: it would be far better if we did not need to pass the store.  this is done b/c we need to fire the 'datachanged' event
     //once the lookup store loads.  a better idea would be to force the store/grid to listen for event fired by the lookupStore or somehow get the
     //metadata to fire events itself
-    lookupRenderer : function(meta, data, record, store) {
+    getLookupDisplayValue : function(meta, data, record, store) {
         var lookupStore = LABKEY.ext.MetaHelper.getLookupStore(meta);
         if(!lookupStore){
             return '';

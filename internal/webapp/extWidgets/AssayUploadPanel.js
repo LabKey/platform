@@ -393,6 +393,7 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
             xtype: 'labkey-gridpanel',
             itemId: 'resultGrid',
             title: 'Assay Results',
+            autoScroll: true,
             bodyStyle:'',
             minHeight: 400,
             tbar: [
