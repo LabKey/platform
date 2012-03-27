@@ -2527,25 +2527,26 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             //style: 'padding: 5px;',
             width: this.width - 5,
             autoHeight: true,
-            activeTab: 0,
+            activeTab: this.shouldShowFacetedUI() ? 1 : 0,
             defaults: this.itemDefaults,
             itemId: 'filterArea',
             border: true,
             monitorValid: true,
             listeners: {
                 scope: this,
-                clientvalidation: function(form, val){
-                    console.log('validation')
-                    var btn = this.buttons[0];  //kinda fragile...
-                    btn.setDisabled(!val);
-                },
-                beforetabchange: this.beforeTabChange
+                beforetabchange: this.beforeTabChange,
+                tabchange: function(){
+                    this.syncShadow();
+                }
             },
             items: [
-                this.getDefaultFilterPanel(),
-                this.getLookupFilterPanel()
+                this.getDefaultFilterPanelCfg()
             ]
         };
+
+        if(this.shouldShowFacetedUI()){
+            panelCfg.items.push(this.getFacetedFilterPanelCfg());
+        }
 
         var dataRegion = LABKEY.DataRegions[this.dataRegionName];
 
@@ -2555,8 +2556,6 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
         var panel = this.add(panelCfg);
         this.configureLookupPanel();
-//        this.doLayout();
-//        this.setValuesFromParams();
     },
 
     beforeTabChange: function(panel, newTab, oldTab){
@@ -2567,11 +2566,11 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         var optimized;
         var filterDef;
 
-        if(!this.allowFilterDiscard && oldTab && oldTab.filterType == 'default' && !this.shouldShowLookupUI(newTab.filterType)){
+        if(!this.allowFilterDiscard && oldTab && oldTab.filterType == 'default' && newTab.filterType != 'default' && !this.shouldShowFacetedUI(newTab.filterType)){
             var msgBox = Ext.Msg.confirm('Confirm change', 'If you switch tabs you will loose one or more filters.  Do you want to continue?', function(input){
                 if(input == 'yes'){
                     this.allowFilterDiscard = true;
-                    this.find('tabpanel')[0].setActiveTab(newTab)
+                    this.find('tabpanel')[0].setActiveTab(newTab);
                 }
             }, this);
             msgBox.getDialog().toFront(true);
@@ -2579,7 +2578,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         }
         this.allowFilterDiscard = null;
 
-        if(this.shouldShowLookupUI()){
+        if(this.getInitialFilterType() != 'default' && !this.forceAdvancedFilters){
             Ext.each(filterArray, function(filter){
                 var allowable = [];
                 this.getLookupStore().each(function(rec){
@@ -2590,10 +2589,10 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 if(optimized){
                     newFilters.push({operator: optimized[0], value: optimized[1]});
                 }
-                else {
-                    console.log('dropping filter');
-                    console.log(filter);
-                }
+//                else {
+//                    console.log('dropping filter');
+//                    console.log(filter);
+//                }
             }, this);
         }
         else {
@@ -2626,7 +2625,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         return filterType;
     },
 
-    shouldShowLookupUI: function(filterType){
+    shouldShowFacetedUI: function(filterType){
         filterType = filterType || this.filterType;
 
         var paramValPairs = this.getParamsForField(this._fieldName);
@@ -2646,7 +2645,6 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             }
 
             if(filter.isMultiValued() && ['in', 'notin'].indexOf(filter.getURLSuffix()) == -1 ){
-                console.log('different filter')
                 shouldShow = false;
             }
 
@@ -2660,7 +2658,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 this.forceAdvancedFilters
             ){
                 shouldShow = false;
-                console.log('either too many for zero filter options, switching to default UI');
+                //console.log('either too many for zero filter options, switching to default UI');
             }
         }
 
@@ -2670,7 +2668,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         return shouldShow;
     },
 
-    getDefaultFilterPanel: function(){
+    getDefaultFilterPanelCfg: function(){
         // create a task to set the input focus that will get started after layout is complete, the task will
         // run for a max of 2000ms but will get stopped when the component receives focus
         this.focusTask = this.focusTask || {interval:150, run: function(){
@@ -2703,40 +2701,60 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         return form;
     },
 
-    getLookupFilterPanel: function(){
+    getFacetedFilterPanelCfg: function(){
         return {
             border: false,
             xtype: 'form',
+            //autoHeight: true,
             title: 'Choose Values',
-            itemId: 'lookupPanel',
+            itemId: 'facetedPanel',
             filterType: 'include',
+            height: 200,
+            autoScroll: true,
             //deferredRender: false,
             bubbleEvents: ['add', 'remove', 'clientvalidation'],
 
             defaults: {
                 border: false
             },
-            disabled: true,
+            //disabled: true,
+            maskDisabled: true,
+            //items: [],
             items: [{
                 layout: 'hbox',
                 style: 'padding-bottom: 5px;',
+                width: 100,
                 defaults: {
                     border: false
                 },
                 items: []
-            }]
+            }],
+            mask: function(doMask){
+                if(this.rendered)
+                    this.body.mask('Loading...');
+                else
+                    this.on('render', this.mask, this, {single: true});
+            },
+            unMask: function(){
+                if(this.rendered){
+                    this.body.unmask();
+                }
+                else {
+                    this.un('render', this.mask, this);
+                }
+            }
         };
     },
 
     configureLookupPanel: function(){
-        var panel = this.find('itemId', 'lookupPanel')[0];
+        var panel = this.find('itemId', 'facetedPanel')[0];
         //identify and render the correct UI
-        if(this.shouldShowLookupUI()){
+        if(this.shouldShowFacetedUI()){
             //start loading the store
             var store = this.getLookupStore();
 
             if(!store.fields || !store.fields.length){
-                panel.setDisabled(true);
+                panel.mask();
                 return;
             }
 
@@ -2749,23 +2767,32 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             toAdd.push(filterConfig);
             toAdd.push({
                 xtype: 'panel',
-                autoScroll: true,
-                height: 200,
+                //autoScroll: true,
+                //height: 200,
                 //autoHeight: true,
                 bodyStyle: 'padding-left: 5px;',
                 items: [
                     this.getCheckboxGroupConfig(0)
                 ]
             });
+            panel.removeAll();
             panel.add(toAdd);
-            panel.doLayout();
+            this.doLayout();
 
-            panel.setDisabled(false);
-//            if(this.filterType == 'include')
-                panel.ownerCt.setActiveTab(panel);
+            panel.unMask();
         }
         else {
-            panel.setDisabled(true);
+            if(this.rendered){
+                var tabpanel = this.find('tabpanel')[0];
+                tabpanel.setActiveTab(0);
+                tabpanel.remove(1);  //remove the faceted UI
+            }
+            else {
+                if(panel){
+                    panel.setDisabled(true);
+                    panel.setVisible(false);
+                }
+            }
         }
     },
 
@@ -2799,14 +2826,17 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         }
 
         target = target || this.getActiveTab();
-
-        this.filterType = target.filterType;
-
-        var paramValPairs = values || this.getParamsForField(this._fieldName);
-        this.hasLoaded = true;
-
         var combos = this.getFilterCombos(target);
         var inputFields = this.getInputFields(target);
+
+        if(!combos || !combos.length){
+            this.setValuesFromParams.defer(100, this, [target, values]);
+            return;
+        }
+
+        this.filterType = target.filterType;
+        var paramValPairs = values || this.getParamsForField(this._fieldName);
+        this.hasLoaded = true;
 
         var filterIndex = 0;
 
@@ -2829,7 +2859,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         Ext.each(paramValPairs, function(pair, idx){
             var combo = combos[filterIndex];
             if(!combo){
-                console.log('no input found for idx: ' + idx)
+                console.log('no input found for idx: ' + idx);
                 this.hasLoaded = false;
                 return;
             }
@@ -3047,7 +3077,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                     resizable: false,
                     width: 340,
                     tpl: new Ext.XTemplate('<tpl for=".">' +
-                        '<span class="labkey-link" ext:qtip="Click label to select only this row.  Click the checkbox to toggle this row and preserve other selections.">{[!Ext.isEmpty(values["value"]) ? values["value"] : "[Blank]"]}' +
+                        '<span class="labkey-link" ext:qtip="Click the label to select only this row.  Click the checkbox to toggle this row and preserve other selections.">{[!Ext.isEmpty(values["value"]) ? values["value"] : "[Blank]"]}' +
                         '</span></tpl>')
                 }
             )],
@@ -3114,8 +3144,10 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 this.getSelectionModel().selectRows(records);
             },
             selectAll: function(){
-                if(this.rendered)
-                    this.getSelectionModel().selectAll();
+                if(this.rendered){
+                    var sm = this.getSelectionModel();
+                    sm.selectAll.defer(10, sm);
+                }
                 else {
                     this.on('render', this.selectAll, this, {single: true});
                 }
@@ -3164,6 +3196,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             clearFilterOnReset: false,
             editable: false,
             value: idx === 0 ? this.getComboDefaultValue() : '',
+            originalValue: idx === 0 ? this.getComboDefaultValue() : '',
             listeners:{
                 scope: this,
                 select: function(combo){
@@ -3243,7 +3276,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     getComboDefaultValue: function()
     {
         //afterRender of combobox we set the default value.
-        if(this.shouldShowLookupUI()){
+        if(this.shouldShowFacetedUI()){
             return 'in';
         }
         else if(this._mappedType == 'LONGTEXT' || this._mappedType == 'TEXT'){
@@ -3616,7 +3649,11 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         var column = this.boundColumn;
 
         if(Ext.StoreMgr.get(storeId)){
-            return Ext.StoreMgr.get(storeId);
+            var store = Ext.StoreMgr.get(storeId);
+            if(store && (!store.fields || !store.fields.length) && !this.forceAdvancedFilters && !store.isLoading)
+                store.load();
+
+            return store;
         }
 
         var store = Ext.StoreMgr.add(new LABKEY.ext.Store({
@@ -3652,11 +3689,21 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         //NOTE: empty string will be treated as NULL, which is b/c Ext checkboxes can be set to empty string, but not null
         var sql = 'SELECT CASE WHEN value IS NULL then \'\' ELSE cast(value as varchar) END as value FROM (';
         sql += 'SELECT DISTINCT t.';
-        for (var i = 0; i < column.fieldKeyArray.length; i++)
-        {
-            sql += "\"" + column.fieldKeyArray[i].replace("\"", "\"\"") + "\".";
+
+        var fieldKey;
+        if(column.displayField){
+            fieldKey = column.displayField.split("/");
         }
-        sql += "\"" + column.lookup.displayColumn.replace("\"", "\"\"") + "\"";
+        else {
+            fieldKey = column.fieldKeyArray;
+        }
+
+        for (var i = 0; i < fieldKey.length; i++)
+        {
+            sql += "\"" + fieldKey[i].replace("\"", "\"\"") + "\"";
+            if(i < fieldKey.length - 1)
+                sql += '.';
+        }
         sql += ' AS value FROM "' + dataRegion.schemaName.replace("\"", "\"\"") + '"."' + dataRegion.queryName.replace("\"", "\"\"") + '" t';
         sql += ') s';
 
