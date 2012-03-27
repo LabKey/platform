@@ -38,6 +38,7 @@ import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -2485,110 +2486,150 @@ public class StudyManager
             return false;
 
         List<Map<String, Object>> mapsImport = reader.getImportMaps();
+        if (mapsImport.isEmpty())
+            return true;
 
-        if (!mapsImport.isEmpty())
+        List<String> importErrors = new LinkedList<String>();
+        final Container c = study.getContainer();
+
+        // Use a factory to ensure domain URI consistency between imported properties and the dataset.  See #7944.
+        DomainURIFactory factory = new DomainURIFactory() {
+            public String getDomainURI(String name)
+            {
+                return StudyManager.getDomainURI(c, user, name);
+            }
+        };
+
+        OntologyManager.ListImportPropertyDescriptors list = OntologyManager.createPropertyDescriptors(factory, reader.getTypeNameColumn(), mapsImport, importErrors, c, true);
+
+        if (!importErrors.isEmpty())
         {
-            List<String> importErrors = new LinkedList<String>();
-            final Container c = study.getContainer();
+            for (String error : importErrors)
+                errors.reject("importDatasetSchemas", error);
+            return false;
+        }
 
-            // Use a factory to ensure domain URI consistency between imported properties and the dataset.  See #7944.
-            DomainURIFactory factory = new DomainURIFactory() {
-                public String getDomainURI(String name)
-                {
-                    return StudyManager.getDomainURI(c, user, name);
-                }
-            };
+        for (OntologyManager.ImportPropertyDescriptor ipd : list.properties)
+        {
+            if (null == ipd.domainName || null == ipd.domainURI)
+                errors.reject("importDatasetSchemas", "Dataset not specified for property: " + ipd.pd.getName());
+        }
+        if (errors.hasErrors())
+            return false;
 
-            boolean success;
+        Map<Integer, SchemaReader.DataSetImportInfo> datasetInfoMap = reader.getDatasetInfo();
+        StudyManager manager = StudyManager.getInstance();
+
+        for (Map.Entry<Integer, SchemaReader.DataSetImportInfo> entry : datasetInfoMap.entrySet())
+        {
+            int id = entry.getKey().intValue();
+            SchemaReader.DataSetImportInfo info = entry.getValue();
+            String name = info.name;
+            String label = info.label;
+            if (label == null)
+            {
+                // Default to using the name as the label if none was explicitly specified
+                label = name;
+            }
+
+            // Check for name conflicts
+            DataSet existingDef = manager.getDataSetDefinition(study, label);
+
+            if (existingDef != null && existingDef.getDataSetId() != id)
+            {
+                errors.reject("importDatasetSchemas", "Dataset '" + existingDef.getName() + "' is already using the label '" + label + "'");
+                return false;
+            }
+
+            existingDef = manager.getDataSetDefinitionByName(study, name);
+
+            if (existingDef != null && existingDef.getDataSetId() != id)
+            {
+                errors.reject("importDatasetSchemas", "A different dataset already exists with the name " + name);
+                return false;
+            }
+
+            DataSetDefinition def = manager.getDataSetDefinition(study, id);
+
+            if (def == null)
+            {
+                def = new DataSetDefinition(study, id, name, label, null, factory.getDomainURI(name));
+                def.setDescription(info.description);
+                def.setVisitDatePropertyName(info.visitDatePropertyName);
+                def.setShowByDefault(!info.isHidden);
+                def.setKeyPropertyName(info.keyPropertyName);
+                def.setCategory(info.category);
+                def.setEntityId(GUID.makeGUID());
+                def.setKeyManagementType(info.keyManagementType);
+                def.setDemographicData(info.demographicData);
+                def.setType(info.type);
+                manager.createDataSetDefinition(user, def);
+            }
+            else
+            {
+                def = def.createMutable();
+                def.setLabel(label);
+                def.setName(name);
+                def.setDescription(info.description);
+                def.setTypeURI(getDomainURI(c, user, def));
+                def.setVisitDatePropertyName(info.visitDatePropertyName);
+                def.setShowByDefault(!info.isHidden);
+                def.setKeyPropertyName(info.keyPropertyName);
+                def.setCategory(info.category);
+                def.setKeyManagementType(info.keyManagementType);
+                def.setDemographicData(info.demographicData);
+                manager.updateDataSetDefinition(user, def);
+            }
+
+            if (info.tags != null)
+            {
+                ReportPropsManager.get().importProperties(def.getEntityId(), study.getContainer(), user, info.tags);
+            }
+        }
+
+        /** now that we actually have datasets, create/update the domains */
+        Map<String, Domain> domainsMap = new CaseInsensitiveHashMap<Domain>();
+        for (OntologyManager.ImportPropertyDescriptor ipd : list.properties)
+        {
+            Domain d = domainsMap.get(ipd.domainURI);
+            if (null == d)
+            {
+                d = PropertyService.get().getDomain(study.getContainer(), ipd.domainURI);
+                if (null == d)
+                    d = PropertyService.get().createDomain(study.getContainer(), ipd.domainURI, ipd.domainName);
+                domainsMap.put(d.getTypeURI(), d);
+            }
+            DomainProperty p = d.getPropertyByName(ipd.pd.getName());
+            if (null != p)
+            {
+                p.setRequired(ipd.pd.isRequired());
+            }
+            else
+            {
+                p = d.addProperty();
+                ipd.pd.copyTo(p.getPropertyDescriptor());
+                p.setName(ipd.pd.getName());
+                p.setRequired(ipd.pd.isRequired());
+                p.setDescription(ipd.pd.getDescription());
+            }
+        }
+
+        for (Domain d : domainsMap.values())
+        {
             try
             {
-                success = OntologyManager.importTypes(factory, reader.getTypeNameColumn(), mapsImport, importErrors, c, true, user);
+                d.save(user);
             }
-            catch (ChangePropertyDescriptorException e)
+            catch (ChangePropertyDescriptorException ex)
             {
-                errors.reject("importDatasetSchemas", e.getMessage() == null ? e.toString() : e.getMessage());
+                errors.reject("importDatasetSchemas", ex.getMessage() == null ? ex.toString() : ex.getMessage());
                 return false;
             }
+        }
 
-            if (!importErrors.isEmpty())
-            {
-                for (String error : importErrors)
-                    errors.reject("importDatasetSchemas", error);
-                return false;
-            }
-
-            if (success)
-            {
-                Map<Integer, SchemaReader.DataSetImportInfo> datasetInfoMap = reader.getDatasetInfo();
-                StudyManager manager = StudyManager.getInstance();
-
-                for (Map.Entry<Integer, SchemaReader.DataSetImportInfo> entry : datasetInfoMap.entrySet())
-                {
-                    int id = entry.getKey().intValue();
-                    SchemaReader.DataSetImportInfo info = entry.getValue();
-                    String name = info.name;
-                    String label = info.label;
-                    if (label == null)
-                    {
-                        // Default to using the name as the label if none was explicitly specified
-                        label = name;
-                    }
-
-                    // Check for name conflicts
-                    DataSet existingDef = manager.getDataSetDefinition(study, label);
-
-                    if (existingDef != null && existingDef.getDataSetId() != id)
-                    {
-                        errors.reject("importDatasetSchemas", "Dataset '" + existingDef.getName() + "' is already using the label '" + label + "'");
-                        return false;
-                    }
-
-                    existingDef = manager.getDataSetDefinitionByName(study, name);
-
-                    if (existingDef != null && existingDef.getDataSetId() != id)
-                    {
-                        errors.reject("importDatasetSchemas", "A different dataset already exists with the name " + name);
-                        return false;
-                    }
-
-                    DataSetDefinition def = manager.getDataSetDefinition(study, id);
-
-                    if (def == null)
-                    {
-                        def = new DataSetDefinition(study, id, name, label, null, factory.getDomainURI(name));
-                        def.setDescription(info.description);
-                        def.setVisitDatePropertyName(info.visitDatePropertyName);
-                        def.setShowByDefault(!info.isHidden);
-                        def.setKeyPropertyName(info.keyPropertyName);
-                        def.setCategory(info.category);
-                        def.setEntityId(GUID.makeGUID());
-                        def.setKeyManagementType(info.keyManagementType);
-                        def.setDemographicData(info.demographicData);
-                        def.setType(info.type);
-                        manager.createDataSetDefinition(user, def);
-                    }
-                    else
-                    {
-                        def = def.createMutable();
-                        def.setLabel(label);
-                        def.setName(name);
-                        def.setDescription(info.description);
-                        def.setTypeURI(getDomainURI(c, user, def));
-                        def.setVisitDatePropertyName(info.visitDatePropertyName);
-                        def.setShowByDefault(!info.isHidden);
-                        def.setKeyPropertyName(info.keyPropertyName);
-                        def.setCategory(info.category);
-                        def.setKeyManagementType(info.keyManagementType);
-                        def.setDemographicData(info.demographicData);
-                        manager.updateDataSetDefinition(user, def);
-                    }
-
-                    if (info.tags != null)
-                    {
-                        ReportPropsManager.get().importProperties(def.getEntityId(), study.getContainer(), user, info.tags);
-                    }
-                }
-            }
+        for (Map.Entry<String, List<ConditionalFormat>> entry : list.formats.entrySet())
+        {
+            PropertyService.get().saveConditionalFormats(user, OntologyManager.getPropertyDescriptor(entry.getKey(), study.getContainer()), entry.getValue());
         }
 
         return true;
