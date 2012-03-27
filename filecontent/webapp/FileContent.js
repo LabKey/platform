@@ -16,7 +16,11 @@
 
 /**
  * This class extends the filebrowser widget to provide management and execution
- * of pipeline actions.
+ * of pipeline actions. The following configs are used by the base class:
+ *
+ * This class introduces a  optional config parameter, rootOffset which indicates the path between the root of
+ * exposed in the container and the root of the WebDAV file system tree used for this webpart. This allows
+ * display of a subtree rooted below the default root for the container.
  */
 LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
 
@@ -37,6 +41,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
     adminUser : false,
     isPipelineRoot : false,
     selectionProcessed : false,
+    rootOffset : '',
 
     constructor : function(config)
     {
@@ -44,6 +49,8 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             return record.name.indexOf('.') != 0;
         }};
         LABKEY.FilesWebPartPanel.superclass.constructor.call(this, config);
+        if (this.rootOffset && this.rootOffset.length > 0)
+            this.rootOffset = LABKEY.Utils.endsWith(this.rootOffset, "/") ? this.rootOffset : this.rootOffset + "/";
     },
 
     initComponent : function()
@@ -193,7 +200,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         if (this.isPipelineRoot)
         {
             Ext.Ajax.request({
-                url:this.actionsURL + encodeURIComponent(this.path),
+                url:this.actionsURL + encodeURIComponent(this.rootOffset + this.path),
                 method:'GET',
                 disableCaching:false,
                 success : function(resp, opt){
@@ -270,7 +277,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         if (e.updatePipelineActions && this.isPipelineRoot)
         {
             Ext.Ajax.request({
-                url:this.actionsURL + encodeURIComponent(this.path),
+                url:this.actionsURL + encodeURIComponent(this.rootOffset + this.path),
                 method:'GET',
                 disableCaching:false,
                 success : this.updatePipelineActions,
