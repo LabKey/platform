@@ -729,8 +729,16 @@ public class ProjectController extends SpringActionController
 
         public boolean handlePost(CustomizePortletForm form, BindException errors) throws Exception
         {
+            String pageId = form.getPageId();
+            int index = form.getIndex();
             Portal.WebPart webPart = Portal.getPart(getContainer(), form.getWebPartId());
-            return handleDeleteWebPart(getViewContext().getContainer(), webPart.getPageId(), webPart.getIndex());
+            if (null != webPart)
+            {
+                pageId = webPart.getPageId();
+                index = webPart.getIndex();
+            }
+
+            return handleDeleteWebPart(getViewContext().getContainer(), pageId, index);
         }
 
         public URLHelper getSuccessURL(CustomizePortletForm customizePortletForm)

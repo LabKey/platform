@@ -53,7 +53,9 @@
 
     if (null != body)
     { %>
-    <tr><td colspan="3"><%=body%></td></tr><%
+    <tr><td colspan="3" id="message-body">
+        <%=body%>
+    </td></tr><%
     }
 
     %>
