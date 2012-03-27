@@ -2290,7 +2290,10 @@ public class OntologyManager
 	}
 
 
-    /** @return whether the import was successful or not. Check the errors collection for details */
+    /**
+     * @return whether the import was successful or not. Check the errors collection for details
+     * @deprecated  use PropertyService
+     */
     public static boolean importOneType(final String domainURI, List<Map<String, Object>> maps, Collection<String> errors, Container container, User user)
             throws SQLException, ChangePropertyDescriptorException
     {
@@ -2304,7 +2307,12 @@ public class OntologyManager
     }
 
 
-    /** @return whether the import was successful or not. Check the errors collection for details */
+    /**
+     * @return whether the import was successful or not. Check the errors collection for details
+     * @deprecated  use PropertyService
+     * TODO rewrite to use createPropertyDescriptors()
+     */
+    @Deprecated
     public static boolean importTypes(DomainURIFactory uriFactory, String typeColumn, List<Map<String, Object>> maps, Collection<String> errors, Container container, boolean ignoreDuplicates, User user)
             throws SQLException, ChangePropertyDescriptorException
     {
@@ -2557,6 +2565,190 @@ public class OntologyManager
 
         return true;
     }
+
+
+    public static class ImportPropertyDescriptor
+    {
+        public String domainName;
+        public String domainURI;
+        public PropertyDescriptor pd;
+        ImportPropertyDescriptor(String domainName, String domainURI, PropertyDescriptor pd)
+        {
+            this.domainName = domainName;
+            this.domainURI = domainURI;
+            this.pd = pd;
+        }
+    }
+
+
+    public static class ListImportPropertyDescriptors
+    {
+        public ArrayList<ImportPropertyDescriptor> properties = new ArrayList<ImportPropertyDescriptor>();
+        public Map<String, List<ConditionalFormat>> formats = new HashMap<String, List<ConditionalFormat>>();
+        void add(String domainName, String domainURI, PropertyDescriptor pd)
+        {
+            properties.add(new ImportPropertyDescriptor(domainName, domainURI, pd));
+        }
+    }
+
+
+    /**
+     * Turns a list of maps into a list of PropertyDescriptors.  Does not save anything.
+     *
+     * Look for duplicates with in imported list, but does not verify against any existing PropertyDescriptors/Domains
+     */
+    public static ListImportPropertyDescriptors createPropertyDescriptors(DomainURIFactory uriFactory, String typeColumn, List<Map<String, Object>> maps, Collection<String> errors, Container container, boolean ignoreDuplicates)
+    {
+        ListImportPropertyDescriptors ret = new ListImportPropertyDescriptors();
+        CaseInsensitiveHashSet all = new CaseInsensitiveHashSet();
+
+        for (Map<String, Object> m : maps)
+        {
+            String domainName = typeColumn != null ? (String) m.get(typeColumn) : null;
+            String domainURI = uriFactory.getDomainURI(domainName);
+
+            String name = StringUtils.trimToEmpty(((String)m.get("property")));
+            String propertyURI = StringUtils.trimToEmpty((String) m.get("propertyuri"));
+            if (propertyURI.length() == 0)
+                propertyURI = domainURI + "." + name;
+            if (-1 != name.indexOf('#'))
+            {
+                propertyURI = name;
+                name = name.substring(name.indexOf('#')+1);
+            }
+            if (name.length() == 0)
+            {
+                String e = "'property' field is required";
+                if (!errors.contains(e))
+                    errors.add(e);
+                continue;
+            }
+
+            // try use existing SystemProperty PropertyDescriptor from Shared container.
+            PropertyDescriptor pd = null;
+            if (!propertyURI.startsWith(domainURI) && !propertyURI.startsWith(ColumnInfo.DEFAULT_PROPERTY_URI_PREFIX))
+                pd = getPropertyDescriptor(propertyURI, _sharedContainer);
+
+            if (pd == null)
+            {
+                String label = StringUtils.trimToNull((String) m.get("label"));
+                if (null == label)
+                    label = name;
+                String conceptURI = (String) m.get("conceptURI");
+                String rangeURI = (String) m.get("rangeURI");
+
+                BooleanConverter booleanConverter = new BooleanConverter(Boolean.FALSE);
+
+                boolean required = ((Boolean)booleanConverter.convert(Boolean.class, m.get("NotNull"))).booleanValue();
+                boolean hidden = ((Boolean)booleanConverter.convert(Boolean.class, m.get("HiddenColumn"))).booleanValue();
+                boolean mvEnabled = ((Boolean)booleanConverter.convert(Boolean.class, m.get("MvEnabled"))).booleanValue();
+
+                String description = (String) m.get("description");
+                String format = StringUtils.trimToNull((String)m.get("format"));
+                String url = (String) m.get("url");
+                String importAliases = (String) m.get("importAliases");
+
+                // Try to resolve folder path to a container... if this fails, just use current folder (which at least will preserve schema & query)
+                String lookupContainerId = null;
+                String lookupFolderPath = (String) m.get("LookupFolderPath");
+                if (null != lookupFolderPath)
+                {
+                    Container lookupContainer = ContainerManager.getForPath(lookupFolderPath);
+                    lookupContainerId = null != lookupContainer ? lookupContainer.getId() : null;
+                }
+                String lookupSchema = (String) m.get("LookupSchema");
+                String lookupQuery = (String) m.get("LookupQuery");
+
+                boolean shownInInsertView = m.get("ShownInInsertView") == null || ((Boolean)m.get("ShownInInsertView")).booleanValue();
+                boolean shownInUpdateView = m.get("ShownInUpdateView") == null || ((Boolean)m.get("ShownInUpdateView")).booleanValue();
+                boolean shownInDetailsView = m.get("ShownInDetailsView") == null || ((Boolean)m.get("ShownInDetailsView")).booleanValue();
+
+                boolean dimension = m.get("Dimension") != null && ((Boolean)m.get("Dimension")).booleanValue();
+                boolean measure = m.get("Measure") != null && ((Boolean)m.get("Measure")).booleanValue();
+
+                PropertyType pt = PropertyType.getFromURI(conceptURI, rangeURI, null);
+                if (null == pt)
+                {
+                    String e = "Unrecognized type URI : " + ((null==conceptURI)? rangeURI : conceptURI);
+                    if (!errors.contains(e))
+                        errors.add(e);
+                    continue;
+                }
+                if (pt == PropertyType.STRING && "textarea".equals(m.get("InputType")))
+                {
+                    pt = PropertyType.MULTI_LINE;
+                }
+                rangeURI = pt.getTypeUri();
+
+                if (format != null)
+                {
+                    try
+                    {
+                        switch (pt)
+                        {
+                            case INTEGER:
+                            case DOUBLE:
+                                format = convertNumberFormatChars(format);
+                                (new DecimalFormat(format)).format(1.0);
+                                break;
+                            case DATE_TIME:
+                                format = convertDateFormatChars(format);
+                                (new SimpleDateFormat(format)).format(new Date());
+                                // UNDONE: don't import date format until we have default format for study
+                                // UNDONE: it looks bad to have mixed formats
+                                break;
+                            case STRING:
+                            case MULTI_LINE:
+                            default:
+                                format = null;
+                        }
+                    }
+                    catch (Exception x)
+                    {
+                        format = null;
+                    }
+                }
+
+                if (!all.add(propertyURI) && !ignoreDuplicates)
+                {
+                    if (null != domainName)
+                        errors.add("'" + domainName + "' has multiple fields named '" + name + "'");
+                    else
+                        errors.add("field '" + name + "' is specified more than once.");
+                }
+
+                pd = new PropertyDescriptor();
+                pd.setPropertyURI(propertyURI);
+                pd.setName(name);
+                pd.setLabel(label);
+                pd.setConceptURI(conceptURI);
+                pd.setRangeURI(rangeURI);
+                pd.setContainer(container);
+                pd.setDescription(description);
+                pd.setURL(StringExpressionFactory.createURL(url));
+                pd.setImportAliases(importAliases);
+                pd.setRequired(required);
+                pd.setHidden(hidden);
+                pd.setShownInInsertView(shownInInsertView);
+                pd.setShownInUpdateView(shownInUpdateView);
+                pd.setShownInDetailsView(shownInDetailsView);
+                pd.setDimension(dimension);
+                pd.setMeasure(measure);
+                pd.setFormat(format);
+                pd.setMvEnabled(mvEnabled);
+                pd.setLookupContainer(lookupContainerId);
+                pd.setLookupSchema(lookupSchema);
+                pd.setLookupQuery(lookupQuery);
+
+                List<ConditionalFormat> conditionalFormats = (List<ConditionalFormat>) m.get("ConditionalFormats");
+                if (conditionalFormats != null && !conditionalFormats.isEmpty())
+                    ret.formats.put(pd.getPropertyURI(), conditionalFormats);
+                ret.add(domainName, domainURI, pd);
+            }
+        }
+        return ret;
+    }
+
 
     private static String convertNumberFormatChars(String format)
     {
