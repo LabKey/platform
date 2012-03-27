@@ -435,8 +435,8 @@ public class DataColumn extends DisplayColumn
             if (_displayColumn != _boundColumn)
             {
                 Object boundValue = _boundColumn.getValue(ctx);
-                // In many entry paths we've already checked for null, but not all (for example, MVDisplayColumn)
-                if (boundValue == null)
+                // In many entry paths we've already checked for null, but not all (for example, MVDisplayColumn or when the TargetStudy no longer exists or is empty string)
+                if (boundValue == null || "".equals(boundValue))
                 {
                     sb.append("&nbsp;");
                 }
