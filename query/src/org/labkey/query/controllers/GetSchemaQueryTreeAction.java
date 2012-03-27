@@ -73,7 +73,6 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                 JSONArray schemas = map.get(scope);
 
                 JSONObject schemaProps = new JSONObject();
-                schemaProps.put("id", "s:" + name);
                 schemaProps.put("text", PageFlowUtil.filter(name));
                 schemaProps.put("description", PageFlowUtil.filter(schema.getDescription()));
                 schemaProps.put("qtip", PageFlowUtil.filter(schema.getDescription()));
@@ -91,7 +90,6 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                 {
                     String dsName = scope.getDataSourceName();
                     JSONObject ds = new JSONObject();
-                    ds.put("id", "ds:" + dsName);
                     ds.put("text", "Schemas in " + scope.getDisplayName());
                     ds.put("qtip", "Schemas in data source '" + dsName + "'");
                     ds.put("expanded", true);
@@ -104,10 +102,9 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
         }
         else
         {
-            //node id is "s:<schema-name>"
-            if (null != form.getNode() || form.getNode().startsWith("s:"))
+            if (null != form.getSchemaName())
             {
-                String schemaName = form.getNode().substring(2);
+                String schemaName = form.getSchemaName();
                 QuerySchema schema = defSchema.getSchema(schemaName);
 
                 if (null != schema && schema instanceof UserSchema)
@@ -168,7 +165,6 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                     if (userDefined.length() > 0)
                     {
                         JSONObject fldr = new JSONObject();
-                        fldr.put("id", "s:" + schemaName + ":ud");
                         fldr.put("text", "user-defined queries");
                         fldr.put("qtip", "Custom queries created by you and those shared by others.");
                         fldr.put("expanded", true);
@@ -180,7 +176,6 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                     if (builtIn.length() > 0)
                     {
                         JSONObject fldr = new JSONObject();
-                        fldr.put("id", "s:" + schemaName + ":bi");
                         fldr.put("text", PageFlowUtil.filter("built-in queries & tables"));
                         fldr.put("qtip", "Queries and tables that are part of the schema by default.");
                         fldr.put("expanded", true);
@@ -218,7 +213,6 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
         JSONObject qprops = new JSONObject();
         qprops.put("schemaName", schemaName);
         qprops.put("queryName", qname);
-        qprops.put("id", "q:" + schemaName + ":" + qname);
         qprops.put("text", PageFlowUtil.filter(qname));
         qprops.put("leaf", true);
         if (null != description)
@@ -232,6 +226,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
     public static class Form
     {
         private String _node;
+        private String _schemaName;
 
         public String getNode()
         {
@@ -241,6 +236,16 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
         public void setNode(String node)
         {
             _node = node;
+        }
+
+        public String getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            _schemaName = schemaName;
         }
     }
 }

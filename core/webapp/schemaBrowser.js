@@ -7,6 +7,7 @@
 Ext.namespace('LABKEY', 'LABKEY.ext');
 
 Ext.Ajax.timeout = 60000;
+Ext.QuickTips.init();
 
 LABKEY.ext.QueryCache = Ext.extend(Ext.util.Observable,
 {
@@ -146,6 +147,17 @@ LABKEY.ext.QueryDetailsCache = Ext.extend(Ext.util.Observable,
 
 });
 
+LABKEY.ext.QueryTreeLoader = Ext.extend(Ext.tree.TreeLoader, {
+    constructor : function (config) {
+        this.url = LABKEY.ActionURL.buildURL("query", "getSchemaQueryTree.api");
+        LABKEY.ext.QueryTreeLoader.superclass.constructor.call(this, config);
+    },
+
+    // TreeLoader usually uses the node id as the parameter, but we want to avoid using the schemaName or queryName in the tree node's id attribute.
+    getParams : function (node) {
+        return Ext.apply({node: node.id, schemaName: node.attributes.schemaName}, this.baseParams);
+    }
+});
 
 LABKEY.ext.QueryTreePanel = Ext.extend(Ext.tree.TreePanel,
 {
@@ -156,7 +168,6 @@ LABKEY.ext.QueryTreePanel = Ext.extend(Ext.tree.TreePanel,
             this._unloading = true
         }, this);
 
-        this.dataUrl = LABKEY.ActionURL.buildURL("query", "getSchemaQueryTree.api");
         this.root = new Ext.tree.AsyncTreeNode({
             id: 'root',
             text: 'Schemas',
@@ -186,6 +197,7 @@ LABKEY.ext.QueryTreePanel = Ext.extend(Ext.tree.TreePanel,
                 }
             }
         });
+        this.loader = new LABKEY.ext.QueryTreeLoader();
 
         LABKEY.ext.QueryTreePanel.superclass.initComponent.apply(this, arguments);
         this.addEvents("schemasloaded");
