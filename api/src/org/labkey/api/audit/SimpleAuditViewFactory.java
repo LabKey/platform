@@ -27,6 +27,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 
@@ -67,7 +68,7 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
         return Collections.emptyList();
     }
 
-    public void setupTable(FilteredTable table)
+    public void setupTable(FilteredTable table, UserSchema schema)
     {
         // set the filter for the audit view type
         table.addCondition(table.getRealTable().getColumn("EventType"), getEventType());

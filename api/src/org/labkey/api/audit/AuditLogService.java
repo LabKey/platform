@@ -123,7 +123,7 @@ public class AuditLogService
         
         public QueryView createDefaultQueryView(ViewContext context);
         public List<FieldKey> getDefaultVisibleColumns();
-        public void setupTable(FilteredTable table);
+        public void setupTable(FilteredTable table, UserSchema schema);
     }
 
     public interface Replaceable{}

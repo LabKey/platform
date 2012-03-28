@@ -23,6 +23,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.view.ViewContext;
 
 import java.util.ArrayList;
@@ -98,9 +99,9 @@ public class FileSystemAuditViewFactory extends SimpleAuditViewFactory
         return columns;
     }
 
-    public void setupTable(FilteredTable table)
+    public void setupTable(FilteredTable table, UserSchema schema)
     {
-        super.setupTable(table);
+        super.setupTable(table, schema);
         ColumnInfo dir = table.getColumn("Key1");
         if (dir != null)
         {
