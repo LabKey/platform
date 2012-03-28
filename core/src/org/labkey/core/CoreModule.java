@@ -424,15 +424,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             ExceptionUtil.logExceptionToMothership(null, t);
         }
 
-        try
-        {
-            addWebPart(WEB_PART_NAME, ContainerManager.getHomeContainer(), HttpView.BODY, 0);
-        }
-        catch (Throwable t)
-        {
-            Logger.getLogger(CoreModule.class).error("Unable to set up home folder", t);
-            ExceptionUtil.logExceptionToMothership(null, t);
-        }
     }
 
 

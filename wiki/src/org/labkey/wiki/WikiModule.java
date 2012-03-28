@@ -158,6 +158,8 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
             homeProps.put("name", defaultPageName);
             addWebPart(WEB_PART_NAME, homeContainer, HttpView.BODY, homeProps);
 
+            addWebPart("Projects", homeContainer, HttpView.BODY, 1);
+
             Map<String, String> supportProps = new HashMap<String, String>();
             supportProps.put("webPartContainer", supportContainer.getId());
             supportProps.put("name", defaultPageName);
