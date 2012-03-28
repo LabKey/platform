@@ -169,12 +169,11 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
 
             formItems.push({
                 xtype   : 'checkbox',
-                value   : false,
-                inputValue  : false,
+                inputValue  : this.data.shared,
+                checked     : this.data.shared,
                 boxLabel    : 'Share this report with all users?',
                 name        : "shared",
                 fieldLabel  : "Shared",
-                checked     : this.data.shared,
                 listeners: {
                     change: function(cmp, newVal, oldVal){
                         cmp.inputValue = newVal;

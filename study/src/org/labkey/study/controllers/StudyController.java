@@ -7013,7 +7013,6 @@ public class StudyController extends BaseStudyController
     {
         public ApiResponse execute(BrowseDataForm form, BindException errors) throws Exception
         {
-            boolean isAdmin = getContainer().hasPermission(getUser(), AdminPermission.class);
             Map<String, Boolean> types = new HashMap<String, Boolean>();
             ApiSimpleResponse response = new ApiSimpleResponse();
 
@@ -7076,7 +7075,7 @@ public class StudyController extends BaseStudyController
                 // get reports and queries
                 if (includeReports || includeQueries)
                 {
-                    for (ViewInfo info : ReportManager.get().getViews(getViewContext(), null, null, includeReports, includeQueries, isAdmin))
+                    for (ViewInfo info : ReportManager.get().getViews(getViewContext(), null, null, includeReports, includeQueries, false))
                     {
                         if (info.getCategoryDisplayOrder() != ReportUtil.DEFAULT_CATEGORY_DISPLAY_ORDER)
                             startingDefaultDisplayOrder = Math.max(startingDefaultDisplayOrder, info.getCategoryDisplayOrder());

@@ -24,12 +24,14 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.visualization.VisualizationController" %>
+<%@ page import="org.labkey.api.reports.permissions.ShareReportPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<VisualizationController.GetVisualizationForm> me = (JspView<VisualizationController.GetVisualizationForm>) HttpView.currentView();
     ViewContext ctx = me.getViewContext();
     VisualizationController.GetVisualizationForm form = me.getModelBean();
     boolean canEdit;
+    boolean canShare = ctx.hasPermission(ShareReportPermission.class);
     ReportIdentifier id = form.getReportId();
 
     if (id != null)
@@ -129,7 +131,8 @@
                     viewInfo: viewTypes['line'],
                     chartInfo: chartInfo,
                     saveReportInfo: saveReportInfo,
-                    canEdit: <%=canEdit%>
+                    canEdit: <%=canEdit%>,
+                    canShare: <%=canShare%>
                 })
             ]
         });

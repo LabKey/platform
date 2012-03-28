@@ -125,6 +125,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 reportInfo: this.saveReportInfo,
                 saveThumbnail: this.chartInfo.saveThumbnail == undefined ? true : this.chartInfo.saveThumbnail,
                 canEdit: this.canEdit,
+                canShare: this.canShare,
                 listeners: {
                     scope: this,
                     'initialMeasuresStoreLoaded': function(data) {

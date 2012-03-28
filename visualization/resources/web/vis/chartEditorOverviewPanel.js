@@ -239,7 +239,7 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
 
     canSaveSharedCharts : function()
     {
-        return this.canEdit;
+        return this.canEdit && this.canShare;
     },
 
     showMeasureSelectionWindow: function() {
