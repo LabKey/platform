@@ -22,6 +22,7 @@ import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.data.*;
@@ -86,9 +87,9 @@ public class MessageAuditViewFactory extends SimpleAuditViewFactory
         return columns;
     }
 
-    public void setupTable(FilteredTable table)
+    public void setupTable(FilteredTable table, UserSchema schema)
     {
-        super.setupTable(table);
+        super.setupTable(table, schema);
         ColumnInfo col1 = table.getColumn("Key1");
         if (col1 != null)
         {

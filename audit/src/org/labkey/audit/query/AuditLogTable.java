@@ -36,7 +36,6 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.PropertyForeignKey;
-import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserIdRenderer;
@@ -67,6 +66,7 @@ public class AuditLogTable extends FilteredTable
     {
         super(tInfo, schema.getContainer());
 
+        _schema = schema;
         _viewFactory = AuditLogService.get().getAuditViewFactory(viewFactoryName);
         setInsertURL(AbstractTableInfo.LINK_DISABLER);
 
@@ -144,6 +144,14 @@ public class AuditLogTable extends FilteredTable
                 throw new RuntimeSQLException(e);
             }
         }
+        else
+        {
+            // issue: 14463, exclude dataset audit events from the general query
+            SimpleFilter filter = new SimpleFilter();
+            filter.addCondition("EventType", "DatasetAuditEvent", CompareType.NEQ);
+
+            addCondition(filter);
+        }
         getColumn("RowId").setHidden(true);
         getColumn("Lsid").setHidden(true);
 
@@ -216,7 +224,7 @@ public class AuditLogTable extends FilteredTable
     {
         if (_viewFactory != null)
         {
-            _viewFactory.setupTable(this);
+            _viewFactory.setupTable(this, _schema);
         }
     }
 

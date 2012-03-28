@@ -343,25 +343,25 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 '<div class="data-views-tip-content">' +
                 '<table cellpadding="20" cellspacing="100">' +
                 '<tpl if="data.category != undefined && data.category.length">' +
-                '<tr><td>Source:</td><td>{data.category}</td></tr>' +
+                '<tr><td>Source:</td><td>{[fm.htmlEncode(values.data.category)]}</td></tr>' +
                 '</tpl>' +
                 '<tpl if="data.createdBy != undefined && data.createdBy.length">' +
-                '<tr><td>Created By:</td><td>{data.createdBy}</td></tr>' +
+                '<tr><td>Created By:</td><td>{[fm.htmlEncode(values.data.createdBy)]}</td></tr>' +
                 '</tpl>' +
                 '<tpl if="data.authorDisplayName != undefined && data.authorDisplayName.length">' +
-                '<tr><td>Author:</td><td>{data.authorDisplayName}</td></tr>' +
+                '<tr><td>Author:</td><td>{[fm.htmlEncode(values.data.authorDisplayName)]}</td></tr>' +
                 '</tpl>' +
                 '<tpl if="data.type != undefined && data.type.length">' +
-                '<tr><td>Type:</td><td>{data.type}</td></tr>' +
+                '<tr><td>Type:</td><td>{[fm.htmlEncode(values.data.type)]}</td></tr>' +
                 '</tpl>' +
                 '<tpl if="data.status != undefined && data.status.length">' +
-                '<tr><td>Status:</td><td>{data.status}</td></tr>' +
+                '<tr><td>Status:</td><td>{[fm.htmlEncode(values.data.status)]}</td></tr>' +
                 '</tpl>' +
                 '<tpl if="data.refreshDate != undefined && data.refreshDate.length">' +
-                '<tr><td valign="top">Data Cut Date:</td><td>{data.refreshDate}</td></tr>' +
+                '<tr><td valign="top">Data Cut Date:</td><td>{[fm.htmlEncode(values.data.refreshDate)]}</td></tr>' +
                 '</tpl>' +
                 '<tpl if="data.description != undefined && data.description.length">' +
-                '<tr><td valign="top">Description:</td><td>{data.description}</td></tr>' +
+                '<tr><td valign="top">Description:</td><td>{[fm.htmlEncode(values.data.description)]}</td></tr>' +
                 '</tpl>' +
                 '<tpl if="data.thumbnail != undefined && data.thumbnail.length">' +
                 '</tpl>' +
@@ -383,12 +383,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 cls    : 'tip-panel',
                 tpl    : tipTpl,
                 renderTipRecord : function(rec){
-                    for (var d in rec.data) {
-                        if (rec.data.hasOwnProperty(d))
-                        {
-                            rec.data[d] = Ext4.htmlEncode(rec.data[d]);
-                        }
-                    }
                     tipPanel.update(rec);
                 }
             });

@@ -24,6 +24,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserIdForeignKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.view.ViewContext;
 
@@ -103,9 +104,9 @@ public class UserAuditViewFactory extends SimpleAuditViewFactory
         return columns;
     }
 
-    public void setupTable(FilteredTable table)
+    public void setupTable(FilteredTable table, UserSchema schema)
     {
-        super.setupTable(table);
+        super.setupTable(table, schema);
         ColumnInfo col = table.getColumn("IntKey1");
         if (col != null)
         {

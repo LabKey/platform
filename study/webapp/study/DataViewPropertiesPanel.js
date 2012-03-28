@@ -74,8 +74,8 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 editable    : false,
                 value       : this.data.authorUserId,
                 queryMode      : 'local',
-                displayField   : 'displayName',
-                valueField     : 'userId',
+                displayField   : 'DisplayName',
+                valueField     : 'UserId',
                 emptyText      : 'Unknown'
             });
         }
@@ -239,10 +239,19 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
             autoLoad: true,
             proxy   : {
                 type   : 'ajax',
-                url : LABKEY.ActionURL.buildURL('user', 'getUsers.api'),
+                url : LABKEY.ActionURL.buildURL('query', 'selectRows.api'),
+                extraParams : {
+                    schemaName  : 'core',
+                    queryName   : 'Users'
+                },
                 reader : {
                     type : 'json',
-                    root : 'users'
+                    root : 'rows'
+                }
+            },
+            listeners : {
+                load : function(s, recs, success, operation, ops) {
+                    s.sort('DisplayName', 'ASC');
                 }
             }
         };

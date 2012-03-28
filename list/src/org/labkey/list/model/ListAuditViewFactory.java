@@ -41,6 +41,7 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
@@ -147,7 +148,7 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
         return columns;
     }
 
-    public void setupTable(final FilteredTable table)
+    public void setupTable(final FilteredTable table, UserSchema schema)
     {
         SimpleFilter filter = new SimpleFilter();
 

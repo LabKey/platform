@@ -37,6 +37,7 @@ import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserIdRenderer;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.SecurityManager;
@@ -119,9 +120,9 @@ public class GroupAuditViewFactory extends SimpleAuditViewFactory
         return columns;
     }
 
-    public void setupTable(FilteredTable table)
+    public void setupTable(FilteredTable table, UserSchema schema)
     {
-        super.setupTable(table);
+        super.setupTable(table, schema);
         ColumnInfo col = table.getColumn("IntKey1");
         if (col != null)
         {

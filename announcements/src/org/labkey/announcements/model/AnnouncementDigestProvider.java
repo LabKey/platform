@@ -78,7 +78,11 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
         List<Container> containers = new ArrayList<Container>(containerIds.length);
 
         for (String id : containerIds)
-            containers.add(ContainerManager.getForId(id));
+        {
+            Container c = ContainerManager.getForId(id);
+            if (c != null)
+                containers.add(c);
+        }
 
         return containers;
     }

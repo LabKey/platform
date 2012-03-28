@@ -32,6 +32,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
@@ -200,9 +201,9 @@ public class SearchModule extends DefaultModule
         }
 
         @Override
-        public void setupTable(FilteredTable table)
+        public void setupTable(FilteredTable table, UserSchema schema)
         {
-            super.setupTable(table);
+            super.setupTable(table, schema);
             ColumnInfo col = table.getColumn("Key1");
             col.setLabel("Query");
         }

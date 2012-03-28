@@ -39,6 +39,7 @@ import org.labkey.api.files.FileUrls;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
@@ -98,7 +99,7 @@ public class LabEventsAuditViewFactory extends SimpleAuditViewFactory
     }
 
     @Override
-    public void setupTable(final FilteredTable table)
+    public void setupTable(final FilteredTable table, UserSchema schema)
     {
         // show only the specified types
         SimpleFilter filter = new SimpleFilter(table.getRealTable().getColumn("EventType").getName(), (Object)StringUtils.join(EVENT_TYPE_MAP.keySet(), ";"), CompareType.IN);

@@ -32,6 +32,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.view.ViewContext;
 
 import java.util.ArrayList;
@@ -110,9 +111,9 @@ public class ExperimentAuditViewFactory extends SimpleAuditViewFactory
         return protocol.getName() + ExperimentAuditColumn.KEY_SEPARATOR + (run != null ? run.getName() : "");
     }
 
-    public void setupTable(final FilteredTable table)
+    public void setupTable(final FilteredTable table, UserSchema schema)
     {
-        super.setupTable(table);
+        super.setupTable(table, schema);
         final ColumnInfo containerId = table.getColumn("ContainerId");
 
         ColumnInfo protocolCol = table.getColumn("Key1");

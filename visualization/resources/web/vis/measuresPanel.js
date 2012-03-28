@@ -157,6 +157,12 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
                         }
                         this.fireEvent('beforeMeasuresStoreLoad', this, this.measuresStoreData);
                         this.measuresStore.loadData(this.measuresStoreData);
+
+                        var value = this.searchBox.getValue();
+                        if (value && clearCache) {
+                            // refilter the grid, if a filter was present
+                            this.filterMeasures(value);
+                        }
                     },
                     failure      : function(info, response, options) {
                         this.isLoading = false;

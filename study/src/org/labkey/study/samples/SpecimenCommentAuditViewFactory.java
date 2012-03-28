@@ -24,6 +24,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -78,9 +79,9 @@ public class SpecimenCommentAuditViewFactory extends SimpleAuditViewFactory
     }
 
     @Override
-    public void setupTable(final FilteredTable table)
+    public void setupTable(final FilteredTable table, UserSchema schema)
     {
-        super.setupTable(table);
+        super.setupTable(table, schema);
 
         final ColumnInfo containerColumn = table.getColumn("ContainerId");
         final ColumnInfo vialIdColumn = table.getColumn("Key1");

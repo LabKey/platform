@@ -70,8 +70,11 @@ public class FileContentDigestProvider implements MessageDigest.Provider
         Set<Container> containers = new HashSet<Container>();
 
         for (AuditLogEvent event : events)
-            containers.add(ContainerManager.getForId(event.getContainerId()));
-
+        {
+            Container c = ContainerManager.getForId(event.getContainerId());
+            if (c != null)
+                containers.add(c);
+        }
         return Arrays.asList(containers.toArray(new Container[containers.size()]));
     }
 

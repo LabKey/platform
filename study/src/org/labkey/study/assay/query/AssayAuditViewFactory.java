@@ -128,9 +128,9 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
         return columns;
     }
 
-    public void setupTable(final FilteredTable table)
+    public void setupTable(final FilteredTable table, UserSchema schema)
     {
-        super.setupTable(table);
+        super.setupTable(table, schema);
         final ColumnInfo containerId = table.getColumn("ContainerId");
         ColumnInfo col = table.getColumn("Key1");
 

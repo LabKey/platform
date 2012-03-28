@@ -32,10 +32,10 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -44,8 +44,9 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.SecurityType;
+import org.labkey.study.model.StudyImpl;
 
-import java.awt.image.renderable.*;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -111,9 +112,9 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
     }
     
     @Override
-    public void setupTable(final FilteredTable table)
+    public void setupTable(final FilteredTable table, UserSchema schema)
     {
-        super.setupTable(table);
+        super.setupTable(table, schema);
         final ColumnInfo containerColumn = table.getColumn("ContainerId");
 
         ColumnInfo datasetColumn = new AliasedColumn(table, "Dataset", table.getColumn("IntKey1"));
@@ -245,6 +246,36 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
             });
 
             table.addColumn(new AliasedColumn(table, "NewValues", newCol));
+        }
+
+        restrictDatasetAccess(table, schema.getUser());
+    }
+
+    /**
+     * issue 14463 : filter the audit records to those that the user has read access to. For basic
+     * study security, the container security policy should suffice, for advanced security we
+     * need to check the list of datasets the user can read.
+     */
+    private void restrictDatasetAccess(FilteredTable table, User user)
+    {
+        Study study = StudyService.get().getStudy(table.getContainer());
+
+        if (study instanceof StudyImpl)
+        {
+            SecurityType type = ((StudyImpl)study).getSecurityType();
+
+            // create the dataset in clause if we are configured for advanced security
+            if (type == SecurityType.ADVANCED_READ || type == SecurityType.ADVANCED_WRITE)
+            {
+                List<Integer> readDatasets = new ArrayList<Integer>();
+                for (DataSet ds : study.getDataSets())
+                {
+                    if (ds.canRead(user))
+                        readDatasets.add(ds.getDataSetId());
+                }
+
+                table.addInClause(table.getRealTable().getColumn("IntKey1"), readDatasets);
+            }
         }
     }
 

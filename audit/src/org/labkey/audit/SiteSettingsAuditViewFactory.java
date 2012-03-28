@@ -22,10 +22,9 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.DataView;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.*;
 import org.labkey.api.settings.WriteableAppProps;
@@ -80,9 +79,9 @@ public class SiteSettingsAuditViewFactory extends SimpleAuditViewFactory
         return columns;
     }
 
-    public void setupTable(FilteredTable table)
+    public void setupTable(FilteredTable table, UserSchema schema)
     {
-        super.setupTable(table);
+        super.setupTable(table, schema);
         ColumnInfo idCol = table.getColumn("RowId");
 
         ActionURL url = new ActionURL(AuditController.ShowSiteSettingsAuditDetailsAction.class, table.getContainer());
