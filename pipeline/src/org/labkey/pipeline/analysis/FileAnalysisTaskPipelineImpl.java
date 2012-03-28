@@ -15,12 +15,14 @@
  */
 package org.labkey.pipeline.analysis;
 
+import org.labkey.api.action.HasViewContext;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipelineSettings;
 import org.labkey.api.util.*;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.data.Container;
+import org.labkey.api.view.ViewContext;
 import org.labkey.pipeline.api.TaskPipelineImpl;
 
 import java.io.FileFilter;
@@ -145,10 +147,10 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         {
             try
             {
-                // Probably not the right way to push container in... see #14153
-                Map<String, Object> properties = new HashMap<String, Object>(HttpView.currentContext().getExtendedProperties());
-                properties.put("container", c);
-                URLHelper result = new URLHelper(_analyzeURL.eval(properties));
+                ViewContext context = HttpView.currentContext();
+                if (_analyzeURL instanceof HasViewContext)
+                    ((HasViewContext)_analyzeURL).setViewContext(context);
+                URLHelper result = new URLHelper(_analyzeURL.eval(context.getExtendedProperties()));
                 if (result.getParameter("path") == null)
                 {
                     result.addParameter("path", path);
