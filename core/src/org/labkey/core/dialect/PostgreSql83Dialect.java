@@ -1219,6 +1219,12 @@ class PostgreSql83Dialect extends SqlDialect
         return null;
     }
 
+    @Override
+    public void configureToDisableResultSetCaching(Connection connection) throws SQLException
+    {
+        connection.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
+        connection.setAutoCommit(false);
+    }
 
     // TODO: Move to special test case for PostgreSQL
     public void testParameterSubstitution()
