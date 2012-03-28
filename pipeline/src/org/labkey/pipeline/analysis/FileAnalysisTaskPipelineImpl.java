@@ -19,6 +19,7 @@ import org.labkey.api.action.HasViewContext;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipelineSettings;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.util.*;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.data.Container;
@@ -148,9 +149,10 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
             try
             {
                 ViewContext context = HttpView.currentContext();
-                if (_analyzeURL instanceof HasViewContext)
-                    ((HasViewContext)_analyzeURL).setViewContext(context);
-                URLHelper result = new URLHelper(_analyzeURL.eval(context.getExtendedProperties()));
+                StringExpression expressionCopy = _analyzeURL.clone();
+                if (expressionCopy instanceof HasViewContext)
+                    ((HasViewContext)expressionCopy).setViewContext(context);
+                URLHelper result = new URLHelper(expressionCopy.eval(context.getExtendedProperties()));
                 if (result.getParameter("path") == null)
                 {
                     result.addParameter("path", path);
