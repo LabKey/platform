@@ -318,4 +318,11 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
     {
         throw new UnsupportedOperationException();
     }
+
+
+    @Override
+    public boolean supportsContainerFilter()
+    {
+        return false;
+    }
 }

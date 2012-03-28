@@ -612,4 +612,10 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
     {
         return StudyManager.getInstance().getDefaultNumberFormatString(getContainer());
     }
+
+    @Override
+    public boolean supportsContainerFilter()
+    {
+        return false;
+    }
 }

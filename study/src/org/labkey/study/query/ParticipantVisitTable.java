@@ -207,5 +207,11 @@ public class ParticipantVisitTable extends FilteredTable
             return null;
         }
     }
+
+    @Override
+    public boolean supportsContainerFilter()
+    {
+        return false;
+    }
 }
 

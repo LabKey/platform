@@ -190,7 +190,7 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
             targetContainer.put("canEditSharedViews", container.hasPermission(user, EditSharedViewPermission.class));
             targetContainers.put(targetContainer);
 
-            if (tinfo instanceof ContainerFilterable)
+            if (tinfo.supportsContainerFilter())
             {
                 Container c = container.getParent();
                 while (c != null && !c.equals(ContainerManager.getRoot()))

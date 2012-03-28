@@ -449,7 +449,7 @@ public class Query
             if (_parseErrors.size() > 0)
                 return null;
             TableInfo tinfo = _queryRoot.getTableInfo();
-            if (tinfo instanceof ContainerFilterable && getContainerFilter() != null)
+            if (tinfo.supportsContainerFilter() && getContainerFilter() != null)
                 ((ContainerFilterable) tinfo).setContainerFilter(getContainerFilter());
             return tinfo;
         }

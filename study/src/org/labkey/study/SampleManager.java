@@ -1521,7 +1521,7 @@ public class SampleManager
                 {
                     if (isLookup)
                     {
-                        if (tinfo instanceof ContainerFilterable)
+                        if (tinfo.supportsContainerFilter())
                         {
                             Set<Container> containers = new HashSet<Container>();
                             containers.add(container);

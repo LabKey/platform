@@ -293,7 +293,7 @@ public class QueryTable extends QueryRelation
 
     public void setContainerFilter(ContainerFilter containerFilter)
     {
-        if (_tableInfo instanceof ContainerFilterable)
+        if (_tableInfo.supportsContainerFilter())
         {
             ((ContainerFilterable) _tableInfo).setContainerFilter(containerFilter);
         }
