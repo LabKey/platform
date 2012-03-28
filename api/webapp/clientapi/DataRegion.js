@@ -2547,6 +2547,9 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         if(this.shouldShowFacetedUI()){
             panelCfg.items.push(this.getFacetedFilterPanelCfg());
         }
+        else {
+            this.hideTabStrip();
+        }
 
         var dataRegion = LABKEY.DataRegions[this.dataRegionName];
 
@@ -2786,6 +2789,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 var tabpanel = this.find('tabpanel')[0];
                 tabpanel.setActiveTab(0);
                 tabpanel.remove(1);  //remove the faceted UI
+                this.hideTabStrip();
             }
             else {
                 if(panel){
@@ -2794,6 +2798,26 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 }
             }
         }
+    },
+
+    hideTabStrip: function(){
+        if(this.rendered){
+            var tabpanel = this.find('tabpanel')[0];
+            tabpanel.hideTabStripItem(0);
+
+            if(tabpanel.rendered){
+                tabpanel.strip.setVisibilityMode(Ext.Element.OFFSETS);
+                tabpanel.strip.setVisible(false);
+                this.doLayout();
+            }
+            else {
+                tabpanel.on('render', this.hideTabStrip, this, {single: true});
+            }
+        }
+        else {
+            this.on('render', this.hideTabStrip, this, {single: true});
+        }
+
     },
 
     getFilterCombos: function(panel){
@@ -3656,11 +3680,10 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             return store;
         }
 
-        var store = Ext.StoreMgr.add(new LABKEY.ext.Store({
+        return Ext.StoreMgr.add(new LABKEY.ext.Store({
             schemaName: dataRegion.schemaName,
             sql: this.getLookupValueSql(dataRegion, column),
             storeId: storeId,
-            //TODO: add sort on client??
             sort: "value",
             containerPath: dataRegion.container || dataRegion.containerPath || LABKEY.container.path,
             maxRows: this.MAX_FILTER_CHOICES, // Limit so that we don't overwhelm the user (or the browser itself) with too many checkboxes
@@ -3680,7 +3703,6 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             }
         }));
 
-        return store;
     },
 
     getLookupValueSql: function(dataRegion, column)
