@@ -43,7 +43,7 @@ public abstract class BaseSqlFactory implements SqlFactory
         try
         {
             conn = _selector.getConnection();
-            rs = Table._executeQuery(conn, sql.getSQL(), sql.getParamsArray());
+            rs = Table._executeQuery(conn, sql.getSQL(), sql.getParamsArray(), false, null, null);
             processResultSet(rs);
 
             return handler.handle(rs);

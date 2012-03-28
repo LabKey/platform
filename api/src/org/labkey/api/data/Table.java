@@ -126,12 +126,7 @@ public class Table
     }
 
 
-    static ResultSet _executeQuery(Connection conn, String sql, Object[] parameters) throws SQLException
-    {
-        return _executeQuery(conn, sql, parameters, false, null, null);
-    }
-
-    private static ResultSet _executeQuery(Connection conn, String sql, Object[] parameters, boolean scrollable, @Nullable AsyncQueryRequest asyncRequest, @Nullable Integer statementRowCount)
+    static ResultSet _executeQuery(Connection conn, String sql, Object[] parameters, boolean scrollable, @Nullable AsyncQueryRequest asyncRequest, @Nullable Integer statementRowCount)
             throws SQLException
     {
         ResultSet rs;
@@ -321,6 +316,13 @@ public class Table
         try
         {
             conn = schema.getScope().getConnection(log);
+            if (!schema.getScope().isTransactionActive())
+            {
+                // Only fiddle with the Connection settings if we're not inside of a transaction so we won't mess
+                // up any state the caller is relying on
+                schema.getSqlDialect().configureToDisableResultSetCaching(conn);
+            }
+
             rs = _executeQuery(conn, sql, parameters, scrollable, asyncRequest, statementRowCount);
 
             while (scrollOffset > 0 && rs.next())

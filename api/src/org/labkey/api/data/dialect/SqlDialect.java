@@ -242,6 +242,11 @@ public abstract class SqlDialect
         return null;
     }
 
+    public void configureToDisableResultSetCaching(Connection connection) throws SQLException
+    {
+        // No-op by default
+    }
+
 
     /**
      * @return any additional information that should be sent to the mothership in the case of a SQLException

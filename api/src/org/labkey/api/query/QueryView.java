@@ -1543,6 +1543,12 @@ public class QueryView extends WebPartView<Object>
             rgn.setButtonBarPosition(_buttonBarPosition);
         }
 
+        if (getSettings() != null && getSettings().getShowRows() == ShowRows.ALL)
+        {
+            // Don't cache if the ResultSet is likely to be very large
+            ret.getRenderContext().setCache(false);
+        }
+
         // Apply base sorts and filters from custom view and from QuerySettings.
         if (!ignoreUserFilter())
         {
@@ -1780,27 +1786,21 @@ public class QueryView extends WebPartView<Object>
         TableInfo table = getTable();
         if (table != null)
         {
-            // On PostgreSQL, wrap the TSV export in a transaction and change some obscure settings to coerce the JDBC driver
-            // to stream what could be very large results.  TODO: In 11.1, hide this bogosity inside the dialect.
-            if (getSqlDialect().isPostgreSQL())
-            {
-                DbScope scope = getSchema().getDbSchema().getScope();
+            // Wrap the TSV export in a transaction and change some obscure settings to coerce the Postgres JDBC driver
+            // to stream what could be very large results.
+            DbScope scope = getSchema().getDbSchema().getScope();
 
-                try
-                {
-                    scope.ensureTransaction();
-                    scope.getConnection().setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
-                    scope.getConnection().setAutoCommit(false);
-                    doExport(response, isExportAsWebPage);
-                }
-                finally
-                {
-                    scope.closeConnection();
-                }
-            }
-            else
+            try
             {
+                // We need to start a transaction so that we end up using the same Connection when we
+                // execute the query.
+                Connection connection = scope.ensureTransaction();
+                scope.getSqlDialect().configureToDisableResultSetCaching(connection);
                 doExport(response, isExportAsWebPage);
+            }
+            finally
+            {
+                scope.closeConnection();
             }
         }
     }
