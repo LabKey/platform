@@ -26,6 +26,8 @@ import java.io.IOException;
  */
 public interface StringExpression extends Cloneable
 {
+    public StringExpression clone();
+
     public String eval(Map ctx);
 
     public String getSource();
