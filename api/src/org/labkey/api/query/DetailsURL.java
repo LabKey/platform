@@ -259,15 +259,6 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
             return _containerContext.getContainer(context);
         if (null != _context)
             return _context.getContainer();
-
-        if (null != context)
-        {
-            // Not sure this is right... see #14153
-            Object container = context.get("container");
-            if (container instanceof Container)
-                return (Container)container;
-        }
-
         return null;
     }
 
