@@ -361,7 +361,7 @@ public class DatasetController extends BaseStudyController
                 if (lsid != null)
                 {
                     // If we have a current record, display it
-                    int datasetId = event.getIntKey1();
+                    int datasetId = null==event.getIntKey1() ? -1 : event.getIntKey1().intValue();
                     DataSet ds = StudyManager.getInstance().getDataSetDefinition(getStudy(), datasetId);
                     if (null != ds)
                     {
