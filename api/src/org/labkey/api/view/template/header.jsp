@@ -86,30 +86,39 @@ if ("true".equals(request.getParameter("testFont"))) {
       </td>
       <td valign="top" align="right" class="labkey-main-nav">
       <%
+          boolean needSeparator = false;
+
           if (currentContext.hasPermission(AdminPermission.class) || ContainerManager.getRoot().hasPermission(user, AdminReadPermission.class))
           {
               include(new PopupAdminView(currentContext), out);
-              out.write(" | ");
+              needSeparator = true;
           }
           else if (currentContext.getUser().isDeveloper())
           {
               include(new PopupDeveloperView(currentContext), out);
-              out.write(" | ");
+              needSeparator = true;
           }
 
           PopupHelpView helpMenu = new PopupHelpView(c, user, bean.pageConfig.getHelpTopic());
           if (helpMenu.hasChildren())
           {
+              if (needSeparator)
+                  out.write(" | ");
               include(helpMenu, out);
-              out.write(" | ");
+              needSeparator = true;
           }
 
           if (null != user && !user.isGuest())
           {
+              if (needSeparator)
+                  out.write(" | ");
               include(new PopupUserView(currentContext), out);
           }
           else if (bean.pageConfig.shouldIncludeLoginLink())
           {
+              if (needSeparator)
+                  out.write(" | ");
+
               String authLogoHtml = AuthenticationManager.getHeaderLogoHtml(currentURL);
 
               if (null != authLogoHtml)
