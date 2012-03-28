@@ -84,7 +84,8 @@ public class GroupMembershipCache
                 "SELECT Members.UserId FROM " + CORE.getTableInfoMembers() + " Members" +
                 " JOIN " + CORE.getTableInfoPrincipals() + " Users ON Members.UserId = Users.UserId\n" +
                 " WHERE Members.GroupId = ?" +
-                " ORDER BY Users.Type, Users.Name", group.getUserId()));
+                // order: Site groups, project groups, users
+                " ORDER BY Users.Type, CASE WHEN ( Users.Container IS NULL ) THEN 1 ELSE 2 END, Users.Name", group.getUserId()));
 
             return _toIntArray(selector.getArray(Integer.class));
         }
