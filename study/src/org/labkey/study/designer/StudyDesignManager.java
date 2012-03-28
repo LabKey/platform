@@ -241,31 +241,31 @@ public class StudyDesignManager
     {
         int studyDesignId = version.getStudyId();
         StudyDesignInfo designInfo;
-        if (0 == studyDesignId)
-        {
-            designInfo = new StudyDesignInfo();
-            designInfo.setLabel(version.getLabel());
-            designInfo.setContainer(container);
 
-            // Check if there is a name conflict
-            if (getStudyDesign(container, version.getLabel()) != null)
-            {
-                throw new SaveException("The name '" + version.getLabel() + "' is already in use");
-            }
-            designInfo = insertStudyDesign(user, designInfo);
-            version.setStudyId(designInfo.getStudyId());
-        }
-        else
-            designInfo = getStudyDesign(container, studyDesignId);
-
-        int revision = designInfo.getPublicRevision() + 1;
-        version.setRevision(revision);
-        version.setContainer(designInfo.getContainer());
-
-        //Synchronize?
         try
         {
             getSchema().getScope().ensureTransaction();
+            if (0 == studyDesignId)
+            {
+                designInfo = new StudyDesignInfo();
+                designInfo.setLabel(version.getLabel());
+                designInfo.setContainer(container);
+
+                // Check if there is a name conflict
+                if (getStudyDesign(container, version.getLabel()) != null)
+                {
+                    throw new SaveException("The name '" + version.getLabel() + "' is already in use");
+                }
+                designInfo = insertStudyDesign(user, designInfo);
+                version.setStudyId(designInfo.getStudyId());
+            }
+            else
+                designInfo = getStudyDesign(container, studyDesignId);
+
+            int revision = designInfo.getPublicRevision() + 1;
+            version.setRevision(revision);
+            version.setContainer(designInfo.getContainer());
+
             version = Table.insert(user, getStudyVersionTable(), version);
             designInfo.setPublicRevision(version.getRevision());
             designInfo.setLabel(version.getLabel());
