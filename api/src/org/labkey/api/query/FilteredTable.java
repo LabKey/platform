@@ -394,11 +394,19 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         return _filter;
     }
 
+    @Override
+    public boolean supportsContainerFilter()
+    {
+        return true;
+    }
+
     public void setContainerFilter(@NotNull ContainerFilter filter)
     {
         //noinspection ConstantConditions
         if (filter == null) // this really can happen, if other callers ignore warnings
             throw new IllegalArgumentException("filter cannot be null");
+        if (!supportsContainerFilter())
+            throw new IllegalArgumentException("container filter is not supported by " + this.getClass().getSimpleName());
         _containerFilter = filter;
         applyContainerFilter(_containerFilter);
     }

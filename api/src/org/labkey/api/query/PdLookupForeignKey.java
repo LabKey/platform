@@ -124,7 +124,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
         if (displayField == null)
             return null;
 
-        if (table instanceof ContainerFilterable && parent.getParentTable().getContainerFilter() != null)
+        if (table.supportsContainerFilter() && parent.getParentTable().getContainerFilter() != null)
         {
             ContainerFilterable newTable = (ContainerFilterable)table;
 

@@ -1115,4 +1115,10 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     {
         return _locked;
     }
+
+    @Override
+    public boolean supportsContainerFilter()
+    {
+        return this instanceof ContainerFilterable;
+    }
 }

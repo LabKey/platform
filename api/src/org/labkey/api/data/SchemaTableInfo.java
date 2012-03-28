@@ -860,4 +860,10 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     {
         return _locked;
     }
+
+    @Override
+    public boolean supportsContainerFilter()
+    {
+        return this instanceof ContainerFilterable;
+    }
 }

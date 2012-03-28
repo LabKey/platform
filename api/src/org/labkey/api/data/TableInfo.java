@@ -373,4 +373,6 @@ public interface TableInfo extends HasPermission
     /* for asserting that tableinfo is not changed unexpectedly */
     public void setLocked(boolean b);
     public boolean isLocked();
+
+    public boolean supportsContainerFilter();
 }

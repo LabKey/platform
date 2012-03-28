@@ -1093,7 +1093,7 @@ public class QueryView extends WebPartView<Object>
             button.addMenuItem(item);
         }
 
-        if (getTable() instanceof ContainerFilterable && !getAllowableContainerFilterTypes().isEmpty())
+        if (getTable().supportsContainerFilter() && !getAllowableContainerFilterTypes().isEmpty())
         {
             button.addSeparator();
             NavTree containerFilterItem = new NavTree("Folder Filter");
@@ -1940,7 +1940,7 @@ public class QueryView extends WebPartView<Object>
             }
         }
 
-        if (_table instanceof ContainerFilterable)
+        if (_table instanceof ContainerFilterable && _table.supportsContainerFilter())
         {
             ContainerFilter filter = getContainerFilter();
             if (filter != null)

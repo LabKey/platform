@@ -177,7 +177,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
             // Get the assay results table
             UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getContainer(), AssaySchema.NAME);
             TableInfo table = schema.getTable(AssayService.get().getResultsTableName(_protocol));
-            if (table instanceof ContainerFilterable && publishForm.getContainerFilterName() != null)
+            if (table.supportsContainerFilter() && publishForm.getContainerFilterName() != null)
             {
                 ((ContainerFilterable)table).setContainerFilter(ContainerFilter.getContainerFilterByName(publishForm.getContainerFilterName(), getViewContext().getUser()));
             }
