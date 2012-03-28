@@ -803,8 +803,8 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
         {
             var users = this.cache.getMembersOf(this.userId);
             user = users.sort(function(a,b){
-                // sort by type (groups before users) and name
-                var A = a.Type + a.Name.toUpperCase(), B = b.Type + b.Name.toUpperCase();
+                //sort by type (site groups, project groups, then users) and name
+                var A = a.Type + (a.Container == null ? "1" : "2") + a.Name.toUpperCase(), B = b.Type + (b.Container == null ? "1" : "2") + b.Name.toUpperCase();
                 return A > B ? 1 : A < B ? -1 : 0;
             });
             html.push("<b>members</b>");
@@ -834,7 +834,7 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
                     html.push("<tr><td width=100>");
                     if (isMemberGroup)
                     {
-                        html.push("<a href='" + $url('security', 'group',(user.Container ? this.cache.projectId : this.cache.rootId),{id:user.UserId}) + "'><b>" + $h(user.Name) + "</b></a>");
+                        html.push("<a href='" + $url('security', 'group',(user.Container ? this.cache.projectId : this.cache.rootId),{id:user.UserId}) + "'><b>" + (user.Container ? "" : "Site: ") + $h(user.Name) + "</b></a>");
                     }
                     else
                     {

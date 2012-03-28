@@ -158,7 +158,7 @@ else
         boolean isGroup = member.getPrincipalType() == PrincipalType.GROUP;
         %>
         <tr>
-            <td>
+            <td align="center">
                 <input type="checkbox" name="delete" id="<%= userId %>" value="<%= h(memberName) %>">
             </td>
             <td>
