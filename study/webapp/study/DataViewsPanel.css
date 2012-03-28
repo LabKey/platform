@@ -141,15 +141,15 @@
 }
 
 /* Ext4 Windows */
-.x4-reset .x4-window-default,
-.x4-reset .x4-window-header-default-top,
-.x4-reset .x4-window-body-default
+.x4-reset .data-window,
+.x4-reset .data-window .x4-window-header-default-top,
+.x4-reset .data-window .x4-window-body-default
 {
     border-color: transparent !important;
     background-color: white;
 }
 
-.x4-reset span.x4-window-header-text-default
+.x4-reset .data-window span.x4-window-header-text-default
 {
     color: #333333;
 }
@@ -165,7 +165,7 @@
     height : 24px;
 }
 
-.x4-reset .x4-form-cb-label-after
+.x4-reset .data-window .x4-form-cb-label-after
 {
     position: absolute;
 }

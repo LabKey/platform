@@ -1154,6 +1154,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             width  : 450,
             height : isReportView ? 510 : 425,
             layout : 'fit',
+            cls    : 'data-window',
             draggable : false,
             modal  : true,
             title  : record.data.name,
@@ -1273,6 +1274,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             width  : 550,
             height : 400,
             layout : 'fit',
+            cls    : 'data-window',
             modal  : true,
             defaults  : {
                 frame : false

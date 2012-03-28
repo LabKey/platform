@@ -2092,9 +2092,9 @@ th.labkey-wp-title-left a:hover {
 	text-decoration: none;
 }
 
-th.labkey-wp-title-left img, .labkey-wp-title img {
-	margin-top: 4px;
-}
+/*th.labkey-wp-title-left img, .labkey-wp-title img {*/
+	/*margin-top: 4px;*/
+/*}*/
 
 /* This is used for the right side of the wp header and often contains buttons */
 th.labkey-wp-title-right, td.labkey-wp-title-right {
@@ -2108,7 +2108,7 @@ th.labkey-wp-title-right, td.labkey-wp-title-right {
 
 th.labkey-wp-title-left img,
 th.labkey-wp-title-right img {
-	margin-bottom: -6px;
+	margin-bottom: -5px;
 }
 
 span.labkey-wp-icon-button-active {
