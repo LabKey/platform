@@ -64,7 +64,7 @@ LABKEY.Security = new function()
         },
 
         /**
-         * A map commonly used effective permissions supported in the LabKey Server.
+         * A map of commonly used effective permissions supported in the LabKey Server.
          * You can use these values with the hasEffectivePermission() method to test if
          * a user or group has a particular permission. The values in this map
          * are as follows:
