@@ -259,7 +259,17 @@ LABKEY.vis.MeasuresPanel = Ext.extend(Ext.Panel, {
                     {header:'Dataset', dataIndex:'queryName', width: .4},
                     {header:'Measure', dataIndex:'label', width:.25},
                     {header:'Description', dataIndex:'description', cls : 'normal-wrap', renderer : ttRenderer}
-                ]
+                ],
+                listeners: {
+                    dblclick: function (listView, idx, node, event){
+                        var recs = listView.getSelectedRecords();
+                        if (recs && recs.length > 0)
+                        {
+                            this.fireEvent('measuresSelected', recs, true);
+                        }
+                    },
+                    scope: this
+                }
             });
             this.selModel = this.view;
         }

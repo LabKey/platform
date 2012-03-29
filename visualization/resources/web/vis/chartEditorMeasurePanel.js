@@ -538,6 +538,10 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                     'beforeMeasuresStoreLoad': function (mp, data) {
                         // store the measure store JSON object for later use
                         this.measuresStoreData = data;
+                    },
+                    'measuresSelected': function (records, userSelected){
+                        this.fireEvent('measureSelected', records[0].data, userSelected);
+                        win.hide();
                     }
                 }
             }),
@@ -550,7 +554,6 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
                     {
                         // fire the measureSelected event so other panels can update as well
                         this.fireEvent('measureSelected', this.changeMeasureSelection, true);
-
                         win.hide();
                     }
                 },
