@@ -25,6 +25,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
+import java.io.File;
 import java.net.URI;
 import java.sql.SQLException;
 import java.util.List;
@@ -114,4 +115,6 @@ abstract public class PipelineService
                                                             User user, List<String> sequenceDbPaths);
 
     abstract public boolean hasSiteDefaultRoot(Container container);
+
+    abstract public boolean importFolder(ViewContext context, BindException errors, File folderFile, String originalFilename) throws Exception;
 }

@@ -32,6 +32,7 @@ import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.menu.FolderAdminMenu;
 import org.labkey.api.view.menu.MenuService;
 import org.labkey.api.view.menu.ProjectAdminMenu;
 import org.labkey.api.view.menu.SiteAdminMenu;
@@ -99,9 +100,11 @@ public class PopupAdminView extends PopupMenuView
 
             if (isAdminInThisFolder && !c.isWorkbook())
             {
-                NavTree projectAdmin = new NavTree(c.isProject() ? "Project" : "Folder");
-                projectAdmin.addChildren(ProjectAdminMenu.getNavTree(context));
-                navTree.addChild(projectAdmin);
+                NavTree folderAdmin = new NavTree("Folder");
+                folderAdmin.addChildren(FolderAdminMenu.getFolderElements(context.getContainer()));
+                folderAdmin.addSeparator();
+                folderAdmin.addChildren(ProjectAdminMenu.getNavTree(context));
+                navTree.addChild(folderAdmin);
             }
 
             // Don't allow folder admins to impersonate

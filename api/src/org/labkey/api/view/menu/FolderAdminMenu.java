@@ -25,6 +25,10 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * User: brittp
  * Date: Apr 9, 2007
@@ -41,10 +45,18 @@ public class FolderAdminMenu extends NavTreeMenu
     {
         Container c = context.getContainer();
 
-        NavTree[] admin = new NavTree[3];
-        admin[0] = new NavTree("Folder Permissions", PageFlowUtil.urlProvider(SecurityUrls.class).getBeginURL(c));
-        admin[1] = new NavTree("Folder Settings", PageFlowUtil.urlProvider(AdminUrls.class).getFolderSettingsURL(c));
-        admin[2] = new NavTree("Manage Folders", PageFlowUtil.urlProvider(AdminUrls.class).getManageFoldersURL(c));
+        List<NavTree> admin = new ArrayList<NavTree>();
+        admin.addAll(getFolderElements(context.getContainer()));
+        admin.addAll(Arrays.asList(ProjectAdminMenu.getNavTree(context)));
+        NavTree[] adminArr = new NavTree[admin.size()];
+        return admin.toArray(adminArr);
+    }
+
+    public static ArrayList<NavTree> getFolderElements(Container c)
+    {
+        ArrayList<NavTree> admin = new ArrayList<NavTree>();
+        admin.add(new NavTree("Permissions", PageFlowUtil.urlProvider(SecurityUrls.class).getBeginURL(c)));
+        admin.add(new NavTree("Management", PageFlowUtil.urlProvider(AdminUrls.class).getFolderManagementURL(c)));
         return admin;
     }
 
