@@ -49,11 +49,8 @@ public class SpecimenPivotByPrimaryType extends BaseSpecimenPivotTable
 
         try {
             Map<Integer, String> primaryTypeMap = getPrimaryTypeMap(getContainer());
-            Map<Integer, String> allPrimaryTypes = new HashMap<Integer, String>();
+            Map<Integer, String> allPrimaryTypes = getAllPrimaryTypesMap(getContainer());
             
-            for (PrimaryType type : SampleManager.getInstance().getPrimaryTypes(getContainer()))
-                allPrimaryTypes.put(Long.valueOf(type.getRowId()).intValue(), type.getPrimaryType());
-
             for (ColumnInfo col : getRealTable().getColumns())
             {
                 // look for the primary/derivative pivot encoding
@@ -93,11 +90,10 @@ public class SpecimenPivotByPrimaryType extends BaseSpecimenPivotTable
         defaultColumns.add(FieldKey.fromParts(StudyService.get().getSubjectColumnName(getContainer())));
         defaultColumns.add(FieldKey.fromParts("Visit"));
 
-        SpecimenTypeSummary summary = SampleManager.getInstance().getSpecimenTypeSummary(getContainer());
         Map<String, String> nonZeroPrimaryTypes = new HashMap<String, String>();
 
-        for (SpecimenTypeSummary.TypeCount typeCount : summary.getPrimaryTypes())
-            nonZeroPrimaryTypes.put(typeCount.getLabel(), typeCount.getLabel());
+        for (String label : getPrimaryTypeMap(getContainer()).values())
+            nonZeroPrimaryTypes.put(label, label);
 
         for (ColumnInfo col : getColumns())
         {

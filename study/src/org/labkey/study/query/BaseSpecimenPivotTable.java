@@ -16,6 +16,7 @@
 package org.labkey.study.query;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -23,6 +24,7 @@ import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.study.StudyService;
 import org.labkey.study.SampleManager;
+import org.labkey.study.model.PrimaryType;
 import org.labkey.study.model.SiteImpl;
 import org.labkey.study.model.SpecimenTypeSummary;
 
@@ -87,12 +89,48 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable
     protected Map<Integer, String> getPrimaryTypeMap(Container container)
     {
         Map<Integer, String> typeMap = new HashMap<Integer, String>();
+        Map<String, Boolean> dupMap = new CaseInsensitiveHashMap<Boolean>();
         SpecimenTypeSummary summary = SampleManager.getInstance().getSpecimenTypeSummary(getContainer());
 
         for (SpecimenTypeSummary.TypeCount type : summary.getPrimaryTypes())
         {
             if (type.getId() != null)
-                typeMap.put(type.getId(), type.getLabel());
+            {
+                if (dupMap.containsKey(type.getLabel()))
+                    dupMap.put(type.getLabel(), true);
+                else
+                    dupMap.put(type.getLabel(), false);
+            }
+        }
+
+        for (SpecimenTypeSummary.TypeCount type : summary.getPrimaryTypes())
+        {
+            if (type.getId() != null)
+                typeMap.put(type.getId(), getLabel(type.getLabel(), type.getId(), dupMap));
+        }
+        return typeMap;
+    }
+
+    /**
+     * Returns a map of all primary types
+     */
+    protected Map<Integer, String> getAllPrimaryTypesMap(Container container) throws SQLException
+    {
+        Map<Integer, String> typeMap = new HashMap<Integer, String>();
+        Map<String, Boolean> dupMap = new CaseInsensitiveHashMap<Boolean>();
+
+        for (PrimaryType type : SampleManager.getInstance().getPrimaryTypes(container))
+        {
+            if (dupMap.containsKey(type.getPrimaryType()))
+                dupMap.put(type.getPrimaryType(), true);
+            else
+                dupMap.put(type.getPrimaryType(), false);
+        }
+
+
+        for (PrimaryType type : SampleManager.getInstance().getPrimaryTypes(container))
+        {
+            typeMap.put((int)type.getRowId(), getLabel(type.getPrimaryType(), (int)type.getRowId(), dupMap));
         }
         return typeMap;
     }
@@ -103,12 +141,21 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable
     protected Map<Integer, String> getDerivativeTypeMap(Container container)
     {
         Map<Integer, String> typeMap = new HashMap<Integer, String>();
+        Map<String, Boolean> dupMap = new CaseInsensitiveHashMap<Boolean>();
         SpecimenTypeSummary summary = SampleManager.getInstance().getSpecimenTypeSummary(getContainer());
 
         for (SpecimenTypeSummary.TypeCount type : summary.getDerivatives())
         {
+            if (dupMap.containsKey(type.getLabel()))
+                dupMap.put(type.getLabel(), true);
+            else
+                dupMap.put(type.getLabel(), false);
+        }
+
+        for (SpecimenTypeSummary.TypeCount type : summary.getDerivatives())
+        {
             if (type.getId() != null)
-                typeMap.put(type.getId(), type.getLabel());
+                typeMap.put(type.getId(), getLabel(type.getLabel(), type.getId(), dupMap));
         }
         return typeMap;
     }
@@ -119,10 +166,30 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable
     protected Map<Integer, String> getSiteMap(Container container) throws SQLException
     {
         Map<Integer, String> siteMap = new HashMap<Integer, String>();
+        Map<String, Boolean> dupMap = new CaseInsensitiveHashMap<Boolean>();
 
         for (SiteImpl site : SampleManager.getInstance().getSites(container))
-            siteMap.put(site.getRowId(), site.getLabel());
+        {
+            if (dupMap.containsKey(site.getLabel()))
+                dupMap.put(site.getLabel(), true);
+            else
+                dupMap.put(site.getLabel(), false);
+        }
+
+        for (SiteImpl site : SampleManager.getInstance().getSites(container))
+            siteMap.put(site.getRowId(), getLabel(site.getLabel(), site.getRowId(), dupMap));
 
         return siteMap;
+    }
+
+    /**
+     * use the row id to uniquify the column name, else just return the name
+     */
+    private String getLabel(String label, int id, Map<String, Boolean> dupMap)
+    {
+        if (dupMap.containsKey(label) && dupMap.get(label))
+            return String.format("%s(%s)", label, id);
+        else
+            return label;
     }
 }

@@ -128,11 +128,14 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
         boolean success = false;
         try
         {
+            // issue: 13706, study needs to be created outside of the transaction to avoid this race
+            // condition
+            StudyImpl newStudy = createNewStudy(form);
+
             scope.ensureTransaction();
 
             List<AttachmentFile> files = getAttachmentFileList();
 
-            StudyImpl newStudy = createNewStudy(form);
             if (newStudy != null)
             {
                 newStudy.attachProtocolDocument(files, getViewContext().getUser());
