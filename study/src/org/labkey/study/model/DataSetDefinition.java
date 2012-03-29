@@ -2084,7 +2084,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     if (!(e.getCause() instanceof SQLException))
                         continue;
                     String msg = translateSQLException((SQLException)e.getCause());
-                    rowError.getGlobalErrorStrings().set(i, msg);
+                    if (null != msg)
+                        rowError.getGlobalErrorStrings().set(i, msg);
                 }
             }
             return Collections.emptyList();
