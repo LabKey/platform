@@ -597,7 +597,7 @@ core/src/org/labkey/core/admin/ActionsView.java -text
 core/src/org/labkey/core/admin/AdminController.java -text
 core/src/org/labkey/core/admin/FileSettingsForm.java -text
 core/src/org/labkey/core/admin/FilesSiteSettingsAction.java -text
-core/src/org/labkey/core/admin/FolderSettingsAction.java -text
+core/src/org/labkey/core/admin/FolderManagementAction.java -text
 core/src/org/labkey/core/admin/InstallSettingsAction.java -text
 core/src/org/labkey/core/admin/ProjectSettingsAction.java -text
 core/src/org/labkey/core/admin/TestNetworkDriveBean.java -text
@@ -617,12 +617,12 @@ core/src/org/labkey/core/admin/exportFolder.jsp -text
 core/src/org/labkey/core/admin/folderAliases.jsp -text
 core/src/org/labkey/core/admin/folderType.jsp -text
 core/src/org/labkey/core/admin/fullTextSearch.jsp -text
+core/src/org/labkey/core/admin/importFolder.jsp -text
 core/src/org/labkey/core/admin/importer/PageImporterFactory.java -text
 core/src/org/labkey/core/admin/installComplete.jsp -text
 core/src/org/labkey/core/admin/logging.jsp -text
 core/src/org/labkey/core/admin/lookAndFeelProperties.jsp -text
 core/src/org/labkey/core/admin/lookAndFeelResources.jsp -text
-core/src/org/labkey/core/admin/manageFolder.jsp -text
 core/src/org/labkey/core/admin/manageFolders.jsp -text
 core/src/org/labkey/core/admin/memTracker.jsp -text
 core/src/org/labkey/core/admin/moduleErrors.jsp -text
@@ -1624,7 +1624,6 @@ pipeline/src/org/labkey/pipeline/api/properties/RemoteServerPropertiesImpl.java 
 pipeline/src/org/labkey/pipeline/cluster/ClusterStartup.java -text
 pipeline/src/org/labkey/pipeline/cluster/NoOpPipelineStatusWriter.java -text
 pipeline/src/org/labkey/pipeline/emailNotificationSetup.jsp -text
-pipeline/src/org/labkey/pipeline/importFolder.jsp -text
 pipeline/src/org/labkey/pipeline/importer/FolderImportContext.java -text
 pipeline/src/org/labkey/pipeline/importer/FolderImportFinalTask.java -text
 pipeline/src/org/labkey/pipeline/importer/FolderImportInitialTask.java -text

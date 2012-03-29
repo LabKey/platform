@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ViewContext> me = (JspView<ViewContext>) HttpView.currentView();
@@ -53,7 +54,7 @@
                     sb.append(path);
                 }%><%= sb.toString() %></textarea><br><br>
             <%= generateSubmitButton("Save Aliases") %>
-            <%= generateButton("Cancel", "manageFolders.view") %>
+            <%= generateButton("Cancel", urlProvider(AdminUrls.class).getManageFoldersURL(context.getContainer())) %>
         </form>
         </td>
     </tr>

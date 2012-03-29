@@ -26,6 +26,7 @@
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -46,7 +47,7 @@
     {
         %><tr><td>You cannot delete the home project.</td></tr>
         <tr><td>
-            <%=generateButton("OK", buildURL(AdminController.ManageFoldersAction.class))%>
+            <%=generateButton("OK", urlProvider(AdminUrls.class).getManageFoldersURL(c))%>
         </td></tr>
         </table><%
 
@@ -60,7 +61,7 @@
         %><tr><td>This <%=h(containerType)%> has <%=childrenDescription%>s, but you don't have admininistrative permissions to all the <%=childrenDescription%>s.</td></tr>
         <tr><td>&nbsp;</td></tr>
         <tr><td>
-            <%=generateButton("Back", buildURL(AdminController.ManageFoldersAction.class))%>
+            <%=generateButton("Back", urlProvider(AdminUrls.class).getManageFoldersURL(c))%>
         </td></tr>
         </table><%
 
@@ -112,7 +113,7 @@
         <table><tr>
             <td><form action="<%=buildURL(AdminController.DeleteFolderAction.class)%><%=recurse ? "recurse=1" : ""%>" method="post">
                 <%=generateSubmitButton("Delete")%></form></td>
-            <td><%=generateButton("Cancel", buildURL(AdminController.ManageFoldersAction.class))%></td>
+            <td><%=generateButton("Cancel", urlProvider(AdminUrls.class).getManageFoldersURL(c))%></td>
         </tr></table><%
     }
     else
@@ -128,7 +129,7 @@
 <table>
     <tr>
         <td><%=generateButton("Delete All Folders", buildURL(AdminController.DeleteFolderAction.class) + "recurse=1")%></td>
-        <td><%=generateButton("Cancel", buildURL(AdminController.ManageFoldersAction.class))%></td>
+        <td><%=generateButton("Cancel", urlProvider(AdminUrls.class).getManageFoldersURL(c))%></td>
     </tr>
 </table><%
     }  %>

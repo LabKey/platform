@@ -260,7 +260,7 @@ public class AnnouncementsController extends SpringActionController
 
     public static ActionURL getAdminEmailURL(Container c, URLHelper returnURL)
     {
-        ActionURL url = PageFlowUtil.urlProvider(AdminUrls.class).getFolderSettingsURL(c);
+        ActionURL url = PageFlowUtil.urlProvider(AdminUrls.class).getFolderManagementURL(c);
         url.addParameter("tabId", "messages");
         url.addReturnURL(returnURL);
         return url;

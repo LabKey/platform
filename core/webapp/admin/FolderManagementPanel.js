@@ -95,12 +95,12 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
                 xtype: 'toolbar',
                 dock: 'top',
                 items: [
-                    {text : 'Aliases',              itemId : 'alias',   handler : function() { this.action('alias'); },   scope : this },
-                    {text : 'Change Display Order', itemId : 'reorder', handler : function() { this.action('reorder'); }, scope : this },
-                    {text : 'Create Subfolder',     itemId : 'create',  handler : function() { this.action('create'); },  scope : this },
-                    {text : 'Delete',               itemId : 'remove',  handler : function() { this.action('remove'); },  scope : this },
-                    {text : 'Move',                 itemId : 'move',    handler : function() { this.action('move'); },    scope : this },
-                    {text : 'Rename',               itemId : 'rename',  handler : function() { this.action('rename'); },  scope : this }
+                    {text : 'Aliases',              itemId : 'alias',   handler : function() { this.action('alias'); },   scope : this, tooltip: "Manage aliases for the selected folder" },
+                    {text : 'Change Display Order', itemId : 'reorder', handler : function() { this.action('reorder'); }, scope : this, tooltip: "Change the display order for sibling folders" },
+                    {text : 'Create Subfolder',     itemId : 'create',  handler : function() { this.action('create'); },  scope : this, tooltip: "Create a subfolder for the selected folder" },
+                    {text : 'Delete',               itemId : 'remove',  handler : function() { this.action('remove'); },  scope : this, tooltip: "Delete the selected folder" },
+                    {text : 'Move',                 itemId : 'move',    handler : function() { this.action('move'); },    scope : this, tooltip: "Move the selected folder" },
+                    {text : 'Rename',               itemId : 'rename',  handler : function() { this.action('rename'); },  scope : this, tooltip: "Rename the selected folder" }
                 ]
             }];
         }

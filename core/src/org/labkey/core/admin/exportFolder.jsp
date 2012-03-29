@@ -16,18 +16,12 @@
  */
 %>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.api.writer.Writer"%>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="org.labkey.core.admin.writer.FolderSerializationRegistryImpl" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%
-    JspView<AdminController.ExportForm> me = (JspView<AdminController.ExportForm>) HttpView.currentView();
-    AdminController.ExportForm form = me.getModelBean();
-%>
+
 <labkey:errors/>
 <form action="" method="post">
     <table>
@@ -53,7 +47,7 @@
         <tr><td>&nbsp;</td></tr>
         <tr>
             <td>
-                <%=PageFlowUtil.generateSubmitButton("Export")%>&nbsp;<%=PageFlowUtil.generateButton("Cancel", "manageFolder.view")%>
+                <%=PageFlowUtil.generateSubmitButton("Export")%>
             </td>
         </tr>
     </table>

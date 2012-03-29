@@ -510,4 +510,10 @@ public class PipelineServiceImpl extends PipelineService
             }
         }
     }
+
+    @Override
+    public boolean importFolder(ViewContext context, BindException errors, File folderFile, String originalFilename) throws Exception
+    {
+        return PipelineController.importFolder(context, errors, folderFile, originalFilename);
+    }
 }

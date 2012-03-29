@@ -22,15 +22,13 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Comparator" %>
-<%@ page import="java.util.HashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.core.admin.FolderSettingsAction" %>
+<%@ page import="org.labkey.core.admin.FolderManagementAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
@@ -42,7 +40,7 @@ var defaultModules = new Object();
 <% //Generate javascript objects...
 final ViewContext context = HttpView.currentContext();
 Container c = context.getContainer();
-FolderSettingsAction.FolderSettingsForm form = (FolderSettingsAction.FolderSettingsForm) HttpView.currentModel();
+FolderManagementAction.FolderManagementForm form = (FolderManagementAction.FolderManagementForm) HttpView.currentModel();
 Collection<FolderType> allFolderTypes = ModuleLoader.getInstance().getFolderTypes();
 List<Module> allModules = new ArrayList<Module>(ModuleLoader.getInstance().getModules());
 Collections.sort(allModules, new Comparator<Module>()
@@ -188,8 +186,8 @@ function validate()
     return false;
 }
 </script>
-<form name="folderModules" method=POST action="<%=buildURL(FolderSettingsAction.class)%>" onsubmit="return validate();">
-    <input type="hidden" name="tabId" value="folderType"> 
+<form name="folderModules" method=POST action="<%=buildURL(FolderManagementAction.class)%>" onsubmit="return validate();">
+    <input type="hidden" name="tabId" value="folderType">
     <table width="100%">
         <tr>
             <td valign="top"><%WebPartView.startTitleFrame(out, "Folder Type", null, "100%", null);%>

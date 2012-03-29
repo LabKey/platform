@@ -113,7 +113,6 @@ import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionReportingLevel;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
@@ -149,11 +148,7 @@ import org.labkey.api.view.WebThemeManager;
 import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
-import org.labkey.api.writer.FileSystemFile;
-import org.labkey.api.writer.ZipFile;
 import org.labkey.core.admin.sql.SqlScriptController;
-import org.labkey.core.admin.writer.FolderExportContext;
-import org.labkey.core.admin.writer.FolderWriterImpl;
 import org.labkey.data.xml.TablesDocument;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -213,7 +208,7 @@ public class AdminController extends SpringActionController
             AdminController.class,
             FilesSiteSettingsAction.class,
             ProjectSettingsAction.class,
-            FolderSettingsAction.class);
+            FolderManagementAction.class);
     private static final NumberFormat _formatInteger = DecimalFormat.getIntegerInstance();
 
     private static final Logger LOG = Logger.getLogger(AdminController.class);
@@ -230,7 +225,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(SettingsLinkType.Configuration, "authentication", PageFlowUtil.urlProvider(LoginUrls.class).getConfigureURL());
         AdminConsole.addLink(SettingsLinkType.Configuration, "email customization", new ActionURL(CustomizeEmailAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Configuration, "project display order", new ActionURL(ReorderFoldersAction.class, root));
-        AdminConsole.addLink(SettingsLinkType.Configuration, "missing value indicators", new ActionURL(FolderSettingsAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Configuration, "missing value indicators", new ActionURL(FolderManagementAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Configuration, "files", new ActionURL(FilesSiteSettingsAction.class, root));
         if (AppProps.getInstance().isDevMode())
             AdminConsole.addLink(SettingsLinkType.Configuration, "experimental features", new ActionURL(ExperimentalFeaturesAction.class, root));
@@ -445,14 +440,11 @@ public class AdminController extends SpringActionController
             return new ActionURL(MaintenanceAction.class, ContainerManager.getRoot());
         }
 
-        public ActionURL getManageFolderURL(Container c)
-        {
-            return new ActionURL(ManageFolderAction.class, c);
-        }
-
         public ActionURL getManageFoldersURL(Container c)
         {
-            return new ActionURL(ManageFoldersAction.class, c);
+            ActionURL url = new ActionURL(FolderManagementAction.class, c);
+            url.addParameter("tabId", "folderTree");
+            return url;
         }
 
         public ActionURL getCreateProjectURL()
@@ -477,9 +469,9 @@ public class AdminController extends SpringActionController
             return root;
         }
 
-        public ActionURL getFolderSettingsURL(Container c)
+        public ActionURL getFolderManagementURL(Container c)
         {
-            return new ActionURL(FolderSettingsAction.class, c);
+            return new ActionURL(FolderManagementAction.class, c);
         }
 
         public ActionURL getInitialFolderSettingsURL(Container c)
@@ -596,15 +588,7 @@ public class AdminController extends SpringActionController
         {
             Container c = getContainer();
 //            getPageConfig().setTemplate(Template.None);
-            HtmlView v = new HtmlView(
-                "<table>" +
-                "<tr><td>Path</td><td>" + PageFlowUtil.filter(c.getPath()) + "</td></tr>" +
-                "<tr><td>Name</td><td>" + c.getName() + "</td></tr>" +
-                "<tr><td>EntityId</td><td>" + c.getId() + "</td></tr>" +
-                "<tr><td>RowId</td><td>" + c.getRowId() + "</td></tr>" +
-                "<tr><td>FolderType</td><td>" + c.getFolderType().getName() + "</td></tr>" +
-                "</table>"
-                );
+            HtmlView v = getContainerInfoView(c);
             v.setTitle("Container details: " + StringUtils.defaultIfEmpty(c.getName(),"/"));
             return v;
         }
@@ -613,6 +597,19 @@ public class AdminController extends SpringActionController
         {
             return null;
         }
+    }
+
+    public static HtmlView getContainerInfoView(Container c)
+    {
+        return new HtmlView(
+            "<table>" +
+            "<tr><td class='labkey-form-label'>Path</td><td>" + PageFlowUtil.filter(c.getPath()) + "</td></tr>" +
+            "<tr><td class='labkey-form-label'>Name</td><td>" + c.getName() + "</td></tr>" +
+            "<tr><td class='labkey-form-label'>EntityId</td><td>" + c.getId() + "</td></tr>" +
+            "<tr><td class='labkey-form-label'>RowId</td><td>" + c.getRowId() + "</td></tr>" +
+            "<tr><td class='labkey-form-label'>FolderType</td><td>" + c.getFolderType().getName() + "</td></tr>" +
+            "</table>"
+        );
     }
 
 
@@ -3493,39 +3490,10 @@ public class AdminController extends SpringActionController
         public String getEmailMessage(){return _emailMessage;}
     }
 
-
-    public static ActionURL getManageFoldersURL(Container c)
-    {
-        return new ActionURL(ManageFoldersAction.class, c);
-    }
-
-
     private ActionURL getManageFoldersURL()
     {
-        return getManageFoldersURL(getContainer());
+        return new AdminUrlsImpl().getManageFoldersURL(getContainer());
     }
-
-
-    @RequiresPermissionClass(AdminPermission.class)
-    public class ManageFoldersAction extends SimpleViewAction<ManageFoldersForm>
-    {
-        public ModelAndView getView(ManageFoldersForm form, BindException errors) throws Exception
-        {
-            if (getContainer().isRoot())
-            {
-                throw new NotFoundException();
-            }
-
-            return new JspView<ManageFoldersForm>("/org/labkey/core/admin/manageFolders.jsp", form);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            root.addChild("Manage Folders", getManageFoldersURL());
-            return root;
-        }
-    }
-
 
     public static class ManageFoldersForm
     {
@@ -3693,8 +3661,7 @@ public class AdminController extends SpringActionController
                         newAliases.add(c.getPath());
                         ContainerManager.saveAliasesForContainer(c, newAliases);
                     }
-                    c = ContainerManager.getForId(c.getId());     // Reload container to populate new name
-                    _returnURL = getManageFoldersURL(c);
+                    _returnURL = getManageFoldersURL();
                     return true;
                 }
             }
@@ -3740,7 +3707,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root = root.addChild("Manage Folders", new ActionURL(ManageFoldersAction.class, getContainer()));
+            root = root.addChild("Folder Management", getManageFoldersURL());
             return root.addChild("Move Folder");
         }
     }
@@ -3814,14 +3781,12 @@ public class AdminController extends SpringActionController
                 ContainerManager.saveAliasesForContainer(c, newAliases);
             }
 
-            c = ContainerManager.getForId(c.getId());      // Reload container to populate new location
-
-            return HttpView.redirect(getManageFoldersURL(c));
+            return HttpView.redirect(getManageFoldersURL());
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            root = root.addChild("Manage Folders", new ActionURL(ManageFoldersAction.class, getContainer()));
+            root = root.addChild("Folder Management", getManageFoldersURL());
             return root.addChild("Move Folder");
         }
     }
@@ -4252,7 +4217,7 @@ public class AdminController extends SpringActionController
             if (c.isProject())
                 return AppProps.getInstance().getHomePageActionURL();
             else
-                return getManageFoldersURL(c.getParent());
+                return new AdminUrlsImpl().getManageFoldersURL(c.getParent());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -4404,140 +4369,6 @@ public class AdminController extends SpringActionController
         {
             LookAndFeelProperties props = LookAndFeelProperties.getInstance(c);
             return props.getSystemEmailAddress();
-        }
-    }
-
-    @RequiresPermissionClass(AdminPermission.class)
-    public class ManageFolderAction extends SimpleViewAction<Object>
-    {
-        public ModelAndView getView(Object form, BindException errors) throws Exception
-        {
-            if (getContainer().isRoot())
-            {
-                throw new NotFoundException();
-            }
-
-            return new JspView<Object>("/org/labkey/core/admin/manageFolder.jsp", form);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            root.addChild(getTitle("Manage"));
-            return root;
-        }
-    }
-
-    @RequiresPermissionClass(AdminPermission.class)
-    public class ExportFolderAction extends FormViewAction<ExportForm>
-    {
-        private ActionURL _successURL = null;
-
-        public ModelAndView getView(ExportForm form, boolean reshow, BindException errors) throws Exception
-        {
-            // In export-to-browser case, base action will attempt to reshow the view since we returned null as the success
-            // URL; returning null here causes the base action to stop pestering the action.
-            if (reshow)
-                return null;
-
-            if (getContainer().isRoot())
-            {
-                throw new NotFoundException();
-            }
-            else
-            {
-                return new JspView<ExportForm>("/org/labkey/core/admin/exportFolder.jsp", form, errors);
-            }
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Export Folder");
-        }
-
-        public void validateCommand(ExportForm form, Errors errors)
-        {}
-
-        public boolean handlePost(ExportForm form, BindException errors) throws Exception
-        {
-            Container c = getContainer();
-            if (c.isRoot())
-            {
-                throw new NotFoundException();
-            }
-
-            FolderWriterImpl writer = new FolderWriterImpl();
-            FolderExportContext ctx = new FolderExportContext(getUser(), getContainer(), PageFlowUtil.set(form.getTypes()), Logger.getLogger(FolderWriterImpl.class));
-
-            switch(form.getLocation())
-            {
-                case 0:
-                {
-                    PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-                    if (root == null || !root.isValid())
-                    {
-                        throw new NotFoundException("No valid pipeline root found");
-                    }
-                    File exportDir = root.resolvePath("export");
-                    writer.write(c, ctx, new FileSystemFile(exportDir));
-                    _successURL = new ActionURL(ManageFolderAction.class, getContainer());
-                    break;
-                }
-                case 1:
-                {
-                    PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-                    if (root == null || !root.isValid())
-                    {
-                        throw new NotFoundException("No valid pipeline root found");
-                    }
-                    File exportDir = root.resolvePath("export");
-                    exportDir.mkdir();
-                    ZipFile zip = new ZipFile(exportDir, FileUtil.makeFileNameWithTimestamp(c.getName(), "folder.zip"));
-                    writer.write(c, ctx, zip);
-                    zip.close();
-                    _successURL = new ActionURL(ManageFolderAction.class, getContainer());
-                    break;
-                }
-                case 2:
-                {
-                    ZipFile zip = new ZipFile(getViewContext().getResponse(), FileUtil.makeFileNameWithTimestamp(c.getName(), "folder.zip"));
-                    writer.write(c, ctx, zip);
-                    zip.close();
-                    break;
-                }
-            }
-
-            return true;
-        }
-
-        public ActionURL getSuccessURL(ExportForm form)
-        {
-            return _successURL;
-        }
-    }
-
-    public static class ExportForm
-    {
-        private String[] _types;
-        private int _location;
-
-        public String[] getTypes()
-        {
-            return _types;
-        }
-
-        public void setTypes(String[] types)
-        {
-            _types = types;
-        }
-
-        public int getLocation()
-        {
-            return _location;
-        }
-
-        public void setLocation(int location)
-        {
-            _location = location;
         }
     }
 

@@ -34,6 +34,10 @@ import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineStatusUrls;
+import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.ActionNames;
@@ -45,6 +49,7 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -56,17 +61,25 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.writer.FileSystemFile;
+import org.labkey.api.writer.ZipFile;
+import org.labkey.core.admin.writer.FolderExportContext;
+import org.labkey.core.admin.writer.FolderWriterImpl;
 import org.labkey.core.query.CoreQuerySchema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.io.File;
+import java.io.InputStream;
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -75,12 +88,12 @@ import java.util.Set;
  * Time: 10:36:02 AM
  */
 @RequiresPermissionClass(AdminPermission.class)
-@ActionNames("folderSettings, customize")
-public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.FolderSettingsForm>
+@ActionNames("folderManagement, folderSettings, customize")
+public class FolderManagementAction extends FormViewAction<FolderManagementAction.FolderManagementForm>
 {
     private ActionURL _successURL;
 
-    public void validateCommand(FolderSettingsForm form, Errors errors)
+    public void validateCommand(FolderManagementForm form, Errors errors)
     {
         if (form.isFolderTypeTab())
         {
@@ -107,25 +120,37 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
         }
     }
 
-    public ModelAndView getView(FolderSettingsForm form, boolean reshow, BindException errors) throws Exception
+    public ModelAndView getView(FolderManagementForm form, boolean reshow, BindException errors) throws Exception
     {
-        return new FolderSettingsTabStrip(getContainer(), form, errors);
+        // In export-to-browser case, base action will attempt to reshow the view since we returned null as the success
+        // URL; returning null here causes the base action to stop pestering the action.
+        if (reshow && !errors.hasErrors())
+            return null;
+        
+        return new FolderManagementTabStrip(getContainer(), form, errors);
     }
 
-    public boolean handlePost(FolderSettingsForm form, BindException errors) throws Exception
+    public boolean handlePost(FolderManagementForm form, BindException errors) throws Exception
     {
-        if (form.isMvIndicatorsTab())
-            return handleMvIndicatorsPost(form, errors);
-        else if (form.isFolderTypeTab())
+        if (form.isFolderTypeTab())
             return handleFolderTypePost(form, errors);
+        else if (form.isMvIndicatorsTab())
+            return handleMvIndicatorsPost(form, errors);
         else if (form.isFullTextSearchTab())
             return handleFullTextSearchPost(form, errors);
-        else
+        else if (form.isMessagesTab())
             return handleMessagesPost(form, errors);
+        else if (form.isExportTab())
+            return handleExportPost(form, errors);
+        else if (form.isImportTab())
+            return handleImportPost(form, errors);
+        else
+            return handleFolderTreePost(form, errors);
     }
 
-    private boolean handleMvIndicatorsPost(FolderSettingsForm form, BindException errors) throws SQLException
+    private boolean handleMvIndicatorsPost(FolderManagementForm form, BindException errors) throws SQLException
     {
+        _successURL = getViewContext().getActionURL();
         if (form.isInheritMvIndicators())
         {
             MvUtil.inheritMvIndicators(getContainer());
@@ -139,7 +164,7 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
         }
     }
 
-    private boolean handleFolderTypePost(FolderSettingsForm form, BindException errors) throws SQLException
+    private boolean handleFolderTypePost(FolderManagementForm form, BindException errors) throws SQLException
     {
         Container c = getContainer();
         if (c.isRoot())
@@ -186,7 +211,7 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
         return true;
     }
 
-    private boolean handleFullTextSearchPost(FolderSettingsForm form, BindException errors) throws SQLException
+    private boolean handleFullTextSearchPost(FolderManagementForm form, BindException errors) throws SQLException
     {
         Container c = getContainer();
         if (c.isRoot())
@@ -200,7 +225,7 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
         return true;
     }
 
-    private boolean handleMessagesPost(FolderSettingsForm form, BindException errors) throws Exception
+    private boolean handleMessagesPost(FolderManagementForm form, BindException errors) throws Exception
     {
         MessageConfigService.ConfigTypeProvider provider = MessageConfigService.getInstance().getConfigType(form.getProvider());
 
@@ -213,7 +238,114 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
         return false;
     }
 
-    public ActionURL getSuccessURL(FolderSettingsForm form)
+    private boolean handleExportPost(FolderManagementForm form, BindException errors) throws Exception
+    {
+        Container c = getContainer();
+        if (c.isRoot())
+        {
+            throw new NotFoundException();
+        }
+
+        FolderWriterImpl writer = new FolderWriterImpl();
+        FolderExportContext ctx = new FolderExportContext(getUser(), getContainer(), PageFlowUtil.set(form.getTypes()), Logger.getLogger(FolderWriterImpl.class));
+
+        switch(form.getLocation())
+        {
+            case 0:
+            {
+                PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
+                if (root == null || !root.isValid())
+                {
+                    throw new NotFoundException("No valid pipeline root found");
+                }
+                File exportDir = root.resolvePath("export");
+                writer.write(c, ctx, new FileSystemFile(exportDir));
+                _successURL = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(getContainer());
+                break;
+            }
+            case 1:
+            {
+                PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
+                if (root == null || !root.isValid())
+                {
+                    throw new NotFoundException("No valid pipeline root found");
+                }
+                File exportDir = root.resolvePath("export");
+                exportDir.mkdir();
+                ZipFile zip = new ZipFile(exportDir, FileUtil.makeFileNameWithTimestamp(c.getName(), "folder.zip"));
+                writer.write(c, ctx, zip);
+                zip.close();
+                _successURL = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(getContainer());
+                break;
+            }
+            case 2:
+            {
+                ZipFile zip = new ZipFile(getViewContext().getResponse(), FileUtil.makeFileNameWithTimestamp(c.getName(), "folder.zip"));
+                writer.write(c, ctx, zip);
+                zip.close();
+                break;
+            }
+        }
+        return !errors.hasErrors();
+    }
+
+    private boolean handleImportPost(FolderManagementForm form, BindException errors) throws Exception
+    {
+        Container c = getContainer();
+        if (c.isRoot())
+        {
+            throw new NotFoundException();
+        }
+
+        if (!PipelineService.get().hasValidPipelineRoot(c))
+        {
+            errors.reject("folderImport", "Pipeline root not set or does not exist on disk");
+        }
+        else
+        {
+            // Assuming success starting the import process, redirect to pipeline status
+            _successURL = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c);
+
+            Map<String, MultipartFile> map = getFileMap();
+            if (map.isEmpty())
+            {
+                errors.reject("folderImport", "You must select a .folder.zip file to import.");
+            }
+            else if (map.size() > 1)
+            {
+                errors.reject("folderImport", "Only one file is allowed.");
+            }
+            else
+            {
+                MultipartFile file = map.values().iterator().next();
+
+                if (0 == file.getSize() || StringUtils.isBlank(file.getOriginalFilename()))
+                {
+                    errors.reject("folderImport", "You must select a .folder.zip file to import.");
+                }
+                else if (!file.getOriginalFilename().endsWith(".folder.zip"))
+                {
+                    errors.reject("folderImport", "You must select a .folder.zip file to import.");
+                }
+                else
+                {
+                    InputStream is = file.getInputStream();
+                    File zipFile = File.createTempFile("folder", ".zip");
+                    FileUtil.copyData(is, zipFile);
+                    PipelineService.get().importFolder(getViewContext(), errors, zipFile, file.getOriginalFilename());
+                }
+            }
+        }
+        return !errors.hasErrors();
+    }
+
+    private boolean handleFolderTreePost(FolderManagementForm form, BindException errors) throws Exception
+    {
+        _successURL = getViewContext().getActionURL();
+        return true;
+    }
+
+    public ActionURL getSuccessURL(FolderManagementForm form)
     {
         return _successURL;
     }
@@ -225,7 +357,7 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
         if (c.isRoot())
             return AdminController.appendAdminNavTrail(root, "Admin Console", AdminController.ShowAdminAction.class, getContainer());
 
-        root.addChild("Folder Settings: " + getContainer().getPath());
+        root.addChild("Folder Management");
         return root;
     }
 
@@ -239,7 +371,7 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
         return getViewContext().getUser();
     }
 
-    public static class FolderSettingsForm
+    public static class FolderManagementForm
     {
         // folder type settings
         private String[] activeModules = new String[ModuleLoader.getInstance().getModules().size()];
@@ -256,6 +388,10 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
         // full-text search settings
         private boolean searchable;
         private String _provider;
+
+        // folder export settings
+        private String[] types;
+        private int location;
 
         public String[] getActiveModules()
         {
@@ -307,6 +443,11 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
             return tabId;
         }
 
+        public boolean isFolderTreeTab()
+        {
+            return "folderTree".equals(getTabId());
+        }
+
         public boolean isFolderTypeTab()
         {
             return "folderType".equals(getTabId());
@@ -325,6 +466,21 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
         public boolean isMessagesTab()
         {
             return "messages".equals(getTabId());
+        }
+
+        public boolean isExportTab()
+        {
+            return "export".equals(getTabId());
+        }
+
+        public boolean isImportTab()
+        {
+            return "import".equals(getTabId());
+        }
+
+        public boolean isInformationTab()
+        {
+            return "info".equals(getTabId());
         }
 
         public boolean isInheritMvIndicators()
@@ -376,16 +532,36 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
         {
             _provider = provider;
         }
+
+        public String[] getTypes()
+        {
+            return types;
+        }
+
+        public void setTypes(String[] types)
+        {
+            this.types = types;
+        }
+
+        public int getLocation()
+        {
+            return location;
+        }
+
+        public void setLocation(int location)
+        {
+            this.location = location;
+        }
     }
 
 
-    private static class FolderSettingsTabStrip extends TabStripView
+    private static class FolderManagementTabStrip extends TabStripView
     {
         private final Container _container;
-        private FolderSettingsForm _form;
+        private FolderManagementForm _form;
         private BindException _errors;
 
-        private FolderSettingsTabStrip(Container c, FolderSettingsForm form, BindException errors)
+        private FolderManagementTabStrip(Container c, FolderManagementForm form, BindException errors)
         {
             _container = c;
             _form = form;
@@ -394,38 +570,63 @@ public class FolderSettingsAction extends FormViewAction<FolderSettingsAction.Fo
 
         public List<NavTree> getTabList()
         {
-            ActionURL url = new AdminController.AdminUrlsImpl().getFolderSettingsURL(getViewContext().getContainer());
+            ActionURL url = new AdminController.AdminUrlsImpl().getFolderManagementURL(getViewContext().getContainer());
             List<NavTree> tabs = new ArrayList<NavTree>(2);
 
             if (!_container.isRoot())
+            {
+                tabs.add(new TabInfo("Folder Tree", "folderTree", url));
                 tabs.add(new TabInfo("Folder Type", "folderType", url));
+            }
             tabs.add(new TabInfo("Missing Value Indicators", "mvIndicators", url));
             if (!_container.isRoot())
             {
                 tabs.add(new TabInfo("Full-Text Search", "fullTextSearch", url));
                 tabs.add(new TabInfo("Email Notifications", "messages", url));
+                tabs.add(new TabInfo("Export", "export", url));
+                tabs.add(new TabInfo("Import", "import", url));
+                tabs.add(new TabInfo("Information", "info", url));
             }
             return tabs;
         }
 
         public HttpView getTabView(String tabId) throws Exception
         {
-            if ("folderType".equals(tabId))
+            if ("folderTree".equals(tabId))
+            {
+                assert !_container.isRoot() : "No folder tree for the root folder";
+                return new JspView<FolderManagementForm>("/org/labkey/core/admin/manageFolders.jsp", _form, _errors);
+            }
+            else if ("folderType".equals(tabId))
             {
                 assert !_container.isRoot() : "No folder type settings for the root folder";
-                return new JspView<FolderSettingsForm>("/org/labkey/core/admin/folderType.jsp", _form, _errors);
+                return new JspView<FolderManagementForm>("/org/labkey/core/admin/folderType.jsp", _form, _errors);
             }
             else if ("mvIndicators".equals(tabId))
             {
-                return new JspView<FolderSettingsForm>("/org/labkey/core/admin/mvIndicators.jsp", _form, _errors);
+                return new JspView<FolderManagementForm>("/org/labkey/core/admin/mvIndicators.jsp", _form, _errors);
             }
             else if ("fullTextSearch".equals(tabId))
             {
-                return new JspView<FolderSettingsForm>("/org/labkey/core/admin/fullTextSearch.jsp", _form, _errors);
+                return new JspView<FolderManagementForm>("/org/labkey/core/admin/fullTextSearch.jsp", _form, _errors);
             }
             else if ("messages".equals(tabId))
             {
                 return getMessageTabView();
+            }
+            else if ("export".equals(tabId))
+            {
+                assert !_container.isRoot() : "No export for the root folder";
+                return new JspView<FolderManagementForm>("/org/labkey/core/admin/exportFolder.jsp", _form, _errors);
+            }
+            else if ("import".equals(tabId))
+            {
+                assert !_container.isRoot() : "No import for the root folder";
+                return new JspView<FolderManagementForm>("/org/labkey/core/admin/importFolder.jsp", _form, _errors);
+            }
+            else if ("info".equals(tabId))
+            {
+                return AdminController.getContainerInfoView(_container);
             }
             else
             {

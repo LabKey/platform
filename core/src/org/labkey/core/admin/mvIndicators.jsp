@@ -22,12 +22,12 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.core.admin.FolderSettingsAction" %>
+<%@ page import="org.labkey.core.admin.FolderManagementAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     int rowId = 0;
 %>
-<form name="mvIndicatorsForm" method="POST" action="<%=buildURL(FolderSettingsAction.class)%>tabId=mvIndicators">
+<form name="mvIndicatorsForm" method="POST" action="<%=buildURL(FolderManagementAction.class)%>tabId=mvIndicators">
     <table>
         <tr>
             <td>

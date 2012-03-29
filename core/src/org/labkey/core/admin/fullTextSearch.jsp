@@ -17,12 +17,12 @@
 %>
 <%@ page import="org.labkey.api.action.SpringActionController" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.core.admin.FolderSettingsAction" %>
+<%@ page import="org.labkey.core.admin.FolderManagementAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Container c = getViewContext().getContainer();
 %>
-<form name="fullTextSearch" method="POST" action="<%=buildURL(FolderSettingsAction.class)%>tabId=fullTextSearch">
+<form name="fullTextSearch" method="POST" action="<%=buildURL(FolderManagementAction.class)%>tabId=fullTextSearch">
     <table>
         <tr>
             <td>

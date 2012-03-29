@@ -21,9 +21,10 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.core.admin.AdminController.ManageFoldersForm" %>
+<%@ page import="org.labkey.core.admin.FolderManagementAction.FolderManagementForm" %>
+<%@ page import="org.labkey.core.admin.FolderManagementAction" %>
 <%
-    HttpView<ManageFoldersForm> me = (HttpView<ManageFoldersForm>) HttpView.currentView();
+    HttpView<FolderManagementForm> me = (HttpView<FolderManagementAction.FolderManagementForm>) HttpView.currentView();
     ViewContext ctx = me.getViewContext();
     Container c = ctx.getContainer();
 %>

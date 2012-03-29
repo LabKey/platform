@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AdminController.ManageFoldersForm> me = (JspView<AdminController.ManageFoldersForm>) HttpView.currentView();
@@ -46,7 +47,7 @@
     <table>
         <tr>
             <td><%=generateSubmitButton("Rename")%></td>
-            <td><%=generateButton("Cancel", buildURL(AdminController.ManageFoldersAction.class))%></td>
+            <td><%=generateButton("Cancel", urlProvider(AdminUrls.class).getManageFoldersURL(c))%></td>
         </tr>
     </table>
 </form>

@@ -53,7 +53,6 @@ import org.labkey.pipeline.api.PipeRootImpl;
 import org.labkey.pipeline.api.PipelineEmailPreferences;
 import org.labkey.pipeline.api.PipelineRoot;
 import org.labkey.pipeline.api.PipelineServiceImpl;
-import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
 import org.labkey.pipeline.importer.FolderImportJob;
 import org.labkey.pipeline.status.StatusController;
@@ -70,7 +69,6 @@ import javax.servlet.ServletException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.security.GeneralSecurityException;
@@ -1204,86 +1202,6 @@ public class PipelineController extends SpringActionController
         }
     }
 
-
-    @RequiresPermissionClass(AdminPermission.class)
-    public class ImportFolderAction extends FormViewAction<Object>
-    {
-        private ActionURL _redirect;
-
-        @Override
-        public void validateCommand(Object target, Errors errors)
-        {}
-
-        @Override
-        public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
-        {
-            if (getContainer().isRoot())
-            {
-                throw new NotFoundException();
-            }
-            else
-            {
-                return new JspView<Object>("/org/labkey/pipeline/importFolder.jsp", null, errors);
-            }
-        }
-
-        @Override
-        public boolean handlePost(Object o, BindException errors) throws Exception
-        {
-            Container c = getContainer();
-
-            if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
-            {
-                return false;   // getView() will show an appropriate message in this case
-            }
-
-            // Assuming success starting the import process, redirect to pipeline status
-            _redirect = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c);
-
-            Map<String, MultipartFile> map = getFileMap();
-
-            if (map.isEmpty())
-            {
-                errors.reject("folderImport", "You must select a .folder.zip file to import.");
-            }
-            else if (map.size() > 1)
-            {
-                errors.reject("folderImport", "Only one file is allowed.");
-            }
-            else
-            {
-                MultipartFile file = map.values().iterator().next();
-
-                if (0 == file.getSize() || StringUtils.isBlank(file.getOriginalFilename()))
-                {
-                    errors.reject("folderImport", "You must select a .folder.zip file to import.");
-                }
-                else
-                {
-                    InputStream is = file.getInputStream();
-
-                    File zipFile = File.createTempFile("folder", ".zip");
-                    FileUtil.copyData(is, zipFile);
-                    importFolder(errors, zipFile, file.getOriginalFilename());
-                }
-            }
-
-            return !errors.hasErrors();
-        }
-
-        @Override
-        public URLHelper getSuccessURL(Object o)
-        {
-            return _redirect;
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Import Folder");
-        }
-    }
-
     @RequiresPermissionClass(AdminPermission.class)
     public class ImportFolderFromPipelineAction extends SimpleRedirectAction<PipelinePathForm>
     {
@@ -1296,7 +1214,7 @@ public class PipelineController extends SpringActionController
             @SuppressWarnings({"ThrowableInstanceNeverThrown"})
             BindException errors = new NullSafeBindException(c, "import");
 
-            boolean success = importFolder(errors, folderFile, folderFile.getName());
+            boolean success = importFolder(getViewContext(), errors, folderFile, folderFile.getName());
 
             if (success && !errors.hasErrors())
             {
@@ -1324,9 +1242,9 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    public boolean importFolder(BindException errors, File folderFile, String originalFilename) throws ServletException, SQLException, IOException, ParserConfigurationException, SAXException, XmlException
+    public static boolean importFolder(ViewContext context, BindException errors, File folderFile, String originalFilename) throws ServletException, SQLException, IOException, ParserConfigurationException, SAXException, XmlException
     {
-        Container c = getContainer();
+        Container c = context.getContainer();
         if (!PipelineService.get().hasValidPipelineRoot(c))
         {
             return false;
@@ -1367,8 +1285,8 @@ public class PipelineController extends SpringActionController
             folderXml = folderFile;
         }
 
-        User user = getUser();
-        ActionURL url = getViewContext().getActionURL();
+        User user = context.getUser();
+        ActionURL url = context.getActionURL();
 
         PipelineService.get().queueJob(new FolderImportJob(c, user, url, folderXml, originalFilename, errors, pipelineRoot));
 
