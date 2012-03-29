@@ -1669,7 +1669,7 @@ public class OntologyManager
                 // UNDONE - handle truncation in some other way?
                 if (string.length() > ObjectProperty.STRING_LENGTH)
                 {
-                    throw new SQLException("String value too long in field " + OntologyManager.getPropertyDescriptor(propertyId).getName() + ": " + string);
+                    throw new SQLException("String value too long in field " + OntologyManager.getPropertyDescriptor(propertyId).getName() + ": " + (string.length() < 150 ? string : string.substring(0, 149) + "..."));
                 }
                 strings.add(Arrays.asList(objectId, propertyId, string, mvIndicator));
             }
