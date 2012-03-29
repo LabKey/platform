@@ -20,13 +20,13 @@
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController.ManageFoldersForm" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ManageFoldersForm> me = (JspView<ManageFoldersForm>) HttpView.currentView();
@@ -46,7 +46,7 @@
     {
         %><tr><td>You cannot delete the home project.</td></tr>
         <tr><td>
-            <%=generateButton("OK", "manageFolders.view")%>
+            <%=generateButton("OK", buildURL(AdminController.ManageFoldersAction.class))%>
         </td></tr>
         </table><%
 
@@ -60,7 +60,7 @@
         %><tr><td>This <%=h(containerType)%> has <%=childrenDescription%>s, but you don't have admininistrative permissions to all the <%=childrenDescription%>s.</td></tr>
         <tr><td>&nbsp;</td></tr>
         <tr><td>
-            <%=generateButton("Back", "manageFolders.view")%>
+            <%=generateButton("Back", buildURL(AdminController.ManageFoldersAction.class))%>
         </td></tr>
         </table><%
 
@@ -110,9 +110,9 @@
         </table>
 
         <table><tr>
-            <td><form action="deleteFolder.post<%=recurse ? "?recurse=1" : ""%>" method="post">
+            <td><form action="<%=buildURL(AdminController.DeleteFolderAction.class)%><%=recurse ? "recurse=1" : ""%>" method="post">
                 <%=generateSubmitButton("Delete")%></form></td>
-            <td><%=generateButton("Cancel", "manageFolders.view")%></td>
+            <td><%=generateButton("Cancel", buildURL(AdminController.ManageFoldersAction.class))%></td>
         </tr></table><%
     }
     else
@@ -127,8 +127,8 @@
 
 <table>
     <tr>
-        <td><%=generateButton("Delete All Folders", "deleteFolder.view?recurse=1")%></td>
-        <td><%=generateButton("Cancel", "manageFolders.view")%></td>
+        <td><%=generateButton("Delete All Folders", buildURL(AdminController.DeleteFolderAction.class) + "recurse=1")%></td>
+        <td><%=generateButton("Cancel", buildURL(AdminController.ManageFoldersAction.class))%></td>
     </tr>
 </table><%
     }  %>

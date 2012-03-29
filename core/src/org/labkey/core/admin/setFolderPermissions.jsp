@@ -50,7 +50,7 @@
             defaults: {
                 border: false
             },
-            url: 'setFolderPermissions.view',
+            url: LABKEY.ActionURL.buildURL('admin','setFolderPermissions.view'),
             method: 'POST',
             standardSubmit: true,
             items: [{

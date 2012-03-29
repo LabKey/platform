@@ -91,7 +91,7 @@
                 defaults: {
                     border: false
                 },
-                url: 'createFolder.view',
+                url: LABKEY.ActionURL.buildURL('admin','createFolder.view'),
                 method: 'POST',
                 standardSubmit: true,
                 listeners: {

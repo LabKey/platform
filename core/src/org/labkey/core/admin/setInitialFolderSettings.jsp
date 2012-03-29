@@ -59,7 +59,7 @@
             defaults: {
                 border: false
             },
-            url: 'setInitialFolderSettings.view',
+            url: LABKEY.ActionURL.buildURL('admin','setInitialFolderSettings.view'),
             method: 'POST',
             standardSubmit: true,
             items: [{

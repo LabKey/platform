@@ -59,7 +59,7 @@ Ext.onReady(function(){
     renameForm = new LABKEY.ext.FormPanel({
         border:false,
         errorEl:'errorDiv',
-        url:'renameGroup.post',
+        url: LABKEY.ActionURL.buildURL('security','renameGroup.post'),
         items:[
             {name:'newName', xtype:'textfield', fieldLabel:"New Name", allowBlank:false, validator:validGroupName, width:300},
             {name:'id', xtype:'hidden', value:<%=group.getUserId()%>}],

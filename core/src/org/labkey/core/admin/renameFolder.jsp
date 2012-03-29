@@ -34,7 +34,7 @@
     String containerType = containerDescription.toLowerCase();
     String errorHTML = formatMissedErrors("form");
 %>
-<form action="renameFolder.view" method="post">
+<form action="<%=buildURL(AdminController.RenameFolderAction.class)%>" method="post">
     <table><%
         if (errorHTML.length() > 0)
         { %>
@@ -46,7 +46,7 @@
     <table>
         <tr>
             <td><%=generateSubmitButton("Rename")%></td>
-            <td><%=generateButton("Cancel", "manageFolders.view")%></td>
+            <td><%=generateButton("Cancel", buildURL(AdminController.ManageFoldersAction.class))%></td>
         </tr>
     </table>
 </form>

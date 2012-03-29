@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginBean" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginForm" %>
+<%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<LoginBean> me = (HttpView<LoginBean>) HttpView.currentView();
@@ -59,11 +60,11 @@
 
     if (agreeOnly)
     {
-        %><form name="login" method="POST" action="agreeToTerms.post"><%
+        %><form name="login" method="POST" action="<%=buildURL(LoginController.AgreeToTermsAction.class)%>"><%
     }
     else
     {
-        %><form name="login" method="POST" action="login.post"><%
+        %><form name="login" method="POST" action=<%=buildURL(LoginController.LoginAction.class)%>"><%
     } %>
     <labkey:csrf/>
     <table><%
@@ -90,7 +91,7 @@
         <tr><td>Email:</td><td><input id="email" type="text" name="email" value="<%=h(form.getEmail())%>" style="width:200px;"></td></tr>
         <tr><td>Password:</td><td><input id="password" type="password" name="password" style="width:200px;"></td></tr>
         <tr><td></td><td><input type=checkbox name="remember" id="remember" <%=bean.remember ? "checked" : ""%>><label for="remember">Remember my email address</label></td></tr>
-        <tr><td></td><td><a href="resetPassword.view">Forgot your password?</a></td></tr>
+        <tr><td></td><td><a href="<%=buildURL(LoginController.ResetPasswordAction.class)%>">Forgot your password?</a></td></tr>
         <% if (!StringUtils.isBlank(props.getSupportEmail())) { %><tr><td></td><td><a href="mailto:<%= h(props.getSupportEmail()) %>?subject=Account request<%= StringUtils.isBlank(props.getShortName()) ? "" : " for " + h(props.getShortName()) %>">Request an account</a></td></tr><% }
     }
 
