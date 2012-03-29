@@ -95,6 +95,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     // Column-related
     private TableType _xmlTable = null;
     private SchemaColumnMetaData _columnMetaData = null;
+    protected boolean _autoLoadMetaData = true;
     private final Object _columnLock = new Object();
     private String _versionColumnName = null;
     private List<FieldKey> _defaultVisibleColumns = null;
@@ -346,7 +347,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
             {
                 try
                 {
-                    _columnMetaData = new SchemaColumnMetaData(this);
+                    _columnMetaData = new SchemaColumnMetaData(this, _autoLoadMetaData);
                 }
                 catch (SQLException e)
                 {

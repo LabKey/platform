@@ -59,23 +59,31 @@ public class SchemaColumnMetaData
 
     SchemaColumnMetaData(SchemaTableInfo tinfo) throws SQLException
     {
+        this(tinfo,true);
+    }
+
+    SchemaColumnMetaData(SchemaTableInfo tinfo, boolean load) throws SQLException
+    {
         _tinfo = tinfo;
-        DbScope scope = _tinfo.getSchema().getScope();
-        boolean inTransaction = scope.isTransactionActive();
-        Connection conn = null;
-
-        try
+        if (load)
         {
-            conn = scope.getConnection();
-            loadFromMetaData(conn.getMetaData(), _tinfo.getSchema().getScope().getDatabaseName(), _tinfo.getMetaDataSchemaName(), _tinfo);
-        }
-        finally
-        {
-            if (!inTransaction && null != conn)
-                scope.releaseConnection(conn);
-        }
+            DbScope scope = _tinfo.getSchema().getScope();
+            boolean inTransaction = scope.isTransactionActive();
+            Connection conn = null;
 
-        loadColumnsFromXml(_tinfo);
+            try
+            {
+                conn = scope.getConnection();
+                loadFromMetaData(conn.getMetaData(), _tinfo.getSchema().getScope().getDatabaseName(), _tinfo.getMetaDataSchemaName(), _tinfo);
+            }
+            finally
+            {
+                if (!inTransaction && null != conn)
+                    scope.releaseConnection(conn);
+            }
+
+            loadColumnsFromXml(_tinfo);
+        }
     }
 
     private void loadColumnsFromXml(SchemaTableInfo tinfo)
