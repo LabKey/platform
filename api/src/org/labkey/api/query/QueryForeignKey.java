@@ -59,7 +59,7 @@ public class QueryForeignKey implements ForeignKey
         try
         {
             lookupTable = getLookupTableInfo();
-            if (foreignKey.getParentTable().supportsContainerFilter() && lookupTable instanceof ContainerFilterable)
+            if (foreignKey.getParentTable().supportsContainerFilter() && lookupTable.supportsContainerFilter())
             {
                 ((ContainerFilterable)lookupTable).setContainerFilter(foreignKey.getParentTable().getContainerFilter());
             }
