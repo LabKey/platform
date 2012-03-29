@@ -2786,9 +2786,6 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         }
         else {
             if(this.rendered){
-                var tabpanel = this.find('tabpanel')[0];
-                tabpanel.setActiveTab(0);
-                tabpanel.remove(1);  //remove the faceted UI
                 this.hideTabStrip();
             }
             else {
@@ -2796,6 +2793,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                     panel.setDisabled(true);
                     panel.setVisible(false);
                 }
+                this.on('render', this.hideTabStrip, this, {single: true});
             }
         }
     },
@@ -2803,9 +2801,13 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     hideTabStrip: function(){
         if(this.rendered){
             var tabpanel = this.find('tabpanel')[0];
-            tabpanel.hideTabStripItem(0);
 
-            if(tabpanel.rendered){
+            if(tabpanel && tabpanel.rendered){
+                tabpanel.setActiveTab(0);
+                tabpanel.remove(1);  //remove the faceted UI
+
+                tabpanel.hideTabStripItem(0);
+
                 tabpanel.strip.setVisibilityMode(Ext.Element.OFFSETS);
                 tabpanel.strip.setVisible(false);
                 this.doLayout();
