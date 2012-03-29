@@ -132,6 +132,7 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
     public Results generateResults(ViewContext context) throws Exception
     {
         ReportQueryView view = createQueryView(context, getDescriptor());
+        validateQueryView(context, view);
         if (view != null)
         {
             view.getSettings().setMaxRows(Table.ALL_ROWS);

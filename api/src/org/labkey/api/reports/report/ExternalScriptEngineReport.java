@@ -19,6 +19,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
@@ -175,6 +176,13 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
                 runScript(context, outputSubst, createInputDataFile(context));
             }
             catch (ScriptException e)
+            {
+                boolean continueOn = renderer.handleRuntimeException(e);
+
+                if (!continueOn)
+                    return null;
+            }
+            catch (ValidationException e)
             {
                 boolean continueOn = renderer.handleRuntimeException(e);
 

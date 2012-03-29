@@ -38,6 +38,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -164,6 +165,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     {
         ReportDescriptor descriptor = getDescriptor();
         QueryView view = createQueryView(context, descriptor);
+        validateQueryView(context, view);
 
         if (view != null)
         {

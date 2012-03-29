@@ -16,8 +16,13 @@
 package org.labkey.api.reports.report;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.permissions.EditSharedReportPermission;
@@ -288,5 +293,39 @@ public abstract class AbstractReport implements Report
     protected boolean isOwner(User user)
     {
         return isNew() || (getDescriptor().getCreatedBy() != 0 && (getDescriptor().getCreatedBy() == user.getUserId()));
+    }
+
+    /**
+     * Tests whether the specified query view is valid.
+     */
+    public final void validateQueryView(ViewContext context, QueryView view) throws ValidationException
+    {
+        if (view != null)
+        {
+            QueryDefinition def = view.getQueryDef();
+            if (def != null)
+            {
+                List<QueryException> errors = new ArrayList<QueryException>();
+                TableInfo table = def.getTable(errors, false);
+
+                if (!errors.isEmpty())
+                {
+                    StringBuilder sb = new StringBuilder();
+                    String delim = "";
+
+                    for (QueryException error : errors)
+                    {
+                        sb.append(delim).append(error.getMessage());
+                        delim = "\n";
+                    }
+                    throw new ValidationException("Unable to get table or query: " + sb.toString());
+                }
+
+                if (table == null)
+                    throw new ValidationException("Table or query not found: " + view.getSettings().getQueryName());
+            }
+            else
+                throw new ValidationException("Unable to get a query definition from table or query: " + view.getSettings().getQueryName());
+        }
     }
 }
