@@ -559,7 +559,7 @@ public class Query
             else
                 t = schema.getTable(key.getName());
 
-            if (t instanceof ContainerFilterable && getContainerFilter() != null)
+            if (t instanceof ContainerFilterable && ((ContainerFilterable)t).supportsContainerFilter() && getContainerFilter() != null)
                 ((ContainerFilterable) t).setContainerFilter(getContainerFilter());
         }
         catch (QueryException ex)
