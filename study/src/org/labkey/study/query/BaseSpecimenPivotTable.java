@@ -187,7 +187,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable
      */
     private String getLabel(String label, int id, Map<String, Boolean> dupMap)
     {
-        if (dupMap.containsKey(label) && dupMap.get(label))
+        if (label != null && dupMap.containsKey(label) && dupMap.get(label))
             return String.format("%s(%s)", label, id);
         else
             return label;
