@@ -294,7 +294,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                 if (StringUtils.startsWith(sqlx.getSQLState(), "22") || SqlDialect.isConstraintException(sqlx))
                 {
                     ValidationException vex = new ValidationException(sqlx.getMessage());
-                    vex.fillIn(getQueryTable().getPublicSchemaName(), getQueryTable().getName(), row, i);
+                    vex.fillIn(getQueryTable().getPublicSchemaName(), getQueryTable().getName(), row, i+1);
                     errors.addRowError(vex);
                 }
                 else if (SqlDialect.isTransactionException(sqlx) && errors.hasErrors())

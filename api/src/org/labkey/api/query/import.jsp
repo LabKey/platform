@@ -200,23 +200,27 @@
     }
 
 
-    function _getGlobalErrors(collection, errors)
+    function _getGlobalErrors(collection, errors, rowNumber)
     {
+        rowNumber = errors.rowNumber || rowNumber;
         var count = collection.length;
 
         if (errors["msg"] || errors["_form"])
         {
-            collection.push(errors["exception"] || errors["msg"] || errors["_form"]);
+            var err = errors["exception"] || errors["msg"] || errors["_form"];
+            if (rowNumber)
+                err = "row " + rowNumber + ": " + err;
+            collection.push(err);
         }
         
         if (Ext.isArray(errors))
         {
             for (var i=0 ; i<errors.length ; i++)
-                _getGlobalErrors(collection, errors[i]);
+                _getGlobalErrors(collection, errors[i], rowNumber);
         }
         else if (errors.errors)
         {
-            _getGlobalErrors(collection, errors.errors);
+            _getGlobalErrors(collection, errors.errors, rowNumber);
         }
 
         if (collection.length == count)
