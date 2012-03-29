@@ -17,8 +17,10 @@
 package org.labkey.api.security;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.poi.util.ArrayUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
@@ -1024,6 +1026,7 @@ public class SecurityManager
         try
         {
             Table.insert(null, core.getTableInfoPrincipals(), group);
+            ProjectAndSiteGroupsCache.uncache(c);
         }
         catch (SQLException e)
         {
@@ -1085,7 +1088,6 @@ public class SecurityManager
         try
         {
             Group group = getGroup(groupId);
-            GroupCache.uncache(groupId);
 
             // Need to invalidate all computed group lists. This isn't quite right, but it gets the job done.
             GroupMembershipCache.handleGroupChange(group, group);
@@ -1097,6 +1099,10 @@ public class SecurityManager
 
             Filter principalsFilter = new SimpleFilter("UserId", groupId);
             Table.delete(core.getTableInfoPrincipals(), principalsFilter);
+
+            GroupCache.uncache(groupId);
+            Container c = ContainerManager.getForId(group.getContainer());
+            ProjectAndSiteGroupsCache.uncache(c);
         }
         catch (SQLException x)
         {
@@ -1114,9 +1120,6 @@ public class SecurityManager
 
         try
         {
-            // Consider: query for groups in this container and uncache just those.
-            GroupCache.uncacheAll();
-
             Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoRoleAssignments() + "\n"+
                     "WHERE UserId in (SELECT UserId FROM " + core.getTableInfoPrincipals() +
                     "\tWHERE Container=? and Type LIKE ?)", c, typeString);
@@ -1125,6 +1128,10 @@ public class SecurityManager
                     "\tWHERE Container=? and Type LIKE ?)", c, typeString);
             Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoPrincipals() +
                     "\tWHERE Container=? AND Type LIKE ?", c, typeString);
+
+            // Consider: query for groups in this container and uncache just those.
+            GroupCache.uncacheAll();
+            ProjectAndSiteGroupsCache.uncache(c);
         }
         catch (SQLException x)
         {
@@ -1356,7 +1363,23 @@ public class SecurityManager
             sql.add(project.getId());
         }
 
-        return new SqlSelector(core.getSchema(), sql).getArray(Group.class);
+        Group[] oldGroups = new SqlSelector(core.getSchema(), sql).getArray(Group.class);
+        Group[] newGroups = getGroups2(project, includeGlobalGroups);
+
+        if (!Arrays.equals(oldGroups, newGroups))
+            throw new IllegalStateException("Group lists are different: " + Arrays.toString(oldGroups) + " vs. " + Arrays.toString(newGroups));
+
+        return newGroups;
+    }
+
+
+    // Site groups are first (if included) followed by project groups. Each list is sorted by name (case-insensitive).
+    public static Group[] getGroups2(@Nullable Container project, boolean includeGlobalGroups)
+    {
+        if (null != project)
+            return ProjectAndSiteGroupsCache.getProjectGroups(project, includeGlobalGroups);
+        else
+            return ProjectAndSiteGroupsCache.getSiteGroups();
     }
 
 

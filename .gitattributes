@@ -857,6 +857,7 @@ api/src/org/labkey/api/security/MutableSecurityPolicy.java -text
 api/src/org/labkey/api/security/NestedGroupsTest.java -text
 api/src/org/labkey/api/security/PasswordExpiration.java -text
 api/src/org/labkey/api/security/PrincipalType.java -text
+api/src/org/labkey/api/security/ProjectAndSiteGroupsCache.java -text
 api/src/org/labkey/api/security/RequiresLogin.java -text
 api/src/org/labkey/api/security/RequiresNoPermission.java -text
 api/src/org/labkey/api/security/RequiresPermissionClass.java -text

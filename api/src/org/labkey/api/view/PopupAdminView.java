@@ -116,7 +116,6 @@ public class PopupAdminView extends PopupMenuView
                 impersonateMenu.addChild(userMenu);
                 NavTree groupMenu = new NavTree("Group");
 
-                // TODO: Cache this!
                 Group[] groups = SecurityManager.getGroups(c.getProject(), true);
 
                 boolean addSeparator = false;

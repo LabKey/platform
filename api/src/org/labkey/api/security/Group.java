@@ -92,7 +92,7 @@ public class Group extends UserPrincipal
 
     public void setContainer(String containerId)
     {
-        this._container = containerId;
+        _container = containerId;
     }
 
 

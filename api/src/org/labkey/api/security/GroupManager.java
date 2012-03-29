@@ -255,7 +255,6 @@ public class GroupManager
         @Before
         public void setUp()
         {
-
             TestContext context = TestContext.get();
             User loggedIn = context.getUser();
             assertTrue("login before running this test", null != loggedIn);
