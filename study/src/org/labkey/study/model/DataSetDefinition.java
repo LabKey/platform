@@ -772,7 +772,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
 
     /**
-     * NOTE the constructor takes a USER in order that some lookup columns can be property
+     * NOTE the constructor takes a USER in order that some lookup columns can be properly
      * verified/constructed
      *
      * CONSIDER: we could use a way to delay permission checking and final schema construction for lookups
@@ -806,6 +806,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         DatasetSchemaTableInfo(DataSetDefinition def, final User user)
         {
             super(StudySchema.getInstance().getSchema(), DatabaseTableType.TABLE, def.getLabel());
+            _autoLoadMetaData = false;
             _container = def.getContainer();
             Study study = StudyManager.getInstance().getStudy(_container);
 
