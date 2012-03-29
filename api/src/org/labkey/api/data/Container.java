@@ -606,7 +606,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return true;
     }
 
-    public ActionURL getStartURL(User user)
+    public @NotNull ActionURL getStartURL(User user)
     {
         FolderType ft = getFolderType();
         if (!FolderType.NONE.equals(ft))
