@@ -247,6 +247,10 @@ public class DavController extends SpringActionController
             }
             action.handleRequest(request, response);
         }
+        catch (RedirectException x)
+        {
+            ExceptionUtil.doErrorRedirect(response, x.getURL());
+        }
         catch (Exception e)
         {
             _log.error("unexpected exception", e);
@@ -548,11 +552,14 @@ public class DavController extends SpringActionController
                 }
             }
 
-            if (getResponse().sbLogResponse.length() > 0)
-                _log.debug(getResponse().sbLogResponse);
-            WebdavStatus status = getResponse().getStatus();
-            String message = getResponse().getMessage();
-            _log.debug("<<<< " + (status != null ? status.code : 0) + (message == null ? "" : (": " + message)));
+            if (_log.isDebugEnabled())
+            {
+                if (getResponse().sbLogResponse.length() > 0)
+                    _log.debug(getResponse().sbLogResponse);
+                WebdavStatus status = getResponse().getStatus();
+                String message = getResponse().getMessage();
+                _log.debug("<<<< " + (status != null ? status.code : 0) + (message == null ? "" : (": " + message)));
+            }
 
             return null;
         }
@@ -583,7 +590,27 @@ public class DavController extends SpringActionController
             super(method);
         }
 
-        public WebdavStatus doMethod() throws DavException, IOException
+        public final WebdavStatus doMethod() throws DavException, IOException
+        {
+            try
+            {
+                WebdavStatus status = _doMethod();
+                return status;
+            }
+            catch (DavException x)
+            {
+                // last ditch effort to find matching container on GET, e.g. /labkey/home/ --> /labkey/home/project-begin.view
+                // might be a little cleaner to register a javax.servlet.Filter
+                if (x.getStatus() != WebdavStatus.SC_NOT_FOUND || !"GET".equals(method))
+                    throw x;
+                Container c = ContainerManager.getForPath(getResourcePath());
+                if (null == c)
+                    throw x;
+                throw new RedirectException(c.getStartURL(getUser()));
+            }
+        }
+
+        protected WebdavStatus _doMethod() throws DavException, IOException
         {
             WebdavResource resource = null;
             if ("GET".equals(method) && getResourcePath().size() == 0)
