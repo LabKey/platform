@@ -297,6 +297,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
                     vex.fillIn(getQueryTable().getPublicSchemaName(), getQueryTable().getName(), row, i);
                     errors.addRowError(vex);
                 }
+                else if (SqlDialect.isTransactionException(sqlx) && errors.hasErrors())
+                {
+                    // if we already have some errors, just break
+                    break;
+                }
                 else
                 {
                     throw sqlx;
