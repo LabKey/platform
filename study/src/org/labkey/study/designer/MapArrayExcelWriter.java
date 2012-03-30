@@ -17,7 +17,6 @@
 package org.labkey.study.designer;
 
 import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
 import org.labkey.api.data.*;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -38,9 +37,9 @@ public class MapArrayExcelWriter extends ExcelWriter
     List<Map<String,Object>> maps;
     int currentRow = 0;
 
-    public MapArrayExcelWriter(List<Map<String,Object>> maps, ColumnDescriptor[] cols, Workbook template)
+    public MapArrayExcelWriter(List<Map<String, Object>> maps, ColumnDescriptor[] cols)
     {
-        super(ExcelDocumentType.xls, template);
+        super(ExcelDocumentType.xls);
         this.maps = maps;
         List<DisplayColumn> xlcols = new ArrayList<DisplayColumn>();
         for (ColumnDescriptor col : cols)

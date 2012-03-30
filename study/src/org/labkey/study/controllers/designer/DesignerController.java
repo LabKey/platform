@@ -19,7 +19,6 @@ package org.labkey.study.controllers.designer;
 import gwt.client.org.labkey.study.designer.client.model.GWTCohort;
 import gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.poi.ss.usermodel.Workbook;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
@@ -52,7 +51,6 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -61,7 +59,6 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.VBox;
-import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.designer.JSONSerializer;
 import org.labkey.study.designer.MapArrayExcelWriter;
 import org.labkey.study.designer.StudyDefinitionServiceImpl;
@@ -332,7 +329,7 @@ public class DesignerController extends SpringActionController
             xlCols[0] = new ColumnDescriptor("SubjectId", Integer.class);
             xlCols[1] = new ColumnDescriptor("Cohort", String.class);
             xlCols[2] = new ColumnDescriptor("StartDate", Date.class);
-            MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(participantGroup, xlCols, null);
+            MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(participantGroup, xlCols);
             xlWriter.setHeaders(Arrays.asList("#Update the SubjectId column of this spreadsheet to the identifiers used when sending a sample to labs", "#"));
             xlWriter.write(response);
         }
@@ -399,15 +396,13 @@ public class DesignerController extends SpringActionController
         public void export(CreateRepositoryForm form, HttpServletResponse response, BindException errors) throws Exception
         {
             //Search for a template in all folders up to root.
-            Pair<Workbook, Integer> template = SpecimenController.getTemplate(getContainer());
             SimpleSpecimenImporter importer = new SimpleSpecimenImporter(TimepointType.DATE, "Subject Id");
             List<Map<String,Object>> defaultSpecimens = StudyDesignManager.get().generateSampleList(getStudyDefinition(form), getParticipants(), form.getBeginDate());
-            MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns(), template.getKey());
+            MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
             for (ExcelColumn col : xlWriter.getColumns())
             {
                 col.setCaption(importer.label(col.getName()));
             }
-            xlWriter.setStartRow(template.getValue().intValue());
 
             xlWriter.write(response);
         }

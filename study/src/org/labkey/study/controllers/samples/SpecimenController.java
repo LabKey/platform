@@ -18,11 +18,6 @@ package org.labkey.study.controllers.samples;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.Logger;
-import org.apache.poi.hssf.util.AreaReference;
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
-import org.apache.poi.ss.usermodel.Name;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
@@ -36,7 +31,6 @@ import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.Attachment;
-import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
@@ -45,7 +39,6 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
@@ -57,7 +50,6 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
@@ -74,7 +66,6 @@ import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.SamplesUrls;
 import org.labkey.api.study.Site;
 import org.labkey.api.study.Study;
@@ -94,7 +85,6 @@ import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.GridView;
-import org.labkey.api.view.HBox;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -183,7 +173,6 @@ import javax.servlet.http.HttpSession;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.sql.ResultSet;
@@ -4692,14 +4681,11 @@ public class SpecimenController extends BaseStudyController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            //Search for a template in all folders up to root.
-            Pair<Workbook, Integer> template = getTemplate(getContainer());
             List<Map<String,Object>> defaultSpecimens = new ArrayList<Map<String, Object>>();
             SimpleSpecimenImporter importer = new SimpleSpecimenImporter(getStudy().getTimepointType(),  StudyService.get().getSubjectNounSingular(getContainer()));
-            MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns(), template.getKey());
+            MapArrayExcelWriter xlWriter = new MapArrayExcelWriter(defaultSpecimens, importer.getSimpleSpecimenColumns());
             for (ExcelColumn col : xlWriter.getColumns())
                 col.setCaption(importer.label(col.getName()));
-            xlWriter.setStartRow(template.getValue().intValue());
 
             xlWriter.write(getViewContext().getResponse());
 
@@ -4710,37 +4696,6 @@ public class SpecimenController extends BaseStudyController
         {
             return null;
         }
-    }
-
-    public static Pair<Workbook, Integer> getTemplate(Container container) throws IOException, InvalidFormatException
-    {
-        Workbook inputWorkbook = null;
-        while (!container.equals(ContainerManager.getRoot()))
-        {
-            FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
-            AttachmentDirectory dir = svc.getMappedAttachmentDirectory(container, false);
-            if (null != dir && dir.getFileSystemDirectory().exists())
-            {
-                if (new File(dir.getFileSystemDirectory(), "Samples.xls").exists())
-                {
-                    inputWorkbook = WorkbookFactory.create(new FileInputStream(new File(dir.getFileSystemDirectory(), "Samples.xls")));
-                }
-            }
-            container = container.getParent();
-        }
-        int startRow = 0;
-        if (null != inputWorkbook)
-        {
-            Name name = inputWorkbook.getName("specimen_headers");
-            if (null != name)
-            {
-                AreaReference aref = new AreaReference(name.getRefersToFormula());
-                startRow = aref.getFirstCell().getRow();
-            }
-            else
-                inputWorkbook = null;
-        }
-        return new Pair<Workbook, Integer>(inputWorkbook, startRow);
     }
 
     public static class IdForm extends ReturnUrlForm
