@@ -24,7 +24,6 @@ import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.r.view.ConsoleOutput;
-import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RunReportView;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.DateUtil;
