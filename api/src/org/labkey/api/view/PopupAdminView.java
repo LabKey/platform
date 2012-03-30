@@ -150,6 +150,19 @@ public class PopupAdminView extends PopupMenuView
                 impersonateMenu.addChild(groupMenu);
                 navTree.addChild(impersonateMenu);
             }
+        }
+
+        if (user.isDeveloper())
+        {
+            NavTree devMenu = new NavTree("Developer Links");
+            devMenu.addChildren(PopupDeveloperView.getNavTree(context));
+            navTree.addChild(devMenu);
+        }
+
+        if (!c.isRoot())
+        {
+            navTree.addSeparator();
+            c.getFolderType().addManageLinks(navTree, c);
 
             Comparator<Module> moduleComparator = new Comparator<Module>()
             {
@@ -192,20 +205,10 @@ public class PopupAdminView extends PopupMenuView
             }
 
             if (goToModuleMenu.hasChildren())
+            {
+                navTree.addSeparator();
                 navTree.addChild(goToModuleMenu);
-        }
-
-        if (user.isDeveloper())
-        {
-            NavTree devMenu = new NavTree("Developer Links");
-            devMenu.addChildren(PopupDeveloperView.getNavTree(context));
-            navTree.addChild(devMenu);
-        }
-
-        if (!c.isRoot())
-        {
-            navTree.addSeparator();
-            c.getFolderType().addManageLinks(navTree, c);
+            }
         }
 
         navTree.setId("adminMenu");
