@@ -36,6 +36,8 @@ import org.labkey.query.persist.ExternalSchemaDef;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -46,15 +48,15 @@ public class ExternalSchema extends SimpleUserSchema
 
     public static ExternalSchema get(User user, Container container, ExternalSchemaDef def)
     {
-        DbSchema schema = getDbSchema(def);
-        Collection<String> availableTables = getAvailableTables(def, schema);
         TableType[] tableTypes = parseTableTypes(def);
-        Collection<String> hiddenTables = getHiddenTables(tableTypes);
-
         Map<String, TableType> metaDataMap = new CaseInsensitiveHashMap<TableType>();
 
         for (TableType tt : tableTypes)
             metaDataMap.put(tt.getTableName(), tt);
+
+        DbSchema schema = getDbSchema(def);
+        Collection<String> availableTables = getAvailableTables(def, schema, metaDataMap);
+        Collection<String> hiddenTables = getHiddenTables(tableTypes);
 
         return new ExternalSchema(user, container, def, schema, metaDataMap, availableTables, hiddenTables);
     }
@@ -97,6 +99,25 @@ public class ExternalSchema extends SimpleUserSchema
         }
 
         return new TableType[0];
+    }
+
+    private static @NotNull Collection<String> getAvailableTables(ExternalSchemaDef def, @Nullable DbSchema schema, Map<String, TableType> metaDataMap)
+    {
+        Collection<String> tableNames = getAvailableTables(def, schema);
+
+        if (tableNames.isEmpty() || metaDataMap.isEmpty())
+            return tableNames;
+
+        // Translate database names to XML table names
+        List<String> xmlTableNames = new LinkedList<String>();
+
+        for (String tableName : tableNames)
+        {
+            TableType tt = metaDataMap.get(tableName);
+            xmlTableNames.add(null == tt ? tableName : tt.getTableName());
+        }
+
+        return xmlTableNames;
     }
 
     private static @NotNull Collection<String> getAvailableTables(ExternalSchemaDef def, @Nullable DbSchema schema)

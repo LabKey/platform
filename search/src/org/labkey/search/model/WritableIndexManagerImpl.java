@@ -26,7 +26,9 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.SearcherManager;
 import org.apache.lucene.search.SearcherWarmer;
 import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.store.NIOFSDirectory;
+import org.apache.lucene.store.SimpleFSDirectory;
+import org.apache.lucene.util.Constants;
 import org.labkey.api.util.ExceptionUtil;
 
 import java.io.File;
@@ -57,7 +59,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
             }
         };
 
-        Directory directory = FSDirectory.open(indexPath);
+        Directory directory = openDirectory(indexPath);
         IndexWriter iw = null;
 
         try
@@ -72,6 +74,18 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
         }
 
         return new WritableIndexManagerImpl(iw, warmer, directory);
+    }
+
+
+    // We would like to call FSDirectory.open(indexPath) and let Lucene choose the best Directory implementation,
+    // however, in 3.5.0 Lucene starting choosing memory mapped files, which seem to cause all kinds of problems
+    // on atlas test.  This approach mimics what Lucene 3.0 did, which seemed to work just fine.
+    private static Directory openDirectory(File path) throws IOException
+    {
+        if (Constants.WINDOWS)
+            return new SimpleFSDirectory(path, null);
+        else
+            return new NIOFSDirectory(path, null);
     }
 
 

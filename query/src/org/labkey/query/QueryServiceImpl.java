@@ -1029,7 +1029,7 @@ public class QueryServiceImpl extends QueryService
     }
 
     @Override
-    public UserSchema createSimpleUserSchema(String name, String description, User user, Container container, DbSchema schema)
+    public UserSchema createSimpleUserSchema(String name, @Nullable String description, User user, Container container, DbSchema schema)
     {
         return new SimpleUserSchema(name, description, user, container, schema);
     }
