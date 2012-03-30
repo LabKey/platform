@@ -22,12 +22,13 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.AdminController.*" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ManageFoldersForm> view = (JspView<ManageFoldersForm>)HttpView.currentView();
     ManageFoldersForm f = view.getModelBean();
     Container c = view.getViewContext().getContainer();
-    ActionURL cancelURL = AdminController.getManageFoldersURL(c);
+    ActionURL cancelURL = PageFlowUtil.urlProvider(org.labkey.api.admin.AdminUrls.class).getManageFoldersURL(c);
 %>
 
 <form action="moveFolder.post" method="post">
