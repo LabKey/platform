@@ -140,7 +140,6 @@ public class ExcelWriter
     private Map<ExcelColumn.ExcelFormatDescriptor, CellStyle> _formatters = new HashMap<ExcelColumn.ExcelFormatDescriptor, CellStyle>();
 
     /** First row to write to when starting a new sheet */
-    private int _startRow = 0;
     private int _currentRow = 0;
     private int _currentSheet = -1;
 
@@ -526,21 +525,6 @@ public class ExcelWriter
     }
 
 
-    public static Workbook getWorkbook(ServletOutputStream outputStream, Workbook template)
-    {
-        throw new UnsupportedOperationException();
-//        try
-//        {
-//            return null == template ? Workbook.createWorkbook(outputStream) : Workbook.createWorkbook(outputStream, template);
-//        }
-//        catch (IOException e)
-//        {
-//            ExceptionUtil.logExceptionToMothership(null, e);
-//            return null;
-//        }
-    }
-
-
     public int getCurrentRow()
     {
         return _currentRow;
@@ -578,13 +562,7 @@ public class ExcelWriter
     public void renderNewSheet()
     {
         _currentSheet++;
-        _currentRow = _startRow;
         renderSheet(_currentSheet);
-    }
-
-    public void setStartRow(int startRow)
-    {
-        _startRow = startRow;
     }
 
     public void renderCurrentSheet()
