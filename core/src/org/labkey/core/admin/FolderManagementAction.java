@@ -578,11 +578,11 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                 tabs.add(new TabInfo("Folder Tree", "folderTree", url));
                 tabs.add(new TabInfo("Folder Type", "folderType", url));
             }
-            tabs.add(new TabInfo("Missing Value Indicators", "mvIndicators", url));
+            tabs.add(new TabInfo("Missing Values", "mvIndicators", url));
             if (!_container.isRoot())
             {
-                tabs.add(new TabInfo("Full-Text Search", "fullTextSearch", url));
-                tabs.add(new TabInfo("Email Notifications", "messages", url));
+                tabs.add(new TabInfo("Search", "fullTextSearch", url));
+                tabs.add(new TabInfo("Notifications", "messages", url));
                 tabs.add(new TabInfo("Export", "export", url));
                 tabs.add(new TabInfo("Import", "import", url));
                 tabs.add(new TabInfo("Information", "info", url));
