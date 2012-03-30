@@ -272,6 +272,10 @@ LABKEY.vis.ChartEditorOverviewPanel = Ext.extend(Ext.Panel, {
                         // store the measure store JSON object for later use
                         this.measuresStoreData = data;
                         this.fireEvent('initialMeasuresStoreLoaded', data);
+                    },
+                    'measuresSelected': function (records, userSelected){
+                        this.fireEvent('initialMeasureSelected', records[0].data);
+                        win.close();
                     }
                 }
             })],
