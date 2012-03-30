@@ -547,11 +547,14 @@ public abstract class BaseStudyTable extends FilteredTable
 
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
-            out.write(formatParticipantComments(ctx, "<br>"));
+            out.write(formatParticipantComments(ctx, "<br>", COMMENT_FORMAT_HTML));
         }
     }
 
-    protected static String formatParticipantComments(RenderContext ctx, String lineSeparator)
+    protected static final String COMMENT_FORMAT_HTML = "<i>%s:&nbsp;</i>";
+    protected static final String COMMENT_FORMAT = "%s: ";
+
+    protected static String formatParticipantComments(RenderContext ctx, String lineSeparator, String commentFormat)
     {
         Map<String, Object> row = ctx.getRow();
 
@@ -563,7 +566,7 @@ public abstract class BaseStudyTable extends FilteredTable
 
         if (vialComment instanceof String)
         {
-            sb.append("<i>Vial:&nbsp;</i>");
+            sb.append(String.format(commentFormat, "Vial"));
             sb.append(PageFlowUtil.filter(vialComment));
             sb.append(lineSeparator);
         }
@@ -572,7 +575,7 @@ public abstract class BaseStudyTable extends FilteredTable
         {
             if (sb.length() > 0)
                 sb.append(lineSeparator);
-            sb.append("<i>").append(PageFlowUtil.filter(subjectNoun)).append(":&nbsp;</i>");
+            sb.append(String.format(commentFormat, PageFlowUtil.filter(subjectNoun)));
             sb.append(PageFlowUtil.filter(participantComment));
             sb.append(lineSeparator);
         }
@@ -580,7 +583,7 @@ public abstract class BaseStudyTable extends FilteredTable
         {
             if (sb.length() > 0)
                 sb.append(lineSeparator);
-            sb.append("<i>").append(PageFlowUtil.filter(subjectNoun)).append("/Visit:&nbsp;</i>");
+            sb.append(String.format(commentFormat, PageFlowUtil.filter(subjectNoun) +  "/Visit"));
             sb.append(PageFlowUtil.filter(participantVisitComment));
             sb.append(lineSeparator);
         }

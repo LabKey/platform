@@ -324,7 +324,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
             }
         }
 
-        private String getDisplayText(RenderContext ctx, String lineSeparator)
+        private String getDisplayText(RenderContext ctx, String lineSeparator, String commentFormat)
         {
             if (_specimenHashColumn == null)
                 return "ERROR: SpecimenHash column must be added to query to retrive comment information.";
@@ -347,19 +347,19 @@ public class SpecimenSummaryTable extends BaseStudyTable
             }
             if (sb.length() > 0)
                 sb.append(lineSeparator);
-            sb.append(formatParticipantComments(ctx, lineSeparator));
+            sb.append(formatParticipantComments(ctx, lineSeparator, commentFormat));
 
             return sb.toString();
         }
 
         public Object getDisplayValue(RenderContext ctx)
         {
-            return getDisplayText(ctx, ", ");
+            return getDisplayText(ctx, ", ", COMMENT_FORMAT);
         }
 
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
-            out.write(getDisplayText(ctx, "<br>"));
+            out.write(getDisplayText(ctx, "<br>", COMMENT_FORMAT_HTML));
         }
     }
 }
