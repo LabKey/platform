@@ -42,7 +42,7 @@ public interface QuerySchema
 
     public String getName();
 
-    public String getDescription();
+    public @Nullable String getDescription();
 
     public NavTree getSchemaBrowserLinks(User user);
 }

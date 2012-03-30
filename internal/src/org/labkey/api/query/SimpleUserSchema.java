@@ -19,8 +19,10 @@ package org.labkey.api.query;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
@@ -52,6 +54,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -60,12 +64,46 @@ import java.util.Set;
  */
 public class SimpleUserSchema extends UserSchema
 {
-    private final Set<String> _available = new CaseInsensitiveHashSet();
-    private final Set<String> _visible = new CaseInsensitiveHashSet();
+    // CaseInsensitiveTreeSet preserves case of the table names (from XML), unlike CaseInsensitiveHashSet
+    private final Set<String> _available = new CaseInsensitiveTreeSet();
+    private final Set<String> _visible = new CaseInsensitiveTreeSet();
 
-    public SimpleUserSchema(String name, String description, User user, Container container, DbSchema dbschema)
+    public SimpleUserSchema(String name, @Nullable String description, User user, Container container, DbSchema dbschema)
     {
-        this(name, description, user, container, dbschema, null == dbschema ? Collections.<String>emptySet() : dbschema.getTableNames(), Collections.<String>emptySet());
+        this(name, description, user, container, dbschema, getAvailableTableNames(dbschema), getHiddenTableNames(dbschema));
+    }
+
+    private static Collection<String> getAvailableTableNames(DbSchema dbschema)
+    {
+        if (null == dbschema)
+            return Collections.emptySet();
+
+        List<String> availableNames = new LinkedList<String>();
+
+        for (String metaDataName : dbschema.getTableNames())
+            availableNames.add(dbschema.getTable(metaDataName).getName());
+
+        return availableNames;
+    }
+
+    // CONSIDER: We could consult just the XML meta data to keep from loading table meta data from the database here,
+    // like we do for external schemas.  These schemas tend to have very few tables, however...
+    private static Collection<String> getHiddenTableNames(DbSchema dbschema)
+    {
+        if (null == dbschema)
+            return Collections.emptySet();
+
+        List<String> names = new LinkedList<String>();
+
+        for (String name : dbschema.getTableNames())
+        {
+            SchemaTableInfo table = dbschema.getTable(name);
+
+            if (table.isHidden())
+                names.add(table.getName());
+        }
+
+        return names;
     }
 
     // Hidden tables are hidden from the UI but will still be addressible by Query (for fk lookups, etc.)

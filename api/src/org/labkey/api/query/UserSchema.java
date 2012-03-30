@@ -61,7 +61,7 @@ abstract public class UserSchema extends AbstractSchema
     protected String _description;
     protected boolean _cacheTableInfos = false;
 
-    public UserSchema(String name, String description, User user, Container container, DbSchema dbSchema)
+    public UserSchema(String name, @Nullable String description, User user, Container container, DbSchema dbSchema)
     {
         super(dbSchema, user, container);
         _name = name;
@@ -107,7 +107,7 @@ abstract public class UserSchema extends AbstractSchema
     }
 
 
-    Map<Pair<String,Boolean>,Object> cache = new HashMap<Pair<String, Boolean>, Object>();
+    Map<Pair<String, Boolean>, Object> cache = new HashMap<Pair<String, Boolean>, Object>();
 
     public Object _getTableOrQuery(String name, boolean includeExtraMetadata, Collection<QueryException> errors)
     {
@@ -521,5 +521,4 @@ abstract public class UserSchema extends AbstractSchema
 
         return null;
     }
-
 }
