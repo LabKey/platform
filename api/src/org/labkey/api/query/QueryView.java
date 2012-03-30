@@ -1093,14 +1093,15 @@ public class QueryView extends WebPartView<Object>
             button.addMenuItem(item);
         }
 
-        if (getTable().supportsContainerFilter() && !getAllowableContainerFilterTypes().isEmpty())
+        TableInfo t = getTable();
+        if (t instanceof ContainerFilterable && t.supportsContainerFilter() && !getAllowableContainerFilterTypes().isEmpty())
         {
             button.addSeparator();
             NavTree containerFilterItem = new NavTree("Folder Filter");
             containerFilterItem.setId(getBaseMenuId() + ":Views:Folder Filter");
             button.addMenuItem(containerFilterItem);
 
-            ContainerFilterable table = (ContainerFilterable)getTable();
+            ContainerFilterable table = (ContainerFilterable)t;
 
             ContainerFilter selectedFilter = table.getContainerFilter();
 
