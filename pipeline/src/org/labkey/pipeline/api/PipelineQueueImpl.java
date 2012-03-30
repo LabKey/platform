@@ -20,6 +20,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobData;
@@ -331,22 +332,14 @@ public class PipelineQueueImpl implements PipelineQueue
         }
     }
 
-    static class FakeContainer extends Container
-    {
-        FakeContainer(String name, Container parent)
-        {
-            super(parent, name, GUID.makeGUID(), 1, 0, new Date(), false);
-        }
-    }
-
     public static class TestCase extends Assert
     {
         @Test
         public void testPipeline() throws Exception
         {
-            Container root = new FakeContainer(null, null);
-            Container containerA = new FakeContainer("A", root);
-            Container containerB = new FakeContainer("B", root);
+            Container root = ContainerManager.createFakeContainer(null, null);
+            Container containerA = ContainerManager.createFakeContainer("A", root);
+            Container containerB = ContainerManager.createFakeContainer("B", root);
 
             PipelineQueueImpl queue = new PipelineQueueImpl();
             PipelineJobData data;

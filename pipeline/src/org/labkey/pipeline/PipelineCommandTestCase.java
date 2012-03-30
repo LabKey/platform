@@ -18,6 +18,7 @@ package org.labkey.pipeline;
 import junit.framework.Assert;
 import org.junit.Test;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.cmd.BooleanToSwitch;
@@ -30,13 +31,11 @@ import org.labkey.api.pipeline.cmd.UnixSwitchFormat;
 import org.labkey.api.pipeline.cmd.ValueToMultiCommandArgs;
 import org.labkey.api.pipeline.cmd.ValueToSwitch;
 import org.labkey.api.pipeline.cmd.ValueWithSwitch;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.pipeline.analysis.CommandTaskImpl;
 
 import java.sql.SQLException;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -148,8 +147,8 @@ public class PipelineCommandTestCase extends Assert
             commandList.addConverter(test4);
             commandList.addConverter(test5);
 
-            Container root = new FakeContainer(null, null);
-            Container c = new FakeContainer("test", root);
+            Container root = ContainerManager.createFakeContainer(null, null);
+            Container c = ContainerManager.createFakeContainer("test", root);
 
             // expected param args to be : -a 100 -b -c testing -d testing2 100 -999
             TestJob j = new TestJob(c);
@@ -209,14 +208,6 @@ public class PipelineCommandTestCase extends Assert
         public URLHelper getStatusHref()
         {
             return null;
-        }
-    }
-
-    static class FakeContainer extends Container
-    {
-        FakeContainer(String name, Container parent)
-        {
-            super(parent, name, GUID.makeGUID(), 1, 0, new Date(), false);
         }
     }
 }
