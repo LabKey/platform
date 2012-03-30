@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2006-2011 LabKey Corporation
+ * Copyright (c) 2006-2012 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,20 +15,19 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="org.labkey.core.admin.AdminController.*" %>
-<%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.core.admin.AdminController.ManageFoldersForm" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ManageFoldersForm> view = (JspView<ManageFoldersForm>)HttpView.currentView();
     ManageFoldersForm f = view.getModelBean();
     Container c = view.getViewContext().getContainer();
-    ActionURL cancelURL = PageFlowUtil.urlProvider(org.labkey.api.admin.AdminUrls.class).getManageFoldersURL(c);
+    ActionURL cancelURL = PageFlowUtil.urlProvider(AdminUrls.class).getManageFoldersURL(c);
 %>
 
 <form action="moveFolder.post" method="post">
