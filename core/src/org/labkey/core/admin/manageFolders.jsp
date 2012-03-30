@@ -31,7 +31,6 @@
 <div id="someUniqueElement"></div>
 <script type="text/javascript">
     LABKEY.requiresExt4Sandbox();
-    LABKEY.requiresCss('study/DataViewsPanel.css');
     LABKEY.requiresScript("admin/FolderManagementPanel.js");
 </script>
 <script type="text/javascript">
