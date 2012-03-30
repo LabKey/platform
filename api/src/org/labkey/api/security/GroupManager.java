@@ -27,7 +27,12 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.Table;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.AuthorRole;
+import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
@@ -261,6 +266,7 @@ public class GroupManager
             assertFalse("login before running this test", loggedIn.isGuest());
             _user = context.getUser().cloneUser();
         }
+
         @Test
         public void testGroupPermissions() throws Exception
         {
@@ -271,6 +277,7 @@ public class GroupManager
 //            _user = context.getUser().cloneUser();
 
             Container project = JunitUtil.getTestContainer().getProject();
+            assertNotNull(project);
 
             if (null != SecurityManager.getGroupId(project, "a", false))
                 SecurityManager.deleteGroup(SecurityManager.getGroupId(project, "a"));
@@ -280,28 +287,72 @@ public class GroupManager
             Group groupA = SecurityManager.createGroup(project, "a");
             Group groupB = SecurityManager.createGroup(project, "b");
 
-            ACL acl = new ACL();
-            assertFalse(acl.hasPermission(getUser(), ACL.PERM_READ));
-            acl.setPermission(groupA, ACL.PERM_READ);
-            assertFalse(acl.hasPermission(getUser(), ACL.PERM_READ));
-            SecurityManager.addMember(groupA, getUser());
-            assertTrue(acl.hasPermission(getUser(), ACL.PERM_READ));
+            ValidEmail email = new ValidEmail("junit_test_user@test.com");
+            User existingUser = UserManager.getUser(email);
+            if (null != existingUser)
+                UserManager.deleteUser(existingUser.getUserId());
+            SecurityManager.NewUserStatus status = SecurityManager.addUser(email);
+            User newUser = status.getUser();
 
-            assertFalse(acl.hasPermission(getUser(), ACL.PERM_UPDATE));
-            acl.setPermission(groupB, ACL.PERM_UPDATE);
-            assertFalse(acl.hasPermission(getUser(), ACL.PERM_UPDATE));
+            // Each User's groups are fixed on first read, so we'll clone before the changes
+            User user = newUser.cloneUser();
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(project);
+            assertFalse(policy.hasPermission(user, ReadPermission.class));
+            policy.addRoleAssignment(groupA, ReaderRole.class);
+            assertTrue(policy.hasPermission(groupA, ReadPermission.class));
+            assertFalse(policy.hasPermission(user, ReadPermission.class));
+            SecurityManager.addMember(groupA, user);
+            user = newUser.cloneUser();
+            assertTrue(policy.hasPermission(user, ReadPermission.class));
+            assertEquals(policy.getPermsAsOldBitMask(user), ACL.PERM_READ);
+
+            assertFalse(policy.hasPermission(user, UpdatePermission.class));
+            policy.addRoleAssignment(groupB, AuthorRole.class);
+            assertFalse(policy.hasPermission(groupB, UpdatePermission.class));
+            assertTrue(policy.hasPermission(groupB, InsertPermission.class));
+            assertFalse(policy.hasPermission(user, UpdatePermission.class));
+            assertFalse(policy.hasPermission(user, InsertPermission.class));
+            assertEquals(policy.getPermsAsOldBitMask(user), ACL.PERM_READ);
+
             SecurityManager.addMember(groupB, groupA);
-            assertTrue(acl.hasPermission(getUser(), ACL.PERM_UPDATE));
+            user = newUser.cloneUser();
+            assertFalse(policy.hasPermission(groupA, UpdatePermission.class));
+            assertTrue(policy.hasPermission(groupA, InsertPermission.class));
+            assertFalse(policy.hasPermission(user, UpdatePermission.class));
+            assertTrue(policy.hasPermission(user, InsertPermission.class));
+            assertEquals(policy.getPermsAsOldBitMask(user), ACL.PERM_READ | ACL.PERM_INSERT);
+
+            policy.addRoleAssignment(user, EditorRole.class);
+            assertFalse(policy.hasPermission(groupA, UpdatePermission.class));
+            assertFalse(policy.hasPermission(groupB, UpdatePermission.class));
+            assertTrue(policy.hasPermission(user, UpdatePermission.class));
+            assertTrue(policy.hasPermission(user, DeletePermission.class));
+            assertEquals(policy.getPermsAsOldBitMask(user), ACL.PERM_READ | ACL.PERM_INSERT | ACL.PERM_UPDATE | ACL.PERM_DELETE);
+
+            policy.clearAssignedRoles(user);
+            assertFalse(policy.hasPermission(user, UpdatePermission.class));
+            assertFalse(policy.hasPermission(user, DeletePermission.class));
+            assertTrue(policy.hasPermission(user, InsertPermission.class));
+            assertTrue(policy.hasPermission(user, ReadPermission.class));
+            assertEquals(policy.getPermsAsOldBitMask(user), ACL.PERM_READ | ACL.PERM_INSERT);
 
             SecurityManager.deleteMember(groupB, groupA);
-            assertFalse(acl.hasPermission(getUser(), ACL.PERM_UPDATE));
-            assertTrue(acl.hasPermission(getUser(), ACL.PERM_READ));
+            user = newUser.cloneUser();
+            assertFalse(policy.hasPermission(user, UpdatePermission.class));
+            assertFalse(policy.hasPermission(user, InsertPermission.class));
+            assertTrue(policy.hasPermission(user, ReadPermission.class));
+            assertEquals(policy.getPermsAsOldBitMask(user), ACL.PERM_READ);
 
-            SecurityManager.deleteMember(groupA, getUser());
-            assertFalse(acl.hasPermission(getUser(), ACL.PERM_READ));
+            SecurityManager.deleteMember(groupA, user);
+            user = newUser.cloneUser();
+            assertFalse(policy.hasPermission(user, UpdatePermission.class));
+            assertFalse(policy.hasPermission(user, InsertPermission.class));
+            assertFalse(policy.hasPermission(user, ReadPermission.class));
+            assertEquals(policy.getPermsAsOldBitMask(user), ACL.PERM_NONE);
 
             SecurityManager.deleteGroup(groupA);
             SecurityManager.deleteGroup(groupB);
+            UserManager.deleteUser(newUser.getUserId());
         }
 
         @Test
@@ -314,6 +365,8 @@ public class GroupManager
 //            _user = context.getUser().cloneUser();
 
             Container project = JunitUtil.getTestContainer().getProject();
+
+            assertTrue(null != project);
 
             if (null != SecurityManager.getGroupId(project, "a", false))
                 SecurityManager.deleteGroup(SecurityManager.getGroupId(project, "a"));

@@ -17,7 +17,6 @@
 package org.labkey.api.security;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -31,8 +30,6 @@ import java.util.Date;
 
 public class User extends UserPrincipal implements Serializable, Cloneable
 {
-    private static final Logger _log = Logger.getLogger(User.class);
-
     private String _firstName = null;
     private String _lastName = null;
     private String _displayName = null;

@@ -22,6 +22,7 @@ import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -2072,5 +2073,10 @@ public class ContainerManager
         {
             return ContainerManager.getForPath(path);
         }
+    }
+
+    public static Container createFakeContainer(@Nullable String name, @Nullable Container parent)
+    {
+        return new Container(parent, name, GUID.makeGUID(), 1, 0, new Date(), false);
     }
 }

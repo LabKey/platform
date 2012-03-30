@@ -17,10 +17,8 @@
 package org.labkey.api.security;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.poi.util.ArrayUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
@@ -51,10 +49,15 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.impersonation.ImpersonateGroupContextFactory;
 import org.labkey.api.security.impersonation.ImpersonateUserContextFactory;
 import org.labkey.api.security.impersonation.ImpersonationContextFactory;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
@@ -1341,40 +1344,8 @@ public class SecurityManager
     }
 
 
-    public static Group[] getGroups(@Nullable Container project, boolean includeGlobalGroups)
-    {
-        SQLFragment sql;
-
-        if (null == project)
-        {
-            sql = new SQLFragment("SELECT Name, UserId, Container FROM " + core.getTableInfoPrincipals() + " WHERE Type='g' AND Container IS NULL ORDER BY LOWER(Name)");
-        }
-        else
-        {
-            String projectClause = (includeGlobalGroups ? "(Container = ? OR Container IS NULL)" : "Container = ?");
-
-            // PostgreSQL and SQLServer disagree on how to sort null, so we need to handle
-            // null Container values as the first ORDER BY criteria
-            sql = new SQLFragment(
-                    "SELECT Name, UserId, Container FROM " + core.getTableInfoPrincipals() + "\n" +
-                            "WHERE Type='g' AND " + projectClause + "\n" +
-                            "ORDER BY CASE WHEN ( Container IS NULL ) THEN 1 ELSE 2 END, Container, LOWER(Name)");  // Force case-insensitve order for consistency
-
-            sql.add(project.getId());
-        }
-
-        Group[] oldGroups = new SqlSelector(core.getSchema(), sql).getArray(Group.class);
-        Group[] newGroups = getGroups2(project, includeGlobalGroups);
-
-        if (!Arrays.equals(oldGroups, newGroups))
-            throw new IllegalStateException("Group lists are different: " + Arrays.toString(oldGroups) + " vs. " + Arrays.toString(newGroups));
-
-        return newGroups;
-    }
-
-
     // Site groups are first (if included) followed by project groups. Each list is sorted by name (case-insensitive).
-    public static Group[] getGroups2(@Nullable Container project, boolean includeGlobalGroups)
+    public static Group[] getGroups(@Nullable Container project, boolean includeGlobalGroups)
     {
         if (null != project)
             return ProjectAndSiteGroupsCache.getProjectGroups(project, includeGlobalGroups);
@@ -2488,29 +2459,43 @@ public class SecurityManager
         @Test
         public void testACLS() throws NamingException
         {
-            ACL acl = new ACL();
+            Container fakeRoot = ContainerManager.createFakeContainer(null, null);
 
-            // User,Guest
+            // Ignore all contextual roles
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(fakeRoot) {
+                @NotNull
+                @Override
+                protected Set<Role> getContextualRoles(UserPrincipal principal)
+                {
+                    return Collections.emptySet();
+                }
+            };
+
+            // Test Site User and Guest groups
             User user = TestContext.get().getUser();
-            assertFalse("no permission check", acl.hasPermission(user, ACL.PERM_READ));
+            assertFalse("no permission check", policy.hasPermission(user, ReadPermission.class));
 
-            acl.setPermission(user.getUserId(), ACL.PERM_READ);
-            assertTrue("read permission", acl.hasPermission(user, ACL.PERM_READ));
-            assertFalse("no write permission", acl.hasPermission(user, ACL.PERM_UPDATE));
+            policy.addRoleAssignment(user, ReaderRole.class);
+            assertTrue("read permission", policy.hasPermission(user, ReadPermission.class));
+            assertFalse("no insert permission", policy.hasPermission(user, InsertPermission.class));
+            assertFalse("no update permission", policy.hasPermission(user, UpdatePermission.class));
 
-            acl = new ACL();
-            acl.setPermission(Group.groupGuests, ACL.PERM_READ);
-            assertTrue("read permission", acl.hasPermission(user, ACL.PERM_READ));
-            assertFalse("no write permission", acl.hasPermission(user, ACL.PERM_UPDATE));
+            Group guestGroup = SecurityManager.getGroup(Group.groupGuests);
+            policy.addRoleAssignment(guestGroup, ReaderRole.class);
+            assertTrue("read permission", policy.hasPermission(user, ReadPermission.class));
+            assertFalse("no insert permission", policy.hasPermission(user, InsertPermission.class));
+            assertFalse("no update permission", policy.hasPermission(user, UpdatePermission.class));
 
-            acl.setPermission(Group.groupUsers, ACL.PERM_UPDATE);
-            assertTrue("write permission", acl.hasPermission(user, ACL.PERM_UPDATE));
-            assertEquals(acl.getPermissions(user), ACL.PERM_READ | ACL.PERM_READOWN | ACL.PERM_UPDATE | ACL.PERM_UPDATEOWN );
+            Group userGroup = SecurityManager.getGroup(Group.groupUsers);
+            policy.addRoleAssignment(userGroup, EditorRole.class);
+            assertTrue("read permission", policy.hasPermission(user, ReadPermission.class));
+            assertTrue("insert permission", policy.hasPermission(user, InsertPermission.class));
+            assertTrue("update permission", policy.hasPermission(user, UpdatePermission.class));
 
             // Guest
-            assertTrue("read permission", acl.hasPermission(User.guest, ACL.PERM_READ));
-            assertFalse("no write permission", acl.hasPermission(User.guest, ACL.PERM_UPDATE));
-            assertEquals(acl.getPermissions(User.guest), ACL.PERM_READ | ACL.PERM_READOWN);
+            assertTrue("read permission", policy.hasPermission(User.guest, ReadPermission.class));
+            assertFalse("no insert permission", policy.hasPermission(User.guest, InsertPermission.class));
+            assertFalse("no update permission", policy.hasPermission(User.guest, UpdatePermission.class));
         }
 
 
