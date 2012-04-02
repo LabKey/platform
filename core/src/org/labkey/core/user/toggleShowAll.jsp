@@ -27,12 +27,12 @@
     if (!form.showAll())
     {
         url.addParameter("showAll", true);
-        caption = "show all users";
+        caption = form.getShowCaption();
     }
     else
     {
         url.deleteParameter("showAll");
-        caption = "hide unassigned users";
+        caption = form.getHideCaption();
     }
 %>
 <table>

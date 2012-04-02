@@ -974,7 +974,8 @@ public class UserController extends SpringActionController
     }
 
     private void buildAccessDetailList(MultiMap<Container, Container> containerTree, Container parent,
-                                       List<AccessDetailRow> rows, User requestedUser, int depth, Map<Container, Group[]> projectGroupCache)
+                                       List<AccessDetailRow> rows, Set<Container> containersInList, User requestedUser,
+                                       int depth, Map<Container, Group[]> projectGroupCache, boolean showAll)
     {
         if (requestedUser == null)
             return;
@@ -1016,13 +1017,29 @@ public class UserController extends SpringActionController
                     }
                 }
             }
-            rows.add(new AccessDetailRow(getViewContext(), child, requestedUser, childAccessGroups, depth));
-            buildAccessDetailList(containerTree, child, rows, requestedUser, depth + 1, projectGroupCache);
+
+            if (showAll || effectiveRoles.size() > 0)
+            {
+                int index = rows.size();
+                rows.add(new AccessDetailRow(getViewContext(), child, requestedUser, childAccessGroups, depth));
+                containersInList.add(child);
+
+                //Ensure parents of any accessible folder are in the tree. If not add them with no access info
+                int newDepth = depth;
+                while (parent != null && !parent.isRoot() && !containersInList.contains(parent))
+                {
+                    rows.add(index, new AccessDetailRow(getViewContext(), parent, requestedUser, Collections.<String, List<Group>>emptyMap(), --newDepth));
+                    containersInList.add(parent);
+                    parent = parent.getParent();
+                }
+            }
+
+            buildAccessDetailList(containerTree, child, rows, containersInList, requestedUser, depth + 1, projectGroupCache, showAll);
         }
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class UserAccessAction extends SimpleViewAction<UserForm>
+    public class UserAccessAction extends SimpleViewAction<UserAccessForm>
     {
         private boolean _showNavTrail;
         private Integer _userId;
@@ -1036,7 +1053,7 @@ public class UserController extends SpringActionController
             requiresProjectOrSiteAdmin();
         }
 
-        public ModelAndView getView(UserForm form, BindException errors) throws Exception
+        public ModelAndView getView(UserAccessForm form, BindException errors) throws Exception
         {
             String email = form.getNewEmail();
 
@@ -1070,16 +1087,23 @@ public class UserController extends SpringActionController
             if (requestedUser == null)
                 throw new NotFoundException("User not found");
 
+            VBox view = new VBox();
+            SecurityController.FolderAccessForm accessForm = new SecurityController.FolderAccessForm();
+            accessForm.setShowAll(form.getShowAll());
+            accessForm.setShowCaption("show all folders");
+            accessForm.setHideCaption("hide unassigned folders");
+            view.addView(new JspView<SecurityController.FolderAccessForm>("/org/labkey/core/user/toggleShowAll.jsp", accessForm));
+
             List<AccessDetailRow> rows = new ArrayList<AccessDetailRow>();
+            Set<Container> containersInList = new HashSet<Container>();
             Container c = getContainer();
             MultiMap<Container, Container> containerTree =  c.isRoot() ? ContainerManager.getContainerTree() : ContainerManager.getContainerTree(c.getProject());
             Map<Container, Group[]> projectGroupCache = new HashMap<Container, Group[]>();
-            buildAccessDetailList(containerTree, c.isRoot() ? ContainerManager.getRoot() : null, rows, requestedUser, 0, projectGroupCache);
+            buildAccessDetailList(containerTree, c.isRoot() ? ContainerManager.getRoot() : null, rows, containersInList, requestedUser, 0, projectGroupCache, form.getShowAll());
             AccessDetail details = new AccessDetail(rows);
             details.setActive(requestedUser.isActive());
             JspView<AccessDetail> accessView = new JspView<AccessDetail>("/org/labkey/core/user/userAccess.jsp", details);
-
-            VBox view = new VBox(accessView);
+            view.addView(accessView);
 
             if (c.isRoot())
                 view.addView(GroupAuditViewFactory.getInstance().createSiteUserView(getViewContext(), form.getUserId()));
@@ -1575,6 +1599,21 @@ public class UserController extends SpringActionController
         public void setMessage(String message)
         {
             _message = message;
+        }
+    }
+
+    public static class UserAccessForm extends UserForm
+    {
+        private boolean _showAll = false;
+
+        public boolean getShowAll()
+        {
+            return _showAll;
+        }
+
+        public void setShowAll(boolean showAll)
+        {
+            _showAll = showAll;
         }
     }
 

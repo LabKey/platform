@@ -116,6 +116,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -383,6 +384,21 @@ public class SecurityController extends SpringActionController
                 }
             }
             return group;
+        }
+    }
+
+    public static class GroupAccessForm extends GroupForm
+    {
+        private boolean showAll = false;
+
+        public boolean getShowAll()
+        {
+            return showAll;
+        }
+
+        public void setShowAll(boolean showAll)
+        {
+            this.showAll = showAll;
         }
     }
 
@@ -1114,13 +1130,14 @@ public class SecurityController extends SpringActionController
 
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class GroupPermissionAction extends SimpleViewAction<GroupForm>
+    public class GroupPermissionAction extends SimpleViewAction<GroupAccessForm>
     {
         private Group _requestedGroup;
 
-        public ModelAndView getView(GroupForm form, BindException errors) throws Exception
+        public ModelAndView getView(GroupAccessForm form, BindException errors) throws Exception
         {
             List<UserController.AccessDetailRow> rows = new ArrayList<UserController.AccessDetailRow>();
+            Set<Container> containersInList = new HashSet<Container>();
             _requestedGroup = form.getGroupFor(getContainer());
             if (_requestedGroup != null)
             {
@@ -1131,17 +1148,26 @@ public class SecurityController extends SpringActionController
 
                 List<Container> projects = getContainer().isRoot() ? getContainer().getChildren() : Collections.singletonList(getContainer().getProject());
                 Map<Container, Group[]> projectGroupCache = new HashMap<Container, Group[]>();
-                buildAccessDetailList(projects, rows, _requestedGroup, 0, projectGroupCache);
+                buildAccessDetailList(projects, rows, containersInList, _requestedGroup, 0, projectGroupCache, form.getShowAll());
             }
             else
                 throw new NotFoundException("Group not found");
 
+            VBox view = new VBox();
+            SecurityController.FolderAccessForm accessForm = new SecurityController.FolderAccessForm();
+            accessForm.setShowAll(form.getShowAll());
+            accessForm.setShowCaption("show all folders");
+            accessForm.setHideCaption("hide unassigned folders");
+            view.addView(new JspView<SecurityController.FolderAccessForm>("/org/labkey/core/user/toggleShowAll.jsp", accessForm));
+
             UserController.AccessDetail bean = new UserController.AccessDetail(rows, false);
-            return new JspView<UserController.AccessDetail>("/org/labkey/core/user/userAccess.jsp", bean, errors);
+            view.addView(new JspView<UserController.AccessDetail>("/org/labkey/core/user/userAccess.jsp", bean, errors));
+            return view;
         }
 
         private void buildAccessDetailList(List<Container> children, List<UserController.AccessDetailRow> rows,
-                                           Group requestedGroup, int depth, Map<Container, Group[]> projectGroupCache)
+                                           Set<Container> containersInList, Group requestedGroup, int depth,
+                                           Map<Container, Group[]> projectGroupCache, boolean showAll)
         {
             if (children == null || children.isEmpty())
                 return;
@@ -1182,8 +1208,24 @@ public class SecurityController extends SpringActionController
                         }
                     }
 
-                    rows.add(new UserController.AccessDetailRow(getViewContext(), child, requestedGroup, groupAccessGroups, depth));
-                    buildAccessDetailList(child.getChildren(), rows, requestedGroup, depth + 1, projectGroupCache);
+                    if (showAll || roles.size() > 0)
+                    {
+                        int index = rows.size();
+                        rows.add(new UserController.AccessDetailRow(getViewContext(), child, requestedGroup, groupAccessGroups, depth));
+                        containersInList.add(child);
+
+                        //Ensure parents of any accessible folder are in the tree. If not add them with no access info
+                        int newDepth = depth;
+                        Container parent = child.getParent();
+                        while (parent != null && !parent.isRoot() && !containersInList.contains(parent))
+                        {
+                            rows.add(index, new UserController.AccessDetailRow(getViewContext(), parent, requestedGroup, Collections.<String, List<Group>>emptyMap(), --newDepth));
+                            containersInList.add(parent);
+                            parent = parent.getParent();
+                        }
+                    }
+
+                    buildAccessDetailList(child.getChildren(), rows, containersInList, requestedGroup, depth + 1, projectGroupCache, showAll);
                 }
             }
         }
@@ -1783,6 +1825,8 @@ public class SecurityController extends SpringActionController
         public ModelAndView getView(FolderAccessForm form, BindException errors) throws Exception
         {
             VBox view = new VBox();
+            form.setShowCaption("show all users");
+            form.setHideCaption("hide unassigned users");
             view.addView(new JspView<FolderAccessForm>("/org/labkey/core/user/toggleShowAll.jsp", form));
 
             List<UserController.AccessDetailRow> rows = new ArrayList<UserController.AccessDetailRow>();
@@ -1849,6 +1893,8 @@ public class SecurityController extends SpringActionController
     public static class FolderAccessForm
     {
         private boolean _showAll;
+        private String _showCaption = null;
+        private String _hideCaption = null;
 
         public boolean showAll()
         {
@@ -1858,6 +1904,26 @@ public class SecurityController extends SpringActionController
         public void setShowAll(boolean showAll)
         {
             _showAll = showAll;
+        }
+
+        public String getShowCaption()
+        {
+            return _showCaption;
+        }
+
+        public void setShowCaption(String showCaption)
+        {
+            _showCaption = showCaption;
+        }
+
+        public String getHideCaption()
+        {
+            return _hideCaption;
+        }
+
+        public void setHideCaption(String hideCaption)
+        {
+            _hideCaption = hideCaption;
         }
     }
 
