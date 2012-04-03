@@ -1763,10 +1763,10 @@ public class SecurityController extends SpringActionController
 
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class GroupDiagramAction extends ApiAction
+    public class GroupDiagramAction extends ApiAction<GroupDiagramForm>
     {
         @Override
-        public ApiResponse execute(Object o, BindException errors) throws Exception
+        public ApiResponse execute(GroupDiagramForm form, BindException errors) throws Exception
         {
             List<Group> groups = Arrays.asList(SecurityManager.getGroups(getContainer().getProject(), false));
             String html;
@@ -1777,7 +1777,7 @@ public class SecurityController extends SpringActionController
             }
             else
             {
-                String dot = GroupManager.getGroupGraphSvg(groups, getUser());
+                String dot = GroupManager.getGroupGraphSvg(groups, getUser(), form.getHideUnconnected());
                 File dir = FileUtil.getTempDirectory();
                 File svgFile = null;
 
@@ -1815,6 +1815,21 @@ public class SecurityController extends SpringActionController
             }
 
             return new ApiSimpleResponse("html", html);
+        }
+    }
+
+    private static class GroupDiagramForm
+    {
+        boolean _hideUnconnected = false;
+
+        public void setHideUnconnected(boolean hideUnconnected)
+        {
+            _hideUnconnected = hideUnconnected;
+        }
+
+        public boolean getHideUnconnected()
+        {
+            return _hideUnconnected;
         }
     }
 

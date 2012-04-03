@@ -21,6 +21,7 @@
 <%
     ActionURL groupDiagramURL = new ActionURL(SecurityController.GroupDiagramAction.class, getViewContext().getContainer());
 %>
+<div id="unconnected" style="padding:5px;"></div>
 <div id="groupDiagram"></div>
 <script type="text/javascript">
     Ext.onReady(function() {
@@ -37,6 +38,10 @@
         }
         else
         {
+            this.hideUnconnectedCheckbox = new Ext.form.Checkbox({id:'hideUnconnectedCheckbox', style:{display:'inline'}, boxLabel:"Hide unconnected nodes"});
+            this.hideUnconnectedCheckbox.render('unconnected');
+            this.hideUnconnectedCheckbox.on("check", refreshDiagram, this);
+
             refreshDiagram();
             securityCache.principalsStore.on("add", refreshDiagram, this);
             securityCache.principalsStore.on("remove", refreshDiagram, this);
@@ -47,8 +52,14 @@
     // TODO: This is getting called twice for each group add/remove... filter? different listener?
     function refreshDiagram(s, record, type)
     {
+        var urlString = <%=q(groupDiagramURL.toString())%>;
+        if (this.hideUnconnectedCheckbox.getValue())
+        {
+            urlString = <%=q(groupDiagramURL.addParameter("hideUnconnected", true).toString())%>;
+        }
+
         Ext.Ajax.request({
-            url: <%=q(groupDiagramURL.toString())%>,
+            url: urlString,
             success: renderGroupDiagram,
             failure: onError
         });
