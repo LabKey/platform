@@ -129,10 +129,11 @@ public class GroupManager
 
 
     // groups is a collection of one or more root groups to diagram
-    public static String getGroupGraphSvg(Collection<Group> groups, User user)
+    public static String getGroupGraphSvg(Collection<Group> groups, User user, boolean hideUnconnected)
     {
         StringBuilder sb = new StringBuilder("digraph groups\n{\n");
         HashSet<Group> groupSet = new HashSet<Group>();
+        HashSet<Integer> connected = new HashSet<Integer>();
         LinkedList<Group> recurse = new LinkedList<Group>();
         recurse.addAll(groups);
         groupSet.addAll(groups);
@@ -146,6 +147,8 @@ public class GroupManager
             {
                 Group g = (Group)principal;
                 sb.append("\t").append(group.getUserId()).append("->").append(g.getUserId()).append(";\n");
+                connected.add(group.getUserId());
+                connected.add(g.getUserId());
 
                 if (!groupSet.contains(g))
                 {
@@ -157,26 +160,29 @@ public class GroupManager
 
         for (Group g : groupSet)
         {
-            int userCount = SecurityManager.getGroupMembers(g, SecurityManager.GroupMemberType.Users).size();
-
-            sb.append("\t").append(g.getUserId()).append(" [");
-            appendDotAttribute(sb, false, "label", g.getName() + "\\n" + userCount + " users");
-
-            if (g.isProjectGroup() || user.isAdministrator())
+            if (!hideUnconnected || connected.contains(g.getUserId()))
             {
-                appendDotAttribute(sb, true, "URL", "javascript:window.parent.showPopupId(" + g.getUserId() + ")");
-                appendDotAttribute(sb, true, "tooltip", "Click to manage the '" + g.getName() + "' " + (g.isProjectGroup() ? "project" : "site") + " group");
-            }
-            else
-            {
-                appendDotAttribute(sb, true, "URL", "javascript:void()");
-                appendDotAttribute(sb, true, "tooltip", "You must be a site administrator to manage site groups");
-            }
+                int userCount = SecurityManager.getGroupMembers(g, SecurityManager.GroupMemberType.Users).size();
 
-            if (!g.isProjectGroup())
-                sb.append(", shape=box");
+                sb.append("\t").append(g.getUserId()).append(" [");
+                appendDotAttribute(sb, false, "label", g.getName() + "\\n" + userCount + " users");
 
-            sb.append("]\n");
+                if (g.isProjectGroup() || user.isAdministrator())
+                {
+                    appendDotAttribute(sb, true, "URL", "javascript:window.parent.showPopupId(" + g.getUserId() + ")");
+                    appendDotAttribute(sb, true, "tooltip", "Click to manage the '" + g.getName() + "' " + (g.isProjectGroup() ? "project" : "site") + " group");
+                }
+                else
+                {
+                    appendDotAttribute(sb, true, "URL", "javascript:void()");
+                    appendDotAttribute(sb, true, "tooltip", "You must be a site administrator to manage site groups");
+                }
+
+                if (!g.isProjectGroup())
+                    sb.append(", shape=box");
+
+                sb.append("]\n");
+            }
         }
 
         sb.append("}");

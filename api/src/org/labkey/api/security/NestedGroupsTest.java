@@ -191,7 +191,7 @@ public class NestedGroupsTest extends Assert
         notExpected(allGroups, divB, divC, testers, writers, siteGroup1);
 
         List<Group> projectGroups = Arrays.asList(SecurityManager.getGroups(_project, false));
-        String svg = GroupManager.getGroupGraphSvg(projectGroups, user);
+        String svg = GroupManager.getGroupGraphSvg(projectGroups, user, false);
 
         // TODO: Assert something about gv... maybe just length of svg?
     }
