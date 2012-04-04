@@ -335,11 +335,22 @@ var SecurityCache = Ext.extend(Ext.util.Observable,{
         if (group && group.Type == 'g')
         {
             var me = this;
-            S.deleteGroup({groupId:groupid, containerPath:(group.Container||'/'), successCallback:function()
-            {
-                me.principalsStore.removeById(groupid);
-                callback.call(scope || this);
-            }});
+            S.deleteGroup({groupId:groupid, containerPath:(group.Container||'/'),
+                success: function()
+                {
+                    me.principalsStore.removeById(groupid);
+                    callback.call(scope || this);
+                },
+                failure: function(error, response)
+                {
+                    var errorDisplay = error.exception;
+                    // issue 13837 - hack to display the group name since the server only knows about the group ID for this API
+                    if (errorDisplay.indexOf("Group id " + group.UserId) == 0)
+                        errorDisplay = errorDisplay.replace("Group id " + group.UserId, "Group " + group.Name)
+
+                    Ext.Msg.alert("Error", errorDisplay);
+                }
+            });
         }
     },
 

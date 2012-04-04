@@ -899,7 +899,12 @@ public class SecurityApiActions
             Group group = SecurityManager.getGroup(form.getId());
             Container c = getViewContext().getContainer();
             if (null == group || (c.isRoot() && null != group.getContainer()) || (!c.isRoot() && !getViewContext().getContainer().getId().equals(group.getContainer())))
-                throw new IllegalArgumentException("Group id " + form.getId() + " does not exist within this container!");
+            {
+                String containerInfo = "this container!";
+                if (!c.isRoot())
+                    containerInfo = "the " + c.getName() + " project!";
+                throw new IllegalArgumentException("Group id " + form.getId() + " does not exist within " + containerInfo);
+            }
 
             SecurityManager.deleteGroup(group);
             writeToAuditLog(group);

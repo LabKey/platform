@@ -239,9 +239,10 @@
             {
                 blankValue = true;
             }
-            if (valuesFound[indicator])
+            // check for duplicates - case insensitive (issue 14513)
+            if (valuesFound[indicator.toLowerCase()])
                 repeatedValue = indicator;
-            valuesFound[indicator] = true;
+            valuesFound[indicator.toLowerCase()] = true;
         }
         if (blankValue)
         {

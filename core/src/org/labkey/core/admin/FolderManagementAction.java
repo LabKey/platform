@@ -630,7 +630,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             }
             else
             {
-                throw new NotFoundException("Unknown tab id");
+                return null; // tabstrip.jsp will handle display for unknown tabIds
             }
         }
 

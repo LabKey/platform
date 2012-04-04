@@ -376,7 +376,7 @@ public class SecurityController extends SpringActionController
             }
             Group group = SecurityManager.getGroup(id);
             Container p = c == null ? null : c.getProject();
-            if (null != p)
+            if (null != group && null != p)
             {
                 if (group.getContainer() != null && !p.getId().equals(group.getContainer()))
                 {
@@ -409,12 +409,19 @@ public class SecurityController extends SpringActionController
 
         public boolean handlePost(GroupForm form, BindException errors) throws Exception
         {
-            Group group = form.getGroupFor(getContainer());
-            ensureGroupInContainer(group,getContainer());
-            if (group != null)
+            try
             {
-                SecurityManager.deleteGroup(group);
-                addGroupAuditEvent(getViewContext(), group, "The group: " + group.getPath() + " was deleted.");
+                Group group = form.getGroupFor(getContainer());
+                ensureGroupInContainer(group,getContainer());
+                if (group != null)
+                {
+                    SecurityManager.deleteGroup(group);
+                    addGroupAuditEvent(getViewContext(), group, "The group: " + group.getPath() + " was deleted.");
+                }
+            }
+            catch(NotFoundException e)
+            {
+                // Issue 13837: if someone else already deleted the group, no need to throw exception
             }
             return true;
         }

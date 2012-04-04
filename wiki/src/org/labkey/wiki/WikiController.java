@@ -2368,7 +2368,7 @@ public class WikiController extends SpringActionController
             WikiVersion wikiversion = new WikiVersion(wikiUpdate.getLatestVersion());
 
             //if title is null, use name
-            HString title = form.getTitle().isEmpty() ? form.getName() : form.getTitle();
+            HString title = null == form.getTitle() || form.getTitle().isEmpty() ? form.getName() : form.getTitle();
             WikiRendererType currentRendererType = WikiRendererType.valueOf(form.getRendererType());
 
             //only insert new version if something has changed
