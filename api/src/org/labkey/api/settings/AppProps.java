@@ -527,4 +527,11 @@ public class AppProps extends AbstractWriteableSettingsGroup
         DecimalFormat format = new DecimalFormat("0.00");
         return format.format(ModuleLoader.getInstance().getCoreModule().getVersion());
     }
+
+
+    // default to use backward compatible
+    public boolean useBackwardCompatibleURL()
+    {
+        return !"false".equals(System.getProperty("useBackwardCompatibleURL", "true"));
+    }
 }

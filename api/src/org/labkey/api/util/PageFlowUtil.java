@@ -2029,6 +2029,7 @@ public class PageFlowUtil
         AppProps props = AppProps.getInstance();
         String contextPath = props.getContextPath();
         JSONObject json = new JSONObject();
+        json.put("useBackwardCompatibleURL", AppProps.getInstance().useBackwardCompatibleURL());
         json.put("contextPath", contextPath);
         json.put("imagePath", contextPath + "/_images");
         json.put("extJsRoot", extJsRoot);

@@ -276,11 +276,15 @@ that points back to the current page:
                 containerPath = "/" + containerPath;
             if(containerPath.charAt(containerPath.length - 1) != "/")
                 containerPath = containerPath + "/";
-
-            var newUrl = LABKEY.contextPath + "/" + controller + containerPath + action;
             if (-1 == action.indexOf('.'))
-                newUrl += '.view';
+                action += '.view';
             var query = LABKEY.ActionURL.queryString(parameters);
+
+            var newUrl;
+            if (LABKEY.useBackwardCompatibleURL)
+                newUrl = LABKEY.contextPath + "/" + controller + containerPath + action;
+            else
+                newUrl = LABKEY.contextPath + containerPath + controller + "-" + action;
             if (query)
                 newUrl += '?' + query;
             return newUrl;
