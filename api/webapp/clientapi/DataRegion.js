@@ -2544,11 +2544,10 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             ]
         };
 
+        var shouldShow;
         if(this.shouldShowFacetedUI()){
             panelCfg.items.push(this.getFacetedFilterPanelCfg());
-        }
-        else {
-            this.hideTabStrip();
+            shouldShow = true;
         }
 
         var dataRegion = LABKEY.DataRegions[this.dataRegionName];
@@ -2557,7 +2556,12 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             this.queryString = dataRegion ? dataRegion.requestURL : null;
         }
 
-        var panel = this.add(panelCfg);
+        this.add(panelCfg);
+
+        if(!shouldShow) {
+            this.hideTabStrip();
+        }
+
         this.configureLookupPanel();
     },
 
@@ -2662,6 +2666,19 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             ){
                 shouldShow = false;
                 //console.log('either too many for zero filter options, switching to default UI');
+            }
+            else if (store.getCount()) {
+                Ext.each(paramValPairs, function(pair, idx){
+                    if(!Ext.isEmpty(pair.value)){
+                        var values = pair.value.split(';');
+                        Ext.each(values, function(v){
+                            if(store.findExact('value', v) == -1){
+                                shouldShow = false;
+                                return false;
+                            }
+                        }, this);
+                    }
+                }, this);
             }
         }
 
@@ -2802,7 +2819,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         if(this.rendered){
             var tabpanel = this.find('tabpanel')[0];
 
-            if(tabpanel && tabpanel.rendered){
+            if(tabpanel.rendered){
                 tabpanel.setActiveTab(0);
                 tabpanel.remove(1);  //remove the faceted UI
 
@@ -3157,15 +3174,30 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
                 var records = [];
                 var recIdx;
+                var error;
                 Ext.each(values, function(val){
                     recIdx = this.store.findBy(function(rec){
                         return rec.get('value') === val
                     });
                     if(recIdx != -1)
                         records.push(recIdx);
-                    else
-                        console.log('unable to find record for: ' + val)
+                    else {
+                        error = true;
+                        return false;
+                    }
                 }, this);
+
+                if(error){
+                    // NOTE: this is sort of a hack.  we allow users to pick values from the faceted UI, but also let them manually enter
+                    // filters.  i think that's the right thing to do, but this means they can choose to filter on an invalid value.
+                    // if we hit this situation, rather then just ignore it, we switch to advanced UI
+                    var tabpanel = this.findParentByType('tabpanel');
+                    var window = tabpanel.ownerCt;
+                    var tab = tabpanel.setActiveTab(0);
+                    tabpanel.hasLoaded = false;  //force reload from URL
+                    window.setValuesFromParams(null, [{operator: 'in', value: values.join(';')}]);
+                    return;
+                }
 
                 this.getSelectionModel().selectRows(records);
             },
@@ -3484,7 +3516,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         }
 
         //b/c empty strings will be ignored, we add a second to force a delimiter.
-        if(value.length == 1 && value[0] == '')
+        if(filter.isDataValueRequired() && value.length == 1 && value[0] == '')
             value.push('');
 
         //if the value is blank, do not apply this empty filter

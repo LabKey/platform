@@ -1,5 +1,9 @@
 /* Apply patches found for Ext 4.0.7 here */
 
+
+// set the default ajax timeout from 30's to 5 minutes
+Ext4.Ajax.timeout = 5 * 60 * 1000;
+
 // Define an override for RowModel to fix page jumping on first click
 // LabKey Issue : 12940: Data Browser - First click on a row scrolls down slightly, doesn't trigger metadata popup
 // Ext issue    : http://www.sencha.com/forum/showthread.php?142291-Grid-panel-jump-to-start-of-the-panel-on-click-of-any-row-in-IE.In-mozilla-it-is-fine&p=640415

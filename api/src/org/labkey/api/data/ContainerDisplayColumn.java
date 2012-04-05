@@ -92,6 +92,8 @@ public class ContainerDisplayColumn extends DataColumn
             String id = getEntityIdValue(ctx);
             if(id != null)
                 return "<deleted>";
+            else if (getEntityIdFieldKey(ctx) != null && id == null)
+                return "";
             else
                 return "<could not resolve container>";
         }
@@ -109,16 +111,25 @@ public class ContainerDisplayColumn extends DataColumn
         return keys;
     }
 
-    private String getEntityIdValue(RenderContext ctx)
+    private FieldKey getEntityIdFieldKey(RenderContext ctx)
     {
         for(FieldKey fk : getEntityIdFieldKeys())
         {
-            if(ctx.get(fk) != null && ctx.get(fk) instanceof String)
+            if(ctx.containsKey(fk) && (ctx.get(fk) == null || ctx.get(fk) instanceof String))
             {
-                return (String)ctx.get(fk);
+                return fk;
             }
         }
         return null;
+    }
+
+    private String getEntityIdValue(RenderContext ctx)
+    {
+        FieldKey fk = getEntityIdFieldKey(ctx);
+        if(fk == null)
+            return null;
+
+        return ctx.get(fk) == null ? null : (String)ctx.get(fk);
     }
 
     private Container getContainer(RenderContext ctx)
