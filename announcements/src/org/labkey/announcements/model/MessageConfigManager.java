@@ -94,6 +94,9 @@ public class MessageConfigManager
         }
     }
 
+    // Returns email preferences for all active users with read permissions to this container.  A user could have multiple
+    // preferences (one for each srcIdentifier).  If a user hasn't expressed any preferences they'll still get one preference
+    // representing the container default.
     public static EmailPref[] getUserEmailPrefs(Container c, String type)
     {
         SQLFragment sql = new SQLFragment();
@@ -423,6 +426,12 @@ public class MessageConfigManager
         public void setSrcIdentifier(String srcIdentifier)
         {
             _srcIdentifier = srcIdentifier;
+        }
+
+        @Override
+        public String toString()
+        {
+            return getEmail() + " " + _emailOptionId + " " + _srcIdentifier;
         }
     }
 

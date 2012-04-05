@@ -17,7 +17,7 @@
 package org.labkey.announcements.model;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.message.settings.MessageConfigService;
+import org.labkey.api.message.settings.MessageConfigService.UserPreference;
 
 /**
  * User: adam
@@ -33,8 +33,8 @@ public class IndividualEmailPrefsSelector extends EmailPrefsSelector
 
 
     @Override
-    protected boolean includeEmailPref(MessageConfigService.UserPreference ep)
+    protected boolean includeEmailPref(UserPreference up)
     {
-        return super.includeEmailPref(ep) && ((ep.getEmailOptionId() & AnnouncementManager.EMAIL_NOTIFICATION_TYPE_DIGEST) == 0);
+        return super.includeEmailPref(up) && ((up.getEmailOptionId() & AnnouncementManager.EMAIL_NOTIFICATION_TYPE_DIGEST) == 0);
     }
 }

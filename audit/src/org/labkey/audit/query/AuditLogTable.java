@@ -27,6 +27,7 @@ import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -152,6 +153,13 @@ public class AuditLogTable extends FilteredTable
 
             addCondition(filter);
         }
+
+        if (isGuest(_schema.getUser()))
+        {
+            // issue: 14511 - return an empty result set for guests
+            addCondition(new SQLFragment("1 = 0"));
+        }
+
         getColumn("RowId").setHidden(true);
         getColumn("Lsid").setHidden(true);
 

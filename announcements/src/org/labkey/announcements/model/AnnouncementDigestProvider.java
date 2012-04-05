@@ -95,7 +95,7 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
 
         DailyDigestEmailPrefsSelector sel = new DailyDigestEmailPrefsSelector(c);
 
-        for (User user : sel.getUsers())
+        for (User user : sel.getNotificationCandidates())
         {
             List<AnnouncementModel> announcementModelList = new ArrayList<AnnouncementModel>(announcementModels.length);
 

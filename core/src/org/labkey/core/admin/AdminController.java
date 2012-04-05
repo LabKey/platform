@@ -3661,7 +3661,8 @@ public class AdminController extends SpringActionController
                         newAliases.add(c.getPath());
                         ContainerManager.saveAliasesForContainer(c, newAliases);
                     }
-                    _returnURL = getManageFoldersURL();
+                    c = ContainerManager.getForId(c.getId());     // Reload container to populate new name
+                    _returnURL = new AdminUrlsImpl().getManageFoldersURL(c);
                     return true;
                 }
             }
@@ -3781,7 +3782,8 @@ public class AdminController extends SpringActionController
                 ContainerManager.saveAliasesForContainer(c, newAliases);
             }
 
-            return HttpView.redirect(getManageFoldersURL());
+            c = ContainerManager.getForId(c.getId());      // Reload container to populate new location
+            return HttpView.redirect(new AdminUrlsImpl().getManageFoldersURL(c));
         }
 
         public NavTree appendNavTrail(NavTree root)

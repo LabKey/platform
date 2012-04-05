@@ -46,6 +46,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.actions.ProtocolIdForm;
+import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AbstractTsvAssayProvider;
 import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
@@ -313,18 +314,18 @@ public class CBCAssayController extends SpringActionController
                 displayColumns.add(col.getRenderer());
             }
 
-            ListIterator<DisplayColumn> iter = displayColumns.listIterator();
-            while (iter.hasNext())
+            List<DisplayColumn> ret = new ArrayList<DisplayColumn>(displayColumns.size());
+            for (DisplayColumn column : displayColumns)
             {
-                DisplayColumn column = iter.next();
                 if (column.getColumnInfo() != null && !column.getColumnInfo().isShownInUpdateView())
-                    iter.remove();
-                if (column.getCaption().contains("Target Study"))
-                    iter.remove();
+                    continue;
+                if (column.getCaption().contains(AbstractAssayProvider.TARGET_STUDY_PROPERTY_CAPTION))
+                    continue;
                 if (!column.isEditable() || column.getColumnInfo() instanceof LookupColumn)
-                    iter.remove();
+                    continue;
+                ret.add(column);
             }
-            return displayColumns;
+            return ret;
         }
 
         public ModelAndView getView(DetailsForm form, boolean reshow, BindException errors) throws Exception

@@ -174,7 +174,20 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                         scope   : this
                     },'->',this.lengthReportField]
                 }],
-                items    : [this.previewPanel, this.exportForm]
+                items    : [this.previewPanel, this.exportForm],
+                listeners: {
+                    scope: this,
+                    delay: 50,
+                    afterrender: function(panel){
+                        // Issue 14452: with IE8/Win7 the disabled mask doesnt render correctly on initial load
+                        // this might have something to do w/ creating the panel prior to adding to the outer panel.
+                        // this is a dirty fix, but does render the right mask
+                        if(Ext4.isIE && panel.disabled){
+                            panel.setDisabled(false);
+                            panel.setDisabled(true);
+                        }
+                    }
+                }
             });
         }
         else {
@@ -822,7 +835,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             var pConfig = {
                 listeners : {
                     selectionchange : function(){
-                        this.filterTask.delay(400);
+                        this.filterTask.delay(1500);
                         if (this.allowCustomize)
                             this.markDirty(true);
                     },

@@ -17,11 +17,7 @@
 package org.labkey.announcements.model;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.message.settings.MessageConfigService;
-import org.labkey.api.security.User;
-
-import java.util.HashMap;
-import java.util.Map;
+import org.labkey.api.message.settings.MessageConfigService.UserPreference;
 
 /**
  * User: adam
@@ -30,29 +26,15 @@ import java.util.Map;
  */
 public class DailyDigestEmailPrefsSelector extends EmailPrefsSelector
 {
-    Map<User, MessageConfigService.UserPreference> _epMap;
-
     public DailyDigestEmailPrefsSelector(Container c)
     {
         super(c);
-
-        // Create a map for shouldSend()
-        _epMap = new HashMap<User, MessageConfigService.UserPreference>(_emailPrefs.size());
-
-        for (MessageConfigService.UserPreference ep : _emailPrefs)
-            _epMap.put(ep.getUser(), ep);
     }
 
 
     @Override
-    protected boolean includeEmailPref(MessageConfigService.UserPreference ep)
+    protected boolean includeEmailPref(UserPreference up)
     {
-        return super.includeEmailPref(ep) && ((ep.getEmailOptionId() & AnnouncementManager.EMAIL_NOTIFICATION_TYPE_DIGEST) != 0);
-    }
-
-
-    public boolean shouldSend(AnnouncementModel ann, User user)
-    {
-        return shouldSend(ann, _epMap.get(user));
+        return super.includeEmailPref(up) && ((up.getEmailOptionId() & AnnouncementManager.EMAIL_NOTIFICATION_TYPE_DIGEST) != 0);
     }
 }

@@ -654,7 +654,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
     onFinish : function() {
 
-        if (!this.info.datasets)
+        if (!this.info.datasets || (this.info.datasets.length == 0))
         {
             Ext.MessageBox.alert('Error', 'You must select at least one dataset to create the new study from.');
             return;

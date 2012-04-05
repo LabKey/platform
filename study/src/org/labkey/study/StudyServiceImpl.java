@@ -34,7 +34,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -46,7 +45,6 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
-import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.importer.MissingValueImporter;
@@ -78,9 +76,11 @@ public class StudyServiceImpl implements StudyService.Service
     public Study createStudy(Container container, User user, String name, TimepointType timepointType) throws SQLException
     {
         // Needed for study creation from VISC module. We might want to remove this when we don't need the old study design tool.
-        
-        if (container.hasPermission(user, AdminPermission.class))
-        {
+
+        // We no longer check for admin permissions due to Issue 14493, permissions are checked earlier during folder creation,
+        // and permissions are not properly set on a new folder until after the study is created, so folder Admins will not be
+        // recognized as folder admins at this stage.
+
             StudyImpl study = new StudyImpl(container, name);
 
             study.setTimepointType(timepointType);
@@ -90,9 +90,6 @@ public class StudyServiceImpl implements StudyService.Service
             study.setStartDate(new Date());
 
             return StudyManager.getInstance().createStudy(user, study);
-        }
-        else
-            throw new UnauthorizedException();
     }
 
     public String getStudyName(Container container)

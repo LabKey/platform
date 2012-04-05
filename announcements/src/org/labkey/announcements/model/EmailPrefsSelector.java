@@ -20,13 +20,13 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.announcements.AnnouncementsController;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.data.Container;
-import org.labkey.api.message.settings.MessageConfigService;
+import org.labkey.api.message.settings.MessageConfigService.UserPreference;
 import org.labkey.api.security.User;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -36,69 +36,79 @@ import java.util.Set;
  */
 public abstract class EmailPrefsSelector
 {
-    // All project users' preferences plus anyone else who's signed up for notifications from this board.
-    // Default option is set if this user has not indicated a preference.  Prefs with NONE have been removed.
-    protected List<MessageConfigService.UserPreference> _emailPrefs;
-    protected Container _c;
+    // This map contains one or more email preferences for each user who has read permissions to this folder.  If the
+    // user has not indicated a preference then their map includes a preference with the folder default option.
+    private final Map<User, PreferencePicker> _emailPrefsMap;
+    private final Container _c;
 
     protected EmailPrefsSelector(Container c)
     {
-        initEmailPrefs(c);
+        _emailPrefsMap = createEmailPrefsMap(c);
         _c = c;
     }
 
 
-    // Initialize list of email preferences: get all settings from the database, add the default values, and remove NONE.
-    private void initEmailPrefs(Container c)
+    // Get all settings from the database, add the default values, and create map of User -> PreferencePicker
+    private Map<User, PreferencePicker> createEmailPrefsMap(Container c)
     {
         int defaultOption = AnnouncementManager.getDefaultEmailOption(c);
-        MessageConfigService.UserPreference[] epArray = AnnouncementManager.getAnnouncementConfigProvider().getPreferences(c);
-        _emailPrefs = new ArrayList<MessageConfigService.UserPreference>(epArray.length);
+        UserPreference[] upArray = AnnouncementManager.getAnnouncementConfigProvider().getPreferences(c);
+        Map<User, PreferencePicker> map = new HashMap<User, PreferencePicker>();
 
-        for (MessageConfigService.UserPreference ep : epArray)
+        for (UserPreference up : upArray)
         {
-            if (null == ep.getEmailOptionId())
-                ep.setEmailOptionId(defaultOption);
+            if (null == up.getEmailOptionId())
+                up.setEmailOptionId(defaultOption);
 
-            if (includeEmailPref(ep))
-                _emailPrefs.add(ep);
+            User user = up.getUser();
+            PreferencePicker pp = map.get(user);
+
+            if (null == pp)
+            {
+                pp = new PreferencePicker(c);
+                map.put(user, pp);
+            }
+
+            pp.addPreference(up);
         }
+
+        return map;
     }
 
 
-    // Override this to filter out other prefs
-    protected boolean includeEmailPref(MessageConfigService.UserPreference ep)
+    // All users with read permissions in this folder... not filtered for anything else!
+    public Collection<User> getNotificationCandidates()
+    {
+        return _emailPrefsMap.keySet();
+    }
+
+
+    // Anything but NONE... override this to filter out other prefs
+    protected boolean includeEmailPref(UserPreference ep)
     {
         return AnnouncementManager.EMAIL_PREFERENCE_NONE != ep.getEmailOptionId();
     }
 
 
-    // All users with an email preference that was allowed by includeEmailPrefs() -- they have not been authorized!
-    public Collection<User> getUsers()
+    public boolean shouldSend(@Nullable AnnouncementModel ann, User user)
     {
-        Set<User> users = new HashSet<User>(_emailPrefs.size());
+        PreferencePicker pp = _emailPrefsMap.get(user);
+        UserPreference up = pp.getApplicablePreference(ann);
 
-        for (MessageConfigService.UserPreference ep : _emailPrefs)
-            users.add(ep.getUser());
+        // Skip if current notification type (e.g., individual or digest) doesn't match the preference
+        if (!includeEmailPref(up))
+            return false;
 
-        return users;
-    }
-
-
-    protected boolean shouldSend(@Nullable AnnouncementModel ann, MessageConfigService.UserPreference ep)
-    {
-        int emailPreference = ep.getEmailOptionId() & AnnouncementManager.EMAIL_PREFERENCE_MASK;
-
-        User user = ep.getUser();
-
-        //if user is inactive, don't send email
+        // Skip if user is inactive
         if (!user.isActive())
             return false;
 
         DiscussionService.Settings settings = AnnouncementsController.getSettings(_c);
+        int emailPreference = up.getEmailOptionId() & AnnouncementManager.EMAIL_PREFERENCE_MASK;
 
         if (AnnouncementManager.EMAIL_PREFERENCE_MINE == emailPreference)
         {
+            // Skip if preference is MINE and this is a new message
             if (null == ann)
                 return false;
 
@@ -110,7 +120,7 @@ public abstract class EmailPrefsSelector
         }
         else
         {
-            // Shouldn't be here if preference is NONE.
+            // Shouldn't be here if preference is NONE
             assert AnnouncementManager.EMAIL_PREFERENCE_NONE != emailPreference;
         }
 
@@ -122,41 +132,50 @@ public abstract class EmailPrefsSelector
 
     public Set<User> getNotificationUsers(@Nullable AnnouncementModel ann)
     {
-        Set<User> authorized = new HashSet<User>(_emailPrefs.size());
-        List<MessageConfigService.UserPreference> relevantPrefs = new ArrayList<MessageConfigService.UserPreference>(_emailPrefs.size());
-        Set<User> directlySubscribedUsers = new HashSet<User>();
-        String srcIdentifier = null != ann ? ann.lookupSrcIdentifer() : null;
+        Collection<User> candidates = getNotificationCandidates();
+        Set<User> sendUsers = new HashSet<User>(candidates.size());
 
-        if (null != ann)
+        for (User user : candidates)
+            if (shouldSend(ann, user))
+                sendUsers.add(user);
+
+        return sendUsers;
+    }
+
+
+    private static class PreferencePicker
+    {
+        private final Container _c;
+        // srcIdentifier -> UserPreference map for all of this user's preferences
+        private final Map<String, UserPreference> _preferenceMap = new HashMap<String, UserPreference>();
+
+        private PreferencePicker(Container c)
         {
-            // First look through for users that have subscriptions for this srcIdentfier directly
-            for (MessageConfigService.UserPreference ep : _emailPrefs)
-            {
-                if (ep.getSrcIdentifier().equals(srcIdentifier))
-                {
-                    // Remember the permission, and the user
-                    relevantPrefs.add(ep);
-                    directlySubscribedUsers.add(ep.getUser());
-                }
-            }
+            _c = c;
         }
 
-        for (MessageConfigService.UserPreference ep : _emailPrefs)
+        private void addPreference(UserPreference up)
         {
-            // Then look for users who didn't have a direct subscription, but have one set at the container level
-            if (ep.getSrcIdentifier().equals(_c.getId()) && !ep.getSrcIdentifier().equals(srcIdentifier) && !directlySubscribedUsers.contains(ep.getUser()))
-            {
-                relevantPrefs.add(ep);
-            }
+             _preferenceMap.put(up.getSrcIdentifier(), up);
         }
 
-        for (MessageConfigService.UserPreference ep : relevantPrefs)
-            if (shouldSend(ann, ep))
-                authorized.add(ep.getUser());
+        UserPreference getApplicablePreference(@Nullable AnnouncementModel ann)
+        {
+            String srcIdentifier = null != ann ? ann.lookupSrcIdentifer() : null;
 
-        if (null != ann)
-            authorized.addAll(AnnouncementManager.getAnnouncement(ann.lookupContainer(), ann.getEntityId(), true).getMemberList());
+            if (null != ann)
+            {
+                // srcIdentfier preference takes precedence, so return it if present
+                UserPreference up = _preferenceMap.get(srcIdentifier);
 
-        return authorized;
+                if (null != up)
+                    return up;
+            }
+
+            // Return container preference for users who don't have a direct subscription
+            UserPreference up = _preferenceMap.get(_c.getId());
+            assert null != up;
+            return up;
+        }
     }
 }
