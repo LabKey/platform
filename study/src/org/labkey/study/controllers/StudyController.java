@@ -41,6 +41,9 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.views.DataViewInfo;
+import org.labkey.api.data.views.DataViewProvider;
+import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
@@ -76,6 +79,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotForm;
@@ -84,7 +88,6 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.model.DataViewEditForm;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
@@ -103,7 +106,6 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -137,7 +139,6 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
-import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.GridView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -209,6 +210,8 @@ import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.visitmanager.VisitManager.VisitStatistic;
 import org.labkey.study.writer.StudyExportContext;
 import org.labkey.study.writer.StudyWriter;
+import org.springframework.beans.PropertyValue;
+import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -232,6 +235,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -7033,11 +7037,15 @@ public class StudyController extends BaseStudyController
                 response.put("webpart", new JSONObject(webPartProps));
             }
 
-            for (ViewInfo.DataType type : ViewInfo.DataType.values())
+            List<DataViewProvider.Type> visibleDataTypes = new ArrayList<DataViewProvider.Type>();
+            for (DataViewProvider.Type type : DataViewService.get().getDataTypes(getContainer(), getUser()))
             {
-                types.put(type.name(), getCheckedState(type.name(), props, true));
-            }
+                boolean visible = getCheckedState(type.getName(), props, true);
+                types.put(type.getName(), visible);
 
+                if (visible)
+                    visibleDataTypes.add(type);
+            }
             response.put("types", new JSONObject(types));
 
             // visible columns
@@ -7053,14 +7061,26 @@ public class StudyController extends BaseStudyController
 
             response.put("visibleColumns", columns);
 
+            // provider editor information
+            Map<String, Map<String, Object>> viewTypeProps = new HashMap<String, Map<String, Object>>();
+            for (DataViewProvider.Type type : visibleDataTypes)
+            {
+                DataViewProvider provider = DataViewService.get().getProvider(type);
+                DataViewProvider.EditInfo editInfo = provider.getEditInfo();
+                if (editInfo != null)
+                {
+                    Map<String, Object> info = new HashMap<String, Object>();
+                    for (String propName : editInfo.getEditableProperties(getContainer(), getUser()))
+                    {
+                        info.put(propName, true);
+                    }
+                    viewTypeProps.put(type.getName(), info);
+                }
+            }
+            response.put("editInfo", viewTypeProps);
+
             if (form.includeData())
             {
-                JSONArray data = new JSONArray();
-                boolean includeReports = types.isEmpty() ? true : types.get(ViewInfo.DataType.reports.name());
-                boolean includeQueries = types.isEmpty() ? true : types.get(ViewInfo.DataType.queries.name());
-                boolean includeDatasets = types.isEmpty() ? true : types.get(ViewInfo.DataType.datasets.name());
-
-                List<ViewInfo> dataViews = new ArrayList<ViewInfo>();
                 int startingDefaultDisplayOrder = 0;
                 Set<String> defaultCategories = new TreeSet<String>(new Comparator<String>(){
                     @Override
@@ -7072,31 +7092,25 @@ public class StudyController extends BaseStudyController
 
                 getViewContext().put("returnUrl", form.getReturnUrl());
 
-                // get reports and queries
-                if (includeReports || includeQueries)
-                {
-                    for (ViewInfo info : ReportManager.get().getViews(getViewContext(), null, null, includeReports, includeQueries, false))
-                    {
-                        if (info.getCategoryDisplayOrder() != ReportUtil.DEFAULT_CATEGORY_DISPLAY_ORDER)
-                            startingDefaultDisplayOrder = Math.max(startingDefaultDisplayOrder, info.getCategoryDisplayOrder());
-                        else
-                            defaultCategories.add(info.getCategory());
+                // get the data view information from all visible providers
+                List<DataViewInfo> views = new ArrayList<DataViewInfo>();
 
-                        dataViews.add(info);
-                    }
+                for (DataViewProvider.Type type : visibleDataTypes)
+                {
+                    DataViewProvider provider = DataViewService.get().getProvider(type);
+                    views.addAll(provider.getViews(getViewContext()));
                 }
 
-                // datasets
-                if (includeDatasets)
+                for (DataViewInfo info : views)
                 {
-                    for (ViewInfo info : getDatasets())
-                    {
-                        if (info.getCategoryDisplayOrder() != ReportUtil.DEFAULT_CATEGORY_DISPLAY_ORDER)
-                            startingDefaultDisplayOrder = Math.max(startingDefaultDisplayOrder, info.getCategoryDisplayOrder());
-                        else
-                            defaultCategories.add(info.getCategory());
+                    ViewCategory category = info.getCategory();
 
-                        dataViews.add(info);
+                    if (category != null)
+                    {
+                        if (category.getDisplayOrder() != ReportUtil.DEFAULT_CATEGORY_DISPLAY_ORDER)
+                            startingDefaultDisplayOrder = Math.max(startingDefaultDisplayOrder, category.getDisplayOrder());
+                        else
+                            defaultCategories.add(category.getLabel());
                     }
                 }
 
@@ -7107,13 +7121,22 @@ public class StudyController extends BaseStudyController
                     defaultCategoryMap.put(it.next(), ++startingDefaultDisplayOrder);                    
                 }
 
-                for (ViewInfo info : dataViews)
+                for (DataViewInfo info : views)
                 {
-                    if (info.getCategoryDisplayOrder() == ReportUtil.DEFAULT_CATEGORY_DISPLAY_ORDER && defaultCategoryMap.containsKey(info.getCategory()))
-                        info.setCategoryDisplayOrder(defaultCategoryMap.get(info.getCategory()));
-                    data.put(info.toJSON(getUser(), StudyManager.getInstance().getDefaultDateFormatString(getViewContext().getContainer())));
+                    ViewCategory category = info.getCategory();
+
+                    if (category != null)
+                    {
+                        if (category.getDisplayOrder() == ReportUtil.DEFAULT_CATEGORY_DISPLAY_ORDER && defaultCategoryMap.containsKey(category.getLabel()))
+                            category.setDisplayOrder(defaultCategoryMap.get(category.getLabel()));
+                    }
                 }
-                response.put("data", data);
+
+                String dateFormat = StudyManager.getInstance().getDefaultDateFormatString(getViewContext().getContainer());
+                if (dateFormat == null)
+                    dateFormat = DateUtil.getStandardDateFormatString();
+
+                response.put("data", DataViewService.get().toJSON(getContainer(), getUser(), views, dateFormat));
             }
 
             return response;
@@ -7126,64 +7149,6 @@ public class StudyController extends BaseStudyController
                 return !propMap.get(prop).equals("0");
             }
             return defaultState;
-        }
-
-        private List<ViewInfo> getDatasets() throws Exception
-        {
-            List<ViewInfo> datasets = new ArrayList<ViewInfo>();
-
-            Study study = StudyService.get().getStudy(getContainer());
-            if (study != null)
-            {
-                for (DataSet ds : study.getDataSets())
-                {
-/*
-                    if (!ds.isShowByDefault())
-                        continue;
-*/
-                    if (ds.canRead(getUser()))
-                    {
-                        ViewInfo view = new ViewInfo(ds.getLabel(), "Dataset");
-
-                        if (ds.getCategory() != null)
-                        {
-                            view.setCategory(ds.getCategory());
-
-                            ViewCategory vc = ViewCategoryManager.getInstance().getCategory(getContainer(), ds.getCategory());
-                            if (vc != null)
-                                view.setCategoryDisplayOrder(vc.getDisplayOrder());
-                            else
-                                view.setCategoryDisplayOrder(ReportUtil.DEFAULT_CATEGORY_DISPLAY_ORDER);
-                        }
-                        else
-                        {
-                            view.setCategory("Uncategorized");
-                            view.setCategoryDisplayOrder(ReportUtil.DEFAULT_CATEGORY_DISPLAY_ORDER);
-                        }
-                        view.setDescription(ds.getDescription());
-                        view.setEntityId(ds.getEntityId());
-                        view.setDataType(ViewInfo.DataType.datasets);
-                        view.setIcon(getViewContext().getContextPath() + "/reports/grid.gif");
-
-                        // run url and details url are the same for now
-                        ActionURL runUrl = new ActionURL(DefaultDatasetReportAction.class, getContainer()).addParameter("datasetId", ds.getDataSetId());
-                        view.setRunUrl(runUrl);
-                        view.setDetailsUrl(runUrl);
-
-                        view.setContainer(ds.getContainer());
-                        view.setHidden(!ds.isShowByDefault());
-                        view.setThumbnailUrl(new ActionURL(ThumbnailAction.class, getContainer()));
-                        view.setModified(ds.getModified());
-                        view.setRefreshDate((Date)ReportPropsManager.get().getPropertyValue(ds.getEntityId(), getContainer(), "refreshDate"));
-                        String status = (String)ReportPropsManager.get().getPropertyValue(ds.getEntityId(), getContainer(), "status");
-                        if (status != null)
-                            view.setStatus(ViewInfo.Status.valueOf(status));
-
-                        datasets.add(view);
-                    }
-                }
-            }
-            return datasets;
         }
     }
 
@@ -7369,131 +7334,91 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
-    public class EditViewAction extends MutatingApiAction<DataViewEditForm>
+    public static class EditViewsForm
     {
-        private Report _report;
+        String _id;
+        String _dataType;
 
-        @Override
-        public void validateForm(DataViewEditForm form, Errors errors)
+        public String getId()
         {
-            String id = form.getEntityId();
-            ViewInfo.DataType dataType = form.getDataType();
-
-            if (id != null && dataType != null)
-            {
-                try {
-                    switch (dataType)
-                    {
-                        case reports:
-                            _report = ReportService.get().getReportByEntityId(getContainer(), id);
-
-                            if (_report != null)
-                            {
-                                if (!_report.canEdit(getUser(), getContainer()))
-                                    errors.reject(ERROR_MSG, "Unauthorized operation");
-
-                                _report.getDescriptor().setReportDescription(StringUtils.trimToNull(form.getDescription()));
-                                _report.getDescriptor().setHidden(form.isHidden());
-                            }
-                            break;
-                        case datasets:
-                            break;
-                        default:
-                            errors.reject(ERROR_MSG, "Editing this data type not yet supported.");
-                    }
-                }
-                catch (Exception e)
-                {
-                    _log.error("failed to get data view from identifier", e);
-                    errors.reject(ERROR_MSG, "Unable to find the specified data view");
-                }
-            }
-            else
-                errors.reject(ERROR_MSG, "Unable to find the specified data view");
+            return _id;
         }
 
-        public ApiResponse execute(DataViewEditForm form, BindException errors) throws Exception
+        public void setId(String id)
+        {
+            _id = id;
+        }
+
+        public String getDataType()
+        {
+            return _dataType;
+        }
+
+        public void setDataType(String dataType)
+        {
+            _dataType = dataType;
+        }
+
+        public Map<String, Object> getPropertyMap(PropertyValues pv, List<String> editableValues)
+        {
+            Map<String, Object> map = new HashMap<String, Object>();
+
+            for (PropertyValue value : pv.getPropertyValues())
+            {
+                if (editableValues.contains(value.getName()))
+                    map.put(value.getName(), value.getValue());
+            }
+            return map;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class EditViewAction extends MutatingApiAction<EditViewsForm>
+    {
+        private DataViewProvider _provider;
+        private Map<String, Object> _propertiesMap;
+
+        @Override
+        public void validateForm(EditViewsForm form, Errors errors)
+        {
+            DataViewProvider.Type type = DataViewService.get().getDataTypeByName(form.getDataType());
+            if (type != null)
+            {
+                _provider = DataViewService.get().getProvider(type);
+                DataViewProvider.EditInfo editInfo = _provider.getEditInfo();
+
+                if (editInfo != null)
+                {
+                    List<String> editable = Arrays.asList(editInfo.getEditableProperties(getContainer(), getUser()));
+                    try {
+                        _propertiesMap = form.getPropertyMap(getPropertyValues(), editable);
+                        editInfo.validateProperties(getContainer(), getUser(), form.getId(), _propertiesMap);
+                    }
+                    catch (ValidationException e)
+                    {
+                        for (ValidationError error : e.getErrors())
+                            errors.reject(ERROR_MSG, error.getMessage());
+                    }
+                }
+                else
+                    errors.reject(ERROR_MSG, "This data view does not support editing");
+            }
+            else
+                errors.reject(ERROR_MSG, "Unable to find the specified data view type");
+        }
+
+        public ApiResponse execute(EditViewsForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            DbScope scope = StudySchema.getInstance().getSchema().getScope();
-
-            try {
-                scope.ensureTransaction();
-
-                String id = form.getEntityId();
-                ViewInfo.DataType dataType = form.getDataType();
-                ViewCategory category = null;
-
-                // save the category information then the report
-                if (form.getCategory() != null)
-                    category = ViewCategoryManager.getInstance().ensureViewCategory(getContainer(), getUser(), form.getCategory());
-
-                // author field
-                User author = UserManager.getUser(form.getAuthor());
-                ViewInfo.Status status = form.getStatus();
-
-                switch (dataType)
-                {
-                    case reports:
-                        if (category != null)
-                            _report.getDescriptor().setCategory(category);
-
-                        // shared status
-                        if(!form.getShared())
-                            _report.getDescriptor().setOwner(getUser().getUserId());
-                        else
-                            _report.getDescriptor().setOwner(null);
-
-                        ReportService.get().saveReport(getViewContext(), _report.getDescriptor().getReportKey(), _report);
-                        break;
-                    case datasets:
-                        StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
-                        if (study != null)
-                        {
-                            DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinitionByEntityId(study, id);
-                            boolean dirty = false;
-                            if (dsDef != null)
-                            {
-                                dsDef = dsDef.createMutable();
-                                if (category != null)
-                                {
-                                    dirty = dsDef.getCategoryId() == null || (category.getRowId() != dsDef.getCategoryId());
-                                    dsDef.setCategoryId(category.getRowId());
-                                }
-                                String newDescription = StringUtils.trimToNull(form.getDescription());
-                                dirty = dirty || !StringUtils.equals(dsDef.getDescription(), newDescription);
-                                dsDef.setDescription(newDescription);
-
-                                dirty = dirty || (dsDef.isShowByDefault() == form.isHidden());
-                                dsDef.setShowByDefault(!form.isHidden());
-
-                                if (dirty)
-                                    dsDef.save(getUser());
-                            }
-                        }
-                        break;
-                    default:
-                        throw new UnsupportedOperationException("The specified data type is not supported yet");
-                }
-
-                // additional properties
-                if (author != null)
-                    ReportPropsManager.get().setPropertyValue(id, getContainer(), "author", author.getUserId());
-                if (status != null)
-                    ReportPropsManager.get().setPropertyValue(id, getContainer(), "status", status.name());
-                if (form.getRefreshDate() != null)
-                    ReportPropsManager.get().setPropertyValue(id, getContainer(), "refreshDate", form.getRefreshDate());
-
-                scope.commitTransaction();
-
-                response.put("success", true);
-                return response;
-            }
-            finally
+            DataViewProvider.EditInfo editInfo = _provider.getEditInfo();
+            if (editInfo != null && _propertiesMap != null)
             {
-                scope.closeConnection();
+                editInfo.updateProperties(getContainer(), getUser(), form.getId(), _propertiesMap);
+                response.put("success", true);
             }
+            response.put("success", false);
+
+            return response;
         }
     }
 

@@ -83,6 +83,12 @@ public class CustomViewInfoImpl implements CustomViewInfo
         return ContainerManager.getForId(_cstmView.getContainerId());
     }
 
+    @Override
+    public String getEntityId()
+    {
+        return _cstmView.getEntityId();
+    }
+
     public List<FieldKey> getColumns()
     {
         List<FieldKey> ret = new ArrayList<FieldKey>();

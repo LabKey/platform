@@ -2198,6 +2198,7 @@ query/src/org/labkey/query/sql/UnionTableInfoImpl.java -text
 query/src/org/labkey/query/view/CustomViewSetKey.java -text
 query/src/org/labkey/query/view/EditQueryPage.java -text
 query/src/org/labkey/query/view/EditQueryView.java -text
+query/src/org/labkey/query/view/QueryDataViewProvider.java -text
 query/src/org/labkey/query/view/QueryWebPartFactory.java -text
 query/src/org/labkey/query/view/editQueryWebPart.jsp -text
 query/webapp/query/QueryEditorPanel.js -text
@@ -2801,6 +2802,7 @@ study/src/org/labkey/study/controllers/samples/SpecimenUtils.java -text
 study/src/org/labkey/study/controllers/security/SecurityController.java -text
 study/src/org/labkey/study/dataset/DatasetAuditViewFactory.java -text
 study/src/org/labkey/study/dataset/DatasetSnapshotProvider.java -text
+study/src/org/labkey/study/dataset/DatasetViewProvider.java -text
 study/src/org/labkey/study/dataset/SnapshotDependency.java -text
 study/src/org/labkey/study/designer/JSONSerializer.java -text
 study/src/org/labkey/study/designer/MapArrayExcelWriter.java -text
@@ -2997,6 +2999,7 @@ study/src/org/labkey/study/reports/ExternalReport.java -text
 study/src/org/labkey/study/reports/ParticipantReport.java -text
 study/src/org/labkey/study/reports/ReportManager.java -text
 study/src/org/labkey/study/reports/ReportQueryViewFactory.java -text
+study/src/org/labkey/study/reports/ReportViewProvider.java -text
 study/src/org/labkey/study/reports/StudyChartQueryReport.java -text
 study/src/org/labkey/study/reports/StudyCrosstabReport.java -text
 study/src/org/labkey/study/reports/StudyQueryReport.java -text

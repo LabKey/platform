@@ -93,6 +93,12 @@ public class ModuleCustomViewInfo implements CustomViewInfo
     }
 
     @Override
+    public String getEntityId()
+    {
+        return null;
+    }
+
+    @Override
     public boolean canInherit()
     {
         return false;

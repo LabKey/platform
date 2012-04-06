@@ -23,6 +23,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.EnumConverter;
 import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.ExperimentRunTypeSource;
 import org.labkey.api.exp.LsidManager;
@@ -99,6 +100,7 @@ import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
+import org.labkey.study.dataset.DatasetViewProvider;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.importer.StudyImportProvider;
@@ -122,6 +124,7 @@ import org.labkey.study.reports.EnrollmentReport;
 import org.labkey.study.reports.ExportExcelReport;
 import org.labkey.study.reports.ExternalReport;
 import org.labkey.study.reports.ParticipantReport;
+import org.labkey.study.reports.ReportViewProvider;
 import org.labkey.study.reports.StudyChartQueryReport;
 import org.labkey.study.reports.StudyCrosstabReport;
 import org.labkey.study.reports.StudyQueryReport;
@@ -134,7 +137,18 @@ import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.security.roles.AssayDesignerRole;
 import org.labkey.study.security.roles.SpecimenCoordinatorRole;
 import org.labkey.study.security.roles.SpecimenRequesterRole;
-import org.labkey.study.view.*;
+import org.labkey.study.view.AssayBatchesWebPartFactory;
+import org.labkey.study.view.AssayList2WebPartFactory;
+import org.labkey.study.view.AssayListWebPartFactory;
+import org.labkey.study.view.AssayResultsWebPartFactory;
+import org.labkey.study.view.AssayRunsWebPartFactory;
+import org.labkey.study.view.DatasetsWebPartView;
+import org.labkey.study.view.StudyListWebPartFactory;
+import org.labkey.study.view.StudySummaryWebPartFactory;
+import org.labkey.study.view.StudyToolsWebPartFactory;
+import org.labkey.study.view.StudyViewLoader;
+import org.labkey.study.view.SubjectDetailsWebPartFactory;
+import org.labkey.study.view.SubjectsWebPart;
 import org.labkey.study.writer.StudySerializationRegistryImpl;
 
 import java.lang.reflect.InvocationTargetException;
@@ -232,6 +246,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         ServiceRegistry.get().registerService(StudySerializationRegistry.class, StudySerializationRegistryImpl.get());
 
         ExperimentService.get().registerExperimentDataHandler(new FileBasedModuleDataHandler());
+        DataViewService.get().registerProvider(DatasetViewProvider.getType(), new DatasetViewProvider());
+        DataViewService.get().registerProvider(ReportViewProvider.getType(), new ReportViewProvider());
     }
 
     @Override

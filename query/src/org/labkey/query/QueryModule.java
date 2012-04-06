@@ -23,6 +23,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
@@ -72,6 +73,7 @@ import org.labkey.query.reports.view.ReportUIProvider;
 import org.labkey.query.sql.QNode;
 import org.labkey.query.sql.Query;
 import org.labkey.query.sql.SqlParser;
+import org.labkey.query.view.QueryDataViewProvider;
 import org.labkey.query.view.QueryWebPartFactory;
 
 import javax.script.ScriptEngineManager;
@@ -129,6 +131,7 @@ public class QueryModule extends DefaultModule
         QueryView.register(new JavaScriptExportScriptFactory());
         QueryView.register(new PerlExportScriptFactory());
 //		WebdavService.addProvider(new QueryWebdavprovider());
+        DataViewService.get().registerProvider(QueryDataViewProvider.getType(), new QueryDataViewProvider());
     }
 
 

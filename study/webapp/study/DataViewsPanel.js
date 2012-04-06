@@ -30,37 +30,45 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         // The following default to type 'string'
         var fields = [
+            {name : 'id'},
             {name : 'category'},
             {name : 'categoryDisplayOrder', type : 'int'},
             {name : 'created',              type : 'string'},
             {name : 'createdBy'},
             {name : 'createdByUserId',      type : 'int'},
-            {name : 'authorUserId',         type : 'int', mapping : 'author.userId'},
-            {name : 'authorDisplayName',                  mapping : 'author.displayName'},
+            {name : 'authorUserId',
+                convert : function(v, record){
+                    if (record.raw.author)
+                        return record.raw.author.userId;
+                    else return 0;
+                }
+            },
+            {name : 'authorDisplayName',
+                convert : function(v, record){
+                    if (record.raw.author)
+                        return record.raw.author.displayName;
+                    else return '';
+                }
+            },
             {name : 'container'},
             {name : 'dataType'},
             {name : 'editable',             type : 'boolean'},
             {name : 'editUrl'},
-            {name : 'entityId'},
+            {name : 'type'},
             {name : 'description'},
             {name : 'displayOrder',         type : 'int'},
-            {name : 'hidden',               type : 'boolean'},
             {name : 'shared',               type : 'boolean'},
+            {name : 'visible',              type : 'boolean'},
             {name : 'icon'},
-            {name : 'inherited',            type : 'boolean'},
             {name : 'modified',             type : 'string'},
             {name : 'modifiedBy'},
-            {name : 'refreshDate',              type : 'string'},
+            {name : 'refreshDate',          type : 'string'},
             {name : 'name'},
-            {name : 'permissions'},
-            {name : 'reportId'},
+            {name : 'access'},
             {name : 'runUrl'},
             {name : 'detailsUrl'},
-            {name : 'schema'},
             {name : 'thumbnail'},
-            {name : 'type'},
-            {name : 'status'},
-            {name : 'version'}
+            {name : 'status'}
         ];
 
         // define Models
@@ -103,6 +111,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         this._height;
 
         this.items = [];
+        this.editInfo = {};
 
         this.store = null;
         this.centerPanel = null;
@@ -274,7 +283,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 this._height = parseInt(json.webpart.height);
                 this.setHeight(this._height);
             }
-
+            this.editInfo = json.editInfo;
             this.initGrid(true, json.visibleColumns);
         };
         
@@ -527,8 +536,10 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             renderer : function(view, meta, rec, idx, colIdx, store) {
                 if (!this._inCustomMode())
                     meta.style = 'display: none;';  // what a nightmare
-                if (!rec.data.entityId) {
-                    return '<span height="16px" class="edit-link-cls-' + this.webpartId + '"></span>'; // entityId is required for editing
+
+                // an item need an edit info interface to be editable
+                if (!this.editInfo[rec.data.dataType]) {
+                    return '<span height="16px" class="edit-link-cls-' + this.webpartId + '"></span>';
                 }
                 return '<span height="16px" class="edit-link-cls-' + this.webpartId + ' edit-views-link"></span>';
             },
@@ -644,7 +655,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 header   : 'Access',
                 width    : 100,
                 sortable : false,
-                dataIndex: 'permissions'
+                dataIndex: 'access'
             });
         }
 
@@ -818,7 +829,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 return answer;
 
             // otherwise never show hidden records
-            if (rec.data.hidden)
+            if (!rec.data.visible)
                 return false;
 
             return answer;
@@ -1079,13 +1090,15 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         if (tip)
             tip.hide();
 
+        // grab the map of available fields from the edit info for the view type
+        var editInfo = this.editInfo[record.data.dataType] || {};
         var formItems = [];
 
-        /* Record 'entityId' is required*/
+        /* Record 'id' is required*/
         var editable = true;
-        if (record.data.entityId == undefined || record.data.entityId == "")
+        if (record.data.id == undefined || record.data.id == "")
         {
-            console.warn('Entity ID is required');
+            console.warn('ID is required');
             editable = false;
         }
 
@@ -1093,13 +1106,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         formItems.push({
             xtype : 'hidden',
             style : 'display:none;',
-            name  : 'reportId',
-            value : record.data.reportId
-        },{
-            xtype : 'hidden',
-            style : 'display:none;',
-            name  : 'entityId',
-            value : record.data.entityId
+            name  : 'id',
+            value : record.data.id
         },{
             xtype : 'hidden',
             style : 'display:none;',
@@ -1107,21 +1115,19 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             value : record.data.dataType
         });
 
-        var isReportView = record.data.type.toLowerCase() != 'dataset';
-
         var viewForm = Ext4.create('LABKEY.study.DataViewPropertiesPanel', {
             record          : record,
             extraItems      : formItems,
             visibleFields   : {
-                author  : isReportView,
-                status  : true,
-                datacutdate : true,
-                category    : true,
-                description : true,
+                author  : editInfo['author'],
+                status  : editInfo['status'],
+                datacutdate : editInfo['refreshDate'],
+                category    : editInfo['category'],
+                description : editInfo['description'],
                 type        : true,
-                visibility  : true,
+                visible     : editInfo['visible'],
                 created     : true,
-                shared      : isReportView,
+                shared      : editInfo['shared'],
                 modified    : true
             },
             buttons     : [{
@@ -1152,7 +1158,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         var editWindow = Ext4.create('Ext.window.Window', {
             width  : 450,
-            height : isReportView ? 510 : 425,
+            height : 510,
             layout : 'fit',
             cls    : 'data-window',
             draggable : false,

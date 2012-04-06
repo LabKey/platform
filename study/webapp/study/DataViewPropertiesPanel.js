@@ -190,18 +190,20 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
             formItems.push({
                 xtype      : 'displayfield',
                 fieldLabel : 'Type',
-                value      : this.data.type,
+                value      : this.data.dataType,
                 readOnly   : true
             });
         }
 
-        if (this.visibleFields['visibility']) {
+        if (this.visibleFields['visible']) {
 
             formItems.push({
                 xtype      : 'radiogroup',
                 fieldLabel : 'Visibility',
-                items      : [{boxLabel : 'Visible',  name : 'hidden', checked : !this.data.hidden, inputValue : false},
-                    {boxLabel : 'Hidden',   name : 'hidden', checked : this.data.hidden,  inputValue : true}]
+                items      : [
+                    {boxLabel : 'Visible',  name : 'visible', checked : this.data.visible, inputValue : true},
+                    {boxLabel : 'Hidden',   name : 'visible', checked : !this.data.visible,  inputValue : false}
+                ]
             });
         }
 
