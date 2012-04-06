@@ -152,6 +152,8 @@ public interface CustomViewInfo
     String getQueryName();
     
     Container getContainer();
+    String getEntityId();
+
     boolean canInherit();
     boolean isHidden();
     boolean isEditable();

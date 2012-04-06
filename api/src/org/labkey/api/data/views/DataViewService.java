@@ -1,0 +1,228 @@
+package org.labkey.api.data.views;
+
+import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.labkey.api.data.Container;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.reports.model.ViewCategory;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.view.ViewContext;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Created by IntelliJ IDEA.
+ * User: klum
+ * Date: Apr 2, 2012
+ */
+public class DataViewService
+{
+    private final Map<DataViewProvider.Type, DataViewProvider> _providers = new ConcurrentHashMap<DataViewProvider.Type, DataViewProvider>();
+
+    private static final Logger _log = Logger.getLogger(DataViewService.class);
+    private static final DataViewService _instance = new DataViewService();
+
+    public static DataViewService get()
+    {
+        return _instance;
+    }
+
+    private DataViewService(){}
+
+    public void registerProvider(DataViewProvider.Type type, DataViewProvider provider)
+    {
+        if (_providers.containsKey(type))
+            throw new IllegalArgumentException("A provider for type: " + type.getName() + " has already been registered");
+
+        _providers.put(type, provider);
+    }
+
+    public List<DataViewProvider.Type> getDataTypes(Container container, User user)
+    {
+        List<DataViewProvider.Type> types = new ArrayList<DataViewProvider.Type>();
+
+        for (Map.Entry<DataViewProvider.Type, DataViewProvider> entry : _providers.entrySet())
+        {
+            if (entry.getValue().isVisible(container, user))
+                types.add(entry.getKey());
+        }
+        return types;
+    }
+
+    @Nullable
+    public DataViewProvider.Type getDataTypeByName(String typeName)
+    {
+        for (DataViewProvider.Type type : _providers.keySet())
+        {
+            if (type.getName().equals(typeName))
+                return type;
+        }
+        return null;
+    }
+
+    /**
+     * Gets the data views for all visible data types
+     */
+    public List<DataViewInfo> getViews(ViewContext context) throws Exception
+    {
+        return getViews(context, new ArrayList<DataViewProvider.Type>(_providers.keySet()));
+    }
+
+    /**
+     * Gets the data views for all the specified data types
+     */
+    public List<DataViewInfo> getViews(ViewContext context, List<DataViewProvider.Type> types) throws Exception
+    {
+        List<DataViewInfo> views = new ArrayList<DataViewInfo>();
+
+        for (DataViewProvider.Type type : types)
+        {
+            if (_providers.containsKey(type))
+            {
+                DataViewProvider provider = _providers.get(type);
+                if (provider.isVisible(context.getContainer(), context.getUser()))
+                    views.addAll(provider.getViews(context));
+            }
+            else
+                throw new IllegalStateException("Provider type: " + type.getName() + " not found.");
+        }
+        return views;
+    }
+
+    public DataViewProvider getProvider(DataViewProvider.Type type)
+    {
+        if (_providers.containsKey(type))
+            return _providers.get(type);
+        else
+            throw new IllegalStateException("Provider type: " + type.getName() + " not found.");
+    }
+
+    public static final int DEFAULT_CATEGORY_DISPLAY_ORDER = 1000;
+
+    public JSONArray toJSON(Container container, User user, List<DataViewInfo> views)
+    {
+        return toJSON(container, user, views, DateUtil.getStandardDateFormatString());
+    }
+
+    public JSONArray toJSON(Container container, User user, List<DataViewInfo> views, String dateFormat)
+    {
+        if (dateFormat == null)
+            throw new IllegalArgumentException("Date format cannot be null");
+
+        JSONArray jsonViews = new JSONArray();
+
+        for (DataViewInfo info : views)
+            jsonViews.put(toJSON(container, user, info, dateFormat));
+
+        return jsonViews;
+    }
+
+    public JSONObject toJSON(Container container, User user, DataViewInfo info, String dateFormat)
+    {
+        if (dateFormat == null)
+            throw new IllegalArgumentException("Date format cannot be null");
+
+        JSONObject o = new JSONObject();
+
+        o.put("id", info.getId());
+        o.put("dataType", info.getDataType().getName());
+        o.put("name", info.getName());
+        o.put("container", info.getContainer().getPath());
+
+        if (info.getType() != null)
+            o.put("type", info.getType());
+        if (info.getDescription() != null)
+            o.put("description", info.getDescription());
+
+        if (info.getIcon() != null)
+            o.put("icon", info.getIcon());
+
+        ViewCategory vc = info.getCategory();
+        if (vc != null)
+        {
+            o.put("category", vc.getLabel());
+            o.put("categoryDisplayOrder", vc.getDisplayOrder());
+        }
+        else
+        {
+            o.put("category", "Uncategorized");
+            o.put("categoryDisplayOrder", DEFAULT_CATEGORY_DISPLAY_ORDER);
+        }
+
+        o.put("visible", info.isVisible());
+        o.put("shared", info.isShared());
+        
+        if (info.getAccess() != null)
+            o.put("access", info.getAccess());
+
+        if (info.getCreatedBy() != null)
+        {
+            o.put("createdBy", info.getCreatedBy().getDisplayName(user));
+            // temporary, refactor in 12.1
+            o.put("createdByUserId", info.getCreatedBy().getUserId());
+        }
+        if (info.getModifiedBy() != null)
+            o.put("modifiedBy", info.getModifiedBy().getDisplayName(user));
+        if (info.getAuthor() != null)
+            o.put("author", info.getAuthor().getDisplayName(user));
+
+        if (info.getCreated() != null)
+            o.put("created",  DateUtil.formatDateTime(info.getCreated(), dateFormat));
+        if (info.getModified() != null)
+            o.put("modified", DateUtil.formatDateTime(info.getModified(), dateFormat));
+
+        if (info.getRunUrl() != null)
+            o.put("runUrl", info.getRunUrl().getLocalURIString());
+        if (info.getThumbnailUrl() != null)
+            o.put("thumbnail", info.getThumbnailUrl().getLocalURIString());
+        if (info.getDetailsUrl() != null)
+            o.put("detailsUrl", info.getDetailsUrl().getLocalURIString());
+
+        // tags
+        for (Pair<DomainProperty, Object> tag : info.getTags())
+        {
+            DomainProperty dp = tag.getKey();
+
+            if (DataViewProvider.EditInfo.Property.author.name().equals(dp.getName()))
+            {
+                User u = null;
+                if (tag.getValue() instanceof Number)
+                    u = UserManager.getUser(((Number)tag.getValue()).intValue());
+
+                if (u != null)
+                    o.put(dp.getName(), createUserObject(u, user));
+                else
+                    o.put(dp.getName(), String.valueOf(tag.getValue()));
+            }
+            else
+            {
+                Object value = tag.getValue();
+
+                if (value instanceof Date)
+                    o.put(dp.getName(), DateUtil.formatDateTime((Date)value, dateFormat));
+                else
+                    o.put(dp.getName(), String.valueOf(tag.getValue()));
+            }
+        }
+        return o;
+    }
+
+    private JSONObject createUserObject(User user, User currentUser)
+    {
+        JSONObject json = new JSONObject();
+
+        json.put("userId", user != null ? user.getUserId() : "");
+        json.put("displayName", user != null ? user.getDisplayName(currentUser) : "");
+
+        return json;
+    }
+}

@@ -324,6 +324,12 @@ api/src/org/labkey/api/data/dialect/TestUpgradeCode.java -text
 api/src/org/labkey/api/data/dialect/sql2003Keywords.txt -text
 api/src/org/labkey/api/data/dialect/sqlKeywords.txt -text
 api/src/org/labkey/api/data/parameterForm.jsp -text
+api/src/org/labkey/api/data/views/DataViewInfo.java -text
+api/src/org/labkey/api/data/views/DataViewProvider.java -text
+api/src/org/labkey/api/data/views/DataViewService.java -text
+api/src/org/labkey/api/data/views/DefaultProviderType.java -text
+api/src/org/labkey/api/data/views/DefaultViewInfo.java -text
+api/src/org/labkey/api/data/views/ProviderType.java -text
 api/src/org/labkey/api/defaults/ClearDefaultValuesAction.java -text
 api/src/org/labkey/api/defaults/DefaultValueService.java -text
 api/src/org/labkey/api/defaults/DefaultValuesAction.java -text

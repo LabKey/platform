@@ -364,6 +364,15 @@ public class ReportUtil
             errors.reject(SpringActionController.ERROR_MSG, error.getMessage());
     }
 
+    public static String getErrors(List<ValidationError> reportErrors)
+    {
+        StringBuffer sb = new StringBuffer();
+        for (ValidationError error : reportErrors)
+            sb.append(error.getMessage()).append("\n");
+
+        return sb.toString();
+    }
+
     public static interface ReportFilter
     {
         public boolean accept(Report report, Container c, User user);
@@ -404,7 +413,7 @@ public class ReportUtil
         return getViews(context, schemaName, queryName, includeReports, includeQueries, new DefaultReportFilter());
     }
 
-    private static ViewCategory getDefaultCategory(Container c, String schema, String query)
+    public static ViewCategory getDefaultCategory(Container c, String schema, String query)
     {
         ViewCategory vc;
         String category = query;
