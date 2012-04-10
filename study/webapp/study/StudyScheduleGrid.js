@@ -345,6 +345,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             {name : 'description',  mapping : 'dataset.description'},
             {name : 'entityId',     mapping : 'dataset.entityId'},
             {name : 'modified',     mapping : 'dataset.modified'},
+            {name : 'refreshDate',  mapping : 'dataset.refreshDate',type : 'string'},
             {name : 'visible',      mapping : 'dataset.visible',    type : 'boolean'}
         ];
 
@@ -1147,7 +1148,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             cls    : 'data-window',
             draggable : false,
             modal  : true,
-            //title  : record.data.name,
+            title  : record.data.name,
             defaults: {
                 border: false, frame: false
             },
