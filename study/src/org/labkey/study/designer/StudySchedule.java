@@ -22,11 +22,16 @@ import org.json.JSONObject;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.views.DataViewInfo;
+import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Cohort;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.view.HttpView;
+import org.labkey.study.dataset.DatasetViewProvider;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitDataSet;
 import org.labkey.study.model.VisitImpl;
 
@@ -51,11 +56,17 @@ public class StudySchedule implements CustomApiForm
 {
     VisitImpl[] _visits;
     DataSetDefinition[] _datasets;
+    Map<String, DataViewInfo> _viewInfo = new HashMap<String, DataViewInfo>();
     Map<Integer, List<VisitDataSet>> _schedule;
 
-    public void setDatasets(DataSetDefinition[] datasets)
+    public void setDatasets(DataSetDefinition[] datasets, List<DataViewInfo> views)
     {
         _datasets = datasets;
+
+        for (DataViewInfo info : views)
+        {
+            _viewInfo.put(info.getId(), info);
+        }
     }
 
     public void setVisits(VisitImpl[] visits)
@@ -118,6 +129,18 @@ public class StudySchedule implements CustomApiForm
     {
         JSONObject o = new JSONObject();
 
+        // merge dataset info with data view info to pick up tag information
+        if (_viewInfo.containsKey(ds.getEntityId()))
+        {
+            DataViewInfo info = _viewInfo.get(ds.getEntityId());
+
+            String dateFormat = StudyManager.getInstance().getDefaultDateFormatString(ds.getContainer());
+            if (dateFormat == null)
+                dateFormat = DateUtil.getStandardDateFormatString();
+
+            o = DataViewService.get().toJSON(ds.getContainer(), user, info, dateFormat);
+            o.put("entityId", ds.getEntityId());
+        }
         o.put("label", ds.getLabel());
         o.put("category", ds.getCategory());
         o.put("description", ds.getDescription());

@@ -23,13 +23,16 @@
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.security.permissions.ManageStudyPermission" %>
+<%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     JspView<Portal.WebPart> me = (JspView) HttpView.currentView();
     Container c = me.getViewContext().getContainer();
     StudyImpl study = StudyManager.getInstance().getStudy(c);
     Portal.WebPart webpart = me.getModelBean();
-    boolean canEdit  = c.hasPermission(me.getViewContext().getUser(), ManageStudyPermission.class);
+    User user = me.getViewContext().getUser();
+    boolean canEdit  = c.hasPermission(user, AdminPermission.class);
     int webPartIndex = (webpart == null ? 0 : webpart.getIndex());
     boolean nullStudy = (study == null);
     String timepointType = null;
@@ -58,6 +61,7 @@
                 });
             }
             Ext4.onReady(callRender);
+
         </script>
 <%
     }

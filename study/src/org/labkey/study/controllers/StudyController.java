@@ -167,6 +167,7 @@ import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
+import org.labkey.study.dataset.DatasetViewProvider;
 import org.labkey.study.designer.StudySchedule;
 import org.labkey.study.importer.DatasetImportUtils;
 import org.labkey.study.importer.SchemaReader;
@@ -7436,7 +7437,9 @@ public class StudyController extends BaseStudyController
             if (study != null)
             {
                 schedule.setVisits(StudyManager.getInstance().getVisits(study, null, getUser(), Visit.Order.DISPLAY));
-                schedule.setDatasets(StudyManager.getInstance().getDataSetDefinitions(study, cohort, new String[]{DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER}));
+                schedule.setDatasets(
+                        StudyManager.getInstance().getDataSetDefinitions(study, cohort, new String[]{DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER}),
+                        DataViewService.get().getViews(getViewContext(), Collections.singletonList(DatasetViewProvider.getType())));
 
                 response.put("schedule", schedule.toJSON(getUser()));
                 response.put("success", true);

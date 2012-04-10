@@ -3,6 +3,8 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
+LABKEY.requiresScript("study/DataViewPropertiesPanel.js");
+
 Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
 
     extend : 'Ext.panel.Panel',
@@ -248,8 +250,8 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                 scope: this,
                 itemmousedown: function(view, record, html, idx){
                     if(this.canEdit){
-                        if(view.getSelectionModel().getCurrentPosition().column < 2){
-                            if(view.getSelectionModel().getCurrentPosition().column == 1){
+                        if(view.getSelectionModel().getCurrentPosition().column < 4){
+                            if(view.getSelectionModel().getCurrentPosition().column == 2){
                                 this.expectationDatasetId = this.scheduleStore.getAt(view.getSelectionModel().getCurrentPosition().row).get('id').id;
                                 this.expectationDatasetLabel = this.scheduleStore.getAt(view.getSelectionModel().getCurrentPosition().row).get('id').label;
                                 var datasetType = this.scheduleStore.getAt(view.getSelectionModel().getCurrentPosition().row).get('id').type;
@@ -267,13 +269,13 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                                 columns = this.schedule.timepoints;
                             }
 
-                            var timepoint = columns[view.getSelectionModel().getCurrentPosition().column -2];
+                            var timepoint = columns[view.getSelectionModel().getCurrentPosition().column -4];
                             var timepointId = timepoint.id;
 
                             // Make a copy of the object so when we set the value of required the dirty bit gets set.
                             var timepointValue = Ext4.apply({}, record.data[timepointId]);
                             if(record.data[timepointId] == undefined || record.data[timepointId] == ""){
-                                timepointValue = Ext4.apply({}, columns[view.getSelectionModel().getCurrentPosition().column -2]);
+                                timepointValue = Ext4.apply({}, columns[view.getSelectionModel().getCurrentPosition().column -4]);
                             }
 
                             if(!timepointValue.required){
@@ -284,6 +286,11 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                             record.set(timepointId, timepointValue);
                         }
                     }
+                },
+                itemclick : function(view, record, item, index, e, opts) {
+                    var cls = e.target.className;
+                    if (cls.search(/edit-views-link/i) >= 0)
+                        this.onEditClick(view, record);
                 }
             }
         });
@@ -316,7 +323,30 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
         },{
             name    : 'id',
             mapping : 'dataset'
-        }];
+        },{
+            name : 'authorUserId',
+            convert : function(v, record){
+                if (record.raw.dataset.author)
+                    return record.raw.dataset.author.userId;
+                else return 0;
+            }
+        },{
+            name : 'authorDisplayName',
+            convert : function(v, record){
+                if (record.raw.dataset.author)
+                    return record.raw.dataset.author.displayName;
+                else return '';
+            }
+        },
+            {name : 'name',         mapping : 'dataset.name'},
+            {name : 'dataType',     mapping : 'dataset.dataType'},
+            {name : 'status',       mapping : 'dataset.status'},
+            {name : 'category',     mapping : 'dataset.category'},
+            {name : 'description',  mapping : 'dataset.description'},
+            {name : 'entityId',     mapping : 'dataset.entityId'},
+            {name : 'modified',     mapping : 'dataset.modified'},
+            {name : 'visible',      mapping : 'dataset.visible',    type : 'boolean'}
+        ];
 
         for(var i = 0; i < this.schedule.timepoints.length; i++){
             fields.push({
@@ -334,6 +364,19 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
     },
 
     initColumns : function(visibleColumns){
+
+        var statusTpl = '<tpl if="status == \'Draft\'">' +
+                '<img data-qtip="Draft" height="16px" width="16px" src="' + LABKEY.ActionURL.getContextPath() + '/reports/icon_draft.png" alt="Draft">' +
+                '</tpl>' +
+                '<tpl if="status == \'Final\'">' +
+                '<img data-qtip="Final" height="16px" width="16px" src="' + LABKEY.ActionURL.getContextPath() + '/reports/icon_final.png" alt="Final">' +
+                '</tpl>' +
+                '<tpl if="status == \'Locked\'">' +
+                '<img data-qtip="Locked" height="16px" width="16px" src="' + LABKEY.ActionURL.getContextPath() + '/reports/icon_locked.png" alt="Locked">' +
+                '</tpl>' +
+                '<tpl if="status == \'Unlocked\'">' +
+                '<img data-qtip="Unlocked" height="16px" width="16px" src="' + LABKEY.ActionURL.getContextPath() + '/reports/icon_unlocked.png" alt="Unlocked">' +
+                '</tpl>';
 
         function urlRenderer(val){
             if(val.type == "Standard"){
@@ -353,7 +396,24 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             }
         }
 
-        var columnItems = [{
+        var columnItems = [];
+
+        if (this.canEdit) {
+            columnItems.push({
+                text     : '',
+                width    : 40,
+                sortable : false,
+                renderer : function(view, meta, rec, idx, colIdx, store) {
+                    if (rec.data.entityId)
+                        return '<span height="16px" class="edit-views-link"></span>';
+                    else
+                        return '';
+                },
+                scope    : this
+            });
+        }
+
+        columnItems.push({
             xtype     : 'templatecolumn',
             text      : 'Datasets',
             dataIndex : 'dataset',
@@ -366,7 +426,15 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             tdCls     : 'type-column',
             style     : 'text-align: center',
             renderer  : urlRenderer
-        }];
+        },{
+            xtype     : 'templatecolumn',
+            text      : 'Status',
+            width     : 75,
+            sortable  : true,
+            tdCls     : 'type-column',
+            dataIndex : 'status',
+            tpl       : statusTpl
+        });
 
         var header;
 
@@ -1006,5 +1074,88 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             },
             scope   : this
         });
+    },
+
+    onEditClick : function(view, record) {
+
+        var formItems = [];
+
+        /* Record 'entityId' is required*/
+        var editable = true;
+        if (record.data.entityId == undefined || record.data.entityId == "")
+        {
+            console.warn('Entity ID is required');
+            editable = false;
+        }
+
+        // hidden items
+        formItems.push({
+            xtype : 'hidden',
+            style : 'display:none;',
+            name  : 'id',
+            value : record.data.entityId
+        },{
+            xtype : 'hidden',
+            style : 'display:none;',
+            name  : 'dataType',
+            value : record.data.dataType
+        });
+
+        var viewForm = Ext4.create('LABKEY.study.DataViewPropertiesPanel', {
+            record          : record,
+            extraItems      : formItems,
+            visibleFields   : {
+                author  : true,
+                status  : true,
+                datacutdate : true,
+                category    : true,
+                description : true,
+                visible     : true,
+                created     : true,
+                modified    : true
+            },
+            buttons     : [{
+                text : 'Save',
+                formBind: true,
+                handler : function(btn) {
+                    var form = btn.up('form').getForm();
+                    if (form.isValid())
+                    {
+                        Ext4.Ajax.request({
+                            url     : LABKEY.ActionURL.buildURL('study', 'editView.api'),
+                            method  : 'POST',
+                            params  : form.getValues(),
+                            success : function(){
+                                this.configureGrid();
+                                editWindow.close();
+                            },
+                            failure : function(response){
+                                Ext4.Msg.alert('Failure', Ext4.decode(response.responseText).exception);
+                            },
+                            scope : this
+                        });
+                    }
+                },
+                scope   : this
+            }]
+        });
+
+        var editWindow = Ext4.create('Ext.window.Window', {
+            width  : 450,
+            height : 425,
+            layout : 'fit',
+            cls    : 'data-window',
+            draggable : false,
+            modal  : true,
+            //title  : record.data.name,
+            defaults: {
+                border: false, frame: false
+            },
+            bodyPadding : 20,
+            items : viewForm,
+            scope : this
+        });
+
+        editWindow.show();
     }
 });
