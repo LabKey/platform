@@ -1444,6 +1444,7 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
     isSiteAdmin : false,
     isProjectAdmin : false,
     canInherit : true,
+    doneURL : LABKEY.ActionURL.buildURL('project', 'begin', LABKEY.ActionURL.getContainer()),
 
     // components, internal
     inheritedCheckbox : null,
@@ -1605,13 +1606,19 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
         {
             var html = [];
 
-            html.push(_link("view permissions report", LABKEY.ActionURL.buildURL('security', 'folderAccess', LABKEY.ActionURL.getContainer())));
-
+            html.push("<table style='padding-top:5px;padding-bottom:5px'>");
+            if (this.saveButton) // check if caller wants to omit the button
+            {
+                html.push("<tr><td colspan=2 id=savetoptoolbarTD></td></tr>");
+            }
+            html.push("<tr><td colspan=2>" + _link("view permissions report", LABKEY.ActionURL.buildURL('security', 'folderAccess', LABKEY.ActionURL.getContainer())) + "</td></tr>");
+            
             if (this.canInherit)
             {
                 var label = "Inherit permissions from " + (this.parentName || 'parent') + "<br>";
-                html.push("<table style='padding-top:5px;padding-bottom:5px'><tr><td id=checkboxTD></td><td>&nbsp;" + label + "</td></tr></table>");
+                html.push("<tr><td id=checkboxTD></td><td>&nbsp;" + label + "</td></tr>");
             }
+            html.push("</table>");
 
             html.push(['<table cellspacing=0 style="border-collapse:collapse;"><tr><td></td><th><h3>Roles<br><img src="' +Ext.BLANK_IMAGE_URL + '" width=300 height=1></h3></th><th><h3>Groups<br><img src="' +Ext.BLANK_IMAGE_URL + '" width=300 height=1></h3></th></tr>']);
             var spacerRow = ''; // '<tr class="spacerTR"><td><img src="' + Ext.BLANK_IMAGE_URL + '"></td></tr>';
@@ -1636,6 +1643,31 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
 
             if (this.saveButton) // check if caller wants to omit the button
             {
+                // add the save and finish, save, and cancel buttons to the top toolbar
+                var btnItems = [];
+                btnItems.push(new Ext.Button({text:'Save and Finish', handler: function(){
+                    this.save(false, function(){
+                        LABKEY.setSubmit(true);
+                        window.location = this.doneURL;
+                    });
+                }, scope:this}));
+                btnItems.push(new Ext.Button({text:'Save', handler:this.SaveButton_onClick, scope:this}));
+                btnItems.push(new Ext.Button({text:'Cancel', handler:this.cancel, scope:this}));
+                var btnPanel = new Ext.Panel({
+                    renderTo : 'savetoptoolbarTD',
+                    layout : 'table',
+                    layoutConfig: {columns: 3},
+                    defaults : {
+                        style : {
+                            padding: '0px 5px 0px 0px'
+                        }
+                    },
+                    border: false,
+                    frame : false,
+                    items : btnItems
+                });
+
+                // add just the save button to the button of the permissions panel
                 this.saveButton = new Ext.Button({text:'Save', handler:this.SaveButton_onClick, scope:this, style:{margin:'5px'}});
                 this.saveButton.render(this.body);
                 this.add(this.saveButton);
@@ -2018,5 +2050,11 @@ var PolicyEditor = Ext.extend(Ext.Panel, {
 
         Ext.MessageBox.alert("Error", (json.exception || response.statusText || 'save failed'));
         this.enable();
+    },
+
+    cancel : function()
+    {
+        LABKEY.setSubmit(true);
+        window.location = this.doneURL;
     }
 });

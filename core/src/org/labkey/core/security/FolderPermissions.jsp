@@ -102,25 +102,6 @@ var doneURL = <%=doneURL==null?"null":PageFlowUtil.jsString(doneURL.getLocalURIS
 
 function done()
 {
-    if (!policyEditor || !policyEditor.isDirty())
-        window.location = doneURL;
-    else
-    {
-        policyEditor.save(false, function(){
-            LABKEY.setSubmit(true);
-            window.location = doneURL;
-        });
-    }
-}
-
-function save()
-{
-    if (policyEditor)
-        policyEditor.save();
-}
-
-function cancel()
-{
     window.location = doneURL;
 }
 
@@ -128,24 +109,10 @@ var autoScroll = true;
 
 Ext.onReady(function(){
 
-    var btnItems = [];
-    btnItems.push(new Ext.Button({text: (isRoot ? 'Done' : 'Save and Finish'), handler:done}));
-    if (!isRoot) {
-        btnItems.push(new Ext.Button({text:'Save', handler:save}));
-        btnItems.push(new Ext.Button({text:'Cancel', handler:cancel}));
-    }
-    var btnPanel = new Ext.Panel({
-        renderTo : 'buttonDiv',
-        layout : 'table',
-        layoutConfig: {columns: 3},
-        defaults : {
-            style : {
-                padding: '0px 5px 0px 0px'
-            }
-        },
-        border: false,
-        frame : false,
-        items : btnItems
+    var doneBtn = new Ext.Button({
+        text: 'Done',
+        handler: done,
+        renderTo: 'buttonDiv'
     });
 
     for (var i=0 ; i<tabItems.length ; i++)
@@ -227,7 +194,8 @@ Ext.onReady(function(){
     {
         policyEditor = new PolicyEditor({cache:securityCache, border:false, isSiteAdmin:isSiteAdmin, isProjectAdmin:isProjectAdmin,
             canInherit:<%=(!c.isProject() && !c.isRoot())?"true":"false"%>,
-            resourceId:LABKEY.container.id});
+            resourceId:LABKEY.container.id,
+            doneURL:doneURL});
         policyEditor.render($('permissionsFrame'));
     });
     </script>

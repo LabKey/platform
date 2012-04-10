@@ -50,6 +50,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
@@ -2089,6 +2090,7 @@ public class WikiController extends SpringActionController
         private HString _title;
         private String _body;
         private Integer _parent = -1;
+        private Integer _pageVersionId;
         private String _rendererType;
         private String _pageId;
         private int _index = -1;
@@ -2154,6 +2156,18 @@ public class WikiController extends SpringActionController
         public void setParent(Integer parent)
         {
             _parent = parent;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public Integer getPageVersionId()
+        {
+            return null == _pageVersionId ? -1 : _pageVersionId;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setPageVersionId(Integer pageVersionId)
+        {
+            _pageVersionId = pageVersionId;
         }
 
         public int getParentId()
@@ -2340,6 +2354,7 @@ public class WikiController extends SpringActionController
             wikiProps.put("body", wikiversion.getBody()); //CONSIDER: do we really need to return the body here?
             wikiProps.put("rendererType", wikiversion.getRendererTypeEnum().name());
             wikiProps.put("parent", wiki.getParent());
+            wikiProps.put("pageVersionId", wiki.getPageVersionId());
             wikiProps.put("showAttachments", wiki.isShowAttachments());
 
             return wikiProps;
@@ -2354,6 +2369,10 @@ public class WikiController extends SpringActionController
             Wiki wikiUpdate = getWikiManager().getWikiByEntityId(getViewContext().getContainer(), form.getEntityId().toString());
             if (wikiUpdate == null)
                 throw new NotFoundException("Could not find the wiki page matching the passed id; if it was a valid page, it may have been deleted by another user.");
+
+            // issue 12960: if the wiki was updated by a different user, don't allow the save
+            if (!wikiUpdate.getPageVersionId().equals(form.getPageVersionId()))
+                throw new NotFoundException("This wiki version has already been updated by a different user.");            
 
             LOG.debug("Updating wiki " + wikiUpdate.getName());
 

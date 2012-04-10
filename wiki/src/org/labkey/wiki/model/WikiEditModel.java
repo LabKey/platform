@@ -106,6 +106,11 @@ public class WikiEditModel
         return null == _wiki ? -1 : _wiki.getParent();
     }
 
+    public int getPageVersionId()
+    {
+        return null == _wiki ? -1 : _wiki.getPageVersionId();
+    }
+
     public String getRendererType()
     {
         if (null == _wikiVersion)

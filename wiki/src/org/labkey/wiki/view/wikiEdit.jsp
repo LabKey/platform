@@ -51,6 +51,7 @@
         title: <%=model.getTitle()%>,
         body: <%=model.getBody()%>,
         parent: <%=model.getParent()%>,
+        pageVersionId: <%=model.getPageVersionId()%>,
         rendererType: <%=model.getRendererType()%>,
         webPartId: <%=model.getWebPartId()%>,
         showAttachments: <%=model.isShowAttachments()%>,
