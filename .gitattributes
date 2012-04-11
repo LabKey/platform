@@ -618,7 +618,9 @@ core/src/org/labkey/core/admin/folderAliases.jsp -text
 core/src/org/labkey/core/admin/folderType.jsp -text
 core/src/org/labkey/core/admin/fullTextSearch.jsp -text
 core/src/org/labkey/core/admin/importFolder.jsp -text
+core/src/org/labkey/core/admin/importer/FolderTypeImporterFactory.java -text
 core/src/org/labkey/core/admin/importer/PageImporterFactory.java -text
+core/src/org/labkey/core/admin/importer/SearchSettingsImporterFactory.java -text
 core/src/org/labkey/core/admin/installComplete.jsp -text
 core/src/org/labkey/core/admin/logging.jsp -text
 core/src/org/labkey/core/admin/lookAndFeelProperties.jsp -text
@@ -648,10 +650,12 @@ core/src/org/labkey/core/admin/view/folderSettingsHeader.jsp -text
 core/src/org/labkey/core/admin/webTheme.jsp -text
 core/src/org/labkey/core/admin/writer/FolderExportContext.java -text
 core/src/org/labkey/core/admin/writer/FolderSerializationRegistryImpl.java -text
+core/src/org/labkey/core/admin/writer/FolderTypeWriterFactory.java -text
 core/src/org/labkey/core/admin/writer/FolderWriterImpl.java -text
 core/src/org/labkey/core/admin/writer/FolderXmlWriter.java -text
 core/src/org/labkey/core/admin/writer/InternalFolderWriter.java -text
 core/src/org/labkey/core/admin/writer/PageWriterFactory.java -text
+core/src/org/labkey/core/admin/writer/SearchSettingsWriterFactory.java -text
 core/src/org/labkey/core/analytics/AnalyticsController.java -text
 core/src/org/labkey/core/analytics/AnalyticsServiceImpl.java -text
 core/src/org/labkey/core/analytics/analyticsSettings.jsp -text
@@ -2050,6 +2054,8 @@ query/src/org/labkey/query/CustomViewUtil.java -text
 query/src/org/labkey/query/CustomViewWriter.java -text
 query/src/org/labkey/query/CustomViewXmlReader.java -text
 query/src/org/labkey/query/ExternalSchema.java -text
+query/src/org/labkey/query/ExternalSchemaDefImporterFactory.java -text
+query/src/org/labkey/query/ExternalSchemaDefWriterFactory.java -text
 query/src/org/labkey/query/ExternalSchemaDocumentProvider.java -text
 query/src/org/labkey/query/ModuleCustomQueryDefinition.java -text
 query/src/org/labkey/query/ModuleCustomView.java -text

@@ -117,10 +117,14 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.core.admin.ActionsTsvWriter;
 import org.labkey.core.admin.AdminController;
+import org.labkey.core.admin.importer.FolderTypeImporterFactory;
 import org.labkey.core.admin.importer.PageImporterFactory;
+import org.labkey.core.admin.importer.SearchSettingsImporterFactory;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.admin.writer.FolderSerializationRegistryImpl;
+import org.labkey.core.admin.writer.FolderTypeWriterFactory;
 import org.labkey.core.admin.writer.PageWriterFactory;
+import org.labkey.core.admin.writer.SearchSettingsWriterFactory;
 import org.labkey.core.analytics.AnalyticsController;
 import org.labkey.core.analytics.AnalyticsServiceImpl;
 import org.labkey.core.attachment.AttachmentServiceImpl;
@@ -520,6 +524,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         FolderSerializationRegistry fsr = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
         if (null != fsr)
         {
+            fsr.addFactories(new FolderTypeWriterFactory(), new FolderTypeImporterFactory());
+            fsr.addFactories(new SearchSettingsWriterFactory(), new SearchSettingsImporterFactory());
             fsr.addFactories(new PageWriterFactory(), new PageImporterFactory());
         }
     }

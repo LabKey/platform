@@ -60,7 +60,7 @@ import java.util.Map;
 
 /*
     Base reader for de-serializing query custom view XML files (creating using queryCustomView.xsd) into a form that's
-    compatible with CustomView.  This class is used by study import and simple modules.  
+    compatible with CustomView.  This class is used by folder import and simple modules.  
  */
 public class CustomViewXmlReader
 {
