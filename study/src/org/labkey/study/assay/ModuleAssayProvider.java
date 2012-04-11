@@ -523,13 +523,14 @@ public class ModuleAssayProvider extends TsvAssayProvider
     }
 
     @Override
-    public List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope, ScriptType type)
+    public List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope)
     {
-        List<File> validationScripts = new ArrayList<File>();
+        // Start with the standard set
+        List<File> validationScripts = new ArrayList<File>(super.getValidationAndAnalysisScripts(protocol, scope));
 
         if (scope == Scope.ASSAY_TYPE || scope == Scope.ALL)
         {
-            // lazily get the validation scripts
+            // lazily get the validation scripts defined in the module
             Resource scriptDir = module.getModuleResolver().lookup(basePath.getPath().append("scripts"));
 
             if (scriptDir != null && scriptDir.exists())
@@ -556,7 +557,6 @@ public class ModuleAssayProvider extends TsvAssayProvider
                 });
             }
         }
-        validationScripts.addAll(super.getValidationAndAnalysisScripts(protocol, scope, type));
         return validationScripts;
     }
 

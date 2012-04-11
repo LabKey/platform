@@ -24,7 +24,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.defaults.SetDefaultValuesAssayAction;
-import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
@@ -48,7 +47,6 @@ import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTContainer;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.qc.TransformDataHandler;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -205,14 +203,12 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         }
 
         // validation scripts
-        List<File> scripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_DEF, AssayProvider.ScriptType.VALIDATION);
-        if (scripts.size() > 1)
-            throw new IllegalStateException("Only a single validation script per Assay Definition is available for this release");
+        List<File> scripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_DEF);
 
         if (scripts.size() == 1)
             result.setProtocolValidationScript(scripts.get(0).getAbsolutePath());
 
-        List<File> typeScripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_TYPE, AssayProvider.ScriptType.VALIDATION);
+        List<File> typeScripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_TYPE);
         if (!typeScripts.isEmpty())
         {
             List<String> scriptNames = new ArrayList<String>();
@@ -227,12 +223,14 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         result.setBackgroundUpload(provider.isBackgroundUpload(protocol));
 
         // data transform scripts
-        List<File> transformScripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_DEF, AssayProvider.ScriptType.TRANSFORM);
-        if (transformScripts.size() > 1)
-            throw new IllegalStateException("Only a single data transform script per Assay Definition is available for this release");
+        List<File> transformScripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_DEF);
 
-        if (transformScripts.size() == 1)
-            result.setProtocolTransformScript(transformScripts.get(0).getAbsolutePath());
+        List<String> transformScriptStrings = new ArrayList<String>();
+        for (File transformScript : transformScripts)
+        {
+            transformScriptStrings.add(transformScript.getAbsolutePath());
+        }
+        result.setProtocolTransformScripts(transformScriptStrings);
 
         ObjectProperty autoCopyValue = protocol.getObjectProperties().get(AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI);
         if (autoCopyValue != null)
@@ -246,8 +244,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
 
         ExpData data = ExperimentService.get().createData(getContainer(), provider.getDataType());
         ExperimentDataHandler handler = data.findDataHandler();
-        result.setAllowValidationScript(provider.createDataExchangeHandler() != null);
-        result.setAllowTransformationScript(handler instanceof TransformDataHandler);
+        result.setAllowTransformationScript(provider.createDataExchangeHandler() != null);
 
         return result;
     }
@@ -394,17 +391,22 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
 
                 // qc and data transform scripts
                 List<File> validationScripts = Collections.emptyList();
-                List<File> transformScripts = Collections.emptyList();
+                List<File> transformScripts = new ArrayList<File>();
 
                 if (!StringUtils.isBlank(assay.getProtocolValidationScript()))
                     validationScripts = Collections.singletonList(new File(assay.getProtocolValidationScript()));
 
-                provider.setValidationAndAnalysisScripts(protocol, validationScripts, AssayProvider.ScriptType.VALIDATION);
+                provider.setValidationAndAnalysisScripts(protocol, validationScripts);
 
-                if (!StringUtils.isBlank(assay.getProtocolTransformScript()))
-                    transformScripts = Collections.singletonList(new File(assay.getProtocolTransformScript()));
+                for (String script : assay.getProtocolTransformScripts())
+                {
+                    if (!StringUtils.isBlank(script))
+                    {
+                        transformScripts.add(new File(script));
+                    }
+                }
 
-                provider.setValidationAndAnalysisScripts(protocol, transformScripts, AssayProvider.ScriptType.TRANSFORM);
+                provider.setValidationAndAnalysisScripts(protocol, transformScripts);
                 provider.setSaveScriptFiles(protocol, assay.isSaveScriptFiles());
                 provider.setEditableResults(protocol, assay.isEditableResults());
                 provider.setEditableRuns(protocol, assay.isEditableRuns());

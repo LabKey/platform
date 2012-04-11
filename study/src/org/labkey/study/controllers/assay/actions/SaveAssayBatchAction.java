@@ -40,7 +40,7 @@ import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.xar.LsidUtils;
-import org.labkey.api.qc.DataValidator;
+import org.labkey.api.qc.DataTransformer;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -305,9 +305,9 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         if (tsvData != null)
         {
             // programmatic qc validation
-            DataValidator dataValidator = provider.getRunCreator().getDataValidator();
-            if (dataValidator != null)
-                dataValidator.validate(new ModuleRunUploadContext(getViewContext(), protocol.getRowId(), runJsonObject, rawData), run);
+            DataTransformer dataTransformer = provider.getRunCreator().getDataTransformer();
+            if (dataTransformer != null)
+                dataTransformer.transformAndValidate(new ModuleRunUploadContext(getViewContext(), protocol.getRowId(), runJsonObject, rawData), run);
 
             TsvDataHandler dataHandler = new TsvDataHandler();
             dataHandler.setAllowEmptyData(true);
