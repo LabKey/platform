@@ -543,28 +543,38 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                 @Override
                 protected void handleDrop(FlexTable sourceTable, FlexTable targetTable, int sourceRow, int targetRow)
                 {
-                    BoundTextBox sourceTextBox = getTransformScriptTextBox(sourceRow);
-                    BoundTextBox targetTextBox = getTransformScriptTextBox(targetRow);
+                    // If we're dragging from the top of the table to the bottom, shift everything between up one row
+                    for (int i = sourceRow; i < targetRow; i++)
+                    {
+                        BoundTextBox box1 = getTransformScriptTextBox(i);
+                        BoundTextBox box2 = getTransformScriptTextBox(i + 1);
 
-                    _transformScriptTable.setWidget(targetRow, TRANSFORM_SCRIPT_PATH_COLUMN_INDEX, sourceTextBox);
-                    _transformScriptTable.setWidget(sourceRow, TRANSFORM_SCRIPT_PATH_COLUMN_INDEX, targetTextBox);
+                        _transformScriptTable.setWidget(i + 1, TRANSFORM_SCRIPT_PATH_COLUMN_INDEX, box1);
+                        _transformScriptTable.setWidget(i, TRANSFORM_SCRIPT_PATH_COLUMN_INDEX, box2);
+                    }
+
+                    // If we're dragging from the bottom of the table to the top, shift everything between down one row
+                    for (int i = sourceRow; i > targetRow && i > 0; i--)
+                    {
+                        BoundTextBox box1 = getTransformScriptTextBox(i);
+                        BoundTextBox box2 = getTransformScriptTextBox(i - 1);
+
+                        _transformScriptTable.setWidget(i - 1, TRANSFORM_SCRIPT_PATH_COLUMN_INDEX, box1);
+                        _transformScriptTable.setWidget(i, TRANSFORM_SCRIPT_PATH_COLUMN_INDEX, box2);
+                    }
+
                     setDirty(true);
                 }
             };
             tableRowDragController.registerDropController(controller);
 
             // validation scripts defined at the type or global level are read only
-            for (String path : assay.getValidationScripts())
+            if (!assay.getModuleTransformScripts().isEmpty())
             {
-                TextBox text = new TextBox();
-                text.setText(path);
-                text.setReadOnly(true);
-                text.setVisibleLength(79);
-
                 FlowPanel validationPanel = new FlowPanel();
-                validationPanel.add(new InlineLabel("Validation Script"));
-                validationPanel.add(new HelpPopup("Validation Script", "<div>The full path to the validation script file. " +
-                        "Validation scripts run before the assay data is imported and can reject invalid data.</div>" +
+                validationPanel.add(new InlineLabel("Module-Provided Scripts"));
+                validationPanel.add(new HelpPopup("Module-Provided Scripts", "<div>The full path to the script files. " +
+                        "These scripts are part of the assay type and cannot be removed. They will run after any custom scripts configured above.</div>" +
                         "<br><div>The extension of the script file " +
                         "identifies the script engine that will be used to run the validation script. For example, " +
                         "a script named test.pl will be run with the Perl scripting engine. The scripting engine must be " +
@@ -572,7 +582,15 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                         "the <a href=\"https://www.labkey.org/wiki/home/Documentation/page.view?name=configureScripting\" target=\"_blank\">help documentation</a>.</div>"));
                 table.setWidget(row, 0, validationPanel);
                 table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
-                table.setWidget(row++, 1, text);
+
+                VerticalPanel moduleScriptPanel = new VerticalPanel();
+                for (String path : assay.getModuleTransformScripts())
+                {
+                    moduleScriptPanel.add(new Label(path));
+                }
+
+                table.setWidget(row++, 1, moduleScriptPanel);
+
             }
 
             // add a checkbox to enter debug mode

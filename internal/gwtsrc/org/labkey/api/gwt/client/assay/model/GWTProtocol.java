@@ -45,9 +45,10 @@ public class GWTProtocol implements IsSerializable
     private List<String> _availablePlateTemplates;
 
     private String _selectedPlateTemplate;
-    private List<String> _validationScripts = new ArrayList<String>();
-    private String _protocolValidationScript;
-    private List<String> _protocolTransformScripts;
+    /** Scripts defined in the module itself, associated with the assay provider */
+    private List<String> _moduleTransformScripts = new ArrayList<String>();
+    /** Scripts defined in the assay definition */
+    private List<String> _protocolTransformScripts = new ArrayList<String>();
     private boolean _allowTransformationScript;
     private GWTContainer _autoCopyTargetContainer;
     private boolean _saveScriptFiles;
@@ -140,24 +141,14 @@ public class GWTProtocol implements IsSerializable
         _selectedPlateTemplate = selectedPlateTemplate;
     }
 
-    public List<String> getValidationScripts()
+    public List<String> getModuleTransformScripts()
     {
-        return _validationScripts;
+        return _moduleTransformScripts;
     }
 
-    public void setValidationScripts(List<String> validationScripts)
+    public void setModuleTransformScripts(List<String> moduleTransformScripts)
     {
-        _validationScripts = validationScripts;
-    }
-
-    public String getProtocolValidationScript()
-    {
-        return _protocolValidationScript;
-    }
-
-    public void setProtocolValidationScript(String protocolValidationScript)
-    {
-        _protocolValidationScript = protocolValidationScript.trim();
+        _moduleTransformScripts = moduleTransformScripts;
     }
 
     public boolean isAllowTransformationScript()
