@@ -69,7 +69,6 @@ import org.labkey.study.StudySchema;
 import java.io.File;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -202,12 +201,6 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             setPlateTemplateList(provider, result);
         }
 
-        // validation scripts
-        List<File> scripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_DEF);
-
-        if (scripts.size() == 1)
-            result.setProtocolValidationScript(scripts.get(0).getAbsolutePath());
-
         List<File> typeScripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_TYPE);
         if (!typeScripts.isEmpty())
         {
@@ -215,7 +208,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             for (File script : typeScripts)
                 scriptNames.add(script.getAbsolutePath());
 
-            result.setValidationScripts(scriptNames);
+            result.setModuleTransformScripts(scriptNames);
         }
         result.setSaveScriptFiles(provider.isSaveScriptFiles(protocol));
         result.setEditableResults(provider.isEditableResults(protocol));
@@ -389,15 +382,8 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                         throw new AssayException("The selected plate template could not be found.  Perhaps it was deleted by another user?");
                 }
 
-                // qc and data transform scripts
-                List<File> validationScripts = Collections.emptyList();
+                // data transform scripts
                 List<File> transformScripts = new ArrayList<File>();
-
-                if (!StringUtils.isBlank(assay.getProtocolValidationScript()))
-                    validationScripts = Collections.singletonList(new File(assay.getProtocolValidationScript()));
-
-                provider.setValidationAndAnalysisScripts(protocol, validationScripts);
-
                 for (String script : assay.getProtocolTransformScripts())
                 {
                     if (!StringUtils.isBlank(script))
@@ -405,8 +391,8 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                         transformScripts.add(new File(script));
                     }
                 }
-
                 provider.setValidationAndAnalysisScripts(protocol, transformScripts);
+
                 provider.setSaveScriptFiles(protocol, assay.isSaveScriptFiles());
                 provider.setEditableResults(protocol, assay.isEditableResults());
                 provider.setEditableRuns(protocol, assay.isEditableRuns());
