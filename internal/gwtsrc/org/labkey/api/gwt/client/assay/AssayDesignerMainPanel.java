@@ -19,10 +19,11 @@ package org.labkey.api.gwt.client.assay;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
 import com.google.gwt.event.logical.shared.ValueChangeHandler;
 import com.google.gwt.event.shared.HandlerRegistration;
-import com.google.gwt.http.client.URL;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
@@ -31,10 +32,12 @@ import com.google.gwt.user.client.ui.FlexTable;
 import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HorizontalPanel;
+import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.InlineHTML;
 import com.google.gwt.user.client.ui.InlineLabel;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
+import com.google.gwt.user.client.ui.PushButton;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
@@ -49,6 +52,7 @@ import org.labkey.api.gwt.client.ui.BoundTextAreaBox;
 import org.labkey.api.gwt.client.ui.BoundTextBox;
 import org.labkey.api.gwt.client.ui.DirtyCallback;
 import org.labkey.api.gwt.client.ui.HelpPopup;
+import org.labkey.api.gwt.client.ui.ImageButton;
 import org.labkey.api.gwt.client.ui.LinkButton;
 import org.labkey.api.gwt.client.ui.PropertiesEditor;
 import org.labkey.api.gwt.client.ui.SaveButtonBar;
@@ -58,6 +62,8 @@ import org.labkey.api.gwt.client.ui.WidgetUpdatable;
 import org.labkey.api.gwt.client.ui.WindowUtil;
 import org.labkey.api.gwt.client.util.BooleanProperty;
 import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
+import org.labkey.api.gwt.client.util.FlexTableRowDragController;
+import org.labkey.api.gwt.client.util.FlexTableRowDropController;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.ServiceUtil;
 import org.labkey.api.gwt.client.util.StringUtils;
@@ -96,10 +102,13 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
     private BooleanProperty _editableRuns = new BooleanProperty(false);
     private BooleanProperty _editableResults = new BooleanProperty(false);
     private BooleanProperty _backgroundUpload = new BooleanProperty(false);
-    private BoundTextBox _transformFile;
-    private BoundTextBox _validationFile;
+    private FlexTable _transformScriptTable;
     private boolean _allowSpacesInPath;
     private String _designerURL;
+
+    private static final int TRANSFORM_SCRIPT_PATH_COLUMN_INDEX = 0;
+    private static final int TRANSFORM_SCRIPT_DRAG_LABEL_COLUMN_INDEX = 2;
+    private static final int TRANSFORM_SCRIPT_REMOVE_BUTTON_COLUMN_INDEX = 1;
 
     public AssayDesignerMainPanel(RootPanel rootPanel)
     {
@@ -473,38 +482,76 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
             table.setWidget(row++, 1, picker);
         }
 
-        if (assay.isAllowValidationScript())
+        if (assay.isAllowTransformationScript())
         {
+            _transformScriptTable = new FlexTable();
+            final FlexTableRowDragController tableRowDragController = new FlexTableRowDragController(_rootPanel);
+            
+            for (String transformScriptPath : assay.getProtocolTransformScripts())
+            {
+                addTransformScriptToTable(assay, transformScriptPath, tableRowDragController);
+            }
+
+            FlowPanel transformNamePanel = new FlowPanel();
+            transformNamePanel.add(new InlineHTML("Transform Scripts"));
+            transformNamePanel.add(new HelpPopup("Transform Scripts", "<div>The full path to the transform script file. " +
+                    "Transform scripts run before the assay data is imported and can reshape the data file to match " +
+                    "the expected import format. " +
+                    "For help writing a transform script refer to the " +
+                    "<a href=\"https://www.labkey.org/wiki/home/Documentation/page.view?name=programmaticQC\" target=\"_blank\">Programmatic Quality Control & Transformations</a> guide.</div>" +
+                    "<br><div>The extension of the script file " +
+                    "identifies the script engine that will be used to run the validation script. For example, " +
+                    "a script named test.pl will be run with the Perl scripting engine. The scripting engine must be " +
+                    "configured on the Views and Scripting page in the Admin Console. For additional information refer to " +
+                    "the <a href=\"https://www.labkey.org/wiki/home/Documentation/page.view?name=configureScripting\" target=\"_blank\">help documentation</a>.</div>"));
+            table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
+            table.setWidget(row, 0, transformNamePanel);
+
+            VerticalPanel transformPanel = new VerticalPanel();
+            transformPanel.add(_transformScriptTable);
+
+            FlowPanel buttonPanel = new FlowPanel();
             if (assay.isAllowTransformationScript())
             {
-                _transformFile = new ValidatorTextBox("Transform Script", "AssayDesignerTransformScript", assay.getProtocolTransformScript(), new WidgetUpdatable()
+                ImageButton addScriptButton = new ImageButton("Add Script");
+                addScriptButton.addClickHandler(new ClickHandler()
                 {
-                    public void update(Widget widget)
+                    public void onClick(ClickEvent event)
                     {
-                        if (!((TextBox) widget).getText().equals(StringUtils.trimToEmpty(assay.getProtocolTransformScript())))
-                        {
-                            setDirty(true);
-                            assay.setProtocolTransformScript(StringUtils.trimToEmpty(((TextBox)widget).getText()));
-                        }
+                        addTransformScriptToTable(assay, null, tableRowDragController);
                     }
-                }, this, _debugScriptFiles, _allowSpacesInPath);
-                _transformFile.getBox().setVisibleLength(79);
-                FlowPanel transformNamePanel = new FlowPanel();
-                transformNamePanel.add(new InlineHTML("Transform Script"));
-                transformNamePanel.add(new HelpPopup("Transform Script", "<div>The full path to the transform script file. " +
-                        "Transform scripts run before the assay data is imported and can reshape the data file to match " +
-                        "the expected import format. " +
-                        "For help writing a transform script refer to the " +
-                        "<a href=\"https://www.labkey.org/wiki/home/Documentation/page.view?name=programmaticQC\" target=\"_blank\">Programmatic Quality Control & Transformations</a> guide.</div>" +
-                        "<br><div>The extension of the script file " +
-                        "identifies the script engine that will be used to run the validation script. For example, " +
-                        "a script named test.pl will be run with the Perl scripting engine. The scripting engine must be " +
-                        "configured on the Views and Scripting page in the Admin Console. For additional information refer to " +
-                        "the <a href=\"https://www.labkey.org/wiki/home/Documentation/page.view?name=configureScripting\" target=\"_blank\">help documentation</a>.</div>"));
-                table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
-                table.setWidget(row, 0, transformNamePanel);
-                table.setWidget(row++, 1, _transformFile);
+                });
+                buttonPanel.add(addScriptButton);
             }
+            // add a download sample data button if the protocol already exists
+            if (_protocolId != null)
+            {
+                String url = PropertyUtil.getRelativeURL("downloadSampleQCData", "assay");
+                url += "?rowId=" + _protocolId;
+
+                buttonPanel.add(new LinkButton("Download Test Data", url));
+            }
+            if (buttonPanel.getWidgetCount() > 0)
+            {
+                transformPanel.add(buttonPanel);
+            }
+
+            table.setWidget(row++, 1, transformPanel);
+
+            FlexTableRowDropController controller = new FlexTableRowDropController(_transformScriptTable)
+            {
+                @Override
+                protected void handleDrop(FlexTable sourceTable, FlexTable targetTable, int sourceRow, int targetRow)
+                {
+                    BoundTextBox sourceTextBox = getTransformScriptTextBox(sourceRow);
+                    BoundTextBox targetTextBox = getTransformScriptTextBox(targetRow);
+
+                    _transformScriptTable.setWidget(targetRow, TRANSFORM_SCRIPT_PATH_COLUMN_INDEX, sourceTextBox);
+                    _transformScriptTable.setWidget(sourceRow, TRANSFORM_SCRIPT_PATH_COLUMN_INDEX, targetTextBox);
+                    setDirty(true);
+                }
+            };
+            tableRowDragController.registerDropController(controller);
 
             // validation scripts defined at the type or global level are read only
             for (String path : assay.getValidationScripts())
@@ -528,54 +575,9 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                 table.setWidget(row++, 1, text);
             }
 
-            _validationFile = new ValidatorTextBox("Validation Script", "AssayDesignerQCScript", assay.getProtocolValidationScript(), new WidgetUpdatable()
-            {
-                public void update(Widget widget)
-                {
-                    if (!((TextBox) widget).getText().equals(StringUtils.trimToEmpty(assay.getProtocolValidationScript())))
-                    {
-                        setDirty(true);
-                        assay.setProtocolValidationScript(StringUtils.trimToEmpty(((TextBox)widget).getText()));
-                    }
-                }
-            }, this, _debugScriptFiles, _allowSpacesInPath);
-            _validationFile.getBox().setVisibleLength(79);
-
-            FlowPanel validationPanel = new FlowPanel();
-            validationPanel.add(new InlineHTML("Validation Script"));
-            validationPanel.add(new HelpPopup("Validation Script", "<div>The full path to the validation script file. " +
-                    "Validation scripts run before the assay data is imported and can reject invalid data.</div>" +
-                    "<br><div>The extension of the script file " +
-                    "identifies the script engine that will be used to run the validation script. For example, " +
-                    "a script named test.pl will be run with the Perl scripting engine. The scripting engine must be " +
-                    "configured on the Views and Scripting page in the Admin Console. For additional information refer to " +
-                    "the <a href=\"https://www.labkey.org/wiki/home/Documentation/page.view?name=configureScripting\" target=\"_blank\">help documentation</a>.</div>"));
-            table.setWidget(row, 0, validationPanel);
-            table.getFlexCellFormatter().setStyleName(row, 0, "labkey-form-label");
-            table.setWidget(row, 1, _validationFile);
-
-            // add a download sample data button if the protocol already exists
-            if (_protocolId != null)
-            {
-                String url = PropertyUtil.getRelativeURL("downloadSampleQCData", "assay");
-                url += "?rowId=" + _protocolId;
-
-                LinkButton download = new LinkButton("Download Test Data", url);
-                table.setWidget(row, 2, download);
-            }
-            row++;
-
             // add a checkbox to enter debug mode
             _debugScriptFiles.setBool(assay.isSaveScriptFiles());
             BoundCheckBox debugScriptFilesCheckBox = new BoundCheckBox("id_debug_script", "debugScript", _debugScriptFiles, this);
-            debugScriptFilesCheckBox.addValueChangeHandler(new ValueChangeHandler<Boolean>(){
-                public void onValueChange(ValueChangeEvent<Boolean> event)
-                {
-                    _transformFile.checkValid();
-                    _validationFile.checkValid();
-                }
-            });
-            _validationFile.getBox().setVisibleLength(79);
             FlowPanel debugPanel = new FlowPanel();
             debugPanel.add(new InlineHTML("Save Script Data"));
             debugPanel.add(new HelpPopup("Save Script Data", "Typically transform and validation script data files are deleted on script completion. " +
@@ -623,6 +625,81 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         }
 
         return table;
+    }
+
+    private void addTransformScriptToTable(final GWTProtocol assay, String transformScriptPath, final FlexTableRowDragController tableRowDragController)
+    {
+        int row = _transformScriptTable.getRowCount();
+        BoundTextBox textBox = new ValidatorTextBox("Transform Script", "AssayDesignerTransformScript" + row, transformScriptPath, new WidgetUpdatable()
+        {
+            public void update(Widget widget)
+            {
+                syncTransformScripts(assay);
+            }
+        }, this, _debugScriptFiles, _allowSpacesInPath);
+        textBox.getBox().setVisibleLength(79);
+
+        final PushButton deleteButton = PropertiesEditor.getDeleteButton("removeTransformScript" + row, null);
+        deleteButton.setTitle("Click to remove");
+        deleteButton.addClickHandler(new ClickHandler()
+        {
+            public void onClick(ClickEvent event)
+            {
+                for (int i = 0; i < _transformScriptTable.getRowCount(); i++)
+                {
+                    if (_transformScriptTable.getWidget(i, TRANSFORM_SCRIPT_REMOVE_BUTTON_COLUMN_INDEX) == deleteButton)
+                    {
+                        _transformScriptTable.removeRow(i);
+                        syncTransformScripts(assay);
+
+                        setRemoveButtonVisibility(_transformScriptTable, tableRowDragController);
+                    }
+                }
+            }
+        });
+        _transformScriptTable.setWidget(row, TRANSFORM_SCRIPT_PATH_COLUMN_INDEX, textBox);
+        Image dragIcon = new Image(PropertyUtil.getContextPath() + "/_images/partupdown.png");
+        dragIcon.setTitle("Drag and drop to reorder");
+        _transformScriptTable.setWidget(row, TRANSFORM_SCRIPT_DRAG_LABEL_COLUMN_INDEX, dragIcon);
+        _transformScriptTable.setWidget(row, TRANSFORM_SCRIPT_REMOVE_BUTTON_COLUMN_INDEX, deleteButton);
+
+        setRemoveButtonVisibility(_transformScriptTable, tableRowDragController);
+    }
+
+    private void setRemoveButtonVisibility(FlexTable scriptTable, FlexTableRowDragController tableRowDragController)
+    {
+        boolean multiple = scriptTable.getRowCount() > 1;
+        for (int row = 0; row < scriptTable.getRowCount(); row++)
+        {
+            scriptTable.getWidget(row, TRANSFORM_SCRIPT_DRAG_LABEL_COLUMN_INDEX).setVisible(multiple);
+            if (multiple)
+            {
+                tableRowDragController.makeDraggable(scriptTable.getWidget(row, TRANSFORM_SCRIPT_DRAG_LABEL_COLUMN_INDEX));
+            }
+            else
+            {
+                tableRowDragController.makeDraggable(scriptTable.getWidget(row, TRANSFORM_SCRIPT_DRAG_LABEL_COLUMN_INDEX));
+            }
+        }
+    }
+
+    private void syncTransformScripts(GWTProtocol assay)
+    {
+        List<String> transformScriptPaths = new ArrayList<String>();
+        for (int row = 0; row < _transformScriptTable.getRowCount(); row++)
+        {
+            BoundTextBox textBox = getTransformScriptTextBox(row);
+            String path = StringUtils.trimToNull(textBox.getBox().getText());
+            if (path != null)
+            {
+                transformScriptPaths.add(path);
+            }
+        }
+        if (!transformScriptPaths.equals(assay.getProtocolTransformScripts()))
+        {
+            setDirty(true);
+            assay.setProtocolTransformScripts(transformScriptPaths);
+        }
     }
 
     private boolean hasAutoCopyTargets()
@@ -678,10 +755,17 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         if (_isPlateBased && _assay.getSelectedPlateTemplate() == null)
             errors.add("You must select a plate template from the list, or create one first.");
 
-        if (_transformFile != null && !_transformFile.checkValid())
-            errors.add(_transformFile.validate());
-        if (_validationFile != null && !_validationFile.checkValid())
-            errors.add(_validationFile.validate());
+        if (_transformScriptTable != null)
+        {
+            for (int row = 0; row < _transformScriptTable.getRowCount(); row++)
+            {
+                BoundTextBox boundTextBox = getTransformScriptTextBox(row);
+                if (!boundTextBox.checkValid())
+                {
+                    errors.add(boundTextBox.validate());
+                }
+            }
+        }
 
         if (errors.size() > 0)
         {
@@ -697,6 +781,11 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         }
         else
             return true;
+    }
+
+    private BoundTextBox getTransformScriptTextBox(int row)
+    {
+        return (BoundTextBox) _transformScriptTable.getWidget(row, TRANSFORM_SCRIPT_PATH_COLUMN_INDEX);
     }
 
     public String getCurrentURL()

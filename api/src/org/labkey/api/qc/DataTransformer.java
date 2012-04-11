@@ -27,5 +27,5 @@ import org.labkey.api.query.ValidationException;
  */
 public interface DataTransformer
 {
-    TransformResult transform(AssayRunUploadContext context, ExpRun run) throws ValidationException;
+    TransformResult transformAndValidate(AssayRunUploadContext context, ExpRun run) throws ValidationException;
 }

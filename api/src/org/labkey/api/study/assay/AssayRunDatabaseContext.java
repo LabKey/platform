@@ -35,7 +35,6 @@ import org.labkey.api.view.ActionURL;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -213,5 +212,11 @@ public class AssayRunDatabaseContext<ProviderType extends AssayProvider> impleme
     public TransformResult getTransformResult()
     {
         return DefaultTransformResult.createEmptyResult();
+    }
+
+    @Override
+    public void setTransformResult(TransformResult result)
+    {
+        throw new UnsupportedOperationException();
     }
 }

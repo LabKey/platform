@@ -16,6 +16,8 @@
 
 package org.labkey.api.study.assay;
 
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.qc.*;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -41,114 +43,33 @@ import java.util.HashMap;
  * User: klum
  * Date: Sep 22, 2009
  */
-public class DefaultDataTransformer implements DataTransformer, DataValidator
+public class DefaultDataTransformer implements DataTransformer
 {
     public static final String RUN_INFO_REPLACEMENT = "runInfo";
     public static final String SRC_DIR_REPLACEMENT = "srcDirectory";
     public static final String R_JESSIONID_REPLACEMENT = "rLabkeySessionId";
 
-    public void validate(AssayRunUploadContext context, ExpRun run) throws ValidationException
-    {
-        boolean isDefault = isDefault(context.getProtocol());
-        for (File scriptFile : context.getProvider().getValidationAndAnalysisScripts(context.getProtocol(), AssayProvider.Scope.ALL, AssayProvider.ScriptType.VALIDATION))
-        {
-            // read the contents of the script file
-            if (scriptFile.exists())
-            {
-                BufferedReader br = null;
-                StringBuffer sb = new StringBuffer();
-                try {
-                    br = new BufferedReader(new FileReader(scriptFile));
-                    String l;
-                    while ((l = br.readLine()) != null)
-                        sb.append(l).append('\n');
-                }
-                catch (Exception e)
-                {
-                    throw new ValidationException(e.getMessage());
-                }
-                finally
-                {
-                    if (br != null)
-                        try {br.close();} catch(IOException ioe) {}
-                }
-
-                ScriptEngine engine = ServiceRegistry.get().getService(ScriptEngineManager.class).getEngineByExtension(FileUtil.getExtension(scriptFile));
-                if (engine != null)
-                {
-                    File scriptDir = getScriptDir(context.getProtocol(), scriptFile, isDefault);
-                    // issue 13643: ensure script dir is initially empty
-                    FileUtil.deleteDirectoryContents(scriptDir);
-                    try
-                    {
-                        DataExchangeHandler dataHandler = context.getProvider().createDataExchangeHandler();
-                        if (dataHandler != null)
-                        {
-                            Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
-                            String script = sb.toString();
-                            File runInfo = dataHandler.createValidationRunInfo(context, run, scriptDir);
-
-                            bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, scriptDir.getAbsolutePath());
-                            bindings.put(ExternalScriptEngine.SCRIPT_PATH, scriptFile.getAbsolutePath());
-
-                            Map<String, String> paramMap = new HashMap<String, String>();
-
-                            paramMap.put(RUN_INFO_REPLACEMENT, runInfo.getAbsolutePath().replaceAll("\\\\", "/"));
-                            File srcDir = scriptFile.getParentFile();
-                            if (srcDir != null && srcDir.exists())
-                                paramMap.put(SRC_DIR_REPLACEMENT, srcDir.getAbsolutePath().replaceAll("\\\\", "/"));
-                            paramMap.put(R_JESSIONID_REPLACEMENT, getSessionInfo(context));
-
-                            bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, paramMap);
-
-                            Object output = engine.eval(script);
-
-                            // process any output from the validation script
-                            dataHandler.processValidationOutput(runInfo);
-                        }
-                    }
-                    catch (ValidationException e)
-                    {
-                        throw e;
-                    }
-                    catch (Exception e)
-                    {
-                        throw new ValidationException(e.getMessage());
-                    }
-                    finally
-                    {
-                        if (!isDefault)
-                        {
-                            // clean up temp directory
-                            if (FileUtil.deleteDir(scriptDir))
-                            {
-                                File parent = scriptDir.getParentFile();
-                                if (parent != null)
-                                    parent.delete();
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    // we may just want to log an error rather than fail the upload due to an engine config problem.
-                    throw new ValidationException("A script engine implementation was not found for the specified QC script. " +
-                            "Check configurations in the Admin Console.");
-                }
-            }
-            else
-            {
-                throw new ValidationException("The validation script: " + scriptFile.getAbsolutePath() + " configured for this Assay does not exist. Please check " +
-                        "the configuration for this Assay design.");
-            }
-        }
-    }
-
-    public TransformResult transform(AssayRunUploadContext context, ExpRun run) throws ValidationException
+    public TransformResult transformAndValidate(AssayRunUploadContext context, ExpRun run) throws ValidationException
     {
         boolean isDefault = isDefault(context.getProtocol());
         TransformResult result = DefaultTransformResult.createEmptyResult();
-        for (File scriptFile : context.getProvider().getValidationAndAnalysisScripts(context.getProtocol(), AssayProvider.Scope.ALL, AssayProvider.ScriptType.TRANSFORM))
+        DataExchangeHandler dataHandler = context.getProvider().createDataExchangeHandler();
+        if (dataHandler == null)
+        {
+            return result;
+        }
+
+        Map<DomainProperty, String> runProperties;
+        try
+        {
+            runProperties = context.getRunProperties();
+        }
+        catch (ExperimentException e)
+        {
+            throw new ValidationException(e.getMessage() == null ? e.toString() : e.getMessage());
+        }
+        
+        for (File scriptFile : context.getProvider().getValidationAndAnalysisScripts(context.getProtocol(), AssayProvider.Scope.ALL))
         {
             // read the contents of the script file
             if (scriptFile.exists())
@@ -180,41 +101,43 @@ public class DefaultDataTransformer implements DataTransformer, DataValidator
 
                     try
                     {
-                        DataExchangeHandler dataHandler = context.getProvider().createDataExchangeHandler();
-                        if (dataHandler != null)
+                        Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
+                        String script = sb.toString();
+                        File runInfo = dataHandler.createTransformationRunInfo(context, run, scriptDir, runProperties, context.getBatchProperties());
+
+                        bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, scriptDir.getAbsolutePath());
+                        bindings.put(ExternalScriptEngine.SCRIPT_PATH, scriptFile.getAbsolutePath());
+
+                        Map<String, String> paramMap = new HashMap<String, String>();
+
+                        paramMap.put(RUN_INFO_REPLACEMENT, runInfo.getAbsolutePath().replaceAll("\\\\", "/"));
+                        File srcDir = scriptFile.getParentFile();
+                        if (srcDir != null && srcDir.exists())
+                            paramMap.put(SRC_DIR_REPLACEMENT, srcDir.getAbsolutePath().replaceAll("\\\\", "/"));
+                        paramMap.put(R_JESSIONID_REPLACEMENT, getSessionInfo(context));
+
+                        bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, paramMap);
+
+                        Object output = engine.eval(script);
+
+                        File rewrittenScriptFile;
+                        if (bindings.get(ExternalScriptEngine.REWRITTEN_SCRIPT_FILE) instanceof File)
                         {
-                            Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
-                            String script = sb.toString();
-                            File runInfo = dataHandler.createTransformationRunInfo(context, run, scriptDir);
-
-                            bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, scriptDir.getAbsolutePath());
-                            bindings.put(ExternalScriptEngine.SCRIPT_PATH, scriptFile.getAbsolutePath());
-
-                            Map<String, String> paramMap = new HashMap<String, String>();
-
-                            paramMap.put(RUN_INFO_REPLACEMENT, runInfo.getAbsolutePath().replaceAll("\\\\", "/"));
-                            File srcDir = scriptFile.getParentFile();
-                            if (srcDir != null && srcDir.exists())
-                                paramMap.put(SRC_DIR_REPLACEMENT, srcDir.getAbsolutePath().replaceAll("\\\\", "/"));
-                            paramMap.put(R_JESSIONID_REPLACEMENT, getSessionInfo(context));
-
-                            bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, paramMap);
-
-                            Object output = engine.eval(script);
-
-                            File rewrittenScriptFile;
-                            if (bindings.get(ExternalScriptEngine.REWRITTEN_SCRIPT_FILE) instanceof File)
-                            {
-                                rewrittenScriptFile = (File)bindings.get(ExternalScriptEngine.REWRITTEN_SCRIPT_FILE);
-                            }
-                            else
-                            {
-                                rewrittenScriptFile = scriptFile;
-                            }
-
-                            // process any output from the transformation script
-                            result = dataHandler.processTransformationOutput(context, runInfo, run, rewrittenScriptFile);
+                            rewrittenScriptFile = (File)bindings.get(ExternalScriptEngine.REWRITTEN_SCRIPT_FILE);
                         }
+                        else
+                        {
+                            rewrittenScriptFile = scriptFile;
+                        }
+
+                        // process any output from the transformation script
+                        result = dataHandler.processTransformationOutput(context, runInfo, run, rewrittenScriptFile, result);
+                        if (result.getRunProperties() != null && !result.getRunProperties().isEmpty())
+                        {
+                            // Propagate any transformed run properties on to the next script
+                            runProperties = result.getRunProperties();
+                        }
+                        context.setTransformResult(result);
                     }
                     catch (ValidationException e)
                     {

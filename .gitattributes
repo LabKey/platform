@@ -632,7 +632,6 @@ api/src/org/labkey/api/portal/ProjectUrls.java -text
 api/src/org/labkey/api/qc/DataExchangeHandler.java -text
 api/src/org/labkey/api/qc/DataLoaderSettings.java -text
 api/src/org/labkey/api/qc/DataTransformer.java -text
-api/src/org/labkey/api/qc/DataValidator.java -text
 api/src/org/labkey/api/qc/DefaultTransformResult.java -text
 api/src/org/labkey/api/qc/PlateBasedDataExchangeHandler.java -text
 api/src/org/labkey/api/qc/TransformDataHandler.java -text
@@ -4728,6 +4727,7 @@ internal/webapp/_images/partover-ie.png -text
 internal/webapp/_images/partover.png -text
 internal/webapp/_images/partup.gif -text
 internal/webapp/_images/partup.png -text
+internal/webapp/_images/partupdown.png -text
 internal/webapp/_images/partupg.gif -text
 internal/webapp/_images/partupg.png -text
 internal/webapp/_images/pencil.png -text

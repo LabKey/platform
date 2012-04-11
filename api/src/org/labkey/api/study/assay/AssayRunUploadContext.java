@@ -78,4 +78,6 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider>
     String getTargetStudy();
 
     TransformResult getTransformResult();
+
+    void setTransformResult(TransformResult result);
 }

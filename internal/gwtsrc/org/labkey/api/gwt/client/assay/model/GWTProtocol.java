@@ -47,8 +47,7 @@ public class GWTProtocol implements IsSerializable
     private String _selectedPlateTemplate;
     private List<String> _validationScripts = new ArrayList<String>();
     private String _protocolValidationScript;
-    private String _protocolTransformScript;
-    private boolean _allowValidationScript;
+    private List<String> _protocolTransformScripts;
     private boolean _allowTransformationScript;
     private GWTContainer _autoCopyTargetContainer;
     private boolean _saveScriptFiles;
@@ -161,16 +160,6 @@ public class GWTProtocol implements IsSerializable
         _protocolValidationScript = protocolValidationScript.trim();
     }
 
-    public boolean isAllowValidationScript()
-    {
-        return _allowValidationScript;
-    }
-
-    public void setAllowValidationScript(boolean allowValidationScript)
-    {
-        _allowValidationScript = allowValidationScript;
-    }
-
     public boolean isAllowTransformationScript()
     {
         return _allowTransformationScript;
@@ -181,14 +170,18 @@ public class GWTProtocol implements IsSerializable
         _allowTransformationScript = allowTransformationScript;
     }
 
-    public String getProtocolTransformScript()
+    public List<String> getProtocolTransformScripts()
     {
-        return _protocolTransformScript;
+        return _protocolTransformScripts;
     }
 
-    public void setProtocolTransformScript(String protocolTransformScript)
+    public void setProtocolTransformScripts(List<String> protocolTransformScripts)
     {
-        _protocolTransformScript = protocolTransformScript.trim();
+        _protocolTransformScripts = new ArrayList<String>(protocolTransformScripts.size());
+        for (String script : protocolTransformScripts)
+        {
+            _protocolTransformScripts.add(script.trim());
+        }
     }
 
     public GWTContainer getAutoCopyTargetContainer()

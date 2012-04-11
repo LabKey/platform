@@ -1124,53 +1124,94 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return true;
     }
 
-    public void setValidationAndAnalysisScripts(ExpProtocol protocol, List<File> scripts, ScriptType type) throws ExperimentException
+    private static final String SCRIPT_PATH_DELIMETER = "|";
+
+    @Override
+    public void setValidationAndAnalysisScripts(ExpProtocol protocol, List<File> scripts) throws ExperimentException
     {
-        if (scripts.size() > 1)
-            throw new ExperimentException("Only one script is supported for this release");
-
         Map<String, ObjectProperty> props = new HashMap<String, ObjectProperty>(protocol.getObjectProperties());
-        String propertyURI;
+        String propertyURI = ScriptType.TRANSFORM.getPropertyURI(protocol);
 
-        propertyURI = type.getPropertyURI(protocol);
-
-        if (scripts.isEmpty())
-            props.remove(propertyURI);
-        else
+        StringBuilder sb = new StringBuilder();
+        String separator = "";
+        for (File scriptFile : scripts)
         {
-            File scriptFile = scripts.get(0);
-            if (scriptFile.exists())
+            if (scriptFile.isFile())
             {
                 String ext = FileUtil.getExtension(scriptFile);
                 ScriptEngine engine = ServiceRegistry.get().getService(ScriptEngineManager.class).getEngineByExtension(ext);
                 if (engine != null)
                 {
-                    ObjectProperty prop = new ObjectProperty(protocol.getLSID(), protocol.getContainer(),
-                            propertyURI, scriptFile.getAbsolutePath());
-                    props.put(propertyURI, prop);
+                    sb.append(separator);
+                    sb.append(scriptFile.getAbsolutePath());
+                    separator = SCRIPT_PATH_DELIMETER;
                 }
                 else
                     throw new ExperimentException("Script engine for the extension : " + ext + " has not been registered.\nFor documentation about how to configure a " +
                             "scripting engine, paste this link into your browser: \"https://www.labkey.org/wiki/home/Documentation/page.view?name=configureScripting\".");
             }
             else
-                throw new ExperimentException("The validation script is invalid or does not exist");
+                throw new ExperimentException("The transform script '" + scriptFile.getPath() + "' is invalid or does not exist");
         }
+        if (sb.length() > 0)
+        {
+            ObjectProperty prop = new ObjectProperty(protocol.getLSID(), protocol.getContainer(),
+                    propertyURI, sb.toString());
+            props.put(propertyURI, prop);
+        }
+        else
+        {
+            props.remove(propertyURI);
+        }
+        // Be sure to strip out any validation scripts that were stored with the legacy propertyURI. We merge and save
+        // them as a single list in the TRANSFORM 
+        props.remove(ScriptType.VALIDATION.getPropertyURI(protocol));
         protocol.setObjectProperties(props);
     }
 
-    public List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope, ScriptType type)
+    /** For migrating legacy assay designs that have separate transform and validation script properties */
+    private enum ScriptType
     {
+        VALIDATION("ValidationScript"),
+        TRANSFORM("TransformScript");
+
+        private final String _uriSuffix;
+
+        ScriptType(String uriSuffix)
+        {
+            _uriSuffix = uriSuffix;
+        }
+
+        public String getPropertyURI(ExpProtocol protocol)
+        {
+            return protocol.getLSID() + "#" + _uriSuffix;
+        }
+    }
+
+    @Override
+    public List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope)
+    {
+        List<File> result = new ArrayList<File>();
         if (scope == Scope.ASSAY_DEF || scope == Scope.ALL)
         {
-            String propertyURI = type.getPropertyURI(protocol);
-            ObjectProperty prop = protocol.getObjectProperties().get(propertyURI);
-            if (prop != null)
+            ObjectProperty transformScripts = protocol.getObjectProperties().get(ScriptType.TRANSFORM.getPropertyURI(protocol));
+            if (transformScripts != null)
             {
-                return Collections.singletonList(new File(prop.getStringValue()));
+                for (String scriptPath : transformScripts.getStringValue().split("\\" + SCRIPT_PATH_DELIMETER))
+                {
+                    result.add(new File(scriptPath));
+                }
+            }
+            ObjectProperty validationScripts = protocol.getObjectProperties().get(ScriptType.VALIDATION.getPropertyURI(protocol));
+            if (validationScripts != null)
+            {
+                for (String scriptPath : validationScripts.getStringValue().split("\\" + SCRIPT_PATH_DELIMETER))
+                {
+                    result.add(new File(scriptPath));
+                }
             }
         }
-        return Collections.emptyList();
+        return result;
     }
 
     @Override

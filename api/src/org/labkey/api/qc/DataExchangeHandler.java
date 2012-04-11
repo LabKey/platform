@@ -18,6 +18,7 @@ package org.labkey.api.qc;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayRunUploadContext;
@@ -38,12 +39,10 @@ import java.util.Map;
  */
 public interface DataExchangeHandler
 {
-    public File createValidationRunInfo(AssayRunUploadContext context, ExpRun run, File scriptDir) throws Exception;
-    public void processValidationOutput(File runInfo) throws ValidationException;
+    public File createTransformationRunInfo(AssayRunUploadContext<? extends AssayProvider> context, ExpRun run, File scriptDir, Map<DomainProperty, String> runProperties, Map<DomainProperty, String> batchProperties) throws Exception;
     public void createSampleData(@NotNull ExpProtocol protocol, ViewContext viewContext, File scriptDir) throws Exception;
 
-    public File createTransformationRunInfo(AssayRunUploadContext<? extends AssayProvider> context, ExpRun run, File scriptDir) throws Exception;
-    public TransformResult processTransformationOutput(AssayRunUploadContext<? extends AssayProvider> context, File runInfo, ExpRun run, File scriptFile) throws ValidationException;
+    public TransformResult processTransformationOutput(AssayRunUploadContext<? extends AssayProvider> context, File runInfo, ExpRun run, File scriptFile, TransformResult mergeResult) throws ValidationException;
 
     public DataSerializer getDataSerializer();
     

@@ -29,8 +29,6 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpQCFlagTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.qc.DataExchangeHandler;
-import org.labkey.api.qc.DataTransformer;
-import org.labkey.api.qc.DataValidator;
 import org.labkey.api.security.User;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.assay.pipeline.AssayRunAsyncContext;
@@ -174,31 +172,13 @@ public interface AssayProvider extends Handler<ExpProtocol>
         ASSAY_DEF,
     }
 
-    public enum ScriptType
-    {
-        VALIDATION("ValidationScript"),
-        TRANSFORM("TransformScript");
-
-        private final String _uriSuffix;
-
-        ScriptType(String uriSuffix)
-        {
-            _uriSuffix = uriSuffix;
-        }
-
-        public String getPropertyURI(ExpProtocol protocol)
-        {
-            return protocol.getLSID() + "#" + _uriSuffix;
-        }
-    }
-
     /**
      * File based QC and analysis scripts can be added to a protocol and invoked when the validate
      * method is called. Set to an empty list if no scripts exist.
      */
-    void setValidationAndAnalysisScripts(ExpProtocol protocol, List<File> scripts, ScriptType type) throws ExperimentException;
+    void setValidationAndAnalysisScripts(ExpProtocol protocol, List<File> scripts) throws ExperimentException;
 
-    List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope, ScriptType type);
+    List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope);
 
     void setSaveScriptFiles(ExpProtocol protocol, boolean save) throws ExperimentException;
     boolean isSaveScriptFiles(ExpProtocol protocol);

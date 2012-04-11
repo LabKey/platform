@@ -19,7 +19,6 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.action.LabkeyError;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -40,7 +39,6 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.qc.DataTransformer;
-import org.labkey.api.qc.DataValidator;
 import org.labkey.api.qc.DefaultTransformResult;
 import org.labkey.api.qc.TransformDataHandler;
 import org.labkey.api.qc.TransformResult;
@@ -82,7 +80,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     {
         DataTransformer transformer = getDataTransformer();
         if (transformer != null)
-            return transformer.transform(context, run);
+            return transformer.transformAndValidate(context, run);
 
         return DefaultTransformResult.createEmptyResult();
     }
@@ -92,7 +90,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
      * @param forceSaveBatchProps
      * @return the run and batch that were inserted
      */
-    public ExpExperiment saveExperimentRun(AssayRunUploadContext context, @Nullable ExpExperiment batch, ExpRun run, boolean forceSaveBatchProps) throws ExperimentException, ValidationException
+    public ExpExperiment saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable ExpExperiment batch, ExpRun run, boolean forceSaveBatchProps) throws ExperimentException, ValidationException
     {
         Map<ExpMaterial, String> inputMaterials = new HashMap<ExpMaterial, String>();
         Map<ExpData, String> inputDatas = new HashMap<ExpData, String>();
@@ -192,8 +190,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             // handle data transformation
             TransformResult transformResult = transform(context, run);
             List<ExpData> insertedDatas = new ArrayList<ExpData>();
-            if (context instanceof AssayRunUploadForm)
-                ((AssayRunUploadForm)context).setTransformResult(transformResult);
 
             if (saveBatchProps)
             {
@@ -254,7 +250,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     }
                 }
             }
-            validate(context, run);
 
             scope.commitTransaction();
 
@@ -282,13 +277,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         {
             scope.closeConnection();
         }
-    }
-
-    public void validate(AssayRunUploadContext context, ExpRun run) throws ValidationException
-    {
-        DataValidator validator = getDataValidator();
-        if (validator != null)
-            validator.validate(context, run);
     }
 
     protected void addInputMaterials(AssayRunUploadContext context, Map<ExpMaterial, String> inputMaterials, ParticipantVisitResolverType resolverType) throws ExperimentException
@@ -528,11 +516,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     }
 
     public DataTransformer getDataTransformer()
-    {
-        return new DefaultDataTransformer();
-    }
-
-    public DataValidator getDataValidator()
     {
         return new DefaultDataTransformer();
     }

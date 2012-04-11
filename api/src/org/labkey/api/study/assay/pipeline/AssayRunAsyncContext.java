@@ -73,6 +73,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     private transient Map<DomainProperty, String> _runProperties;
     private transient Map<DomainProperty, String> _batchProperties;
     private transient Set<Domain> _domains;
+    private transient TransformResult _transformResult;
 
     public AssayRunAsyncContext(AssayRunUploadContext<ProviderType> originalContext) throws IOException, ExperimentException
     {
@@ -300,6 +301,12 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     @Override
     public TransformResult getTransformResult()
     {
-        return DefaultTransformResult.createEmptyResult();
+        return _transformResult == null ? DefaultTransformResult.createEmptyResult() : _transformResult;
+    }
+
+    @Override
+    public void setTransformResult(TransformResult result)
+    {
+        _transformResult = result;
     }
 }

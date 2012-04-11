@@ -43,6 +43,14 @@ public class DefaultTransformResult implements TransformResult
         _dataMap = dataMap;
     }
 
+    public DefaultTransformResult(TransformResult mergeResult)
+    {
+        _dataMap = mergeResult.getTransformedData();
+        _batchProperties = mergeResult.getBatchProperties();
+        _runProperties = mergeResult.getRunProperties();
+        _uploadedFile = mergeResult.getUploadedFile();
+    }
+
     public Map<ExpData, List<Map<String, Object>>> getTransformedData()
     {
         return _dataMap;

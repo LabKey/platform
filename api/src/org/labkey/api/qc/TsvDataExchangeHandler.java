@@ -91,7 +91,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         return _serializer;
     }
 
-    public File createValidationRunInfo(AssayRunUploadContext context, ExpRun run, File scriptDir) throws Exception
+    public File createTransformationRunInfo(AssayRunUploadContext<? extends AssayProvider> context, ExpRun run, File scriptDir, Map<DomainProperty, String> runProperties, Map<DomainProperty, String> batchProperties) throws Exception
     {
         File runProps = new File(scriptDir, VALIDATION_RUN_INFO_FILE);
         _filesToIgnore.add(runProps);
@@ -103,7 +103,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         try
         {
             // serialize the run properties to a tsv
-            writeRunProperties(context, scriptDir, pw, writer);
+            writeRunProperties(context, runProperties, scriptDir, pw, writer);
 
             // add the run data entries
             writeRunData(context, run, scriptDir, pw);
@@ -281,35 +281,26 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         _sampleProperties.put(propertyName, rows);
     }
 
-    protected void writeRunProperties(AssayRunUploadContext context, File scriptDir, PrintWriter pw, TSVWriter writer) throws ValidationException
+    protected void writeRunProperties(AssayRunUploadContext context, Map<DomainProperty, String> runProperties, File scriptDir, PrintWriter pw, TSVWriter writer) throws ValidationException
     {
-        try
+        // serialize the run properties to a tsv
+        for (Map.Entry<DomainProperty, String> entry : runProperties.entrySet())
         {
-            Map<DomainProperty, String> runProperties = getRunProperties(context);
-
-            // serialize the run properties to a tsv
-            for (Map.Entry<DomainProperty, String> entry : runProperties.entrySet())
-            {
-                pw.append(writer.quoteValue(entry.getKey().getName()));
-                pw.append('\t');
-                pw.append(writer.quoteValue(StringUtils.defaultString(entry.getValue())));
-                pw.append('\t');
-                pw.println(writer.quoteValue(entry.getKey().getPropertyDescriptor().getPropertyType().getJavaType().getName()));
-            }
-
-            // additional context properties
-            for (Map.Entry<String, String> entry : getContextProperties(context, scriptDir).entrySet())
-            {
-                pw.append(writer.quoteValue(entry.getKey()));
-                pw.append('\t');
-                pw.append(writer.quoteValue(entry.getValue()));
-                pw.append('\t');
-                pw.println(writer.quoteValue(String.class.getName()));
-            }
+            pw.append(writer.quoteValue(entry.getKey().getName()));
+            pw.append('\t');
+            pw.append(writer.quoteValue(StringUtils.defaultString(entry.getValue())));
+            pw.append('\t');
+            pw.println(writer.quoteValue(entry.getKey().getPropertyDescriptor().getPropertyType().getJavaType().getName()));
         }
-        catch (ExperimentException e)
+
+        // additional context properties
+        for (Map.Entry<String, String> entry : getContextProperties(context, scriptDir).entrySet())
         {
-            throw new ValidationException(e.getMessage());
+            pw.append(writer.quoteValue(entry.getKey()));
+            pw.append('\t');
+            pw.append(writer.quoteValue(entry.getValue()));
+            pw.append('\t');
+            pw.println(writer.quoteValue(String.class.getName()));
         }
     }
 
@@ -435,9 +426,9 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
         try
         {
-            AssayRunUploadContext context = new SampleRunUploadContext(protocol, viewContext);
+            AssayRunUploadContext<? extends AssayProvider> context = new SampleRunUploadContext(protocol, viewContext);
 
-            writeRunProperties(context, scriptDir, pw, writer);
+            writeRunProperties(context, context.getRunProperties(), scriptDir, pw, writer);
 
             // create the sample run data
             AssayProvider provider = AssayService.get().getProvider(protocol);
@@ -499,12 +490,6 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         };
     }
 
-    public File createTransformationRunInfo(AssayRunUploadContext<? extends AssayProvider> context, ExpRun run, File scriptDir) throws Exception
-    {
-        // include all of the batch and run properties
-        return createValidationRunInfo(context, run, scriptDir);
-    }
-
     protected List<Map<String, Object>> parseRunInfo(File runInfo) throws IOException
     {
         Reader reader = null;
@@ -532,9 +517,9 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         return _filesToIgnore.contains(file);
     }
 
-    public TransformResult processTransformationOutput(AssayRunUploadContext<? extends AssayProvider> context, File runInfo, ExpRun run, File scriptFile) throws ValidationException
+    public TransformResult processTransformationOutput(AssayRunUploadContext<? extends AssayProvider> context, File runInfo, ExpRun run, File scriptFile, TransformResult mergeResult) throws ValidationException
     {
-        DefaultTransformResult result = new DefaultTransformResult();
+        DefaultTransformResult result = new DefaultTransformResult(mergeResult);
         _filesToIgnore.add(scriptFile);
 
         // check to see if any errors were generated
@@ -821,6 +806,12 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         public TransformResult getTransformResult()
         {
             return null;
+        }
+
+        @Override
+        public void setTransformResult(TransformResult result)
+        {
+            throw new UnsupportedOperationException();
         }
     }
 }
