@@ -45,6 +45,8 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
         super(factory, job);
     }
 
+    private static final int DELAY_INCREMENT = 10;
+
     public RecordedActionSet run() throws PipelineJobException
     {
         try
@@ -57,12 +59,12 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             // Check if a delay has been requested for testing purposes, to make it easier to cancel the job in a reliable way 
             if (studyXml.isSetImportDelay() && studyXml.getImportDelay() > 0)
             {
-                for (int i = 0; i < studyXml.getImportDelay(); i++)
+                for (int i = 0; i < studyXml.getImportDelay(); i = i + DELAY_INCREMENT)
                 {
                     job.setStatus("Delaying import, waited " + i + " out of "+ studyXml.getImportDelay() + " second delay");
                     try
                     {
-                        Thread.sleep(1000);
+                        Thread.sleep(1000 * DELAY_INCREMENT);
                     }
                     catch (InterruptedException e) {}
                 }
