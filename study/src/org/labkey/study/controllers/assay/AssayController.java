@@ -27,10 +27,12 @@ import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.LabkeyError;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JsonWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.defaults.SetDefaultValuesAssayAction;
@@ -101,6 +103,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -290,7 +293,22 @@ public class AssayController extends SpringActionController
     private static List<Map<String, Object>> serializeDomain(Domain domain, TableInfo tableInfo, User user)
     {
         if (tableInfo != null)
-            return JsonWriter.getNativeColProps(tableInfo, Collections.<FieldKey>emptyList(), null, true);
+        {
+            // Serialize the Domain properties using TableInfo columns which may include metadata overrides.
+            // Issue 14546: Don't include all TableInfo columns in the response -- just Domain properties.
+            Collection<FieldKey> fields = new ArrayList<FieldKey>();
+            for (DomainProperty property : domain.getProperties())
+            {
+                fields.add(FieldKey.fromParts(property.getName()));
+            }
+            Map<FieldKey, ColumnInfo> columnMap = QueryService.get().getColumns(tableInfo, fields);
+            Collection<DisplayColumn> displayColumns = new ArrayList<DisplayColumn>(columnMap.size());
+            for (ColumnInfo column : columnMap.values())
+            {
+                displayColumns.add(column.getDisplayColumnFactory().createRenderer(column));
+            }
+            return JsonWriter.getNativeColProps(displayColumns, null, true);
+        }
 
         List<Map<String, Object>> propertyList = new ArrayList<Map<String, Object>>();
         for (DomainProperty property : domain.getProperties())

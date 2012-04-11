@@ -508,6 +508,8 @@ ColumnInfo[] sortColumns(Collection<ColumnInfo> cols, DataSet dsd, ViewContext c
             continue;
         if (subjectcol.equalsIgnoreCase(col.getName()))
             continue;
+        if (col.isMvIndicatorColumn())
+            continue;
         ret.add(col);
     }
     return ret.toArray(new ColumnInfo[ret.size()]);

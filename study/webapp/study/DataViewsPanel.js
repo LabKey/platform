@@ -926,7 +926,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             for (var type in data.types) {
                 if(data.types.hasOwnProperty(type))
                 {
-                    cbItems.push({boxLabel : type, name : type, checked : data.types[type], uncheckedValue : '0'});
+                    cbItems.push({boxLabel : type, name : type, checked : data.types[type], width: 150, uncheckedValue : '0'});
                 }
             }
         }

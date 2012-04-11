@@ -314,7 +314,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
             Set<VisualizationSourceColumn> groupBys = new LinkedHashSet<VisualizationSourceColumn>();
             if (_pivot != null)
                     groupBys.add(_pivot);
-            groupBys.addAll(_selects);
+            groupBys.addAll(_allSelects);
             groupBys.addAll(_sorts);
 
             appendColumnNames(groupBy, groupBys, false, false, false);

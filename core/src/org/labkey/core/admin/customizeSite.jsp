@@ -87,7 +87,7 @@ function submitSystemMaintenance()
 if (bean.upgradeInProgress)
 {%>
 <tr>
-    <td><p>You can use this page to customize your LabKey Server installation. If you prefer to customize it later, you can reach this page again by clicking <b>Manage Site->Admin Console->Customize Site</b>.</p>
+    <td><p>You can use this page to customize your LabKey Server installation. If you prefer to customize it later, you can reach this page again by clicking <b>Admin->Site->Admin Console->Site Settings</b>.</p>
 Click the Save button at any time to accept the current settings and continue.</td>
 </tr>
 <%}%>

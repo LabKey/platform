@@ -4,4 +4,4 @@ administrator can customize this page to explain your support policies.\\
 
 By default, users will arrive at this page when they click the **Support** link at the bottom \\
 of the left-hand navigation pane. If you like, you can change the destination URL for the \\
-**Support** link by clicking **Manage Site->Admin Console->Customize Site**.
+**Support** link by clicking **Admin->Site->Admin Console->Look and Feel Settings**.

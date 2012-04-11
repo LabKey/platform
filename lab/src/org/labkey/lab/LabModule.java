@@ -49,7 +49,7 @@ public class LabModule extends DefaultModule
     @Override
     public double getVersion()
     {
-        return 11.30;
+        return 12.10;
     }
 
     @Override

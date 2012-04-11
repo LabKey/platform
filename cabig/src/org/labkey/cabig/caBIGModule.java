@@ -40,7 +40,7 @@ public class caBIGModule extends DefaultModule
 
     public double getVersion()
     {
-        return 11.30;
+        return 12.10;
     }
 
     protected void init()

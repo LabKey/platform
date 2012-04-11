@@ -449,7 +449,7 @@ public class Query
             if (_parseErrors.size() > 0)
                 return null;
             TableInfo tinfo = _queryRoot.getTableInfo();
-            if (tinfo.supportsContainerFilter() && getContainerFilter() != null)
+            if (tinfo instanceof ContainerFilterable && tinfo.supportsContainerFilter() && getContainerFilter() != null)
                 ((ContainerFilterable) tinfo).setContainerFilter(getContainerFilter());
             return tinfo;
         }
@@ -1261,12 +1261,14 @@ public class Query
                 selectQ.validate(this, sub);
 
                 rs = resultset(selectQ.sql, c);
-                assert rs.next();
+                boolean hasNext = rs.next();
+                assert hasNext;
                 assertEquals(rs.getInt(2), c.getRowId());
                 ResultSetUtil.close(rs); rs = null;
 
                 rs = resultset(selectQ.sql, sub);
-                assert rs.next();
+                hasNext = rs.next();
+                assert hasNext;
                 assertEquals(rs.getInt(2), sub.getRowId());
                 ResultSetUtil.close(rs); rs = null;
 

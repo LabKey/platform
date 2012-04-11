@@ -3366,6 +3366,25 @@ public class DavController extends SpringActionController
 
         Path path = Path.parse(destinationPath).normalize();
         log("Dest path: " + path.toString());
+
+        // some user agents incorrectly double encode!  check here
+        if (destinationPath.contains("%") && StringUtils.contains(request.getHeader("User-Agent"),"cadaver"))
+        {
+            Resource r = null;
+            try { r = resolvePath(path); } catch (DavException x) {};
+            if (null == r || r instanceof WebdavResolverImpl.UnboundResource)
+            {
+                String decodeAgain = PageFlowUtil.decode(destinationPath);
+                if (!decodeAgain.equals(destinationPath))
+                {
+                    Path pathDecodeAgain = Path.parse(decodeAgain).normalize();
+                    try { r = resolvePath(pathDecodeAgain); } catch (DavException x) {};
+//                    if (null != r && !(r instanceof WebdavResolverImpl.UnboundResource))
+//                        path = pathDecodeAgain;
+                }
+            }
+        }
+
         return path;
     }
                                                              
@@ -4018,8 +4037,9 @@ public class DavController extends SpringActionController
             throw new DavException(WebdavStatus.SC_FORBIDDEN);
         WebdavStatus successStatus = destination.exists() ? WebdavStatus.SC_NO_CONTENT : WebdavStatus.SC_CREATED;
 
-        if (resource.getFile().getCanonicalPath().equals(destination.getFile().getCanonicalPath())) 
-            throw new DavException(WebdavStatus.SC_CONFLICT);
+        if (null != resource.getFile() && null != destination.getFile())
+            if (resource.getFile().getCanonicalPath().equals(destination.getFile().getCanonicalPath()))
+                throw new DavException(WebdavStatus.SC_CONFLICT);
         Resource parent = destination.parent();
         if (parent == null || !parent.exists())
             throw new DavException(WebdavStatus.SC_CONFLICT);
