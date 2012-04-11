@@ -2767,7 +2767,17 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     },
 
     configureLookupPanel: function(){
+        if(!this.rendered){
+            this.on('render', this.configureLookupPanel, this, {single: true});
+            return;
+        }
+
         var panel = this.find('itemId', 'facetedPanel')[0];
+        if(!panel){
+            this.on('render', this.configureLookupPanel, this, {single: true});
+            return;
+        }
+
         //identify and render the correct UI
         if(this.shouldShowFacetedUI()){
             //start loading the store
@@ -2818,6 +2828,9 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     hideTabStrip: function(){
         if(this.rendered){
             var tabpanel = this.find('tabpanel')[0];
+            if(!tabpanel){
+                return;
+            }
 
             if(tabpanel.rendered){
                 tabpanel.setActiveTab(0);

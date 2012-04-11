@@ -2743,8 +2743,8 @@ public class OntologyManager
                 List<ConditionalFormat> conditionalFormats = (List<ConditionalFormat>) m.get("ConditionalFormats");
                 if (conditionalFormats != null && !conditionalFormats.isEmpty())
                     ret.formats.put(pd.getPropertyURI(), conditionalFormats);
-                ret.add(domainName, domainURI, pd);
             }
+            ret.add(domainName, domainURI, pd);
         }
         return ret;
     }

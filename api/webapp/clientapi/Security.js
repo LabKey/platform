@@ -725,8 +725,9 @@ LABKEY.Security = new function()
          * <li>canUpdateOwn: set to true if this user can update data this user created in the current folder</li>
          * <li>canDelete: set to true if this user can delete data in the current folder</li>
          * <li>canDeleteOwn: set to true if this user can delete data this user created in the current folder</li>
-         * <li>isAdmin: set to true if this user is a system administrator</li>
+         * <li>isAdmin: set to true if this user has admin permissions in the current folder</li>
          * <li>isGuest: set to true if this user is the guest (anonymous) user</li>
+         * <li>isSystemAdmin: set to true if this user is a system administrator</li>
          * </ul>
          */
         currentUser : LABKEY.user,

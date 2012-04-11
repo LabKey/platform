@@ -47,7 +47,6 @@ public class FolderAdminMenu extends NavTreeMenu
 
         List<NavTree> admin = new ArrayList<NavTree>();
         admin.addAll(getFolderElements(context.getContainer()));
-        admin.addAll(Arrays.asList(ProjectAdminMenu.getNavTree(context)));
         NavTree[] adminArr = new NavTree[admin.size()];
         return admin.toArray(adminArr);
     }
