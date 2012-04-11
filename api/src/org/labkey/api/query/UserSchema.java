@@ -60,6 +60,7 @@ abstract public class UserSchema extends AbstractSchema
     protected String _name;
     protected String _description;
     protected boolean _cacheTableInfos = false;
+    protected boolean _restricted = false;      // restricted schemas will return nul from getSchema()
 
     public UserSchema(String name, @Nullable String description, User user, Container container, DbSchema dbSchema)
     {
@@ -77,6 +78,12 @@ abstract public class UserSchema extends AbstractSchema
     public String getDescription()
     {
         return _description;
+    }
+
+
+    public void setRestricted(boolean restricted)
+    {
+        _restricted = restricted;
     }
 
     protected boolean canReadSchema()
@@ -316,6 +323,8 @@ abstract public class UserSchema extends AbstractSchema
 
     public QuerySchema getSchema(String name)
     {
+        if (_restricted)
+            return null;
         return DefaultSchema.get(_user, _container).getSchema(name);
     }
 

@@ -71,6 +71,9 @@ abstract public class FolderSchemaProvider extends DefaultSchema.SchemaProvider
 
 		public QuerySchema getSchema(String name)
         {
+            if (_restricted)
+                return null;
+
             if (_fallback != null && !name.contains("/"))
             {
                 QuerySchema ret = _fallback.getSchema(name);

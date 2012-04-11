@@ -92,6 +92,8 @@ public class BlockingCache<K, V> implements Cache<K, V>
                     return w.getValue();
             }
 
+            if (null == loader)
+                loader = _loader;
             V value = loader.load(key, arg);
             w.setValue(value);
             return value;
