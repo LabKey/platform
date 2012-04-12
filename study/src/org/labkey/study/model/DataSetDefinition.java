@@ -22,6 +22,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.ScrollableDataIterator;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -37,6 +39,7 @@ import org.labkey.api.etl.Pump;
 import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.etl.StandardETL;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -2734,6 +2737,51 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     private String getCacheString()
     {
         return "c" + getContainer().getRowId() + "_" + getName().toLowerCase();
+    }
+
+
+    public static void cleanupOrphanedDatasetDomains() throws SQLException
+    {
+        DbSchema s = StudySchema.getInstance().getSchema();
+        if (null == s)
+            return;
+
+        s.getScope().ensureTransaction();
+
+        ResultSet rs = null;
+        try
+        {
+            rs = Table.executeQuery(s, "SELECT domainid FROM exp.domaindescriptor WHERE domainuri like '%:StudyDataset%Folder-%' and domainuri not in (SELECT typeuri from study.dataset)", new Object[0]);
+            while (rs.next())
+            {
+                int domainid = rs.getInt(1);
+                Domain domain = PropertyService.get().getDomain(domainid);
+                try
+                {
+                    domain.delete(null);
+                }
+                catch (DomainNotFoundException x)
+                {
+                    //
+                }
+            }
+            s.getScope().commitTransaction();
+        }
+        finally
+        {
+            ResultSetUtil.close(rs);
+            s.getScope().closeConnection();
+        }
+    }
+
+
+    public static class TestCleanupOrphanedDatasetDomains extends Assert
+    {
+        @Test
+        public void test() throws Exception
+        {
+            cleanupOrphanedDatasetDomains();
+        }
     }
 }
 

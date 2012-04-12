@@ -16,6 +16,7 @@
 
 package org.labkey.study;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
@@ -107,6 +108,7 @@ import org.labkey.study.importer.StudyImportProvider;
 import org.labkey.study.importer.StudyReload;
 import org.labkey.study.model.CohortDomainKind;
 import org.labkey.study.model.ContinuousDatasetDomainKind;
+import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.DateDatasetDomainKind;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.SecurityType;
@@ -370,6 +372,15 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         }
 
         SystemMaintenance.addTask(new PurgeParticipantsMaintenanceTask());
+
+        try
+        {
+            DataSetDefinition.cleanupOrphanedDatasetDomains();
+        }
+        catch (SQLException sql)
+        {
+            Logger.getLogger(StudyModule.class).error("Error cleanup orphaned domains", sql);
+        }
     }
 
 
@@ -658,6 +669,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         set.add(StudyManager.DatasetImportTestCase.class);
         set.add(ParticipantGroupManager.ParticipantGroupTestCase.class);
         set.add(StudyImpl.ProtocolDocumentTestCase.class);
+        set.add(DataSetDefinition.TestCleanupOrphanedDatasetDomains.class);
 
         return set;
     }
