@@ -377,7 +377,6 @@ public class StudyController extends BaseStudyController
 
         public void validateCommand(ImportTypeForm form, Errors errors)
         {
-
             if (null == form.getDataSetId() && !form.isAutoDatasetId())
                 errors.reject("defineDatasetType", "You must supply an integer Dataset Id");
             if (null != form.getDataSetId())
@@ -390,26 +389,16 @@ public class StudyController extends BaseStudyController
                 errors.reject("defineDatasetType", "Dataset must have a name.");
             else
             {
-                String typeURI = AssayPublishManager.getInstance().getDomainURIString(StudyManager.getInstance().getStudy(getContainer()), form.getTypeName());
-                DomainDescriptor dd = OntologyManager.getDomainDescriptor(typeURI, getContainer());
-                if (null != dd)
+                // Check if a dataset, query or table exists with the same name
+                StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
+                StudyQuerySchema studySchema = new StudyQuerySchema(study, getUser(), true);
+                if (null != studySchema.getDataSetDefinitionByName(form.getTypeName())
+                        || studySchema.getTableNames().contains(form.getTypeName())
+                        || QueryService.get().getQueryDef(getUser(), getContainer(), "study", form.getTypeName()) != null)
                 {
-                    errors.reject("defineDatasetType", "There is a dataset named " + form.getTypeName() + " already defined in this folder.");
-                }
-                else
-                {
-                    // Check if a dataset, query or table exists with the same name
-                    StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
-                    StudyQuerySchema studySchema = new StudyQuerySchema(study, getUser(), true);
-                    if (null != studySchema.getDataSetDefinitionByName(form.getTypeName())
-                            || studySchema.getTableNames().contains(form.getTypeName())
-                            || QueryService.get().getQueryDef(getUser(), getContainer(), "study", form.getTypeName()) != null)
-                    {
-                        errors.reject("defineDatasetType", "There is a dataset or query named " + form.getTypeName() + " already defined in this folder.");
-                    }
+                    errors.reject("defineDatasetType", "There is a dataset or query named " + form.getTypeName() + " already defined in this folder.");
                 }
             }
-
         }
 
         public boolean handlePost(ImportTypeForm form, BindException derrors) throws Exception

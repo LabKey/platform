@@ -215,7 +215,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
-    public DataSetDefinition(StudyImpl study, int dataSetId, String name, String label, String category, String typeURI)
+    public DataSetDefinition(StudyImpl study, int dataSetId, String name, String label, String category, @Nullable String typeURI)
     {
         _study = study;
         setContainer(_study.getContainer());
@@ -223,7 +223,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         _name = name;
         _label = label;
         _category = category;
-        _typeURI = typeURI;
+        _typeURI = null != typeURI ? typeURI : DatasetDomainKind.generateDomainURI(name,getContainer());
         _showByDefault = true;
     }
 
