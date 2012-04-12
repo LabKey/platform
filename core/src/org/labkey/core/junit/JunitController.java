@@ -86,12 +86,14 @@ public class JunitController extends SpringActionController
 
                     for (String module : testCases.keySet())
                     {
-                        String moduleTd = "<a href=\"run.view?module=" + h(module) + "\">" + module + "</a>";
+                        ActionURL moduleURL = new ActionURL(RunAction.class, getContainer()).addParameter("module", module);
+                        String moduleTd = "<a href=\"" + PageFlowUtil.filter(moduleURL.getLocalURIString()) + "\">" + module + "</a>";
 
                         for (Class clazz : testCases.get(module))
                         {
                             out.println("<tr><td>" + moduleTd + "</td><td>");
-                            out.println(clazz.getName() + " <a href=\"run.view?testCase=" + clazz.getName() + "\">&lt;run&gt;</a></td></tr>");
+                            ActionURL testCaseURL = new ActionURL(RunAction.class, getContainer()).addParameter("testCase", clazz.getName());
+                            out.println(clazz.getName() + " <a href=\"" + PageFlowUtil.filter(testCaseURL.getLocalURIString()) + "\">&lt;run&gt;</a></td></tr>");
                             moduleTd = "&nbsp;";
                         }
 
@@ -101,7 +103,7 @@ public class JunitController extends SpringActionController
                     out.println("</table></div>");
 
                     out.print("<p><br>" + PageFlowUtil.generateButton("Run All", new ActionURL(RunAction.class, getContainer())) + "</p>");
-                    out.print("<form name=\"run2\" action=\"run2.post\" method=\"post\">" + PageFlowUtil.generateSubmitButton("Run In Background #1 (Experimental)") + "</form>");
+                    out.print("<form name=\"run2\" action=\"" +  new ActionURL(Run2Action.class, getContainer()) + "\" method=\"post\">" + PageFlowUtil.generateSubmitButton("Run In Background #1 (Experimental)") + "</form>");
                     out.print("<br>" + PageFlowUtil.generateButton("Run In Background #2 (Experimental)", new ActionURL(Run3Action.class, getContainer())));
                 }
             };
