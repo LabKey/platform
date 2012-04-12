@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.study.controllers.StudyController.*" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -45,7 +46,8 @@
 </script>
 
 <%
-    Study study = StudyManager.getInstance().getStudy(HttpView.currentContext().getContainer());
+    Container c = HttpView.currentContext().getContainer();
+    Study study = StudyManager.getInstance().getStudy(c);
 
     List<? extends DataSet> datasets = study.getDataSetsByType(new String[]{DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER});
     int countUndefined = 0;
@@ -176,12 +178,13 @@
         <th>&nbsp;</th>
     </tr><%
 
+    ActionURL details = new ActionURL(DatasetDetailsAction.class, c);
     for (DataSet def : datasets)
     {
     %><tr>
         <td align=right><a href="<%="datasetDetails.view?id=" + def.getDataSetId()%>"><%=def.getDataSetId()%></a></td>
-        <td><a href="<%="datasetDetails.view?id=" + def.getDataSetId()%>"><%= h(def.getName()) %></a></td>
-        <td><% if (!def.getName().equals(def.getLabel())) {%><a href="<%="datasetDetails.view?id=" + def.getDataSetId()%>"><%= h(def.getLabel()) %></a><%}%>&nbsp;</td>
+        <td><a href="<%=buildURL(DatasetDetailsAction.class)%>id=<%=def.getDataSetId()%>"><%= h(def.getName()) %></a></td>
+        <td><% if (!def.getName().equals(def.getLabel())) {%><a href="<%=details.replaceParameter("id",String.valueOf(def.getDataSetId()))%>"><%= h(def.getLabel()) %></a><%}%>&nbsp;</td>
         <td><%= def.getCategory() != null ? h(def.getCategory()) : "&nbsp;" %>&nbsp;</td>
         <td><%= def.getType()%>&nbsp;</td>
         <td><%= def.getCohort() != null ? h(def.getCohort().getLabel()) : "All" %></td>
@@ -189,5 +192,5 @@
     </tr><%
     }
 %></table>
-<%= textLink("Create New Dataset", "defineDatasetType.view?autoDatasetId=true")%>
+<%= textLink("Create New Dataset", new ActionURL(DefineDatasetTypeAction.class,c).addParameter("autoDatasetId","true"))%>
 <% WebPartView.endTitleFrame(out); %>
