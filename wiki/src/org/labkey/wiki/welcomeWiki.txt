@@ -1,22 +1,20 @@
 <p>Welcome to LabKey Server.</p>
 
-<p>Thank you for installing LabKey Server, the industry's top open-source platform for accelerating biomedical research
-and facilitating collaboration between scientists.</p>
-
-<p>To begin using your new server, create a new project using the projects webpart below.  There are many different types of projects available,
-including those tailored to mass spectrometry, plate-based assays, observational studies and collaboration.  If you have additional questions or need to customize LabKey to meet specific workflows and research needs,
-please contact <a href="http://www.labkey.com">LabKey Software</a> directly at <a href="mailto:info@labkey.com?subject=Request for More Information
-on LabKey Server">info@LabKey.com</a>. Commercial support packages are also available.</p>
-
 <p>To learn more about using the platform, please visit one of the community resources freely available on
 <a href="http://www.labkey.org">LabKey.org</a>:</p>
 <ul>
     <li><a href="https://www.labkey.org/Project/home/Documentation/begin.view">Documentation</a></li>
-    <li><a href="https://www.labkey.org/wiki/home/page.view?name=support">Community Forums</a></li>
+    <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=tutorials">Tutorials</a></li>
     <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=dev">Developer Guide</a></li>
+    <li><a href="https://www.labkey.org/wiki/home/page.view?name=support">Community Forums</a></li>
 </ul>
 
-<p>Thank you again for downloading LabKey Server. We appreciate your support.</p>
+<p>
+If you need further assistance, <a href="http://www.labkey.com">LabKey Software</a> provides professional support,
+customization and development. Contact: <a href="mailto:info@labkey.com">info@labkey.com</a>
+</p>
+
+<p>Thanks for installing LabKey Server. </p>
 
 <p>Regards,</p>
 
