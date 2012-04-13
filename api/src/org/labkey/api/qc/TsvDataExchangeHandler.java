@@ -258,11 +258,12 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         // the original uploaded data file
         pw.append(Props.runDataUploadedFile.name());
         pw.append('\t');
-        pw.append(transformResult.getUploadedFile().getAbsolutePath());
+        File originalFile = transformResult.getUploadedFile();
+        pw.append(originalFile.getAbsolutePath());
         pw.append('\n');
 
         Set<File> result = new HashSet<File>();
-        result.add(transformResult.getUploadedFile());
+        result.add(originalFile);
 
         AssayFileWriter.ensureUploadDirectory(context.getContainer());
         for (Map.Entry<ExpData, List<Map<String, Object>>> entry : transformResult.getTransformedData().entrySet())
@@ -280,8 +281,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             pw.append(data.getLSIDNamespacePrefix());
 
             // Include an additional column for the location of a transformed data file that a transform script may create.
-            File transformedData = AssayFileWriter.createFile(context.getProtocol(), scriptDir, "tsv");
-
+            File transformedData = AssayFileWriter.createFile(context.getProtocol(), originalFile.getParentFile(), "tsv");
             pw.append('\t');
             pw.append(transformedData.getAbsolutePath());
 

@@ -232,6 +232,14 @@ public class ExperimentService
          * @param log output log target
          */
         public ExpRun saveSimpleExperimentRun(ExpRun run, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException;
+
+        /**
+         * Adds an extra protocol application to a run created by saveSimpleExperimentRun() to track more complex
+         * workflows.
+         * @param expRun run to which the extra should be added
+         * @param name name of the prococol application
+         * @return a fully populated but not yet saved ExpProtocolApplication. It will have no inputs and outputs.
+         */
         public ExpProtocolApplication createSimpleRunExtraProtocolApplication(ExpRun expRun, String name);
         public ExpRun deriveSamples(Map<ExpMaterial, String> inputMaterials, Map<ExpMaterial, String> outputMaterials, ViewBackgroundInfo info, Logger log) throws ExperimentException;
 
