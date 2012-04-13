@@ -51,6 +51,7 @@ public class AssayRunDatabaseContext<ProviderType extends AssayProvider> impleme
     protected final ExpProtocol _protocol;
     protected final ProviderType _provider;
     private final HttpServletRequest _request;
+    private TransformResult _transformResult;
 
     public AssayRunDatabaseContext(ExpRun run, User user, HttpServletRequest request)
     {
@@ -211,12 +212,12 @@ public class AssayRunDatabaseContext<ProviderType extends AssayProvider> impleme
     @Override
     public TransformResult getTransformResult()
     {
-        return DefaultTransformResult.createEmptyResult();
+        return _transformResult == null ? DefaultTransformResult.createEmptyResult() :_transformResult;
     }
 
     @Override
     public void setTransformResult(TransformResult result)
     {
-        throw new UnsupportedOperationException();
+        _transformResult = result;
     }
 }
