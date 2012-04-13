@@ -168,6 +168,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
             inputFileSuffices[i] = new FileType(providerConfig.getInputDataFileSuffixArray(i));
         }
 
+        // Remember the preferred order of the transform scripts
         if (providerConfig.isSetTransformScripts())
         {
             for (ProviderType.TransformScripts.TransformScript transformScript : providerConfig.getTransformScripts().getTransformScriptArray())
@@ -570,6 +571,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
                     }
                 }
 
+                // Put the scripts in the order specified by the config.xml file
                 List<File> sortedModuleScripts = new ArrayList<File>();
                 for (ScriptMetadata scriptMetadata : _scriptMetadata)
                 {
@@ -594,6 +596,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return result;
     }
 
+    /** Finds a script from the list of available files, and removes it from the list */
     private File findAndRemove(List<File> scriptFiles, String fileName)
     {
         for (File scriptFile : scriptFiles)
