@@ -16,6 +16,7 @@
 
 package org.labkey.study.assay;
 
+import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
@@ -62,6 +63,8 @@ import java.util.*;
  */
 public class ModuleAssayProvider extends TsvAssayProvider
 {
+    private static final Logger LOG = Logger.getLogger(ModuleAssayProvider.class);
+
     public static class ModuleAssayException extends RuntimeException
     {
         public ModuleAssayException(String message)
@@ -88,6 +91,10 @@ public class ModuleAssayProvider extends TsvAssayProvider
     private FieldKey visitIdKey;
     private FieldKey dateKey;
     private FieldKey specimenIdKey;
+
+    private List<ScriptMetadata> _scriptMetadata = new ArrayList<ScriptMetadata>();
+
+    private Set<String> _missingScriptWarnings = new HashSet<String>(); 
 
     public static final DataType RAW_DATA_TYPE = new DataType("RawAssayData");
 
@@ -160,6 +167,20 @@ public class ModuleAssayProvider extends TsvAssayProvider
         {
             inputFileSuffices[i] = new FileType(providerConfig.getInputDataFileSuffixArray(i));
         }
+
+        if (providerConfig.isSetTransformScripts())
+        {
+            for (ProviderType.TransformScripts.TransformScript transformScript : providerConfig.getTransformScripts().getTransformScriptArray())
+            {
+                _scriptMetadata.add(new ScriptMetadata(transformScript.getFileName(), null, null));
+            }
+        }
+    }
+
+    @Override
+    public String toString()
+    {
+        return "Module assay provider: " + getName();
     }
 
     @Override
@@ -526,7 +547,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     public List<File> getValidationAndAnalysisScripts(ExpProtocol protocol, Scope scope)
     {
         // Start with the standard set
-        List<File> validationScripts = new ArrayList<File>(super.getValidationAndAnalysisScripts(protocol, scope));
+        List<File> result = new ArrayList<File>(super.getValidationAndAnalysisScripts(protocol, scope));
 
         if (scope == Scope.ASSAY_TYPE || scope == Scope.ALL)
         {
@@ -538,26 +559,57 @@ public class ModuleAssayProvider extends TsvAssayProvider
                 final ScriptEngineManager manager = ServiceRegistry.get().getService(ScriptEngineManager.class);
 
                 Collection<? extends Resource> scripts = scriptDir.list();
-                List<File> scriptFiles = new ArrayList<File>(scripts.size());
+                List<File> moduleScriptFiles = new ArrayList<File>(scripts.size());
                 for (Resource r : scripts)
                 {
                     if (r instanceof FileResource)
                     {
                         String ext = r.getPath().extension();
                         if (manager.getEngineByExtension(ext) != null)
-                            scriptFiles.add(((FileResource)r).getFile());
+                            moduleScriptFiles.add(((FileResource)r).getFile());
                     }
                 }
-                validationScripts.addAll(scriptFiles);
-                Collections.sort(validationScripts, new Comparator<File>(){
+
+                List<File> sortedModuleScripts = new ArrayList<File>();
+                for (ScriptMetadata scriptMetadata : _scriptMetadata)
+                {
+                    File matchingScript = findAndRemove(moduleScriptFiles, scriptMetadata.getFileName());
+                    if (matchingScript != null)
+                    {
+                        sortedModuleScripts.add(matchingScript);
+                    }
+                }
+                result.addAll(sortedModuleScripts);
+
+                // Add any remaining module-provided files in alphabetical order
+                Collections.sort(moduleScriptFiles, new Comparator<File>(){
                     public int compare(File o1, File o2)
                     {
                         return o1.getName().compareToIgnoreCase(o2.getName());
                     }
                 });
+                result.addAll(moduleScriptFiles);
             }
         }
-        return validationScripts;
+        return result;
+    }
+
+    private File findAndRemove(List<File> scriptFiles, String fileName)
+    {
+        for (File scriptFile : scriptFiles)
+        {
+            if (scriptFile.getName().equalsIgnoreCase(fileName))
+            {
+                scriptFiles.remove(scriptFile);
+                return scriptFile;
+            }
+        }
+        // Only warn the first time we notice that there's a script that's in the config.xml file but not on disk
+        if (_missingScriptWarnings.add(fileName))
+        {
+            LOG.warn("Unable to find a script file '" + fileName + "' specified in metadata for assay type '" + getName() + "'");
+        }
+        return null;
     }
 
     @Override
@@ -583,6 +635,35 @@ public class ModuleAssayProvider extends TsvAssayProvider
         protected String getFilePropertiesId()
         {
             return super.getFilePropertiesId() + ':' + this.getName();
+        }
+    }
+
+    static class ScriptMetadata
+    {
+        private String _fileName;
+        private String _name;
+        private String _description;
+
+        ScriptMetadata(String fileName, String name, String description)
+        {
+            _fileName = fileName;
+            _name = name == null ? fileName : name;
+            _description = description == null ? fileName : description;
+        }
+
+        public String getFileName()
+        {
+            return _fileName;
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public String getDescription()
+        {
+            return _description;
         }
     }
 }

@@ -23,8 +23,10 @@ import org.labkey.api.study.assay.AssayRunUploadContext;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -34,14 +36,17 @@ import java.util.Map;
 public class ModuleDataExchangeHandler extends TsvDataExchangeHandler
 {
     @Override
-    protected void writeRunData(AssayRunUploadContext form, ExpRun run, File scriptDir, PrintWriter pw) throws Exception
+    protected Set<File> writeRunData(AssayRunUploadContext form, ExpRun run, File scriptDir, PrintWriter pw) throws Exception
     {
+        Set<File> result = new HashSet<File>();
         for (ExpData expData : run.getDataInputs().keySet())
         {
             // the original uploaded path
             pw.append(TsvDataExchangeHandler.Props.runDataUploadedFile.name());
             pw.append('\t');
-            pw.println(expData.getFile().getAbsolutePath());
+            File file = expData.getFile();
+            pw.println(file.getAbsolutePath());
+            result.add(file);
         }
 
         if (form instanceof ModuleRunUploadContext)
@@ -53,11 +58,13 @@ public class ModuleDataExchangeHandler extends TsvDataExchangeHandler
             {
                 File runData = new File(scriptDir, RUN_DATA_FILE);
                 getDataSerializer().exportRunData(context.getProtocol(), data, runData);
+                result.add(runData);
 
                 pw.append(Props.runDataFile.name());
                 pw.append('\t');
                 pw.println(runData.getAbsolutePath());
             }
         }
+        return result;
     }
 }

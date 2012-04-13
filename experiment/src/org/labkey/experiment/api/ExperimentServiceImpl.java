@@ -2679,6 +2679,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
+    private static final int SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE = 1;
+    private static final int SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE = 10;
+    private static final int SIMPLE_PROTOCOL_EXTRA_STEP_SEQUENCE = 15;
+    private static final int SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE = 20;
+
     public ExpRun saveSimpleExperimentRun(ExpRun baseRun, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials,
                                             Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException
     {
@@ -2720,7 +2725,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                         throw new IllegalArgumentException("Protocol has the wrong number of steps for a simple protocol, it should have three");
                     }
                     ProtocolAction action1 = actions[0];
-                    assert action1.getSequence() == 1;
+                    assert action1.getSequence() == SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE;
                     assert action1.getChildProtocolId() == parentProtocol.getRowId();
 
                     context.addSubstitution("ExperimentRun.RowId", Integer.toString(run.getRowId()));
@@ -2728,11 +2733,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     Date date = new Date();
 
                     ProtocolAction action2 = actions[1];
-                    assert action2.getSequence() == 10;
+                    assert action2.getSequence() == SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE;
                     ExpProtocol protocol2 = getExpProtocol(action2.getChildProtocolId());
 
                     ProtocolAction action3 = actions[2];
-                    assert action3.getSequence() == 20;
+                    assert action3.getSequence() == SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE;
                     ExpProtocol outputProtocol = getExpProtocol(action3.getChildProtocolId());
                     assert outputProtocol.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput : "Expected third protocol to be of type ExperimentRunOutput but was " + outputProtocol.getApplicationType();
 
@@ -2742,21 +2747,32 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
                     for (ExpProtocolApplicationImpl existingProtApp : run.getProtocolApplications())
                     {
-                        if (existingProtApp.getProtocol().equals(parentProtocol))
+                        if (existingProtApp.getProtocol().equals(parentProtocol) && existingProtApp.getActionSequence() == action1.getSequence())
                         {
                             protApp1 = existingProtApp;
                         }
                         else if (existingProtApp.getProtocol().equals(protocol2))
                         {
-                            protApp2 = existingProtApp;
+                            if (existingProtApp.getActionSequence() == SIMPLE_PROTOCOL_EXTRA_STEP_SEQUENCE)
+                            {
+                                existingProtApp.delete(user);
+                            }
+                            else if (existingProtApp.getActionSequence() == action2.getSequence())
+                            {
+                                protApp2 = existingProtApp;
+                            }
+                            else
+                            {
+                                throw new IllegalStateException("Unexpected existing protocol application: " + existingProtApp.getLSID() + " with sequence " + existingProtApp.getActionSequence());
+                            }
                         }
-                        else if (existingProtApp.getProtocol().equals(outputProtocol))
+                        else if (existingProtApp.getProtocol().equals(outputProtocol) && existingProtApp.getActionSequence() == action3.getSequence())
                         {
                             protApp3 = existingProtApp;
                         }
                         else
                         {
-                            throw new IllegalStateException("Unexpected existing protocol application: " + existingProtApp.getLSID());
+                            throw new IllegalStateException("Unexpected existing protocol application: " + existingProtApp.getLSID() + " with sequence " + existingProtApp.getActionSequence());
                         }
                     }
 
@@ -2868,6 +2884,32 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 throw new RuntimeSQLException(e);
             }
         }
+    }
+
+    @Override
+    public ExpProtocolApplication createSimpleRunExtraProtocolApplication(ExpRun run, String name)
+    {
+        ExpProtocol protocol = run.getProtocol();
+        List<ExpProtocol> childProtocols = protocol.getChildProtocols();
+        if (childProtocols.size() != 3)
+        {
+            throw new IllegalArgumentException("Expected to be called for a protocol with three steps, but found " + childProtocols.size());
+        }
+        for (ExpProtocol childProtocol : childProtocols)
+        {
+            if (childProtocol.getApplicationType() == ExpProtocol.ApplicationType.ProtocolApplication)
+            {
+                ExpProtocolApplicationImpl result = new ExpProtocolApplicationImpl(new ProtocolApplication());
+                result.setProtocol(childProtocol);
+                Lsid lsid = new Lsid(ExpProtocol.ApplicationType.ProtocolApplication.name(), GUID.makeGUID());
+                result.setLSID(lsid);
+                result.setActionSequence(SIMPLE_PROTOCOL_EXTRA_STEP_SEQUENCE);
+                result.setRun(run);
+                result.setName(name);
+                return result;
+            }
+        }
+        throw new IllegalArgumentException("Could not find childProtocol of type " + ExpProtocol.ApplicationType.ProtocolApplication);
     }
 
     public ExpRun deriveSamples(Map<ExpMaterial, String> inputMaterials, Map<ExpMaterial, String> outputMaterials, ViewBackgroundInfo info, Logger log) throws ExperimentException
@@ -3238,7 +3280,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 {
                     wrappedProtocol.setApplicationType(ExpProtocol.ApplicationType.ExperimentRun);
                     baseProtocol.setOutputDataType(ExpData.DEFAULT_CPAS_TYPE);
-                    baseProtocol.setOutputMaterialType("Material");
+                    baseProtocol.setOutputMaterialType(ExpMaterial.DEFAULT_CPAS_TYPE);
                     baseProtocol.setContainer(baseProtocol.getContainer());
 
                     Map<String, ProtocolParameter> baseParams = new HashMap<String, ProtocolParameter>(wrappedProtocol.getProtocolParameters());
@@ -3258,9 +3300,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
                     Protocol coreProtocol = new Protocol();
                     coreProtocol.setOutputDataType(ExpData.DEFAULT_CPAS_TYPE);
-                    coreProtocol.setOutputMaterialType("Material");
+                    coreProtocol.setOutputMaterialType(ExpMaterial.DEFAULT_CPAS_TYPE);
                     coreProtocol.setContainer(baseProtocol.getContainer());
-                    coreProtocol.setApplicationType("ProtocolApplication");
+                    coreProtocol.setApplicationType(ExpProtocol.ApplicationType.ProtocolApplication.name());
                     coreProtocol.setName(baseProtocol.getName() + " - Core");
                     coreProtocol.setLSID(baseProtocol.getLSID() + ".Core");
 
@@ -3281,10 +3323,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
                     Protocol outputProtocol = new Protocol();
                     outputProtocol.setOutputDataType(ExpData.DEFAULT_CPAS_TYPE);
-                    outputProtocol.setOutputMaterialType("Material");
+                    outputProtocol.setOutputMaterialType(ExpMaterial.DEFAULT_CPAS_TYPE);
                     outputProtocol.setName(baseProtocol.getName() + " - Output");
                     outputProtocol.setLSID(baseProtocol.getLSID() + ".Output");
-                    outputProtocol.setApplicationType("ExperimentRunOutput");
+                    outputProtocol.setApplicationType(ExpProtocol.ApplicationType.ExperimentRunOutput.name());
                     outputProtocol.setContainer(baseProtocol.getContainer());
 
                     List<ProtocolParameter> outputParams = new ArrayList<ProtocolParameter>();
@@ -3305,7 +3347,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     ProtocolAction action1 = new ProtocolAction();
                     action1.setParentProtocolId(baseProtocol.getRowId());
                     action1.setChildProtocolId(baseProtocol.getRowId());
-                    action1.setSequence(1);
+                    action1.setSequence(SIMPLE_PROTOCOL_FIRST_STEP_SEQUENCE);
                     action1 = Table.insert(user, getTinfoProtocolAction(), action1);
 
                     insertProtocolPredecessor(user, action1.getRowId(), action1.getRowId());
@@ -3313,7 +3355,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     ProtocolAction action2 = new ProtocolAction();
                     action2.setParentProtocolId(baseProtocol.getRowId());
                     action2.setChildProtocolId(coreProtocol.getRowId());
-                    action2.setSequence(10);
+                    action2.setSequence(SIMPLE_PROTOCOL_CORE_STEP_SEQUENCE);
                     action2 = Table.insert(user, getTinfoProtocolAction(), action2);
 
                     insertProtocolPredecessor(user, action2.getRowId(), action1.getRowId());
@@ -3321,7 +3363,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     ProtocolAction action3 = new ProtocolAction();
                     action3.setParentProtocolId(baseProtocol.getRowId());
                     action3.setChildProtocolId(outputProtocol.getRowId());
-                    action3.setSequence(20);
+                    action3.setSequence(SIMPLE_PROTOCOL_OUTPUT_STEP_SEQUENCE);
                     action3 = Table.insert(user, getTinfoProtocolAction(), action3);
 
                     insertProtocolPredecessor(user, action3.getRowId(), action2.getRowId());

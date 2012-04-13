@@ -17,6 +17,7 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.RuntimeSQLException;
@@ -210,7 +211,31 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
 
     public void delete(User user)
     {
-        throw new UnsupportedOperationException();
+        if (getRowId() != 0)
+        {
+            try
+            {
+                Table.delete(ExperimentServiceImpl.get().getTinfoDataInput(), new SimpleFilter("TargetApplicationId", getRowId()));
+                Table.delete(ExperimentServiceImpl.get().getTinfoMaterialInput(), new SimpleFilter("TargetApplicationId", getRowId()));
+                Table.delete(ExperimentServiceImpl.get().getTinfoProtocolApplicationParameter(), new SimpleFilter("ProtocolApplicationId", getRowId()));
+
+                SQLFragment commonSQL = new SQLFragment(" SET SourceApplicationId = NULL, RunId = NULL WHERE SourceApplicationId = ?", getRowId());
+
+                SQLFragment materialSQL = new SQLFragment("UPDATE " + ExperimentServiceImpl.get().getTinfoMaterial());
+                materialSQL.append(commonSQL);
+                Table.execute(ExperimentServiceImpl.get().getSchema(), materialSQL);
+
+                SQLFragment dataSQL = new SQLFragment("UPDATE " + ExperimentServiceImpl.get().getTinfoData());
+                dataSQL.append(commonSQL);
+                Table.execute(ExperimentServiceImpl.get().getSchema(), dataSQL);
+
+                Table.delete(ExperimentServiceImpl.get().getTinfoProtocolApplication(), getRowId());
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+        }
     }
 
     public void setInputMaterials(List<ExpMaterial> inputMaterialList)

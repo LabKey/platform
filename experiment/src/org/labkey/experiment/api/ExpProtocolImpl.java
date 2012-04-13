@@ -214,7 +214,7 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
         try
         {
             String sql = "SELECT P.* FROM " + ExperimentServiceImpl.get().getTinfoProtocol() + " P, " + ExperimentServiceImpl.get().getTinfoProtocolAction() + " PA "
-                    + " WHERE P.RowId = PA.ParentProtocolID AND PA.ParentProtocolId = ? ORDER BY PA.Sequence" ;
+                    + " WHERE P.RowId = PA.ChildProtocolID AND PA.ParentProtocolId = ? ORDER BY PA.Sequence" ;
 
             ExpProtocolImpl[] result = fromProtocols(Table.executeQuery(ExperimentServiceImpl.get().getExpSchema(), sql, new Object[]{_object.getRowId()}, Protocol.class));
             return Arrays.<ExpProtocol>asList(result);
