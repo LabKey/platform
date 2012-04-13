@@ -148,44 +148,6 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         }
     }
 
-    public static class ParticipantVisitColumn extends ExprColumn
-    {
-        protected static final String PARTICIPANT_VISIT_JOIN = "ParticipantVisitJoin$";
-
-        public ParticipantVisitColumn(final StudyQuerySchema schema, TableInfo parent)
-        {
-            super(parent, StudyService.get().getSubjectVisitColumnName(schema.getContainer()),
-                    new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "$" + PARTICIPANT_VISIT_JOIN + ".ParticipantSequenceKey"),
-                    JdbcType.INTEGER);
-
-            setFk(new LookupForeignKey("ParticipantSequenceKey")
-            {
-                public TableInfo getLookupTableInfo()
-                {
-                    return new ParticipantVisitTable(schema);
-                }
-            });
-        }
-
-        @Override
-        public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
-        {
-            super.declareJoins(parentAlias, map);
-
-            String tableAlias = parentAlias + "$" + PARTICIPANT_VISIT_JOIN;
-            if (map.containsKey(tableAlias))
-                return;
-
-            SQLFragment joinSql = new SQLFragment();
-            joinSql.append(" LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoParticipantVisit()).append(" AS ");
-            joinSql.append(tableAlias).append(" ON ");
-            joinSql.append(parentAlias).append(".ParticipantSequenceKey = ").append(tableAlias).append(".ParticipantSequenceKey");
-            joinSql.append(" AND ").append(parentAlias).append(".Container = ").append(tableAlias).append(".Container");
-
-            map.put(tableAlias, joinSql);
-        }
-    }
-
     public static class CollectionCohortColumn extends ExprColumn
     {
         protected static final String COLLECTION_COHORT_JOIN = "CollectionCohortJoin$";

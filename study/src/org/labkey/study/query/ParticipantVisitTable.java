@@ -49,12 +49,6 @@ public class ParticipantVisitTable extends FilteredTable
         _demographicsColumns = new CaseInsensitiveHashMap<ColumnInfo>();
         Study study = StudyService.get().getStudy(schema.getContainer());
 
-        /*
-        ColumnInfo keyPV = new ParticipantVisitColumn("ParticipantVisit", this, _rootTable.getColumn("ParticipantId"), _rootTable.getColumn("SequenceNum"));
-        keyPV.setHidden(true);
-        keyPV.setIsUnselectable(true);
-        addColumn(keyPV);
-        */
         ColumnInfo participantSequenceKeyColumn = null;
         for (ColumnInfo col : _rootTable.getColumns())
         {
@@ -115,18 +109,8 @@ public class ParticipantVisitTable extends FilteredTable
                 addWrapColumn(col);
         }
 
-// it would be nice to avoid lookup back to source table
-// however, getLookupTableInfo does not pass in the foreigh key column
-//        int foreignDatasetId = -1;
-//        if (pv instanceof ParticipantVisitColumn && pv.getParentTable() instanceof DataSetTableImpl)
-//            foreignDatasetId = ((DataSetTableImpl)pv.getParentTable()).getDatasetDefinition().getDataSetId();
-
         for (DataSetDefinition dataset : _schema.getStudy().getDataSets())
         {
-// don't do a lookup back to myself
-//            if (dataset.getDataSetId() == foreignDatasetId)
-//                continue;
-
             // verify that the current user has permission to read this dataset (they may not if
             // advanced study security is enabled).
             if (!dataset.canRead(schema.getUser()))

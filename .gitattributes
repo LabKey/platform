@@ -2983,7 +2983,6 @@ study/src/org/labkey/study/query/ParticipantDataSetTable.java -text
 study/src/org/labkey/study/query/ParticipantGroupMapTable.java -text
 study/src/org/labkey/study/query/ParticipantGroupTable.java -text
 study/src/org/labkey/study/query/ParticipantTable.java -text
-study/src/org/labkey/study/query/ParticipantVisitColumn.java -text
 study/src/org/labkey/study/query/ParticipantVisitDataSetTable.java -text
 study/src/org/labkey/study/query/ParticipantVisitTable.java -text
 study/src/org/labkey/study/query/PrimaryTypeTable.java -text
