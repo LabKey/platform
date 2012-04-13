@@ -38,6 +38,7 @@ import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.FacetingBehaviorType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 
@@ -155,7 +156,7 @@ public class ListImporter
         RowMapFactory<Object> mapFactory = new RowMapFactory<Object>(TYPE_NAME_COLUMN, "Property", "PropertyURI", "Label", "Description",
                 "RangeURI", "NotNull", "ConceptURI", "Format", "InputType", "HiddenColumn", "MvEnabled", "LookupFolderPath",
                 "LookupSchema", "LookupQuery", "URL", "ImportAliases", "ShownInInsertView", "ShownInUpdateView",
-                "ShownInDetailsView", "Measure", "Dimension", "ConditionalFormats");
+                "ShownInDetailsView", "Measure", "Dimension", "ConditionalFormats", "FacetingBehaviorType");
         List<Map<String, Object>> importMaps = new LinkedList<Map<String, Object>>();
 
         for (ColumnType columnXml : listXml.getColumns().getColumnArray())
@@ -192,6 +193,11 @@ public class ListImporter
             boolean measure = columnXml.isSetMeasure() && columnXml.getMeasure();
             boolean dimension = columnXml.isSetDimension() && columnXml.getDimension();
 
+            FacetingBehaviorType.Enum type = columnXml.getFacetingBehavior();
+            String facetingBehaviorType = FacetingBehaviorType.AUTOMATIC.toString();
+            if (type != null)
+                facetingBehaviorType = type.toString();
+
             Set<String> importAliases = new LinkedHashSet<String>();
             if (columnXml.isSetImportAliases())
             {
@@ -223,7 +229,8 @@ public class ListImporter
                 shownInDetailsView,
                 measure,
                 dimension,
-                ConditionalFormat.convertFromXML(columnXml.getConditionalFormats())
+                ConditionalFormat.convertFromXML(columnXml.getConditionalFormats()),
+                facetingBehaviorType
             });
 
             importMaps.add(map);

@@ -27,6 +27,7 @@ import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.FacetingBehaviorType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.study.importer.DatasetImporter.DatasetImportProperties;
@@ -110,7 +111,7 @@ public class SchemaXmlReader implements SchemaReader
             RowMapFactory<Object> mapFactory = new RowMapFactory<Object>(NAME_KEY, "Property", "PropertyURI", "Label", "Description",
                     "RangeURI", "NotNull", "ConceptURI", "Format", "InputType", "HiddenColumn", "MvEnabled", "LookupFolderPath",
                     "LookupSchema", "LookupQuery", "URL", "ImportAliases", "ShownInInsertView", "ShownInUpdateView",
-                    "ShownInDetailsView", "Measure", "Dimension", "ConditionalFormats");
+                    "ShownInDetailsView", "Measure", "Dimension", "ConditionalFormats", "FacetingBehaviorType");
 
             if (tableXml.getColumns() != null)
             {
@@ -161,6 +162,11 @@ public class SchemaXmlReader implements SchemaReader
                         importAliases.addAll(Arrays.asList(columnXml.getImportAliases().getImportAliasArray()));
                     }
 
+                    FacetingBehaviorType.Enum type = columnXml.getFacetingBehavior();
+                    String facetingBehaviorType = FacetingBehaviorType.AUTOMATIC.toString();
+                    if (type != null)
+                        facetingBehaviorType = type.toString();
+
                     ColumnType.Fk fk = columnXml.getFk();
                     List<ConditionalFormat> conditionalFormats = ConditionalFormat.convertFromXML(columnXml.getConditionalFormats());
                     Map<String, Object> map = mapFactory.getRowMap(new Object[]{
@@ -186,7 +192,8 @@ public class SchemaXmlReader implements SchemaReader
                         shownInDetailsView,
                         measure,
                         dimension,
-                        conditionalFormats
+                        conditionalFormats,
+                        facetingBehaviorType
                     });
 
                     _importMaps.add(map);

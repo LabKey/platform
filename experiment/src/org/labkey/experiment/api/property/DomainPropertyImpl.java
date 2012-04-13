@@ -17,14 +17,23 @@
 package org.labkey.experiment.api.property;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ConditionalFormat;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.StorageProvisioner;
-import org.labkey.api.exp.property.*;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.IPropertyType;
+import org.labkey.api.exp.property.IPropertyValidator;
+import org.labkey.api.exp.property.Lookup;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpressionFactory;
 
@@ -547,6 +556,18 @@ public class DomainPropertyImpl implements DomainProperty
     public PropertyDescriptor getOldProperty()
     {
         return _pdOld;
+    }
+
+    @Override
+    public FacetingBehaviorType getFacetingBehavior()
+    {
+        return _pd.getFacetingBehaviorType();
+    }
+
+    @Override
+    public void setFacetingBehavior(FacetingBehaviorType type)
+    {
+        _pd.setFacetingBehaviorType(type);
     }
 
     @Override
