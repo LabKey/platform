@@ -22,6 +22,8 @@ import java.util.Map;
 
 public interface ExpMaterial extends ExpProtocolOutput
 {
+    public static final String DEFAULT_CPAS_TYPE = "Material";
+
     public ExpSampleSet getSampleSet();
 
     public Map<PropertyDescriptor, Object> getPropertyValues();

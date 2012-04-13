@@ -232,6 +232,7 @@ public class ExperimentService
          * @param log output log target
          */
         public ExpRun saveSimpleExperimentRun(ExpRun run, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException;
+        public ExpProtocolApplication createSimpleRunExtraProtocolApplication(ExpRun expRun, String name);
         public ExpRun deriveSamples(Map<ExpMaterial, String> inputMaterials, Map<ExpMaterial, String> outputMaterials, ViewBackgroundInfo info, Logger log) throws ExperimentException;
 
         public void registerExperimentDataHandler(ExperimentDataHandler handler);

@@ -26,6 +26,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -37,6 +38,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -103,7 +105,8 @@ public class DefaultDataTransformer implements DataTransformer
                     {
                         Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
                         String script = sb.toString();
-                        File runInfo = dataHandler.createTransformationRunInfo(context, run, scriptDir, runProperties, context.getBatchProperties());
+                        Pair<File, Set<File>> files = dataHandler.createTransformationRunInfo(context, run, scriptDir, runProperties, context.getBatchProperties());
+                        File runInfo = files.getKey();
 
                         bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, scriptDir.getAbsolutePath());
                         bindings.put(ExternalScriptEngine.SCRIPT_PATH, scriptFile.getAbsolutePath());
@@ -131,7 +134,7 @@ public class DefaultDataTransformer implements DataTransformer
                         }
 
                         // process any output from the transformation script
-                        result = dataHandler.processTransformationOutput(context, runInfo, run, rewrittenScriptFile, result);
+                        result = dataHandler.processTransformationOutput(context, runInfo, run, rewrittenScriptFile, result, files.getValue());
                         if (result.getRunProperties() != null && !result.getRunProperties().isEmpty())
                         {
                             // Propagate any transformed run properties on to the next script

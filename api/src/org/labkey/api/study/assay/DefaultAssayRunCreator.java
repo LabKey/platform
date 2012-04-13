@@ -237,9 +237,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     for (Map.Entry<ExpData, List<Map<String, Object>>> entry : transformResult.getTransformedData().entrySet())
                     {
                         ExpData expData = entry.getKey();
-
-                        expData.setSourceApplication(run.getOutputProtocolApplication());
-                        expData.setRun(run);
+                        // The object may have already been claimed by 
+                        if (expData.getSourceApplication() == null)
+                        {
+                            expData.setSourceApplication(run.getOutputProtocolApplication());
+                        }
                         expData.save(context.getUser());
 
                         run.getOutputProtocolApplication().addDataInput(context.getUser(), expData, ExpDataRunInput.DEFAULT_ROLE);
