@@ -21,9 +21,23 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ColumnRenderProperties;
+import org.labkey.api.data.ConditionalFormat;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.defaults.DefaultValueService;
-import org.labkey.api.exp.*;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.exp.DomainDescriptor;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -41,7 +55,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: jgarms
@@ -192,6 +212,7 @@ public class DomainUtil
         gwtProp.setDimension(prop.isDimension());
         gwtProp.setMeasure(prop.isMeasure());
         gwtProp.setMvEnabled(prop.isMvEnabled());
+        gwtProp.setFacetingBehaviorType(prop.getFacetingBehavior().name());
         gwtProp.setDefaultValueType(prop.getDefaultValueTypeEnum());
         gwtProp.setImportAliases(prop.getPropertyDescriptor().getImportAliases());
         StringExpression url = prop.getPropertyDescriptor().getURL();
@@ -509,6 +530,12 @@ public class DomainUtil
             Type type = Type.getTypeByXsdType(from.getRangeURI());
             to.setMeasure(ColumnRenderProperties.inferIsMeasure(from.getName(), from.getLabel(), type != null && type.isNumeric(),
                                                                 false, from.getLookupQuery() != null, from.isHidden()));
+        }
+
+        if (from.getFacetingBehaviorType() != null)
+        {
+            FacetingBehaviorType type = FacetingBehaviorType.valueOf(from.getFacetingBehaviorType());
+            to.setFacetingBehavior(type);
         }
     }
 

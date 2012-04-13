@@ -23,6 +23,7 @@ import org.apache.commons.beanutils.converters.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportIdentifierConverter;
 import org.labkey.api.security.User;
@@ -117,6 +118,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new EnumConverter(), DataSet.KeyManagementType.class);
         _register(new UserConverter(), User.class);
         _register(new ExpDataFileConverter(), File.class);
+        _register(new FacetingBehaviorTypeConverter(), FacetingBehaviorType.class);
     }
 
 
@@ -578,6 +580,19 @@ public class ConvertHelper implements PropertyEditorRegistrar
             else
             {
                 return UserManager.getUser(NumberUtils.toInt(value.toString(), -1));
+            }
+        }
+    }
+
+    public static class FacetingBehaviorTypeConverter implements Converter
+    {
+        public Object convert(Class type, Object value)
+        {
+            if(value == null || value.equals("null") || !type.equals(FacetingBehaviorType.class))
+                return null;
+            else
+            {
+                return FacetingBehaviorType.valueOf(value.toString());
             }
         }
     }

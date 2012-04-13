@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.labkey.api.exp.property.Type;
 import org.labkey.api.util.DateUtil;
 import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.FacetingBehaviorType;
 import org.labkey.data.xml.TableType;
 import org.jetbrains.annotations.Nullable;
 
@@ -164,6 +165,12 @@ public class TableInfoWriter
         // TODO: Field validators?
         // TODO: Default values / Default value types
         ConditionalFormat.convertToXML(column.getConditionalFormats(), columnXml);
+
+        if (column.getFacetingBehaviorType() != null)
+        {
+            FacetingBehaviorType.Enum type = FacetingBehaviorType.Enum.forString(column.getFacetingBehaviorType().name());
+            columnXml.setFacetingBehavior(type);
+        }
     }
 
     protected String getConceptURI(ColumnInfo column)

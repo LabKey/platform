@@ -53,6 +53,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorContext;
+import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.gwt.client.ui.domain.CancellationException;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -2350,164 +2351,58 @@ public class OntologyManager
                 continue;
             }
 
-            // try use existing SystemProperty PropertyDescriptor from Shared container.
-            PropertyDescriptor pd = null;
-            if (!propertyURI.startsWith(domainURI) && !propertyURI.startsWith(ColumnInfo.DEFAULT_PROPERTY_URI_PREFIX))
-                pd = getPropertyDescriptor(propertyURI, _sharedContainer);
-
-            if (pd == null)
+            PropertyDescriptor pd = _propertyDescriptorFromRowMap(container, domainURI, propertyURI, name, m, errors);
+            if (pd != null)
             {
-                String label = StringUtils.trimToNull((String) m.get("label"));
-                if (null == label)
-                    label = name;
-                String conceptURI = (String) m.get("conceptURI");
-                String rangeURI = (String) m.get("rangeURI");
-
-                BooleanConverter booleanConverter = new BooleanConverter(Boolean.FALSE);
-
-                boolean required = ((Boolean)booleanConverter.convert(Boolean.class, m.get("NotNull"))).booleanValue();
-                boolean hidden = ((Boolean)booleanConverter.convert(Boolean.class, m.get("HiddenColumn"))).booleanValue();
-                boolean mvEnabled = ((Boolean)booleanConverter.convert(Boolean.class, m.get("MvEnabled"))).booleanValue();
-
-                String description = (String) m.get("description");
-                String format = StringUtils.trimToNull((String)m.get("format"));
-                String url = (String) m.get("url");
-                String importAliases = (String) m.get("importAliases");
-
-                // Try to resolve folder path to a container... if this fails, just use current folder (which at least will preserve schema & query)
-                String lookupContainerId = null;
-                String lookupFolderPath = (String) m.get("LookupFolderPath");
-                if (null != lookupFolderPath)
-                {
-                    Container lookupContainer = ContainerManager.getForPath(lookupFolderPath);
-                    lookupContainerId = null != lookupContainer ? lookupContainer.getId() : null;
-                }
-                String lookupSchema = (String) m.get("LookupSchema");
-                String lookupQuery = (String) m.get("LookupQuery");
-
-                boolean shownInInsertView = m.get("ShownInInsertView") == null || ((Boolean)m.get("ShownInInsertView")).booleanValue();
-                boolean shownInUpdateView = m.get("ShownInUpdateView") == null || ((Boolean)m.get("ShownInUpdateView")).booleanValue();
-                boolean shownInDetailsView = m.get("ShownInDetailsView") == null || ((Boolean)m.get("ShownInDetailsView")).booleanValue();
-
-                boolean dimension = m.get("Dimension") != null && ((Boolean)m.get("Dimension")).booleanValue();
-                boolean measure = m.get("Measure") != null && ((Boolean)m.get("Measure")).booleanValue();
-
-                PropertyType pt = PropertyType.getFromURI(conceptURI, rangeURI, null);
-                if (null == pt)
-                {
-                    String e = "Unrecognized type URI : " + ((null==conceptURI)? rangeURI : conceptURI);
-                    if (!errors.contains(e))
-                        errors.add(e);
-                    continue;
-                }
-                if (pt == PropertyType.STRING && "textarea".equals(m.get("InputType")))
-                {
-                    pt = PropertyType.MULTI_LINE;
-                }
-                rangeURI = pt.getTypeUri();
-
-                if (format != null)
-                {
-                    try
-                    {
-                        switch (pt)
-                        {
-                            case INTEGER:
-                            case DOUBLE:
-                                format = convertNumberFormatChars(format);
-                                (new DecimalFormat(format)).format(1.0);
-                                break;
-                            case DATE_TIME:
-                                format = convertDateFormatChars(format);
-                                (new SimpleDateFormat(format)).format(new Date());
-                                // UNDONE: don't import date format until we have default format for study
-                                // UNDONE: it looks bad to have mixed formats
-                                break;
-                            case STRING:
-                            case MULTI_LINE:
-                            default:
-                                format = null;
-                        }
-                    }
-                    catch (Exception x)
-                    {
-                        format = null;
-                    }
-                }
-
-                pd = new PropertyDescriptor();
-                pd.setPropertyURI(propertyURI);
-                pd.setName(name);
-                pd.setLabel(label);
-                pd.setConceptURI(conceptURI);
-                pd.setRangeURI(rangeURI);
-                pd.setContainer(container);
-                pd.setDescription(description);
-                pd.setURL(StringExpressionFactory.createURL(url));
-                pd.setImportAliases(importAliases);
-                pd.setRequired(required);
-                pd.setHidden(hidden);
-                pd.setShownInInsertView(shownInInsertView);
-                pd.setShownInUpdateView(shownInUpdateView);
-                pd.setShownInDetailsView(shownInDetailsView);
-                pd.setDimension(dimension);
-                pd.setMeasure(measure);
-                pd.setFormat(format);
-                pd.setMvEnabled(mvEnabled);
-                pd.setLookupContainer(lookupContainerId);
-                pd.setLookupSchema(lookupSchema);
-                pd.setLookupQuery(lookupQuery);
-
                 List<ConditionalFormat> conditionalFormats = (List<ConditionalFormat>) m.get("ConditionalFormats");
                 if (conditionalFormats != null && !conditionalFormats.isEmpty())
                 {
                     allConditionalFormats.put(pd.getPropertyURI(), conditionalFormats);
                 }
-            }
-
-            if (null != allProps.put(pd.getPropertyURI(), pd))
-            {
-                if (!ignoreDuplicates)
-                    errors.add("Duplicate definition of property: " + pd.getPropertyURI());
-            }
-
-            DomainDescriptor dd = null;
-            if (null != domainURI)
-            {
-                dd = domainMap.get(domainURI);
-                if (null == dd)
+                if (null != allProps.put(pd.getPropertyURI(), pd))
                 {
-                    dd = ensureDomainDescriptor(domainURI, domainName, container);
-                    domainMap.put(domainURI, dd);
+                    if (!ignoreDuplicates)
+                        errors.add("Duplicate definition of property: " + pd.getPropertyURI());
                 }
-            }
 
-            if (null != dd)
-            {
-                pdNewMap = newPropsByDomain.get(dd.getDomainURI());
-                if (null == pdNewMap)
+                DomainDescriptor dd = null;
+                if (null != domainURI)
                 {
-                    pdNewMap = new LinkedHashMap<String, PropertyDescriptor>();
-                    newPropsByDomain.put(dd.getDomainURI(), pdNewMap);
+                    dd = domainMap.get(domainURI);
+                    if (null == dd)
+                    {
+                        dd = ensureDomainDescriptor(domainURI, domainName, container);
+                        domainMap.put(domainURI, dd);
+                    }
                 }
-                pdNewMap.put(pd.getPropertyURI(), pd);
 
-                // Need to do a case insensitive check for duplicate property names
-                Set<String> caseInsensitivePropertyNames = newPropertyURIsByDomain.get(dd.getDomainURI());
-                if (caseInsensitivePropertyNames == null)
+                if (null != dd)
                 {
-                    caseInsensitivePropertyNames = new CaseInsensitiveHashSet();
-                    newPropertyURIsByDomain.put(dd.getDomainURI(), caseInsensitivePropertyNames);
+                    pdNewMap = newPropsByDomain.get(dd.getDomainURI());
+                    if (null == pdNewMap)
+                    {
+                        pdNewMap = new LinkedHashMap<String, PropertyDescriptor>();
+                        newPropsByDomain.put(dd.getDomainURI(), pdNewMap);
+                    }
+                    pdNewMap.put(pd.getPropertyURI(), pd);
+
+                    // Need to do a case insensitive check for duplicate property names
+                    Set<String> caseInsensitivePropertyNames = newPropertyURIsByDomain.get(dd.getDomainURI());
+                    if (caseInsensitivePropertyNames == null)
+                    {
+                        caseInsensitivePropertyNames = new CaseInsensitiveHashSet();
+                        newPropertyURIsByDomain.put(dd.getDomainURI(), caseInsensitivePropertyNames);
+                    }
+                    if (!caseInsensitivePropertyNames.add(pd.getPropertyURI()))
+                    {
+                        errors.add("'" + dd.getName() + "' has multiple fields named '" + pd.getName() + "'");
+                    }
                 }
-                if (!caseInsensitivePropertyNames.add(pd.getPropertyURI()))
+                else
                 {
-                    errors.add("'" + dd.getName() + "' has multiple fields named '" + pd.getName() + "'");
+                    // put only the domain-less allProps in this list
+                    propsWithoutDomains.put(pd.getPropertyURI(), pd);
                 }
-            }
-            else
-            {
-                // put only the domain-less allProps in this list
-                propsWithoutDomains.put(pd.getPropertyURI(), pd);
             }
         }
 
@@ -2624,92 +2519,11 @@ public class OntologyManager
                 continue;
             }
 
-            // try use existing SystemProperty PropertyDescriptor from Shared container.
-            PropertyDescriptor pd = null;
-            if (!propertyURI.startsWith(domainURI) && !propertyURI.startsWith(ColumnInfo.DEFAULT_PROPERTY_URI_PREFIX))
-                pd = getPropertyDescriptor(propertyURI, _sharedContainer);
+            PropertyDescriptor pd = _propertyDescriptorFromRowMap(container, domainURI, propertyURI, name, m, errors);
 
-            if (pd == null)
+            if (pd != null)
             {
-                String label = StringUtils.trimToNull((String) m.get("label"));
-                if (null == label)
-                    label = name;
-                String conceptURI = (String) m.get("conceptURI");
-                String rangeURI = (String) m.get("rangeURI");
-
-                BooleanConverter booleanConverter = new BooleanConverter(Boolean.FALSE);
-
-                boolean required = ((Boolean)booleanConverter.convert(Boolean.class, m.get("NotNull"))).booleanValue();
-                boolean hidden = ((Boolean)booleanConverter.convert(Boolean.class, m.get("HiddenColumn"))).booleanValue();
-                boolean mvEnabled = ((Boolean)booleanConverter.convert(Boolean.class, m.get("MvEnabled"))).booleanValue();
-
-                String description = (String) m.get("description");
-                String format = StringUtils.trimToNull((String)m.get("format"));
-                String url = (String) m.get("url");
-                String importAliases = (String) m.get("importAliases");
-
-                // Try to resolve folder path to a container... if this fails, just use current folder (which at least will preserve schema & query)
-                String lookupContainerId = null;
-                String lookupFolderPath = (String) m.get("LookupFolderPath");
-                if (null != lookupFolderPath)
-                {
-                    Container lookupContainer = ContainerManager.getForPath(lookupFolderPath);
-                    lookupContainerId = null != lookupContainer ? lookupContainer.getId() : null;
-                }
-                String lookupSchema = (String) m.get("LookupSchema");
-                String lookupQuery = (String) m.get("LookupQuery");
-
-                boolean shownInInsertView = m.get("ShownInInsertView") == null || ((Boolean)m.get("ShownInInsertView")).booleanValue();
-                boolean shownInUpdateView = m.get("ShownInUpdateView") == null || ((Boolean)m.get("ShownInUpdateView")).booleanValue();
-                boolean shownInDetailsView = m.get("ShownInDetailsView") == null || ((Boolean)m.get("ShownInDetailsView")).booleanValue();
-
-                boolean dimension = m.get("Dimension") != null && ((Boolean)m.get("Dimension")).booleanValue();
-                boolean measure = m.get("Measure") != null && ((Boolean)m.get("Measure")).booleanValue();
-
-                PropertyType pt = PropertyType.getFromURI(conceptURI, rangeURI, null);
-                if (null == pt)
-                {
-                    String e = "Unrecognized type URI : " + ((null==conceptURI)? rangeURI : conceptURI);
-                    if (!errors.contains(e))
-                        errors.add(e);
-                    continue;
-                }
-                if (pt == PropertyType.STRING && "textarea".equals(m.get("InputType")))
-                {
-                    pt = PropertyType.MULTI_LINE;
-                }
-                rangeURI = pt.getTypeUri();
-
-                if (format != null)
-                {
-                    try
-                    {
-                        switch (pt)
-                        {
-                            case INTEGER:
-                            case DOUBLE:
-                                format = convertNumberFormatChars(format);
-                                (new DecimalFormat(format)).format(1.0);
-                                break;
-                            case DATE_TIME:
-                                format = convertDateFormatChars(format);
-                                (new SimpleDateFormat(format)).format(new Date());
-                                // UNDONE: don't import date format until we have default format for study
-                                // UNDONE: it looks bad to have mixed formats
-                                break;
-                            case STRING:
-                            case MULTI_LINE:
-                            default:
-                                format = null;
-                        }
-                    }
-                    catch (Exception x)
-                    {
-                        format = null;
-                    }
-                }
-
-                if (!all.add(propertyURI) && !ignoreDuplicates)
+                if (!all.add(pd.getPropertyURI()) && !ignoreDuplicates)
                 {
                     if (null != domainName)
                         errors.add("'" + domainName + "' has multiple fields named '" + name + "'");
@@ -2717,38 +2531,138 @@ public class OntologyManager
                         errors.add("field '" + name + "' is specified more than once.");
                 }
 
-                pd = new PropertyDescriptor();
-                pd.setPropertyURI(propertyURI);
-                pd.setName(name);
-                pd.setLabel(label);
-                pd.setConceptURI(conceptURI);
-                pd.setRangeURI(rangeURI);
-                pd.setContainer(container);
-                pd.setDescription(description);
-                pd.setURL(StringExpressionFactory.createURL(url));
-                pd.setImportAliases(importAliases);
-                pd.setRequired(required);
-                pd.setHidden(hidden);
-                pd.setShownInInsertView(shownInInsertView);
-                pd.setShownInUpdateView(shownInUpdateView);
-                pd.setShownInDetailsView(shownInDetailsView);
-                pd.setDimension(dimension);
-                pd.setMeasure(measure);
-                pd.setFormat(format);
-                pd.setMvEnabled(mvEnabled);
-                pd.setLookupContainer(lookupContainerId);
-                pd.setLookupSchema(lookupSchema);
-                pd.setLookupQuery(lookupQuery);
-
                 List<ConditionalFormat> conditionalFormats = (List<ConditionalFormat>) m.get("ConditionalFormats");
                 if (conditionalFormats != null && !conditionalFormats.isEmpty())
                     ret.formats.put(pd.getPropertyURI(), conditionalFormats);
+
+                ret.add(domainName, domainURI, pd);
             }
-            ret.add(domainName, domainURI, pd);
         }
         return ret;
     }
 
+    private static PropertyDescriptor _propertyDescriptorFromRowMap(Container container, String domainURI, String propertyURI, String name,
+                                                                    Map<String, Object> m, Collection<String> errors)
+    {
+        // try use existing SystemProperty PropertyDescriptor from Shared container.
+        PropertyDescriptor pd = null;
+        if (!propertyURI.startsWith(domainURI) && !propertyURI.startsWith(ColumnInfo.DEFAULT_PROPERTY_URI_PREFIX))
+            pd = getPropertyDescriptor(propertyURI, _sharedContainer);
+
+        if (pd == null)
+        {
+            String label = StringUtils.trimToNull((String) m.get("label"));
+            if (null == label)
+                label = name;
+            String conceptURI = (String) m.get("conceptURI");
+            String rangeURI = (String) m.get("rangeURI");
+
+            BooleanConverter booleanConverter = new BooleanConverter(Boolean.FALSE);
+
+            boolean required = ((Boolean)booleanConverter.convert(Boolean.class, m.get("NotNull"))).booleanValue();
+            boolean hidden = ((Boolean)booleanConverter.convert(Boolean.class, m.get("HiddenColumn"))).booleanValue();
+            boolean mvEnabled = ((Boolean)booleanConverter.convert(Boolean.class, m.get("MvEnabled"))).booleanValue();
+
+            String description = (String) m.get("description");
+            String format = StringUtils.trimToNull((String)m.get("format"));
+            String url = (String) m.get("url");
+            String importAliases = (String) m.get("importAliases");
+
+            // Try to resolve folder path to a container... if this fails, just use current folder (which at least will preserve schema & query)
+            String lookupContainerId = null;
+            String lookupFolderPath = (String) m.get("LookupFolderPath");
+            if (null != lookupFolderPath)
+            {
+                Container lookupContainer = ContainerManager.getForPath(lookupFolderPath);
+                lookupContainerId = null != lookupContainer ? lookupContainer.getId() : null;
+            }
+            String lookupSchema = (String) m.get("LookupSchema");
+            String lookupQuery = (String) m.get("LookupQuery");
+
+            boolean shownInInsertView = m.get("ShownInInsertView") == null || ((Boolean)m.get("ShownInInsertView")).booleanValue();
+            boolean shownInUpdateView = m.get("ShownInUpdateView") == null || ((Boolean)m.get("ShownInUpdateView")).booleanValue();
+            boolean shownInDetailsView = m.get("ShownInDetailsView") == null || ((Boolean)m.get("ShownInDetailsView")).booleanValue();
+
+            boolean dimension = m.get("Dimension") != null && ((Boolean)m.get("Dimension")).booleanValue();
+            boolean measure = m.get("Measure") != null && ((Boolean)m.get("Measure")).booleanValue();
+
+            FacetingBehaviorType facetingBehavior = FacetingBehaviorType.AUTOMATIC;
+            if (m.get("FacetingBehaviorType") != null)
+            {
+                FacetingBehaviorType type = FacetingBehaviorType.valueOf(m.get("FacetingBehaviorType").toString());
+                if (type != null)
+                    facetingBehavior = type;
+            }
+
+            PropertyType pt = PropertyType.getFromURI(conceptURI, rangeURI, null);
+            if (null == pt)
+            {
+                String e = "Unrecognized type URI : " + ((null==conceptURI)? rangeURI : conceptURI);
+                if (!errors.contains(e))
+                    errors.add(e);
+                return null;
+            }
+            if (pt == PropertyType.STRING && "textarea".equals(m.get("InputType")))
+            {
+                pt = PropertyType.MULTI_LINE;
+            }
+            rangeURI = pt.getTypeUri();
+
+            if (format != null)
+            {
+                try
+                {
+                    switch (pt)
+                    {
+                        case INTEGER:
+                        case DOUBLE:
+                            format = convertNumberFormatChars(format);
+                            (new DecimalFormat(format)).format(1.0);
+                            break;
+                        case DATE_TIME:
+                            format = convertDateFormatChars(format);
+                            (new SimpleDateFormat(format)).format(new Date());
+                            // UNDONE: don't import date format until we have default format for study
+                            // UNDONE: it looks bad to have mixed formats
+                            break;
+                        case STRING:
+                        case MULTI_LINE:
+                        default:
+                            format = null;
+                    }
+                }
+                catch (Exception x)
+                {
+                    format = null;
+                }
+            }
+
+            pd = new PropertyDescriptor();
+            pd.setPropertyURI(propertyURI);
+            pd.setName(name);
+            pd.setLabel(label);
+            pd.setConceptURI(conceptURI);
+            pd.setRangeURI(rangeURI);
+            pd.setContainer(container);
+            pd.setDescription(description);
+            pd.setURL(StringExpressionFactory.createURL(url));
+            pd.setImportAliases(importAliases);
+            pd.setRequired(required);
+            pd.setHidden(hidden);
+            pd.setShownInInsertView(shownInInsertView);
+            pd.setShownInUpdateView(shownInUpdateView);
+            pd.setShownInDetailsView(shownInDetailsView);
+            pd.setDimension(dimension);
+            pd.setMeasure(measure);
+            pd.setFormat(format);
+            pd.setMvEnabled(mvEnabled);
+            pd.setLookupContainer(lookupContainerId);
+            pd.setLookupSchema(lookupSchema);
+            pd.setLookupQuery(lookupQuery);
+            pd.setFacetingBehaviorType(facetingBehavior);
+        }
+        return pd;
+    }
 
     private static String convertNumberFormatChars(String format)
     {

@@ -2612,7 +2612,28 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     getInitialFilterType: function(){
         var filterType = 'default';
         var dataRegion = LABKEY.DataRegions[this.dataRegionName];
-        if (this.boundColumn.lookup && dataRegion && dataRegion.schemaName && dataRegion.queryName )
+        var isFacetingCandidate = false;
+
+        switch (this.boundColumn.facetingBehaviorType) {
+
+            case 'ALWAYS_ON':
+                isFacetingCandidate = true;
+                break;
+            case 'ALWAYS_OFF':
+                break;
+            case 'AUTOMATIC':
+                // auto rules are if the column is a lookup or dimension OR if it is of type : (boolean, int, date, text), multiline excluded
+                
+                if (this.boundColumn.lookup || this.boundColumn.dimension)
+                    isFacetingCandidate = true;
+                else if (this.boundColumn.jsonType == 'boolean' || this.boundColumn.jsonType == 'int' || this.boundColumn.jsonType == 'date' ||
+                        (this.boundColumn.jsonType == 'string' && this.boundColumn.inputType != 'textarea'))
+                    isFacetingCandidate = true;
+
+                break;
+        }
+
+        if (isFacetingCandidate && dataRegion && dataRegion.schemaName && dataRegion.queryName )
         {
             var paramValPairs = this.getParamsForField(this._fieldName);
 

@@ -196,6 +196,9 @@ public class JsonWriter
             }
 
             props.put("shortCaption", cinfo.getShortLabel());
+
+            if (cinfo.getFacetingBehaviorType() != null)
+                props.put("facetingBehaviorType", cinfo.getFacetingBehaviorType().name());
         }
         else
         {

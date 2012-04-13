@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.util.StringExpression;
 
 import java.io.File;
@@ -62,6 +63,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     protected String urlTargetWindow;
     protected Set<String> importAliases = new LinkedHashSet<String>();
     protected DefaultValueType _defaultValueType = null;
+    protected FacetingBehaviorType facetingBehaviorType = FacetingBehaviorType.AUTOMATIC;
 
     public void copyTo(ColumnRenderProperties to)
     {
@@ -83,7 +85,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         to.dimension = dimension;
         to.url = url;
         to.importAliases = new LinkedHashSet<String>(importAliases);
-    }
+        to.facetingBehaviorType = facetingBehaviorType;                          }
 
     public Sort.SortDirection getSortDirection()
     {
@@ -574,5 +576,15 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     public Class getJavaClass()
     {
         return javaClassFromSqlType(getSqlTypeInt(), isNullable());
+    }
+
+    public void setFacetingBehaviorType(FacetingBehaviorType type)
+    {
+        facetingBehaviorType = type;
+    }
+
+    public FacetingBehaviorType getFacetingBehaviorType()
+    {
+        return facetingBehaviorType;
     }
 }

@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.gwt.client.FacetingBehaviorType;
 
 import java.util.List;
 import java.util.Set;
@@ -37,6 +38,7 @@ public interface DomainProperty extends ImportAliasable
     
     Domain getDomain();
     IPropertyType getType();
+    FacetingBehaviorType getFacetingBehavior();
     boolean isRequired();
     boolean isHidden();
     boolean isShownInInsertView();
@@ -52,6 +54,7 @@ public interface DomainProperty extends ImportAliasable
     void setLabel(String caption);
     void setConceptURI(String conceptURI);
     void setType(IPropertyType type);
+    void setFacetingBehavior(FacetingBehaviorType type);
     void setPropertyURI(String uri);
     void setRangeURI(String uri);
     void setFormat(String s);

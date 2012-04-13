@@ -4362,6 +4362,7 @@ api/webapp/labkey-ext-theme/resources/sass/ext-sage.scss -text
 api/webapp/labkey-ext-theme/resources/sass/ext-seattle.scss -text
 internal/gwtsrc/org/labkey/api/gwt/Internal.gwt.xml -text
 internal/gwtsrc/org/labkey/api/gwt/client/DefaultValueType.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/FacetingBehaviorType.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/assay/AssayDesignerMainPanel.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/assay/AssayException.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/assay/AssayService.java -text
@@ -4446,6 +4447,7 @@ internal/gwtsrc/org/labkey/api/gwt/client/ui/property/ConditionalFormatItem.java
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/DefaultValueItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/DescriptionItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/DimensionItem.java -text
+internal/gwtsrc/org/labkey/api/gwt/client/ui/property/FacetingBehaviorItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/FormatItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/ImportAliasesItem.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/ui/property/MeasureItem.java -text
