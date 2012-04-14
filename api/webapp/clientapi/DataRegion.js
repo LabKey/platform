@@ -3496,7 +3496,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 }
 
                 if(Ext.isEmpty(value) && filter.isDataValueRequired()){
-                    if(this.filterType == 'default'){
+                    if(tab.filterType == 'default'){
                         input.markInvalid('You must enter a value');
                         isValid = false;
                         return false;
@@ -3507,7 +3507,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 }
 
                 var filterArray = [filter.getURLSuffix(), value];
-                if(this.filterType != 'default'){
+                if(tab.filterType != 'default'){
                     var allowable = [];
                     this.getLookupStore().each(function(rec){
                         allowable.push(rec.get('value'))
