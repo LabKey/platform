@@ -16,8 +16,11 @@
 
 package org.labkey.api.security;
 
+import org.labkey.api.security.roles.Role;
+
 import java.security.Principal;
 import java.io.Serializable;
+import java.util.Set;
 
 /**
  * User: matthewb
@@ -90,6 +93,8 @@ public abstract class UserPrincipal implements Principal, Serializable
     }
 
     public abstract int[] getGroups();
+
+    public abstract Set<Role> getContextualRoles();
 
     public abstract boolean isInGroup(int group);
 

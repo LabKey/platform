@@ -22,10 +22,15 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.impersonation.NotImpersonatingContext;
+import org.labkey.api.security.roles.DeveloperRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 
 public class User extends UserPrincipal implements Serializable, Cloneable
@@ -163,6 +168,25 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     {
         int i = Arrays.binarySearch(getGroups(), group);
         return i >= 0;
+    }
+
+    @Override
+    public Set<Role> getContextualRoles()
+    {
+        return _impersonationContext.getContextualRoles(this);
+    }
+
+    // Return the usual contextual roles
+    public Set<Role> getStandardContextualRoles()
+    {
+        Set<Role> roles = new HashSet<Role>();
+
+        if (isAdministrator())
+            roles.add(RoleManager.siteAdminRole);
+        if (isDeveloper())
+            roles.add(RoleManager.getRole(DeveloperRole.class));
+
+        return roles;
     }
 
     @Override

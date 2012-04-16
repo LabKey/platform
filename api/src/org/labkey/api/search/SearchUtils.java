@@ -58,7 +58,7 @@ public class SearchUtils
 
         if (includeMoreInformationMessage)
         {
-            out.write("  <tr><td>For more information, visit the " + getHelpTopic().getLinkHtml("search syntax documentation.") + "</td></tr>\n");
+            out.write("  <tr><td>For more information, visit the " + getHelpTopic().getSimpleLinkHtml("search syntax documentation.") + "</td></tr>\n");
         }
 
         out.write("</table>\n");

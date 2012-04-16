@@ -17,7 +17,12 @@ package org.labkey.api.security;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.roles.Role;
+
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * User: arauch
@@ -124,5 +129,11 @@ public class Group extends UserPrincipal
     {
         int i = Arrays.binarySearch(getGroups(), group);
         return i >= 0;
+    }
+
+    @Override
+    public Set<Role> getContextualRoles()
+    {
+        return new HashSet<Role>();
     }
 }

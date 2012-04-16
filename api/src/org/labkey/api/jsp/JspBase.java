@@ -318,7 +318,7 @@ abstract public class JspBase extends JspContext implements HasViewContext
 
     public String helpLink(String helpTopic, String displayText)
     {
-        return new HelpTopic(helpTopic).getLinkHtml(displayText);
+        return new HelpTopic(helpTopic).getSimpleLinkHtml(displayText);
     }
 
     public String formatDate(Date date)

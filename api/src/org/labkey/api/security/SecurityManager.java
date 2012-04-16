@@ -47,6 +47,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.impersonation.ImpersonateGroupContextFactory;
+import org.labkey.api.security.impersonation.ImpersonateRoleContextFactory;
 import org.labkey.api.security.impersonation.ImpersonateUserContextFactory;
 import org.labkey.api.security.impersonation.ImpersonationContextFactory;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -483,6 +484,14 @@ public class SecurityManager
         @Nullable Container project = viewContext.getContainer().getProject();
         User user = viewContext.getUser();
         impersonate(viewContext, new ImpersonateGroupContextFactory(project, user, group, returnURL));
+    }
+
+
+    public static void impersonateRole(ViewContext viewContext, Role role, URLHelper returnURL)
+    {
+        @Nullable Container project = viewContext.getContainer().getProject();
+        User user = viewContext.getUser();
+        impersonate(viewContext, new ImpersonateRoleContextFactory(project, user, role, returnURL));
     }
 
 
@@ -2712,7 +2721,7 @@ public class SecurityManager
 
             sb.append("</p>");
             sb.append("<p>For help on fixing your mail server settings, please consult the SMTP section of the ");
-            sb.append(new HelpTopic("cpasxml").getLinkHtml("LabKey documentation on modifying your configuration file"));
+            sb.append(new HelpTopic("cpasxml").getSimpleLinkHtml("LabKey documentation on modifying your configuration file"));
             sb.append(".<br>");
         }
         else

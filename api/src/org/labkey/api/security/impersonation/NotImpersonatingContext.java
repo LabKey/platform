@@ -18,7 +18,10 @@ package org.labkey.api.security.impersonation;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.URLHelper;
+
+import java.util.Set;
 
 /**
  * User: adam
@@ -79,5 +82,11 @@ public class NotImpersonatingContext implements ImpersonationContext
     public int[] getGroups(User user)
     {
         return GroupManager.getAllGroupsForPrincipal(user);
+    }
+
+    @Override
+    public Set<Role> getContextualRoles(User user)
+    {
+        return user.getStandardContextualRoles();
     }
 }

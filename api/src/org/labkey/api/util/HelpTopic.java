@@ -21,6 +21,8 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.view.NavTree;
 
+import java.util.Map;
+
 /**
  * User: Tamra Myers
  * Date: Feb 15, 2007
@@ -64,8 +66,9 @@ public class HelpTopic
         return HELP_ROOT_URL + _topic;
     }
 
-    // Create a standard <a> tag that links to the help topic, displays the provided text, uses the standard target, etc.
-    public String getLinkHtml(String displayText)
+    // Create a simple link (just an <a> tag with plain mixed case text, no graphics) that links to the help topic, displays
+    // the provided text, uses the standard target, etc. Use in cases where LabKey standard link style doesn't fit in.
+    public String getSimpleLinkHtml(String displayText)
     {
         StringBuilder html = new StringBuilder();
         html.append("<a href=\"");
@@ -77,6 +80,15 @@ public class HelpTopic
         html.append("</a>");
 
         return html.toString();
+    }
+
+    private static final Map<String, String> TARGET_MAP = PageFlowUtil.map("target", TARGET_NAME);
+
+    // TODO: Use this in place where it makes sense (search results page, etc.)
+    // Create a standard LabKey style link (all caps + arrow right) to the help topic, displaying the provided text, using the standard target, etc.
+    public String getLinkHtml(String displayText)
+    {
+        return PageFlowUtil.textLink(displayText, getHelpTopicHref(), null, null, TARGET_MAP);
     }
 
     // Get create a NavTree for a menu item that to the help topic, displays the provided text, uses the standard target, etc.

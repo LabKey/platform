@@ -23,6 +23,7 @@ import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewContext;
@@ -32,6 +33,7 @@ import javax.servlet.http.HttpSession;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
 * User: adam
@@ -45,7 +47,7 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
     private final int _adminUserId;
     private final int _impersonatedUserId;
     private final URLHelper _returnURL;
-    private Map<String, Object> _adminSessionAttributes = new HashMap<String, Object>();
+    private final Map<String, Object> _adminSessionAttributes = new HashMap<String, Object>();
 
     public ImpersonateUserContextFactory(@Nullable Container project, User adminUser, User impersonatedUser, URLHelper returnURL)
     {
@@ -192,6 +194,12 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
         public int[] getGroups(User user)
         {
             return GroupManager.getAllGroupsForPrincipal(user);
+        }
+
+        @Override
+        public Set<Role> getContextualRoles(User user)
+        {
+            return user.getStandardContextualRoles();
         }
     }
 }

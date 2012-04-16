@@ -384,7 +384,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
         public int compareTo(SqlScript script)
         {
-            int schemaCompare = getSchemaName().compareTo(script.getSchemaName());
+            int schemaCompare = getSchemaName().compareToIgnoreCase(script.getSchemaName());
 
             if (0 != schemaCompare)
                 return schemaCompare;

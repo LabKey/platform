@@ -507,12 +507,18 @@ public class ExceptionUtil
             log.error("Unhandled exception: " + (null == message ? "" : message), ex);
         }
 
-        if (ex instanceof ForbiddenProjectException)
+        if (ex instanceof UnauthorizedException)
         {
-            // Not allowed in the project... don't offer Home or Folder buttons, provide "Stop Impersonating" button 
-            errorView.setIncludeHomeButton(false);
-            errorView.setIncludeFolderButton(false);
-            errorView.setIncludeStopImpersonatingButton(true);
+            if (ex instanceof ForbiddenProjectException)
+            {
+                // Not allowed in the project... don't offer Home or Folder buttons
+                errorView.setIncludeHomeButton(false);
+                errorView.setIncludeFolderButton(false);
+            }
+
+            // Provide "Stop Impersonating" button if unauthorized while impersonating
+            if (user.isImpersonated())
+                errorView.setIncludeStopImpersonatingButton(true);
         }
 
         if (response.isCommitted())

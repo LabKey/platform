@@ -141,7 +141,7 @@ public class DotRunner
         sb.append(PageFlowUtil.filter(message));
         sb.append("</pre>");
         sb.append("For help on fixing your system configuration, please consult the Graphviz section of the ");
-        sb.append((new HelpTopic("thirdPartyCode")).getLinkHtml("LabKey Server documentation on third party components"));
+        sb.append((new HelpTopic("thirdPartyCode")).getSimpleLinkHtml("LabKey Server documentation on third party components"));
         sb.append(".<br>");
 
         return sb.toString();

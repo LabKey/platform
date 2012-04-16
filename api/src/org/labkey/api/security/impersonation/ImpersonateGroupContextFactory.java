@@ -24,11 +24,13 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewContext;
 
 import java.util.LinkedList;
+import java.util.Set;
 
 /**
  * User: adam
@@ -40,7 +42,7 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
     private final @Nullable GUID _projectId;
     private final int _groupId;
     private final URLHelper _returnURL;
-    private int _impersonatingUserId;
+    private final int _impersonatingUserId;
 
     public ImpersonateGroupContextFactory(@Nullable Container project, User impersonatingUser, Group group, URLHelper returnURL)
     {
@@ -181,6 +183,12 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
         public int[] getGroups(User user)
         {
             return _groups;
+        }
+
+        @Override
+        public Set<Role> getContextualRoles(User user)
+        {
+            return user.getStandardContextualRoles();
         }
     }
 }

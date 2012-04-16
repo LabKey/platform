@@ -18,12 +18,28 @@ package org.labkey.api.security;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.permissions.*;
-import org.labkey.api.security.roles.DeveloperRole;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /*
 * User: Dave
@@ -182,6 +198,7 @@ public class SecurityPolicy implements HasPermission
     @NotNull
     public Set<Class<? extends Permission>> getPermissions(@NotNull UserPrincipal principal, @Nullable Set<Role> contextualRoles)
     {
+        // TODO: Should we be mutating the result of getContextualRoles()?  Some implementations would like to return unmodifiable collections...
         Set<Role> allContextualRoles = getContextualRoles(principal);
         if (contextualRoles != null)
             allContextualRoles.addAll(contextualRoles);
@@ -383,17 +400,6 @@ public class SecurityPolicy implements HasPermission
     @NotNull
     protected Set<Role> getContextualRoles(UserPrincipal principal)
     {
-        Set<Role> roles = new HashSet<Role>();
-        if (principal instanceof User)
-        {
-            User user = (User)principal;
-
-            if (user.isAdministrator())
-                roles.add(RoleManager.siteAdminRole);
-            if (user.isDeveloper())
-                roles.add(RoleManager.getRole(DeveloperRole.class));
-        }
-
-        return roles;
+        return principal.getContextualRoles();
     }
 }

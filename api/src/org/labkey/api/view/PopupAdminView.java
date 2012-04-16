@@ -24,11 +24,14 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserUrls;
 import org.labkey.api.security.impersonation.ImpersonateGroupContextFactory;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.AdminReadPermission;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.util.PageFlowUtil;
@@ -148,6 +151,20 @@ public class PopupAdminView extends PopupMenuView
                 }
 
                 impersonateMenu.addChild(groupMenu);
+
+                SecurityPolicy policy = SecurityManager.getPolicy(c);
+                NavTree roleMenu = new NavTree("Role");
+
+                // Add the relevant roles
+                for (Role role : RoleManager.getAllRoles())
+                {
+                    if (role.isAssignable() && role.isApplicable(policy, c))
+                        roleMenu.addChild(role.getName(), userURLs.getImpersonateRoleURL(c, role.getUniqueName(), currentURL));
+                }
+
+                if (roleMenu.hasChildren())
+                    impersonateMenu.addChild(roleMenu);
+
                 navTree.addChild(impersonateMenu);
             }
         }

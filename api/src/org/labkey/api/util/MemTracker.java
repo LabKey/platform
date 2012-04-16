@@ -28,8 +28,11 @@ import java.lang.management.MemoryPoolMXBean;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * User: brittp
@@ -131,6 +134,11 @@ public class MemTracker
                 return "toString() failed: " + e.getClass().getName() + (e.getMessage() == null ? "" : (" - " + e.getMessage()));
             }
         }
+
+        public Object getReference()
+        {
+            return _reference;
+        }
     }
 
 
@@ -144,6 +152,27 @@ public class MemTracker
     {
         assert _instance._remove(object);
         return true;
+    }
+
+    // Work around Java 7 PriorityBlockingQueue bug, http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7161229
+    public static void register(MemTrackerListener generator)
+    {
+        assert _instance._listeners.add(generator);
+    }
+
+    public static void unregister(MemTrackerListener queue)
+    {
+        assert _instance._listeners.remove(queue);
+    }
+
+    public static Set<Object> beforeReport()
+    {
+        Set<Object> ignorableReferences = Collections.newSetFromMap(new IdentityHashMap<Object, Boolean>());
+
+        for (MemTrackerListener generator : _instance._listeners)
+            generator.beforeReport(ignorableReferences);
+
+        return ignorableReferences;
     }
 
     public static List<HeldReference> getReferences()
@@ -227,6 +256,7 @@ public class MemTracker
     //
 
     private final Map<Object, AllocationInfo> _references = new ReferenceIdentityMap<Object, AllocationInfo>(AbstractReferenceMap.WEAK, AbstractReferenceMap.HARD, true);
+    private final List<MemTrackerListener> _listeners = new CopyOnWriteArrayList<MemTrackerListener>();
 
     private synchronized boolean _put(Object object)
     {
