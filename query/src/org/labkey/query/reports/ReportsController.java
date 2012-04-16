@@ -454,6 +454,7 @@ public class ReportsController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            getPageConfig().setHelpTopic(new HelpTopic("configureScripting"));
             root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL());
             return root.addChild("Views and Scripting Configuration");
         }
