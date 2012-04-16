@@ -1745,7 +1745,7 @@ public class SecurityController extends SpringActionController
             }
             sb.append("</p>");
             sb.append("<p>For help on fixing your mail server settings, please consult the SMTP section of the ");
-            sb.append(new HelpTopic("cpasxml").getLinkHtml("LabKey Server documentation on modifying your configuration file"));
+            sb.append(new HelpTopic("cpasxml").getSimpleLinkHtml("LabKey Server documentation on modifying your configuration file"));
             sb.append(".</p>");
         }
 
@@ -1805,7 +1805,7 @@ public class SecurityController extends SpringActionController
                         html = "This feature requires graphviz to be installed; ";
 
                         if (getUser().isAdministrator())
-                            html += "see " + new HelpTopic("thirdPartyCode").getLinkHtml("the LabKey installation instructions") + " for more information.";
+                            html += "see " + new HelpTopic("thirdPartyCode").getSimpleLinkHtml("the LabKey installation instructions") + " for more information.";
                         else
                             html += "contact a server administrator about this problem.";
                     }

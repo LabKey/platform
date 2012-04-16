@@ -521,7 +521,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
     private static abstract class LookAndFeelBean
     {
-        public String helpLink = new HelpTopic("customizeLook").getLinkHtml("more info...");
+        public String helpLink = new HelpTopic("customizeLook").getSimpleLinkHtml("more info...");
     }
 
     public static class LookAndFeelResourcesBean extends LookAndFeelBean

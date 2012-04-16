@@ -201,7 +201,7 @@ public class caBIGController extends SpringActionController
             html.append("Click the buttons below to publish or unpublish folders to the caBIG&trade; interface.  If your caBIG&trade; web application ");
             html.append("is running then all experiment data in published folders is publicly visible via the caBIG&trade; interface.<br><br>");
             html.append("For more information about publishing to caBIG&trade;, ");
-            html.append(new HelpTopic("cabig").getLinkHtml("click here")).append(".<br><br>\n");
+            html.append(new HelpTopic("cabig").getSimpleLinkHtml("click here")).append(".<br><br>\n");
             html.append("<form method=post action=''>");
             html.append("<input type=\"hidden\" name=\"returnUrl\" value=\"");
             html.append(currentUrl.getEncodedLocalURIString());

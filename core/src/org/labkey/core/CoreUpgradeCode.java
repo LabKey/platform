@@ -16,29 +16,14 @@
 package org.labkey.core;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.Filter;
-import org.labkey.api.data.MvUtil;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.PasswordExpiration;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
-import org.labkey.core.login.DbLoginManager;
-import org.labkey.core.login.LoginController;
-import org.labkey.core.login.PasswordRule;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * User: adam
@@ -61,62 +46,6 @@ public class CoreUpgradeCode implements UpgradeCode
         catch (SQLException e)
         {
             return null;
-        }
-    }
-
-
-    // Called on bootstrap... probably doesn't belong here...
-    public void installDefaultMvIndicators()
-    {
-        try
-        {
-            // Need to insert standard MV indicators for the root -- okay to call getRoot() here, since it's called after upgrade.
-            Container rootContainer = ContainerManager.getRoot();
-            String rootContainerId = rootContainer.getId();
-            TableInfo mvTable = CoreSchema.getInstance().getTableInfoMvIndicators();
-
-            // If we already have any entries, skip this step
-            Filter rootFilter = new SimpleFilter("Container", rootContainerId);
-            ResultSet rs = Table.select(mvTable, Collections.singleton("MvIndicator"), rootFilter, null);
-            try
-            {
-                if (rs.next())
-                    return;
-            }
-            finally
-            {
-                rs.close();
-            }
-
-            for(Map.Entry<String,String> qcEntry : MvUtil.getDefaultMvIndicators().entrySet())
-            {
-                Map<String,Object> params = new HashMap<String,Object>();
-                params.put("Container", rootContainerId);
-                params.put("MvIndicator", qcEntry.getKey());
-                params.put("Label", qcEntry.getValue());
-
-                Table.insert(null, mvTable, params);
-            }
-        }
-        catch (SQLException se)
-        {
-            UnexpectedException.rethrow(se);
-        }
-    }
-
-
-    // invoked by prop-9.30-9.31.sql
-    @SuppressWarnings({"UnusedDeclaration"})
-    public void setPasswordStrengthAndExpiration(ModuleContext context)
-    {
-        // If upgrading an existing installation, make sure the settings don't change.  New installations will require
-        // strong passwords.
-        if (!context.isNewInstall())
-        {
-            LoginController.Config config = new LoginController.Config();
-            config.setStrength(PasswordRule.Weak.toString());
-            config.setExpiration(PasswordExpiration.Never.toString());
-            DbLoginManager.saveProperties(config);
         }
     }
 

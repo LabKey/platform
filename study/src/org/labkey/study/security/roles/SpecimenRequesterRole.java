@@ -15,10 +15,8 @@
  */
 package org.labkey.study.security.roles;
 
-import org.labkey.api.security.*;
+import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.roles.AbstractRole;
-import org.labkey.study.StudyModule;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
 
 /*

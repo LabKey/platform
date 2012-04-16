@@ -17,6 +17,7 @@ package org.labkey.search.model;
 
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -45,6 +46,7 @@ import org.labkey.api.util.Formats;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.MemTrackerListener;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.RateLimiter;
@@ -101,6 +103,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     // Resources go here for preprocessing (this can be multi-threaded)
     final PriorityBlockingQueue<Item> _itemQueue = new PriorityBlockingQueue<Item>(1000, itemCompare);
 
+    final Item NOOP_ITEM = new Item(null, null, null);
+
     // And a single threaded queue for actually writing to the index (can this be multi-threaded?)
     BlockingQueue<Item> _indexQueue = null;
 
@@ -128,6 +132,24 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         addSearchCategory(fileCategory);
         addSearchCategory(navigationCategory);
+
+        // Hack to work around Java 7 PriorityBlockingQueue bug, http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7161229
+        if (SystemUtils.IS_JAVA_1_7)
+        {
+            MemTracker.register(new MemTrackerListener()
+            {
+                @Override
+                public void beforeReport(Set<Object> set)
+                {
+                    // Add a no-op marker item to the queue to purge previously removed item that queue might be holding.
+                    _itemQueue.put(_commitItem);
+                    _runQueue.put(_commitItem);
+
+                    // TODO: Ignore commit item?
+//                    set.add(_commitItem);
+                }
+            });
+        }
     }
     
 
@@ -316,7 +338,12 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    final Item _commitItem = new Item(null, null, PRIORITY.commit);
+    final Item _commitItem = new Item(null, new Runnable(){
+        @Override
+        public void run()
+        {
+        }
+    }, PRIORITY.commit);
 
 
     public boolean isBusy()
@@ -1062,7 +1089,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                     {
                         synchronized (_commitLock)
                         {
-                            // TODO: Add a check that allows commit in the case where we've been continuous pounding the indexer for a long time...
+                            // TODO: Add a check that allows commit in the case where we've been continuously pounding the indexer for a long time...
                             // either an oldest non-committed document check or a simple _countIndexedSinceCommit > n check.
                             if (_countIndexedSinceCommit > 0 && _lastIndexedTime + 2000 < ms && _runQueue.isEmpty())
                             {

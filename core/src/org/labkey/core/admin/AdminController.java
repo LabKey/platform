@@ -1166,8 +1166,8 @@ public class AdminController extends SpringActionController
 
     public static class SiteSettingsBean
     {
-        public String helpLink = new HelpTopic("configAdmin").getLinkHtml("more info...");
-        public String caBigHelpLink = new HelpTopic("cabig").getLinkHtml("more info...");
+        public String helpLink = new HelpTopic("configAdmin").getSimpleLinkHtml("more info...");
+        public String caBigHelpLink = new HelpTopic("cabig").getSimpleLinkHtml("more info...");
         public boolean upgradeInProgress;
         public boolean testInPage;
 
@@ -2296,6 +2296,8 @@ public class AdminController extends SpringActionController
     {
         public ModelAndView getView(MemForm form, BindException errors) throws Exception
         {
+            Set<Object> objectsToIgnore = MemTracker.beforeReport();
+
             if (form.isClearCaches())
             {
                 LOG.info("Clearing Introspector caches");
@@ -2321,7 +2323,7 @@ public class AdminController extends SpringActionController
                 LOG.info("Cache clearing and garbage collecting complete");
             }
 
-            return new JspView<MemBean>("/org/labkey/core/admin/memTracker.jsp", new MemBean(getViewContext().getRequest()));
+            return new JspView<MemBean>("/org/labkey/core/admin/memTracker.jsp", new MemBean(getViewContext().getRequest(), objectsToIgnore));
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -2369,7 +2371,7 @@ public class AdminController extends SpringActionController
 
         public boolean assertsEnabled = false;
 
-        private MemBean(HttpServletRequest request)
+        private MemBean(HttpServletRequest request, Set<Object> objectsToIgnore)
         {
             List<MemTracker.HeldReference> all = MemTracker.getReferences();
             long threadId = Thread.currentThread().getId();
@@ -2410,6 +2412,10 @@ public class AdminController extends SpringActionController
             {
                 if (r.getThreadId() == threadId && r.getAllocationTime() >= start)
                     continue;
+
+                if (objectsToIgnore.contains(r.getReference()))
+                    continue;
+
                 references.add(r);
             }
 

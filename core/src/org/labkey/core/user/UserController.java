@@ -128,6 +128,14 @@ public class UserController extends SpringActionController
             return url;
         }
 
+        public ActionURL getImpersonateRoleURL(Container c, String uniqueRoleName, ActionURL returnURL)
+        {
+            ActionURL url = new ActionURL(ImpersonateRoleAction.class, c);
+            url.addParameter("roleName", uniqueRoleName);
+            url.addReturnURL(returnURL);
+            return url;
+        }
+
         public ActionURL getImpersonateUserURL(Container c)
         {
             return new ActionURL(ImpersonateUserAction.class, c);
@@ -1922,6 +1930,55 @@ public class UserController extends SpringActionController
 
             ActionURL returnURL = form.getReturnActionURL(AppProps.getInstance().getHomePageActionURL());
             SecurityManager.impersonateGroup(getViewContext(), group, returnURL);
+
+            return returnURL;
+        }
+    }
+
+
+    public static class ImpersonateRoleForm extends ReturnUrlForm
+    {
+        private String _roleName;
+
+        public String getRoleName()
+        {
+            return _roleName;
+        }
+
+        public void setRoleName(String roleName)
+        {
+            _roleName = roleName;
+        }
+    }
+
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ImpersonateRoleAction extends SimpleRedirectAction<ImpersonateRoleForm>
+    {
+        @Override
+        public void checkPermissions() throws TermsOfUseException, UnauthorizedException
+        {
+            super.checkPermissions();
+            requiresProjectOrSiteAdmin();     // TODO: Check spec
+        }
+
+        public ActionURL getRedirectURL(ImpersonateRoleForm form) throws Exception
+        {
+            if (getUser().isImpersonated())
+                throw new UnauthorizedException("Can't impersonate; you're already impersonating");
+
+            String roleName = StringUtils.trimToNull(form.getRoleName());
+
+            if (null == roleName)
+                throw new NotFoundException("roleName parameter is missing");
+
+            Role role = RoleManager.getRole(form.getRoleName());
+
+            if (null == role)
+                throw new NotFoundException("Role not found");
+
+            ActionURL returnURL = form.getReturnActionURL(AppProps.getInstance().getHomePageActionURL());
+            SecurityManager.impersonateRole(getViewContext(), role, returnURL);
 
             return returnURL;
         }
