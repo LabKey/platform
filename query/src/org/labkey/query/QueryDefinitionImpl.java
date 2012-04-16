@@ -53,6 +53,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
+import org.labkey.data.xml.TablesType;
 import org.labkey.query.design.DgColumn;
 import org.labkey.query.design.DgQuery;
 import org.labkey.query.design.DgTable;
@@ -658,7 +659,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         {
             tablesDoc = TablesDocument.Factory.newInstance();
         }
-        TablesDocument.Tables tables = tablesDoc.getTables();
+        TablesType tables = tablesDoc.getTables();
         if (tables == null)
         {
             tables = tablesDoc.addNewTables();

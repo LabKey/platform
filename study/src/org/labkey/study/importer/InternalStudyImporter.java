@@ -17,10 +17,7 @@
 package org.labkey.study.importer;
 
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.study.model.StudyImpl;
 import org.springframework.validation.BindException;
-
-import java.io.File;
 
 /*
 * User: adam
@@ -30,5 +27,5 @@ import java.io.File;
 public interface InternalStudyImporter
 {
     public String getDescription();
-    public void process(ImportContext ctx, VirtualFile root, BindException errors) throws Exception;
+    public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception;
 }

@@ -16,6 +16,8 @@
 
 package org.labkey.list.model;
 
+import org.labkey.api.admin.AbstractFolderContext;
+import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportContext;
@@ -28,13 +30,19 @@ import org.labkey.folder.xml.FolderDocument;
 * Date: Aug 25, 2009
 * Time: 10:11:16 AM
 */
-public class FolderListWriter implements FolderWriter
+public class FolderListWriter extends BaseFolderWriter
 {
     private static final String DEFAULT_DIRECTORY = "lists";
 
     public String getSelectionText()
     {
         return "Lists";
+    }
+
+    @Override
+    public boolean includeInType(AbstractFolderContext.ExportType type)
+    {
+        return AbstractFolderContext.ExportType.ALL == type || AbstractFolderContext.ExportType.STUDY == type;
     }
 
     @Override

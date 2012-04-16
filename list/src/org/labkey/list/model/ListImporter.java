@@ -41,6 +41,7 @@ import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.FacetingBehaviorType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
+import org.labkey.data.xml.TablesType;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -81,7 +82,7 @@ public class ListImporter
             throw new InvalidFileException(schemaFile.getName(), e);
         }
 
-        TablesDocument.Tables tablesXml = tablesDoc.getTables();
+        TablesType tablesXml = tablesDoc.getTables();
         List<String> names = new LinkedList<String>();
 
         Map<String, ListDefinition> lists = ListService.get().getLists(c);

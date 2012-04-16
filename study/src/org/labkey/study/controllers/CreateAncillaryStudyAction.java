@@ -17,9 +17,7 @@ package org.labkey.study.controllers;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
-import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.NullSafeBindException;
@@ -36,7 +34,6 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.RequiresPermissionClass;
@@ -54,7 +51,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudyFolderType;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.DatasetImporter;
-import org.labkey.study.importer.ImportContext;
+import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.importer.MissingValueImporter;
 import org.labkey.study.importer.ParticipantGroupImporter;
 import org.labkey.study.importer.QcStatesImporter;
@@ -81,7 +78,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
 
-import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -247,10 +243,10 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
         if (studyXml instanceof StudyDocument)
         {
             StudyDocument studyDoc = (StudyDocument)studyXml;
-            ImportContext importContext = new ImportContext(user, newStudy.getContainer(), studyDoc, Logger.getLogger(StudyWriter.class));
+            StudyImportContext importContext = new StudyImportContext(user, newStudy.getContainer(), studyDoc, Logger.getLogger(StudyWriter.class));
 
             // missing values and qc states
-            new MissingValueImporter().process(importContext, vf);
+            new MissingValueImporter().process(null, importContext, vf);
             new QcStatesImporter().process(importContext, vf, errors);
 
             // dataset definitions
@@ -366,7 +362,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
             if (studyXml instanceof StudyDocument)
             {
                 StudyDocument studyDoc = (StudyDocument)studyXml;
-                ImportContext importContext = new ImportContext(user, newStudy.getContainer(), studyDoc, Logger.getLogger(StudyWriter.class));
+                StudyImportContext importContext = new StudyImportContext(user, newStudy.getContainer(), studyDoc, Logger.getLogger(StudyWriter.class));
 
                 ParticipantGroupImporter groupImporter = new ParticipantGroupImporter();
                 groupImporter.process(importContext, vf, errors);

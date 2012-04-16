@@ -1,5 +1,6 @@
 package org.labkey.core.admin.writer;
 
+import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportContext;
@@ -21,7 +22,7 @@ public class FolderTypeWriterFactory implements FolderWriterFactory
         return new FolderTypeWriter();
     }
 
-    public class FolderTypeWriter implements FolderWriter
+    public class FolderTypeWriter extends BaseFolderWriter
     {
         @Override
         public String getSelectionText()

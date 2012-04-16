@@ -16,6 +16,8 @@
 package org.labkey.query;
 
 import org.apache.xmlbeans.XmlObject;
+import org.labkey.api.admin.AbstractFolderContext;
+import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportContext;
@@ -35,7 +37,7 @@ import java.util.List;
  * Date: Apr 16, 2009
  * Time: 4:49:55 PM
  */
-public class QueryWriter implements FolderWriter
+public class QueryWriter extends BaseFolderWriter
 {
     public static final String FILE_EXTENSION = ".sql";
     public static final String META_FILE_EXTENSION =  ".query.xml";
@@ -46,6 +48,12 @@ public class QueryWriter implements FolderWriter
     {
         return "Queries";
     }
+
+    @Override
+    public boolean includeInType(AbstractFolderContext.ExportType type)
+    {
+        return AbstractFolderContext.ExportType.ALL == type || AbstractFolderContext.ExportType.STUDY == type;
+    }    
 
     @Override
     public void write(Container object, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception

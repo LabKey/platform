@@ -30,6 +30,7 @@ import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.FacetingBehaviorType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
+import org.labkey.data.xml.TablesType;
 import org.labkey.study.importer.DatasetImporter.DatasetImportProperties;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
@@ -76,7 +77,7 @@ public class SchemaXmlReader implements SchemaReader
             throw new ImportException("Invalid TablesDocument ", xve);
         }
 
-        TablesDocument.Tables tablesXml = tablesDoc.getTables();
+        TablesType tablesXml = tablesDoc.getTables();
 
         _datasetInfoMap = new HashMap<Integer, DataSetImportInfo>(tablesXml.getTableArray().length);
 

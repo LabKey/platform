@@ -24,6 +24,7 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.FileAttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.PageFlowUtil;
@@ -76,11 +77,14 @@ public class WikiImporterFactory implements FolderImporterFactory
         }
 
         @Override
-        public void process(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
+        public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
             File wikisDir = ctx.getDir("wikis");
             if (wikisDir != null)
             {
+                job.setStatus("IMPORT " + getDescription());
+                ctx.getLogger().info("Loading " + getDescription());
+
                 File wikisXmlFile = new File(wikisDir, WikiWriterFactory.WIKIS_FILENAME);
 
                 if (!wikisXmlFile.exists())
@@ -120,6 +124,8 @@ public class WikiImporterFactory implements FolderImporterFactory
                 }
 
                 setParents(ctx, parentsToBeSet);
+
+                ctx.getLogger().info("Done importing " + getDescription());
             }
         }
 

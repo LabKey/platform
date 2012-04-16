@@ -15,6 +15,8 @@
  */
 package org.labkey.query.reports;
 
+import org.labkey.api.admin.AbstractFolderContext;
+import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportContext;
@@ -30,7 +32,7 @@ import org.labkey.folder.xml.ExportDirType;
  * Date: Apr 16, 2009
  * Time: 4:39:43 PM
  */
-public class ReportWriter implements FolderWriter
+public class ReportWriter extends BaseFolderWriter
 {
     private static final String DEFAULT_DIRECTORY = "reports";
 
@@ -38,6 +40,12 @@ public class ReportWriter implements FolderWriter
     {
         return "Reports";
     }
+
+    @Override
+    public boolean includeInType(AbstractFolderContext.ExportType type)
+    {
+        return AbstractFolderContext.ExportType.ALL == type || AbstractFolderContext.ExportType.STUDY == type;
+    }    
 
     @Override
     public void write(Container object, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception

@@ -22,6 +22,7 @@ import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.data.Container;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
@@ -53,11 +54,14 @@ public class QueryImporter implements FolderImporter<FolderDocument.Folder>
         return "queries";
     }
 
-    public void process(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws ServletException, XmlException, IOException, SQLException, ImportException
+    public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws ServletException, XmlException, IOException, SQLException, ImportException
     {
         File queriesDir = ctx.getDir("queries");
         if (null != queriesDir)
         {
+            job.setStatus("IMPORT " + getDescription());
+            ctx.getLogger().info("Loading " + getDescription());
+
             File[] sqlFiles = queriesDir.listFiles(new FilenameFilter() {
                 public boolean accept(File dir, String name)
                 {
@@ -123,6 +127,7 @@ public class QueryImporter implements FolderImporter<FolderDocument.Folder>
             }
 
             ctx.getLogger().info(sqlFiles.length + " quer" + (1 == sqlFiles.length ? "y" : "ies") + " imported");
+            ctx.getLogger().info("Done importing " + getDescription());
 
             // TODO: As a check, remove meta data files from map on each save and check for map.size == 0
         }
@@ -133,6 +138,7 @@ public class QueryImporter implements FolderImporter<FolderDocument.Folder>
         List<PipelineJobWarning> warnings = new ArrayList<PipelineJobWarning>();
 
         //validate all queries in all schemas in the container
+        ctx.getLogger().info("Post-processing " + getDescription());
         ctx.getLogger().info("Validating all queries in all schemas...");
         Container container = ctx.getContainer();
         User user = ctx.getUser();
@@ -162,6 +168,7 @@ public class QueryImporter implements FolderImporter<FolderDocument.Folder>
         }
 
         ctx.getLogger().info("Finished validating queries.");
+        ctx.getLogger().info("Done post-processing " + getDescription());
         return warnings;
     }
 

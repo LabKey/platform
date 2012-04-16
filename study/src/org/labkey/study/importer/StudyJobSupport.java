@@ -32,7 +32,7 @@ public interface StudyJobSupport
 
     StudyImpl getStudy(boolean allowNullStudy);
 
-    ImportContext getImportContext();
+    StudyImportContext getImportContext();
 
     File getRoot();
 

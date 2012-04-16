@@ -41,7 +41,7 @@ public class StudyImportDatasetTask extends AbstractDatasetImportTask<StudyImpor
     public File getDatasetsFile() throws ImportException
     {
         StudyJobSupport support = getJob().getJobSupport(StudyJobSupport.class);
-        ImportContext ctx = support.getImportContext();
+        StudyImportContext ctx = support.getImportContext();
         File root = support.getRoot();
 
         StudyDocument.Study.Datasets datasetsXml = ctx.getXml().getDatasets();

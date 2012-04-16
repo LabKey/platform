@@ -34,17 +34,17 @@ import java.io.IOException;
  * Date: May 16, 2009
  * Time: 2:48:59 PM
  */
-public class ImportContext extends AbstractContext
+public class StudyImportContext extends AbstractContext
 {
     private File _studyXml;
 
-    public ImportContext(User user, Container c, File studyXml, Logger logger, File root)
+    public StudyImportContext(User user, Container c, File studyXml, Logger logger, File root)
     {
         super(user, c, null, logger, root);  // XStream can't seem to serialize the StudyDocument XMLBean, so we always read the file on demand
         _studyXml = studyXml;
     }
 
-    public ImportContext(User user, Container c, StudyDocument studyDoc, Logger logger)
+    public StudyImportContext(User user, Container c, StudyDocument studyDoc, Logger logger)
     {
         super(user, c, studyDoc, logger, null); 
     }

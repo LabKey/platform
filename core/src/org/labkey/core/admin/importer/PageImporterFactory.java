@@ -21,6 +21,7 @@ import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.XmlBeansUtil;
@@ -67,12 +68,15 @@ public class PageImporterFactory implements FolderImporterFactory
         }
 
         @Override
-        public void process(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
+        public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
             FolderDocument.Folder.Pages pagesXml = ctx.getXml().getPages();
 
             if (null != pagesXml)
             {
+                job.setStatus("IMPORT " + getDescription());
+                ctx.getLogger().info("Loading " + getDescription());
+
                 PagesDocument pagesDocXml;
                 String pagesFileName = pagesXml.getFile();
 
@@ -145,6 +149,8 @@ public class PageImporterFactory implements FolderImporterFactory
                 {
                     Portal.saveParts(ctx.getContainer(), FolderTab.FOLDER_TAB_PAGE_ID, tabs);
                 }
+
+                ctx.getLogger().info("Done importing " + getDescription());
             }
         }
 

@@ -5,6 +5,7 @@ import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
@@ -38,12 +39,15 @@ public class SearchSettingsImporterFactory implements FolderImporterFactory
         }
 
         @Override
-        public void process(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
+        public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
             Container c = ctx.getContainer();
             if (ctx.getXml().isSetSearchable())
             {
+                job.setStatus("IMPORT " + getDescription());
+                ctx.getLogger().info("Loading " + getDescription());
                 ContainerManager.updateSearchable(c, ctx.getXml().getSearchable(), ctx.getUser());
+                ctx.getLogger().info("Done importing " + getDescription());
             }
         }
 

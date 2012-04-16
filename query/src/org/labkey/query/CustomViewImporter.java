@@ -19,6 +19,7 @@ import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.util.XmlValidationException;
@@ -42,15 +43,19 @@ public class CustomViewImporter implements FolderImporter<FolderDocument.Folder>
         return "custom views";
     }
 
-    public void process(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws IOException, SQLException, ImportException, XmlValidationException
+    public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws IOException, SQLException, ImportException, XmlValidationException
     {
         File viewDir = ctx.getDir("views");
 
         if (null != viewDir)
         {
-            int count = QueryService.get().importCustomViews(ctx.getUser(), ctx.getContainer(), viewDir);
+            job.setStatus("IMPORT " + getDescription());
+            ctx.getLogger().info("Loading " + getDescription());
 
+            int count = QueryService.get().importCustomViews(ctx.getUser(), ctx.getContainer(), viewDir);
+            
             ctx.getLogger().info(count + " custom view" + (1 == count ? "" : "s") + " imported");
+            ctx.getLogger().info("Done importing " + getDescription());
         }
     }
 

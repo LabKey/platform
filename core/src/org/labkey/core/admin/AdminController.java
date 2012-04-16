@@ -447,6 +447,13 @@ public class AdminController extends SpringActionController
             return url;
         }
 
+        public ActionURL getExportFolderURL(Container c)
+        {
+            ActionURL url = new ActionURL(FolderManagementAction.class, c);
+            url.addParameter("tabId", "export");
+            return url;
+        }
+
         public ActionURL getCreateProjectURL()
         {
             return new ActionURL(CreateFolderAction.class, ContainerManager.getRoot());
@@ -474,6 +481,11 @@ public class AdminController extends SpringActionController
             return new ActionURL(FolderManagementAction.class, c);
         }
 
+//        public ActionURL getCreateFromTemplateURL(Container c)
+//        {
+//            return new ActionURL(CreateFromTemplateAction.class, c);
+//        }
+//
         public ActionURL getInitialFolderSettingsURL(Container c)
         {
             return new ActionURL(SetInitialFolderSettingsAction.class, c);
@@ -4939,4 +4951,36 @@ public class AdminController extends SpringActionController
             return root.addChild("Experimental Features");
         }
     }
+
+//    @RequiresPermissionClass(AdminPermission.class)
+//    public class CreateFromTemplateAction extends FormViewAction<Object>
+//    {
+//        @Override
+//        public void validateCommand(Object target, Errors errors)
+//        {}
+//
+//        @Override
+//        public ModelAndView getView(Object form, boolean reshow, BindException errors) throws Exception
+//        {
+//            return new JspView<Object>("/org/labkey/core/admin/createFromTemplate.jsp", form, errors);
+//        }
+//
+//        @Override
+//        public boolean handlePost(Object o, BindException errors) throws Exception
+//        {
+//            return true;
+//        }
+//
+//        @Override
+//        public URLHelper getSuccessURL(Object o)
+//        {
+//            return getShowAdminURL();
+//        }
+//
+//        @Override
+//        public NavTree appendNavTrail(NavTree root)
+//        {
+//            return root.addChild("Create Folder From Template");
+//        }
+//    }
 }

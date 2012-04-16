@@ -46,7 +46,7 @@ public class ViewCategoryImporter implements InternalStudyImporter
     }
 
     @Override
-    public void process(ImportContext ctx, VirtualFile root, BindException errors) throws Exception
+    public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
         StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
         try
@@ -64,7 +64,7 @@ public class ViewCategoryImporter implements InternalStudyImporter
         }
     }
 
-    public void process(StudyImpl study, ImportContext ctx, XmlObject xmlObject) throws Exception
+    public void process(StudyImpl study, StudyImportContext ctx, XmlObject xmlObject) throws Exception
     {
         if (xmlObject instanceof CategoriesDocument)
         {

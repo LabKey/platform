@@ -101,6 +101,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
+import org.labkey.data.xml.TablesType;
 import org.labkey.query.CustomViewImpl;
 import org.labkey.query.CustomViewUtil;
 import org.labkey.query.ExternalSchemaDocumentProvider;
@@ -3591,7 +3592,7 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(TableInfoForm form, BindException errors) throws Exception
         {
             TablesDocument ret = TablesDocument.Factory.newInstance();
-            TablesDocument.Tables tables = ret.addNewTables();
+            TablesType tables = ret.addNewTables();
 
             FieldKey[] fields = form.getFieldKeys();
             if (fields.length != 0)

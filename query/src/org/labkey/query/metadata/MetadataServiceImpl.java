@@ -34,6 +34,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
+import org.labkey.data.xml.TablesType;
 import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.metadata.client.GWTColumnInfo;
 import org.labkey.query.metadata.client.GWTTableInfo;
@@ -260,7 +261,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
     {
         if (doc != null && doc.getTables() != null)
         {
-            TablesDocument.Tables tables = doc.getTables();
+            TablesType tables = doc.getTables();
             for (TableType tableType : tables.getTableArray())
             {
                 if (name.equalsIgnoreCase(tableType.getTableName()))
@@ -320,7 +321,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
         
         if (xmlTable == null)
         {
-            TablesDocument.Tables tables = doc.addNewTables();
+            TablesType tables = doc.addNewTables();
             xmlTable = tables.addNewTable();
             xmlTable.setTableName(gwtTableInfo.getName());
         }

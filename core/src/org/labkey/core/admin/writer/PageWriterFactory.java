@@ -15,6 +15,7 @@
  */
 package org.labkey.core.admin.writer;
 
+import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportContext;
@@ -45,7 +46,7 @@ public class PageWriterFactory implements FolderWriterFactory
         return new PageWriter();
     }
 
-    public class PageWriter implements FolderWriter
+    public class PageWriter extends BaseFolderWriter
     {
         public String getSelectionText()
         {

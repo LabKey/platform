@@ -1,5 +1,6 @@
 package org.labkey.core.admin.writer;
 
+import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportContext;
@@ -19,7 +20,7 @@ public class SearchSettingsWriterFactory implements FolderWriterFactory
         return new SearchSettingsWriter();
     }
 
-    public class SearchSettingsWriter implements FolderWriter
+    public class SearchSettingsWriter extends BaseFolderWriter
     {
         @Override
         public String getSelectionText()

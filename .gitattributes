@@ -614,6 +614,7 @@ core/src/org/labkey/core/admin/admin.jsp -text
 core/src/org/labkey/core/admin/checkDatabase.jsp -text
 core/src/org/labkey/core/admin/confirmProjectMove.jsp -text
 core/src/org/labkey/core/admin/createFolder.jsp -text
+core/src/org/labkey/core/admin/createFromTemplate.jsp -text
 core/src/org/labkey/core/admin/customizeEmail.jsp -text
 core/src/org/labkey/core/admin/customizeSite.jsp -text
 core/src/org/labkey/core/admin/deleteFolder.jsp -text
@@ -2847,7 +2848,6 @@ study/src/org/labkey/study/importer/DataFaxVisitMapReader.java -text
 study/src/org/labkey/study/importer/DatasetCohortAssigner.java -text
 study/src/org/labkey/study/importer/DatasetImportUtils.java -text
 study/src/org/labkey/study/importer/DatasetImporter.java -text
-study/src/org/labkey/study/importer/ImportContext.java -text
 study/src/org/labkey/study/importer/InternalStudyImporter.java -text
 study/src/org/labkey/study/importer/LDMSRecord.java -text
 study/src/org/labkey/study/importer/MissingValueImporter.java -text
@@ -2862,10 +2862,12 @@ study/src/org/labkey/study/importer/SchemaTsvReader.java -text
 study/src/org/labkey/study/importer/SchemaXmlReader.java -text
 study/src/org/labkey/study/importer/SimpleSpecimenImporter.java -text
 study/src/org/labkey/study/importer/SpecimenImporter.java -text
+study/src/org/labkey/study/importer/StudyImportContext.java -text
 study/src/org/labkey/study/importer/StudyImportFinalTask.java -text
 study/src/org/labkey/study/importer/StudyImportInitialTask.java -text
 study/src/org/labkey/study/importer/StudyImportJob.java -text
 study/src/org/labkey/study/importer/StudyImportProvider.java -text
+study/src/org/labkey/study/importer/StudyImporterFactory.java -text
 study/src/org/labkey/study/importer/StudyJobSupport.java -text
 study/src/org/labkey/study/importer/StudyReload.java -text
 study/src/org/labkey/study/importer/ViewCategoryImporter.java -text
@@ -3255,6 +3257,7 @@ study/src/org/labkey/study/writer/StandardSpecimenWriter.java -text
 study/src/org/labkey/study/writer/StudyExportContext.java -text
 study/src/org/labkey/study/writer/StudySerializationRegistryImpl.java -text
 study/src/org/labkey/study/writer/StudyWriter.java -text
+study/src/org/labkey/study/writer/StudyWriterFactory.java -text
 study/src/org/labkey/study/writer/StudyXmlWriter.java -text
 study/src/org/labkey/study/writer/ViewCategoryWriter.java -text
 study/src/org/labkey/study/writer/VisitMapWriter.java -text

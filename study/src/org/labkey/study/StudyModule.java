@@ -18,6 +18,7 @@ package org.labkey.study;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -105,6 +106,7 @@ import org.labkey.study.dataset.DatasetViewProvider;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.importer.StudyImportProvider;
+import org.labkey.study.importer.StudyImporterFactory;
 import org.labkey.study.importer.StudyReload;
 import org.labkey.study.model.CohortDomainKind;
 import org.labkey.study.model.ContinuousDatasetDomainKind;
@@ -152,6 +154,8 @@ import org.labkey.study.view.StudyViewLoader;
 import org.labkey.study.view.SubjectDetailsWebPartFactory;
 import org.labkey.study.view.SubjectsWebPart;
 import org.labkey.study.writer.StudySerializationRegistryImpl;
+import org.labkey.study.writer.StudyWriter;
+import org.labkey.study.writer.StudyWriterFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
@@ -372,6 +376,12 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         }
 
         SystemMaintenance.addTask(new PurgeParticipantsMaintenanceTask());
+
+        FolderSerializationRegistry folderRegistry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
+        if (null != folderRegistry)
+        {
+            folderRegistry.addFactories(new StudyWriterFactory(), new StudyImporterFactory());
+        }        
 
         try
         {

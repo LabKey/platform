@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -247,7 +248,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         }
 
         FolderWriterImpl writer = new FolderWriterImpl();
-        FolderExportContext ctx = new FolderExportContext(getUser(), getContainer(), PageFlowUtil.set(form.getTypes()), Logger.getLogger(FolderWriterImpl.class));
+        FolderExportContext ctx = new FolderExportContext(getUser(), getContainer(), PageFlowUtil.set(form.getTypes()), form.getFormat(), Logger.getLogger(FolderWriterImpl.class));
 
         switch(form.getLocation())
         {
@@ -392,6 +393,8 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         // folder export settings
         private String[] types;
         private int location;
+        private String format;
+        private String exportType;
 
         public String[] getActiveModules()
         {
@@ -552,6 +555,29 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         {
             this.location = location;
         }
+
+        public String getFormat()
+        {
+            return format;
+        }
+
+        public void setFormat(String format)
+        {
+            this.format = format;
+        }
+
+        public AbstractFolderContext.ExportType getExportType()
+        {
+            if ("study".equals(exportType))
+                return AbstractFolderContext.ExportType.STUDY;
+            else
+                return AbstractFolderContext.ExportType.ALL;
+        }
+
+        public void setExportType(String exportType)
+        {
+            this.exportType = exportType;
+        }
     }
 
 
@@ -617,6 +643,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             else if ("export".equals(tabId))
             {
                 assert !_container.isRoot() : "No export for the root folder";
+                _form.setExportType(PageFlowUtil.filter(getViewContext().getActionURL().getParameter("exportType")));
                 return new JspView<FolderManagementForm>("/org/labkey/core/admin/exportFolder.jsp", _form, _errors);
             }
             else if ("import".equals(tabId))

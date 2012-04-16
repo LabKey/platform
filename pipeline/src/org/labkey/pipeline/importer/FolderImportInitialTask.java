@@ -49,8 +49,8 @@ public class FolderImportInitialTask extends PipelineJob.Task<FolderImportInitia
         try
         {
             job.info("Loading folder from " + support.getOriginalFilename());
-            job.info("Loading folder settings"); // currently only MVIs
-            StudyService.get().getMissingValueImporter().process(support.getImportContext(), vf);
+            // currently only MVIs must be loaded first
+            StudyService.get().getMissingValueImporter().process(job, support.getImportContext(), vf);
         }
         catch (Exception e)
         {

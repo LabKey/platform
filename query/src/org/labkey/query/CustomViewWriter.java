@@ -15,6 +15,8 @@
  */
 package org.labkey.query;
 
+import org.labkey.api.admin.AbstractFolderContext;
+import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportContext;
@@ -36,7 +38,7 @@ import java.util.Set;
  * Date: May 23, 2009
  * Time: 8:25:19 AM
  */
-public class CustomViewWriter implements FolderWriter
+public class CustomViewWriter extends BaseFolderWriter
 {
     private static final String DEFAULT_DIRECTORY = "views";  // TODO: qviews?
     private VirtualFile _viewDir = null;
@@ -45,6 +47,12 @@ public class CustomViewWriter implements FolderWriter
     {
         return "Custom Views";
     }
+
+    @Override
+    public boolean includeInType(AbstractFolderContext.ExportType type)
+    {
+        return AbstractFolderContext.ExportType.ALL == type || AbstractFolderContext.ExportType.STUDY == type;
+    }    
 
     @Override
     public void write(Container object, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception

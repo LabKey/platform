@@ -54,7 +54,7 @@ public class VisitImporter implements InternalStudyImporter
         _ensureDataSets = ensureDataSets;
     }
 
-    public void process(ImportContext ctx, VirtualFile vf, BindException errors) throws IOException, SQLException, ImportException, ValidationException
+    public void process(StudyImportContext ctx, VirtualFile vf, BindException errors) throws IOException, SQLException, ImportException, ValidationException
     {
         StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
         // Visit map

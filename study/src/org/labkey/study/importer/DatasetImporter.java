@@ -55,7 +55,7 @@ public class DatasetImporter implements InternalStudyImporter
         return "Dataset Definition Importer";
     }
 
-    public void process(ImportContext ctx, VirtualFile vf, BindException errors) throws IOException, SQLException, DatasetImportUtils.DatasetLockExistsException, XmlException, ImportException
+    public void process(StudyImportContext ctx, VirtualFile vf, BindException errors) throws IOException, SQLException, DatasetImportUtils.DatasetLockExistsException, XmlException, ImportException
     {
         StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
         StudyDocument.Study.Datasets datasetsXml = ctx.getXml().getDatasets();
@@ -127,7 +127,7 @@ public class DatasetImporter implements InternalStudyImporter
         }
     }
 
-    public static File getDatasetDirectory(ImportContext ctx, File root) throws ImportException
+    public static File getDatasetDirectory(StudyImportContext ctx, File root) throws ImportException
     {
         StudyDocument.Study.Datasets datasetsXml = ctx.getXml().getDatasets();
 
@@ -142,7 +142,7 @@ public class DatasetImporter implements InternalStudyImporter
         return null;
     }
 
-    public static VirtualFile getDatasetDirectory(ImportContext ctx, VirtualFile root) throws ImportException
+    public static VirtualFile getDatasetDirectory(StudyImportContext ctx, VirtualFile root) throws ImportException
     {
         StudyDocument.Study.Datasets datasetsXml = ctx.getXml().getDatasets();
 
@@ -158,7 +158,7 @@ public class DatasetImporter implements InternalStudyImporter
     }
 
     @Nullable
-    public static DatasetsDocument.Datasets getDatasetsManifest(ImportContext ctx, VirtualFile root, boolean log) throws XmlException, IOException, ImportException
+    public static DatasetsDocument.Datasets getDatasetsManifest(StudyImportContext ctx, VirtualFile root, boolean log) throws XmlException, IOException, ImportException
     {
         VirtualFile datasetDir = getDatasetDirectory(ctx, root);
 

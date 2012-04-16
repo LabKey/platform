@@ -43,6 +43,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
+import org.labkey.data.xml.TablesType;
 import org.labkey.list.view.ListItemAttachmentParent;
 
 import java.io.FileNotFoundException;
@@ -80,7 +81,7 @@ public class ListWriter
         {
             // Create meta data doc
             TablesDocument tablesDoc = TablesDocument.Factory.newInstance();
-            TablesDocument.Tables tablesXml = tablesDoc.addNewTables();
+            TablesType tablesXml = tablesDoc.addNewTables();
 
             // Insert standard comment explaining where the data lives, who exported it, and when
             XmlBeansUtil.addStandardExportComment(tablesXml, c, user);

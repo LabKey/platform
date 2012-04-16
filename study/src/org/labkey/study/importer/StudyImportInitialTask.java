@@ -49,14 +49,22 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
 
     public RecordedActionSet run() throws PipelineJobException
     {
+        PipelineJob job = getJob();
+        StudyJobSupport support = job.getJobSupport(StudyJobSupport.class);
+        StudyImportContext ctx = support.getImportContext();
+
+        doImport(job, ctx, support.getSpringErrors(), support.getOriginalFilename());
+
+        return new RecordedActionSet();
+    }
+
+    public static void doImport(PipelineJob job, StudyImportContext ctx, BindException errors, String originalFileName) throws PipelineJobException
+    {
         try
         {
-            PipelineJob job = getJob();
-            StudyJobSupport support = job.getJobSupport(StudyJobSupport.class);
-            ImportContext ctx = support.getImportContext();
             StudyDocument.Study studyXml = ctx.getXml();
 
-            // Check if a delay has been requested for testing purposes, to make it easier to cancel the job in a reliable way 
+            // Check if a delay has been requested for testing purposes, to make it easier to cancel the job in a reliable way
             if (studyXml.isSetImportDelay() && studyXml.getImportDelay() > 0)
             {
                 for (int i = 0; i < studyXml.getImportDelay(); i = i + DELAY_INCREMENT)
@@ -70,12 +78,12 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
                 }
             }
             
-            StudyImpl study = support.getStudy(true);
+            StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
 
             // Create the study if it doesn't exist... otherwise, modify the existing properties
             if (null == study)
             {
-                job.info("Loading study from " + support.getOriginalFilename());
+                job.info("Loading study from " + originalFileName);
                 job.info("Creating study");
 
                 // Create study
@@ -116,11 +124,11 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
                 if (studyXml.getGrant() != null)
                     studyForm.setGrant(studyXml.getGrant());
 
-                StudyController.createStudy(support.getStudy(true), ctx.getContainer(), ctx.getUser(), studyForm);
+                StudyController.createStudy(study, ctx.getContainer(), ctx.getUser(), studyForm);
             }
             else
             {
-                job.info("Reloading study from " + support.getOriginalFilename());
+                job.info("Reloading study from " + originalFileName);
                 job.info("Loading top-level study properties");
 
                 TimepointType timepointType = study.getTimepointType();
@@ -156,18 +164,18 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
                 StudyManager.getInstance().updateStudy(ctx.getUser(), study);
             }
 
-            VirtualFile vf = new FileSystemFile(support.getRoot());
+            VirtualFile vf = new FileSystemFile(ctx.getRoot());
 
-            new MissingValueImporter().process(ctx, vf);
-            new QcStatesImporter().process(ctx, vf, support.getSpringErrors());
+            new MissingValueImporter().process(job, ctx, vf);
+            new QcStatesImporter().process(ctx, vf, errors);
 
-            new VisitImporter().process(ctx, vf, support.getSpringErrors());
-            if (support.getSpringErrors().hasErrors())
-                throwFirstErrorAsPiplineJobException(support.getSpringErrors());
+            new VisitImporter().process(ctx, vf, errors);
+            if (errors.hasErrors())
+                throwFirstErrorAsPiplineJobException(errors);
 
-            new DatasetImporter().process(ctx, vf, support.getSpringErrors());
-            if (support.getSpringErrors().hasErrors())
-                throwFirstErrorAsPiplineJobException(support.getSpringErrors());
+            new DatasetImporter().process(ctx, vf, errors);
+            if (errors.hasErrors())
+                throwFirstErrorAsPiplineJobException(errors);
         }
         catch (CancelledException e)
         {
@@ -178,8 +186,6 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
         {
             throw new PipelineJobException(t) {};
         }
-
-        return new RecordedActionSet();
     }
 
     private static void throwFirstErrorAsPiplineJobException(BindException errors) throws PipelineJobException

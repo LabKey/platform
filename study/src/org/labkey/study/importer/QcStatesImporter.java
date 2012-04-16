@@ -36,7 +36,7 @@ public class QcStatesImporter implements InternalStudyImporter
     }
 
     @Override
-    public void process(ImportContext ctx, VirtualFile root, BindException errors) throws Exception
+    public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
         StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
         // TODO: Generalize to all qc state properties

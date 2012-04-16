@@ -53,21 +53,16 @@ public class FolderImportFinalTask extends PipelineJob.Task<FolderImportFinalTas
 
                 for (FolderImporter importer : importers)
                 {
-                    job.info("Importing " + importer.getDescription());
-                    job.setStatus("IMPORT " + importer.getDescription());
-                    importer.process(support.getImportContext(), vf);
-                    job.info("Done importing " + importer.getDescription());
+                    importer.process(job, support.getImportContext(), vf);
                 }
 
                 List<PipelineJobWarning> warnings = new ArrayList<PipelineJobWarning>();
                 for (FolderImporter importer : importers)
                 {
-                    job.info("Post-processing " + importer.getDescription());
-                    job.setStatus("POST-PROCESS " + importer.getDescription());
+                    job.setStatus("POST-PROCESS " + importer.getDescription()); 
                     Collection<PipelineJobWarning> importerWarnings = importer.postProcess(support.getImportContext(), vf);
                     if (null != importerWarnings)
                         warnings.addAll(importerWarnings);
-                    job.info("Done post-processing " + importer.getDescription());
                 }
                 //TODO: capture warnings in the pipeline job and make a distinction between success & success with warnings
                 //for now, just fail the job if there were any warnings. The warnings will

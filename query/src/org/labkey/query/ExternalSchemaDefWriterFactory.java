@@ -1,13 +1,14 @@
 package org.labkey.query;
 
-import org.apache.xmlbeans.XmlObject;
+import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.data.xml.externalSchemaDef.ExternalSchemaDefDocument;
-import org.labkey.data.xml.externalSchemaDef.ExternalSchemaDefType;
+import org.labkey.data.xml.MultiTablesType;
+import org.labkey.data.xml.externalSchema.ExternalSchemaDocument;
+import org.labkey.data.xml.externalSchema.ExternalSchemaType;
 import org.labkey.folder.xml.FolderDocument;
 import org.labkey.query.persist.ExternalSchemaDef;
 import org.labkey.query.persist.QueryManager;
@@ -21,8 +22,8 @@ import java.util.List;
  */
 public class ExternalSchemaDefWriterFactory implements FolderWriterFactory
 {
-    private static final String DEFAULT_DIRECTORY = "externalSchemaDefs";
-    public static final String FILE_EXTENSION =  ".extschemadef.xml";
+    public static final String DEFAULT_DIRECTORY = "externalSchemas";
+    public static final String FILE_EXTENSION =  ".externalschema.xml";   
 
     @Override
     public FolderWriter create()
@@ -30,7 +31,7 @@ public class ExternalSchemaDefWriterFactory implements FolderWriterFactory
         return new ExternalSchemaDefWriter();
     }
 
-    public class ExternalSchemaDefWriter implements FolderWriter
+    public class ExternalSchemaDefWriter extends BaseFolderWriter
     {
         @Override
         public String getSelectionText()
@@ -44,20 +45,20 @@ public class ExternalSchemaDefWriterFactory implements FolderWriterFactory
             List<ExternalSchemaDef> defs = Arrays.asList(QueryManager.get().getExternalSchemaDefs(c));
             if (defs.size() > 0)
             {
-                ctx.getXml().addNewExternalSchemaDefs().setDir(DEFAULT_DIRECTORY);
-                VirtualFile extSchemaDefsDir = vf.getDir(DEFAULT_DIRECTORY);
+                ctx.getXml().addNewExternalSchemas().setDir(DEFAULT_DIRECTORY);
+                VirtualFile extSchemasDir = vf.getDir(DEFAULT_DIRECTORY);
 
                 for (ExternalSchemaDef def : defs)
                 {
-                    ExternalSchemaDefDocument defDoc = ExternalSchemaDefDocument.Factory.newInstance();
-                    ExternalSchemaDefType defXml = defDoc.addNewExternalSchemaDef();
+                    ExternalSchemaDocument defDoc = ExternalSchemaDocument.Factory.newInstance();
+                    ExternalSchemaType defXml = defDoc.addNewExternalSchema();
                     defXml.setDataSource(def.getDataSource());
                     defXml.setDbSchemaName(def.getDbSchemaName());
                     defXml.setUserSchemaName(def.getUserSchemaName());
                     defXml.setEditable(def.isEditable());
                     defXml.setIndexable(def.isIndexable());
 
-                    ExternalSchemaDefType.Tables tablesXml = defXml.addNewTables();
+                    ExternalSchemaType.Tables tablesXml = defXml.addNewTables();
                     String tables = def.getTables();
                     if (tables.equals("*"))
                     {
@@ -73,11 +74,11 @@ public class ExternalSchemaDefWriterFactory implements FolderWriterFactory
 
                     if (null != def.getMetaData())
                     {
-                        XmlObject xObj = XmlObject.Factory.parse(def.getMetaData());
-                        defXml.setMetadata(xObj);
+                        MultiTablesType metaDataXml = MultiTablesType.Factory.parse(def.getMetaData());
+                        defXml.setMetadata(metaDataXml);
                     }
 
-                    extSchemaDefsDir.saveXmlBean(def.getUserSchemaName() + FILE_EXTENSION, defDoc);
+                    extSchemasDir.saveXmlBean(def.getUserSchemaName() + FILE_EXTENSION, defDoc);
                 }
             }
         }

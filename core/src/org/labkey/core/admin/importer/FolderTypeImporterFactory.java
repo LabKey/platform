@@ -7,6 +7,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
@@ -42,12 +43,15 @@ public class FolderTypeImporterFactory implements FolderImporterFactory
         }
 
         @Override
-        public void process(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
+        public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
             Container c = ctx.getContainer();
             
             if (ctx.getXml().isSetFolderType())
             {
+                job.setStatus("IMPORT " + getDescription());
+                ctx.getLogger().info("Loading " + getDescription());
+
                 org.labkey.folder.xml.FolderType folderTypeXml = ctx.getXml().getFolderType();
                 FolderType folderType = ModuleLoader.getInstance().getFolderType(folderTypeXml.getName());
 
@@ -67,6 +71,8 @@ public class FolderTypeImporterFactory implements FolderImporterFactory
                 {
                     c.setDefaultModule(defaultModule);
                 }
+                
+                ctx.getLogger().info("Done importing " + getDescription());
             }
         }
 

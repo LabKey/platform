@@ -29,15 +29,22 @@ import java.util.Set;
 public class FolderExportContext extends AbstractFolderContext
 {
     private final Set<String> _dataTypes;
+    private String _format = "new";
 
-    public FolderExportContext(User user, Container c, Set<String> dataTypes, Logger logger)
+    public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, Logger logger)
     {
         super(user, c, FolderXmlWriter.getFolderDocument(), logger, null);
         _dataTypes = dataTypes;
+        _format = format;
     }
 
     public Set<String> getDataTypes()
     {
         return _dataTypes;
+    }
+
+    public String getFormat()
+    {
+        return _format;
     }
 }

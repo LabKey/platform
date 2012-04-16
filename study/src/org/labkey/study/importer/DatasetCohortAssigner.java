@@ -46,8 +46,8 @@ public class DatasetCohortAssigner implements InternalStudyImporter
     }
 
     // Parses the dataset manifest again to retrieve the cohort assigments; should cache info from the first parsing
-    // somewhere in the ImportContext
-    public void process(ImportContext ctx, VirtualFile root, BindException errors) throws SQLException, XmlException, IOException, ImportException
+    // somewhere in the StudyImportContext
+    public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws SQLException, XmlException, IOException, ImportException
     {
         StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
         DatasetsDocument.Datasets datasets = DatasetImporter.getDatasetsManifest(ctx, root, false);

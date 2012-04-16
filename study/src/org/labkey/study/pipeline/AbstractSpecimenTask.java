@@ -57,6 +57,14 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
             throw new PipelineJobException("Error attempting to load specimen archive", e);
         }
 
+        doImport(specimenArchive, job, isMerge());
+
+        return new RecordedActionSet();
+    }
+
+    public static void doImport(File specimenArchive, PipelineJob job, boolean merge) throws PipelineJobException
+    {
+
         if (null == specimenArchive)
         {
             job.info("No specimen archive");
@@ -79,7 +87,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
                     job.setStatus("PROCESSING SPECIMENS");
 
                     SpecimenImporter importer = new SpecimenImporter();
-                    importer.process(job.getUser(), job.getContainer(), files, isMerge(), job.getLogger());
+                    importer.process(job.getUser(), job.getContainer(), files, merge, job.getLogger());
                 }
                 catch (Exception e)
                 {
@@ -88,7 +96,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
             }
             finally
             {
-                delete(unzipDir);
+                delete(unzipDir, job);
                 // Since changing specimens in this study will impact specimens in ancillary studies dependent on this study,
                 // we need to force a participant/visit refresh in those study containers (if any):
                 StudyImpl[] dependentStudies = StudyManager.getInstance().getAncillaryStudies(job.getContainer());
@@ -96,20 +104,18 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
                     StudyManager.getInstance().getVisitManager(dependentStudy).updateParticipantVisits(job.getUser(), Collections.<DataSetDefinition>emptySet());
             }
         }
-
-        return new RecordedActionSet();
     }
 
     protected abstract boolean isMerge();
 
-    private void delete(File file)
+    private static void delete(File file, PipelineJob job)
     {
         if (file.isDirectory())
         {
             for (File child : file.listFiles())
-                delete(child);
+                delete(child, job);
         }
-        getJob().info("Deleting " + file.getPath());
+        job.info("Deleting " + file.getPath());
         file.delete();
     }
 }

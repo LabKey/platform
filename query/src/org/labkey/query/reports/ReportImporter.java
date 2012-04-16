@@ -20,6 +20,7 @@ import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.util.XmlValidationException;
@@ -44,11 +45,13 @@ public class ReportImporter implements FolderImporter<FolderDocument.Folder>
         return "reports";
     }
 
-    public void process(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws IOException, SQLException, ImportException
+    public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws IOException, SQLException, ImportException
     {
         File reportsDir = ctx.getDir("reports");
         if (null != reportsDir)
         {
+            ctx.getLogger().info("Loading " + getDescription());
+
             File[] reportsFiles = reportsDir.listFiles(new FilenameFilter() {
                 public boolean accept(File dir, String name)
                 {
@@ -69,6 +72,7 @@ public class ReportImporter implements FolderImporter<FolderDocument.Folder>
             }
 
             ctx.getLogger().info(reportsFiles.length + " report" + (1 == reportsFiles.length ? "" : "s") + " imported");
+            ctx.getLogger().info("Done importing " + getDescription());
         }
     }
 

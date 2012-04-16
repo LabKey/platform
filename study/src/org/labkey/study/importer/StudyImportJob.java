@@ -42,7 +42,7 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport
 {
     private static final Logger LOG = Logger.getLogger(StudyImportJob.class);
 
-    private final ImportContext _ctx;
+    private final StudyImportContext _ctx;
     private final File _root;
     private final BindException _errors;
     private final boolean _reload;
@@ -56,7 +56,7 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport
         _originalFilename = originalFilename;
         setLogFile(StudyPipeline.logForInputFile(new File(_root, "study_load")));
         _errors = errors;
-        _ctx = new ImportContext(user, c, studyXml, getLogger(), _root);
+        _ctx = new StudyImportContext(user, c, studyXml, getLogger(), _root);
 
         StudyImpl study = getStudy(true);
         _reload = (null != study);
@@ -79,7 +79,7 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport
         return study;
     }
 
-    public ImportContext getImportContext()
+    public StudyImportContext getImportContext()
     {
         return _ctx;
     }

@@ -15,25 +15,15 @@
  */
 package org.labkey.wiki.export;
 
+import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
-import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.data.xml.wiki.WikiType;
-import org.labkey.data.xml.wiki.WikisDocument;
-import org.labkey.data.xml.wiki.WikisType;
 import org.labkey.folder.xml.FolderDocument;
-import org.labkey.wiki.WikiSelectManager;
 import org.labkey.wiki.WikiWebdavProvider;
-import org.labkey.wiki.model.Wiki;
-import org.labkey.wiki.model.WikiTree;
-import org.labkey.wiki.model.WikiVersion;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 
 /**
  * User: jeckels
@@ -50,7 +40,7 @@ public class WikiWriterFactory implements FolderWriterFactory
         return new WikiFolderWriter();
     }
 
-    private class WikiFolderWriter implements FolderWriter
+    private class WikiFolderWriter extends BaseFolderWriter
     {
         @Override
         public String getSelectionText()

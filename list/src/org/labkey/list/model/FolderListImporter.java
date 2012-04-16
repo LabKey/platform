@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.admin.ImportContext;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
@@ -41,12 +42,15 @@ public class FolderListImporter implements FolderImporter<FolderDocument.Folder>
         return "lists";
     }
 
-    public void process(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
+    public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
     {
         File listsDir = ctx.getDir("lists");
 
         if (null != listsDir)
         {
+            job.setStatus("IMPORT " + getDescription());
+            ctx.getLogger().info("Loading " + getDescription());
+
             ListImporter importer = new ListImporter();
             Logger log = ctx.getLogger();
             List<String> errors = new LinkedList<String>();
@@ -54,6 +58,8 @@ public class FolderListImporter implements FolderImporter<FolderDocument.Folder>
 
             for (String error : errors)
                 log.error(error);
+
+            ctx.getLogger().info("Done importing " + getDescription());
         }
     }
 

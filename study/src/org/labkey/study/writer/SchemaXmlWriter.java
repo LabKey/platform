@@ -29,6 +29,7 @@ import org.labkey.api.writer.Writer;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
+import org.labkey.data.xml.TablesType;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.DataSetTableImpl;
@@ -74,7 +75,7 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, ImportCo
     {
         // Create dataset metadata file
         TablesDocument tablesDoc = TablesDocument.Factory.newInstance();
-        TablesDocument.Tables tablesXml = tablesDoc.addNewTables();
+        TablesType tablesXml = tablesDoc.addNewTables();
 
         StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
 

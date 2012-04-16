@@ -82,6 +82,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
+import org.labkey.data.xml.TablesType;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.ExternalSchemaDef;
 import org.labkey.query.persist.QueryDef;
@@ -1072,7 +1073,7 @@ public class QueryServiceImpl extends QueryService
         try
         {
             TablesDocument doc = TablesDocument.Factory.parse(metadataXML, options);
-            TablesDocument.Tables tables = doc.getTables();
+            TablesType tables = doc.getTables();
             if (tables != null && tables.sizeOfTableArray() > 0)
                 return tables.getTableArray(0);
         }

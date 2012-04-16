@@ -20,6 +20,7 @@ import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.MvUtil;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
@@ -44,7 +45,7 @@ public class MissingValueImporter implements FolderImporter
     }
 
     @Override
-    public void process(ImportContext ctx, VirtualFile root) throws Exception
+    public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws Exception
     {
         // This conversion of the xml object to either a Study doc or a Folder doc is temparary until the
         // study archive is merged with the folder archive. For now, we need to support importing the
@@ -58,6 +59,8 @@ public class MissingValueImporter implements FolderImporter
 
         if (null != mvXml)
         {
+            if (null != job)
+                job.setStatus("IMPORT " + getDescription());
             ctx.getLogger().info("Loading " + getDescription());
             MissingValueIndicatorsType.MissingValueIndicator[] mvs = mvXml.getMissingValueIndicatorArray();
 
@@ -77,6 +80,7 @@ public class MissingValueImporter implements FolderImporter
                 String[] mvLabels = newMvMap.values().toArray(new String[mvs.length]);
                 MvUtil.assignMvIndicators(ctx.getContainer(), mvIndicators, mvLabels);
             }
+            ctx.getLogger().info("Done importing " + getDescription());
         }
     }
 

@@ -49,7 +49,7 @@ public class CohortImporter implements InternalStudyImporter
         return "cohort settings";
     }
 
-    public void process(ImportContext ctx, VirtualFile root, BindException errors) throws IOException, SQLException, ServletException, ImportException
+    public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws IOException, SQLException, ServletException, ImportException
     {
         StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
         StudyDocument.Study.Cohorts cohortsXml = ctx.getXml().getCohorts();
