@@ -25,6 +25,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import java.io.File;
+import java.util.Collections;
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -93,6 +95,11 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
         return _logger;
     }
 
+    public File getRoot()
+    {
+        return _root;
+    }
+
     public void lockDocument()
     {
         _locked = true;
@@ -111,4 +118,15 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
         _xmlDocument = folderDoc;
     }
 
+    @Override
+    public Set<String> getDataTypes()
+    {
+        return Collections.<String>emptySet();
+    }
+
+    @Override
+    public String getFormat()
+    {
+        return "new";
+    }
 }

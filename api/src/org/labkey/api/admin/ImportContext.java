@@ -20,6 +20,7 @@ import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.writer.ContainerUser;
 
 import java.io.File;
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -30,4 +31,6 @@ public interface ImportContext<XmlType extends XmlObject> extends ContainerUser
     public XmlType getXml() throws ImportException;
     public File getDir(String xmlNodeName) throws ImportException;
     public Logger getLogger();
+    public Set<String> getDataTypes();
+    public String getFormat();
 }

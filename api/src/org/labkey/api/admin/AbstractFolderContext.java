@@ -31,6 +31,11 @@ import java.io.File;
  */
 public abstract class AbstractFolderContext extends AbstractImportContext<FolderDocument.Folder, FolderDocument>
 {
+    public enum ExportType {
+        ALL,
+        STUDY
+    }
+
     protected AbstractFolderContext(User user, Container c, FolderDocument folderDoc, Logger logger, @Nullable File root)
     {
         super(user, c, folderDoc, logger, root);

@@ -37,7 +37,9 @@ public interface AdminUrls extends UrlProvider
     ActionURL getCustomizeSiteURL(boolean upgradeInProgress);
     ActionURL getMaintenanceURL();
     ActionURL getManageFoldersURL(Container c);
+    ActionURL getExportFolderURL(Container c);
     ActionURL getFolderManagementURL(Container c);
+//    ActionURL getCreateFromTemplateURL(Container c);
     ActionURL getCreateProjectURL();
     ActionURL getMemTrackerURL();
     ActionURL getProjectSettingsURL(Container c);

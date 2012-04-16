@@ -21,6 +21,7 @@ import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.OntologyType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
+import org.labkey.data.xml.TablesType;
 
 import java.io.InputStream;
 import java.util.SortedMap;
@@ -41,7 +42,7 @@ public class TableXmlUtils
     {
         DbSchema dbSchema = DbSchema.createFromMetaData(dbSchemaName);
         TablesDocument xmlTablesDoc = TablesDocument.Factory.newInstance();
-        TablesDocument.Tables xmlTables = xmlTablesDoc.addNewTables();
+        TablesType xmlTables = xmlTablesDoc.addNewTables();
 
         for (String tableName : dbSchema.getTableNames())
         {
