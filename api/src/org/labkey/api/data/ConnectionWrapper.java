@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Pair;
@@ -60,7 +61,7 @@ public class ConnectionWrapper implements java.sql.Connection
     private static boolean _explicitLogger = _logDefault.getLevel() != null || _logDefault.getParent() != null  && _logDefault.getParent().getName().equals("org.labkey.api.data");
     private Logger _log;
 
-    protected ConnectionWrapper(Connection conn, SqlDialect dialect, Integer spid, @Nullable Logger log) throws SQLException
+    public ConnectionWrapper(Connection conn, SqlDialect dialect, Integer spid, @Nullable Logger log) throws SQLException
     {
         _connection = conn;
         _spid = spid;
@@ -77,10 +78,17 @@ public class ConnectionWrapper implements java.sql.Connection
         }
         assert MemTracker.put(this);
         _allocatingThreadName = Thread.currentThread().getName();
+
         //noinspection ConstantConditions
         assert null == _openConnections.put(this,  new Pair<Thread,Throwable>(Thread.currentThread(), new Throwable())) || true;
 
         _log = log != null ? log : getConnectionLogger();
+    }
+
+
+    public void untrack()
+    {
+        _openConnections.remove(this);
     }
 
 
@@ -177,19 +185,19 @@ public class ConnectionWrapper implements java.sql.Connection
     public Statement createStatement()
     throws SQLException
     {
-        return _dialect.getStatementWrapper(this, _connection.createStatement());
+        return getStatementWrapper(this, _connection.createStatement());
     }
 
     public PreparedStatement prepareStatement(String sql)
     throws SQLException
     {
-        return _dialect.getStatementWrapper(this, _connection.prepareStatement(sql), sql);
+        return getStatementWrapper(this, _connection.prepareStatement(sql), sql);
     }
 
     public CallableStatement prepareCall(String sql)
     throws SQLException
     {
-        return _dialect.getStatementWrapper(this, _connection.prepareCall(sql), sql);
+        return getStatementWrapper(this, _connection.prepareCall(sql), sql);
     }
 
     public String nativeSQL(String sql)
@@ -295,22 +303,39 @@ public class ConnectionWrapper implements java.sql.Connection
         _connection.clearWarnings();
     }
 
+    private StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt)
+    {
+        if (null == _dialect)
+            return new StatementWrapper(conn, stmt);
+        else
+            return _dialect.getStatementWrapper(conn, stmt);
+    }
+
+    private StatementWrapper getStatementWrapper(ConnectionWrapper conn, Statement stmt, String sql)
+    {
+        if (null == _dialect)
+            return new StatementWrapper(conn, stmt, sql);
+        else
+            return _dialect.getStatementWrapper(conn, stmt, sql);
+    }
+
+
     public Statement createStatement(int resultSetType, int resultSetConcurrency)
     throws SQLException
     {
-        return _dialect.getStatementWrapper(this, _connection.createStatement(resultSetType, resultSetConcurrency));
+        return getStatementWrapper(this, _connection.createStatement(resultSetType, resultSetConcurrency));
     }
 
     public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency)
     throws SQLException
     {
-        return _dialect.getStatementWrapper(this, _connection.prepareStatement(sql, resultSetType, resultSetConcurrency), sql);
+        return getStatementWrapper(this, _connection.prepareStatement(sql, resultSetType, resultSetConcurrency), sql);
     }
 
     public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency)
     throws SQLException
     {
-        return _dialect.getStatementWrapper(this, _connection.prepareCall(sql, resultSetType, resultSetConcurrency), sql);
+        return getStatementWrapper(this, _connection.prepareCall(sql, resultSetType, resultSetConcurrency), sql);
     }
 
     public Map<String, Class<?>> getTypeMap()
@@ -364,37 +389,37 @@ public class ConnectionWrapper implements java.sql.Connection
     public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability)
     throws SQLException
     {
-        return _dialect.getStatementWrapper(this, _connection.createStatement(resultSetType, resultSetConcurrency, resultSetHoldability));
+        return getStatementWrapper(this, _connection.createStatement(resultSetType, resultSetConcurrency, resultSetHoldability));
     }
 
     public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
     throws SQLException
     {
-        return _dialect.getStatementWrapper(this, _connection.prepareStatement(sql, resultSetType, resultSetConcurrency, resultSetHoldability), sql);
+        return getStatementWrapper(this, _connection.prepareStatement(sql, resultSetType, resultSetConcurrency, resultSetHoldability), sql);
     }
 
     public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
     throws SQLException
     {
-        return _dialect.getStatementWrapper(this, _connection.prepareCall(sql, resultSetType, resultSetConcurrency, resultSetHoldability), sql);
+        return getStatementWrapper(this, _connection.prepareCall(sql, resultSetType, resultSetConcurrency, resultSetHoldability), sql);
     }
 
     public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys)
     throws SQLException
     {
-        return _dialect.getStatementWrapper(this, _connection.prepareStatement(sql, autoGeneratedKeys), sql);
+        return getStatementWrapper(this, _connection.prepareStatement(sql, autoGeneratedKeys), sql);
     }
 
     public PreparedStatement prepareStatement(String sql, int[] columnIndexes)
     throws SQLException
     {
-        return _dialect.getStatementWrapper(this, _connection.prepareStatement(sql, columnIndexes), sql);
+        return getStatementWrapper(this, _connection.prepareStatement(sql, columnIndexes), sql);
     }
 
     public PreparedStatement prepareStatement(String sql, String[] columnNames)
     throws SQLException
     {
-        return _dialect.getStatementWrapper(this, _connection.prepareStatement(sql, columnNames), sql);
+        return getStatementWrapper(this, _connection.prepareStatement(sql, columnNames), sql);
     }
 
     public static int getActiveConnectionCount()

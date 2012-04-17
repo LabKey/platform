@@ -68,7 +68,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     String _sqlStateTestException = null;
 
 
-    protected StatementWrapper(ConnectionWrapper conn, Statement stmt)
+    public StatementWrapper(ConnectionWrapper conn, Statement stmt)
     {
         _conn = conn;
         _log = conn.getLogger();
@@ -76,7 +76,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         assert MemTracker.put(this);
     }
 
-    protected StatementWrapper(ConnectionWrapper conn, Statement stmt, String sql)
+    public StatementWrapper(ConnectionWrapper conn, Statement stmt, String sql)
     {
         this(conn, stmt);
         _debugSql = sql;
