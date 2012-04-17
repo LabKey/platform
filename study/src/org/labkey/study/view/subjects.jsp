@@ -456,7 +456,7 @@ li.ptid a.unhighlight
             {
                 if (++count > 1 && count % _ptidPerCol == 1)
                     html.push('</ul></td><td valign="top"><ul class="subjectlist">');
-                html.push('<li class="ptid" index=' + subjectIndex + ' ptid="' + p.html + '" ><a href="' + _urlTemplate + p.html + '">' + (LABKEY.demoMode?LABKEY.id(p.ptid):p.html) + '</a></li>\n');
+                html.push('<li class="ptid" index=' + subjectIndex + ' ptid="' + p.html + '" style="white-space:nowrap;"><a href="' + _urlTemplate + p.html + '">' + (LABKEY.demoMode?LABKEY.id(p.ptid):p.html) + '</a></li>\n');
             }
         }
 
