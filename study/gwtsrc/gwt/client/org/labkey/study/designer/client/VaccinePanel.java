@@ -480,6 +480,7 @@ public class VaccinePanel extends Composite
             columnNames[1].setTitle("The dose of this adjuvant. If the protocol uses the same adjuvant type with different dosages create multiple adjuvant rows.");
             columnNames[2].setTitle("Route of administration for this adjuvant.");
             setReadOnly(designer.isReadOnly());
+            DOM.setAttribute(getElement(), "id", "AdjuvantGrid");
         }
 
         public int getDataColumnCount()

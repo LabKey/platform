@@ -101,6 +101,7 @@ public class AssayDefinitionDialog extends DialogBox
             }
         });
         listBox.setWidth("250");
+        listBox.setName("assayList");
         mainTable.setWidget(0, 0, listBox);
         mainTable.getCellFormatter().setVerticalAlignment(0, 0, HasVerticalAlignment.ALIGN_TOP);
         editPanel = new EditPanel();
@@ -194,6 +195,7 @@ public class AssayDefinitionDialog extends DialogBox
         {
             add(lblLocked);
             tbAssayName.setWidth("300");
+            tbAssayName.setName("assayName");
             tbAssayName.addChangeHandler(new ChangeHandler() {
                 public void onChange(ChangeEvent e)
                 {
@@ -220,6 +222,7 @@ public class AssayDefinitionDialog extends DialogBox
             add (new Label("Description"));
             taDescription.setVisibleLines(5);
             taDescription.setWidth("300");
+            taDescription.setName("assayDescription");
             taDescription.addChangeHandler(new ChangeHandler() {
                 public void onChange(ChangeEvent e)
                 {
@@ -232,6 +235,7 @@ public class AssayDefinitionDialog extends DialogBox
             add(new Label("Labs (one per line)"));
             taLabs.setWidth("300");
             taLabs.setVisibleLines(3);
+            taLabs.setName("assayLabs");                   
             add(taLabs);
             taLabs.addChangeHandler(new ChangeHandler()
             {

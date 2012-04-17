@@ -98,6 +98,7 @@ public class SampleTypeDefinitionDialog extends DialogBox
             }
         });
         listBox.setWidth("250");
+        listBox.setName("sampleTypeList");
         mainTable.setWidget(0, 0, listBox);
         mainTable.getCellFormatter().setVerticalAlignment(0, 0, HasVerticalAlignment.ALIGN_TOP);
         editPanel = new EditPanel();
@@ -187,6 +188,7 @@ public class SampleTypeDefinitionDialog extends DialogBox
             add(lblLocked);
             add (new Label("Sample Type"));
             tbSampleTypeName.setWidth("300");
+            tbSampleTypeName.setName("sampleTypeName");
             tbSampleTypeName.addChangeListener(new ChangeListener() {
                 public void onChange(Widget sender)
                 {
@@ -213,6 +215,7 @@ public class SampleTypeDefinitionDialog extends DialogBox
 
             add (new Label("Primary Type"));
             tbPrimaryType.setWidth("300");
+            tbPrimaryType.setName("primaryType");
             tbPrimaryType.addChangeListener(new ChangeListener() {
                 public void onChange(Widget sender)
                 {
@@ -226,6 +229,7 @@ public class SampleTypeDefinitionDialog extends DialogBox
             sampleCodeLabel.setTitle("The short sample code is used to generate unique vial ids");
             add (sampleCodeLabel);
             tbSampleCode.setWidth("100");
+            tbSampleCode.setName("sampleCode");
             tbSampleCode.addChangeListener(new ChangeListener() {
                 public void onChange(Widget sender)
                 {

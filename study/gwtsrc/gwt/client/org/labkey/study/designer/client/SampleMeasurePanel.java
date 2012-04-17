@@ -42,6 +42,7 @@ public class SampleMeasurePanel extends HorizontalPanel implements SourcesChange
     {
         this.studyDef = def;
         init(measure);
+        tbAmount.setName("materialAmount");
         tbAmount.addChangeListener(new ChangeListener()
         {
             public void onChange(Widget sender)
@@ -62,6 +63,7 @@ public class SampleMeasurePanel extends HorizontalPanel implements SourcesChange
             }
         });
 
+        lbSampleType.setName("materialType");
         lbSampleType.addChangeListener(new ChangeListener()
         {
             public void onChange(Widget sender)
@@ -71,6 +73,7 @@ public class SampleMeasurePanel extends HorizontalPanel implements SourcesChange
             }
         });
 
+        lbUnits.setName("materialUnits");
         lbUnits.addChangeListener(new ChangeListener()
         {
             public void onChange(Widget sender)
