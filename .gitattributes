@@ -75,8 +75,10 @@ api/src/org/labkey/api/admin/AbstractImportContext.java -text
 api/src/org/labkey/api/admin/AdminUrls.java -text
 api/src/org/labkey/api/admin/BaseFolderWriter.java -text
 api/src/org/labkey/api/admin/CoreUrls.java -text
+api/src/org/labkey/api/admin/FolderImportContext.java -text
 api/src/org/labkey/api/admin/FolderImporter.java -text
 api/src/org/labkey/api/admin/FolderImporterFactory.java -text
+api/src/org/labkey/api/admin/FolderImporterImpl.java -text
 api/src/org/labkey/api/admin/FolderSerializationRegistry.java -text
 api/src/org/labkey/api/admin/FolderWriter.java -text
 api/src/org/labkey/api/admin/FolderWriterFactory.java -text
@@ -1256,6 +1258,7 @@ api/src/org/labkey/api/writer/FastaEntry.java -text
 api/src/org/labkey/api/writer/FastaGenerator.java -text
 api/src/org/labkey/api/writer/FastaWriter.java -text
 api/src/org/labkey/api/writer/FileSystemFile.java -text
+api/src/org/labkey/api/writer/MemoryVirtualFile.java -text
 api/src/org/labkey/api/writer/ResultSetFastaGenerator.java -text
 api/src/org/labkey/api/writer/VirtualFile.java -text
 api/src/org/labkey/api/writer/Writer.java -text

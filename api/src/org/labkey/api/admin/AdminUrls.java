@@ -38,8 +38,9 @@ public interface AdminUrls extends UrlProvider
     ActionURL getMaintenanceURL();
     ActionURL getManageFoldersURL(Container c);
     ActionURL getExportFolderURL(Container c);
+    ActionURL getImportFolderURL(Container c);
     ActionURL getFolderManagementURL(Container c);
-//    ActionURL getCreateFromTemplateURL(Container c);
+    ActionURL getCreateFromTemplateURL(Container target, Container source);
     ActionURL getCreateProjectURL();
     ActionURL getMemTrackerURL();
     ActionURL getProjectSettingsURL(Container c);
