@@ -5544,4 +5544,6 @@ internal/webapp/tiny_mce/utils/mctabs.js -text
 internal/webapp/tiny_mce/utils/validate.js -text
 internal/webapp/util.js -text
 internal/webapp/viewPicker.js -text
+internal/webapp/vis/lib/d3-2.0.4.js -text
+internal/webapp/vis/lib/raphael-min.js -text
 internal/webapp/wikitoc.js -text
