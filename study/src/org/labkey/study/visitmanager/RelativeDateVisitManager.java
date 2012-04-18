@@ -136,10 +136,10 @@ public class RelativeDateVisitManager extends VisitManager
             //
             SQLFragment sqlInsertParticipantVisit = new SQLFragment();
             sqlInsertParticipantVisit.append("INSERT INTO ").append(tableParticipantVisit.getSelectName());
-            sqlInsertParticipantVisit.append(" (Container, ParticipantId, SequenceNum, VisitDate, ParticipantSequenceKey)\n");
+            sqlInsertParticipantVisit.append(" (Container, ParticipantId, SequenceNum, VisitDate, ParticipantSequenceNum)\n");
             sqlInsertParticipantVisit.append("SELECT DISTINCT ? as Container, ParticipantId, SequenceNum, _VisitDate, \n(");
             sqlInsertParticipantVisit.add(getStudy().getContainer());
-            sqlInsertParticipantVisit.append(getParticipantSequenceKeyExpr(schema, "ParticipantId", "SequenceNum")).append(") AS ParticipantSequenceKey\n");
+            sqlInsertParticipantVisit.append(getParticipantSequenceNumExpr(schema, "ParticipantId", "SequenceNum")).append(") AS ParticipantSequenceNum\n");
             sqlInsertParticipantVisit.append("FROM ").append(tableStudyData.getFromSQL("SD")).append("\n");
             sqlInsertParticipantVisit.append("WHERE NOT EXISTS (SELECT ParticipantId, SequenceNum FROM ");
             sqlInsertParticipantVisit.append(tableParticipantVisit, "PV").append("\n");
@@ -149,10 +149,10 @@ public class RelativeDateVisitManager extends VisitManager
 
             SQLFragment sqlInsertParticipantVisit2 = new SQLFragment();
             sqlInsertParticipantVisit2.append("INSERT INTO ").append(tableParticipantVisit.getSelectName());
-            sqlInsertParticipantVisit2.append(" (Container, ParticipantId, SequenceNum, VisitDate, ParticipantSequenceKey)\n");
+            sqlInsertParticipantVisit2.append(" (Container, ParticipantId, SequenceNum, VisitDate, ParticipantSequenceNum)\n");
             sqlInsertParticipantVisit2.append("SELECT DISTINCT Container, Ptid AS ParticipantId, VisitValue AS SequenceNum, ");
             sqlInsertParticipantVisit2.append(schema.getSqlDialect().getDateTimeToDateCast("DrawTimestamp")).append(" AS VisitDate, \n");
-            sqlInsertParticipantVisit2.append("(").append(getParticipantSequenceKeyExpr(schema, "Ptid", "VisitValue")).append(") AS ParticipantSequenceKey\n");
+            sqlInsertParticipantVisit2.append("(").append(getParticipantSequenceNumExpr(schema, "Ptid", "VisitValue")).append(") AS ParticipantSequenceNum\n");
             sqlInsertParticipantVisit2.append("FROM ").append(tableSpecimen, "Specimen").append("\n");
             sqlInsertParticipantVisit2.append("WHERE Container = ?  AND Ptid IS NOT NULL AND VisitValue IS NOT NULL AND NOT EXISTS (\n");
             sqlInsertParticipantVisit2.add(getStudy().getContainer());
@@ -174,18 +174,18 @@ public class RelativeDateVisitManager extends VisitManager
 //                TableInfo tempTableInfo = dataSet.getMaterializedTempTableInfo(user, false);
 //                if (tempTableInfo != null)
 //                {
-//                    Table.execute(schema, new SQLFragment("UPDATE " + tempTableInfo + " SET Day = (SELECT Day FROM " + tableParticipantVisit + " pv WHERE pv.ParticipantSequenceKey = " + tempTableInfo + ".ParticipantSequenceKey" +
+//                    Table.execute(schema, new SQLFragment("UPDATE " + tempTableInfo + " SET Day = (SELECT Day FROM " + tableParticipantVisit + " pv WHERE pv.ParticipantSequenceNum = " + tempTableInfo + ".ParticipantSequenceNum" +
 //                            " AND pv.Container = ?)",  _study.getContainer()));
 //                }
 //            }
 
-            StringBuilder participantSequenceKey = new StringBuilder("(");
-            participantSequenceKey.append(getParticipantSequenceKeyExpr(schema,"ParticipantId","SequenceNum"));
-            participantSequenceKey.append(")");
+            StringBuilder participantSequenceNum = new StringBuilder("(");
+            participantSequenceNum.append(getParticipantSequenceNumExpr(schema, "ParticipantId", "SequenceNum"));
+            participantSequenceNum.append(")");
 
-            String sqlUpdateParticipantSeqKey = "UPDATE " + tableParticipantVisit + " SET ParticipantSequenceKey = " +
-                    participantSequenceKey + " WHERE Container = ?  AND ParticipantSequenceKey IS NULL";
-            Table.execute(schema, sqlUpdateParticipantSeqKey, getStudy().getContainer());
+            String sqlUpdateParticipantSeqNum = "UPDATE " + tableParticipantVisit + " SET ParticipantSequenceNum = " +
+                    participantSequenceNum + " WHERE Container = ?  AND ParticipantSequenceNum IS NULL";
+            Table.execute(schema, sqlUpdateParticipantSeqNum, getStudy().getContainer());
 
             _updateVisitRowId();
 

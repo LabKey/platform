@@ -1380,11 +1380,11 @@ public class SpecimenImporter
 
     private void populateSpecimens(SpecimenLoadInfo info, boolean merge) throws IOException, SQLException
     {
-        String participantSequenceKeyExpr = VisitManager.getParticipantSequenceKeyExpr(info._schema, "PTID", "VisitValue");
+        String participantSequenceNumExpr = VisitManager.getParticipantSequenceNumExpr(info._schema, "PTID", "VisitValue");
 
         SQLFragment insertSelectSql = new SQLFragment();
         insertSelectSql.append("SELECT ");
-        insertSelectSql.append(participantSequenceKeyExpr).append(" AS ParticipantSequenceKey");
+        insertSelectSql.append(participantSequenceNumExpr).append(" AS ParticipantSequenceNum");
         insertSelectSql.append(", Container, SpecimenHash, ");
         insertSelectSql.append(getSpecimenColsSql(info.getAvailableColumns())).append(" FROM (\n");
         insertSelectSql.append(getVialListFromTempTableSql(info)).append(") VialList\n");
@@ -1399,7 +1399,7 @@ public class SpecimenImporter
                 // Create list of specimen columns, including unique columns not found in SPECIMEN_COLUMNS.
                 Set<SpecimenColumn> cols = new LinkedHashSet<SpecimenColumn>();
                 cols.add(new SpecimenColumn("SpecimenHash", "SpecimenHash", "VARCHAR(256)", TargetTable.SPECIMENS, true));
-                cols.add(new SpecimenColumn("ParticipantSequenceKey", "ParticipantSequenceKey", "VARCHAR(200)", TargetTable.SPECIMENS, false));
+                cols.add(new SpecimenColumn("ParticipantSequenceNum", "ParticipantSequenceNum", "VARCHAR(200)", TargetTable.SPECIMENS, false));
                 cols.addAll(getSpecimenCols(info.getAvailableColumns()));
 
                 // Insert or update the specimens from in the temp table.
@@ -1417,7 +1417,7 @@ public class SpecimenImporter
         {
             // Insert all specimens from in the temp table.
             SQLFragment insertSql = new SQLFragment();
-            insertSql.append("INSERT INTO study.Specimen \n(").append("ParticipantSequenceKey, Container, SpecimenHash, ");
+            insertSql.append("INSERT INTO study.Specimen \n(").append("ParticipantSequenceNum, Container, SpecimenHash, ");
             insertSql.append(getSpecimenColsSql(info.getAvailableColumns())).append(")\n");
             insertSql.append(insertSelectSql);
 

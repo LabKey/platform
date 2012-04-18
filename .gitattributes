@@ -2593,6 +2593,7 @@ study/resources/schemas/dbscripts/postgresql/study-11.20-11.30.sql -text
 study/resources/schemas/dbscripts/postgresql/study-11.30-12.10.sql -text
 study/resources/schemas/dbscripts/postgresql/study-11.31-11.32.sql -text
 study/resources/schemas/dbscripts/postgresql/study-11.32-11.33.sql -text
+study/resources/schemas/dbscripts/postgresql/study-12.10-12.11.sql -text
 study/resources/schemas/dbscripts/postgresql/study-create.sql -text
 study/resources/schemas/dbscripts/postgresql/study-drop.sql -text
 study/resources/schemas/dbscripts/sqlserver/obsolete/study-0.00-1.11.sql -text
@@ -2764,6 +2765,7 @@ study/resources/schemas/dbscripts/sqlserver/study-11.20-11.30.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-11.30-12.10.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-11.31-11.32.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-11.32-11.33.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-12.10-12.11.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-create.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-drop.sql -text
 study/resources/schemas/study.xml -text
@@ -2917,7 +2919,6 @@ study/src/org/labkey/study/model/ParticipantDataMapKey.java -text
 study/src/org/labkey/study/model/ParticipantDataset.java -text
 study/src/org/labkey/study/model/ParticipantGroup.java -text
 study/src/org/labkey/study/model/ParticipantGroupManager.java -text
-study/src/org/labkey/study/model/ParticipantSequenceKey.java -text
 study/src/org/labkey/study/model/PrimaryType.java -text
 study/src/org/labkey/study/model/QCState.java -text
 study/src/org/labkey/study/model/QCStateSet.java -text

@@ -905,7 +905,6 @@ class PostgreSql83Dialect extends SqlDialect
 
     private List<String> getRenameColumnsStatement(TableChange change)
     {
-
         List<String> statements = new ArrayList<String>();
         for (Map.Entry<String, String> oldToNew : change.getColumnRenames().entrySet())
         {
@@ -913,6 +912,16 @@ class PostgreSql83Dialect extends SqlDialect
                     change.getSchemaName(), change.getTableName(),
                     makePropertyIdentifier(oldToNew.getKey()),
                     makePropertyIdentifier(oldToNew.getValue())));
+        }
+
+        for (Map.Entry<PropertyStorageSpec.Index, PropertyStorageSpec.Index> oldToNew : change.getIndexRenames().entrySet())
+        {
+            PropertyStorageSpec.Index oldIndex = oldToNew.getKey();
+            PropertyStorageSpec.Index newIndex = oldToNew.getValue();
+            statements.add(String.format("ALTER INDEX %s.%s RENAME TO %s",
+                    change.getSchemaName(),
+                    nameIndex(change.getTableName(), oldIndex.columnNames),
+                    nameIndex(change.getTableName(), newIndex.columnNames)));
         }
 
         return statements;
@@ -968,7 +977,11 @@ class PostgreSql83Dialect extends SqlDialect
 
         for (PropertyStorageSpec.Index index : change.getIndexedColumns())
         {
-            statements.add(String.format("CREATE %s INDEX %s ON %s (%s)", index.isUnique ? "UNIQUE" : "", nameIndex(change.getTableName(), index.columnNames), makeTableIdentifier(change), StringUtils.join(index.columnNames, ", ")));
+            statements.add(String.format("CREATE %s INDEX %s ON %s (%s)",
+                    index.isUnique ? "UNIQUE" : "",
+                    nameIndex(change.getTableName(), index.columnNames),
+                    makeTableIdentifier(change),
+                    StringUtils.join(index.columnNames, ", ")));
         }
 
         return statements;

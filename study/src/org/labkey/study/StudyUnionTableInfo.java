@@ -55,7 +55,7 @@ public class StudyUnionTableInfo extends VirtualTable
             "_key",
             "_visitdate",
             "qcstate",
-            "participantsequencekey"
+            "participantsequencenum"
     };
 
     final Set<String> unionColumns = new HashSet<String>(Arrays.asList(COLUMN_NAMES));
@@ -224,5 +224,19 @@ public class StudyUnionTableInfo extends VirtualTable
     public String toString()
     {
         return "StudyData UNION table";
+    }
+
+    @Override
+    protected ColumnInfo resolveColumn(String name)
+    {
+        ColumnInfo result = super.resolveColumn(name);
+        if (result == null)
+        {
+            // Resolve 'ParticipantSequenceKey' to 'ParticipantSequenceNum' for compatibility with versions <12.2.
+            if ("ParticipantSequenceKey".equalsIgnoreCase(name))
+                return getColumn("ParticipantSequenceNum");
+        }
+
+        return result;
     }
 }

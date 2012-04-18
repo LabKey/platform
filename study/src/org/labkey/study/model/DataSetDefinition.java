@@ -157,7 +157,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         "visitRowId",
         "lsid",
         "Dataset",
-        "ParticipantSequenceKey",
+        "ParticipantSequenceNum",
         // The following columns names don't refer to actual built-in dataset columns, but
         // they're used by import ('replace') or are commonly used/confused synonyms for built-in column names
         "replace",
@@ -189,7 +189,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         "visitRowId",
         "lsid",
         "Dataset",
-        "ParticipantSequenceKey"
+        "ParticipantSequenceNum"
     };
 
     static final Set<String> DEFAULT_ABSOLUTE_DATE_FIELDS;
@@ -841,7 +841,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             // base columns
 
-            for (String name : Arrays.asList("lsid","ParticipantSequenceKey","sourcelsid","Created","CreatedBy","Modified","ModifiedBy"))
+            for (String name : Arrays.asList("lsid","ParticipantSequenceNum","sourcelsid","Created","CreatedBy","Modified","ModifiedBy"))
             {
                 ColumnInfo col = getStorageColumn(name);
                 if (null == col) continue;
@@ -1678,10 +1678,10 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             }
 
             //
-            // ParticipantSequenceKey
+            // ParticipantSequenceNum
             //
 
-            it.addParticipantSequence();
+            it.addParticipantSequenceNum();
 
             // QCSTATE
 
@@ -1905,10 +1905,10 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             return indexLSIDOutput;
         }
 
-        int addParticipantSequence()
+        int addParticipantSequenceNum()
         {
-            ColumnInfo col = new ColumnInfo("participantsequencekey", JdbcType.VARCHAR);
-            return addColumn(col, new ParticipantSequenceColumn());
+            ColumnInfo col = new ColumnInfo("participantsequencenum", JdbcType.VARCHAR);
+            return addColumn(col, new ParticipantSequenceNumColumn());
         }
 
         int replaceOrAddColumn(Integer index, ColumnInfo col, Callable call)
@@ -1973,7 +1973,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             }
         }
 
-        class ParticipantSequenceColumn implements Callable
+        class ParticipantSequenceNumColumn implements Callable
         {
             @Override
             public Object call() throws Exception
@@ -2673,7 +2673,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             //TableInfo studyData = StudySchema.getInstance().getTableInfoStudyData(study, user);
             TableInfo studyData = StudySchema.getInstance().getSchema().getTable("StudyData");
 
-            List<ColumnInfo> columnsBase = studyData.getColumns("_key","lsid","participantid","ParticipantSequenceKey","sourcelsid", "created","modified","sequenceNum","qcstate","participantsequencekey");
+            List<ColumnInfo> columnsBase = studyData.getColumns("_key","lsid","participantid","ParticipantSequenceNum","sourcelsid", "created","modified","sequenceNum","qcstate","participantsequencenum");
             for (ColumnInfo col : columnsBase)
             {
                 ColumnInfo wrapped = new ColumnInfo(col, this);

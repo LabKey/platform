@@ -166,7 +166,7 @@ public class StudyServiceImpl implements StudyService.Service
 
             // these columns are always recalculated
             mergeData.remove("lsid");
-            mergeData.remove("participantsequencekey");
+            mergeData.remove("participantsequencenum");
 
 
             def.deleteRows(u, Collections.singletonList(lsid));

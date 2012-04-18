@@ -3949,7 +3949,7 @@ public class StudyController extends BaseStudyController
             DataRegion dr = new DataRegion();
             dr.setTable(tinfo);
 
-            Set<String> ignoreColumns = new CaseInsensitiveHashSet("createdby", "modifiedby", "lsid", "participantsequencekey", "datasetid", "visitdate", "sourcelsid", "created", "modified", "visitrowid", "day", "qcstate", "dataset");
+            Set<String> ignoreColumns = new CaseInsensitiveHashSet("createdby", "modifiedby", "lsid", "participantsequencenum", "datasetid", "visitdate", "sourcelsid", "created", "modified", "visitrowid", "day", "qcstate", "dataset");
             if (study.getTimepointType() != TimepointType.VISIT)
                 ignoreColumns.add("SequenceNum");
 

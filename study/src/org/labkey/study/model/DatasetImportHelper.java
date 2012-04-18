@@ -83,12 +83,12 @@ class DatasetImportHelper implements OntologyManager.UpdateableTableImportHelper
 //        String participantId = getParticipantId(row);
 //        double sequenceNum = getSequenceNum(row);
 //        Object key = getKey(row);
-//        String participantSequenceKey = participantId + "|" + _sequenceFormat.format(sequenceNum);
+//        String participantSequenceNum = participantId + "|" + _sequenceFormat.format(sequenceNum);
 //        Date visitDate = getVisitDate(row);
 //        Integer qcState = getQCState(row);
 //        String sourceLsid = getSourceLsid(row);
 //
-//        parameterMap.put("participantsequencekey", participantSequenceKey);
+//        parameterMap.put("participantsequencenum", participantSequenceNum);
 //        parameterMap.put("participantid", participantId);
 //        parameterMap.put("sequencenum", sequenceNum);
 //        parameterMap.put("_key", key==null ? "" : String.valueOf(key));
@@ -192,12 +192,12 @@ class DatasetImportHelper implements OntologyManager.UpdateableTableImportHelper
         String lsid = getURI(row);
         String participantId = getParticipantId(row);
         double sequenceNum = getSequenceNum(row);
-        String participantSequenceKey = participantId + "|" + _sequenceFormat.format(sequenceNum);
+        String participantSequenceNum = participantId + "|" + _sequenceFormat.format(sequenceNum);
         Date visitDate = getVisitDate(row);
         Integer qcState = getQCState(row);
         String sourceLsid = getSourceLsid(row);
 
-        row.put("participantsequencekey", participantSequenceKey);
+        row.put("participantsequencenum", participantSequenceNum);
         row.put("participantid", participantId);
         row.put("sequencenum", sequenceNum);
         row.put("lsid", lsid);

@@ -138,7 +138,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
         }
         if (type == ColumnMatchType.CONFIGURED_MEASURES)
         {
-            return table != null && table.getColumnNameSet().contains("ParticipantSequenceKey");
+            return table != null && table.getColumnNameSet().contains("ParticipantSequenceNum");
         }
         else
             return super.isValid(table, query, type);

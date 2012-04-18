@@ -35,8 +35,8 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         addWrapColumn(_rootTable.getColumn("GlobalUniqueId"));
         
         ColumnInfo pvColumn = new AliasedColumn(this, StudyService.get().getSubjectVisitColumnName(schema.getContainer()),
-                _rootTable.getColumn("ParticipantSequenceKey"));//addWrapColumn(baseColumn);
-        pvColumn.setFk(new LookupForeignKey("ParticipantSequenceKey")
+                _rootTable.getColumn("ParticipantSequenceNum"));//addWrapColumn(baseColumn);
+        pvColumn.setFk(new LookupForeignKey("ParticipantSequenceNum")
         {
             public TableInfo getLookupTableInfo()
             {
@@ -120,6 +120,20 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         addVialCommentsColumn(joinCommentsToSpecimens);
     }
 
+    @Override
+    protected ColumnInfo resolveColumn(String name)
+    {
+        ColumnInfo result = super.resolveColumn(name);
+        if (result == null)
+        {
+            // Resolve 'ParticipantSequenceKey' to 'ParticipantSequenceNum' for compatibility with versions <12.2.
+            if ("ParticipantSequenceKey".equalsIgnoreCase(name))
+                return getColumn("ParticipantSequenceNum");
+        }
+
+        return result;
+    }
+
     public static class QualityControlColumn extends ExprColumn
     {
         protected static final String QUALITY_CONTROL_JOIN = "QualityControlJoin$";
@@ -180,7 +194,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
             SQLFragment joinSql = new SQLFragment();
             joinSql.append(" LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoParticipantVisit()).append(" AS ");
             joinSql.append(tableAlias).append(" ON ");
-            joinSql.append(parentAlias).append(".ParticipantSequenceKey = ").append(tableAlias).append(".ParticipantSequenceKey");
+            joinSql.append(parentAlias).append(".ParticipantSequenceNum = ").append(tableAlias).append(".ParticipantSequenceNum");
             joinSql.append(" AND ").append(parentAlias).append(".Container = ").append(tableAlias).append(".Container");
 
             map.put(tableAlias, joinSql);

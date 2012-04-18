@@ -458,9 +458,9 @@
       <ns:column columnName="container">
           <ns:datatype>Varchar</ns:datatype>
       </ns:column>
-      <ns:column columnName="ParticipantSequenceKey">
+      <ns:column columnName="ParticipantSequenceNum">
         <ns:description>A string value uniquely identfying the subject/visit combination for each dataset row.</ns:description>
-          <ns:propertyURI>http://cpas.labkey.com/Study#ParticipantSequenceKey</ns:propertyURI>
+          <ns:propertyURI>http://cpas.labkey.com/Study#ParticipantSequenceNum</ns:propertyURI>
           <ns:datatype>Varchar</ns:datatype>
           <ns:nullable>false</ns:nullable>
       </ns:column>
@@ -660,7 +660,7 @@
     <ns:description>Contains one row per primary specimen collection/draw.</ns:description>
     <ns:columns>
       <ns:column columnName="RowId"/>
-      <ns:column columnName="ParticipantSequenceKey">
+      <ns:column columnName="ParticipantSequenceNum">
         <ns:description>A string value uniquely identfying the subject/visit combination for each specimen row.</ns:description>
       </ns:column>
       <ns:column columnName="Container"/>
@@ -767,7 +767,7 @@
           <ns:description>The ID of the subject providing each specimen.</ns:description>
           <ns:datatype>Varchar</ns:datatype>
       </ns:column>
-      <ns:column columnName="ParticipantSequenceKey">
+      <ns:column columnName="ParticipantSequenceNum">
           <ns:description>A string value uniquely identfying the subject/visit combination for each specimendetail row.</ns:description>
           <ns:datatype>Varchar</ns:datatype>
       </ns:column>
@@ -929,7 +929,7 @@
           <ns:description>The ID of the subject providing each specimen.</ns:description>
           <ns:datatype>Varchar</ns:datatype>
       </ns:column>
-      <ns:column columnName="ParticipantSequenceKey">
+      <ns:column columnName="ParticipantSequenceNum">
           <ns:description>A string value uniquely identfying the subject/visit combination for each specimensummary row.</ns:description>
           <ns:datatype>Varchar</ns:datatype>
       </ns:column>
@@ -1320,7 +1320,7 @@
       <ns:column columnName="VisitDate">
         <ns:description>The date of the visit.  Primarily used in date-based studies.</ns:description>
       </ns:column>
-      <ns:column columnName="ParticipantSequenceKey">
+      <ns:column columnName="ParticipantSequenceNum">
         <ns:description>A string value uniquely identfying the subject/visit combination for each subject/visit row.</ns:description>
       </ns:column>
       <ns:column columnName="Container"/>

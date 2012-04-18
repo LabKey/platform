@@ -54,7 +54,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
 {
     final ColumnInfo _participantidColumn;
     final ColumnInfo _sequencenumColumn;
-    final ColumnInfo _participantvisitColumn;
+    final ColumnInfo _participantSequenceNumColumn;
 
     public SpecimenSummaryTable(StudyQuerySchema schema)
     {
@@ -64,17 +64,17 @@ public class SpecimenSummaryTable extends BaseStudyTable
 
         _sequencenumColumn = addSpecimenVisitColumn(_schema.getStudy().getTimepointType());
 
-        _participantvisitColumn = new AliasedColumn(this, StudyService.get().getSubjectVisitColumnName(schema.getContainer()),
-                _rootTable.getColumn("ParticipantSequenceKey"));//addWrapColumn(baseColumn);
-        _participantvisitColumn.setFk(new LookupForeignKey("ParticipantSequenceKey")
+        _participantSequenceNumColumn = new AliasedColumn(this, StudyService.get().getSubjectVisitColumnName(schema.getContainer()),
+                _rootTable.getColumn("ParticipantSequenceNum"));//addWrapColumn(baseColumn);
+        _participantSequenceNumColumn.setFk(new LookupForeignKey("ParticipantSequenceNum")
         {
             public TableInfo getLookupTableInfo()
             {
                 return new ParticipantVisitTable(_schema);
             }
         });
-        _participantvisitColumn.setIsUnselectable(true);
-        addColumn(_participantvisitColumn);
+        _participantSequenceNumColumn.setIsUnselectable(true);
+        addColumn(_participantSequenceNumColumn);
 
         addWrapColumn(_rootTable.getColumn("TotalVolume"));
         addWrapColumn(_rootTable.getColumn("AvailableVolume"));
@@ -162,9 +162,9 @@ public class SpecimenSummaryTable extends BaseStudyTable
         if (name.equals("sequencenum") || name.equals(StudyService.get().getSubjectVisitColumnName(_schema.getContainer()).toLowerCase()))
             return _sequencenumColumn;
 
-        // DatasetTableImpl also has participantsequencekey?
-        if (name.equals("participantvisit"))
-            return _participantvisitColumn;
+        // Resolve 'ParticipantSequenceKey' to 'ParticipantSequenceNum' for compatibility with versions <12.2.
+        if (name.equals("participantvisit") || name.equals("participantsequencekey"))
+            return _participantSequenceNumColumn;
 
         return null;
     }

@@ -717,10 +717,6 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
                 break;
             case RenameColumns:
                 sql.addAll(getRenameColumnsStatements(change));
-                /*
-                sql = String.format("EXEC sp_rename '%s.%s','%s','COLUMN'", change.getSchemaName()+"."+change.getTableName(),
-                    change.getOldColumnName(), change.getNewColumnName());
-                    */
         }
 
         return sql;
@@ -780,6 +776,15 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
         {
             statements.add(String.format("EXEC sp_rename '%s','%s','COLUMN'",
                     makeTableIdentifier(change) + "." + oldToNew.getKey(), oldToNew.getValue()));
+        }
+
+        for (Map.Entry<PropertyStorageSpec.Index, PropertyStorageSpec.Index> oldToNew : change.getIndexRenames().entrySet())
+        {
+            PropertyStorageSpec.Index oldIndex = oldToNew.getKey();
+            PropertyStorageSpec.Index newIndex = oldToNew.getValue();
+            statements.add(String.format("EXEC sp_rename '%s','%s','INDEX'",
+                    makeTableIdentifier(change) + "." + nameIndex(change.getTableName(), oldIndex.columnNames),
+                    nameIndex(change.getTableName(), newIndex.columnNames)));
         }
 
         return statements;

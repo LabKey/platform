@@ -49,7 +49,7 @@ public class ParticipantVisitTable extends FilteredTable
         _demographicsColumns = new CaseInsensitiveHashMap<ColumnInfo>();
         Study study = StudyService.get().getStudy(schema.getContainer());
 
-        ColumnInfo participantSequenceKeyColumn = null;
+        ColumnInfo participantSequenceNumColumn = null;
         for (ColumnInfo col : _rootTable.getColumns())
         {
             if ("Container".equalsIgnoreCase(col.getName()))
@@ -90,10 +90,10 @@ public class ParticipantVisitTable extends FilteredTable
                     addColumn(cohortColumn);
                 }
             }
-            else if ("ParticipantSequenceKey".equalsIgnoreCase(col.getName()))
+            else if ("ParticipantSequenceNum".equalsIgnoreCase(col.getName()))
             {
-                participantSequenceKeyColumn = addWrapColumn(col);
-                participantSequenceKeyColumn.setHidden(true);
+                participantSequenceNumColumn = addWrapColumn(col);
+                participantSequenceNumColumn.setHidden(true);
             }
             else if ("ParticipantId".equalsIgnoreCase(col.getName()))
             {
@@ -128,7 +128,7 @@ public class ParticipantVisitTable extends FilteredTable
             if (dataset.getKeyPropertyName() != null)
                 continue;
 
-            ColumnInfo datasetColumn = createDataSetColumn(name, dataset, participantSequenceKeyColumn);
+            ColumnInfo datasetColumn = createDataSetColumn(name, dataset, participantSequenceNumColumn);
 
             // Don't add demographics datasets, but stash it for backwards compatibility with <11.3 queries if needed.
             if (dataset.isDemographicData())
@@ -139,9 +139,9 @@ public class ParticipantVisitTable extends FilteredTable
     }
 
 
-    protected ColumnInfo createDataSetColumn(String name, final DataSetDefinition dsd, ColumnInfo participantSequenceKeyColumn)
+    protected ColumnInfo createDataSetColumn(String name, final DataSetDefinition dsd, ColumnInfo participantSequenceNumColumn)
     {
-        ColumnInfo ret = new AliasedColumn(name, participantSequenceKeyColumn);
+        ColumnInfo ret = new AliasedColumn(name, participantSequenceNumColumn);
         ret.setFk(new PVForeignKey(dsd));
         ret.setLabel(dsd.getLabel());
         ret.setIsUnselectable(true);
@@ -158,6 +158,10 @@ public class ParticipantVisitTable extends FilteredTable
         col = _demographicsColumns.get(name);
         if (col != null)
             return addColumn(col);
+
+        // Resolve 'ParticipantSequenceKey' to 'ParticipantSequenceNum' for compatibility with versions <12.2.
+        if ("ParticipantSequenceKey".equalsIgnoreCase(name))
+            return getColumn("ParticipantSequenceNum");
 
         return null;
     }

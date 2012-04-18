@@ -52,7 +52,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
     final static String SOURCELSID = "sourcelsid";
     final static String _KEY = "_key";
     final static String QCSTATE = "qcstate";
-    final static String PARTICIPANTSEQUENCEKEY = "participantsequencekey";
+    final static String PARTICIPANTSEQUENCENUM = "participantsequencenum";
 
     /*
      * the columns common to all datasets
@@ -71,7 +71,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
             new PropertyStorageSpec(SOURCELSID, Types.VARCHAR, 200),
             new PropertyStorageSpec(_KEY, Types.VARCHAR, 200),
             new PropertyStorageSpec(QCSTATE, Types.INTEGER),
-            new PropertyStorageSpec(PARTICIPANTSEQUENCEKEY, Types.VARCHAR, 200),
+            new PropertyStorageSpec(PARTICIPANTSEQUENCENUM, Types.VARCHAR, 200),
             new PropertyStorageSpec("created", Types.TIMESTAMP),
             new PropertyStorageSpec("modified", Types.TIMESTAMP),
             new PropertyStorageSpec("createdBy", Types.INTEGER),
@@ -82,7 +82,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
 
         PropertyStorageSpec.Index[] indices = {
           new PropertyStorageSpec.Index(false, QCSTATE),
-          new PropertyStorageSpec.Index(false, PARTICIPANTSEQUENCEKEY),
+          new PropertyStorageSpec.Index(false, PARTICIPANTSEQUENCENUM),
           new PropertyStorageSpec.Index(true, PARTICIPANTID, SEQUENCENUM, _KEY)
         };
 

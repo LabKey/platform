@@ -279,7 +279,7 @@ public abstract class BaseStudyTable extends FilteredTable
             SQLFragment join = new SQLFragment();
 
             join.append(" LEFT OUTER JOIN ").append(StudySchema.getInstance().getTableInfoParticipantVisit(), pvAlias).append(" ON\n");
-            join.append(parentAlias).append(".ParticipantSequenceKey = ").append(pvAlias).append(".ParticipantSequenceKey AND\n");
+            join.append(parentAlias).append(".ParticipantSequenceNum = ").append(pvAlias).append(".ParticipantSequenceNum AND\n");
             join.append(parentAlias).append(".Container = ").append(pvAlias).append(".Container");
 
             map.put(pvAlias, join);
@@ -303,7 +303,7 @@ public abstract class BaseStudyTable extends FilteredTable
             String dateVisitJoinAlias = parentAlias + "$" + DATE_VISIT_JOIN_ALIAS;
             SQLFragment join = new SQLFragment();
             join.append(" LEFT OUTER JOIN " + StudySchema.getInstance().getTableInfoParticipantVisit() + " " + pvAlias + " ON\n" +
-                    parentAlias + ".ParticipantSequenceKey = " + pvAlias + ".ParticipantSequenceKey AND\n" +
+                    parentAlias + ".ParticipantSequenceNum = " + pvAlias + ".ParticipantSequenceNum AND\n" +
                     parentAlias + ".Container = " + pvAlias + ".Container\n");
             join.append("LEFT OUTER JOIN " + StudySchema.getInstance().getTableInfoVisit() + " " + dateVisitJoinAlias +
                     " ON " + dateVisitJoinAlias + ".RowId = " + pvAlias + ".VisitRowId");
@@ -508,7 +508,7 @@ public abstract class BaseStudyTable extends FilteredTable
 
                 joinSql.append(" LEFT OUTER JOIN ").append(_ptidVisitCommentTable.getFromSQL(ptidTableAlias));
                 joinSql.append(" ON ");
-                joinSql.append(parentAlias).append(".ParticipantSequenceKey = ").append(ptidTableAlias).append(".ParticipantSequenceKey");
+                joinSql.append(parentAlias).append(".ParticipantSequenceNum = ").append(ptidTableAlias).append(".ParticipantSequenceNum");
             }
             map.put(tableAlias, joinSql);
         }

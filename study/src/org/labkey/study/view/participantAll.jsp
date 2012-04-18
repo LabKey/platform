@@ -478,7 +478,7 @@ Map<FieldKey,ColumnInfo> getQueryColumns(TableInfo t)
 
 static CaseInsensitiveHashSet skipColumns = new CaseInsensitiveHashSet(
         "lsid","sourcelsid","sequencenum","qcstate","participantid",
-        "visitrowid","dataset","participantsequencekey","created","modified","createdby","modifiedby","participantvisit");
+        "visitrowid","dataset","participantsequencenum","created","modified","createdby","modifiedby","participantvisit");
 
 
 ColumnInfo[] sortColumns(Collection<ColumnInfo> cols, DataSet dsd, ViewContext context)

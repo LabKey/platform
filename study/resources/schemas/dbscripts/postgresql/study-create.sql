@@ -42,7 +42,7 @@ CREATE VIEW study.SpecimenSummary AS SELECT * FROM study.Specimen;
 CREATE VIEW study.SpecimenDetail AS
     SELECT Vial.*,
         Specimen.Ptid,
-        Specimen.ParticipantSequenceKey,
+        Specimen.ParticipantSequenceNum,
         Specimen.TotalVolume,
         Specimen.AvailableVolume,
         Specimen.VisitDescription,

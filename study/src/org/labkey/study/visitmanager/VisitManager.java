@@ -142,18 +142,18 @@ public abstract class VisitManager
     }
 
 
-    public static String getParticipantSequenceKeyExpr(DbSchema schema, String ptidColumnName, String sequenceNumColumnName)
+    public static String getParticipantSequenceNumExpr(DbSchema schema, String ptidColumnName, String sequenceNumColumnName)
     {
         SqlDialect dialect = schema.getSqlDialect();
         String strType = dialect.sqlTypeNameFromSqlType(Types.VARCHAR);
 
         //CAST(CAST(? AS NUMERIC(15, 4)) AS " + strType +
 
-        StringBuilder participantSequenceKey = new StringBuilder("(");
-        participantSequenceKey.append(dialect.concatenate(ptidColumnName, "'|'", "CAST(CAST(" + sequenceNumColumnName + " AS NUMERIC(15,4)) AS " + strType + ")"));
-        participantSequenceKey.append(")");
+        StringBuilder participantSequenceNum = new StringBuilder("(");
+        participantSequenceNum.append(dialect.concatenate(ptidColumnName, "'|'", "CAST(CAST(" + sequenceNumColumnName + " AS NUMERIC(15,4)) AS " + strType + ")"));
+        participantSequenceNum.append(")");
 
-        return participantSequenceKey.toString();
+        return participantSequenceNum.toString();
     }
 
 

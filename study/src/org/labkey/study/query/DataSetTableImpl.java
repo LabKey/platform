@@ -187,12 +187,12 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
                 if (!StudyManager.getInstance().showQCStates(_schema.getContainer()))
                     qcStateColumn.setHidden(true);
             }
-            else if ("ParticipantSequenceKey".equalsIgnoreCase(name))
+            else if ("ParticipantSequenceNum".equalsIgnoreCase(name))
             {
-                // Add a copy of the sequence key column without the FK so we can get the value easily when materializing to temp tables:
+                // Add a copy of the ParticipantSequenceNum column without the FK so we can get the value easily when materializing to temp tables:
                 addWrapColumn(baseColumn).setHidden(true);
                 ColumnInfo pvColumn = new AliasedColumn(this, StudyService.get().getSubjectVisitColumnName(dsd.getContainer()), baseColumn);//addWrapColumn(baseColumn);
-                pvColumn.setFk(new LookupForeignKey("ParticipantSequenceKey")
+                pvColumn.setFk(new LookupForeignKey("ParticipantSequenceNum")
                 {
                     public TableInfo getLookupTableInfo()
                     {
@@ -334,6 +334,10 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
         {
             return result;
         }
+
+        // Resolve 'ParticipantSequenceKey' to 'ParticipantSequenceNum' for compatibility with versions <12.2.
+        if ("ParticipantSequenceKey".equalsIgnoreCase(name))
+            return getColumn("ParticipantSequenceNum");
 
         FieldKey fieldKey = null;
 
