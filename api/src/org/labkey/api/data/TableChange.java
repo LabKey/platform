@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.data.PropertyStorageSpec.Index;
 
 import java.sql.Types;
 import java.util.Collection;
@@ -35,8 +36,9 @@ public class TableChange
     final String schemaName;
     final String tableName;
     Collection<PropertyStorageSpec> columns = new HashSet<PropertyStorageSpec>();
-    Collection<PropertyStorageSpec.Index> indices = new HashSet<PropertyStorageSpec.Index>();
+    Collection<Index> indices = new HashSet<Index>();
     Map<String, String> columnRenames = new HashMap<String, String>();
+    Map<Index, Index> indexRenames = new HashMap<Index, Index>();
 
     public TableChange(String schemaName, String tableName, ChangeType changeType)
     {
@@ -80,6 +82,19 @@ public class TableChange
         columnRenames.put(oldName, newName);
     }
 
+    /**
+     * Index will be renamed using the columns listed in the Index.
+     * The columns used by the index won't be changed.  We need to
+     * pass the list of columns since the index name is created by the dialect.
+     *
+     * @param oldIndex Old index to be renamed.
+     * @param newIndex New index to be renamed.
+     */
+    public void addIndexRename(Index oldIndex, Index newIndex)
+    {
+        indexRenames.put(oldIndex, newIndex);
+    }
+
     public void dropColumnExactName(String name)
     {
         if (type != ChangeType.DropColumns)
@@ -90,19 +105,27 @@ public class TableChange
     }
 
     /**
-     * @return  map where key = old column name value = new column name
+     * @return  map where key = old column name, value = new column name
      */
     public Map<String, String> getColumnRenames()
     {
         return columnRenames;
     }
 
-    public Collection<PropertyStorageSpec.Index> getIndexedColumns()
+    /**
+     * @return  map where key = old index, value = new index
+     */
+    public Map<Index, Index> getIndexRenames()
+    {
+        return indexRenames;
+    }
+
+    public Collection<Index> getIndexedColumns()
     {
         return indices;
     }
 
-    public void setIndexedColumns(Collection<PropertyStorageSpec.Index> indices)
+    public void setIndexedColumns(Collection<Index> indices)
     {
         this.indices = indices;
     }
