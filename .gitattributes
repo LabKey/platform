@@ -5546,4 +5546,10 @@ internal/webapp/util.js -text
 internal/webapp/viewPicker.js -text
 internal/webapp/vis/lib/d3-2.0.4.js -text
 internal/webapp/vis/lib/raphael-min.js -text
+internal/webapp/vis/src/geom.js -text
+internal/webapp/vis/src/layer.js -text
+internal/webapp/vis/src/plot.js -text
+internal/webapp/vis/src/position.js -text
+internal/webapp/vis/src/scale.js -text
+internal/webapp/vis/src/stat.js -text
 internal/webapp/wikitoc.js -text
