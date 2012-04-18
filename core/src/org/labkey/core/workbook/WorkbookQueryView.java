@@ -18,6 +18,7 @@ package org.labkey.core.workbook;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.Sort;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -41,6 +42,7 @@ public class WorkbookQueryView extends QueryView
 
         QuerySettings settings = schema.getSettings(ctx, QueryView.DATAREGIONNAME_DEFAULT, CoreQuerySchema.WORKBOOKS_TABLE_NAME);
         settings.setAllowChooseQuery(false);
+        settings.setBaseSort(new Sort("ID")); 
         //settings.setContainerFilterName(ContainerFilter.Type.CurrentAndSubfolders.name());
         setSettings(settings);
 
