@@ -15,6 +15,8 @@
  */
 package org.labkey.pipeline.importer;
 
+import org.labkey.api.admin.FolderImportContext;
+
 import java.io.File;
 
 /**

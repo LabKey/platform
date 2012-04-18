@@ -24,11 +24,13 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.writer.Writer" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
 ViewContext context = HttpView.currentContext();
-Container c = context.getContainer();
+AdminController.CreateFromTemplateForm form = (AdminController.CreateFromTemplateForm) HttpView.currentModel();
+Container sourceContainer = form.getSourceContainer();
 %>
 
 <labkey:errors/>
@@ -45,7 +47,7 @@ formItems.push({xtype: "label", text: "Folder objects to copy:"});
     for (FolderWriter writer : writers)
     {
         String parent = writer.getSelectionText();
-        if (null != parent && writer.show(c))
+        if (null != parent && null != sourceContainer && writer.show(sourceContainer))
         {
             %>formItems.push({xtype: "checkbox", hideLabel: true, boxLabel: "<%=parent%>", name: "types", itemId: "<%=parent%>", inputValue: "<%=parent%>", checked: true, objectType: "parent"});<%
 
@@ -69,6 +71,7 @@ formItems.push({xtype: "label", text: "Folder objects to copy:"});
 %>
 
 var form = new LABKEY.ext.FormPanel({
+    labelWidth: 150,
     border: false,
     standardSubmit: true,
     items:formItems,

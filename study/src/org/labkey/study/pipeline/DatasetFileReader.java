@@ -19,6 +19,7 @@ package org.labkey.study.pipeline;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.study.model.DataSetDefinition;
@@ -58,7 +59,7 @@ public class DatasetFileReader
     private final File _definitionFile;
     private final StudyImpl _study;
     private final StudyManager _studyManager = StudyManager.getInstance();
-    private final AbstractDatasetImportTask _task;
+    private final PipelineJob _job;
 
     private ArrayList<DatasetImportRunnable> _runnables = null;
 
@@ -67,16 +68,21 @@ public class DatasetFileReader
         this(datasetFile, study, null);
     }
 
-    public DatasetFileReader(File datasetFile, StudyImpl study, AbstractDatasetImportTask task)
+    public DatasetFileReader(File datasetFile, StudyImpl study, PipelineJob job)
     {
         _definitionFile = datasetFile;
         _study = study;
-        _task = task;
+        _job = job;
     }
 
     public File getDefinitionFile()
     {
         return _definitionFile;
+    }
+
+    public PipelineJob getJob()
+    {
+        return _job;
     }
 
     public List<DatasetImportRunnable> getRunnables()
@@ -315,9 +321,9 @@ public class DatasetFileReader
     {
         DatasetImportRunnable runnable;
         if (ds.getDataSetId() == -1 && "Participant".equals(ds.getLabel()))
-            runnable = new ParticipantImportRunnable(_task, ds, tsv, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
+            runnable = new ParticipantImportRunnable(_job, _study, ds, tsv, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
         else
-            runnable = new DatasetImportRunnable(_task, ds, tsv, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
+            runnable = new DatasetImportRunnable(_job, _study, ds, tsv, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
         return runnable;
     }
 

@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LoggingEvent;
+import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.Nullable;
 import org.jfree.chart.ChartFactory;
@@ -43,6 +44,9 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.StatusReportingRunnableAction;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.admin.FolderImportContext;
+import org.labkey.api.admin.FolderImporterImpl;
+import org.labkey.api.admin.ImportContext;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentService;
@@ -148,10 +152,15 @@ import org.labkey.api.view.WebThemeManager;
 import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
+import org.labkey.api.writer.MemoryVirtualFile;
 import org.labkey.core.admin.sql.SqlScriptController;
+import org.labkey.core.admin.writer.FolderExportContext;
+import org.labkey.core.admin.writer.FolderWriterImpl;
 import org.labkey.data.xml.TablesDocument;
+import org.labkey.folder.xml.FolderDocument;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -454,6 +463,13 @@ public class AdminController extends SpringActionController
             return url;
         }
 
+        public ActionURL getImportFolderURL(Container c)
+        {
+            ActionURL url = new ActionURL(FolderManagementAction.class, c);
+            url.addParameter("tabId", "import");
+            return url;
+        }
+
         public ActionURL getCreateProjectURL()
         {
             return new ActionURL(CreateFolderAction.class, ContainerManager.getRoot());
@@ -481,11 +497,13 @@ public class AdminController extends SpringActionController
             return new ActionURL(FolderManagementAction.class, c);
         }
 
-//        public ActionURL getCreateFromTemplateURL(Container c)
-//        {
-//            return new ActionURL(CreateFromTemplateAction.class, c);
-//        }
-//
+        public ActionURL getCreateFromTemplateURL(Container target, Container source)
+        {
+            ActionURL url = new ActionURL(CreateFromTemplateAction.class, target);
+            url.addParameter("sourceId", source.getId());
+            return url;
+        }
+
         public ActionURL getInitialFolderSettingsURL(Container c)
         {
             return new ActionURL(SetInitialFolderSettingsAction.class, c);
@@ -4958,35 +4976,105 @@ public class AdminController extends SpringActionController
         }
     }
 
-//    @RequiresPermissionClass(AdminPermission.class)
-//    public class CreateFromTemplateAction extends FormViewAction<Object>
-//    {
-//        @Override
-//        public void validateCommand(Object target, Errors errors)
-//        {}
-//
-//        @Override
-//        public ModelAndView getView(Object form, boolean reshow, BindException errors) throws Exception
-//        {
-//            return new JspView<Object>("/org/labkey/core/admin/createFromTemplate.jsp", form, errors);
-//        }
-//
-//        @Override
-//        public boolean handlePost(Object o, BindException errors) throws Exception
-//        {
-//            return true;
-//        }
-//
-//        @Override
-//        public URLHelper getSuccessURL(Object o)
-//        {
-//            return getShowAdminURL();
-//        }
-//
-//        @Override
-//        public NavTree appendNavTrail(NavTree root)
-//        {
-//            return root.addChild("Create Folder From Template");
-//        }
-//    }
+    @RequiresPermissionClass(AdminPermission.class)
+    public class CreateFromTemplateAction extends FormViewAction<CreateFromTemplateForm>
+    {
+        Container sourceContainer;
+
+        @Override
+        public void validateCommand(CreateFromTemplateForm target, Errors errors)
+        {}
+
+        @Override
+        public ModelAndView getView(CreateFromTemplateForm form, boolean reshow, BindException errors) throws Exception
+        {
+            sourceContainer = form.getSourceContainer();
+
+            if (null == sourceContainer)
+            {
+                throw new NotFoundException("No source container found.");
+            }
+            else if (!sourceContainer.hasPermission(getUser(), AdminPermission.class))
+            {
+                throw new UnauthorizedException("User does not have administrator permissions to the source container.");
+            }
+
+            return new JspView<CreateFromTemplateForm>("/org/labkey/core/admin/createFromTemplate.jsp", form, errors);
+        }
+
+        @Override
+        public boolean handlePost(CreateFromTemplateForm form, BindException errors) throws Exception
+        {
+            Container target = getContainer();
+            Container source = form.getSourceContainer();
+            if (null == target || null == source)
+            {
+                throw new NotFoundException();
+            }
+            if (!target.hasPermission(getUser(), AdminPermission.class) || !source.hasPermission(getUser(), AdminPermission.class))
+            {
+                throw new UnauthorizedException();
+            }
+
+            MemoryVirtualFile vf = new MemoryVirtualFile();
+
+            // export objects from the source folder, then import then into the new folder
+            FolderWriterImpl writer = new FolderWriterImpl();
+            FolderExportContext exportCtx = new FolderExportContext(getUser(), source, PageFlowUtil.set(form.getTypes()), "new", Logger.getLogger(FolderWriterImpl.class));
+            writer.write(source, exportCtx, vf);
+
+//            FolderImporterImpl importer = new FolderImporterImpl();
+//            XmlObject folderXml = vf.getXmlBean("folder.xml");
+//            if (folderXml instanceof FolderDocument)
+//            {
+//                FolderDocument folderDoc = (FolderDocument)folderXml;
+//                FolderImportContext importCtx = new FolderImportContext(getUser(), target, folderDoc, Logger.getLogger(FolderImporterImpl.class), vf);
+//                importer.process(null, importCtx, vf);
+//                // TODO: should be call the postProcess-ers here?
+//            }
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(CreateFromTemplateForm form)
+        {
+            return getViewContext().getActionURL();
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("Folder Management", new AdminUrlsImpl().getFolderManagementURL(getContainer()));
+            return root.addChild("Create Folder From " + (sourceContainer != null ? sourceContainer.getPath() : ""));
+        }
+    }
+
+    public static class CreateFromTemplateForm
+    {
+        private String _sourceId;
+        private String[] _types;
+
+        public void setSourceId(String sourceId)
+        {
+            _sourceId = sourceId;
+        }
+
+        public Container getSourceContainer()
+        {
+            if (null == _sourceId)
+                return null;
+            return ContainerManager.getForId(_sourceId);
+        }
+
+        public String[] getTypes()
+        {
+            return _types;
+        }
+
+        public void setTypes(String[] types)
+        {
+            _types = types;
+        }
+    }
 }

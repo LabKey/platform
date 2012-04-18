@@ -82,7 +82,8 @@ public class WikiImporterFactory implements FolderImporterFactory
             File wikisDir = ctx.getDir("wikis");
             if (wikisDir != null)
             {
-                job.setStatus("IMPORT " + getDescription());
+                if (null != job)
+                    job.setStatus("IMPORT " + getDescription());
                 ctx.getLogger().info("Loading " + getDescription());
 
                 File wikisXmlFile = new File(wikisDir, WikiWriterFactory.WIKIS_FILENAME);

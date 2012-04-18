@@ -48,7 +48,8 @@ public class FolderListImporter implements FolderImporter<FolderDocument.Folder>
 
         if (null != listsDir)
         {
-            job.setStatus("IMPORT " + getDescription());
+            if (null != job)
+                job.setStatus("IMPORT " + getDescription());
             ctx.getLogger().info("Loading " + getDescription());
 
             ListImporter importer = new ListImporter();

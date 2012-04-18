@@ -50,6 +50,8 @@ public class ReportImporter implements FolderImporter<FolderDocument.Folder>
         File reportsDir = ctx.getDir("reports");
         if (null != reportsDir)
         {
+            if (null != job)
+                job.setStatus("IMPORT " + getDescription());
             ctx.getLogger().info("Loading " + getDescription());
 
             File[] reportsFiles = reportsDir.listFiles(new FilenameFilter() {

@@ -49,7 +49,8 @@ public class CustomViewImporter implements FolderImporter<FolderDocument.Folder>
 
         if (null != viewDir)
         {
-            job.setStatus("IMPORT " + getDescription());
+            if (null != job)
+                job.setStatus("IMPORT " + getDescription());
             ctx.getLogger().info("Loading " + getDescription());
 
             int count = QueryService.get().importCustomViews(ctx.getUser(), ctx.getContainer(), viewDir);

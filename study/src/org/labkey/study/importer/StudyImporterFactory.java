@@ -9,6 +9,8 @@ import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.security.User;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.pipeline.StudyImportDatasetTask;
 import org.labkey.study.pipeline.StudyImportSpecimenTask;
 import org.labkey.study.writer.StudyWriterFactory;
@@ -56,16 +58,20 @@ public class StudyImporterFactory implements FolderImporterFactory
                 User user = ctx.getUser();
                 File studyFile = new File(studyDir, "study.xml");
                 BindException errors = new NullSafeBindException(c, "import");
-
                 StudyImportContext studyImportContext = new StudyImportContext(user, c, studyFile, ctx.getLogger(), studyFile.getParentFile());
+
                 StudyImportInitialTask.doImport(job, studyImportContext, errors, studyFile.getName());
 
-                // TODO: refactor similar to the other study import tasks
-                //new StudyImportDatasetTask.Factory().createTask(job).run();  
+                File datasetsFile = StudyImportDatasetTask.getDatasetsFile(studyImportContext, studyImportContext.getRoot());
+                StudyImpl study = StudyManager.getInstance().getStudy(c);
+                StudyImportDatasetTask.doImport(datasetsFile, job, study);
 
-                StudyImportSpecimenTask.doImport(StudyImportSpecimenTask.getSpecimenArchive(studyImportContext, studyImportContext.getRoot()), job, false);
+                File specimenFile = StudyImportSpecimenTask.getSpecimenArchive(studyImportContext, studyImportContext.getRoot());
+                StudyImportSpecimenTask.doImport(specimenFile, job, false);
+
                 StudyImportFinalTask.doImport(job, studyImportContext, errors);
 
+                // TODO: review how errors are handled in the various study import tasks
                 ctx.getLogger().info("Done importing " + getDescription());
             }
         }

@@ -74,7 +74,8 @@ public class PageImporterFactory implements FolderImporterFactory
 
             if (null != pagesXml)
             {
-                job.setStatus("IMPORT " + getDescription());
+                if (null != job)
+                    job.setStatus("IMPORT " + getDescription());
                 ctx.getLogger().info("Loading " + getDescription());
 
                 PagesDocument pagesDocXml;

@@ -16,6 +16,7 @@
 package org.labkey.pipeline.importer;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;

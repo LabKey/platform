@@ -49,7 +49,8 @@ public class FolderTypeImporterFactory implements FolderImporterFactory
             
             if (ctx.getXml().isSetFolderType())
             {
-                job.setStatus("IMPORT " + getDescription());
+                if (null != job)
+                    job.setStatus("IMPORT " + getDescription());
                 ctx.getLogger().info("Loading " + getDescription());
 
                 org.labkey.folder.xml.FolderType folderTypeXml = ctx.getXml().getFolderType();

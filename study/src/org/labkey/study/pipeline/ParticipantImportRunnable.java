@@ -22,11 +22,13 @@ import org.labkey.api.data.TempTableInfo;
 import org.labkey.api.data.TempTableWriter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.study.StudyService;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.StudyImpl;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,9 +40,9 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
 {
     private String _siteLookup = "RowId";
 
-    ParticipantImportRunnable(AbstractDatasetImportTask task, DataSetDefinition ds, File tsv, AbstractDatasetImportTask.Action action, boolean deleteAfterImport, Date defaultReplaceCutoff, Map<String, String> columnMap)
+    ParticipantImportRunnable(PipelineJob job, StudyImpl study, DataSetDefinition ds, File tsv, AbstractDatasetImportTask.Action action, boolean deleteAfterImport, Date defaultReplaceCutoff, Map<String, String> columnMap)
     {
-        super(task, ds, tsv, action, deleteAfterImport, defaultReplaceCutoff, columnMap);
+        super(job, study, ds, tsv, action, deleteAfterImport, defaultReplaceCutoff, columnMap);
     }
 
 
@@ -61,7 +63,7 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
         }
         catch (Exception x)
         {
-            _task.logError("Unexpected error importing file: " + _tsv.getName(), x);
+            _job.error("Unexpected error importing file: " + _tsv.getName(), x);
         }
     }
 
@@ -92,7 +94,7 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
         String subjectIdCol = StudyService.get().getSubjectColumnName(getDatasetDefinition().getContainer());
         if (!columnMap.containsKey(subjectIdCol))
         {
-            _task.logError("Dataset does not contain column " + subjectIdCol + ".");
+            _job.error("Dataset does not contain column " + subjectIdCol + ".");
             return;
         }
 

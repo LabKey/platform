@@ -1659,7 +1659,6 @@ pipeline/src/org/labkey/pipeline/api/properties/RemoteServerPropertiesImpl.java 
 pipeline/src/org/labkey/pipeline/cluster/ClusterStartup.java -text
 pipeline/src/org/labkey/pipeline/cluster/NoOpPipelineStatusWriter.java -text
 pipeline/src/org/labkey/pipeline/emailNotificationSetup.jsp -text
-pipeline/src/org/labkey/pipeline/importer/FolderImportContext.java -text
 pipeline/src/org/labkey/pipeline/importer/FolderImportFinalTask.java -text
 pipeline/src/org/labkey/pipeline/importer/FolderImportInitialTask.java -text
 pipeline/src/org/labkey/pipeline/importer/FolderImportJob.java -text

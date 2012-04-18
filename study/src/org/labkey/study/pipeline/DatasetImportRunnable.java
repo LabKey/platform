@@ -46,13 +46,15 @@ public class DatasetImportRunnable implements Runnable
     protected String visitDatePropertyName = null;
 
     protected final DataSetDefinition _datasetDefinition;
-    protected final AbstractDatasetImportTask _task;
+    protected final PipelineJob _job;
+    protected final StudyImpl _study;
     protected final Map<String, String> _columnMap = new DatasetFileReader.OneToOneStringMap();
 
 
-    DatasetImportRunnable(AbstractDatasetImportTask task, DataSetDefinition ds, File tsv, AbstractDatasetImportTask.Action action, boolean deleteAfterImport, Date defaultReplaceCutoff, Map<String, String> columnMap)
+    DatasetImportRunnable(PipelineJob job, StudyImpl study, DataSetDefinition ds, File tsv, AbstractDatasetImportTask.Action action, boolean deleteAfterImport, Date defaultReplaceCutoff, Map<String, String> columnMap)
     {
-        _task = task;
+        _job = job;
+        _study = study;
         _datasetDefinition = ds;
         _action = action;
         _deleteAfterImport = deleteAfterImport;
@@ -94,7 +96,6 @@ public class DatasetImportRunnable implements Runnable
 
     public void run()
     {
-        PipelineJob pj = _task.getJob();
         String name = getDatasetDefinition().getName();
         CPUTimer cpuDelete = new CPUTimer(name + ": delete");
         CPUTimer cpuImport = new CPUTimer(name + ": import");
@@ -102,9 +103,8 @@ public class DatasetImportRunnable implements Runnable
 
         DbSchema schema  = StudyManager.getSchema();
         DbScope scope = schema.getScope();
-        StudyImpl study = _task.getStudy();
-        QCState defaultQCState = study.getDefaultPipelineQCState() != null ?
-                StudyManager.getInstance().getQCStateForRowId(pj.getContainer(), study.getDefaultPipelineQCState().intValue()) : null;
+        QCState defaultQCState = _study.getDefaultPipelineQCState() != null ?
+                StudyManager.getInstance().getQCStateForRowId(_job.getContainer(), _study.getDefaultPipelineQCState().intValue()) : null;
 
         List<String> errors = new ArrayList<String>();
         validate(errors);
@@ -112,7 +112,7 @@ public class DatasetImportRunnable implements Runnable
         if (!errors.isEmpty())
         {
             for (String e : errors)
-                _task.logError(_tsv.getName() + " -- " + e);
+                _job.error(_tsv.getName() + " -- " + e);
             return;
         }
 
@@ -121,7 +121,7 @@ public class DatasetImportRunnable implements Runnable
         {
             scope.ensureTransaction();
 
-            final String visitDatePropertyURI = getVisitDateURI(pj.getUser());
+            final String visitDatePropertyURI = getVisitDateURI(_job.getUser());
             boolean useCutoff =
                     _action == AbstractDatasetImportTask.Action.REPLACE &&
                     visitDatePropertyURI != null &&
@@ -130,9 +130,9 @@ public class DatasetImportRunnable implements Runnable
             if (_action == AbstractDatasetImportTask.Action.REPLACE || _action == AbstractDatasetImportTask.Action.DELETE)
             {
                 assert cpuDelete.start();
-                pj.info(_datasetDefinition.getLabel() + ": Starting delete" + (useCutoff ? " of rows newer than " + _replaceCutoff : ""));
-                int rows = _task.getStudyManager().purgeDataset(study, _datasetDefinition, useCutoff ? _replaceCutoff : null, _task.getJob().getUser());
-                pj.info(_datasetDefinition.getLabel() + ": Deleted " + rows + " rows");
+                _job.info(_datasetDefinition.getLabel() + ": Starting delete" + (useCutoff ? " of rows newer than " + _replaceCutoff : ""));
+                int rows = StudyManager.getInstance().purgeDataset(_study, _datasetDefinition, useCutoff ? _replaceCutoff : null, _job.getUser());
+                _job.info(_datasetDefinition.getLabel() + ": Deleted " + rows + " rows");
                 assert cpuDelete.stop();
             }
 
@@ -163,10 +163,10 @@ public class DatasetImportRunnable implements Runnable
                 }
 
                 assert cpuImport.start();
-                pj.info(_datasetDefinition.getLabel() + ": Starting import");
-                List<String> imported = _task.getStudyManager().importDatasetData(
-                        study,
-                        pj.getUser(),
+                _job.info(_datasetDefinition.getLabel() + ": Starting import");
+                List<String> imported = StudyManager.getInstance().importDatasetData(
+                        _study,
+                        _job.getUser(),
                         _datasetDefinition,
                         loader,
                         _columnMap,
@@ -174,7 +174,7 @@ public class DatasetImportRunnable implements Runnable
                         false, //Set to TRUE if/when MERGE is implemented
                         //Set to TRUE if MERGEing
                         defaultQCState,
-                        pj.getLogger()
+                        _job.getLogger()
                 );
                 if (errors.size() == 0)
                 {
@@ -183,20 +183,20 @@ public class DatasetImportRunnable implements Runnable
                     String msg = _datasetDefinition.getLabel() + ": Successfully imported " + imported.size() + " rows from " + _tsv;
                     if (useCutoff && skippedRowCount[0] > 0)
                         msg += " (skipped " + skippedRowCount[0] + " rows older than cutoff)";
-                    pj.info(msg);
+                    _job.info(msg);
                     assert cpuCommit.stop();
                 }
 
                 for (String err : errors)
-                    _task.logError(_tsv.getName() + " -- " + err);
+                    _job.error(_tsv.getName() + " -- " + err);
 
                 if (_deleteAfterImport)
                 {
                     boolean success = _tsv.delete();
                     if (success)
-                        pj.info("Deleted file " + _tsv.getPath());
+                        _job.info("Deleted file " + _tsv.getPath());
                     else
-                        _task.logError("Could not delete file " + _tsv.getPath());
+                        _job.error("Could not delete file " + _tsv.getPath());
                 }
                 assert cpuImport.stop();
             }
@@ -208,7 +208,7 @@ public class DatasetImportRunnable implements Runnable
             scope.closeConnection();
             needToClose = false;
 
-            _task.logError("Exception while importing dataset " + _datasetDefinition.getName() + " from " + _tsv, x);
+            _job.error("Exception while importing dataset " + _datasetDefinition.getName() + " from " + _tsv, x);
         }
         finally
         {

@@ -59,7 +59,8 @@ public class QueryImporter implements FolderImporter<FolderDocument.Folder>
         File queriesDir = ctx.getDir("queries");
         if (null != queriesDir)
         {
-            job.setStatus("IMPORT " + getDescription());
+            if (null != job)
+                job.setStatus("IMPORT " + getDescription());
             ctx.getLogger().info("Loading " + getDescription());
 
             File[] sqlFiles = queriesDir.listFiles(new FilenameFilter() {

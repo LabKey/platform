@@ -39,8 +39,6 @@ import java.util.List;
  */
 public abstract class AbstractDatasetImportTask<FactoryType extends AbstractDatasetImportTaskFactory<FactoryType>> extends PipelineJob.Task<TaskFactory>
 {
-    private boolean hasErrors = false;
-
     transient private StudyManager _studyManager = StudyManager.getInstance();
     transient private CohortManager _cohortManager = CohortManager.getInstance();
 
@@ -75,12 +73,19 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
             throw new PipelineJobException("Exception retrieving datasets file", e);
         }
 
+        doImport(datasetsFile, getJob(), getStudy());
+
+        return new RecordedActionSet();
+    }
+
+    public static void doImport(File datasetsFile, PipelineJob job, StudyImpl study) throws PipelineJobException
+    {
         if (null != datasetsFile)
         {
             try
             {
-                QuerySnapshotService.get(StudyManager.getSchemaName()).pauseUpdates(getStudy().getContainer());
-                DatasetFileReader reader = new DatasetFileReader(datasetsFile, getStudy(), this);
+                QuerySnapshotService.get(StudyManager.getSchemaName()).pauseUpdates(study.getContainer());
+                DatasetFileReader reader = new DatasetFileReader(datasetsFile, study, job);
                 List<String> errors = new ArrayList<String>();
 
                 try
@@ -88,17 +93,16 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
                     reader.validate(errors);
 
                     for (String error : errors)
-                        logError(error);
+                        job.error(error);
                 }
                 catch (Exception x)
                 {
-                    logError("Parse failed: " + datasetsFile.getPath(), x);
-                    return new RecordedActionSet();
+                    job.error("Parse failed: " + datasetsFile.getPath(), x);
+                    return;
                 }
 
-                PipelineJob pj = getJob();
                 List<DatasetImportRunnable> runnables = reader.getRunnables();
-                pj.info("Start batch " + (null == datasetsFile ? "" : datasetsFile.getName()));
+                job.info("Start batch " + (null == datasetsFile ? "" : datasetsFile.getName()));
 
                 List<DataSetDefinition> datasets = new ArrayList<DataSetDefinition>();
 
@@ -107,15 +111,15 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
                     String validate = runnable.validate();
                     if (validate != null)
                     {
-                        pj.setStatus(validate);
-                        logError(validate);
+                        job.setStatus(validate);
+                        job.error(validate);
                         continue;
                     }
                     String statusMsg = "" + runnable._action + " " + runnable._datasetDefinition.getLabel();
                     datasets.add(runnable._datasetDefinition);
                     if (runnable._tsv != null)
                         statusMsg += " using file " + runnable._tsv.getName();
-                    pj.setStatus(statusMsg);
+                    job.setStatus(statusMsg);
 
                     try
                     {
@@ -123,35 +127,31 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
                     }
                     catch (Exception x)
                     {
-                        logError("Unexpected error loading " + runnable._tsv.getName(), x);
-                        assert hasErrors;
+                        job.error("Unexpected error loading " + runnable._tsv.getName(), x);
                     }
                 }
 
-                pj.info("Finish batch " + (null == datasetsFile ? "" : datasetsFile.getName()));
+                job.info("Finish batch " + (null == datasetsFile ? "" : datasetsFile.getName()));
 
-                pj.setStatus("UPDATE participants");
-                pj.info("Updating participant visits");
-                getStudyManager().getVisitManager(getStudy()).updateParticipantVisits(pj.getUser(), datasets);
+                job.setStatus("UPDATE participants");
+                job.info("Updating participant visits");
+                StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(job.getUser(), datasets);
 
-                pj.info("Finished updating participants");
+                job.info("Finished updating participants");
             }
             catch (RuntimeException x)
             {
-                logError("Unexpected error", x);
-                assert hasErrors;
+                job.error("Unexpected error", x);
                 throw x;
             }
             finally
             {
-                QuerySnapshotService.get(StudyManager.getSchemaName()).resumeUpdates(getJob().getUser(), getStudy().getContainer());
-                File lock = StudyPipeline.lockForDataset(getStudy(), datasetsFile);
+                QuerySnapshotService.get(StudyManager.getSchemaName()).resumeUpdates(job.getUser(), study.getContainer());
+                File lock = StudyPipeline.lockForDataset(study, datasetsFile);
                 if (lock.exists() && lock.canRead() && lock.canWrite())
                     lock.delete();
             }
         }
-
-        return new RecordedActionSet();
     }
 
 
@@ -161,17 +161,5 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
         APPEND,
         DELETE,
 //            MERGE
-    }
-
-
-    void logError(String s)
-    {
-        logError(s, null);
-    }
-
-    void logError(String s, Exception x)
-    {
-        hasErrors = true;
-        getJob().error(s,x);
     }
 }

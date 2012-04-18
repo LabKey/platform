@@ -44,7 +44,8 @@ public class SearchSettingsImporterFactory implements FolderImporterFactory
             Container c = ctx.getContainer();
             if (ctx.getXml().isSetSearchable())
             {
-                job.setStatus("IMPORT " + getDescription());
+                if (null != job)
+                    job.setStatus("IMPORT " + getDescription());
                 ctx.getLogger().info("Loading " + getDescription());
                 ContainerManager.updateSearchable(c, ctx.getXml().getSearchable(), ctx.getUser());
                 ctx.getLogger().info("Done importing " + getDescription());

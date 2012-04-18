@@ -53,7 +53,8 @@ public class ExternalSchemaDefImporterFactory implements FolderImporterFactory
             File externalSchemaDir = ctx.getDir(ExternalSchemaDefWriterFactory.DEFAULT_DIRECTORY);
             if (null != externalSchemaDir)
             {
-                job.setStatus("IMPORT " + getDescription());
+                if (null != job)
+                    job.setStatus("IMPORT " + getDescription());
                 ctx.getLogger().info("Loading " + getDescription());
 
                 File[] schemaXmlFiles = externalSchemaDir.listFiles(new FilenameFilter() {
