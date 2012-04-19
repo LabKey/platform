@@ -358,13 +358,12 @@ public class Portal
     }
 
     // Add a web part to the container at the specified index
-    public static WebPart addPart(Container c, WebPartFactory desc, String location, int partIndex)
-            throws SQLException
+    public static WebPart addPart(Container c, WebPartFactory desc, String location, int partIndex) throws SQLException
     {
         return addPart(c, desc, location, partIndex, null);
     }
 
-    public static WebPart addPart(Container c, WebPartFactory desc, String location, int partIndex, @Nullable Map<String, String> properties)
+    public static WebPart addPart(Container c, WebPartFactory desc, @Nullable String location, int partIndex, @Nullable Map<String, String> properties)
     {
         return addPart(c, DEFAULT_PORTAL_PAGE_ID, desc, location, partIndex, properties);
     }

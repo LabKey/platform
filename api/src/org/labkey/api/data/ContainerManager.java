@@ -45,7 +45,6 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.AuthorRole;
-import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -458,18 +457,12 @@ public class ContainerManager
         firePropertyChangeEvent(evt);
     }
 
-    private static final String SHARED_CONTAINER_PATH = "/Shared";
+    public static final String SHARED_CONTAINER_PATH = "/Shared";
 
     @NotNull
     public static Container getSharedContainer()
     {
-        Container c = getForPath(SHARED_CONTAINER_PATH);
-        if (null == c)
-            c = bootstrapContainer(SHARED_CONTAINER_PATH,
-                    RoleManager.getRole(SiteAdminRole.class),
-                    RoleManager.getRole(ReaderRole.class),
-                    RoleManager.getRole(NoPermissionsRole.class));
-        return c;
+        return getForPath(SHARED_CONTAINER_PATH);
     }
 
     public static List<Container> getChildren(Container parent)
@@ -1636,7 +1629,7 @@ public class ContainerManager
     }
 
 
-    public static Container getDefaultSupportContainer()
+    public static Container createDefaultSupportContainer()
     {
         // create a "support" container. Admins can do anything,
         // Users can read/write, Guests can read.

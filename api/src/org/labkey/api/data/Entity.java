@@ -20,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.view.NotFoundException;
 
 import java.util.Date;
 

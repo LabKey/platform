@@ -355,7 +355,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return Module.TabDisplayMode.DISPLAY_USER_PREFERENCE;
     }
 
-    protected void addWebPart(String name, Container c, String location) throws SQLException
+    protected void addWebPart(String name, Container c, @Nullable String location) throws SQLException
     {
         addWebPart(name, c, location, -1, new HashMap<String, String>());
     }
@@ -370,7 +370,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         addWebPart(name, c, location, partIndex, new HashMap<String, String>());
     }
 
-    protected void addWebPart(String name, Container c, String location, int partIndex, Map<String, String> properties)
+    protected void addWebPart(String name, Container c, @Nullable String location, int partIndex, Map<String, String> properties)
             throws SQLException
     {
         boolean foundPart = false;
