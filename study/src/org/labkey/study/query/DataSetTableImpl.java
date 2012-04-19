@@ -60,12 +60,11 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
     DataSetDefinition _dsd;
     TableInfo _fromTable;
 
-    public DataSetTableImpl(StudyQuerySchema schema, DataSetDefinition dsd)
+    public DataSetTableImpl(final StudyQuerySchema schema, DataSetDefinition dsd)
     {
         super(dsd.getTableInfo(schema.getUser(), schema.getMustCheckPermissions()));
         setDescription("Contains up to one row of " + dsd.getLabel() + " data for each " +
-                StudyService.get().getSubjectNounSingular(dsd.getContainer()) + (!dsd.isDemographicData() ? "/visit" : "") +
-            (dsd.getKeyPropertyName() != null ? "/" + dsd.getKeyPropertyName() : "") + " combination.");
+                dsd.getKeyTypeDescription() + " combination.");
         _schema = schema;
         _dsd = dsd;
 
@@ -210,7 +209,7 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
                 // When copying a column, the hidden bit is not propagated, so we need to do it manually
                 if (baseColumn.isHidden() || !isVisibleByDefault(baseColumn))
                     col.setHidden(true);
-                
+
                 String propertyURI = col.getPropertyURI();
                 if (null != propertyURI && !standardURIs.contains(propertyURI))
                 {
@@ -234,10 +233,43 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
                     defaultVisibleCols.add(FieldKey.fromParts(col.getName()));
             }
         }
+
+
         ColumnInfo lsidColumn = getColumn("LSID");
         lsidColumn.setHidden(true);
         lsidColumn.setKeyField(true);
         getColumn("SourceLSID").setHidden(true);
+
+        ColumnInfo autoJoinColumn = new AliasedColumn(this, "DataSets", _rootTable.getColumn("ParticipantId"));
+        autoJoinColumn.setDescription("Contains lookups to each DataSet that can be joined by the " + _dsd.getLabel() + " DataSet's " + _dsd.getKeyTypeDescription() + " combination.");
+        autoJoinColumn.setKeyField(false);
+        autoJoinColumn.setIsUnselectable(true);
+        autoJoinColumn.setUserEditable(false);
+        autoJoinColumn.setLabel("DataSets");
+        autoJoinColumn.setFk(new AbstractForeignKey()
+        {
+            @Override
+            public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
+            {
+                if (displayField == null)
+                    return null;
+                return new DataSetAutoJoinTable(schema, DataSetTableImpl.this, parent).getColumn(displayField);
+            }
+
+            @Override
+            public TableInfo getLookupTableInfo()
+            {
+                return new DataSetAutoJoinTable(schema, DataSetTableImpl.this, null);
+            }
+
+            @Override
+            public StringExpression getURL(ColumnInfo parent)
+            {
+                return null;
+            }
+        });
+        addColumn(autoJoinColumn);
+
         setDefaultVisibleColumns(defaultVisibleCols);
 
         // Don't show sequence num for date-based studies
@@ -569,13 +601,14 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
 
     /**
      * In order to discourage the user from selecting data from deeply nested datasets, we hide
-     * the "ParticipantID" and "ParticipantVisit" columns when the user could just as easily find
+     * the "ParticipantID", "ParticipantVisit", and "DataSets" columns when the user could just as easily find
      * the same data further up the tree.
      */
     public void hideParticipantLookups()
     {
         getColumn(StudyService.get().getSubjectColumnName(_dsd.getContainer())).setHidden(true);
         getColumn(StudyService.get().getSubjectVisitColumnName(_dsd.getContainer())).setHidden(true);
+        getColumn("DataSets").setHidden(true);
     }
 
     @Override

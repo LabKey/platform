@@ -176,9 +176,10 @@
         <th align="left">Category</th>
         <th align="left">Type</th>
         <th align="left">Cohort</th>
-        <th align="left">Show By Default</th>
-        <th>&nbsp;</th>
-        <th>&nbsp;</th>
+        <th align="left">Shown</th>
+        <th align="left">Demographic</th>
+        <th align="left">Keys</th>
+        <th align="left">Source Assay</th>
     </tr><%
 
     ActionURL details = new ActionURL(DatasetDetailsAction.class, c);
@@ -191,7 +192,10 @@
         <td><%= def.getCategory() != null ? h(def.getCategory()) : "&nbsp;" %>&nbsp;</td>
         <td><%= def.getType()%>&nbsp;</td>
         <td><%= def.getCohort() != null ? h(def.getCohort().getLabel()) : "All" %></td>
-        <td><%= def.isShowByDefault() %></td>
+        <td><%= def.isShowByDefault() ? "" : "false" %></td>
+        <td><%= def.isDemographicData() ? "true" : "" %></td>
+        <td><%= def.getKeyTypeDescription() %></td>
+        <td><%= def.getAssayProtocol() != null ? def.getAssayProtocol().getName() : "" %></td>
     </tr><%
     }
 %></table>

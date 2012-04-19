@@ -666,6 +666,30 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         return KeyType.SUBJECT_VISIT;
     }
 
+    /**
+     * Construct a description of the key type for this dataset.
+     * Participant/Visit/ExtraKey
+     * @return Description of KeyType
+     */
+    @Override
+    public String getKeyTypeDescription()
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append(StudyService.get().getSubjectNounSingular(getContainer()));
+        if (!isDemographicData())
+        {
+            sb.append(getStudy().getTimepointType() != TimepointType.VISIT ? "/Visit" : "/Date");
+
+            if (getKeyPropertyName() != null)
+                sb.append("/").append(getKeyPropertyName());
+        }
+        else if (getKeyPropertyName() != null)
+        {
+            sb.append("/").append(getKeyPropertyName());
+        }
+        return sb.toString();
+    }
+
 
     /** most external users should use this */
     public String getVisitDateColumnName()
@@ -849,6 +873,15 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 wrapped.setName(name);
                 wrapped.setUserEditable(false);
                 addColumn(wrapped);
+            }
+
+            // _Key
+
+            if (def.getKeyPropertyName() != null)
+            {
+                ColumnInfo keyCol = newDatasetColumnInfo(this, getStorageColumn("_Key"), getKeyURI());
+                keyCol.setUserEditable(false);
+                addColumn(keyCol);
             }
 
             // SequenceNum
@@ -1062,7 +1095,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         @Override
         public Domain getDomain()
         {
-            return DataSetDefinition.this.getDomain();    //To change body of overridden methods use File | Settings | File Templates.
+            return DataSetDefinition.this.getDomain();
         }
 
         @Override
@@ -1214,6 +1247,11 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         return getStandardPropertiesMap().get(name).getPropertyURI();
     }
 
+
+    public static String getKeyURI()
+    {
+        return uriForName("_key");
+    }
 
     public static String getSequenceNumURI()
     {
@@ -1682,6 +1720,10 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             //
 
             it.addParticipantSequenceNum();
+            
+            // ParticipantSequenceNumKey
+            
+            //it.addParticipantSequenceNumKey();
 
             // QCSTATE
 
@@ -1911,6 +1953,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             return addColumn(col, new ParticipantSequenceNumColumn());
         }
 
+        int addParticipantSequenceNumKey()
+        {
+            ColumnInfo col = new ColumnInfo("participantsequencenumkey", JdbcType.VARCHAR);
+            return addColumn(col, new ParticipantSequenceNumKeyColumn());
+        }
+
         int replaceOrAddColumn(Integer index, ColumnInfo col, Callable call)
         {
             if (null == index || index <= 0)
@@ -1982,6 +2030,19 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 String ptid = null==indexPtidOutput ? "" : getOutputString(indexPtidOutput);
                 String seqnum = getFormattedSequenceNum();
                 return ptid + "|" + seqnum;
+            }
+        }
+
+        class ParticipantSequenceNumKeyColumn implements Callable
+        {
+            @Override
+            public Object call() throws Exception
+            {
+                assert (null!=indexPtidOutput && null!=indexKeyPropertyOutput) || hasErrors();
+                String ptid = null==indexPtidOutput ? "" : getOutputString(indexPtidOutput);
+                String seqnum = getFormattedSequenceNum();
+                Object key = null==indexKeyPropertyOutput ? "" : String.valueOf(_DatasetColumnsIterator.this.get(indexKeyPropertyOutput));
+                return ptid + "|" + seqnum + "|" + key;
             }
         }
 
@@ -2673,6 +2734,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             //TableInfo studyData = StudySchema.getInstance().getTableInfoStudyData(study, user);
             TableInfo studyData = StudySchema.getInstance().getSchema().getTable("StudyData");
 
+            //            List<ColumnInfo> columnsBase = studyData.getColumns("_key","lsid","participantid","ParticipantSequenceNum","ParticipantSequenceNumKey","sourcelsid", "created","modified","sequenceNum","qcstate","participantsequencenum","participantsequencenumkey");
             List<ColumnInfo> columnsBase = studyData.getColumns("_key","lsid","participantid","ParticipantSequenceNum","sourcelsid", "created","modified","sequenceNum","qcstate","participantsequencenum");
             for (ColumnInfo col : columnsBase)
             {
