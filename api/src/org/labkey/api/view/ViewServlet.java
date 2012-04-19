@@ -245,9 +245,9 @@ public class ViewServlet extends HttpServlet
                     {
                         getController(module, controllerClass);
                     }
-                    catch (Exception e)
+                    catch (Throwable t)
                     {
-                        throw new RuntimeException(e);
+                        ExceptionUtil.logExceptionToMothership(null, t);
                     }
                 }
             }
