@@ -55,8 +55,14 @@ LABKEY.vis.Scale.ColorDiscrete = function(){
 };
 
 
-LABKEY.vis.Scale.PointType = function(paper, x, y, r){
-	var triangle = paper.path('M ' + x + ' ' + (y + (r)) + ' L ' + (x + (r)) + ' ' + (y-(r/2)) + ' L ' + (x - (r)) + ' ' + (y - (r/2)) + ' Z');
-	// var square = paper.path('M' + (x + (r/2)) + ' '  + (y + (r / 2)) + 'L' + () + () + );
-	var circle = paper.circle(x, y, r);
+LABKEY.vis.Scale.PointType = function(){
+    var circle = function(paper, x, y, r){ return paper.circle(x, y, r)};
+    var square = function(paper, x, y, r){ return paper.rect(x-r, y-r, r*2, r*2)};
+    var diamond = function(paper, x, y, r){r = (Math.sqrt(2*Math.pow(r*2, 2)))/2; return paper.path('M' + x + ' ' + (y+r) + ' L ' + (x+r) + ' ' + y + ' L ' + x + ' ' + (y-r) + ' L ' + (x-r) + ' ' + y + ' Z')};
+    var triangle = function(paper, x, y, r){return paper.path('M ' + x + ' ' + (y + (r)) + ' L ' + (x + (r)) + ' ' + (y-(r)) + ' L ' + (x - (r)) + ' ' + (y - (r)) + ' Z')};
+    var x = function(paper, x, y, r){ return paper.path('M' + (x-r) + ' ' + (y+r) + ' L '  + (x+r) + ' ' + (y-r) + 'M' + (x-r) + ' ' + (y-r) + ' L '  + (x+r) + ' ' + (y+r)).attr('stroke-width', 3)};
+    
+    var scale = d3.scale.ordinal().range([circle, triangle, square, diamond, x]);
+
+    return scale;
 }

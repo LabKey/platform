@@ -27,6 +27,7 @@ LABKEY.vis.Geom.Point = function(){
 		var yMap = null;
 		var xMap = null;
 		var colorMap = null;
+        var pointMap = null;
 
 		if(!layerAes.x && !parentAes.x){
 			console.error('x aesthetic required for point geom to render.')
@@ -56,10 +57,17 @@ LABKEY.vis.Geom.Point = function(){
 			colorMap = parentAes.color;
 		}
 
+        if(layerAes.pointType){
+            pointMap = layerAes.pointType;
+        } else if(parentAes.pointType){
+            pointMap = parentAes.pointType;
+        }
+
 		for(var i = 0; i < data.length; i++){
 			var x = null;
 			var y = null;
 			var color = null;
+            var pointType = null;
 
 			if(typeof xMap.value === "function"){
 				x = xMap.scale(xMap.value(data[i]));
@@ -79,20 +87,27 @@ LABKEY.vis.Geom.Point = function(){
 				} else {
 					color = colorMap.scale(data[i][colorMap.value]);
 				}
-			}
+			} else {
+                color = function(){return "#000"};
+            }
 
-			if(!color){
-				color = function(){return "#000"};
-			}
+            if(pointMap){
+                if(typeof pointMap.scale === 'function'){
+                    pointType = pointMap.scale(pointMap.value(data[i]));
+                } else {
+                    pointType = pointMap.scale(data[i][pointMap.value]);
+                }
+            } else {
+                pointType = function(paper, x, y, r){return paper.circle(x, y, r)};
+            }
 
-			var circle = paper.circle(x, -y, 5).attr('fill', color).attr('stroke', color).transform("t0," + grid.height);
-			
+			var point = pointType(paper, x, -y, 5).attr('fill', color).attr('stroke', color).transform("t0," + grid.height);
+
 			if(layerAes.hoverText){
-				console.log(layerAes.hoverText.value(data[i]));
-				circle.attr('title', layerAes.hoverText.value(data[i]));
+				point.attr('title', layerAes.hoverText.value(data[i]));
 			}
 		}
-	}
+	};
 
 	return this;
 };
