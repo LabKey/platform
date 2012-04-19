@@ -1529,7 +1529,7 @@ public class DataRegion extends AbstractDataRegion
 
     public void _renderDetails(RenderContext ctx, Writer out) throws SQLException, IOException
     {
-        if (!ctx.getViewContext().hasPermission(ReadPermission.class))
+        if (!ctx.getViewContext().hasPermission(ReadPermission.class) && ctx.getViewContext().getUser() != User.getSearchUser())
         {
             out.write("You do not have permission to read this data");
             return;

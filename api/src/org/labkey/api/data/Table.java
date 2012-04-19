@@ -271,40 +271,96 @@ public class Table
         }
     }
 
+    /**
+     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
+     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
+     * resource usage.
+     *
+     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
+     * you must explicitly start your own transaction and commit it.
+     */
     public static Table.TableResultSet executeQuery(DbSchema schema, String sql, Object[] parameters) throws SQLException
     {
         return (Table.TableResultSet) executeQuery(schema, sql, parameters, ALL_ROWS, true);
     }
 
+    /**
+     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
+     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
+     * resource usage.
+     *
+     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
+     * you must explicitly start your own transaction and commit it.
+     */
     public static Table.TableResultSet executeQuery(DbSchema schema, SQLFragment sql) throws SQLException
     {
         return executeQuery(schema, sql.getSQL(), sql.getParams().toArray());
     }
 
 
+    /**
+     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
+     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
+     * resource usage.
+     *
+     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
+     * you must explicitly start your own transaction and commit it.
+     */
     public static Table.TableResultSet executeQuery(DbSchema schema, SQLFragment sql, int rowCount)
             throws SQLException
     {
         return (Table.TableResultSet) executeQuery(schema, sql.getSQL(), sql.getParamsArray(), rowCount, NO_OFFSET, true, false, null, null, null);
     }
 
+    /**
+     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
+     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
+     * resource usage.
+     *
+     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
+     * you must explicitly start your own transaction and commit it.
+     */
     public static ResultSet executeQuery(DbSchema schema, SQLFragment sql, int rowCount, boolean cache, boolean scrollable) throws SQLException
     {
         return executeQuery(schema, sql.getSQL(), sql.getParamsArray(), rowCount, cache, scrollable);
     }
 
+    /**
+     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
+     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
+     * resource usage.
+     *
+     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
+     * you must explicitly start your own transaction and commit it.
+     */
     public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int rowCount, boolean cache)
             throws SQLException
     {
         return executeQuery(schema, sql, parameters, rowCount, NO_OFFSET, cache, false, null, null, null);
     }
 
+    /**
+     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
+     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
+     * resource usage.
+     *
+     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
+     * you must explicitly start your own transaction and commit it.
+     */
     public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int rowCount, boolean cache, boolean scrollable)
             throws SQLException
     {
         return executeQuery(schema, sql, parameters, rowCount, NO_OFFSET, cache, scrollable, null, null, null);
     }
 
+    /**
+     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
+     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
+     * resource usage.
+     *
+     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
+     * you must explicitly start your own transaction and commit it.
+     */
     private static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int rowCount, long scrollOffset, boolean cache, boolean scrollable, @Nullable AsyncQueryRequest asyncRequest, @Nullable Logger log, @Nullable Integer statementRowCount)
             throws SQLException
     {
@@ -316,10 +372,11 @@ public class Table
         try
         {
             conn = schema.getScope().getConnection(log);
-            if (!schema.getScope().isTransactionActive())
+            if (isSelect(sql) && !schema.getScope().isTransactionActive())
             {
                 // Only fiddle with the Connection settings if we're not inside of a transaction so we won't mess
-                // up any state the caller is relying on
+                // up any state the caller is relying on. Also, only do this when we're fairly certain that it's
+                // a read-only statement (starting with SELECT)
                 schema.getSqlDialect().configureToDisableResultSetCaching(conn);
             }
 
@@ -345,6 +402,20 @@ public class Table
             if (cache || queryFailed)
                 doFinally(rs, null, conn, schema.getScope());
         }
+    }
+
+    /** @return if this is a statement that starts with SELECT, ignoring comment lines that start with "--" */
+    private static boolean isSelect(String sql)
+    {
+        for (String sqlLine : sql.split("\\r?\\n"))
+        {
+            sqlLine = sqlLine.trim();
+            if (!sqlLine.startsWith("--"))
+            {
+                return sqlLine.toUpperCase().startsWith("SELECT");
+            }
+        }
+        return false;
     }
 
 

@@ -143,7 +143,7 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
                     specimenIdCol = col;
             }
 
-            if (col != null && !col.isHidden() && !col.isUnselectable())
+            if (col != null && !col.isHidden() && !col.isUnselectable() && !col.isMvIndicatorColumn())
                 visibleColumns.add(col.getFieldKey());
         }
 
