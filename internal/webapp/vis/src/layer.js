@@ -29,7 +29,7 @@ LABKEY.vis.Layer = function(config){
 			}
 		}
 	*/
-	this.aes = config.aes ? config.aes : null;
+	this.aes = config.aes ? config.aes : {};
 	this.data = config.data ? config.data : null; // This is the data used on the layer. If not specified it will used the data from the base plot object.
 	this.geom = config.geom ? config.geom : null; // This is the geom object used to render on the grid. It is currently required.
 	this.stat = config.stat ? config.stat : null; // This is the stat object used to format the data, it is optional and not currently implemented.
