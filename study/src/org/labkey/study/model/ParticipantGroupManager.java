@@ -331,7 +331,7 @@ public class ParticipantGroupManager
         return getParticipantCategories(c, user, new SimpleFilter());
     }
 
-    public ParticipantCategory setParticipantCategory(Container c, User user, ParticipantCategory def, String[] participants) throws ValidationException
+    public ParticipantCategory setParticipantCategory(Container c, User user, ParticipantCategory def, String[] participants, String participantFilters, String description) throws ValidationException
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
@@ -359,7 +359,7 @@ public class ParticipantGroupManager
             switch (ParticipantCategory.Type.valueOf(ret.getType()))
             {
                 case list:
-                    updateListTypeDef(c, user, ret, isUpdate, participants);
+                    updateListTypeDef(c, user, ret, isUpdate, participants, participantFilters, description);
                     break;
                 case query:
                     throw new UnsupportedOperationException("Participant category type: query not yet supported");
@@ -662,7 +662,7 @@ public class ParticipantGroupManager
                 return groups;
 
             SQLFragment sql = new SQLFragment("SELECT * FROM (");
-            sql.append("SELECT pg.label, pg.rowId FROM ").append(StudySchema.getInstance().getTableInfoParticipantCategory(), "pc");
+            sql.append("SELECT pg.label, pg.rowId, pg.filters, pg.description FROM ").append(StudySchema.getInstance().getTableInfoParticipantCategory(), "pc");
             sql.append(" JOIN ").append(getTableInfoParticipantGroup(), "pg").append(" ON pc.rowId = pg.categoryId WHERE pg.categoryId = ?) jr ");
             sql.append(" JOIN ").append(getTableInfoParticipantGroupMap(), "gm").append(" ON jr.rowId = gm.groupId");
             sql.append(" ORDER BY gm.groupId, gm.ParticipantId;");
@@ -688,6 +688,8 @@ public class ParticipantGroupManager
                     group.setLabel(pg.getLabel());
                     group.setContainer(pg.getContainerId());
                     group.setRowId(pg.getRowId());
+                    group.setFilters(pg.getFilters());
+                    group.setDescription(pg.getDescription());
 
                     groupMap.put(pg.getGroupId(), group);
                 }
@@ -727,7 +729,7 @@ public class ParticipantGroupManager
         }
     }
 
-    private void updateListTypeDef(Container c, User user, ParticipantCategory def, boolean update, String[] participants) throws SQLException, ValidationException
+    private void updateListTypeDef(Container c, User user, ParticipantCategory def, boolean update, String[] participants, String filters, String description) throws SQLException, ValidationException
     {
         assert !def.isNew() : "The participant category has not been created yet";
 
@@ -754,6 +756,8 @@ public class ParticipantGroupManager
                 }
                 group.setLabel(def.getLabel());
                 group.setParticipantIds(participants);
+                group.setFilters(filters);
+                group.setDescription(description);
 
                 group = setParticipantGroup(user, group);
                 def.setGroups(new ParticipantGroup[]{group});

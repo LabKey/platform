@@ -83,7 +83,7 @@ public class ParticipantGroupController extends BaseStudyController
 
             form.setContainer(getContainer().getId());
 
-            ParticipantCategory category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form, form.getParticipantIds());
+            ParticipantCategory category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form, form.getParticipantIds(), form.getFilters(), form.getDescription());
 
             resp.put("success", true);
             resp.put("category", category.toJSON());
@@ -98,6 +98,8 @@ public class ParticipantGroupController extends BaseStudyController
     public static class ParticipantCategorySpecification extends ParticipantCategory
     {
         private String[] _participantIds = new String[0];
+        private String _filters;
+        private String _description;
 
         public String[] getParticipantIds()
         {
@@ -107,6 +109,26 @@ public class ParticipantGroupController extends BaseStudyController
         public void setParticipantIds(String[] participantIds)
         {
             _participantIds = participantIds;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public void setDescription(String description)
+        {
+            _description = description;
+        }
+
+        public String getFilters()
+        {
+            return _filters;
+        }
+
+        public void setFilters(String filters)
+        {
+            _filters = filters;
         }
 
         public void fromJSON(JSONObject json)
@@ -123,6 +145,12 @@ public class ParticipantGroupController extends BaseStudyController
                     ids[i] = ptids.getString(i);
                 }
                 setParticipantIds(ids);
+            }
+
+            if (json.has("participantFilters"))
+            {
+                JSONArray filters = json.getJSONArray("participantFilters");
+                setFilters(filters.toString());
             }
         }
     }
@@ -145,7 +173,7 @@ public class ParticipantGroupController extends BaseStudyController
             if (defs.length == 1)
             {
                 form.copySpecialFields(defs[0]);
-                ParticipantCategory category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form, form.getParticipantIds());
+                ParticipantCategory category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form, form.getParticipantIds(), form.getFilters(), form.getDescription());
 
                 resp.put("success", true);
                 resp.put("category", category.toJSON());
@@ -386,7 +414,7 @@ public class ParticipantGroupController extends BaseStudyController
                         for (ParticipantCategory category : ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser()))
                         {
                             for (ParticipantGroup group : category.getGroups())
-                                groups.add(createGroup(group.getRowId(), category.getLabel(), groupType, category.getRowId()));
+                                groups.add(createGroup(group.getRowId(), category.getLabel(), groupType, category.getRowId(), group.getFilters(), group.getDescription()));
                         }
                         groups.add(createGroup(-1, "Not in any group", groupType));
                         break;
@@ -407,10 +435,10 @@ public class ParticipantGroupController extends BaseStudyController
 
         private Map<String, Object> createGroup(int id, String label, GroupType type)
         {
-            return createGroup(id, label, type, 0);
+            return createGroup(id, label, type, 0, "", "");
         }
 
-        private Map<String, Object> createGroup(int id, String label, GroupType type, int categoryId)
+        private Map<String, Object> createGroup(int id, String label, GroupType type, int categoryId, String filters, String description)
         {
             Map<String, Object> group = new HashMap<String, Object>();
 
@@ -418,6 +446,8 @@ public class ParticipantGroupController extends BaseStudyController
             group.put("label", label);
             group.put("type", type);
             group.put("categoryId", categoryId);
+            group.put("filters", filters);
+            group.put("description", description);
 
             return group;
         }

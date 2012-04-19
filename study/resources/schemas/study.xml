@@ -1618,6 +1618,8 @@
         <ns:column columnName="Container"/>
         <ns:column columnName="Label"/>
         <ns:column columnName="CategoryId"/>
+        <ns:column columnName="Filters"/>
+        <ns:column columnName="Description"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="ParticipantGroupMap" tableDbType="TABLE">

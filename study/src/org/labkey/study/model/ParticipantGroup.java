@@ -41,6 +41,8 @@ public class ParticipantGroup extends Entity
     private String _categoryLabel;
 
     private Set<String> _participantIds = new LinkedHashSet<String>();
+    private String _filters;
+    private String _description;
 
     public boolean isNew()
     {
@@ -145,6 +147,25 @@ public class ParticipantGroup extends Entity
         _participantIds.add(participantId);
     }
 
+    public String getDescription()
+    {
+        return _description;
+    }
+
+    public void setDescription(String description)
+    {
+        _description = description;
+    }
+
+    public String getFilters()
+    {
+        return _filters;
+    }
+
+    public void setFilters(String filters)
+    {
+        _filters = filters;
+    }
 
     public String getCategoryLabel()
     {
