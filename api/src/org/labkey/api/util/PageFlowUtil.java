@@ -130,6 +130,7 @@ import java.util.zip.InflaterInputStream;
 
 public class PageFlowUtil
 {
+
     public enum TransformFormat
     {
         html,
@@ -1784,6 +1785,7 @@ public class PageFlowUtil
         "clientapi/Message.js",
         "clientapi/FormPanel.js",
         "clientapi/Pipeline.js",
+        "clientapi/FileSystem.js",
         "clientapi/Portal.js"
     };
     static String clientDebug = "clientapi/clientapi.js";

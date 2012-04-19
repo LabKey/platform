@@ -90,7 +90,7 @@
                             }
                             %>
 
-                            var fileSystem = new LABKEY.WebdavFileSystem({
+                            var fileSystem = new LABKEY.FileSystem.WebdavFileSystem({
                                 extraPropNames: ['description', 'actions'],
 
                                 // extra props should model Ext.data.Field types

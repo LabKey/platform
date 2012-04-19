@@ -35,6 +35,7 @@ import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
@@ -175,6 +176,12 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         if (policy.hasPermission(getViewContext().getUser(), DeletePermission.class))
         {
             actions.add(FilesForm.actions.deletePath);
+        }
+
+        if (policy.hasPermission(getViewContext().getUser(), UpdatePermission.class))
+        {
+            actions.add(FilesForm.actions.renamePath);
+            actions.add(FilesForm.actions.movePath);
         }
 
         if (policy.hasPermission(getViewContext().getUser(), InsertPermission.class))
@@ -390,6 +397,8 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         public enum actions {
             download,
             deletePath,
+            renamePath,
+            movePath,
             refresh,
             uploadTool,
             configure,
