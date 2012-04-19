@@ -32,4 +32,6 @@ public interface FolderWriter extends Writer<Container, ImportContext<FolderDocu
     public Set<Writer> getChildren();
     public boolean show(Container c);
     public boolean includeInType(AbstractFolderContext.ExportType type);
+    /* temporary setting until all importers support using VirtualFile */
+    boolean supportsVirtualFile();
 }

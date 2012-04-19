@@ -40,4 +40,10 @@ public class BaseFolderWriter implements FolderWriter
     @Override
     public void write(Container object, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
     {}
+
+    @Override
+    public boolean supportsVirtualFile()
+    {
+        return false;
+    }
 }

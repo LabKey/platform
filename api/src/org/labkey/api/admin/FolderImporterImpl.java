@@ -20,10 +20,12 @@ public class FolderImporterImpl implements FolderImporter<FolderDocument.Folder>
     private FolderSerializationRegistry _registry;
     private Collection<FolderImporter> _importers;
     private PipelineJob _job;
+    private boolean _usingVirtualFile = false;
 
     public FolderImporterImpl()
     {
         this(null);
+        _usingVirtualFile = true;
     }
 
     public FolderImporterImpl(@Nullable PipelineJob job)
@@ -51,7 +53,8 @@ public class FolderImporterImpl implements FolderImporter<FolderDocument.Folder>
     {
         for (FolderImporter importer : _importers)
         {
-            importer.process(job, ctx, vf);
+            if (!_usingVirtualFile || importer.supportsVirtualFile())
+                importer.process(job, ctx, vf);
         }
     }
 
@@ -67,5 +70,11 @@ public class FolderImporterImpl implements FolderImporter<FolderDocument.Folder>
                 warnings.addAll(importerWarnings);
         }
         return warnings;
+    }
+
+    @Override
+    public boolean supportsVirtualFile()
+    {
+        return false;
     }
 }
