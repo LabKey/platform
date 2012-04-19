@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-/* mothership-0.00-9.10.sql */
-
 CREATE SCHEMA mothership;
 
 CREATE TABLE mothership.SoftwareRelease
@@ -89,6 +87,7 @@ CREATE TABLE mothership.ServerSession
     EnterprisePipelineEnabled BOOLEAN,
     LDAPEnabled BOOLEAN,
     SoftwareReleaseId INT NOT NULL,
+    HeapSize INT,
 
     CONSTRAINT PK_ServerSession PRIMARY KEY (ServerSessionId),
     CONSTRAINT UQ_ServerSession_ServerSessionGUID UNIQUE (ServerSessionGUID),
@@ -119,7 +118,3 @@ CREATE TABLE mothership.ExceptionReport
 );
 CREATE INDEX IX_ExceptionReport_ExceptionStackTraceId ON mothership.exceptionreport(exceptionstacktraceid);
 CREATE INDEX IX_ExceptionReport_ServerSessionId ON mothership.exceptionreport(serversessionid);
-
-/* mothership-9.20-9.30.sql */
-
-ALTER TABLE mothership.ServerSession ADD HeapSize INT;

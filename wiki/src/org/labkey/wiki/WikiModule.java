@@ -131,7 +131,7 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
 
     private void bootstrap(ModuleContext moduleContext)
     {
-        Container supportContainer = ContainerManager.getDefaultSupportContainer();
+        Container supportContainer = ContainerManager.createDefaultSupportContainer();
         Container homeContainer = ContainerManager.getHomeContainer();
 
         FolderType collaborationType = ModuleLoader.getInstance().getFolderType(CollaborationFolderType.TYPE_NAME);

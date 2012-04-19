@@ -44,7 +44,6 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.Role;
@@ -198,7 +197,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     {
         try
         {
-            Container supportContainer = ContainerManager.getDefaultSupportContainer();
+            Container supportContainer = ContainerManager.createDefaultSupportContainer();
             addWebPart(WEB_PART_NAME, supportContainer, null);
         }
         catch (SQLException e)

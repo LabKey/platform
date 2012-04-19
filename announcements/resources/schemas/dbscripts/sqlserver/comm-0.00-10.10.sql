@@ -16,8 +16,6 @@
 
 -- Create schema comm: tables for Announcements and Wiki
 
-/* comm-0.00-1.10.sql */
-
 CREATE SCHEMA comm;
 GO
 
@@ -40,6 +38,7 @@ CREATE TABLE comm.Announcements
     AssignedTo USERID NULL,
     DiscussionSrcIdentifier NVARCHAR(100) NULL,
     DiscussionSrcURL NVARCHAR(1000) NULL,
+    LastIndexed DATETIME NULL,
 
     CONSTRAINT PK_Announcements PRIMARY KEY (RowId),
     CONSTRAINT UQ_Announcements UNIQUE CLUSTERED (Container, Parent, RowId)
@@ -62,12 +61,11 @@ CREATE TABLE comm.Pages
     DisplayOrder FLOAT NOT NULL,
     PageVersionId INT NULL,
     ShowAttachments BIT NOT NULL DEFAULT 1,
+    LastIndexed DATETIME NULL,
 
     CONSTRAINT PK_Pages PRIMARY KEY (EntityId),
     CONSTRAINT UQ_Pages UNIQUE CLUSTERED (Container, Name)
 );
-
-/* comm-1.20-1.30.sql */
 
 CREATE TABLE comm.PageVersions
 (
@@ -86,12 +84,8 @@ CREATE TABLE comm.PageVersions
     CONSTRAINT UQ_PageVersions UNIQUE (PageEntityId, Version)
 );
 
-/* comm-1.30-1.40.sql */
-
 ALTER TABLE comm.Pages
     ADD CONSTRAINT FK_Pages_PageVersions FOREIGN KEY (PageVersionId) REFERENCES comm.PageVersions (RowId);
-
-/* comm-1.50-1.60.sql */
 
 CREATE TABLE comm.EmailOptions
 (
@@ -104,6 +98,7 @@ CREATE TABLE comm.EmailOptions
 INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (0, 'No Email');
 INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (1, 'All conversations');
 INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (2, 'My conversations');
+INSERT INTO comm.EmailOptions (EmailOptionID, EmailOption) VALUES (3, 'Broadcast only');
 INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (257, 'Daily digest of all conversations');
 INSERT INTO comm.EmailOptions (EmailOptionId, EmailOption) VALUES (258, 'Daily digest of my conversations');
 
@@ -146,8 +141,6 @@ CREATE TABLE comm.EmailPrefs
     CONSTRAINT FK_EmailPrefs_PageTypes FOREIGN KEY (PageTypeId) REFERENCES comm.PageTypes (PageTypeId)
 );
 
-/* comm-1.60-1.70.sql */
-
 -- Discussions can be private, constrained to a certain subset of users (like a Cc: line)
 CREATE TABLE comm.UserList
 (
@@ -160,11 +153,3 @@ CREATE TABLE comm.UserList
 -- Improve performance of user list lookups for permission checking
 CREATE INDEX IX_UserList_UserId ON comm.UserList(UserId);
 
-/* comm-9.30-10.10.sql */
-
-ALTER TABLE comm.Pages ADD LastIndexed DATETIME NULL;
-
-ALTER TABLE comm.Announcements ADD LastIndexed DATETIME NULL;
-
-INSERT INTO comm.EmailOptions (EmailOptionID, EmailOption)
-    VALUES (3, 'Broadcast only');

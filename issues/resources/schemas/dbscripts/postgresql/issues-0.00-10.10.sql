@@ -57,12 +57,12 @@ CREATE TABLE issues.Issues
     String1 VARCHAR(200) NULL,
     String2 VARCHAR(200) NULL,
     NotifyList TEXT,
+    LastIndexed TIMESTAMP NULL,
 
     CONSTRAINT PK_Issues PRIMARY KEY (IssueId)
 );
 CREATE INDEX IX_Issues_AssignedTo ON issues.Issues (AssignedTo);
 CREATE INDEX IX_Issues_Status ON issues.Issues (Status);
-
 
 CREATE TABLE issues.Comments
 (
@@ -77,7 +77,6 @@ CREATE TABLE issues.Comments
     CONSTRAINT FK_Comments_Issues FOREIGN KEY (IssueId) REFERENCES issues.Issues(IssueId)
 );
 
-
 CREATE TABLE issues.IssueKeywords
 (
     Container ENTITYID NOT NULL,
@@ -87,7 +86,6 @@ CREATE TABLE issues.IssueKeywords
 
     CONSTRAINT PK_IssueKeywords PRIMARY KEY (Container, Type, Keyword)
 );
-
 
 CREATE TABLE issues.EmailPrefs
 (
@@ -99,7 +97,3 @@ CREATE TABLE issues.EmailPrefs
     CONSTRAINT FK_EmailPrefs_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
     CONSTRAINT FK_EmailPrefs_Principals FOREIGN KEY (UserId) REFERENCES core.Principals (UserId)
 );
-
-/* issues-9.30-10.10.sql */
-
-ALTER TABLE issues.issues ADD LastIndexed TIMESTAMP NULL;

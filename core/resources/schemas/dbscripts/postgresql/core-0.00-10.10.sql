@@ -14,8 +14,6 @@
  * limitations under the License.
  */
  
-/* core-0.00-1.30.sql */
-
 -- Create "core" schema, tables, etc.
 
 CREATE DOMAIN public.UNIQUEIDENTIFIER AS VARCHAR(36);
@@ -34,6 +32,8 @@ CREATE TABLE core.Logins
     Email VARCHAR(255) NOT NULL,
     Crypt VARCHAR(64) NOT NULL,
     Verification VARCHAR(64),
+    LastChanged TIMESTAMP NULL,
+    PreviousCrypts VARCHAR(1000),
 
     CONSTRAINT PK_Logins PRIMARY KEY (Email)
 );
@@ -108,6 +108,10 @@ CREATE TABLE core.Containers
     SortOrder INTEGER NOT NULL DEFAULT 0,
     CaBIGPublished BOOLEAN NOT NULL DEFAULT '0',
 
+    Description VARCHAR(4000),
+    Workbook BOOLEAN NOT NULL DEFAULT false,
+    Title VARCHAR(1000),
+
     CONSTRAINT UQ_Containers_RowId UNIQUE (RowId),
     CONSTRAINT UQ_Containers_EntityId UNIQUE (EntityId),
     CONSTRAINT UQ_Containers_Parent_Name UNIQUE (Parent, Name),
@@ -163,14 +167,14 @@ CREATE TABLE core.Documents
     DocumentType VARCHAR(500) DEFAULT 'text/plain',    -- Needs to be large enough to handle new Office document mime-types
     Document BYTEA,            -- ContentType LIKE application/*
 
+    LastIndexed TIMESTAMP NULL,
+
     CONSTRAINT PK_Documents PRIMARY KEY (RowId),
     CONSTRAINT UQ_Documents_Parent_DocumentName UNIQUE (Parent, DocumentName)
 );
 
 CREATE INDEX IX_Documents_Container ON core.Documents(Container);
 CREATE INDEX IX_Documents_Parent ON core.Documents(Parent);
-
-/* core-1.30-1.40.sql */
 
 -- Create a log of events (created, verified, password reset, etc.) associated with users
 CREATE TABLE core.UserHistory
@@ -182,8 +186,6 @@ CREATE TABLE core.UserHistory
     CONSTRAINT PK_UserHistory PRIMARY KEY (UserId, Date),
     CONSTRAINT FK_UserHistory_UserId FOREIGN KEY (UserId) REFERENCES core.Principals(UserId)
 );
-
-/* core-1.40-1.50.sql */
 
 CREATE TABLE core.Report
 (
@@ -222,8 +224,6 @@ CREATE TABLE core.MappedDirectories
     CONSTRAINT UQ_MappedDirectories UNIQUE (Container,Name)
 );
 
-/* core-9.10-9.20.sql */
-
 CREATE TABLE core.Policies
 (
     ResourceId ENTITYID NOT NULL,
@@ -254,8 +254,6 @@ CREATE TABLE core.MvIndicators
     CONSTRAINT PK_MvIndicators_Container_MvIndicator PRIMARY KEY (Container, MvIndicator)
 );
 
-/* core-8.30-9.10.sql */
-
 -- This empty stored procedure doesn't directly change the database, but calling it from a sql script signals the
 -- script runner to invoke the specified method at this point in the script running process.  See usages of the
 -- UpgradeCode interface for more details.
@@ -264,19 +262,6 @@ CREATE FUNCTION core.executeJavaUpgradeCode(text) RETURNS void AS $$
     BEGIN
     END
 $$ LANGUAGE plpgsql;
-
-/* core-9.30-10.10.sql */
-
-ALTER TABLE core.Containers
-    ADD ExperimentID INT,
-    ADD Description VARCHAR(4000);
-
--- experiment id should not be on Containers table
-ALTER TABLE core.Containers
-    DROP COLUMN ExperimentID;
-
-ALTER TABLE core.Containers
-    ADD Workbook BOOLEAN NOT NULL DEFAULT false;
 
 -- Add ability to drop default
 CREATE FUNCTION core.fn_dropifexists (text, text, text, text) RETURNS INTEGER AS $$
@@ -365,19 +350,3 @@ DECLARE
     RETURN ret_code;
     END;
 $$ LANGUAGE plpgsql;
-
-ALTER TABLE core.Containers
-    ADD Title VARCHAR(1000);
-
-ALTER TABLE core.Documents ADD LastIndexed TIMESTAMP NULL;
-
--- Add support for password expiration and password history
-ALTER TABLE core.Logins
-    ADD LastChanged TIMESTAMP NULL,
-    ADD PreviousCrypts VARCHAR(1000);
-
--- Set all password last changed dates to account creation date
-UPDATE core.Logins SET LastChanged = (SELECT Created FROM core.UsersData ud JOIN core.Principals p ON ud.UserId = p.UserId WHERE Email = p.Name);
-
--- Put current password crypt into history
-UPDATE core.Logins SET PreviousCrypts = Crypt;

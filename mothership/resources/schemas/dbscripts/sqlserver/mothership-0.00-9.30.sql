@@ -90,6 +90,7 @@ CREATE TABLE mothership.ServerSession
     EnterprisePipelineEnabled BIT,
     LDAPEnabled BIT,
     SoftwareReleaseId INT NOT NULL,
+    HeapSize INT,
 
     CONSTRAINT PK_ServerSession PRIMARY KEY (ServerSessionId),
     CONSTRAINT UQ_ServerSession_ServerSessionGUID UNIQUE (ServerSessionGUID),
@@ -121,6 +122,3 @@ CREATE TABLE mothership.ExceptionReport
 CREATE INDEX IX_ExceptionReport_ExceptionStackTraceId ON mothership.exceptionreport(ExceptionStackTraceId);
 CREATE INDEX IX_ExceptionReport_ServerSessionId ON mothership.exceptionreport(ServerSessionId);
 
-/* mothership-9.20-9.30.sql */
-
-ALTER TABLE mothership.ServerSession ADD HeapSize INT;

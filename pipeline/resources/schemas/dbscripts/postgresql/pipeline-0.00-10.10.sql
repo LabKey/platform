@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-/* pipeline-0.00-9.10.sql */
-
 CREATE SCHEMA pipeline;
 
 CREATE TABLE pipeline.StatusFiles
@@ -51,9 +49,7 @@ CREATE TABLE pipeline.StatusFiles
     CONSTRAINT UQ_StatusFiles_Job UNIQUE (Job),
     CONSTRAINT FK_StatusFiles_JobParent FOREIGN KEY (JobParent) REFERENCES pipeline.StatusFiles(Job)
 );
-CREATE INDEX IX_StatusFiles_Container ON pipeline.StatusFiles(Container);
-CREATE INDEX IX_StatusFiles_Job ON pipeline.StatusFiles (Job);
-CREATE INDEX IX_StatusFiles_JobParent ON pipeline.StatusFiles (JobParent);
+CREATE INDEX IX_StatusFiles_Container_JobParent ON pipeline.StatusFiles (Container, JobParent);
 
 CREATE TABLE pipeline.PipelineRoots
 (
@@ -74,32 +70,7 @@ CREATE TABLE pipeline.PipelineRoots
     CertBytes BYTEA,
     KeyPassword VARCHAR(32),
     Type VARCHAR(255) NOT NULL DEFAULT 'PRIMARY',
-    PerlPipeline BOOLEAN NOT NULL DEFAULT FALSE,
+    Searchable BOOLEAN NOT NULL DEFAULT FALSE,
 
     CONSTRAINT PK_PipelineRoots PRIMARY KEY (PipelineRootId)
 );
-
-/* pipeline-9.20-9.30.sql */
-
-ALTER TABLE pipeline.PipelineRoots DROP COLUMN PerlPipeline;
-
--- drop this index because it is already a unique constraint
--- format of Drop proc
--- select core.fn_dropifexists(<tablename>, <schemaname>, 'INDEX', <indexname>
-SELECT core.fn_dropifexists('StatusFiles', 'pipeline', 'INDEX', 'IX_StatusFiles_Job');
-
--- drop this index because we can change the code to always pass container with jobparent
-SELECT core.fn_dropifexists('StatusFiles', 'pipeline', 'INDEX', 'IX_StatusFiles_JobParent');
-
--- drop this index so we can add the jobparent column to it
-SELECT core.fn_dropifexists('StatusFiles', 'pipeline', 'INDEX', 'IX_StatusFiles_Container');
-
--- in case this has alreaady been run, drop the new index before trying to create it
-SELECT core.fn_dropifexists('StatusFiles', 'pipeline', 'INDEX', 'IX_StatusFiles_Container_JobParent');
-
-CREATE INDEX IX_StatusFiles_Container_JobParent ON pipeline.StatusFiles (Container, JobParent);
-
-/* pipeline-9.30-10.10.sql */
-
-ALTER TABLE pipeline.PipelineRoots
-    ADD Searchable BOOLEAN NOT NULL DEFAULT FALSE;

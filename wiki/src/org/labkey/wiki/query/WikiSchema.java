@@ -45,7 +45,7 @@ public class WikiSchema extends UserSchema
         TABLE_NAMES = Collections.unmodifiableSet(names);
     }
 
-    static public void register()
+    public static void register()
     {
         DefaultSchema.registerProvider(WikiService.SCHEMA_NAME, new DefaultSchema.SchemaProvider()
         {

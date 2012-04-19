@@ -30,16 +30,3 @@ CREATE TABLE filecontent.FileRoots
 
     CONSTRAINT PK_FileRoots PRIMARY KEY (RowId)
 );
-
-INSERT INTO filecontent.FileRoots (Container, Path, Type)
-    SELECT core.Containers.EntityId as Container, prop.Properties.Value as Path, '@files'
-    FROM prop.Properties INNER JOIN
-        prop.PropertySets ON prop.Properties.[Set] = prop.PropertySets.[Set] INNER JOIN
-        core.Containers ON prop.PropertySets.ObjectId = core.Containers.EntityId
-    WHERE (prop.PropertySets.Category = 'staticFile' AND prop.Properties.Name = 'root');
-
-DELETE FROM prop.Properties
-    WHERE prop.Properties.[Set] IN
-        (SELECT [Set] FROM prop.PropertySets WHERE prop.PropertySets.Category = 'staticFile');
-
-DELETE FROM prop.PropertySets WHERE prop.PropertySets.Category = 'staticFile';

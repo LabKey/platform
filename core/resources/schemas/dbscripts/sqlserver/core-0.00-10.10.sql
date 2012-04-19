@@ -30,6 +30,8 @@ CREATE TABLE core.Logins
     Email VARCHAR(255) NOT NULL,
     Crypt VARCHAR(64) NOT NULL,
     Verification VARCHAR(64),
+    LastChanged DATETIME NULL,
+    PreviousCrypts VARCHAR(1000),
 
     CONSTRAINT PK_Logins PRIMARY KEY (Email)
 );
@@ -101,6 +103,9 @@ CREATE TABLE core.Containers
     Name VARCHAR(255),
     SortOrder INTEGER NOT NULL DEFAULT 0,
     CaBIGPublished BIT NOT NULL DEFAULT 0,
+    Description NVARCHAR(4000),
+    Workbook BIT NOT NULL DEFAULT 0,
+    Title NVARCHAR(1000),
 
     CONSTRAINT UQ_Containers_RowId UNIQUE CLUSTERED (RowId),
     CONSTRAINT UQ_Containers_EntityId UNIQUE (EntityId),
@@ -156,6 +161,8 @@ CREATE TABLE core.Documents
     DocumentSize INT DEFAULT -1,
     DocumentType VARCHAR(500) DEFAULT 'text/plain',  -- Needs to be large enough to handle new Office document mime-types
     Document IMAGE,            -- ContentType LIKE application/*
+
+    LastIndexed DATETIME NULL,
 
     CONSTRAINT PK_Documents PRIMARY KEY (RowId),
     CONSTRAINT UQ_Documents_Parent_DocumentName UNIQUE (Parent, DocumentName)
@@ -213,8 +220,6 @@ CREATE TABLE core.MappedDirectories
     CONSTRAINT UQ_MappedDirectories UNIQUE (Container,Name)
 );
 
-/* core-9.10-9.20.sql */
-
 CREATE TABLE core.Policies
 (
     ResourceId ENTITYID NOT NULL,
@@ -244,27 +249,6 @@ CREATE TABLE core.MvIndicators
 
     CONSTRAINT PK_MvIndicators_Container_MvIndicator PRIMARY KEY (Container, MvIndicator)
 );
-
-ALTER TABLE core.Containers
-    ADD ExperimentID INT,
-    Description NVARCHAR(4000);
-
--- experiment id should not be on Containers table
-ALTER TABLE core.Containers
-    DROP COLUMN ExperimentID;
-
-ALTER TABLE core.Containers
-    ADD Workbook BIT NOT NULL DEFAULT 0;
-
-ALTER TABLE core.Containers
-    ADD Title NVARCHAR(1000);
-
-ALTER TABLE core.Documents ADD LastIndexed DATETIME NULL;
-
--- Add support for password expiration and password history
-ALTER TABLE core.Logins ADD
-    LastChanged DATETIME NULL,
-    PreviousCrypts VARCHAR(1000);
 
 -- This empty stored procedure doesn't directly change the database, but calling it from a sql script signals the
 -- script runner to invoke the specified method at this point in the script running process.  See usages of the

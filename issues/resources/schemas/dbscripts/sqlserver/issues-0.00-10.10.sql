@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-/* issues-0.00-8.20.sql */
-
 CREATE SCHEMA issues;
 GO
 
@@ -57,12 +55,12 @@ CREATE TABLE issues.Issues
     String1 VARCHAR(200) NULL,
     String2 VARCHAR(200) NULL,
     NotifyList TEXT,
+    LastIndexed DATETIME NULL,
 
     CONSTRAINT PK_Issues PRIMARY KEY (IssueId)
 );
 CREATE INDEX IX_Issues_AssignedTo ON issues.Issues (AssignedTo);
 CREATE INDEX IX_Issues_Status ON issues.Issues (Status);
-
 
 CREATE TABLE issues.Comments
 (
@@ -101,6 +99,3 @@ CREATE TABLE issues.EmailPrefs
     CONSTRAINT FK_EmailPrefs_Principals FOREIGN KEY (UserId) REFERENCES core.Principals (UserId),
 );
 
-/* issues-9.30-10.10.sql */
-
-ALTER TABLE issues.issues ADD LastIndexed DATETIME NULL;
