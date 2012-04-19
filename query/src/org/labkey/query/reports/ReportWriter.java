@@ -42,12 +42,6 @@ public class ReportWriter extends BaseFolderWriter
     }
 
     @Override
-    public boolean includeInType(AbstractFolderContext.ExportType type)
-    {
-        return AbstractFolderContext.ExportType.ALL == type || AbstractFolderContext.ExportType.STUDY == type;
-    }    
-
-    @Override
     public void write(Container object, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
     {
         Report[] reports = ReportService.get().getReports(ctx.getUser(), ctx.getContainer());

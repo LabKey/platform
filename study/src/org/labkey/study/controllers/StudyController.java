@@ -31,6 +31,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentForm;
@@ -137,6 +138,7 @@ import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.GridView;
@@ -157,6 +159,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.api.writer.ZipUtil;
+import org.labkey.folder.xml.FolderDocument;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudyFolderType;
@@ -4208,7 +4211,7 @@ public class StudyController extends BaseStudyController
 
             if (map.isEmpty())
             {
-                errors.reject("studyImport", "You must select a .study.zip file to import.");
+                errors.reject("studyImport", "You must select a .study.zip or a .folder.zip file to import.");
             }
             else if (map.size() > 1)
             {
@@ -4220,7 +4223,7 @@ public class StudyController extends BaseStudyController
 
                 if (0 == file.getSize() || StringUtils.isBlank(file.getOriginalFilename()))
                 {
-                    errors.reject("studyImport", "You must select a .study.zip file to import.");
+                    errors.reject("studyImport", "You must select a .study.zip or a .folder.zip file to import.");
                 }
                 else
                 {
@@ -4288,7 +4291,7 @@ public class StudyController extends BaseStudyController
     }
 
 
-    public boolean importStudy(BindException errors, File studyFile, String originalFilename) throws ServletException, SQLException, IOException, ParserConfigurationException, SAXException, XmlException
+    public boolean importStudy(BindException errors, File studyFile, String originalFilename) throws ServletException, SQLException, IOException, ParserConfigurationException, SAXException, XmlException, InvalidFileException
     {
         Container c = getContainer();
         PipeRoot pipelineRoot = StudyReload.getPipelineRoot(c);
@@ -4309,6 +4312,27 @@ public class StudyController extends BaseStudyController
             try
             {
                 ZipUtil.unzipToDirectory(studyFile, importDir);
+
+                // when importing a folder archive, the study.xml file may not be at the root
+                if (originalFilename.endsWith(".folder.zip"))
+                {
+                    File folderXml = new File(importDir, "folder.xml");
+                    FolderDocument folderDoc;
+                    try
+                    {
+                        folderDoc = FolderDocument.Factory.parse(folderXml, XmlBeansUtil.getDefaultParseOptions());
+                        XmlBeansUtil.validateXmlDocument(folderDoc);
+                    }
+                    catch (Exception e)
+                    {
+                        throw new InvalidFileException(folderXml.getParentFile(), folderXml, e);
+                    }
+
+                    if (folderDoc.getFolder().isSetStudy())
+                    {
+                        importDir = new File(importDir, folderDoc.getFolder().getStudy().getDir());
+                    }
+                }
                 studyXml = new File(importDir, "study.xml");
             }
             catch (FileNotFoundException e)

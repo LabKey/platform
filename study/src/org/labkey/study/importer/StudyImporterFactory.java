@@ -71,7 +71,6 @@ public class StudyImporterFactory implements FolderImporterFactory
 
                 StudyImportFinalTask.doImport(job, studyImportContext, errors);
 
-                // TODO: review how errors are handled in the various study import tasks
                 ctx.getLogger().info("Done importing " + getDescription());
             }
         }
@@ -80,6 +79,12 @@ public class StudyImporterFactory implements FolderImporterFactory
         public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
             return null;
+        }
+
+        @Override
+        public boolean supportsVirtualFile()
+        {
+            return false;
         }
     }
 }

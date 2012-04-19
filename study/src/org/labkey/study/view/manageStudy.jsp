@@ -278,12 +278,10 @@
 <%
     if (c.hasPermission(user, AdminPermission.class))
     {
-        // TODO: make the change to have the export button go to the Folder Export page
         ActionURL exportURL = PageFlowUtil.urlProvider(AdminUrls.class).getExportFolderURL(c);
         exportURL.addParameter("exportType", "study");
 %>
-<%--<%=generateButton("Export Study", exportURL.getURIString())%>--%>
-<%=generateButton("Export Study", StudyController.ExportStudyAction.class)%>
+<%=generateButton("Export Study", exportURL.getURIString())%>
 <%=generateButton("Reload Study", StudyController.ImportStudyAction.class)%>
 <%=generateButton("Delete Study", StudyController.DeleteStudyAction.class)%>
 <%=generateButton("Create Ancillary Study", "javascript:void(0)", "showNewStudyWizard()")%>

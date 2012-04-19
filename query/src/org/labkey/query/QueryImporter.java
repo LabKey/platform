@@ -172,6 +172,12 @@ public class QueryImporter implements FolderImporter<FolderDocument.Folder>
         ctx.getLogger().info("Done post-processing " + getDescription());
         return warnings;
     }
+    
+    @Override
+    public boolean supportsVirtualFile()
+    {
+        return false;
+    }
 
     public static class Factory implements FolderImporterFactory
     {

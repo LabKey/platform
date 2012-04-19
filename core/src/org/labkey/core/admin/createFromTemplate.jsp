@@ -33,21 +33,25 @@ AdminController.CreateFromTemplateForm form = (AdminController.CreateFromTemplat
 Container sourceContainer = form.getSourceContainer();
 %>
 
+<script type="text/javascript">
+    LABKEY.requiresExt4ClientAPI();
+</script>
+
 <labkey:errors/>
+Select the folder objects that you would like to use, from the selected template folder, to populate your current folder: 
 <div id="form"></div>
 
 <script type="text/javascript">
 
 var formItems = [];
 
-formItems.push({xtype: "label", text: "Folder objects to copy:"});
 <%
     Collection<FolderWriter> writers = new LinkedList<FolderWriter>(FolderSerializationRegistryImpl.get().getRegisteredFolderWriters());
     boolean showFormatOptions = false;
     for (FolderWriter writer : writers)
     {
         String parent = writer.getSelectionText();
-        if (null != parent && null != sourceContainer && writer.show(sourceContainer))
+        if (null != parent && null != sourceContainer && writer.supportsVirtualFile() && writer.show(sourceContainer))
         {
             %>formItems.push({xtype: "checkbox", hideLabel: true, boxLabel: "<%=parent%>", name: "types", itemId: "<%=parent%>", inputValue: "<%=parent%>", checked: true, objectType: "parent"});<%
 
@@ -70,7 +74,8 @@ formItems.push({xtype: "label", text: "Folder objects to copy:"});
     }
 %>
 
-var form = new LABKEY.ext.FormPanel({
+var form = Ext4.create('LABKEY.ext.FormPanel', {
+    bodyStyle: 'background-color: transparent;',
     labelWidth: 150,
     border: false,
     standardSubmit: true,
@@ -84,15 +89,15 @@ function submit()
     form.getForm().submit();
 }
 
-Ext.onReady(function() {
+Ext4.onReady(function() {
     form.render('form');
 
     // add listeners to each of the parent checkboxes
     var parentCbs = form.find("objectType", "parent");
-    Ext.each(parentCbs, function(cb) {
+    Ext4.each(parentCbs, function(cb) {
         cb.on("check", function(cmp, checked) {
             var children = form.find("parentId", cb.getItemId());
-            Ext.each(children, function(child) {
+            Ext4.each(children, function(child) {
                 child.setValue(checked);
                 child.setDisabled(!checked);
             });

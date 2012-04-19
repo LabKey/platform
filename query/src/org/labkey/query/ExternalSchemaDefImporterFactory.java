@@ -131,5 +131,11 @@ public class ExternalSchemaDefImporterFactory implements FolderImporterFactory
         {
             return null;
         }
+
+        @Override
+        public boolean supportsVirtualFile()
+        {
+            return false;
+        }
     }
 }

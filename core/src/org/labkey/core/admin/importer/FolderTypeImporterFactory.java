@@ -82,5 +82,11 @@ public class FolderTypeImporterFactory implements FolderImporterFactory
         {
             return null;
         }
+
+        @Override
+        public boolean supportsVirtualFile()
+        {
+            return true;
+        }
     }
 }

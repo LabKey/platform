@@ -229,5 +229,11 @@ public class WikiImporterFactory implements FolderImporterFactory
         {
             return Collections.emptySet();
         }
+
+        @Override
+        public boolean supportsVirtualFile()
+        {
+            return false;
+        }        
     }
 }

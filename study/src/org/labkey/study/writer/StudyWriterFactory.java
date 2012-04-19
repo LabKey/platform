@@ -1,6 +1,7 @@
 package org.labkey.study.writer;
 
 import org.labkey.api.admin.AbstractFolderContext;
+import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportContext;
@@ -30,7 +31,7 @@ public class StudyWriterFactory implements FolderWriterFactory
         return new StudyFolderWriter();
     }
 
-    public class StudyFolderWriter implements FolderWriter
+    public class StudyFolderWriter extends BaseFolderWriter
     {
         @Override
         public String getSelectionText()

@@ -49,12 +49,6 @@ public class CustomViewWriter extends BaseFolderWriter
     }
 
     @Override
-    public boolean includeInType(AbstractFolderContext.ExportType type)
-    {
-        return AbstractFolderContext.ExportType.ALL == type || AbstractFolderContext.ExportType.STUDY == type;
-    }    
-
-    @Override
     public void write(Container object, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
     {
         Container c = ctx.getContainer();

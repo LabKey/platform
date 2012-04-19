@@ -90,6 +90,12 @@ public class MissingValueImporter implements FolderImporter
         return null;
     }
 
+    @Override
+    public boolean supportsVirtualFile()
+    {
+        return true;
+    }
+
     public static class Factory implements FolderImporterFactory
     {
         @Override

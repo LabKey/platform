@@ -81,6 +81,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.view.SetupForm;
+import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
@@ -5023,15 +5024,17 @@ public class AdminController extends SpringActionController
             FolderExportContext exportCtx = new FolderExportContext(getUser(), source, PageFlowUtil.set(form.getTypes()), "new", Logger.getLogger(FolderWriterImpl.class));
             writer.write(source, exportCtx, vf);
 
-//            FolderImporterImpl importer = new FolderImporterImpl();
-//            XmlObject folderXml = vf.getXmlBean("folder.xml");
-//            if (folderXml instanceof FolderDocument)
-//            {
-//                FolderDocument folderDoc = (FolderDocument)folderXml;
-//                FolderImportContext importCtx = new FolderImportContext(getUser(), target, folderDoc, Logger.getLogger(FolderImporterImpl.class), vf);
-//                importer.process(null, importCtx, vf);
-//                // TODO: should be call the postProcess-ers here?
-//            }
+            FolderImporterImpl importer = new FolderImporterImpl();
+            XmlObject folderXml = vf.getXmlBean("folder.xml");
+            if (folderXml instanceof FolderDocument)
+            {
+                // TODO: need to include the MissingValueImporter
+
+                FolderDocument folderDoc = (FolderDocument)folderXml;
+                FolderImportContext importCtx = new FolderImportContext(getUser(), target, folderDoc, Logger.getLogger(FolderImporterImpl.class), vf);
+                importer.process(null, importCtx, vf);
+                //importer.postProcess(importCtx, vf);
+            }
 
             return true;
         }
@@ -5039,7 +5042,7 @@ public class AdminController extends SpringActionController
         @Override
         public URLHelper getSuccessURL(CreateFromTemplateForm form)
         {
-            return getViewContext().getActionURL();
+            return PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(getContainer());
         }
 
         @Override

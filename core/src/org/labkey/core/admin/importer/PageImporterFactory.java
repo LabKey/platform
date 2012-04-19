@@ -160,5 +160,11 @@ public class PageImporterFactory implements FolderImporterFactory
         {
             return null;
         }
+
+        @Override
+        public boolean supportsVirtualFile()
+        {
+            return true;
+        }
     }
 }

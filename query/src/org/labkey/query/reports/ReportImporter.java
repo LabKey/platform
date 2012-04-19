@@ -84,6 +84,12 @@ public class ReportImporter implements FolderImporter<FolderDocument.Folder>
         return null;
     }
 
+    @Override
+    public boolean supportsVirtualFile()
+    {
+        return false;
+    }    
+
     public static class Factory implements FolderImporterFactory
     {
         public FolderImporter create()

@@ -48,5 +48,11 @@ public class FolderTypeWriterFactory implements FolderWriterFactory
                 modulesXml.addModuleName(module.getName());
             }
         }
+
+        @Override
+        public boolean supportsVirtualFile()
+        {
+            return true;
+        }
     }
 }

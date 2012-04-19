@@ -34,5 +34,11 @@ public class SearchSettingsWriterFactory implements FolderWriterFactory
             FolderDocument.Folder folderXml = ctx.getXml();
             folderXml.setSearchable(c.isSearchable());
         }
+
+        @Override
+        public boolean supportsVirtualFile()
+        {
+            return true;
+        }
     }
 }

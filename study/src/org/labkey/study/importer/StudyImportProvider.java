@@ -56,7 +56,7 @@ public class StudyImportProvider extends PipelineProvider
     {
         public boolean accept(File file)
         {
-            return file.getName().endsWith("study.xml") || file.getName().endsWith(".study.zip");
+            return file.getName().endsWith("study.xml") || file.getName().endsWith(".study.zip") || file.getName().endsWith(".folder.zip");
         }
     }
 }

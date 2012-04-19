@@ -57,5 +57,11 @@ public class SearchSettingsImporterFactory implements FolderImporterFactory
         {
             return null;
         }
+
+        @Override
+        public boolean supportsVirtualFile()
+        {
+            return true;
+        }
     }
 }

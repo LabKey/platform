@@ -23,7 +23,9 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
+import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -80,7 +82,7 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport
     @Override
     public URLHelper getStatusHref()
     {
-        return null;
+        return PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(getInfo().getContainer());
     }
 
     public String getDescription()
