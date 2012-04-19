@@ -116,7 +116,7 @@ public class ParticipantGroupImporter implements InternalStudyImporter
                         participants.addAll(Arrays.asList(group.getParticipantIdArray()));
                     }
                     ParticipantGroupManager.getInstance().setParticipantCategory(ctx.getContainer(), ctx.getUser(), pc,
-                            participants.toArray(new String[participants.size()]));
+                            participants.toArray(new String[participants.size()]), null, null);
                 }
                 scope.commitTransaction();
             }
