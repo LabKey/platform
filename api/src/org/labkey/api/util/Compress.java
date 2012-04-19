@@ -23,7 +23,12 @@ import org.labkey.api.data.dialect.KeywordCandidates;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
@@ -71,6 +76,28 @@ public class Compress
         }
     }
 
+    //Create a compressed output from an input stream
+    public static void compressGzip (InputStream in, OutputStream out) throws IOException
+    {
+        byte[] buf = new byte[1024];
+        int len;
+        while ((len = in.read(buf)) > 0) {
+            out.write(buf, 0, len);
+        }
+    }
+
+    //create a compressed output from a file.  the name of the compressed file will the the input filename plus '.gz'
+    public static File compressGzip (File input) throws IOException
+    {
+        File output = new File(input.getPath() + ".gz");
+        FileInputStream i = new FileInputStream(input);
+        GZIPOutputStream o = new GZIPOutputStream(new FileOutputStream(output));
+        Compress.compressGzip(i, o);
+        i.close();
+        o.close();
+
+        return output;
+    }
 
     // Decompress a byte array that was compressed using GZIP.
     public static String decompressGzip(byte[] bytes)

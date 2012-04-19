@@ -989,6 +989,62 @@ LABKEY.Utils.convertToExcel(
                     || upperVal == "FALSE" || value == "0" || upperVal == "N" || upperVal == "NO" || upperVal == "OFF" || upperVal == "F"){
                 return true;
             }
+        },
+
+        /**
+         * Adds new listener to be executed when all required scripts are fully loaded.
+         * @param {Mixed} config Either a callback function, or an object with the following properties:
+         *
+         * <li>callback (required) A function that will be called when required scripts are loaded.</li>
+         * <li>scope (optional) The scope to be used for the callback function.  Defaults to the current scope.</li>
+         * <li>scripts (optional) A string with a single script or an array of script names to load.  This will be passed to LABKEY.requiresScript().</li>
+         * @example &lt;script type="text/javascript"&gt;
+            //simple usage
+            LABKEY.onReady(function(){
+                //your code here.  will be executed once scripts have loaded
+            });
+
+            //
+            LABKEY.Utils.onReady({
+                scope: this,
+                scripts: ['/myModule/myScript.js', 'AnotherScript.js]
+                callback: function(){
+                    //your code here.  will be executed once scripts have loaded
+                });
+            });
+        &lt;/script&gt;
+         */
+        onReady: function(config)
+        {
+            var scope;
+            var callback;
+            var scripts;
+
+            if (Ext.isFunction(config)){
+                scope = this;
+                callback = config;
+                scripts = null;
+            }
+            else if (Ext.isObject(config) && Ext.isFunction(config.callback))
+            {
+                scope = config.scope || this;
+                callback = config.callback;
+                scripts = config.scripts;
+            }
+            else
+            {
+                alert("Improper configuration for LABKEY.onReady()");
+                return;
+            }
+
+            if (scripts)
+            {
+                LABKEY.requiresScript(scripts, true, callback, scope, true);
+            }
+            else
+            {
+                Ext.onReady(callback, scope);
+            }
         }
 
     };
