@@ -1168,10 +1168,10 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     public synchronized Domain getDomain()
     {
+        if (null == getTypeURI())
+            return null;
         if (null == _domain)
-        {
             _domain = PropertyService.get().getDomain(getContainer(), getTypeURI());
-        }
         return _domain;
     }
 

@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.exp.property.Domain" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -51,8 +52,10 @@
 
     List<? extends DataSet> datasets = study.getDataSetsByType(new String[]{DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER});
     int countUndefined = 0;
-    for (DataSet def : datasets) {
-        if (def.getTypeURI() == null)
+    for (DataSet def : datasets)
+    {
+        Domain d = def.getDomain();
+        if (null == d || 0 == d.getProperties().length)
             countUndefined++;
     }
     String dateFormat = StudyManager.getInstance().getDefaultDateFormatString(HttpView.currentContext().getContainer());
