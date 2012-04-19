@@ -64,7 +64,7 @@ public class StudyImportSpecimenTask extends AbstractSpecimenTask<StudyImportSpe
 
             if (null != specimens.getDir())
             {
-                File specimenDir = ctx.getDir(specimens.getDir());
+                File specimenDir = ctx.getDir("specimens");
 
                 if (null != specimens.getFile())
                     return ctx.getStudyFile(root, specimenDir, specimens.getFile());

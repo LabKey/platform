@@ -26,6 +26,7 @@ import org.labkey.api.security.User;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -108,15 +109,18 @@ public abstract class EmailPrefsSelector
 
         if (AnnouncementManager.EMAIL_PREFERENCE_MINE == emailPreference)
         {
-            // Skip if preference is MINE and this is a new message
+            // Skip if preference is MINE and this is a new message  TODO: notify message creator?
             if (null == ann)
                 return false;
 
             Set<User> authors = ann.getAuthors();
 
-            if (!authors.contains(user))
-                if (!settings.hasMemberList() || !ann.getMemberList().contains(user))
+            if (!authors.contains(user))   // TODO: notify message creator?
+            {
+                List<User> memberList = ann.getMemberList();      // TODO: Should be @NotNull
+                if (null == memberList || !ann.getMemberList().contains(user))
                     return false;
+            }
         }
         else
         {

@@ -224,6 +224,9 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         ensureSameQuery(pivot);
         if (_pivot != null)
         {
+// SEE 12369
+//            if (_pivot.equals(pivot))
+//                return;
             throw new IllegalArgumentException("Can't pivot a single dataset by more than one column.  Attempt to pivot " +
                 getSchemaName() + "." + _queryName + " by both " + _pivot.getSelectName() + " and " + pivot.getSelectName());
         }

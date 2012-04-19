@@ -1047,6 +1047,9 @@ public class QueryServiceImpl extends QueryService
             if (column.isUnselectable())
                 continue;
 
+            if (column.isMvIndicatorColumn())
+                continue;
+
             ret.add(FieldKey.fromParts(column.getName()));
         }
 

@@ -243,7 +243,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 url : LABKEY.ActionURL.buildURL('query', 'selectRows.api'),
                 extraParams : {
                     schemaName  : 'core',
-                    queryName   : 'Users'
+                    queryName   : 'UsersMsgPrefs'
                 },
                 reader : {
                     type : 'json',

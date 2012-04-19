@@ -137,7 +137,7 @@ public class DatasetImporter implements InternalStudyImporter
             if (null == datasetsXml.getDir())
                 return root;
 
-            return ctx.getDir(datasetsXml.getDir());
+            return ctx.getDir("datasets");
         }
 
         return null;
