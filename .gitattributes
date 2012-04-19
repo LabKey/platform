@@ -752,7 +752,6 @@ core/src/org/labkey/core/workbook/createWorkbook.jsp -text
 core/src/org/labkey/core/workbook/moveWorkbooks.jsp -text
 core/src/org/labkey/core/workbook/workbookDescription.jsp -text
 core/src/org/labkey/core/workbook/workbookSearch.jsp -text
-core/webapp/FileTree.js -text
 core/webapp/SecurityAdmin.css -text
 core/webapp/SecurityAdmin.js -text
 core/webapp/admin/FolderManagementPanel.js -text

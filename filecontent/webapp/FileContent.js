@@ -22,7 +22,7 @@
  * exposed in the container and the root of the WebDAV file system tree used for this webpart. This allows
  * display of a subtree rooted below the default root for the container.
  */
-LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
+LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.ext.FileBrowser, {
 
     actionsURL : LABKEY.ActionURL.buildURL('pipeline', 'actions', null, {path:''}),
     actionsConfigURL : LABKEY.ActionURL.buildURL('pipeline', 'getPipelineActionConfig'),
@@ -58,8 +58,8 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         LABKEY.FilesWebPartPanel.superclass.initComponent.call(this);
 
         this.grid.store.on("datachanged", this.onGridDataChange, this);
-        this.on(BROWSER_EVENTS.selectionchange,function(record){this.onSelectionChange(record);}, this);
-        this.on(BROWSER_EVENTS.directorychange,function(record){this.onGridDataChanged(false);}, this);
+        this.on(LABKEY.FileSystem.BROWSER_EVENTS.selectionchange,function(record){this.onSelectionChange(record);}, this);
+        this.on(LABKEY.FileSystem.BROWSER_EVENTS.directorychange,function(record){this.onGridDataChanged(false);}, this);
 
         // message templates
         var typeTemplate = new Ext.XTemplate('<tpl if="icon == undefined">{type}</tpl><tpl if="icon != undefined"><img src="{icon}" alt="{type}"></tpl>').compile();
@@ -91,7 +91,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         this.adminOptions.on('filePropConfigChanged', this.onFilePropConfigChanged, this);
         this.adminOptions.on('gridConfigChanged', this.onGridConfigChanged, this);
 
-        this.on(BROWSER_EVENTS.transfercomplete, this.onCustomFileProperties, this);
+        this.on(LABKEY.FileSystem.BROWSER_EVENTS.transfercomplete, this.onCustomFileProperties, this);
 
         // get the initial admin configuration
         this.updateActionConfiguration(false, false);
@@ -136,7 +136,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             tooltip: 'Configure email notifications on file actions.',
             listeners: {click:function(button, event) {this.onEmailPreferences(button);}, scope:this},
             hideText: true
-        })
+        });
 
         actions.auditLog = new Ext.Action({
             text: 'Audit History',
@@ -144,22 +144,22 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
             disabledClass:'x-button-disabled',
             tooltip: 'View the files audit log for this folder.',
             listeners: {click:function(button, event) {window.location = LABKEY.ActionURL.buildURL('filecontent', 'showFilesHistory');}}
-        })
+        });
         return actions;
     },
 
     createDefaultColumnModel : function(sm)
     {
         // mild convolution to pass fileSystem to the _attachPreview function
-        var iconRenderer = FileBrowser.renderIcon.createDelegate(null,this.attachPreview.createDelegate(this.fileSystem,[],true),true);
+        var iconRenderer = LABKEY.FileSystem.Util.renderIcon.createDelegate(null,this.attachPreview.createDelegate(this.fileSystem,[],true),true);
         var cm = [sm,
                 {header: "",               width: 20,  dataIndex: 'iconHref',    sortable: false, hidden: false, renderer:iconRenderer},
                 {header: "Name",           width: 250, dataIndex: 'name',        sortable: true,  hidden: false, renderer:Ext.util.Format.htmlEncode},
-                {header: "Last Modified",  width: 150, dataIndex: 'modified',    sortable: true,  hidden: false, renderer:FileBrowser.renderDateTime},
-                {header: "Size",           width: 80,  dataIndex: 'size',        sortable: true,  hidden: false, align:'right', renderer:FileBrowser.renderFileSize},
+                {header: "Last Modified",  width: 150, dataIndex: 'modified',    sortable: true,  hidden: false, renderer:LABKEY.FileSystem.Util.renderDateTime},
+                {header: "Size",           width: 80,  dataIndex: 'size',        sortable: true,  hidden: false, align:'right', renderer:LABKEY.FileSystem.Util.renderFileSize},
                 {header: "Created By",     width: 100, dataIndex: 'createdBy',   sortable: true,  hidden: false, renderer:Ext.util.Format.htmlEncode},
                 {header: "Description",    width: 100, dataIndex: 'description', sortable: true,  hidden: false, renderer:Ext.util.Format.htmlEncode},
-                {header: "Usages",         width: 100, dataIndex: 'actionHref',  sortable: true,  hidden: false, renderer:FileBrowser.renderUsage},
+                {header: "Usages",         width: 100, dataIndex: 'actionHref',  sortable: true,  hidden: false, renderer:LABKEY.FileSystem.Util.renderUsage},
                 {header: "Download Link",  width: 100, dataIndex: 'fileLink',    sortable: true,  hidden: true},
                 {header: "File Extension", width: 80,  dataIndex: 'fileExt',     sortable: true,  hidden: true,  renderer:Ext.util.Format.htmlEncode}
             ];
@@ -194,7 +194,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.FileBrowser, {
         this.onGridDataChanged(false);
         this.enableImportData(false);
         this.path = this.currentDirectory.data.path;
-        if (FileBrowser.startsWith(this.path,"/"))
+        if (LABKEY.FileSystem.Util.startsWith(this.path,"/"))
             this.path = this.path.substring(1);
 
         if (this.isPipelineRoot)

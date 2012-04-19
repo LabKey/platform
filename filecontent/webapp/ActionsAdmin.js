@@ -73,7 +73,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
         if (config.path)
         {
-            if (FileBrowser.startsWith(config.path,"/"))
+            if (LABKEY.FileSystem.Util.startsWith(config.path,"/"))
                 config.path = config.path.substring(1);
 
             this.actionsURL = LABKEY.ActionURL.buildURL('pipeline', 'actions', null, {allActions:true, path:config.path});

@@ -2720,26 +2720,16 @@ public class DavController extends SpringActionController
     {
         src.notify(getViewContext(), null == dest.getFile() ? "deleted" : "deleted: moved to " + dest.getFile().getPath());
         dest.notify(getViewContext(), null == src.getFile() ? "created" : "created: moved from " + src.getFile().getPath());
-        removeFromIndex(src);
-        addToIndex(dest);
 
         Container srcContainer = src.getContainerId() == null ? null : ContainerManager.getForId(src.getContainerId());
         Container destContainer = dest.getContainerId() == null ? null : ContainerManager.getForId(dest.getContainerId());
         if (ObjectUtils.equals(srcContainer, destContainer) && src.getFile() != null)
         {
-            ExpData data = ExperimentService.get().getExpDataByURL(src.getFile(), srcContainer);
-            if (data == null && dest.getFile() != null)
-            {
-                data = ExperimentService.get().getExpDataByURL(dest.getFile(), srcContainer);
-            }
-            if (data == null)
-            {
-                data = ExperimentService.get().createData(srcContainer, new DataType("UploadedFile"));
-            }
-            data.setDataFileURI(dest.getFile().toURI());
-            data.setName(dest.getFile().getName());
-            data.save(getUser());
+            ExperimentService.get().onFileMoved(src.getFile(), dest.getFile(), srcContainer, getUser());
         }
+
+        removeFromIndex(src);
+        addToIndex(dest);
     }
 
 

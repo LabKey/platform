@@ -221,11 +221,11 @@ Ext.onReady(function()
         window.location = <%=PageFlowUtil.jsString(listpage.loginURL.getLocalURIString())%>;    
     }});
 
-    fileSystem = new LABKEY.WebdavFileSystem({
+    fileSystem = new LABKEY.FileSystem.WebdavFileSystem({
         baseUrl:<%=PageFlowUtil.jsString(Path.parse(request.getContextPath()).append(listpage.root).encode("/",null))%>,
         rootName:<%=PageFlowUtil.jsString(app.getServerName())%>});
 
-    fileBrowser = new LABKEY.FileBrowser({
+    fileBrowser = new LABKEY.ext.FileBrowser({
         fileSystem:fileSystem
         ,helpEl:null
         ,showAddressBar:true
