@@ -65,7 +65,7 @@ public interface DataSet<T extends DataSet> extends StudyEntity, StudyCachable<T
 
     /**
      * @return true if this dataset is backed by assay data within LabKey Server. Note that if a dataset happens
-     * to contain assay data but isn't linked to an assay provider in the server, this method will return false. 
+     * to contain assay data but isn't linked to an assay provider in the server (ie., when importing a study archive), this method will return false.
      */
     boolean isAssayData();
 
@@ -92,7 +92,14 @@ public interface DataSet<T extends DataSet> extends StudyEntity, StudyCachable<T
     public Set<Class<? extends Permission>> getPermissions(UserPrincipal user);
 
     KeyType getKeyType();
-    
+
+    /**
+     * Returns a string describing the primary keys of this DataSet for display purposes.
+     * For example, "Mouse/Visit/ExtraKey"
+     * @return Primary key description
+     */
+    String getKeyTypeDescription();
+
     // constants for dataset types
     public static final String TYPE_STANDARD = "Standard";
     public static final String TYPE_PLACEHOLDER = "Placeholder";
