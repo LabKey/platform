@@ -18,6 +18,7 @@ package org.labkey.core.admin;
 
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
@@ -52,7 +53,7 @@ public class FilesSiteSettingsAction extends AbstractFileSiteSettingsAction<File
             File root = _svc.getSiteDefaultRoot();
 
             if (root != null && root.exists())
-                form.setRootPath(root.getCanonicalPath());
+                form.setRootPath(FileUtil.getAbsoluteCaseSensitiveFile(root).getAbsolutePath());
         }
         setHelpTopic("setRoots");
         return new JspView<FileSettingsForm>("/org/labkey/core/admin/view/filesSiteSettings.jsp", form, errors);

@@ -652,7 +652,7 @@ public class FileContentController extends SpringActionController
                    try
                    {
                        NetworkDrive.ensureDrive(path);
-                       path = root.getCanonicalPath();
+                       path = FileUtil.getAbsoluteCaseSensitiveFile(root).getAbsolutePath();
                    }
                    catch (Exception e)
                    {
@@ -728,7 +728,7 @@ public class FileContentController extends SpringActionController
 
            if (service != null)
                webRoot = service.getProjectFileRoot(getContainer().getProject());
-           form.setRootPath(webRoot == null ? null : webRoot.getCanonicalPath());
+           form.setRootPath(webRoot == null ? null : FileUtil.getAbsoluteCaseSensitiveFile(webRoot).getAbsolutePath());
            form.setMessage(StringUtils.trimToNull(message));
            setReshow(true);
            return errors.getErrorCount() == 0;
@@ -762,7 +762,7 @@ public class FileContentController extends SpringActionController
                form.setFileSetName(null);
            }
            File webRoot = service.getProjectFileRoot(getContainer().getProject());
-           form.setRootPath(webRoot == null ? null : webRoot.getCanonicalPath());
+           form.setRootPath(webRoot == null ? null : FileUtil.getAbsoluteCaseSensitiveFile(webRoot).getAbsolutePath());
            setReshow(true);
 
 		   return true;

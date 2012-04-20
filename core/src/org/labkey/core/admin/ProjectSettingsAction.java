@@ -34,6 +34,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.FolderDisplayMode;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.*;
@@ -453,7 +454,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                                 _form.setFileRootOption(AdminController.ProjectSettingsForm.FileRootProp.siteDefault.name());
                                 File root = service.getProjectFileRoot(getViewContext().getContainer());
                                 if (root != null && root.exists())
-                                    confirmMessage = "The file root is set to a default of: " + root.getCanonicalPath();
+                                    confirmMessage = "The file root is set to a default of: " + FileUtil.getAbsoluteCaseSensitiveFile(root).getAbsolutePath();
                             }
                             else
                             {
@@ -462,9 +463,10 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                                 _form.setFileRootOption(AdminController.ProjectSettingsForm.FileRootProp.projectSpecified.name());
                                 if (root != null)
                                 {
-                                    _form.setProjectRootPath(root.getCanonicalPath());
+                                    root = FileUtil.getAbsoluteCaseSensitiveFile(root);
+                                    _form.setProjectRootPath(root.getAbsolutePath());
                                     if (root.exists())
-                                        confirmMessage = "The file root is set to: " + root.getCanonicalPath();
+                                        confirmMessage = "The file root is set to: " + root.getAbsolutePath();
                                     else
                                         _errors.reject(SpringActionController.ERROR_MSG, "File root '" + root + "' does not appear to be a valid directory accessible to the server at " + getViewContext().getRequest().getServerName() + ".");
                                 }

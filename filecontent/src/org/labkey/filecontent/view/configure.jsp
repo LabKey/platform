@@ -27,6 +27,7 @@
 <%@ page import="java.io.File" %>
 <%@ page import="org.labkey.api.files.FileContentService" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
+<%@ page import="org.labkey.api.util.FileUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -59,7 +60,7 @@
      <% }
         else
         { %>
-            The file root for this project is <br><blockquote><%=h(rootFile.getCanonicalPath())%></blockquote>
+            The file root for this project is <br><blockquote><%=h(org.labkey.api.util.FileUtil.getAbsoluteCaseSensitiveFile(rootFile).getAbsolutePath())%></blockquote>
             The directory containing files for this folder is
         <%
             String path = "<unset>";
@@ -67,9 +68,8 @@
             if (attachDir != null)
             {
                 File fileSystemDir = attachDir.getFileSystemDirectory();
-                if (fileSystemDir != null)
-                {
-                    path = fileSystemDir.getCanonicalPath();
+                if (fileSystemDir != null)                {
+                    path = FileUtil.getAbsoluteCaseSensitiveFile(fileSystemDir).getAbsolutePath();
                 }
             }
         %>

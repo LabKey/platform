@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.io.File" %>
+<%@ page import="org.labkey.api.util.FileUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -36,7 +37,7 @@
         File projRoot = new File(siteRoot, getViewContext().getContainer().getProject().getName());
         if (projRoot != null)
         {
-            projectDefaultRoot = projRoot.getCanonicalPath();
+            projectDefaultRoot = FileUtil.getAbsoluteCaseSensitiveFile(projRoot).getAbsolutePath();
         }
     }
 %>

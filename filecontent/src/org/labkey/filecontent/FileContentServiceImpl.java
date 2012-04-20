@@ -166,19 +166,13 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         String oldValue = root.getPath();
         String newValue = null;
 
-        try {
-            // clear out the root
-            if (path == null)
-                root.setPath(null);
-            else
-            {
-                root.setPath(path.getCanonicalPath());
-                newValue = root.getPath();
-            }
-        }
-        catch (IOException e)
+        // clear out the root
+        if (path == null)
+            root.setPath(null);
+        else
         {
-            throw new RuntimeException(e);
+            root.setPath(FileUtil.getAbsoluteCaseSensitiveFile(path).getAbsolutePath());
+            newValue = root.getPath();
         }
 
         FileRootManager.get().saveFileRoot(null, root);

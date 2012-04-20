@@ -133,6 +133,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -2936,7 +2937,7 @@ public class AdminController extends SpringActionController
         {
             _webpartColor = webpartColor;
         }
-        
+
         public String getThemeName()
         {
             return _themeName;
@@ -3146,14 +3147,14 @@ public class AdminController extends SpringActionController
                 File root = _svc.getSiteDefaultRoot();
 
                 if (root != null && root.exists())
-                    form.setRootPath(root.getCanonicalPath());
+                    form.setRootPath(FileUtil.getAbsoluteCaseSensitiveFile(root).getAbsolutePath());
 
                 form.setAllowReporting(true);
                 LookAndFeelProperties props = LookAndFeelProperties.getInstance(ContainerManager.getRoot());
                 form.setSiteName(props.getShortName());
                 form.setNotificationEmail(props.getSystemEmailAddress());
             }
-            
+
             JspView<NewInstallSiteSettingsForm> view = new JspView<NewInstallSiteSettingsForm>("/org/labkey/core/admin/newInstallSiteSettings.jsp", form, errors);
 
             getPageConfig().setNavTrail(getInstallUpgradeWizardSteps());
@@ -3498,7 +3499,7 @@ public class AdminController extends SpringActionController
                 // Must be a site admin to customize in the root, which is where the site-wide templates are stored
                 throw new UnauthorizedException();
             }
-            
+
             if (form.getTemplateClass() != null)
             {
                 EmailTemplate template = EmailTemplateService.get().createTemplate(form.getTemplateClass());
@@ -4196,7 +4197,7 @@ public class AdminController extends SpringActionController
         return navTrail;
     }
 
-    // For backward compatibility only -- old welcomeWiki text has link to admin/modifyFolder.view?action=create 
+    // For backward compatibility only -- old welcomeWiki text has link to admin/modifyFolder.view?action=create
 
     @RequiresNoPermission
     public class ModifyFolderAction extends SimpleRedirectAction
@@ -4459,7 +4460,7 @@ public class AdminController extends SpringActionController
             {
                 return false;
             }
-            
+
             LookAndFeelProperties props = LookAndFeelProperties.getInstance(getContainer());
                 try
                 {
@@ -4822,8 +4823,8 @@ public class AdminController extends SpringActionController
             return appendAdminNavTrail(root, "Modules", getClass());
         }
     }
-    
-    
+
+
     public static class ModuleForm
     {
         private String _name;

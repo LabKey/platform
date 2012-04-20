@@ -101,7 +101,7 @@ public abstract class AbstractFileSiteSettingsAction<FormType extends FileSettin
     public boolean handlePost(FormType form, BindException errors) throws Exception
     {
         File prev = _svc.getSiteDefaultRoot();
-        _svc.setSiteDefaultRoot(new File(form.getRootPath()));
+        _svc.setSiteDefaultRoot(FileUtil.getAbsoluteCaseSensitiveFile(new File(form.getRootPath())));
 
         if (form.isUpgrade())
         {
