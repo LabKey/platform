@@ -288,8 +288,18 @@ public class QueryTable extends QueryRelation
             // always copy format, we don't care about preserving set/unset-ness
             to.setFormat(_col.getFormat());
             to.copyURLFrom(_col, null, null);
+
+            if (null == _mapOutputColToTableColumn)
+            {
+                _mapOutputColToTableColumn = new TreeMap<FieldKey, RelationColumn>();
+                _query.qtableColumnMaps.put(QueryTable.this, _mapOutputColToTableColumn);
+            }
+            _mapOutputColToTableColumn.put(to.getFieldKey(), this);
         }
     }
+
+    Map<FieldKey,RelationColumn> _mapOutputColToTableColumn = null;
+
 
     public void setContainerFilter(ContainerFilter containerFilter)
     {

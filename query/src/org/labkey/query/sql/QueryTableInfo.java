@@ -18,10 +18,15 @@ package org.labkey.query.sql;
 
 import org.labkey.api.data.*;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringExpressionFactory.FieldKeyStringExpression;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class QueryTableInfo extends AbstractTableInfo implements ContainerFilterable
 {
@@ -98,5 +103,50 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     public boolean hasSort()
     {
         return false;
+    }
+
+
+    public void afterConstruct()
+    {
+        initFieldKeyMap();
+        // fix up urls using column->RelationColumn map
+        fixupDetailsUrls();
+        super.afterConstruct();
+    }
+
+    // map output column to its related columns (grouped by source querytable)
+    Map<FieldKey, Map<FieldKey,FieldKey>> mapFieldKeyToSiblings = new TreeMap<FieldKey, Map<FieldKey,FieldKey>>();
+
+    private void initFieldKeyMap()
+    {
+        Query query = _relation._query;
+        for (Map.Entry<QueryTable,Map<FieldKey,QueryRelation.RelationColumn>> maps : query.qtableColumnMaps.entrySet())
+        {
+            Map<FieldKey,QueryRelation.RelationColumn> map = maps.getValue();
+            Map<FieldKey,FieldKey> flippedMap = new TreeMap<FieldKey, FieldKey>();
+            for (Map.Entry<FieldKey,QueryRelation.RelationColumn> e : map.entrySet())
+            {
+                flippedMap.put(e.getValue().getFieldKey(), e.getKey());
+                mapFieldKeyToSiblings.put(e.getKey(), flippedMap);
+            }
+        }
+        mapFieldKeyToSiblings = Collections.unmodifiableMap(mapFieldKeyToSiblings);
+    }
+
+
+    protected void fixupDetailsUrls()
+    {
+        for (ColumnInfo ci : getColumns())
+        {
+            StringExpression se = ci.getURL();
+            if (!(se instanceof FieldKeyStringExpression))
+                continue;
+            FieldKeyStringExpression fkse = (FieldKeyStringExpression)se;
+            Map<FieldKey, FieldKey> remap = mapFieldKeyToSiblings.get(ci.getFieldKey());
+            if (null == remap || remap.isEmpty())
+                continue;
+            FieldKeyStringExpression remapped = fkse.addParent(null, remap);
+            ci.setURL(remapped);
+        }
     }
 }

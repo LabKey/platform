@@ -73,6 +73,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -107,6 +108,7 @@ public class Query
 
     private int _aliasCounter = 0;
 
+    IdentityHashMap<QueryTable, Map<FieldKey,QueryRelation.RelationColumn>> qtableColumnMaps = new IdentityHashMap<QueryTable, Map<FieldKey,QueryRelation.RelationColumn>>();
 
     public Query(@NotNull QuerySchema schema)
     {
@@ -451,6 +453,10 @@ public class Query
             TableInfo tinfo = _queryRoot.getTableInfo();
             if (tinfo instanceof ContainerFilterable && tinfo.supportsContainerFilter() && getContainerFilter() != null)
                 ((ContainerFilterable) tinfo).setContainerFilter(getContainerFilter());
+
+            if (tinfo instanceof QueryTableInfo)
+                ((QueryTableInfo)tinfo).afterConstruct();
+
             return tinfo;
         }
         catch (RuntimeException x)
