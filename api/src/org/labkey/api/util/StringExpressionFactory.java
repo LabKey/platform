@@ -490,7 +490,7 @@ public class StringExpressionFactory
          * remap    pk -> fk
          * parent   title -> lk/title
          */
-        public FieldKeyStringExpression addParent(FieldKey parent, Map<FieldKey, FieldKey> remap)
+        public FieldKeyStringExpression addParent(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
         {
             FieldKeyStringExpression clone = this.clone();
             StringBuilder source = new StringBuilder();
