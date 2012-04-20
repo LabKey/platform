@@ -239,7 +239,8 @@ public class DatasetWriter implements InternalStudyWriter
 
         for (ColumnInfo in : inColumns)
         {
-            if (in.getPropertyURI().equals(ptidURI))
+            // Find the PTID column but ignore the PTID wrapped 'DataSets' column.
+            if (in.getPropertyURI().equals(ptidURI) && !in.getName().equals("DataSets"))
             {
                 if (null == ptidColumn)
                     ptidColumn = in;
