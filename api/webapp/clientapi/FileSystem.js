@@ -848,7 +848,7 @@ Ext.extend(LABKEY.FileSystem.AbstractFileSystem, Ext.util.Observable, {
     });
 
     fileSystem.on('ready', function(fileSystem){
-        fileSystem.listFiles('/', function(){
+        fileSystem.listFiles({
             path: '/mySubfolder/',
             success: function(fileSystem, path, records){
                 alert('It worked!');
@@ -866,7 +866,7 @@ Ext.extend(LABKEY.FileSystem.AbstractFileSystem, Ext.util.Observable, {
             },
             failure: function(response, options){
                 alert('It didnt work.  The error was ' + response.statusText);
-                console.log(error);
+                console.log(response);
             },
             scope: this
         });
@@ -926,6 +926,8 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
             method: "PROPFIND",
             headers: {"Depth" : "0"}
         });
+        proxy.api.read.method = 'PROPFIND';
+
         var cb = function(response, args, success)
         {
             if (success && typeof config.success == 'function')
@@ -933,7 +935,7 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
             else if (!success & typeof config.failure == 'function')
                 config.failure.call(config.scope, response, options);
         };
-        proxy.load({method:"PROPFIND", depth:"0", propname : this.propNames}, this.historyReader, cb, this, {filesystem:this, path:config.path});
+        proxy.request('read', null, {method:"PROPFIND", depth:"0", propname : this.propNames}, this.historyReader, cb, this, {filesystem:this, path:config.path});
     },
 
     /**
@@ -1122,9 +1124,58 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
      * @param {Object} [config.scope] The scope of the callback function
      * @param {Boolean} [config.overwrite] If true, files at the target location
      * @methodOf LABKEY.FileSystem.WebdavFileSystem#
+* @example &lt;script type="text/javascript"&gt;
+    var fileSystem = new new LABKEY.FileSystem.WebdavFileSystem({
+        containerPath: '/home',
+        filePath: '/@files'  //optional.  this is the same as the default
+    });
+
+    fileSystem.on('ready', function(fileSystem){
+        fileSystem.listFiles({
+            path: '/mySubfolder/',
+            success: function(fileSystem, path, records){
+                alert('It worked!');
+                console.log(records);
+            },
+            scope: this
+        }, this);
+
+        fileSystem.renamePath({
+            source: 'myFile.xls',
+            destination: 'renamedFile.xls',
+            isFile: true,
+            scope: this
+        });
+
+
+        //if you renamed a file in a subfolder, you can optionally supply the fileName only
+        //this file will be renamed to: '/subfolder/renamedFile.xls'
+        fileSystem.renamePath({
+            source: '/subfolder/myFile.xls',
+            destination: 'renamedFile.xls',
+            isFile: true,
+            scope: this
+        });
+
+        //or provide the entire path
+        fileSystem.renamePath({
+            source: '/subfolder/myFile.xls',
+            destination: '/subfolder/renamedFile.xls',
+            isFile: true,
+            scope: this
+        });
+    }, this);
+
+
+ &lt;/script&gt;
      */
     renamePath : function(config)
     {
+        //allow user to submit either full path for rename, or just the new filename
+        if (config.source.indexOf(this.separator) > -1 && config.destination.indexOf(this.separator) == -1){
+            config.destination = this.concatPaths(this.getParentPath(config.source), config.destination);
+        }
+
         this.movePath({
             source: config.source,
             destination: config.destination,
@@ -1211,13 +1262,13 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
      * Will create a directory at the provided location.  This does not perform permission checking, which can be done using canMkDir().
      * @param config Configuration properties.
      * @param {String} config.path The path of the folder to create.  This should be relative to the rootPath of the FileSystem.  See constructor for examples.
-     * @param {Function} config.callback Callback function.  It will be called with the following arguments:
+     * @param {Function} config.success Success callback function.  It will be called with the following arguments:
      * <li>Filesystem: A reference to the filesystem</li>
-     * <li>Path: The path that was loaded</li>
-     * <li>Response: The XMLHttpRequest object<li>
-     * @param {Object} [config.scope] Failure callback function.  It will be called with the following arguments:
+     * <li>Path: The path that was created</li>
+     * @param {Object} [config.failure] Failure callback function.  It will be called with the following arguments:
      * <li>Response: the response object</li>
-     * @param {Object} [config.scope] The scope of the callback function.
+     * <li>Options: The parameter to the request call.</li>
+     * @param {Object} [config.scope] The scope of the callback functions.
      * @methodOf LABKEY.FileSystem.WebdavFileSystem#
      */
     createDirectory : function(config)
@@ -1394,9 +1445,13 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
     //private
     init : function(config)
     {
-        //support either containerPath + path OR rootPath (which is the concatenation of these 2)
-        if (this.containerPath){
-            this.rootPath = this.concatPaths(this.containerPath, this.path);
+        //support either containerPath + path OR baseUrl (which is the concatenation of these 2)
+        this.filePath = this.filePath || '/@files';
+        this.containerPath = this.containerPath || LABKEY.ActionURL.getContainer();
+
+        if(!config.baseUrl){
+            this.baseUrl = this.concatPaths(LABKEY.contextPath + "/_webdav", this.containerPath);
+            this.baseUrl = this.concatPaths(this.baseUrl, this.filePath);
         }
 
         var prefix = this.concatPaths(this.baseUrl, this.rootPath);
