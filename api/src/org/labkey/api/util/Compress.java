@@ -27,8 +27,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
@@ -76,27 +74,39 @@ public class Compress
         }
     }
 
-    //Create a compressed output from an input stream
-    public static void compressGzip (InputStream in, OutputStream out) throws IOException
-    {
-        byte[] buf = new byte[1024];
-        int len;
-        while ((len = in.read(buf)) > 0) {
-            out.write(buf, 0, len);
-        }
-    }
-
     //create a compressed output from a file.  the name of the compressed file will the the input filename plus '.gz'
-    public static File compressGzip (File input) throws IOException
+    public static File compressGzip (File input)
     {
         File output = new File(input.getPath() + ".gz");
-        FileInputStream i = new FileInputStream(input);
-        GZIPOutputStream o = new GZIPOutputStream(new FileOutputStream(output));
-        Compress.compressGzip(i, o);
-        i.close();
-        o.close();
+        return compressGzip(input, output);
+    }
 
-        return output;
+    //create a compressed output file from the input file
+    public static File compressGzip (File input, File output)
+    {
+        try
+        {
+            FileInputStream i = null;
+            GZIPOutputStream o = null;
+
+            try
+            {
+                i = new FileInputStream(input);
+                o = new GZIPOutputStream(new FileOutputStream(output));
+                FileUtil.copyData(i, o);
+            }
+            finally
+            {
+                if (i != null) try { i.close(); } catch (IOException e) {  }
+                if (o != null) try { o.close(); } catch (IOException e) {  }
+            }
+
+            return output;
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     // Decompress a byte array that was compressed using GZIP.

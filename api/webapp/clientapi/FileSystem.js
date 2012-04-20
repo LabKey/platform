@@ -1030,7 +1030,7 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
                 else if (405 == response.status) // METHOD_NOT_ALLOWED
                     success = false;
 
-                if(success)
+                if (success)
                 {
                     fileSystem._deleteListing(config.path, config.isFile);
 
@@ -1045,12 +1045,12 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
             failure: function(response, options)
             {
                 var success = false;
-                if(response.status == 404)  //NOT_FOUND - not sure if this is the correct behavior or not
+                if (response.status == 404)  //NOT_FOUND - not sure if this is the correct behavior or not
                     success = true;
 
-                if(!success && typeof config.failure == 'function')
+                if (!success && typeof config.failure == 'function')
                     config.failure.call(config.scope, response, options);
-                if(success && typeof config.success == 'function')
+                if (success && typeof config.success == 'function')
                     config.success.call(config.scope, fileSystem, config.path);
             }
         });
@@ -1225,7 +1225,7 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
                 else
                     success = false;
 
-                if(success)
+                if (success)
                 {
                     //the move is performed as a delete / lazy-insert
                     fileSystem._deleteListing(config.source, config.isFile);
@@ -1449,9 +1449,9 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
         this.filePath = this.filePath || '/@files';
         this.containerPath = this.containerPath || LABKEY.ActionURL.getContainer();
 
-        if(!config.baseUrl){
-            this.baseUrl = this.concatPaths(LABKEY.contextPath + "/_webdav", this.containerPath);
-            this.baseUrl = this.concatPaths(this.baseUrl, this.filePath);
+        if (!config.baseUrl){
+            this.baseUrl = this.concatPaths(LABKEY.contextPath + "/_webdav", encodeURI(this.containerPath));
+            this.baseUrl = this.concatPaths(this.baseUrl, encodeURI(this.filePath));
         }
 
         var prefix = this.concatPaths(this.baseUrl, this.rootPath);
