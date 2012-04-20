@@ -2044,17 +2044,15 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
         }
     },
 
-    constructor : function(config)
+    initComponent : function()
     {
-        config = config || {};
-        Ext.apply(this, config);
         Ext.useShims = true;     // so floating elements can appear over the applet drop target
 
         // create the set of actions and initialize any configurable state
         this.actions = this.createActions();
         this.initializeActions();
 
-        delete config.actions;  // so superclass.constructor doesn't overwrite this.actions
+        //delete this.actions;  // so superclass.constructor doesn't overwrite this.actions
 
         //
         // GRID
@@ -2096,12 +2094,8 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
 
         var layoutItems = this.getItems();
 
-        Ext.apply(config, {layout:'border', tbar:tbarConfig, items: layoutItems, renderTo:null}, {id:'fileBrowser', height:600, width:800});
-        LABKEY.ext.FileBrowser.superclass.constructor.call(this, config);
-    },
+        Ext.apply(this, {layout:'border', tbar:tbarConfig, items: layoutItems, renderTo:null}, {id:'fileBrowser', height:600, width:800});
 
-    initComponent : function()
-    {
         LABKEY.ext.FileBrowser.superclass.initComponent.call(this);
 
         //

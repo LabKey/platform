@@ -43,7 +43,7 @@ LABKEY.FilesWebPartPanelEx = Ext.extend(LABKEY.FilesWebPartPanel, {
     {
         var annotationConfig = this.annotationConfig;
 
-        this.on(BROWSER_EVENTS.transferstarted, this.annotateFiles, this);
+        this.on(LABKEY.FileSystem.BROWSER_EVENTS.transferstarted, this.annotateFiles, this);
 
         var securityCheckRequired = annotationConfig.containerPath != null && annotationConfig.containerPath != LABKEY.container.path;
 
@@ -75,7 +75,7 @@ LABKEY.FilesWebPartPanelEx = Ext.extend(LABKEY.FilesWebPartPanel, {
             var selectRowsResult = this.propertiesSelectResults;
             var idCol = result.metaData.id;
             this.annotationConfig.id = idCol;
-            this.on(BROWSER_EVENTS.transferstarted, this.annotateFiles, this);
+            this.on(LABKEY.FileSystem.BROWSER_EVENTS.transferstarted, this.annotateFiles, this);
 
             //Create a map from id to properties for looking things up later.
             //Arguably should create a store for this....
@@ -103,7 +103,7 @@ LABKEY.FilesWebPartPanelEx = Ext.extend(LABKEY.FilesWebPartPanel, {
             this.doLayout();
         }
 
-        this.on(BROWSER_EVENTS.selectionchange, function()
+        this.on(LABKEY.FileSystem.BROWSER_EVENTS.selectionchange, function()
         {
             var selections = this.grid.selModel.getSelections();
             var record = null;
