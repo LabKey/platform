@@ -16,12 +16,14 @@
 
 package org.labkey.study.samples;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.DemoMode;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.SampleManager;
@@ -54,11 +56,13 @@ public class SampleSearchBean
 
     private static class DisplayColumnInfo
     {
-        private boolean _displayByDefault;
-        private boolean _displayAsPickList;
-        private boolean _forceDistinctQuery;
+        private final boolean _displayByDefault;
+        private final boolean _displayAsPickList;
+        private final boolean _forceDistinctQuery;
+        private final boolean _obfuscate;
+        private final @Nullable TableInfo _tableInfo;
+
         private String _orderBy;
-        private TableInfo _tableInfo;
 
         public DisplayColumnInfo(boolean displayByDefault, boolean displayAsPickList)
         {
@@ -67,14 +71,15 @@ public class SampleSearchBean
 
         public DisplayColumnInfo(boolean displayByDefault, boolean displayAsPickList, boolean forceDistinctQuery)
         {
-            this(displayByDefault, displayAsPickList, forceDistinctQuery, null);
+            this(displayByDefault, displayAsPickList, forceDistinctQuery, false, null);
         }
 
-        public DisplayColumnInfo(boolean displayByDefault, boolean displayAsPickList, boolean forceDistinctQuery, TableInfo tableInfo)
+        public DisplayColumnInfo(boolean displayByDefault, boolean displayAsPickList, boolean forceDistinctQuery, boolean obfuscate, @Nullable TableInfo tableInfo)
         {
             _displayByDefault = displayByDefault;
             _displayAsPickList = displayAsPickList;
             _forceDistinctQuery = forceDistinctQuery;
+            _obfuscate = obfuscate;
             _tableInfo = tableInfo;
         }
 
@@ -93,6 +98,11 @@ public class SampleSearchBean
             return _forceDistinctQuery;
         }
 
+        public boolean shouldObfuscate()
+        {
+            return _obfuscate;
+        }
+
         public String getOrderBy()
         {
             return _orderBy;
@@ -103,7 +113,7 @@ public class SampleSearchBean
             _orderBy = orderBy;
         }
 
-        public TableInfo getTableInfo()
+        public @Nullable TableInfo getTableInfo()
         {
             return _tableInfo;
         }
@@ -144,12 +154,12 @@ public class SampleSearchBean
         StudyQuerySchema schema = new StudyQuerySchema(StudyManager.getInstance().getStudy(_container), context.getUser(), true);
         TableInfo simpleSpecimenTable = schema.createSimpleSpecimenTable();
 
-        DisplayColumnInfo participantColInfo = new DisplayColumnInfo(true, true, true, simpleSpecimenTable);
+        DisplayColumnInfo participantColInfo = new DisplayColumnInfo(true, true, true, DemoMode.isDemoMode(context), simpleSpecimenTable);
         participantColInfo.setOrderBy("PTID");
         _defaultDetailCols.put(StudyService.get().getSubjectColumnName(context.getContainer()), participantColInfo);
         _defaultDetailCols.put("Available", new DisplayColumnInfo(true, true));
         _defaultDetailCols.put("DerivativeType", new DisplayColumnInfo(true, true));
-        _defaultDetailCols.put("VolumeUnits", new DisplayColumnInfo(false, true, false, simpleSpecimenTable));
+        _defaultDetailCols.put("VolumeUnits", new DisplayColumnInfo(false, true, false, false, simpleSpecimenTable));
         _defaultDetailCols.put("GlobalUniqueId", new DisplayColumnInfo(true, false));
         _defaultDetailCols.put("Clinic", new DisplayColumnInfo(true, true));
 
@@ -160,7 +170,7 @@ public class SampleSearchBean
         _defaultSummaryCols.put("Visit", visitInfo);
         _defaultSummaryCols.put(StudyService.get().getSubjectColumnName(context.getContainer()), participantColInfo);
         _defaultSummaryCols.put("Available", new DisplayColumnInfo(true, false));
-        _defaultSummaryCols.put("VolumeUnits", new DisplayColumnInfo(false, true, false, simpleSpecimenTable));
+        _defaultSummaryCols.put("VolumeUnits", new DisplayColumnInfo(false, true, false, false, simpleSpecimenTable));
         _defaultSummaryCols.put("Clinic", new DisplayColumnInfo(true, true));
     }
 
@@ -184,26 +194,36 @@ public class SampleSearchBean
         return _dataRegionName;
     }
 
-    public boolean isDefaultColumn(ColumnInfo info)
+    private @Nullable DisplayColumnInfo getDisplayColumnInfo(ColumnInfo info)
     {
         Map<String, DisplayColumnInfo> defaultColumns = isDetailsView() ? _defaultDetailCols : _defaultSummaryCols;
-        DisplayColumnInfo colInfo = defaultColumns.get(info.getName());
+        return defaultColumns.get(info.getName());
+    }
+
+    public boolean isDefaultColumn(ColumnInfo info)
+    {
+        DisplayColumnInfo colInfo = getDisplayColumnInfo(info);
         return colInfo != null && colInfo.isDisplayByDefault();
     }
 
     public boolean isPickListColumn(ColumnInfo info)
     {
-        Map<String, DisplayColumnInfo> defaultColumns = isDetailsView() ? _defaultDetailCols : _defaultSummaryCols;
-        DisplayColumnInfo colInfo = defaultColumns.get(info.getName());
+        DisplayColumnInfo colInfo = getDisplayColumnInfo(info);
         return colInfo != null && colInfo.isDisplayAsPickList();
     }
 
     public List<String> getPickListValues(ColumnInfo info) throws SQLException
     {
-        Map<String, DisplayColumnInfo> defaultColumns = isDetailsView() ? _defaultDetailCols : _defaultSummaryCols;
-        DisplayColumnInfo colInfo = defaultColumns.get(info.getName());
+        DisplayColumnInfo colInfo = getDisplayColumnInfo(info);
         assert colInfo != null : info.getName() + " is not a picklist column.";
         return SampleManager.getInstance().getDistinctColumnValues(_container, _user, info, colInfo.isForceDistinctQuery(), colInfo.getOrderBy(), colInfo.getTableInfo());
+    }
+
+    public boolean shouldObfuscate(ColumnInfo info) throws SQLException
+    {
+        DisplayColumnInfo colInfo = getDisplayColumnInfo(info);
+        assert colInfo != null : info.getName() + " is not a picklist column.";
+        return colInfo.shouldObfuscate();
     }
 
     public boolean isInWebPart()

@@ -74,7 +74,15 @@ select {
 
     function populateSearchDropDowns()
     {
-        populateDropDown("participantId", 'study', studyMetadata.SubjectNounSingular, studyMetadata.SubjectColumnName, 'Any ' + studyMetadata.SubjectNounSingular, '');
+        if (LABKEY.demoMode)
+            populateDropDown("participantId", 'study', studyMetadata.SubjectNounSingular, studyMetadata.SubjectColumnName, 'Any ' + studyMetadata.SubjectNounSingular, '', function(row)
+            {
+                var value = row[studyMetadata.SubjectColumnName];
+                return { text : LABKEY.id(value), value : value };
+            });
+        else
+            populateDropDown("participantId", 'study', studyMetadata.SubjectNounSingular, studyMetadata.SubjectColumnName, 'Any ' + studyMetadata.SubjectNounSingular, '');
+
         populateDropDown('primaryType', 'study', 'SpecimenPrimaryType', 'Description', 'Any Primary Type', '');
         populateDropDown('derivativeType', 'study', 'SpecimenDerivative', 'Description', 'Any Derivative Type', '');
         populateDropDown('additiveType', 'study', 'SpecimenAdditive', 'Description', 'Any Additive Type', '');

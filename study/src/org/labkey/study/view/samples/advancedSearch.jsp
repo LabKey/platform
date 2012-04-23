@@ -120,9 +120,6 @@ This page may be used to search for <%= bean.isDetailsView() ? " individual vial
 
             for (DisplayColumn col : bean.getDisplayColumns())
             {
-                // Bit of a hack... should consider changing getPickListValues to return a Map<Key, Value> and/or get the
-                // displaycolumn to filter the values.
-                boolean obfuscate = col instanceof PtidObfuscatingDisplayColumn;
                 boolean display;
 
                 if (pass == 0)
@@ -138,6 +135,7 @@ This page may be used to search for <%= bean.isDetailsView() ? " individual vial
                     if (bean.isPickListColumn(col.getColumnInfo()))
                     {
                         List<String> pickList = bean.getPickListValues(col.getColumnInfo());
+                        boolean obfuscate = bean.shouldObfuscate(col.getColumnInfo());
         %>
                     <tr>
                         <td><%= h(col.getCaption()) %></td>
