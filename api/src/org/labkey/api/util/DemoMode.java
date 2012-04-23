@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.writer.ContainerUser;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -51,6 +52,11 @@ public class DemoMode
             return obfuscate(id);
         else
             return id;
+    }
+
+    public static boolean isDemoMode(ContainerUser cu)
+    {
+        return isDemoMode(cu.getContainer(), cu.getUser());
     }
 
     public static boolean isDemoMode(Container c, User user)
