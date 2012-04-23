@@ -397,7 +397,7 @@ public class SimpleFilter implements Filter
 
         public MultiValuedFilterClause(String colName, Collection params)
         {
-            if(params.contains("")) //params.size() == 0 ||
+            if (params.contains("")) //params.size() == 0 ||
             {
                 setIncludeNull(true);
                 params.remove("");
@@ -449,19 +449,19 @@ public class SimpleFilter implements Filter
         {
             sb.append(formatter.format(getColName()));
 
-            if(getParamVals().length == 0 && !isIncludeNull())
+            if (getParamVals().length == 0 && !isIncludeNull())
             {
                 sb.append(" has any value");
                 return;
             }
 
-            if(isNegated())
+            if (isNegated())
                 sb.append(" IS NOT ANY OF (");
             else
                 sb.append(" IS ONE OF (");
 
             //TODO: if number of values > 10, dont show each one
-            if(getParamVals().length > MAX_FILTER_VALUES_TO_DISPLAY)
+            if (getParamVals().length > MAX_FILTER_VALUES_TO_DISPLAY)
             {
                 sb.append("too many values to display)");
                 return;
@@ -477,7 +477,7 @@ public class SimpleFilter implements Filter
                 }
             }
 
-            if("".equals(sep) || isIncludeNull())
+            if ("".equals(sep) || isIncludeNull())
             {
                 sb.append(sep + "BLANK");
             }

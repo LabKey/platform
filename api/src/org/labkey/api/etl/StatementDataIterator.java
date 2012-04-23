@@ -50,9 +50,9 @@ class StatementDataIterator extends AbstractDataIterator
     protected StatementDataIterator(DataIterator data, Parameter.ParameterMap map, BatchValidationException errors)
     {
         super(errors);
-        this._data = data;
-        this._stmt = map;
-        this._errors = errors;
+        _data = data;
+        _stmt = map;
+        _errors = errors;
 
         _keyColumnInfo = new ArrayList<ColumnInfo>(Collections.nCopies(data.getColumnCount()+1,(ColumnInfo)null));
         _keyValues = new ArrayList<Object>(Collections.nCopies(data.getColumnCount()+1,null));

@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.arrays.IntegerArray;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.roles.Role;
@@ -337,24 +338,61 @@ public class Parameter
     public static class ParameterMap
     {
         PreparedStatement _stmt;
-        Integer _selectRowIdIndex = null;
+        boolean _selectRowId = false;
         Integer _selectObjectIdIndex = null;
         Integer _rowId;
         Integer _objectId;
         CaseInsensitiveHashMap<Parameter> _map;
+        SqlDialect _dialect;
 
-        public ParameterMap(PreparedStatement stmt, Collection<Parameter> parameters)
+        public ParameterMap(SqlDialect dialect, PreparedStatement stmt, Collection<Parameter> parameters)
         {
-            this(stmt, parameters, null);
+            this(dialect, stmt, parameters, null);
         }
 
-        public ParameterMap(PreparedStatement stmt, Collection<Parameter> parameters, Map<String,String> remap)
+        public ParameterMap(SqlDialect dialect, PreparedStatement stmt, Collection<Parameter> parameters, @Nullable Map<String, String> remap)
         {
-            init(stmt, parameters, remap);
+            init(dialect, stmt, parameters, remap);
         }
         
-        private void init(PreparedStatement stmt, Collection<Parameter> parameters, Map<String,String> remap)
+        /**
+         *  sql bound to constants or Parameters, compute the index array for each named Parameter
+         */
+        public ParameterMap(SqlDialect dialect, Connection conn, SQLFragment sql, Map<String, String> remap) throws SQLException
         {
+            PreparedStatement stmt = conn.prepareStatement(sql.getSQL());
+
+            IdentityHashMap<Parameter, IntegerArray> paramMap = new IdentityHashMap<Parameter,IntegerArray>();
+            List<Object> paramList = sql.getParams();
+            List<Parameter> parameters = new ArrayList<Parameter>(paramList.size());
+
+            for (int i=0 ; i<paramList.size() ; i++)
+            {
+                Object o = paramList.get(i);
+                if (!(o instanceof Parameter))
+                {
+                    new Parameter(stmt, i).setValue(o);
+                    continue;
+                }
+                Parameter p = (Parameter)o;
+                if (!paramMap.containsKey(p))
+                    paramMap.put(p, new IntegerArray());
+                paramMap.get(p).add(i+1);
+            }
+
+            for (Map.Entry<Parameter, IntegerArray> e : paramMap.entrySet())
+            {
+                e.getKey()._indexes = e.getValue().toArray(null);
+                parameters.add(e.getKey());
+            }
+
+            init(dialect, stmt, parameters, remap);
+        }
+
+
+        private void init(SqlDialect dialect, PreparedStatement stmt, Collection<Parameter> parameters, @Nullable Map<String, String> remap)
+        {
+            _dialect = dialect;
             _map = new CaseInsensitiveHashMap<Parameter>(parameters.size() * 2);
             for (Parameter p : parameters)
             {
@@ -381,42 +419,9 @@ public class Parameter
         }
 
 
-        /**
-         *  sql bound to constants or Parameters, compute the index array for each named Parameter
-         */
-        public ParameterMap(Connection conn, SQLFragment sql, Map<String,String> remap) throws SQLException
+        public void setSelectRowId(boolean selectRowId)
         {
-            PreparedStatement stmt = conn.prepareStatement(sql.getSQL());
-
-            IdentityHashMap<Parameter, IntegerArray> paramMap = new IdentityHashMap<Parameter,IntegerArray>();
-            List<Object> paramList = sql.getParams();
-            List<Parameter> parameters = new ArrayList<Parameter>(paramList.size());
-
-            for (int i=0 ; i<paramList.size() ; i++)
-            {
-                Object o = paramList.get(i);
-                if (!(o instanceof Parameter))
-                {
-                    new Parameter(stmt, i).setValue(o);
-                    continue;
-                }
-                Parameter p = (Parameter)o;
-                if (!paramMap.containsKey(p))
-                    paramMap.put(p, new IntegerArray());
-                paramMap.get(p).add(i+1);
-            }
-            for (Map.Entry<Parameter, IntegerArray> e : paramMap.entrySet())
-            {
-                e.getKey()._indexes = e.getValue().toArray(null);
-                parameters.add(e.getKey());
-            }
-            init(stmt, parameters, remap);
-        }
-
-
-        public void setRowIdIndex(Integer i)
-        {
-            _selectRowIdIndex = i;
+            _selectRowId = selectRowId;
         }
 
         public void setObjectIdIndex(Integer i)
@@ -444,24 +449,33 @@ public class Parameter
 
         public boolean execute() throws SQLException
         {
-            _stmt.execute();
+            ResultSet rs = null;
 
-            if (null == _selectObjectIdIndex && null == _selectRowIdIndex)
+            if (_selectRowId)
+                rs = _dialect.executeInsertWithResults(_stmt);
+            else
+                _stmt.execute();
+
+            if (null != rs)
+            {
+                rs.next();
+                _rowId = rs.getInt(1);
+            }
+
+            if (null == _selectObjectIdIndex)
                 return true;
 
             _stmt.getMoreResults();
-            ResultSet rs = null;
+
             try
             {
-                _rowId = null; _objectId = null;
+                _objectId = null;
+
                 rs = _stmt.getResultSet();
+
                 if (!rs.next())
                     return false;
-                if (null != _selectRowIdIndex)
-                {
-                    int id = rs.getInt(_selectRowIdIndex);
-                    _rowId = rs.wasNull() ? null : id;
-                }
+
                 if (null != _selectObjectIdIndex)
                 {
                     int id = rs.getInt(_selectObjectIdIndex);

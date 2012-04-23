@@ -1592,7 +1592,7 @@ public class Table
 
         public Map<String, Object> getRowMap()
         {
-            throw new java.lang.UnsupportedOperationException("getRowMap()");
+            throw new UnsupportedOperationException("getRowMap()");
         }
 
 
@@ -2120,7 +2120,7 @@ public class Table
         }
         sqlfDelete.append(sqlfDeleteTable);
 
-        return new Parameter.ParameterMap(conn, sqlfDelete, updatable.remapSchemaColumns());
+        return new Parameter.ParameterMap(d, conn, sqlfDelete, updatable.remapSchemaColumns());
     }
 
 

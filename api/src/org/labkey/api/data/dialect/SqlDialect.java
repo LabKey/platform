@@ -332,15 +332,6 @@ public abstract class SqlDialect
     // Note: SQLFragment and StringBuilder both implement Appendable
     public abstract void appendSelectAutoIncrement(Appendable sql, TableInfo table, String columnName);
 
-    // String version for convenience
-    @Deprecated  // Most usages assume this is a standalone executable statement, which is a bad assumption (for PostgreSQL)
-    public String appendSelectAutoIncrement(String sql, TableInfo tinfo, String columnName)
-    {
-        StringBuilder sbSql = new StringBuilder(sql);
-        appendSelectAutoIncrement(sbSql, tinfo, columnName);
-        return sbSql.toString();
-    }
-
     public abstract @Nullable ResultSet executeInsertWithResults(@NotNull PreparedStatement stmt) throws SQLException;
 
     public abstract boolean requiresStatementMaxRows();

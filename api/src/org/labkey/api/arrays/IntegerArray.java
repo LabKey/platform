@@ -15,6 +15,8 @@
  */
 package org.labkey.api.arrays;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.ArrayList;
 
 
@@ -25,61 +27,61 @@ import java.util.ArrayList;
  */
 // alternative to ArrayList<Integer>
 public class IntegerArray
-    {
+{
     private static final int ARRAY_LEN = 1024;
-    ArrayList list = new ArrayList();
+    ArrayList<int[]> list = new ArrayList<int[]>();
     int[] arrayLast;
     int lenLast = 0;
     int size = 0;
 
 
     public IntegerArray()
-        {
-        list = new ArrayList();
+    {
+        list = new ArrayList<int[]>();
         arrayLast = new int[ARRAY_LEN];
         list.add(arrayLast);
-        }
+    }
 
 
     public void add(int i)
-        {
+    {
         if (arrayLast.length <= lenLast)
-            {
+        {
             arrayLast = new int[ARRAY_LEN];
             list.add(arrayLast);
             lenLast = 0;
-            }
+        }
         arrayLast[lenLast++] = i;
         size++;
-        }
+    }
 
 
     public int get(int i)
-        {
-        return ((int[]) list.get(i / ARRAY_LEN))[i % ARRAY_LEN];
-        }
+    {
+        return list.get(i / ARRAY_LEN)[i % ARRAY_LEN];
+    }
 
 
     public int size()
-        {
+    {
         return size;
-        }
+    }
 
 
-	public int[] toArray(int[] dst)
-		{
+	public int[] toArray(@Nullable int[] dst)
+    {
     	if (null == dst || dst.length < size)
 			dst = new int[size];
 		int end=0, i=0;
 		int[] src;
 		for (; i<list.size()-1 ; i++)
-			{
-			src = (int[])list.get(i);
+        {
+			src = list.get(i);
 			System.arraycopy(src, 0, dst, end, src.length);
 			end += src.length;
-			}
-		src = (int[])list.get(i);
+        }
+		src = list.get(i);
 		System.arraycopy(src, 0, dst, end, lenLast);
 		return dst;
-		}
     }
+}

@@ -49,15 +49,6 @@ import java.util.Set;
 // identify tests that exercise the code paths that will be changed.
 public class StatementUtils
 {
-    @Deprecated
-    private static void appendSelectAutoIncrement(SqlDialect d, SQLFragment sqlf, TableInfo tinfo, String columnName)
-    {
-        String t = d.appendSelectAutoIncrement("", tinfo, columnName);
-        t = StringUtils.strip(t, ";\n\r");
-        sqlf.append(t);
-    }
-
-
     // Consider: use in other places?
     public static SQLFragment appendParameterOrVariable(SQLFragment f, SqlDialect d, boolean useVariable, Parameter p, Map<Parameter, String> names)
     {
@@ -154,11 +145,14 @@ public class StatementUtils
         Domain domain = t.getDomain();
         DomainKind domainKind = t.getDomainKind();
         DomainProperty[] properties = null;
+
         if (null != domain && null != domainKind && StringUtils.isEmpty(domainKind.getStorageSchemaName()))
         {
             properties = domain.getProperties();
+
             if (properties.length == 0)
                 properties = null;
+
             if (null != properties)
             {
                 if (!d.isPostgreSQL() && !d.isSqlServer())
@@ -219,21 +213,23 @@ public class StatementUtils
 
         List<SQLFragment> cols = new ArrayList<SQLFragment>();
         List<SQLFragment> values = new ArrayList<SQLFragment>();
-        ColumnInfo col;
+        ColumnInfo col = table.getColumn("Container");
 
-        col = table.getColumn("Container");
         if (null != col && null != user)
         {
             cols.add(new SQLFragment("Container"));
+
             if (null == containerParameter)
             {
                 containerParameter = new Parameter("container", JdbcType.VARCHAR);
 //                if (autoFillDefaultColumns && null != c)
 //                    containerParameter.setValue(c.getId(), true);
             }
+
             values.add(appendParameterOrVariable(new SQLFragment(), d, useVariables, containerParameter, parameterToVariable));
             done.add("Container");
         }
+
         if (insert)
         {
             col = table.getColumn("Owner");
@@ -258,14 +254,18 @@ public class StatementUtils
                 done.add("Created");
             }
         }
+
         ColumnInfo colModifiedBy = table.getColumn("Modified");
+
         if (autoFillDefaultColumns && null != colModifiedBy && null != user)
         {
             cols.add(new SQLFragment("ModifiedBy"));
             values.add(new SQLFragment().append(user.getUserId()));
             done.add("ModifiedBy");
         }
+
         ColumnInfo colModified = table.getColumn("Modified");
+
         if (autoFillDefaultColumns && null != colModified)
         {
             cols.add(new SQLFragment("Modified"));
@@ -315,29 +315,18 @@ public class StatementUtils
         }
 
         SQLFragment sqlfSelectIds = null;
-        Integer selectRowIdIndex = null;
+        boolean selectAutoIncrement = false;
         Integer selectObjectIdIndex = null;
-        int countReturnIds = 0;
+        int countReturnIds = 0;    // TODO: Change to a boolean, selectObjectId?
 
-        if (selectIds && (null != autoIncrementColumn || null != objectIdVar))
+        if (selectIds && null != objectIdVar)
         {
-            sqlfSelectIds = new SQLFragment("");
-            String prefix = "SELECT ";
+            if (true)
+                throw new UnsupportedOperationException("Re-selecting object ID should work but has not been tested; remove this throw and test carefully");
 
-            if (null != autoIncrementColumn)
-            {
-                appendSelectAutoIncrement(d, sqlfSelectIds, table, autoIncrementColumn.getName());
-                selectRowIdIndex = ++countReturnIds;
-                prefix = ", ";
-            }
-
-            if (null != objectIdVar)
-            {
-                Logger.getLogger(StatementUtils.class).info("Code path that selects object IDs");
-                sqlfSelectIds.append(prefix);
-                sqlfSelectIds.append(objectIdVar);
-                selectObjectIdIndex = ++countReturnIds;
-            }
+            sqlfSelectIds = new SQLFragment(";\nSELECT ");
+            sqlfSelectIds.append(objectIdVar);
+            selectObjectIdIndex = ++countReturnIds;
 
             sqlfSelectIds.append(";\n");
         }
@@ -359,13 +348,21 @@ public class StatementUtils
             }
             sqlfInsertInto.append(")\nVALUES (");
             comma = "";
+
             for (SQLFragment valueSQL : values)
             {
                 sqlfInsertInto.append(comma);
                 comma = ", ";
                 sqlfInsertInto.append(valueSQL);
             }
-            sqlfInsertInto.append(");\n");
+
+            sqlfInsertInto.append(")");
+
+            if (null != autoIncrementColumn)
+            {
+                d.appendSelectAutoIncrement(sqlfInsertInto, table, autoIncrementColumn.getName());
+                selectAutoIncrement = true;
+            }
         }
         else
         {
@@ -448,7 +445,7 @@ public class StatementUtils
             script.append(sqlfObjectProperty);
             if (null != sqlfSelectIds)
                 script.append(sqlfSelectIds);
-            ret = new Parameter.ParameterMap(conn, script, updatable.remapSchemaColumns());
+            ret = new Parameter.ParameterMap(d, conn, script, updatable.remapSchemaColumns());
         }
         else
         {
@@ -463,7 +460,7 @@ public class StatementUtils
             call.append(fnName).append("(");
             final SQLFragment drop = new SQLFragment("DROP FUNCTION " + fnName + "(");
             comma = "";
-            for (Map.Entry<Parameter,String> e : parameterToVariable.entrySet())
+            for (Map.Entry<Parameter, String> e : parameterToVariable.entrySet())
             {
                 Parameter p = e.getKey();
                 String variable = e.getValue();
@@ -507,7 +504,7 @@ public class StatementUtils
             fn.append("\nEND;\n$$ LANGUAGE plpgsql;\n");
 
             Table.execute(table.getSchema(), fn);
-            ret = new Parameter.ParameterMap(conn, call, updatable.remapSchemaColumns());
+            ret = new Parameter.ParameterMap(d, conn, call, updatable.remapSchemaColumns());
             ret.onClose(new Runnable() { @Override public void run()
             {
                 try
@@ -531,7 +528,7 @@ public class StatementUtils
 //            }
 //        }
 
-        ret.setRowIdIndex(selectRowIdIndex);
+        ret.setSelectRowId(selectAutoIncrement);
         ret.setObjectIdIndex(selectObjectIdIndex);
 
         return ret;
