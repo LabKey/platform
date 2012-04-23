@@ -1,0 +1,81 @@
+<p>
+    This is a dummy page for testing the various forms of the Measure Picker. To be removed after development is complete.
+</p>
+<p>
+    Measure picker panel: only measure columns, single select:<BR/>
+    <input type='button' onclick='showMeasureDialog(1);' value='show'/>
+    <div id="measure1div" style="color:green">Selected measure(s):</div>
+</p>
+<p>
+    Measure picker panel: all columns, multi select, can show hidden:<BR/>
+    <input type='button' onclick='showMeasureDialog(2);' value='show'/>
+    <div id="measure2div" style="color:green">Selected measure(s):</div>
+</p>
+<p>
+    CDS Measure picker panel: all columns, can show hidden:<BR/>
+    <input type='button' onclick='showMeasureDialog(3);' value='show'/>
+    <div id="measure3div" style="color:green">Selected measure(s):</div>
+</p>
+
+<script type='text/javascript'>
+    LABKEY.requiresExt4Sandbox(true);
+    LABKEY.requiresScript("study/MeasurePicker.js");
+</script>
+
+<script type='text/javascript'>
+
+var measuresDialog1;
+var measuresDialog2;
+var measuresDialog3;
+Ext.onReady(function(){
+    measuresDialog1 = Ext4.create('LABKEY.ext4.MeasuresDialog', {
+        allColumns: false,
+        multiSelect : false,
+        closeAction :'hide'
+    });
+    measuresDialog1.addListener('measuresSelected', function(recs){
+        updateMeasureSelectionDisplay(recs, 'measure1div');
+    }, this);
+
+    measuresDialog2 = Ext4.create('LABKEY.ext4.MeasuresDialog', {
+        allColumns: true,
+        canShowHidden: true,
+        multiSelect : true,
+        closeAction :'hide'
+    });
+    measuresDialog2.addListener('measuresSelected', function(recs){
+        updateMeasureSelectionDisplay(recs, 'measure2div');
+    }, this);
+
+    measuresDialog3 = Ext4.create('LABKEY.ext4.MeasuresDialog', {
+        dataViewType: LABKEY.MeasuresDataViewType.SPLIT_PANELS,
+        allColumns: true,
+        canShowHidden: true,
+        multiSelect : true,
+        closeAction :'hide'
+    });
+    measuresDialog3.addListener('measuresSelected', function(recs){
+        updateMeasureSelectionDisplay(recs, 'measure3div');
+    }, this);
+
+});
+
+function updateMeasureSelectionDisplay(recs, divId)
+{
+    var display = "Selected measure(s): | ";
+    for (var i = 0; i < recs.length; i++)
+        display += recs[i].data.label + " | ";
+    document.getElementById(divId).innerHTML = display;
+}
+
+function showMeasureDialog(number)
+{
+    if (number == 1)
+	    measuresDialog1.show();
+    else if (number ==2)
+	    measuresDialog2.show();
+    else if (number ==3)
+	    measuresDialog3.show();    
+}
+
+</script>

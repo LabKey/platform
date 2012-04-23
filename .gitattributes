@@ -3286,6 +3286,7 @@ study/webapp/sampleRequest.js -text
 study/webapp/study/DataViewPropertiesPanel.js -text
 study/webapp/study/DataViewsPanel.css -text
 study/webapp/study/DataViewsPanel.js -text
+study/webapp/study/MeasurePicker.js -text
 study/webapp/study/ParticipantFilterPanel.js -text
 study/webapp/study/ParticipantGroup.js -text
 study/webapp/study/ParticipantReport.js -text
@@ -3553,6 +3554,7 @@ visualization/lib/batik-1.7-all.jar -text
 visualization/module.properties -text
 visualization/resources/config/module.xml -text
 visualization/resources/readme.txt -text
+visualization/resources/views/measurePickerTest.html -text
 visualization/resources/web/protovis/protovis-d3.2.js -text
 visualization/resources/web/protovis/protovis-r3.2.js -text
 visualization/resources/web/vis/ChartComponent.js -text

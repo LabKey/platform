@@ -1127,7 +1127,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
     // show the select measures dialog
     selectMeasures : function(handler, show, scope) {
         if (!this.measuresDialog) {
-            this.measuresDialog = new LABKEY.vis.MeasuresDialog({
+            this.measuresDialog = Ext4.create('LABKEY.ext4.MeasuresDialog', {
                 multiSelect : true,
                 closeAction :'hide',
                 filter : LABKEY.Visualization.Filter.create({schemaName: 'study', queryType: LABKEY.Visualization.Filter.QueryType.BUILT_IN}),
@@ -1183,8 +1183,13 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                             );
                 }, this));
             }, this);
-            if (mp.getSelectionModel().grid) // might not be initialized yet
-                mp.getSelectionModel().selectRows(idArray);
+            
+            if (mp.getSelectionModel()) // might not be initialized yet
+            {
+                Ext4.each(idArray, function(id) {
+                    mp.getSelectionModel().select(id, true);    
+                });
+            }
         }
     },
 

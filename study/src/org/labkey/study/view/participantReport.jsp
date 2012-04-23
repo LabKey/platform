@@ -60,7 +60,7 @@
     LABKEY.requiresExt4Sandbox(true);
     LABKEY.requiresScript("TemplateHelper.js");
     LABKEY.requiresScript("study/ParticipantReport.js");
-    LABKEY.requiresScript("vis/measuresPanel.js");
+    LABKEY.requiresScript("study/MeasurePicker.js");
 </script>
 
 <script type="text/javascript">
