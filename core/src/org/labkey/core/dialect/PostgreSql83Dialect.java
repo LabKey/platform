@@ -267,23 +267,6 @@ class PostgreSql83Dialect extends SqlDialect
         return stmt.executeQuery();
     }
 
-    @Override
-    public String appendSelectAutoIncrement(String sql, TableInfo tinfo, String columnName)
-    {
-        StringBuilder sbSql = new StringBuilder(sql);
-
-        String seq;
-
-        if (null == tinfo.getSequence())
-            seq = "SELECT CURRVAL('" + tinfo.toString() + "_" + columnName + "_seq')";
-        else
-            seq = "SELECT CURRVAL('" + tinfo.getSequence() + "')";
-
-        appendStatement(sbSql, seq);
-
-        return sbSql.toString();
-    }
-
     public boolean requiresStatementMaxRows()
     {
         return false;
