@@ -2119,9 +2119,7 @@ function d3_scale_linear(domain, range, interpolate, clamp) {
 
   scale.domain = function(x) {
     if (!arguments.length) return domain;
-//    domain = x.map(Number);
-//      domain = $.map(x, Number);
-      domain = Ext.Array.map(x, Number);
+    domain = x.map(Number);
     return rescale();
   };
 
@@ -2251,8 +2249,7 @@ function d3_scale_log(linear, log) {
     if (!arguments.length) return linear.domain().map(pow);
     log = x[0] < 0 ? d3_scale_logn : d3_scale_logp;
     pow = log.pow;
-//    linear.domain(x.map(log));
-    linear.domain(Ext.Array.map(x,log));
+    linear.domain(x.map(log));
     return scale;
   };
 
