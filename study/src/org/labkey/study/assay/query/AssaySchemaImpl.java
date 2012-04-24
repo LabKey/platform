@@ -22,11 +22,7 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -396,7 +392,7 @@ public class AssaySchemaImpl extends AssaySchema
         }
         if (map.isEmpty())
             return;
-        col.setURL(fkse.addParent(null, map));
+        col.setURL(fkse.remapFieldKeys(null, map));
     }
 
 

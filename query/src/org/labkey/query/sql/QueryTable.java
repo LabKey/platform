@@ -342,7 +342,7 @@ public class QueryTable extends QueryRelation
     @Override
     public Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
     {
-        Set<FieldKey> fks = new HashSet<FieldKey>();
+//        Set<FieldKey> fks = new HashSet<FieldKey>();
         Set<RelationColumn> suggested = new HashSet<RelationColumn>();
 //        for (RelationColumn rc : selected)
 //        {

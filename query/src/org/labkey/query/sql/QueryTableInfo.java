@@ -106,15 +106,16 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     }
 
 
-    // TODO: fix up OORIndicator
-    // TODO: fix up MVIndicator
-    // TODO: fixup display column factories
-    // TODO: fixup multi-column foreignkeys
     public void afterConstruct()
     {
         initFieldKeyMap();
-        // fix up urls using column->RelationColumn map
-        fixupDetailsUrls();
+        for (ColumnInfo ci : getColumns())
+        {
+            Map<FieldKey, FieldKey> remap = mapFieldKeyToSiblings.get(ci.getFieldKey());
+            if (null == remap || remap.isEmpty())
+                continue;
+            ci.remapFieldKeys(null, remap);
+        }
         super.afterConstruct();
     }
 
@@ -135,22 +136,5 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
             }
         }
         mapFieldKeyToSiblings = Collections.unmodifiableMap(mapFieldKeyToSiblings);
-    }
-
-
-    protected void fixupDetailsUrls()
-    {
-        for (ColumnInfo ci : getColumns())
-        {
-            StringExpression se = ci.getURL();
-            if (!(se instanceof FieldKeyStringExpression))
-                continue;
-            FieldKeyStringExpression fkse = (FieldKeyStringExpression)se;
-            Map<FieldKey, FieldKey> remap = mapFieldKeyToSiblings.get(ci.getFieldKey());
-            if (null == remap || remap.isEmpty())
-                continue;
-            FieldKeyStringExpression remapped = fkse.addParent(null, remap);
-            ci.setURL(remapped);
-        }
     }
 }
