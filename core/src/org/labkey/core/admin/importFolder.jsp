@@ -24,10 +24,6 @@
     Container c = getViewContext().getContainer();
 %>
 
-<script type="text/javascript">
-    LABKEY.requiresExt4ClientAPI();
-</script>
-
 <form action="" name="import" enctype="multipart/form-data" method="post">
 <table cellpadding=0>
     <%=formatMissedErrorsInTable("form", 2)%>
@@ -63,79 +59,6 @@ Folder From Template" option.
 <tr>
     <td>&nbsp;</td>
 </tr>
-<tr><td class="labkey-announcement-title" align=left><span>Create Folder From Template</span></td></tr>
-<tr><td class="labkey-title-area-line"></td></tr>
-    <tr><td>
-        To populate the current folder based on a template folder that you have created somewhere on the current server,
-        select the template folder and click the "Create Folder From Template" button. From there, you will be given a set
-        of folder objects to choose from that you can use from the template folder to populate the current folder.
-    </td></tr>
-<tr>
-    <td><div id="templateSourceFolderDiv"></div></td>
-</tr>
-<tr>
-    <td><%=generateButton("Create Folder From Template", urlProvider(AdminUrls.class).getImportFolderURL(c), "return checkSourceFolderSelection();")%></td>
-</tr>
 </table>
 </form>
 
-<script type="text/javascript">
-
-    var sourceContainers = [];
-    var sourceFolderCombo;
-    Ext4.onReady(function(){
-
-        LABKEY.Security.getContainers({
-            containerPath: '/',
-            includeSubfolders: true,
-            success: getAdminContainers
-        });
-
-        // populate the combobox with the options for the template source folder
-        sourceFolderCombo = Ext4.create('Ext.form.ComboBox', {
-            itemId: 'sourceId',
-            name: 'sourceId',
-            fieldLabel: 'Select Template Folder',
-            labelWidth: 150,
-            width: 400, // TODO: get combo to resize width based on content
-            editable: false,
-            displayField: 'path',
-            valueField: 'id',
-            store: Ext4.create('Ext.data.ArrayStore', {
-                fields: ['id', 'path'],
-                data: sourceContainers
-            })
-        }).render('templateSourceFolderDiv');
-    });
-
-    function getAdminContainers(data)
-    {
-        // add the container itself to the sourceData
-        if (data.id != LABKEY.container.id && data.path != "/" && LABKEY.Security.hasPermission(data.userPermissions, LABKEY.Security.permissions.admin))
-        {
-            sourceContainers.push([data.id, data.path]);
-        }
-
-        // add the container's children to the sourceData
-        if (data.children.length > 0)
-        {
-            for (var i = 0; i < data.children.length; i++)
-                getAdminContainers(data.children[i]);
-        }
-    }
-
-    function checkSourceFolderSelection()
-    {
-        // if the template source folder is not selected return false
-        if (null == sourceFolderCombo.getValue())
-        {
-            Ext4.Msg.alert('Error', 'Template folder must be selected.');
-        }
-        else
-        {
-            window.location = LABKEY.ActionURL.buildURL('admin', 'createFromTemplate', LABKEY.ActionURL.getContainer(),  {sourceId: sourceFolderCombo.getValue()})
-        }
-        return false;
-    }
-
-</script>

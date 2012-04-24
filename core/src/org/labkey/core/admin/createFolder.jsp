@@ -21,6 +21,12 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.api.admin.FolderWriter" %>
+<%@ page import="java.util.Collection" %>
+<%@ page import="java.util.LinkedList" %>
+<%@ page import="org.labkey.core.admin.writer.FolderSerializationRegistryImpl" %>
+<%@ page import="org.labkey.api.writer.Writer" %>
+<%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AdminController.ManageFoldersForm> me = (JspView<AdminController.ManageFoldersForm>) HttpView.currentView();
@@ -52,6 +58,7 @@
         var request = new LABKEY.MultiRequest();
         var folderTypes;
         var moduleTypes;
+        var templateFolders = [];
         <%="var selectedModules = " + modulesOut + ";"%>
         <%="var hasLoaded = " + form.getHasLoaded() + ";"%>
         <%="var defaultTab = '" + form.getDefaultModule() + "';"%>
@@ -71,12 +78,29 @@
                         : (a.label < b.label) ? -1
                         : 0
                 });
+                
+                // add option for create from template
+                folderTypes.push({
+                    name: 'Template',
+                    label: 'Create From Template Folder',
+                    workbookType: false,
+                    activeModules: [],
+                    defaultModule: null,
+                    description: 'Create a new folder based on a template folder that you have created somewhere on the current server.',
+                    preferredWebParts: [],
+                    requiredWebParts: []
+                });
             }
         });
         request.add(LABKEY.Security.getModules, {
             success: function(data){
                 moduleTypes = data;
             }
+        });
+        request.add(LABKEY.Security.getContainers, {
+            containerPath: '/',
+            includeSubfolders: true,
+            success: getTemplateFolders
         });
 
         request.send(onSuccess);
@@ -152,10 +176,13 @@
                     },
                     onTypeChange: function(btn, val){
                         var parent = this.up('form');
-                        parent.down('#modules').removeAll();
+                        parent.down('#additionalTypeInfo').removeAll();
                         parent.doLayout();
                         if(val.folderType=='None'){
                             parent.renderModules();
+                        }
+                        else if (val.folderType=='Template'){
+                            parent.renderTemplateInfo();
                         }
                         parent.doLayout();
                     },
@@ -185,7 +212,7 @@
                     }()
                 },{
                     xtype: 'form',
-                    itemId: 'modules',
+                    itemId: 'additionalTypeInfo',
                     autoHeight: true,
                     border: false,
                     defaults: {
@@ -214,7 +241,7 @@
                     }
                 }],
                 renderModules: function(){
-                    var target = this.down('#modules');
+                    var target = this.down('#additionalTypeInfo');
                     target.add([
                         {
                             html: 'Default Tab:',
@@ -315,6 +342,38 @@
                     if(!hasLoaded && (!this.getForm().getValues().activeModules || !this.getForm().getValues().activeModules.length)){
                         this.getForm().findField('activeModules').setValue({activeModules: ['Portal']});
                     }
+                },
+                renderTemplateInfo : function() {
+                    var target = this.down('#additionalTypeInfo');
+                    target.add([
+                        {
+                            html: 'Choose Template Folder:',
+                            cls: 'labkey-wizard-header'
+                        },
+                        {
+                            xtype: 'combo',
+                            name: 'templateSourceId',
+                            itemId: 'sourceFolderCombo',
+                            allowBlank: false,
+                            displayField: 'path',
+                            valueField: 'id',
+                            editable: false,
+                            width: 400, 
+                            store: Ext4.create('Ext.data.ArrayStore', {
+                                fields: ['id', 'path'],
+                                data: templateFolders
+                            })
+                        },
+                        {
+                            html: 'Folder objects to copy:',
+                            cls: 'labkey-wizard-header'
+                        },
+                        {
+                            xtype: 'panel',
+                            border: false,
+                            items: folderTemplateWriters
+                        }
+                    ]);
                 }
             }).render('createFormDiv');
 
@@ -330,6 +389,51 @@
                 }
             });
         }
+
+        function getTemplateFolders(data)
+        {
+            // add the container itself to the templateFolder object if it is not the root and the user has admin perm to it
+            if (data.path != "/" && LABKEY.Security.hasPermission(data.userPermissions, LABKEY.Security.permissions.admin))
+            {
+                templateFolders.push([data.id, data.path]);
+            }
+
+            // add the container's children to the templateFolder object
+            if (data.children.length > 0)
+            {
+                for (var i = 0; i < data.children.length; i++)
+                    getTemplateFolders(data.children[i]);
+            }
+        }
+
+        var folderTemplateWriters = [];
+        <%
+            Collection<FolderWriter> writers = new LinkedList<FolderWriter>(FolderSerializationRegistryImpl.get().getRegisteredFolderWriters());
+            for (FolderWriter writer : writers)
+            {
+                String parent = writer.getSelectionText();
+                if (null != parent && writer.supportsVirtualFile())
+                {
+                    %>folderTemplateWriters.push({xtype: "checkbox", hideLabel: true, boxLabel: "<%=parent%>", name: "templateWriterTypes", itemId: "<%=parent%>", inputValue: "<%=parent%>", checked: true, objectType: "parent"});<%
+
+                    Set<Writer> children = writer.getChildren();
+                    if (null != children && children.size() > 0)
+                    {
+                        for (Writer child : children)
+                        {
+                            if (null != child.getSelectionText())
+                            {
+                                String text = child.getSelectionText();
+                                %>
+                                folderTemplateWriters.push({xtype: "checkbox", style: {marginLeft: "20px"}, hideLabel: true, boxLabel: "<%=text%>", name: "templateWriterTypes", itemId: "<%=text%>",
+                                    inputValue: "<%=text%>", checked: true, objectType: "child", parentId: "<%=parent%>"});
+                                <%
+                            }
+                        }
+                    }
+                }
+            }
+        %>
     });
 </script>
 

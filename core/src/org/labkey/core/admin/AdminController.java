@@ -499,13 +499,6 @@ public class AdminController extends SpringActionController
             return new ActionURL(FolderManagementAction.class, c);
         }
 
-        public ActionURL getCreateFromTemplateURL(Container target, Container source)
-        {
-            ActionURL url = new ActionURL(CreateFromTemplateAction.class, target);
-            url.addParameter("sourceId", source.getId());
-            return url;
-        }
-
         public ActionURL getInitialFolderSettingsURL(Container c)
         {
             return new ActionURL(SetInitialFolderSettingsAction.class, c);
@@ -3546,6 +3539,8 @@ public class AdminController extends SpringActionController
         private boolean confirmed = false;
         private boolean addAlias = false;
         private boolean recurse = false;
+        private String templateSourceId;
+        private String[] templateWriterTypes;
 
         public boolean getHasLoaded()
         {
@@ -3655,6 +3650,28 @@ public class AdminController extends SpringActionController
         public void setTarget(String target)
         {
             this.target = target;
+        }
+
+        public void setTemplateSourceId(String templateSourceId)
+        {
+            this.templateSourceId = templateSourceId;
+        }
+
+        public Container getTemplateSourceContainer()
+        {
+            if (null == templateSourceId)
+                return null;
+            return ContainerManager.getForId(templateSourceId);
+        }
+
+        public String[] getTemplateWriterTypes()
+        {
+            return templateWriterTypes;
+        }
+
+        public void setTemplateWriterTypes(String[] templateWriterTypes)
+        {
+            this.templateWriterTypes = templateWriterTypes;
         }
     }
 
@@ -3885,6 +3902,7 @@ public class AdminController extends SpringActionController
                     error.append("The parent folder already has a folder with this name.");
                 else
                 {
+                    Container c;
                     String folderType = form.getFolderType();
 
                     if (null == folderType)
@@ -3893,41 +3911,79 @@ public class AdminController extends SpringActionController
                         return false;
                     }
 
-                    FolderType type = ModuleLoader.getInstance().getFolderType(folderType);
-
-                    if (type == null)
+                    if ("Template".equals(folderType)) // Create folder from selected template
                     {
-                        errors.reject(null, "Folder type not recognized");
-                        return false;
-                    }
-
-                    String[] modules = form.getActiveModules();
-
-                    if (null == StringUtils.trimToNull(form.getFolderType()) || FolderType.NONE.getName().equals(form.getFolderType()))
-                    {
-                        if (null == modules || modules.length == 0)
+                        Container sourceContainer = form.getTemplateSourceContainer();
+                        if (null == sourceContainer)
                         {
-                            errors.reject(null, "At least one module must be selected");
+                            errors.reject(null, "Source template folder not selected");
                             return false;
                         }
-                    }
-
-                    Container c = ContainerManager.createContainer(parent, folderName, null, null, false, getUser());
-                    c.setFolderType(type, getUser());
-
-                    if (null == StringUtils.trimToNull(form.getFolderType()) || FolderType.NONE.getName().equals(form.getFolderType()))
-                    {
-                        Set<Module> activeModules = new HashSet<Module>();
-                        for (String moduleName : modules)
+                        else if (!sourceContainer.hasPermission(getUser(), AdminPermission.class))
                         {
-                            Module module = ModuleLoader.getInstance().getModule(moduleName);
-                            if (module != null)
-                                activeModules.add(module);
+                            errors.reject(null, "User does not have administrator permissions to the source container");
+                            return false;
+                        }
+                            
+                        c = ContainerManager.createContainer(parent, folderName, null, null, false, getUser());
+
+                        MemoryVirtualFile vf = new MemoryVirtualFile();
+
+                        // export objects from the source folder, then import then into the new folder
+                        FolderWriterImpl writer = new FolderWriterImpl();
+                        FolderExportContext exportCtx = new FolderExportContext(getUser(), sourceContainer, PageFlowUtil.set(form.getTemplateWriterTypes()), "new", Logger.getLogger(FolderWriterImpl.class));
+                        writer.write(sourceContainer, exportCtx, vf);
+
+                        FolderImporterImpl importer = new FolderImporterImpl();
+                        XmlObject folderXml = vf.getXmlBean("folder.xml");
+                        if (folderXml instanceof FolderDocument)
+                        {
+                            // TODO: need to include the MissingValueImporter
+
+                            FolderDocument folderDoc = (FolderDocument)folderXml;
+                            FolderImportContext importCtx = new FolderImportContext(getUser(), c, folderDoc, Logger.getLogger(FolderImporterImpl.class), vf);
+                            importer.process(null, importCtx, vf);
+                            //importer.postProcess(importCtx, vf);
+                        }
+                    }
+                    else
+                    {
+                        FolderType type = ModuleLoader.getInstance().getFolderType(folderType);
+
+                        if (type == null)
+                        {
+                            errors.reject(null, "Folder type not recognized");
+                            return false;
                         }
 
-                        c.setFolderType(FolderType.NONE, activeModules);
-                        Module defaultModule = ModuleLoader.getInstance().getModule(form.getDefaultModule());
-                        c.setDefaultModule(defaultModule);
+                        String[] modules = form.getActiveModules();
+
+                        if (null == StringUtils.trimToNull(form.getFolderType()) || FolderType.NONE.getName().equals(form.getFolderType()))
+                        {
+                            if (null == modules || modules.length == 0)
+                            {
+                                errors.reject(null, "At least one module must be selected");
+                                return false;
+                            }
+                        }
+
+                        c = ContainerManager.createContainer(parent, folderName, null, null, false, getUser());
+                        c.setFolderType(type, getUser());
+
+                        if (null == StringUtils.trimToNull(form.getFolderType()) || FolderType.NONE.getName().equals(form.getFolderType()))
+                        {
+                            Set<Module> activeModules = new HashSet<Module>();
+                            for (String moduleName : modules)
+                            {
+                                Module module = ModuleLoader.getInstance().getModule(moduleName);
+                                if (module != null)
+                                    activeModules.add(module);
+                            }
+
+                            c.setFolderType(FolderType.NONE, activeModules);
+                            Module defaultModule = ModuleLoader.getInstance().getModule(form.getDefaultModule());
+                            c.setDefaultModule(defaultModule);
+                        }
                     }
 
                     if (c.isProject())
@@ -4975,110 +5031,6 @@ public class AdminController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Experimental Features");
-        }
-    }
-
-    @RequiresPermissionClass(AdminPermission.class)
-    public class CreateFromTemplateAction extends FormViewAction<CreateFromTemplateForm>
-    {
-        Container sourceContainer;
-
-        @Override
-        public void validateCommand(CreateFromTemplateForm target, Errors errors)
-        {}
-
-        @Override
-        public ModelAndView getView(CreateFromTemplateForm form, boolean reshow, BindException errors) throws Exception
-        {
-            sourceContainer = form.getSourceContainer();
-
-            if (null == sourceContainer)
-            {
-                throw new NotFoundException("No source container found.");
-            }
-            else if (!sourceContainer.hasPermission(getUser(), AdminPermission.class))
-            {
-                throw new UnauthorizedException("User does not have administrator permissions to the source container.");
-            }
-
-            return new JspView<CreateFromTemplateForm>("/org/labkey/core/admin/createFromTemplate.jsp", form, errors);
-        }
-
-        @Override
-        public boolean handlePost(CreateFromTemplateForm form, BindException errors) throws Exception
-        {
-            Container target = getContainer();
-            Container source = form.getSourceContainer();
-            if (null == target || null == source)
-            {
-                throw new NotFoundException();
-            }
-            if (!target.hasPermission(getUser(), AdminPermission.class) || !source.hasPermission(getUser(), AdminPermission.class))
-            {
-                throw new UnauthorizedException();
-            }
-
-            MemoryVirtualFile vf = new MemoryVirtualFile();
-
-            // export objects from the source folder, then import then into the new folder
-            FolderWriterImpl writer = new FolderWriterImpl();
-            FolderExportContext exportCtx = new FolderExportContext(getUser(), source, PageFlowUtil.set(form.getTypes()), "new", Logger.getLogger(FolderWriterImpl.class));
-            writer.write(source, exportCtx, vf);
-
-            FolderImporterImpl importer = new FolderImporterImpl();
-            XmlObject folderXml = vf.getXmlBean("folder.xml");
-            if (folderXml instanceof FolderDocument)
-            {
-                // TODO: need to include the MissingValueImporter
-
-                FolderDocument folderDoc = (FolderDocument)folderXml;
-                FolderImportContext importCtx = new FolderImportContext(getUser(), target, folderDoc, Logger.getLogger(FolderImporterImpl.class), vf);
-                importer.process(null, importCtx, vf);
-                //importer.postProcess(importCtx, vf);
-            }
-
-            return true;
-        }
-
-        @Override
-        public URLHelper getSuccessURL(CreateFromTemplateForm form)
-        {
-            return PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(getContainer());
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            root.addChild("Folder Management", new AdminUrlsImpl().getFolderManagementURL(getContainer()));
-            return root.addChild("Create Folder From " + (sourceContainer != null ? sourceContainer.getPath() : ""));
-        }
-    }
-
-    public static class CreateFromTemplateForm
-    {
-        private String _sourceId;
-        private String[] _types;
-
-        public void setSourceId(String sourceId)
-        {
-            _sourceId = sourceId;
-        }
-
-        public Container getSourceContainer()
-        {
-            if (null == _sourceId)
-                return null;
-            return ContainerManager.getForId(_sourceId);
-        }
-
-        public String[] getTypes()
-        {
-            return _types;
-        }
-
-        public void setTypes(String[] types)
-        {
-            _types = types;
         }
     }
 }

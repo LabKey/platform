@@ -304,14 +304,13 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
                 flex: 1,
                 border: false,
                 stripeRows : true,
-                selModel : Ext4.create('Ext.selection.CheckboxModel', {headerWidth: 10}),
+                selModel : Ext4.create('Ext.selection.CheckboxModel'),
                 multiSelect: true,
-                forceFit: true,
                 bubbleEvents : ['viewready'],
                 columns: [
-                    {header:'Dataset', dataIndex:'queryName'},
-                    {header:'Measure', dataIndex:'label'},
-                    {header:'Description', dataIndex:'description', cls : 'normal-wrap', renderer : ttRenderer}
+                    {header:'Dataset', dataIndex:'queryName', flex: 2},
+                    {header:'Measure', dataIndex:'label', flex: 2},
+                    {header:'Description', dataIndex:'description', cls : 'normal-wrap', renderer : ttRenderer, flex: 3}
                 ]
             });
         }
@@ -322,11 +321,10 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
                 flex: 1,
                 border: false,
                 multiSelect: false,
-                forceFit: true,
                 columns: [
-                    {header:'Dataset', dataIndex:'queryName'},
-                    {header:'Measure', dataIndex:'label'},
-                    {header:'Description', dataIndex:'description', cls : 'normal-wrap', renderer : ttRenderer}
+                    {header:'Dataset', dataIndex:'queryName', flex: 2},
+                    {header:'Measure', dataIndex:'label', flex: 2},
+                    {header:'Description', dataIndex:'description', cls : 'normal-wrap', renderer : ttRenderer, flex: 3}
                 ],
                 listeners: {
                     itemdblclick: function (view, record, item, index, event){
@@ -649,6 +647,8 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
             }),
             flex: 1,
             hideHeaders: true,
+            enableColumnHide: false,
+            enableColumnResize: false,
             stripeRows: false,
             border: false,
             forceFit: true,
@@ -702,7 +702,6 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
             stripeRows : true,
             border: false,
             selModel : Ext4.create('Ext.selection.CheckboxModel', {
-                headerWidth: 10,
                 checkOnly: true,
                 listeners: {
                     select: this.onMeasureSelect,
@@ -713,10 +712,11 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
             flex: 1,
             hidden: true, // starts hidden until a source query is chosen
             hideHeaders: true,
+            enableColumnHide: false,
+            enableColumnResize: false,
             multiSelect: true,
-            forceFit: true,
             bubbleEvents : ['viewready'],
-            columns: [{header: 'Measure', dataIndex: 'label'}]
+            columns: [{header: 'Measure', dataIndex: 'label', flex: 1}]
         });
 
         this.measuresGrid.getSelectionModel().on('selectionchange', function(selModel) {
@@ -821,7 +821,6 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
             this.measuresGrid.getSelectionModel().select(measure, true, true);
         }, this);
 
-
         this.getEl().unmask();
 
         // enable the measure panel and show the grid
@@ -829,24 +828,28 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
         this.measuresGrid.show();
     },
 
-    onMeasureSelect : function(selModel, record, index) {
-        record.set("selected", true);
-        record.commit(); // to remove the dirty state
-        this.selectedMeasures.push(record);
+    onMeasureSelect : function(selModel, record, ix) {
+        var index = this.getSelectedRecordIndex(record);
+        if (index == -1)
+        {
+            record.set("selected", true);
+            record.commit(); // to remove the dirty state
+            this.selectedMeasures.push(record);
 
-        this.updateSourcesSelectionEntry();
+            this.updateSourcesSelectionEntry();
+        }
     },
 
-    onMeasureDeselect : function(selModel, record, index) {
+    onMeasureDeselect : function(selModel, record, ix) {
         var index = this.getSelectedRecordIndex(record);
         if (index > -1)
         {
             record.set("selected", false);
             record.commit(); // to remove the dirty state
             this.selectedMeasures.splice(index, 1);
-        }
 
-        this.updateSourcesSelectionEntry();
+            this.updateSourcesSelectionEntry();
+        }
     },
 
     updateSourcesSelectionEntry : function() {
