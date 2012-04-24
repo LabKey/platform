@@ -191,9 +191,9 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
 
 
     @Override
-    public DetailsURL addParent(FieldKey parent, Map<FieldKey, FieldKey> remap)
+    public DetailsURL remapFieldKeys(FieldKey parent, Map<FieldKey, FieldKey> remap)
     {
-        DetailsURL copy = (DetailsURL)super.addParent(parent, remap);
+        DetailsURL copy = (DetailsURL)super.remapFieldKeys(parent, remap);
         // copy changes backwards
         copy._parsedUrl.setRawQuery(copy._source);
         copy._url = copy._parsedUrl;

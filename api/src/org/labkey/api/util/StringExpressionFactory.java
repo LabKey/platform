@@ -486,11 +486,13 @@ public class StringExpressionFactory
         /**
          * Used to fix up column names when a table is referred to via a lookup.
          * E.g. consider column lk in table A, which joins to pk in table B
+         * NOTE: original StringExpression is unchanged, it is cloned and the clone is modified
          *
-         * remap    pk -> fk
-         * parent   title -> lk/title
+         * @param parent   title -> lk/title
+         * @param remap    pk -> fk
+         * @return clone of original StringExpressions with updated fieldkey substitutions
          */
-        public FieldKeyStringExpression addParent(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
+        public FieldKeyStringExpression remapFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
         {
             FieldKeyStringExpression clone = this.clone();
             StringBuilder source = new StringBuilder();
@@ -695,7 +697,7 @@ public class StringExpressionFactory
             m.put(FieldKey.fromParts("A","title"), "title one");
             Map<FieldKey,FieldKey> remap = new HashMap<FieldKey, FieldKey>();
             remap.put(new FieldKey(null,"rowid"), new FieldKey(null,"lookup"));
-            FieldKeyStringExpression lookup = fkse.addParent(new FieldKey(null, "A"), remap);
+            FieldKeyStringExpression lookup = fkse.remapFieldKeys(new FieldKey(null, "A"), remap);
             assertEquals("details.view?id=5&title=title%20one", lookup.eval(m));
         }
     }

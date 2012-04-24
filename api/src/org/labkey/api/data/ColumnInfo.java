@@ -21,6 +21,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
@@ -36,6 +37,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpressionFactory.FieldKeyStringExpression;
 import org.labkey.data.xml.ColumnType;
 
 import java.beans.Introspector;
@@ -340,14 +342,14 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
      * copyURLFrom(col, "Discussion", null) --> "?id=${discussion/RowId}&title=${discussion/Title}
      * copyURLFrom(Col, null, {("RowId","Run")}) --> "?id=${Run}&title=${Title}
      */
-    public void copyURLFrom(ColumnInfo col, FieldKey parent, Map<FieldKey,FieldKey> remap)
+    public void copyURLFrom(ColumnInfo col, @Nullable FieldKey parent, @Nullable Map<FieldKey,FieldKey> remap)
     {
         checkLocked();
         StringExpression url = col.getURL();
         if (null != url)
         {
-            if ((null != parent || null != remap) && url instanceof StringExpressionFactory.FieldKeyStringExpression)
-                url = ((StringExpressionFactory.FieldKeyStringExpression)url).addParent(parent, remap);
+            if ((null != parent || null != remap) && url instanceof FieldKeyStringExpression)
+                url = ((FieldKeyStringExpression)url).remapFieldKeys(parent, remap);
             else
                 url = url.copy();
             setURL(url);
@@ -361,12 +363,12 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         checkLocked();
         StringExpression url = col.getURL();
-        if (url instanceof StringExpressionFactory.FieldKeyStringExpression)
+        if (url instanceof FieldKeyStringExpression)
         {
-            StringExpressionFactory.FieldKeyStringExpression fkse = (StringExpressionFactory.FieldKeyStringExpression)url;
+            FieldKeyStringExpression fkse = (FieldKeyStringExpression)url;
             if (fkse.validateFieldKeys(remap.keySet()))
             {
-                StringExpression mapped = (fkse).addParent(null, remap);
+                StringExpression mapped = (fkse).remapFieldKeys(null, remap);
                 setURL(mapped);
             }
         }
@@ -1429,7 +1431,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     }
 
 
-    public JdbcType getJdbcType()
+    public @NotNull JdbcType getJdbcType()
     {
         if (null == jdbcType && null != sqlTypeName)
         {
@@ -1621,6 +1623,26 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         return validators;
     }
+
+
+    // TODO: fix up OORIndicator
+    // TODO: fix up MVIndicator
+    // TODO: fixup display column factories
+    // TODO: fixup multi-column foreignkeys
+
+    public void remapFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
+    {
+        checkLocked();
+
+        // URL
+        StringExpression se = getURL();
+        if (se instanceof FieldKeyStringExpression)
+        {
+            FieldKeyStringExpression remapped = ((FieldKeyStringExpression)se).remapFieldKeys(parent, remap);
+            setURL(remapped);
+        }
+    }
+
 
 
 
