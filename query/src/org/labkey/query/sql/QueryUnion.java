@@ -28,9 +28,11 @@ import org.labkey.data.xml.ColumnType;
 import org.labkey.query.sql.antlr.SqlBaseParser;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class QueryUnion extends QueryRelation
 {
@@ -366,6 +368,7 @@ public class QueryUnion extends QueryRelation
 		return sb.toString();
     }
 
+
     @Override
     public void setContainerFilter(ContainerFilter containerFilter)
     {
@@ -374,6 +377,14 @@ public class QueryUnion extends QueryRelation
             queryRelation.setContainerFilter(containerFilter);
         }
     }
+
+
+    @Override
+    public Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
+    {
+        return Collections.emptySet();
+    }
+
 
     class UnionColumn extends RelationColumn
     {

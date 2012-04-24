@@ -106,6 +106,10 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     }
 
 
+    // TODO: fix up OORIndicator
+    // TODO: fix up MVIndicator
+    // TODO: fixup display column factories
+    // TODO: fixup multi-column foreignkeys
     public void afterConstruct()
     {
         initFieldKeyMap();
