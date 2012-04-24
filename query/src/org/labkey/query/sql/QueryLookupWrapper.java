@@ -266,7 +266,7 @@ public class QueryLookupWrapper extends QueryRelation
     public Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
     {
         // TODO handle lookup columns
-        TreeSet<RelationColumn> unwrapped = new TreeSet<RelationColumn>();
+        HashSet<RelationColumn> unwrapped = new HashSet<RelationColumn>();
         for (RelationColumn rc : selected)
         {
             if (rc instanceof PassThroughColumn)
