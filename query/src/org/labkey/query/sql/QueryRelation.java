@@ -33,6 +33,7 @@ import org.labkey.data.xml.ColumnType;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: matthewb
@@ -157,6 +158,9 @@ public abstract class QueryRelation
     }
 
     public abstract void setContainerFilter(ContainerFilter containerFilter);
+
+    public abstract Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected);
+
 
     /**
      * Why RelationColumn??

@@ -262,6 +262,20 @@ public class QueryLookupWrapper extends QueryRelation
     }
 
 
+    @Override
+    public Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
+    {
+        // TODO handle lookup columns
+        TreeSet<RelationColumn> unwrapped = new TreeSet<RelationColumn>();
+        for (RelationColumn rc : selected)
+        {
+            if (rc instanceof PassThroughColumn)
+                unwrapped.add(((PassThroughColumn)rc)._wrapped);
+        }
+        return _source.getSuggestedColumns(unwrapped);
+    }
+
+
     private static abstract class _WrapperColumn extends RelationColumn
     {
         final QueryRelation _table;

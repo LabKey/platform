@@ -16,6 +16,7 @@
 package org.labkey.query.sql;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
@@ -28,11 +29,15 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.data.xml.ColumnType;
 
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -46,7 +51,7 @@ public class QueryTable extends QueryRelation
 {
     final AliasManager _aliasManager;
     final TableInfo _tableInfo;
-    final TreeMap<FieldKey,RelationColumn> _selectedColumns = new TreeMap<FieldKey,RelationColumn>();
+    final TreeMap<FieldKey,TableColumn> _selectedColumns = new TreeMap<FieldKey,TableColumn>();
     String _innerAlias;
 
     public QueryTable(Query query, QuerySchema schema, TableInfo table, String alias)
@@ -79,13 +84,20 @@ public class QueryTable extends QueryRelation
     }
 
 
-    RelationColumn getColumn(String name)
+    @Override
+    RelationColumn getColumn(@NotNull String name)
     {
-        FieldKey k = new FieldKey(null, name);
-        RelationColumn ret = _selectedColumns.get(k);
-        if (null != ret)
+        return getColumn(new FieldKey(null, name));
+    }
+
+
+    /* ONLY for one part names */
+    private RelationColumn getColumn(@NotNull FieldKey k)
+    {
+        TableColumn ret = _selectedColumns.get(k);
+        if (null != ret || k.getParent() != null)
             return ret;
-        ColumnInfo ci = _tableInfo.getColumn(name);
+        ColumnInfo ci = _tableInfo.getColumn(k.getName());
         if (ci == null)
             return null;
         ret = new TableColumn(k, ci);
@@ -110,14 +122,14 @@ public class QueryTable extends QueryRelation
     }
     
 
-    RelationColumn getLookupColumn(RelationColumn parentRelCol, String name)
+    RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull String name)
     {
         assert parentRelCol instanceof TableColumn;
         assert parentRelCol.getTable() == this;
 
         TableColumn parent = (TableColumn)parentRelCol;
         FieldKey k = new FieldKey(parent._key, name);
-        RelationColumn ret = _selectedColumns.get(k);
+        TableColumn ret = _selectedColumns.get(k);
         if (null != ret)
             return ret;
         if (parent._col.getFk() == null)
@@ -131,7 +143,7 @@ public class QueryTable extends QueryRelation
     }
 
 
-    RelationColumn getLookupColumn(RelationColumn parentRelCol, ColumnType.Fk fk, String name)
+    RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull ColumnType.Fk fk, @NotNull String name)
     {
         assert parentRelCol instanceof TableColumn;
         assert parentRelCol.getTable() == this;
@@ -144,7 +156,7 @@ public class QueryTable extends QueryRelation
             return null;
 
         FieldKey k = new FieldKey(parent._key, name);
-        RelationColumn ret = _selectedColumns.get(k);
+        TableColumn ret = _selectedColumns.get(k);
         if (null != ret)
             return ret;
 
@@ -162,7 +174,7 @@ public class QueryTable extends QueryRelation
     {
         SqlDialect d = getSchema().getDbSchema().getSqlDialect();
         String gttp = null;
-        try { gttp = d.getGlobalTempTablePrefix(); } catch (UnsupportedOperationException x) { }
+        try { gttp = d.getGlobalTempTablePrefix(); } catch (UnsupportedOperationException x) { /* */ }
 
         if (StringUtils.isEmpty(name))
         {
@@ -237,6 +249,7 @@ public class QueryTable extends QueryRelation
         FieldKey _key;
         ColumnInfo _col;
         String _alias;
+        boolean _setHidden = false;
 
         TableColumn(FieldKey key, ColumnInfo col)
         {
@@ -277,7 +290,7 @@ public class QueryTable extends QueryRelation
             return QueryTable.this;
         }
 
-        public JdbcType getJdbcType()
+        public @NotNull JdbcType getJdbcType()
         {
             return _col.getJdbcType();
         }
@@ -288,6 +301,8 @@ public class QueryTable extends QueryRelation
             // always copy format, we don't care about preserving set/unset-ness
             to.setFormat(_col.getFormat());
             to.copyURLFrom(_col, null, null);
+            if (this._setHidden)
+                to.setHidden(true);
 
             if (null == _mapOutputColToTableColumn)
             {
@@ -308,6 +323,59 @@ public class QueryTable extends QueryRelation
             ((ContainerFilterable) _tableInfo).setContainerFilter(containerFilter);
         }
     }
+
+
+    private void addSuggestedColumn(Set<RelationColumn> suggested, FieldKey k)
+    {
+        boolean existed = _selectedColumns.containsKey(k);
+        TableColumn tc = (TableColumn)getColumn(k);
+        if (null == tc)
+            return;
+        if (!existed)
+            tc._setHidden = true;
+        suggested.add(tc);
+    }
+
+
+    // CONSIDER: should we autoAdd the suggested columns?
+    // we are currently because of the getColumn() call
+    @Override
+    public Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
+    {
+        Set<FieldKey> fks = new HashSet<FieldKey>();
+        Set<RelationColumn> suggested = new HashSet<RelationColumn>();
+//        for (RelationColumn rc : selected)
+//        {
+//            if (!(rc instanceof TableColumn) || ((TableColumn)rc).getTable()  != this)
+//                throw new IllegalArgumentException("Wrong column passed to getSuggestedColumn(): " + rc.getAlias());
+//            TableColumn tc = (TableColumn)rc;
+//            fks.add(tc._key);
+//        }
+        for (RelationColumn rc : selected)
+        {
+            TableColumn tc = (TableColumn)rc;
+            FieldKey fk = tc._col.getFieldKey();
+            // TODO not handling lookup columns yet
+            if (fk.getParent()  != null)
+                continue;
+            if (null != tc._col.getMvColumnName())
+                addSuggestedColumn(suggested, new FieldKey(null, tc._col.getMvColumnName()));
+            StringExpression se = tc._col.getURL();
+            if (se instanceof StringExpressionFactory.FieldKeyStringExpression)
+            {
+                Set<FieldKey> keys = ((StringExpressionFactory.FieldKeyStringExpression) se).getFieldKeys();
+                for (FieldKey key : keys)
+                {
+                    if (key.getParent() != null)
+                        continue;
+                    addSuggestedColumn(suggested, key);
+                }
+            }
+        }
+        suggested.removeAll(selected);
+        return suggested;
+    }
+
 
 //    // an unwrapped lookup column
 //    class LookupColumnInfoColumn extends TableColumn

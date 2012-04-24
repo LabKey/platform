@@ -47,6 +47,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -655,16 +656,25 @@ public class QueryPivot extends QueryRelation
         return sql;
     }
 
+
     @Override
     String getQueryText()
     {
         return null;
     }
 
+
     @Override
     public void setContainerFilter(ContainerFilter containerFilter)
     {
         _from.setContainerFilter(containerFilter);
+    }
+
+
+    @Override
+    public Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
+    {
+        return Collections.emptySet();
     }
 
 

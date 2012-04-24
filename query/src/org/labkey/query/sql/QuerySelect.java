@@ -15,6 +15,7 @@
  */
 package org.labkey.query.sql;
 
+import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -43,14 +44,17 @@ import org.labkey.query.design.QueryDocument;
 import org.labkey.query.sql.antlr.SqlBaseParser;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 
 public class QuerySelect extends QueryRelation
@@ -971,6 +975,9 @@ groupByLoop:
      */
     public QueryTableInfo getTableInfo()
     {
+        Set<RelationColumn> set = new HashSet<RelationColumn>(_columns.values());
+        getSuggestedColumns(set);
+
         final SQLFragment sql = _getSql(true);
         if (null == sql)
             return null;
@@ -1374,6 +1381,48 @@ groupByLoop:
         }
     }
 
+
+    @Override
+    public Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
+    {
+        if (this.isAggregate() || null != this._distinct)
+            return Collections.emptySet();
+
+        MultiHashMap<QueryRelation, RelationColumn> maps = new MultiHashMap<QueryRelation, RelationColumn>();
+        Set<RelationColumn> ret = new HashSet<RelationColumn>();
+
+        for (SelectColumn sc : _columns.values())
+        {
+            if (null == sc._field)
+                continue;
+            QExpr expr = sc.getResolvedField();
+            if (!(expr instanceof QField))
+                continue;
+            QField field = (QField)expr;
+            if (null == field.getTable() || null == field.getRelationColumn())
+                continue;
+            maps.put(field.getTable(), field.getRelationColumn());
+        }
+
+        for (Map.Entry<QueryRelation, Collection<RelationColumn>> e : maps.entrySet())
+        {
+            IdentityHashMap<RelationColumn,RelationColumn> h = new IdentityHashMap<RelationColumn,RelationColumn>();
+            for (RelationColumn rc : e.getValue())
+                h.put(rc, rc);
+            Set<RelationColumn> suggestedColumns = e.getKey().getSuggestedColumns(h.keySet());
+            if (null == suggestedColumns) suggestedColumns = Collections.emptySet();
+            for (RelationColumn s : suggestedColumns)
+            {
+                QField field = new QField(s, null);
+                SelectColumn selectColumn = new SelectColumn(field);
+                this._columns.put(selectColumn.getFieldKey(), selectColumn);
+                ret.add(selectColumn);
+            }
+        }
+        return ret;
+    }
+
+
     RelationColumn getLookupColumn(RelationColumn parentRelCol, ColumnType.Fk fk, String name)
     {
         assert parentRelCol instanceof SelectColumn;
@@ -1579,6 +1628,12 @@ groupByLoop:
             if (null == _resolved)
                 _resolved = resolveFields(getField(), null);
             return _resolved;
+        }
+
+        @Override
+        public String toString()
+        {
+            return super.toString() + " alias: " + this.getAlias();
         }
     }
 }
