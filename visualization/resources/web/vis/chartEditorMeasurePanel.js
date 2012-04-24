@@ -519,7 +519,7 @@ LABKEY.vis.ChartEditorMeasurePanel = Ext.extend(Ext.FormPanel, {
             height:550,
             modal: true,
             closeAction:'hide',
-            items: new LABKEY.vis.MeasuresPanel({
+            items: new LABKEY.vis.MeasuresPanel({ // TODO: when the Time chart is upgraded to Ext4, use the Ext4 Measure Picker
                 hideDemographicMeasures: true,
                 axis: [{
                     multiSelect: false,

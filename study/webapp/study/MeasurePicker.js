@@ -300,6 +300,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
         if (this.multiSelect)
         {
             this.view = Ext4.create('Ext.grid.GridPanel', {
+                cls: 'measuresGridPanel', // for selenium test usage                
                 store: this.measuresStore,
                 flex: 1,
                 border: false,
