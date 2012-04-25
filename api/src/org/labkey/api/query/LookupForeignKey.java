@@ -158,9 +158,9 @@ abstract public class LookupForeignKey extends AbstractForeignKey
 
             // if the URL only substitutes the PK we can rewrite as FK (does the DisplayColumn handle when the join fails?)
             if (f.validateFieldKeys(Collections.singleton(columnKey)))
-                rewrite = f.addParent(null, Collections.singletonMap(columnKey, parent.getFieldKey()));
+                rewrite = f.remapFieldKeys(null, Collections.singletonMap(columnKey, parent.getFieldKey()));
             else
-                rewrite = f.addParent(parent.getFieldKey(), null);
+                rewrite = f.remapFieldKeys(parent.getFieldKey(), null);
             return rewrite;
         }
         return null;
