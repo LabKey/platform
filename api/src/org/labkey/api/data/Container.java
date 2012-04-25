@@ -361,6 +361,25 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return _workbook;
     }
 
+    Boolean hasWorkbookChildren = null;
+
+    public synchronized boolean hasWorkbookChildren()
+    {
+        if (null == hasWorkbookChildren)
+        {
+            hasWorkbookChildren = false;
+            for (Container ch : getChildren())
+            {
+                if (ch.isWorkbook())
+                {
+                    hasWorkbookChildren = true;
+                    break;
+                }
+            }
+        }
+        return hasWorkbookChildren;
+    }
+
     public void setWorkbook(boolean workbook)
     {
         _workbook = workbook;

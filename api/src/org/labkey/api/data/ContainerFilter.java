@@ -110,6 +110,15 @@ public abstract class ContainerFilter
             return new SQLFragment("1 = 0");
         }
 
+        if (ids.size() == 1)
+        {
+            Container first = ContainerManager.getForId(ids.iterator().next());
+            if (null == first)
+                return new SQLFragment("1 = 0");
+            if (!first.hasWorkbookChildren())
+                return new SQLFragment(containerColumnSQL).append("=").append("'").append(first.getId()).append("'");
+        }
+
         SQLFragment result = new SQLFragment(containerColumnSQL);
         result.append(" IN (SELECT c.EntityId FROM ");
         result.append(CoreSchema.getInstance().getTableInfoContainers(), "c");
