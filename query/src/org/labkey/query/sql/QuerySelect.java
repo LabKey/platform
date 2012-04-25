@@ -18,7 +18,9 @@ package org.labkey.query.sql;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
@@ -864,7 +866,7 @@ groupByLoop:
     /*
      * Return the result of replacing field names in the expression with QField objects.
      */
-    QExpr resolveFields(QExpr expr, QNode parent)
+    QExpr resolveFields(QExpr expr, @Nullable QNode parent)
     {
         if (expr instanceof QQuery)
         {
@@ -904,7 +906,7 @@ groupByLoop:
         }
 
         QExpr ret = (QExpr) expr.clone();
-		for (QNode child : expr.children())
+        for (QNode child : expr.children())
         {
             //
             if (child == methodName)
@@ -975,6 +977,11 @@ groupByLoop:
     public QueryTableInfo getTableInfo()
     {
         Set<RelationColumn> set = new HashSet<RelationColumn>(_columns.values());
+
+        resolveFields();
+        if (getParseErrors().size() != 0)
+            return null;
+
         getSuggestedColumns(set);
 
         final SQLFragment sql = _getSql(true);
@@ -1009,27 +1016,85 @@ groupByLoop:
     }
 
 
+    boolean _resolved = false;
+
+    public void resolveFields()
+    {
+        if (_resolved)
+            return;
+        _resolved = true;
+
+        if (getParseErrors().size() != 0)
+            return;
+
+        declareFields();
+        if (getParseErrors().size() != 0)
+            return;
+
+//        SqlDialect dialect = getSqlDialect();
+
+        CaseInsensitiveHashSet aliasSet = new CaseInsensitiveHashSet();
+
+        for (SelectColumn col : _columns.values())
+        {
+            aliasSet.add(col.getAlias());
+            col.getResolvedField();
+        }
+        if (getParseErrors().size() != 0)
+            return;
+
+        for (QJoinOrTable qt : _parsedJoins)
+        {
+            if (qt instanceof QJoin)
+            {
+                if (null != ((QJoin)qt)._on)
+                    resolveFields(((QJoin)qt)._on, null);
+            }
+            else if (qt instanceof QTable)
+            {
+                if (((QTable)qt).getQueryRelation() instanceof QuerySelect)
+                    ((QuerySelect)((QTable)qt).getQueryRelation()).resolveFields();
+            }
+        }
+
+        if (_where != null)
+            for (QNode expr : _where.children())
+                resolveFields((QExpr)expr, null);
+
+        if (_groupBy != null)
+        {
+            for (QNode expr : _groupBy.children())
+                resolveFields((QExpr)expr, _groupBy);
+        }
+        if (_having != null)
+        {
+            for (QNode expr : _having.children())
+                resolveFields((QExpr)expr, null);
+        }
+        if (_orderBy != null)
+        {
+            for (Map.Entry<QExpr, Boolean> entry : _orderBy.getSort())
+            {
+                QExpr expr = entry.getKey();
+                if (!(expr instanceof QIdentifier && aliasSet.contains(expr.getTokenText())))
+                    resolveFields(expr, _orderBy);
+            }
+        }
+    }
+
+
     public SQLFragment getSql()
     {
+        resolveFields();
+        if (getParseErrors().size() != 0)
+            return null;
+
         return _getSql(false);
     }
 
 
-    /**
-     * TODO It would be nice to do resolveFields() in a separate pass.
-     * Some errors could be caught before _getSql() is called.
-     * @param selectAll
-     * @return
-     */
     public SQLFragment _getSql(boolean selectAll)
     {
-        if (getParseErrors().size() != 0)
-            return null;
-
-        declareFields();
-        if (getParseErrors().size() != 0)
-            return null;
-
         SqlBuilder sql = new SqlBuilder(_schema.getDbSchema());
 
         if (null == _distinct)
@@ -1384,6 +1449,11 @@ groupByLoop:
     @Override
     public Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
     {
+        resolveFields();
+
+        if (!getParseErrors().isEmpty())
+            return Collections.emptySet();
+
         if (this.isAggregate() || null != this._distinct)
             return Collections.emptySet();
 
