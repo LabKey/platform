@@ -16,18 +16,30 @@
 package org.labkey.api.data;
 
 import org.labkey.api.collections.NamedObjectList;
+import org.labkey.api.query.FieldKey;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: kevink
  * Date: Nov 29, 2007 5:30:26 PM
  */
-public abstract class AbstractForeignKey implements ForeignKey
+public abstract class AbstractForeignKey implements ForeignKey, Cloneable
 {
     protected String _lookupSchemaName;
     protected String _tableName;
     protected String _columnName;
+
+    // Set of additional FieldKeys that query should select to make the join successful.
+    private Set<FieldKey> _suggestedFields;
+
+    // Map original FieldKey to query's remapped FieldKey.
+    private Map<FieldKey, FieldKey> _remappedFields;
 
     protected AbstractForeignKey()
     {
@@ -129,4 +141,68 @@ public abstract class AbstractForeignKey implements ForeignKey
         return lookupTable.getSelectList(getLookupColumnName());
     }
 
+    @Override
+    public ForeignKey remapFieldKeys(FieldKey parent, Map<FieldKey, FieldKey> mapping)
+    {
+        assert _remappedFields == null : "Already remapped ForeignKey.";
+
+        Set<FieldKey> suggested = getSuggestedColumns();
+        if (suggested == null || suggested.isEmpty())
+            return null;
+
+        // Create a subset of the FieldKey mapping for only the suggested columns
+        Map<FieldKey, FieldKey> remappedSuggested = new HashMap<FieldKey, FieldKey>(suggested.size());
+        for (FieldKey originalField : suggested)
+        {
+            FieldKey remappedField = mapping.get(originalField);
+            // XXX: add the original column name to the remapped suggested columns if it can't be found?
+            if (remappedField == null)
+                remappedField = originalField;
+            remappedSuggested.put(originalField, remappedField);
+        }
+
+        try
+        {
+            AbstractForeignKey cloned = (AbstractForeignKey)this.clone();
+            cloned._remappedFields = remappedSuggested;
+            return cloned;
+        }
+        catch (CloneNotSupportedException e)
+        {
+            assert false : "Silly programmer, clone not supported for " + this.getClass().getName();
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // Get the possibly remapped FieldKey.
+    // Look here for the corrected FieldKey name when trying to resolve columns on the foreign key's parent table.
+    protected FieldKey getRemappedField(FieldKey originalFieldKey)
+    {
+        if (_remappedFields == null || _remappedFields.isEmpty())
+            return originalFieldKey;
+
+        FieldKey remappedFieldKey = _remappedFields.get(originalFieldKey);
+        if (remappedFieldKey != null)
+            return remappedFieldKey;
+
+        return originalFieldKey;
+    }
+
+    // Indicate that the FieldKey should be included in the select list of the foreign key parent table.
+    public void addSuggested(FieldKey fieldKey)
+    {
+        if (_suggestedFields == null)
+            _suggestedFields = new HashSet<FieldKey>();
+        _suggestedFields.add(fieldKey);
+    }
+
+    @Override
+    public Set<FieldKey> getSuggestedColumns()
+    {
+        if (_suggestedFields == null)
+            return null;
+
+        return Collections.unmodifiableSet(_suggestedFields);
+    }
 }

@@ -25,13 +25,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-abstract public class LookupForeignKey extends AbstractForeignKey
+abstract public class LookupForeignKey extends AbstractForeignKey implements Cloneable
 {
     ActionURL _baseURL;
     Object _param;
     private boolean _prefixColumnCaption = false;
     String _titleColumn;
-    private Map<ColumnInfo, String> _additionalJoins = new HashMap<ColumnInfo, String>();
+
+    private Map<FieldKey, String> _additionalJoins = new HashMap<FieldKey, String>();
 
     public LookupForeignKey(ActionURL baseURL, String paramName, String tableName, String pkColumnName, String titleColumn)
     {
@@ -76,8 +77,10 @@ abstract public class LookupForeignKey extends AbstractForeignKey
 
     /** Adds an extra pair of columns to the join. This doesn't affect how the lookup is presented through query,
      * but does change the SQL that we generate for the join criteria */
-    public void addJoin(ColumnInfo fkColumn, String lookupColumnName)
+    public void addJoin(FieldKey fkColumn, String lookupColumnName)
     {
+        assert fkColumn.getParent() == null : "ForeignKey must belong to this table";
+        addSuggested(fkColumn);
         _additionalJoins.put(fkColumn, lookupColumnName);
     }
 
@@ -103,12 +106,14 @@ abstract public class LookupForeignKey extends AbstractForeignKey
         LookupColumn result = LookupColumn.create(parent, getPkColumn(table), table.getColumn(displayField), _prefixColumnCaption);
         if (result != null)
         {
-            for (Map.Entry<ColumnInfo, String> entry : _additionalJoins.entrySet())
+            for (Map.Entry<FieldKey, String> entry : _additionalJoins.entrySet())
             {
-                ColumnInfo lookupContainer = table.getColumn(entry.getValue());
-                assert lookupContainer != null : "Couldn't find Container column of name '" + entry.getValue() + "' in " + table;
+                ColumnInfo lookupColumn = table.getColumn(entry.getValue());
+                assert lookupColumn != null : "Couldn't find additional lookup column of name '" + entry.getValue() + "' in " + table;
 
-                result.addJoin(entry.getKey(), lookupContainer);
+                // Get the possibly remapped foreign key column
+                FieldKey foreignKey = getRemappedField(entry.getKey());
+                result.addJoin(foreignKey, lookupColumn);
             }
         }
 

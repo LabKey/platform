@@ -25,6 +25,9 @@ import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.util.StringExpression;
 
+import java.util.Map;
+import java.util.Set;
+
 public class QueryForeignKey implements ForeignKey
 {
     TableInfo _table;
@@ -137,4 +140,13 @@ public class QueryForeignKey implements ForeignKey
         return lookupTable.getSelectList(getLookupColumnName());
     }
 
+    public ForeignKey remapFieldKeys(FieldKey parent, Map<FieldKey, FieldKey> mapping)
+    {
+        return null;
+    }
+
+    public Set<FieldKey> getSuggestedColumns()
+    {
+        return null;
+    }
 }

@@ -1143,7 +1143,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                 ColumnInfo lookupContainer = lookupTable.getColumn("Container");
                 assert lookupContainer != null : "Couldn't find Container column in " + lookupTable;
 
-                result.addJoin(fkContainer, lookupContainer);
+                result.addJoin(fkContainer.getFieldKey(), lookupContainer);
             }
             return result;
         }
@@ -1197,6 +1197,16 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                 return ret;
 
             return lookupTable.getSelectList(getLookupColumnName());
+        }
+
+        public ForeignKey remapFieldKeys(FieldKey parent, Map<FieldKey, FieldKey> mapping)
+        {
+            return null;
+        }
+
+        public Set<FieldKey> getSuggestedColumns()
+        {
+            return null;
         }
     }
 
@@ -1628,23 +1638,37 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     // TODO: fix up OORIndicator
     // TODO: fix up MVIndicator
     // TODO: fixup display column factories
-    // TODO: fixup multi-column foreignkeys
 
     public void remapFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
     {
         checkLocked();
+        if (null == remap || remap.isEmpty())
+            return;
 
-        // URL
+        remapUrlFieldKeys(parent, remap);
+        remapForeignKeyFieldKeys(parent, remap);
+    }
+    
+    protected void remapUrlFieldKeys(@Nullable FieldKey parent,  @Nullable Map<FieldKey, FieldKey> remap)
+    {
         StringExpression se = getURL();
         if (se instanceof FieldKeyStringExpression)
         {
             FieldKeyStringExpression remapped = ((FieldKeyStringExpression)se).remapFieldKeys(parent, remap);
             setURL(remapped);
-        }
+        }        
     }
 
+    protected void remapForeignKeyFieldKeys(@Nullable FieldKey parent,  @Nullable Map<FieldKey, FieldKey> remap)
+    {
+        ForeignKey fk = getFk();
+        if (fk == null)
+            return;
 
-
+        ForeignKey remappedFk = fk.remapFieldKeys(parent, remap);
+        if (remappedFk != null)
+            setFk(remappedFk);
+    }
 
     private void checkLocked()
     {

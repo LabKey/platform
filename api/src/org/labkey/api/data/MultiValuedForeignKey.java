@@ -16,8 +16,12 @@
 package org.labkey.api.data;
 
 import org.labkey.api.collections.NamedObjectList;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
+
+import java.util.Map;
+import java.util.Set;
 
 /**
 * User: adam
@@ -124,5 +128,16 @@ public class MultiValuedForeignKey implements ForeignKey
     public String getLookupColumnName()
     {
         return _fk.getLookupColumnName();
+    }
+
+    public ForeignKey remapFieldKeys(FieldKey parent, Map<FieldKey, FieldKey> mapping)
+    {
+        return _fk.remapFieldKeys(null, mapping);
+    }
+
+    @Override
+    public Set<FieldKey> getSuggestedColumns()
+    {
+        return _fk.getSuggestedColumns();
     }
 }

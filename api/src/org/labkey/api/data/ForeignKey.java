@@ -16,8 +16,13 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpression;
+
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Interface describing a ColumnInfo's foreign key relationship.
@@ -72,4 +77,23 @@ public interface ForeignKey
      * @return The name of the column in the foreign user schema table.
      */
     String getLookupColumnName();
+
+    /**
+     * Fixup any references fo FieldKeys that may have been reparented or renamed by Query and
+     * generate a new ForeignKey.  If fixup is not needed, return null.
+     *
+     * @param parent A new parent FieldKey to inject, e.g. "title" becomes "parent/title".
+     * @param mapping Rename FieldKeys, e.g. "foo" becomes "bar".
+     * @return Clone of original ForeignKey with updated FieldKey substitutions.
+     */
+    @Nullable
+    ForeignKey remapFieldKeys(FieldKey parent, Map<FieldKey, FieldKey> mapping);
+
+    /**
+     * Suggest a set of FieldKeys from the parent table that may be needed when resolving
+     * the lookup or display URL.
+     * @return A set of suggested columns
+     */
+    @Nullable
+    Set<FieldKey> getSuggestedColumns();
 }

@@ -27,8 +27,6 @@ import java.util.Map;
 
 public class LookupColumn extends ColumnInfo
 {
-    private String _shortLabel;
-
     /**
      * Create a lookup column to a "real" table - one that actually exists
      * in the underlying database
@@ -54,11 +52,6 @@ public class LookupColumn extends ColumnInfo
             ret.setFk(null);
         }
         return ret;
-    }
-
-    public String getShortLabel()
-    {
-        return super.getShortLabel();
     }
 
     @Override
@@ -94,11 +87,12 @@ public class LookupColumn extends ColumnInfo
         return _lookupColumn.getValueSql(getTableAlias(tableAliasName));
     }
 
-    public void addJoin(ColumnInfo foreignKey, ColumnInfo lookupKey)
+    public void addJoin(FieldKey foreignKeyFieldKey, ColumnInfo lookupKey)
     {
-        FieldKey fieldKey = new FieldKey(_foreignKey.getFieldKey().getParent(), foreignKey.getName());
+        FieldKey fieldKey = new FieldKey(_foreignKey.getFieldKey().getParent(), foreignKeyFieldKey.getName());
         Map<FieldKey, ColumnInfo> map = QueryService.get().getColumns(_foreignKey.getParentTable(), Collections.singleton(fieldKey));
         ColumnInfo translatedFK = map.get(fieldKey);
+        assert translatedFK != null : "ForeignKey '" + foreignKeyFieldKey + "' not found on table '" + _foreignKey.getParentTable() + "' for lookup to '" + lookupKey.getFieldKey() + "'";
 
         _additionalJoins.put(translatedFK, lookupKey);
     }
