@@ -246,20 +246,24 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
         autoJoinColumn.setIsUnselectable(true);
         autoJoinColumn.setUserEditable(false);
         autoJoinColumn.setLabel("DataSets");
-        autoJoinColumn.setFk(new AbstractForeignKey()
+        final FieldKey sequenceNumFieldKey = new FieldKey(null, "SequenceNum");
+        final FieldKey keyFieldKey = new FieldKey(null, "_Key");
+        AbstractForeignKey autoJoinFk = new AbstractForeignKey()
         {
             @Override
             public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
             {
                 if (displayField == null)
                     return null;
-                return new DataSetAutoJoinTable(schema, DataSetTableImpl.this, parent).getColumn(displayField);
+
+                DataSetAutoJoinTable table = new DataSetAutoJoinTable(schema, DataSetTableImpl.this.getDatasetDefinition(), parent, getRemappedField(sequenceNumFieldKey), getRemappedField(keyFieldKey));
+                return table.getColumn(displayField);
             }
 
             @Override
             public TableInfo getLookupTableInfo()
             {
-                return new DataSetAutoJoinTable(schema, DataSetTableImpl.this, null);
+                return new DataSetAutoJoinTable(schema, DataSetTableImpl.this.getDatasetDefinition(), null, null, null);
             }
 
             @Override
@@ -267,7 +271,10 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
             {
                 return null;
             }
-        });
+        };
+        autoJoinFk.addSuggested(sequenceNumFieldKey);
+        autoJoinFk.addSuggested(keyFieldKey);
+        autoJoinColumn.setFk(autoJoinFk);
         addColumn(autoJoinColumn);
 
         setDefaultVisibleColumns(defaultVisibleCols);

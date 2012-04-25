@@ -115,7 +115,6 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
     public void setupTable(final FilteredTable table, UserSchema schema)
     {
         super.setupTable(table, schema);
-        final ColumnInfo containerColumn = table.getColumn("ContainerId");
 
         ColumnInfo datasetColumn = new AliasedColumn(table, "Dataset", table.getColumn("IntKey1"));
         LookupForeignKey fk = new LookupForeignKey("DatasetId", "Label") {
@@ -124,7 +123,7 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
                 return StudySchema.getInstance().getTableInfoDataSet();
             }
         };
-        fk.addJoin(table.getColumn("ContainerId"), "container");
+        fk.addJoin(FieldKey.fromParts("ContainerId"), "container");
         datasetColumn.setFk(fk);
         datasetColumn.setDisplayColumnFactory(new DisplayColumnFactory()
         {
@@ -132,15 +131,11 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
             {
                 return new DataColumn(colInfo)
                 {
-                    public void addQueryColumns(Set<ColumnInfo> columns)
-                    {
-                        columns.add(containerColumn);
-                        super.addQueryColumns(columns);
-                    }
+                    final FieldKey containerFieldKey = new FieldKey(null, "ContainerId");
 
                     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
                     {
-                        Object containerId = containerColumn.getValue(ctx);
+                        Object containerId = ctx.get(containerFieldKey);
                         Integer datasetId = (Integer)getBoundColumn().getValue(ctx);
                         if (datasetId == null)
                             return;

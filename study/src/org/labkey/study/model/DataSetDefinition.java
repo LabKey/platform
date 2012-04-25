@@ -1721,10 +1721,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             it.addParticipantSequenceNum();
             
-            // ParticipantSequenceNumKey
-            
-            //it.addParticipantSequenceNumKey();
-
             // QCSTATE
 
             if (needsQC)
@@ -1951,12 +1947,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         {
             ColumnInfo col = new ColumnInfo("participantsequencenum", JdbcType.VARCHAR);
             return addColumn(col, new ParticipantSequenceNumColumn());
-        }
-
-        int addParticipantSequenceNumKey()
-        {
-            ColumnInfo col = new ColumnInfo("participantsequencenumkey", JdbcType.VARCHAR);
-            return addColumn(col, new ParticipantSequenceNumKeyColumn());
         }
 
         int replaceOrAddColumn(Integer index, ColumnInfo col, Callable call)
@@ -2734,7 +2724,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             //TableInfo studyData = StudySchema.getInstance().getTableInfoStudyData(study, user);
             TableInfo studyData = StudySchema.getInstance().getSchema().getTable("StudyData");
 
-            //            List<ColumnInfo> columnsBase = studyData.getColumns("_key","lsid","participantid","ParticipantSequenceNum","ParticipantSequenceNumKey","sourcelsid", "created","modified","sequenceNum","qcstate","participantsequencenum","participantsequencenumkey");
             List<ColumnInfo> columnsBase = studyData.getColumns("_key","lsid","participantid","ParticipantSequenceNum","sourcelsid", "created","modified","sequenceNum","qcstate","participantsequencenum");
             for (ColumnInfo col : columnsBase)
             {

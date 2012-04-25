@@ -325,6 +325,15 @@ public class QueryTable extends QueryRelation
     }
 
 
+    private void addSuggestedColumns(Set<RelationColumn> suggested, Set<FieldKey> ks)
+    {
+        if (ks == null || ks.isEmpty())
+            return;
+
+        for (FieldKey k : ks)
+            addSuggestedColumn(suggested, k);
+    }
+
     private void addSuggestedColumn(Set<RelationColumn> suggested, FieldKey k)
     {
         boolean existed = _selectedColumns.containsKey(k);
@@ -339,10 +348,10 @@ public class QueryTable extends QueryRelation
 
     // CONSIDER: should we autoAdd the suggested columns?
     // we are currently because of the getColumn() call
+    // NOTE: Every type of suggested column should have a corresponding fixup in ColumnInfo.remapFieldKeys().
     @Override
     public Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
     {
-//        Set<FieldKey> fks = new HashSet<FieldKey>();
         Set<RelationColumn> suggested = new HashSet<RelationColumn>();
 //        for (RelationColumn rc : selected)
 //        {
@@ -358,8 +367,10 @@ public class QueryTable extends QueryRelation
             // TODO not handling lookup columns yet
             if (fk.getParent()  != null)
                 continue;
+
             if (null != tc._col.getMvColumnName())
                 addSuggestedColumn(suggested, new FieldKey(null, tc._col.getMvColumnName()));
+
             StringExpression se = tc._col.getURL();
             if (se instanceof StringExpressionFactory.FieldKeyStringExpression)
             {
@@ -371,6 +382,9 @@ public class QueryTable extends QueryRelation
                     addSuggestedColumn(suggested, key);
                 }
             }
+
+            if (tc._col.getFk() != null)
+                addSuggestedColumns(suggested, tc._col.getFk().getSuggestedColumns());
         }
         suggested.removeAll(selected);
         return suggested;

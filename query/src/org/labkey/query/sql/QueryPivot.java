@@ -871,6 +871,18 @@ public class QueryPivot extends QueryRelation
         {
             return null;
         }
+
+        @Override
+        public ForeignKey remapFieldKeys(FieldKey parent, Map<FieldKey, FieldKey> mapping)
+        {
+            return this;
+        }
+
+        @Override
+        public Set<FieldKey> getSuggestedColumns()
+        {
+            return null;
+        }
     }
 
     private void parseError(String message, QNode node)

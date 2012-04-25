@@ -33,7 +33,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         super(schema, StudySchema.getInstance().getTableInfoSpecimenDetail());
 
         addWrapColumn(_rootTable.getColumn("GlobalUniqueId"));
-        
+
         ColumnInfo pvColumn = new AliasedColumn(this, StudyService.get().getSubjectVisitColumnName(schema.getContainer()),
                 _rootTable.getColumn("ParticipantSequenceNum"));//addWrapColumn(baseColumn);
         pvColumn.setFk(new LookupForeignKey("ParticipantSequenceNum")

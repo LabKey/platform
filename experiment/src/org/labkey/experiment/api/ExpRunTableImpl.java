@@ -683,6 +683,15 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             return new NamedObjectList();
         }
 
+        public ForeignKey remapFieldKeys(FieldKey parent, Map<FieldKey, FieldKey> mapping)
+        {
+            return null;
+        }
+
+        public Set<FieldKey> getSuggestedColumns()
+        {
+            return null;
+        }
     }
 
     @Override

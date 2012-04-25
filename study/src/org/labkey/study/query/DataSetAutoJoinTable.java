@@ -52,39 +52,50 @@ import java.util.Set;
 public class DataSetAutoJoinTable extends VirtualTable
 {
     private StudyQuerySchema _schema;
-    private DataSetTableImpl _source;
-    private DataSetDefinition _dataset;
+    private DataSetDefinition _source;
     private String _keyPropertyName;
 
+    // The resolved "ParticipantId" column handed through the ForeignKey.createLookupColumn().
     private ColumnInfo _participantIdColumn;
 
-    public DataSetAutoJoinTable(StudyQuerySchema schema, DataSetTableImpl source,
-                                @Nullable ColumnInfo participantIdColumn)
+    // The "SequenceNum" FieldKey that has possibly been remapped.
+    private FieldKey _sequenceNumFieldKey;
+
+    // The "_Key" FieldKey that has possibly been remapped.
+    private FieldKey _keyFieldKey;
+
+    public DataSetAutoJoinTable(StudyQuerySchema schema, DataSetDefinition source,
+                                @Nullable ColumnInfo participantIdColumn,
+                                @Nullable FieldKey sequenceNumFieldKey,
+                                @Nullable FieldKey keyFieldKey)
     {
         super(StudySchema.getInstance().getSchema());
         setName("DataSets");
         _schema = schema;
         _source = source;
+        _keyPropertyName = _source.getKeyPropertyName();
 
-        _dataset = source.getDatasetDefinition();
-        _keyPropertyName = _dataset.getKeyPropertyName();
+        _participantIdColumn = participantIdColumn;
+        _sequenceNumFieldKey = sequenceNumFieldKey;
+        _keyFieldKey = keyFieldKey;
 
         // We only need to the SequenceNum and Key columns when traversing the dataset FKs.
         // The participantIdColumn should always be present in that case.
-        _participantIdColumn = participantIdColumn;
         if (_participantIdColumn != null)
         {
+            assert _sequenceNumFieldKey != null;
+            assert _keyFieldKey != null;
             TableInfo parent = _participantIdColumn.getParentTable();
 
             // SequenceNum is always available
-            ColumnInfo colSequenceNum = new AliasedColumn(parent, "SequenceNum", parent.getColumn("SequenceNum"));
+            ColumnInfo colSequenceNum = new AliasedColumn(parent, "SequenceNum", parent.getColumn(sequenceNumFieldKey.getName()));
             colSequenceNum.setHidden(true);
             addColumn(colSequenceNum);
 
             // The extra key property is not always available
             if (_keyPropertyName != null)
             {
-                ColumnInfo colExtraKey = new AliasedColumn(parent, "_key", parent.getColumn("_key"));
+                ColumnInfo colExtraKey = new AliasedColumn(parent, "_Key", parent.getColumn(keyFieldKey.getName()));
                 colExtraKey.setHidden(true);
                 addColumn(colExtraKey);
             }
@@ -132,7 +143,7 @@ public class DataSetAutoJoinTable extends VirtualTable
         }
 
         DataSetForeignKey fk = null;
-        if (_dataset.isDemographicData())
+        if (_source.isDemographicData())
         {
             if (dsd.isDemographicData())
                 // A -> A
@@ -183,15 +194,12 @@ public class DataSetAutoJoinTable extends VirtualTable
     private DataSetForeignKey createParticipantSequenceNumFK(DataSetDefinition dsd)
     {
         assert !dsd.isDemographicData() && dsd.getKeyPropertyName() == null;
-        assert !_dataset.isDemographicData();
+        assert !_source.isDemographicData();
 
         DataSetForeignKey fk = new DataSetForeignKey(dsd);
-        if (_participantIdColumn != null)
+        if (_sequenceNumFieldKey != null)
         {
-            // NOTE: We are using the underlying dataset column name 'SequenceNum' and '_Key' so the database indices are used.
-            TableInfo parentTable = _participantIdColumn.getParentTable();
-            ColumnInfo fkColumn = parentTable.getColumn("SequenceNum");
-            fk.addJoin(fkColumn, "SequenceNum");
+            fk.addJoin(_sequenceNumFieldKey, "SequenceNum");
         }
 
         fk.setJoinDescription(StudyService.get().getSubjectNounSingular(dsd.getContainer()) +
@@ -202,13 +210,13 @@ public class DataSetAutoJoinTable extends VirtualTable
     private DataSetForeignKey createParticipantSequenceNumKeyFK(DataSetDefinition dsd)
     {
         assert !dsd.isDemographicData() && dsd.getKeyPropertyName() != null;
-        assert !_dataset.isDemographicData() && _keyPropertyName != null;
+        assert !_source.isDemographicData() && _keyPropertyName != null;
 
         // Key property name must match
         if (!_keyPropertyName.equalsIgnoreCase(dsd.getKeyPropertyName()))
             return null;
 
-        DomainProperty fkDomainProperty = _dataset.getDomain().getPropertyByName(_keyPropertyName);
+        DomainProperty fkDomainProperty = _source.getDomain().getPropertyByName(_keyPropertyName);
         DomainProperty pkDomainProperty = dsd.getDomain().getPropertyByName(_keyPropertyName);
         if (fkDomainProperty == null || pkDomainProperty == null)
             return null;
@@ -222,15 +230,10 @@ public class DataSetAutoJoinTable extends VirtualTable
         // NOTE: Also consider comparing ConceptURI of the properties
 
         DataSetForeignKey fk = new DataSetForeignKey(dsd);
-        if (_participantIdColumn != null)
+        if (_sequenceNumFieldKey != null && _keyFieldKey != null)
         {
-            // NOTE: We are using the underlying dataset column name 'SequenceNum' and '_Key' so the database indices are used.
-            TableInfo parentTable = _participantIdColumn.getParentTable();
-            ColumnInfo seqNumFkColumn = parentTable.getColumn("SequenceNum");
-            fk.addJoin(seqNumFkColumn, "SequenceNum");
-
-            ColumnInfo keyFkColumn = parentTable.getColumn("_key");
-            fk.addJoin(keyFkColumn, "_key");
+            fk.addJoin(_sequenceNumFieldKey, "SequenceNum");
+            fk.addJoin(_keyFieldKey, "_key");
         }
 
         fk.setJoinDescription(StudyService.get().getSubjectNounSingular(dsd.getContainer()) +
