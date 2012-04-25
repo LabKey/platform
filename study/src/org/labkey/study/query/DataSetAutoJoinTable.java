@@ -177,7 +177,7 @@ public class DataSetAutoJoinTable extends VirtualTable
 
         ret.setFk(fk);
         ret.setLabel(dsd.getLabel());
-        ret.setDescription("Lookup to the " + dsd.getLabel() + " DataSet, with one row for each " + fk.getJoinDescription() + ".");
+        ret.setDescription("Lookup to the " + dsd.getLabel() + " DataSet, joined by '" + fk.getJoinDescription() + "'.");
         ret.setIsUnselectable(true);
         ret.setUserEditable(false);
         return ret;

@@ -29,6 +29,7 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.*;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.DataSetTable;
 import org.labkey.api.study.StudyService;
@@ -42,6 +43,7 @@ import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
+import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.StudyController;
@@ -109,15 +111,19 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
                         return dataColumn;
                     }
                 });
-                column.setFk(new QueryForeignKey(_schema,StudyService.get().getSubjectTableName(dsd.getContainer()),
-                        subjectColName, subjectColName)
+
+                if (!AppProps.getInstance().isExperimentalFeatureEnabled(StudyModule.EXPERIMENTAL_REMOVE_PARTICIPANTVISIT_LOOKUPS))
                 {
-                    public StringExpression getURL(ColumnInfo parent) {
-                        ActionURL base = new ActionURL(StudyController.ParticipantAction.class, _schema.getContainer());
-                        base.addParameter(DataSetDefinition.DATASETKEY, Integer.toString(_dsd.getDataSetId()));
-                        return new DetailsURL(base, "participantId", parent.getFieldKey());
-                    }
-                });
+                    column.setFk(new QueryForeignKey(_schema,StudyService.get().getSubjectTableName(dsd.getContainer()),
+                            subjectColName, subjectColName)
+                    {
+                        public StringExpression getURL(ColumnInfo parent) {
+                            ActionURL base = new ActionURL(StudyController.ParticipantAction.class, _schema.getContainer());
+                            base.addParameter(DataSetDefinition.DATASETKEY, Integer.toString(_dsd.getDataSetId()));
+                            return new DetailsURL(base, "participantId", parent.getFieldKey());
+                        }
+                    });
+                }
 
                 if (DemoMode.isDemoMode(schema.getContainer(), schema.getUser()))
                 {
@@ -190,17 +196,20 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
             {
                 // Add a copy of the ParticipantSequenceNum column without the FK so we can get the value easily when materializing to temp tables:
                 addWrapColumn(baseColumn).setHidden(true);
-                ColumnInfo pvColumn = new AliasedColumn(this, StudyService.get().getSubjectVisitColumnName(dsd.getContainer()), baseColumn);//addWrapColumn(baseColumn);
-                pvColumn.setFk(new LookupForeignKey("ParticipantSequenceNum")
+                if (!AppProps.getInstance().isExperimentalFeatureEnabled(StudyModule.EXPERIMENTAL_REMOVE_PARTICIPANTVISIT_LOOKUPS))
                 {
-                    public TableInfo getLookupTableInfo()
+                    ColumnInfo pvColumn = new AliasedColumn(this, StudyService.get().getSubjectVisitColumnName(dsd.getContainer()), baseColumn);//addWrapColumn(baseColumn);
+                    pvColumn.setFk(new LookupForeignKey("ParticipantSequenceNum")
                     {
-                        return new ParticipantVisitTable(_schema);
-                    }
-                });
-                pvColumn.setIsUnselectable(true);
-                pvColumn.setDimension(false);
-                addColumn(pvColumn);
+                        public TableInfo getLookupTableInfo()
+                        {
+                            return new ParticipantVisitTable(_schema);
+                        }
+                    });
+                    pvColumn.setIsUnselectable(true);
+                    pvColumn.setDimension(false);
+                    addColumn(pvColumn);
+                }
             }
             else
             {
@@ -241,7 +250,7 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
         getColumn("SourceLSID").setHidden(true);
 
         ColumnInfo autoJoinColumn = new AliasedColumn(this, "DataSets", _rootTable.getColumn("ParticipantId"));
-        autoJoinColumn.setDescription("Contains lookups to each DataSet that can be joined by the " + _dsd.getLabel() + " DataSet's " + _dsd.getKeyTypeDescription() + " combination.");
+        autoJoinColumn.setDescription("Contains lookups to each DataSet that can be joined by the " + _dsd.getLabel() + " DataSet's '" + _dsd.getKeyTypeDescription() + "' combination.");
         autoJoinColumn.setKeyField(false);
         autoJoinColumn.setIsUnselectable(true);
         autoJoinColumn.setUserEditable(false);
@@ -613,9 +622,17 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
      */
     public void hideParticipantLookups()
     {
-        getColumn(StudyService.get().getSubjectColumnName(_dsd.getContainer())).setHidden(true);
-        getColumn(StudyService.get().getSubjectVisitColumnName(_dsd.getContainer())).setHidden(true);
-        getColumn("DataSets").setHidden(true);
+        ColumnInfo col = getColumn(StudyService.get().getSubjectColumnName(_dsd.getContainer()));
+        if (col != null)
+            col.setHidden(true);
+
+        col = getColumn(StudyService.get().getSubjectVisitColumnName(_dsd.getContainer()));
+        if (col != null)
+            col.setHidden(true);
+
+        col = getColumn("DataSets");
+        if (col != null)
+            col.setHidden(true);
     }
 
     @Override
