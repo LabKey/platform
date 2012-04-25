@@ -1201,7 +1201,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
         public ForeignKey remapFieldKeys(FieldKey parent, Map<FieldKey, FieldKey> mapping)
         {
-            return null;
+            return this;
         }
 
         public Set<FieldKey> getSuggestedColumns()
@@ -1636,19 +1636,27 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
 
     // TODO: fix up OORIndicator
-    // TODO: fix up MVIndicator
     // TODO: fixup display column factories
 
     public void remapFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
     {
         checkLocked();
-        if (null == remap || remap.isEmpty())
+        if (null==parent && (null == remap || remap.isEmpty()))
             return;
+
+        // TODO should mvColumnName be a fieldkey so we can reparent etc?
+        if (null != getMvColumnName())
+        {
+            FieldKey r = null==remap ? null : remap.get(new FieldKey(null, getMvColumnName()));
+            if (null != r && r.getParent()==null)
+                    setMvColumnName(r.getName());
+        }
 
         remapUrlFieldKeys(parent, remap);
         remapForeignKeyFieldKeys(parent, remap);
     }
     
+
     protected void remapUrlFieldKeys(@Nullable FieldKey parent,  @Nullable Map<FieldKey, FieldKey> remap)
     {
         StringExpression se = getURL();
@@ -1659,16 +1667,16 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         }        
     }
 
+
     protected void remapForeignKeyFieldKeys(@Nullable FieldKey parent,  @Nullable Map<FieldKey, FieldKey> remap)
     {
         ForeignKey fk = getFk();
         if (fk == null)
             return;
-
         ForeignKey remappedFk = fk.remapFieldKeys(parent, remap);
-        if (remappedFk != null)
-            setFk(remappedFk);
+        setFk(remappedFk);
     }
+
 
     private void checkLocked()
     {

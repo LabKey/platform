@@ -142,7 +142,7 @@ public class QueryForeignKey implements ForeignKey
 
     public ForeignKey remapFieldKeys(FieldKey parent, Map<FieldKey, FieldKey> mapping)
     {
-        return null;
+        return this;
     }
 
     public Set<FieldKey> getSuggestedColumns()

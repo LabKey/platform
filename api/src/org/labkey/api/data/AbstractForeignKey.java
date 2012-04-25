@@ -141,23 +141,23 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
         return lookupTable.getSelectList(getLookupColumnName());
     }
 
+
     @Override
     public ForeignKey remapFieldKeys(FieldKey parent, Map<FieldKey, FieldKey> mapping)
     {
-        assert _remappedFields == null : "Already remapped ForeignKey.";
+        assert _remappedFields == null : "Already remapped ForeignKey.  If we hit this we need to 'compose' the field mappings";
 
         Set<FieldKey> suggested = getSuggestedColumns();
         if (suggested == null || suggested.isEmpty())
-            return null;
+            return this;
 
         // Create a subset of the FieldKey mapping for only the suggested columns
         Map<FieldKey, FieldKey> remappedSuggested = new HashMap<FieldKey, FieldKey>(suggested.size());
         for (FieldKey originalField : suggested)
         {
             FieldKey remappedField = mapping.get(originalField);
-            // XXX: add the original column name to the remapped suggested columns if it can't be found?
             if (remappedField == null)
-                remappedField = originalField;
+                return null;
             remappedSuggested.put(originalField, remappedField);
         }
 
@@ -174,6 +174,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
             return null;
         }
     }
+
 
     // Get the possibly remapped FieldKey.
     // Look here for the corrected FieldKey name when trying to resolve columns on the foreign key's parent table.
