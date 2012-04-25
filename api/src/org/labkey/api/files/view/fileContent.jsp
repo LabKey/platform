@@ -146,6 +146,7 @@
                                 disableGeneralAdminSettings: <%=bean.isDisableGeneralAdminSettings()%>,
                                 showProperties: false,
                                 showDetails: <%=bean.isShowDetails()%>,
+                                containerPath: <%=q(c.getPath())%>,
                                 allowChangeDirectory: true,
                                 tbarItems: buttonActions,
                                 isPipelineRoot: isPipelineRoot,

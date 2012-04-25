@@ -4715,6 +4715,7 @@ internal/webapp/_images/message.png -text
 internal/webapp/_images/milestone_no.png -text
 internal/webapp/_images/milestone_yes.png -text
 internal/webapp/_images/minus.gif -text
+internal/webapp/_images/move.png -text
 internal/webapp/_images/mv_indicator.gif -text
 internal/webapp/_images/one.gif -text
 internal/webapp/_images/paperclip.gif -text
@@ -4747,6 +4748,7 @@ internal/webapp/_images/plus_minus.png -text
 internal/webapp/_images/private.gif -text
 internal/webapp/_images/public.gif -text
 internal/webapp/_images/reload.png -text
+internal/webapp/_images/rename.png -text
 internal/webapp/_images/restricted.gif -text
 internal/webapp/_images/rss.gif -text
 internal/webapp/_images/search.png -text

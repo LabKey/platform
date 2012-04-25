@@ -203,6 +203,7 @@ LABKEY.FileSystem.Util = new function(){
 
     return {
 
+        FileListMenu: FileListMenu,
         //
         // PREVIEW
         //
@@ -836,20 +837,35 @@ Ext.extend(LABKEY.FileSystem.AbstractFileSystem, Ext.util.Observable, {
  * @augments LABKEY.FileSystem.AbstractFileSystem
  * @constructor
  * @param config Configuration properties.
- * @param {string} [config.baseUrl] The root of the webdav tree (http://localhost:8080/labkey/_webdav), must be an ABSOLUTE URL ("/_webdav" NOT "_webdav").  Defaults to "/_webdav", which is correct for most LabKey Server instances. Optional.
- * @param {String} config.containerPath The path to the container to load (ie. '/home')
- * @param {String} [config.filePath] The file path, relative to the containerPath (ie. '/@files'). Optional.
+ * @param {String} [config.containerPath] The path to the container to load (ie. '/home')
+ * @param {String} [config.filePath] The file path, relative to the containerPath (ie. '/mySubfolder'). Optional.
+ * @param {String} [config.fileLink] A folder name that is appended after the container and filePath.  By default, LabKey stores files in a subfolder called '/@files'.  If the pipeline root of your container differs from the file root, the files may be stored in '/@pipeline'.  This defaults to '/@files'.  To omit this, use 'fileLink: null'.  For non-standard URLs, also see config.baseUrl.
+ * @param {string} [config.baseUrl] Rather than supplying a containerPath and filePath, you can supply the entire baseUrl to use as the root of the webdav tree (ie. http://localhost:8080/labkey/_webdav/home/@files/), must be an ABSOLUTE URL ("/_webdav" NOT "_webdav").  If provided, this will be preferentially used instead of creating a baseUrl from containerPath, filePath and fileLink
  * @param {string} [config.rootName] The display name for the root (ie. 'Fileset'). Optional.
  * @param {array} [config.extraDataFields] An array of extra Ext.data.Field config objects that will be appended to the FileRecord. Optional.
  * @example &lt;script type="text/javascript"&gt;
-    var fileSystem = new new LABKEY.FileSystem.WebdavFileSystem({
+
+    //this example loads files from: /_webdav/home/mySubfolder/@files
+    var fileSystem = new LABKEY.FileSystem.WebdavFileSystem({
         containerPath: '/home',
-        filePath: '/@files'  //optional.  this is the same as the default
+        filePath: '/mySubfolder'  //optional.
     });
+
+     //this would be identical to the example above
+     new LABKEY.FileSystem.WebdavFileSystem({
+         baseUrl: "/_webdav/home/mySubfolder/@files"
+     });
+
+     //this creates the URL: /webdav/myProject/@pipeline
+     new LABKEY.FileSystem.WebdavFileSystem({
+         containerPath: '/myProject',
+         fileLink: '/@pipeline'
+     });
+
 
     fileSystem.on('ready', function(fileSystem){
         fileSystem.listFiles({
-            path: '/mySubfolder/',
+            path: '/mySubfolder',
             success: function(fileSystem, path, records){
                 alert('It worked!');
                 console.log(records);
@@ -881,7 +897,8 @@ LABKEY.FileSystem.WebdavFileSystem = function(config)
     Ext.apply(this, config, {
         baseUrl: LABKEY.contextPath + "/_webdav",
         rootPath: "/",
-        rootName : (LABKEY.serverName || "LabKey Server")
+        rootName : (LABKEY.serverName || "LabKey Server"),
+        fileLink: "/@files"
     });
     this.ready = false;
     this.initialConfig = config;
@@ -1446,12 +1463,14 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
     init : function(config)
     {
         //support either containerPath + path OR baseUrl (which is the concatenation of these 2)
-        this.filePath = this.filePath || '/@files';
+        this.filePath = this.filePath || '';
+        this.fileLink = this.fileLink || '';
         this.containerPath = this.containerPath || LABKEY.ActionURL.getContainer();
 
         if (!config.baseUrl){
             this.baseUrl = this.concatPaths(LABKEY.contextPath + "/_webdav", encodeURI(this.containerPath));
             this.baseUrl = this.concatPaths(this.baseUrl, encodeURI(this.filePath));
+            this.baseUrl = this.concatPaths(this.baseUrl, encodeURI(this.fileLink));
         }
 
         var prefix = this.concatPaths(this.baseUrl, this.rootPath);

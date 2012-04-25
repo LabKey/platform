@@ -12,6 +12,8 @@
 .iconFileShare { background-image: url(fileshare.png) !important; }
 .iconFolderNew { background-image: url(folder_new.png) !important; }
 .iconMessage { background-image: url(message.png) !important; }
+.iconMove { background-image: url(move.png) !important; }
+.iconRename { background-image: url(rename.png) !important; }
 .iconCheck { background-image: url(check.png) !important; }
 .iconAjaxLoading {background-image: url(ajax-loading.gif) !important;}
 .iconAjaxLoadingGreen {background-image: url(ajax-loading-green.gif) !important;}
