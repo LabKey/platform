@@ -34,6 +34,7 @@ LABKEY.vis.Layer = function(config){
 	this.geom = config.geom ? config.geom : null; // This is the geom object used to render on the grid. It is currently required.
 	this.stat = config.stat ? config.stat : null; // This is the stat object used to format the data, it is optional and not currently implemented.
 	this.position = config.position ? config.position : null; // This is the position type used to control how overlapping is handled (e.g. jittering, stacking, dodging). It is not currently implemented.
+    this.name = config.name ? config.name : null;
 
     this.hasData = function(){
         return this.data && this.data.length > 0;
@@ -52,7 +53,7 @@ LABKEY.vis.Layer = function(config){
 
 		if(this.geom){
 			// console.log("Rendering a layer!");
-			this.geom.render(paper, grid, this.data ? this.data : data, this.aes, parentAes);
+			this.geom.render(paper, grid, this.data ? this.data : data, this.aes, parentAes, this.name);
 		} else {
 			// Without a geom the render function will not do anything.
 			console.log("Unable to render this layer. No geom present");

@@ -9,6 +9,7 @@ var errorRows = rawErrorData.rows;
 
 var CD4PointLayer = new LABKEY.vis.Layer({
 	geom: new LABKEY.vis.Geom.Point(),
+	name: 'CD4',
 	aes: {
 		left: {
 			value: function(row){return row.study_LabResults_CD4.value},
@@ -16,6 +17,9 @@ var CD4PointLayer = new LABKEY.vis.Layer({
 			trans: 'linear'
 //			trans: 'log'
 		},
+        size: {
+            value: 5
+        },
 		hoverText: {
 			value: function(row){
 				return row.study_LabResults_ParticipantId.value + ' CD4, Day ' + row.Days.value + ", " + row.study_LabResults_CD4.value;
@@ -26,18 +30,23 @@ var CD4PointLayer = new LABKEY.vis.Layer({
 
 var CD4PathLayer = new LABKEY.vis.Layer({
 	geom: new LABKEY.vis.Geom.Path(),
+	name: 'CD4',
 	aes: {
 		left: {
 			value: function(row){return row.study_LabResults_CD4.value},
 			scaleType: 'continuous',
 			trans: 'linear'
 			// trans: 'log'
-		}
+		},
+        size: {
+            value: 3
+        }
 	}
 });
 
 var hemoglobinPointLayer = new LABKEY.vis.Layer({
 	geom: new LABKEY.vis.Geom.Point(),
+	name: 'Hemoglobin',
 	aes: {
 		right: {
 			value: function(row){return row.study_LabResults_Hemoglobin.value},
@@ -54,6 +63,7 @@ var hemoglobinPointLayer = new LABKEY.vis.Layer({
 
 var hemoglobinPathLayer = new LABKEY.vis.Layer({
 	geom: new LABKEY.vis.Geom.Path(),
+	name: 'Hemoglobin',
 	aes: {
 		right: {
 			value: function(row){return row.study_LabResults_Hemoglobin.value},
@@ -82,7 +92,10 @@ var plotConfig = {
 		group: {
 			// We need to group the paths by ParticipantId in order to get one line per participant.
 			value: function(row){return row.study_LabResults_ParticipantId.value}
-		} 
+		},
+        pointType: {
+            value: function(row){return row.study_LabResults_ParticipantId.value}
+        }
 	},
 	width: 900,
 	height: 350,
@@ -93,19 +106,22 @@ var plot = new LABKEY.vis.Plot(plotConfig);
 
 plot.addLayer(CD4PathLayer);
 plot.addLayer(CD4PointLayer);
-//plot.addLayer(hemoglobinPathLayer);
-//plot.addLayer(hemoglobinPointLayer);
+plot.addLayer(hemoglobinPathLayer);
+plot.addLayer(hemoglobinPointLayer);
 plot.render();
 
 var errorPointLayer = new LABKEY.vis.Layer({
+    name: "Temperature",
     geom: new LABKEY.vis.Geom.Point()
 });
 
 var errorPathLayer = new LABKEY.vis.Layer({
+    name: "Temperature",
     geom: new LABKEY.vis.Geom.Path()
 });
 
 var errorBarLayer = new LABKEY.vis.Layer({
+    name: "Temperature",
     geom: new LABKEY.vis.Geom.ErrorBar()
 });
 
@@ -142,9 +158,3 @@ var errorPlotConfig = {
 };
 var errorPlot = new LABKEY.vis.Plot(errorPlotConfig);
 errorPlot.render();
-
-//var scale = LABKEY.vis.Scale.PointType();
-//for(var i = 0; i < 5; i++){
-//    scale(i)(plot.paper, ((i + 1) * 15), (15), 5);
-//}
-//plot.paper.path('M0,15L90,15');

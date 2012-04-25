@@ -51,9 +51,13 @@ LABKEY.vis.Scale.ColorContinuous = function(config){
 
 LABKEY.vis.Scale.ColorDiscrete = function(){
 	// Used for discrete color scales (color assigned to categorical data)
-	return d3.scale.category10();
+    return d3.scale.ordinal().range([ "#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854", "#FFD92F", "#E5C494", "#B3B3B3"]);
 };
 
+LABKEY.vis.Scale.DarkColorDiscrete = function(){
+	// Used for discrete color scales (color assigned to categorical data)
+    return d3.scale.ordinal().range(["#378a70", "#f34704", "#4b67a6", "#d53597", "#72a124", "#c8a300", "#d19641", "#808080"]);
+};
 
 LABKEY.vis.Scale.PointType = function(){
     var circle = function(paper, x, y, r){ return paper.circle(x, y, r)};
