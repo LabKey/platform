@@ -27,6 +27,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.ext.FileBrowser, {
     actionsURL : LABKEY.ActionURL.buildURL('pipeline', 'actions', null, {path:''}),
     actionsConfigURL : LABKEY.ActionURL.buildURL('pipeline', 'getPipelineActionConfig'),
 
+    containerPath : undefined,              // the containerPath of the files being shown
     path : undefined,
 
     adminOptions : undefined,               // LABKEY.FileContentConfig object which manages admin options
@@ -967,7 +968,9 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.ext.FileBrowser, {
         if (config.isCustomFileProperties())
         {
             cm = cm.concat(config.createColumnModelColumns());
-            this.fileSystem.init(config.createFileSystemConfig(this.fileSystem.initialConfig));
+            var c = config.createFileSystemConfig(this.fileSystem.initialConfig);
+            c.baseUrl = this.fileSystem.baseUrl;
+            this.fileSystem.init(c);
         }
         else
             this.fileSystem.init(this.fileSystem.initialConfig);

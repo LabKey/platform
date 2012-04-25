@@ -58,6 +58,10 @@ LABKEY.ext.ux.ToolbarReorderer = Ext.extend(LABKEY.ext.ux.Reorderer, {
     createItemDD: function(button) {
         if (button.dd != undefined) return;
 
+        //if the toolbar has overflowed items into the menu, we disable drag/drop.
+        //if you expand the window, these items will move to the toolbar and can be reordered
+        if(button.parentMenu != undefined) return;
+
         var el   = button.getEl(),
             id   = el.id,
             tbar = this.target,

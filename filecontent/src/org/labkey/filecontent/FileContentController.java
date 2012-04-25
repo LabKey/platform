@@ -449,6 +449,19 @@ public class FileContentController extends SpringActionController
                 {
                 }
             }
+            if (null != form.getRootOffset())
+            {
+                try
+                {
+                    Path offset = Path.decode(form.getRootOffset());
+                    String sep = part.getModelBean().getRootPath().endsWith("/") ? "" : "/";
+                    part.getModelBean().setRootPath(part.getModelBean().getRootPath() + sep + offset);
+                    part.getModelBean().setRootOffset(offset.toString());
+                }
+                catch (Throwable t)
+                {
+                }
+            }
             part.setFrame(WebPartView.FrameType.NONE);
             part.setWide(true);
             part.getModelBean().setAutoResize(true);
@@ -1468,6 +1481,7 @@ public class FileContentController extends SpringActionController
     public static class FileContentForm
     {
         private String rootPath;
+        private String rootOffset;
         private String message;
         private String fileSetName;
         private String path;
@@ -1510,6 +1524,16 @@ public class FileContentController extends SpringActionController
         public String getPath()
         {
             return path;
+        }
+
+        public String getRootOffset()
+        {
+            return rootOffset;
+        }
+
+        public void setRootOffset(String rootOffset)
+        {
+            this.rootOffset = rootOffset;
         }
     }
 

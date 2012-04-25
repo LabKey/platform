@@ -922,12 +922,11 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
         return new Ext.Action({
             text: 'Rename',
             tooltip: 'Rename the selected file or folder',
-            //iconCls:'iconRename',
+            iconCls:'iconRename',
             disabledClass:'x-button-disabled',
             scope:this,
             disabled:true,
-            //TODO: restore once we have an icon
-            //hideText: true,
+            hideText: true,
             handler: function() {
                 if (!this.currentDirectory || !this.selectedRecord)
                     return;
@@ -1043,12 +1042,11 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
         return new Ext.Action({
             text: 'Move',
             tooltip: 'Move the selected file or folder',
-            //iconCls:'iconRename',
+            iconCls:'iconMove',
             disabledClass:'x-button-disabled',
             scope:this,
             disabled:true,
-            //TODO: restore once we have an icon
-            //hideText: true,
+            hideText: true,
             handler: function() {
                 if (!this.currentDirectory || !this.selectedRecord)
                     return;
@@ -1819,8 +1817,8 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
     showFileListMenu : function(part)
     {
         this.hideFileListMenu();
-        this._filelistmenu = new FileListMenu(this.fileSystem, part.path, this.fileFilter, this.changeDirectory.createDelegate(this));
-        this._filelistmenu.show($(part.idImg) || $('addressBar'));
+        this._filelistmenu = new LABKEY.FileSystem.Util.FileListMenu(this.fileSystem, part.path, this.fileFilter, this.changeDirectory.createDelegate(this));
+        this._filelistmenu.show(Ext.get(part.idImg) || Ext.get('addressBar'));
     },
 
 

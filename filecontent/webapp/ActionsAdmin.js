@@ -718,9 +718,24 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
             items.push({
                 text:'remove', scope: this, actionId: actionId, handler: function(b){
                     var action = this.newActions[b.initialConfig.actionId];
+
+                    //if this item is in the overflow area of the toolbar, we need to remove it differently
+                    var overflowMenu = b.ownerCt.parentMenu;
+                    if(overflowMenu)
+                    {
+                        overflowMenu.items.each(function(i){
+                            if(i.actionId == b.initialConfig.actionId){
+                                overflowMenu.hide();
+                                overflowMenu.remove(i);
+                            }
+                        }, this);
+                    }
+
                     if (action && ('object' == typeof action))
                     {
-                        action.each(function(item, idx, all){item.destroy();}, this);
+                        action.each(function(item, idx, all){
+                            item.destroy();
+                        }, this);
                         delete this.newActions[b.initialConfig.actionId];
                     }
             }});
