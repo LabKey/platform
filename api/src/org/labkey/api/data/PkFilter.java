@@ -35,7 +35,6 @@ public class PkFilter extends SimpleFilter
         List<ColumnInfo> columnPK = tinfo.getPkColumns();
         Object[] pkVals;
 
-        assert null != columnPK;
         assert columnPK.size() == 1 || ((Object[]) pkVal).length == columnPK.size();
 
         if (columnPK.size() == 1 && !pkVal.getClass().isArray())

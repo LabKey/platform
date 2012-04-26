@@ -1051,7 +1051,6 @@ public class Table
         List<ColumnInfo> columnPK = table.getPkColumns();
         Object[] pkVals;
 
-        assert null != columnPK;
         assert columnPK.size() == 1 || ((Object[]) rowId).length == columnPK.size();
 
         if (columnPK.size() == 1 && !rowId.getClass().isArray())

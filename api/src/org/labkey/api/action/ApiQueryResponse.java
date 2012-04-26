@@ -211,7 +211,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
 
         //include an id property set to the pk column name if there is one (and only one)
         List<ColumnInfo> pkCols = _tinfo.getPkColumns();
-        if (null != pkCols && 1 == pkCols.size())
+        if (1 == pkCols.size())
             metaData.put("id", pkCols.get(0).getName());
 
         metaData.put("fields", fields);

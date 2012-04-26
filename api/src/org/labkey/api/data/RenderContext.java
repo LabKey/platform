@@ -44,7 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class RenderContext extends BoundMap // extends ViewContext
+public class RenderContext extends BoundMap
 {
     private static final Logger _log = Logger.getLogger(RenderContext.class);
 
@@ -226,13 +226,8 @@ public class RenderContext extends BoundMap // extends ViewContext
         Collection<ColumnInfo> infoCollection = QueryService.get().getColumns(tinfo, keys, ret).values();
         ret.addAll(infoCollection);
 
-        List<ColumnInfo> pkColumns = tinfo.getPkColumns();
-
-        if (null != pkColumns)
-        {
-            //always need to select pks
-            ret.addAll(pkColumns);
-        }
+        //always need to select pks
+        ret.addAll(tinfo.getPkColumns());
 
         String versionCol = tinfo.getVersionColumnName();
 
