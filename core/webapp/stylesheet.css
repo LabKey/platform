@@ -2177,12 +2177,12 @@ a.no-arrow {
 
 /* these are the new text links with css arrows */
 
-.labkey-text-link
+.labkey-text-link, a.labkey-text-link-noarrow
 {
     font-size: 10px;
 }
 
-a.labkey-text-link, a.labkey-text-link:visited {
+a.labkey-text-link, a.labkey-text-link:visited, a.labkey-text-link-noarrow {
     color: #126495;
     font-family: Verdana,Arial,Helvetica,sans-serif;
     font-weight: bold;
@@ -2193,6 +2193,9 @@ a.labkey-text-link, a.labkey-text-link:visited {
     vertical-align: middle;
     white-space: nowrap;
     margin: 0.1em 0.8em 0.5em 0;
+}
+
+a.labkey-text-link, a.labkey-text-link:visited {
     background: url(./_images/arrow_right.png) right no-repeat;
 }
 
@@ -2202,7 +2205,7 @@ table.labkey-data-region a.labkey-text-link:visited {
     position: static;
 }
 
-a.labkey-text-link:hover {
+a.labkey-text-link:hover, a.labkey-text-link-noarrow:hover {
     text-transform: uppercase;
     /*font-size: 10px;*/
     font-family: Verdana, Arial, Helvetica, sans serif;
