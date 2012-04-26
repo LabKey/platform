@@ -94,7 +94,7 @@ public class ResultsQueryView extends AssayBaseQueryView
                 if (getTable().getContainerFilter() != null)
                     publishURL.addParameter("containerFilterName", getTable().getContainerFilter().getType().name());
 
-                ActionButton publishButton = new ActionButton(publishURL.getLocalURIString(),
+                ActionButton publishButton = new ActionButton(publishURL,
                         "Copy to Study", DataRegion.MODE_GRID, ActionButton.Action.POST);
                 publishButton.setDisplayPermission(InsertPermission.class);
                 publishButton.setRequiresSelection(true);

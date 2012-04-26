@@ -199,7 +199,9 @@ public class UserDefinedButtonConfig implements ButtonConfig
         {
             // An ActionButton must have a valid URL, even if that URL doesn't go anywhere (as in the case of
             // a button with only an onClick handler.
-            ActionButton btn = new ActionButton(_url != null ? processURL(ctx, _url) : "#", _text);
+            String url = null==_url ? "#" : processURL(ctx,_url);
+            ActionButton btn = new ActionButton(_text, StringExpressionFactory.create(url, true));
+
             btn.setDisplayPermission(_permission);
             if (null != _onClick)
                 btn.setScript(getWrappedOnClick(ctx, _onClick), false);

@@ -133,6 +133,13 @@ public class ActionButton extends DisplayElement implements Cloneable
         _actionType = Action.LINK;
     }
 
+    public ActionButton(String caption, StringExpression link)
+    {
+        _caption = StringExpressionFactory.create(caption);
+        _url = link;
+        _actionType = Action.LINK;
+    }
+
     public ActionButton(ActionURL url, String caption)
     {
         _caption = StringExpressionFactory.create(caption);
