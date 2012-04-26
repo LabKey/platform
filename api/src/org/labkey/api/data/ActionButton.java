@@ -135,7 +135,8 @@ public class ActionButton extends DisplayElement implements Cloneable
 
     public ActionButton(ActionURL url, String caption)
     {
-        this(url.getLocalURIString(), caption);
+        _caption = StringExpressionFactory.create(caption);
+        _url = StringExpressionFactory.create(url.getLocalURIString(true), true);
     }
 
     @Deprecated /** Use version that takes an action class instead */
@@ -256,7 +257,12 @@ public class ActionButton extends DisplayElement implements Cloneable
 
     public String getURL(RenderContext ctx)
     {
-        return _eval(_url, ctx);
+        if (null != _url)
+            return _eval(_url, ctx);
+        String action = getActionName(ctx);
+        ActionURL url = ctx.getViewContext().cloneActionURL().deleteParameters();
+        url.setAction(action);
+        return url.getLocalURIString();
     }
 
     public String getScript(RenderContext ctx)
@@ -322,7 +328,7 @@ public class ActionButton extends DisplayElement implements Cloneable
             // confirmation message.
             return "return verifySelected(" +
                         (_encodedSubmitForm != null ? _encodedSubmitForm : "this.form") + ", " +
-                        "\"" + (_url != null ? getURL(ctx) : getActionName(ctx)) + "\", " +
+                        "\"" + getURL(ctx) + "\", " +
                         "\"" + _actionType.toString() + "\", " +
                         "\"rows\"" +
                         (_pluralConfirmText != null ? ", \"" + PageFlowUtil.filter(_pluralConfirmText) + "\"" : "") +
@@ -331,11 +337,8 @@ public class ActionButton extends DisplayElement implements Cloneable
         }
         else
         {
-            String action = getActionName(ctx);
-            if (action == null)
-                action = getURL(ctx);
             return "this.form.action=\"" +
-                    action +
+                    getURL(ctx) +
                     "\";this.form.method=\"" +
                     _actionType.toString() + "\";";
         }
@@ -387,7 +390,7 @@ public class ActionButton extends DisplayElement implements Cloneable
         {
             if (_target != null)
                 attributes.append(" target=\"").append(PageFlowUtil.filter(_target)).append("\"");
-            out.write(PageFlowUtil.generateButton(getCaption(ctx), (_url != null ? getURL(ctx) : getActionName(ctx)), _script == null ? "" : getScript(ctx),
+            out.write(PageFlowUtil.generateButton(getCaption(ctx), getURL(ctx), _script == null ? "" : getScript(ctx),
                     attributes.toString()));
         }
         else
