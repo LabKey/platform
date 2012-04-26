@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ViewContext> me = (JspView<ViewContext>) HttpView.currentView();
@@ -116,7 +117,7 @@ function toggleItemSelector()
 }
 
 </script>
-<form action="reorderFolders.post" name="reorder" method="POST" onSubmit="saveList()">
+<form action="<%=h(buildURL(AdminController.ReorderFoldersAction.class))%>" name="reorder" method="POST" onSubmit="saveList()">
 <p>
     <input type="radio" name="resetToAlphabetical" value="true" <%= isCustomOrder ? "" : "checked" %> onChange="toggleItemSelector();"/> Sort <%= reorderingProjects ? "projects" : "folders" %> alphabetically<br>
     <input type="radio" name="resetToAlphabetical" value="false" <%= isCustomOrder ? "checked" : "" %> onChange="toggleItemSelector();" /> Use custom <%= reorderingProjects ? "project" : "folder" %> order

@@ -29,6 +29,7 @@
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.PrincipalType" %>
 <%@ page import="org.labkey.api.security.User" %>
+<%@ page import="org.labkey.core.security.SecurityController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -110,7 +111,7 @@ Ext.onReady(function()
 
 </script>
 
-<form id="groupMembersForm" action="updateMembers.post" method="POST">
+<form id="groupMembersForm" action="<%=h(buildURL(SecurityController.UpdateMembersAction.class))%>" method="POST">
 <labkey:csrf />
 <%
 if (bean.messages.size() > 0)
@@ -269,7 +270,7 @@ if (!bean.isSystemGroup)
     if (bean.members.size() == 0)
     {
         %>
-        <form action="standardDeleteGroup.post" method="POST">
+        <form action="<%=h(buildURL(SecurityController.StandardDeleteGroupAction.class))%>" method="POST">
         <labkey:csrf/>
         <%=PageFlowUtil.generateSubmitButton("Delete Empty Group", "return confirm('Permanently delete group " + bean.groupName + "?')")%>
         <input type="hidden" name="group" value="<%= bean.groupName %>">

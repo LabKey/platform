@@ -30,7 +30,7 @@
 
     String errors = formatMissedErrors("form");
 %>
-<form method="POST" action="resetPassword.post"><labkey:csrf/>
+<form method="POST" action="<%=h(buildURL(LoginController.ResetPasswordAction.class))%>"><labkey:csrf/>
     <table><%
         if (errors.length() > 0)
         { %>

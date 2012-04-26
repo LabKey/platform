@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ViewContext> me = (JspView<ViewContext>) HttpView.currentView();
@@ -43,7 +44,7 @@
     </tr>
     <tr>
         <td>
-        <form action="folderAliases.post" method="post">
+        <form action="<%=h(buildURL(AdminController.FolderAliasesAction.class))%>" method="post">
             <textarea rows="4" cols="40" name="aliases"><%
                 StringBuilder sb = new StringBuilder();
                 String separator = "";

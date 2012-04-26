@@ -27,7 +27,7 @@
     JspView<LoginController.Config> me = (JspView<Config>)HttpView.currentView();
     Config bean = me.getModelBean();
 %>
-<form action="configureDbLogin.post" method="post">
+<form action="<%=h(buildURL(LoginController.ConfigureDbLoginAction.class))%>" method="post">
 <table>
     <tr>
         <td class="labkey-form-label">Password Strength</td>

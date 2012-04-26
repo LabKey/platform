@@ -21,7 +21,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<form action="updateMembers.post" method="POST">
+<form action="<%=h(buildURL(SecurityController.UpdateMembersAction.class))%>" method="POST">
 <%
     SecurityController.UpdateMembersBean bean = ((JspView<SecurityController.UpdateMembersBean>)HttpView.currentView()).getModelBean();
 

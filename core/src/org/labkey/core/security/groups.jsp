@@ -80,7 +80,7 @@ LABKEY.requiresScript('completion.js');
                     %>
                         <tr>
                             <td colspan="3">
-                                <form action="updateMembers.post" method="POST">
+                                <form action="<%=h(buildURL(SecurityController.UpdateMembersAction.class))%>" method="POST">
                                     New member email:
                                     <input type="hidden" name="group" value="<%= groupPath %>">
                                     <input type="hidden" name="quickUI" value="true">
@@ -103,7 +103,7 @@ LABKEY.requiresScript('completion.js');
     %>
 </table>
 
-<form action=newGroup.post method=POST>
+<form action="<%=h(buildURL(SecurityController.NewGroupAction.class))%>" method=POST>
     <labkey:csrf/>
     <table>
         <tr>

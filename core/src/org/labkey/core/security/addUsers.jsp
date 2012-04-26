@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.core.user.UserController.UserUrlsImpl" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.core.user.UserController" %>
+<%@ page import="org.labkey.core.security.SecurityController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -64,7 +65,7 @@
     }
 </script>
 
-<form action="addUsers.post" method=post>
+<form action="<%=buildURL(SecurityController.AddUsersAction.class)%>" method=post>
     <labkey:csrf/>
     <table><%
             if (getErrors("form").hasErrors());

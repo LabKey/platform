@@ -69,7 +69,7 @@ function testMascot()
     mascotForm.mascotUserPassword.value = preferenceForm.mascotUserPassword.value;
     mascotForm.mascotHTTPProxy.value = preferenceForm.mascotHTTPProxy.value;
 
-    mascotForm.action = "<%= request.getContextPath() %>/MS2/mascotTest.view";
+    mascotForm.action = LABKEY.ActionURL.buildURL("ms2","mascotTest","/");
     mascotForm.submit();
 }
     
@@ -354,11 +354,11 @@ Click the Save button at any time to accept the current settings and continue.</
     <input type="hidden" name="upgradeInProgress" value="<%=bean.upgradeInProgress ? 0 : 1%>" />
     <input type="hidden" name="sequestServer" value="" />
 </form>
-<form name="networkdrivetest" action="showNetworkDriveTest.view" enctype="multipart/form-data" method="post" target="_new">
+<form name="networkdrivetest" action="<%=buildURL(AdminController.ShowNetworkDriveTestAction.class)%>" enctype="multipart/form-data" method="post" target="_new">
     <input type="hidden" name="upgradeInProgress" value="<%=bean.upgradeInProgress ? 0 : 1%>" />
     <input type="hidden" name="networkDriveLetter" value="" />
     <input type="hidden" name="networkDrivePath" value="" />
     <input type="hidden" name="networkDriveUser" value="" />
     <input type="hidden" name="networkDrivePassword" value="" />
 </form>
-<form name="systemMaintenance" action="systemMaintenance.post" method="post" target="systemMaintenance"></form>
+<form name="systemMaintenance" action="<%=buildURL(AdminController.SystemMaintenanceAction.class)%>" method="post" target="systemMaintenance"></form>

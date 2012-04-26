@@ -22,7 +22,7 @@
 <%
     HttpView<AuthenticationManager.AuthLogoBean> me = (HttpView<AuthenticationManager.AuthLogoBean>) HttpView.currentView();
     AuthenticationManager.AuthLogoBean bean = me.getModelBean();
-%><form action="pickAuthLogo.post" enctype="multipart/form-data" method="post">
+%><form action="<%=h(buildURL(AuthenticationManager.PickAuthLogoAction.class))%>" enctype="multipart/form-data" method="post">
 <table>
 <%=formatMissedErrorsInTable("form", 3)%>
 <tr>
