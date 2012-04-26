@@ -17,26 +17,23 @@
 package org.labkey.list.model;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.DomainURIFactory;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListDefinition.KeyType;
 import org.labkey.api.exp.list.ListService;
-import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.Type;
 import org.labkey.api.gwt.client.ui.domain.ImportException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
-import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
-import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.FacetingBehaviorType;
 import org.labkey.data.xml.TableType;
@@ -44,7 +41,6 @@ import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;

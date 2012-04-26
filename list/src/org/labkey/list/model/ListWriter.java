@@ -16,7 +16,6 @@
 
 package org.labkey.list.model;
 
-import org.apache.log4j.Logger;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.ColumnInfo;
@@ -70,7 +69,6 @@ import java.util.Set;
 */
 public class ListWriter
 {
-    private static final Logger LOG = Logger.getLogger(ListWriter.class);
     private static final String SCHEMA_FILENAME = "lists.xml";
 
     public boolean write(Container c, User user, VirtualFile listsDir) throws Exception
