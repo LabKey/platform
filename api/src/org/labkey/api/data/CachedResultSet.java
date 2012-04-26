@@ -342,6 +342,12 @@ public class CachedResultSet implements ResultSet, Table.TableResultSet
             return 0;
         if (o instanceof Integer || o instanceof Short || o instanceof Byte)
             return ((Number) o).intValue();
+        if (o instanceof Long)
+        {
+            long l = ((Long) o).longValue();
+            if (l >= Integer.MIN_VALUE && l <= Integer.MAX_VALUE)
+                return (int)l;
+        }
         throwConversionError("Can't convert '" + o.getClass() + "' to int");
         return 0;
     }
