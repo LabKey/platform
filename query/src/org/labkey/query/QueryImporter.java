@@ -16,6 +16,7 @@
 package org.labkey.query;
 
 import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.admin.ImportContext;
@@ -34,10 +35,10 @@ import org.labkey.data.xml.query.QueryDocument;
 import org.labkey.data.xml.query.QueryType;
 import org.labkey.folder.xml.FolderDocument;
 import org.labkey.query.persist.QueryManager;
+import org.labkey.study.xml.StudyDocument;
 
 import javax.servlet.ServletException;
-import java.io.File;
-import java.io.FilenameFilter;
+import java.io.InputStream;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
@@ -47,67 +48,67 @@ import java.util.*;
  * Date: May 16, 2009
  * Time: 2:21:56 PM
  */
-public class QueryImporter implements FolderImporter<FolderDocument.Folder>
+public class QueryImporter implements FolderImporter
 {
     public String getDescription()
     {
         return "queries";
     }
 
-    public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws ServletException, XmlException, IOException, SQLException, ImportException
+    public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws ServletException, XmlException, IOException, SQLException, ImportException
     {
-        File queriesDir = ctx.getDir("queries");
+        VirtualFile queriesDir = getQueriesDir(ctx, root);
+
         if (null != queriesDir)
         {
             if (null != job)
                 job.setStatus("IMPORT " + getDescription());
             ctx.getLogger().info("Loading " + getDescription());
 
-            File[] sqlFiles = queriesDir.listFiles(new FilenameFilter() {
-                public boolean accept(File dir, String name)
-                {
-                    return name.endsWith(QueryWriter.FILE_EXTENSION);
-                }
-            });
-
-            File[] metaFileArray = queriesDir.listFiles(new FilenameFilter() {
-                public boolean accept(File dir, String name)
-                {
-                    return name.endsWith(QueryWriter.META_FILE_EXTENSION);
-                }
-            });
-
-            Map<String, File> metaFiles = new HashMap<String, File>(metaFileArray.length);
-
-            for (File metaFile : metaFileArray)
-                metaFiles.put(metaFile.getName(), metaFile);
-
-            for (File sqlFile : sqlFiles)
+            // get the list of files and split them into sql and xml file name arrays
+            String[] queryFileNames = queriesDir.list();
+            ArrayList<String> sqlFileNames = new ArrayList<String>();
+            Map<String, QueryDocument> metaFilesMap = new HashMap<String, QueryDocument>();
+            for (String fileName : queryFileNames)
             {
-                String baseFilename = sqlFile.getName().substring(0, sqlFile.getName().length() - QueryWriter.FILE_EXTENSION.length());
+                if (fileName.endsWith(QueryWriter.FILE_EXTENSION))
+                {
+                    // make sure a SQL file/input stream exists before adding it to the array
+                    if (null != queriesDir.getInputStream(fileName))
+                        sqlFileNames.add(fileName);
+                }
+                else if (fileName.endsWith(QueryWriter.META_FILE_EXTENSION))
+                {
+                    // make sure the XML file is valid before adding it to the map
+                    XmlObject metaXml = queriesDir.getXmlBean(fileName);
+                    try
+                    {
+                        if (metaXml instanceof QueryDocument)
+                        {
+                            QueryDocument queryDoc = (QueryDocument)metaXml;
+                            XmlBeansUtil.validateXmlDocument(queryDoc);
+                            metaFilesMap.put(fileName, queryDoc);
+                        }
+                        else
+                            throw new ImportException("Unable to get an instance of QueryDocument from " + fileName);
+                    }
+                    catch (XmlValidationException e)
+                    {
+                        throw new InvalidFileException(queriesDir.getRelativePath(fileName), e);
+                    }
+                }
+            }
+
+            for (String sqlFileName : sqlFileNames)
+            {
+                String baseFilename = sqlFileName.substring(0, sqlFileName.length() - QueryWriter.FILE_EXTENSION.length());
                 String metaFileName = baseFilename + QueryWriter.META_FILE_EXTENSION;
-                File metaFile = metaFiles.get(metaFileName);
+                QueryDocument queryDoc = metaFilesMap.get(metaFileName);
 
-                if (null == metaFile)
-                    throw new ServletException("QueryImport: SQL file \"" + sqlFile.getName() + "\" has no corresponding meta data file.");
+                if (null == queryDoc)
+                    throw new ServletException("QueryImport: SQL file \"" + sqlFileName + "\" has no corresponding meta data file.");
 
-                String sql = PageFlowUtil.getFileContentsAsString(sqlFile);
-
-                QueryDocument queryDoc;
-
-                try
-                {
-                    queryDoc = QueryDocument.Factory.parse(metaFile, XmlBeansUtil.getDefaultParseOptions());
-                    XmlBeansUtil.validateXmlDocument(queryDoc);
-                }
-                catch (XmlException e)
-                {
-                    throw new InvalidFileException(root, metaFile, e);
-                }
-                catch (XmlValidationException e)
-                {
-                    throw new InvalidFileException(root, metaFile, e);
-                }
+                String sql = PageFlowUtil.getStreamContentsAsString(queriesDir.getInputStream(sqlFileName));
 
                 QueryType queryXml = queryDoc.getQuery();
 
@@ -125,16 +126,20 @@ public class QueryImporter implements FolderImporter<FolderDocument.Folder>
                     newQuery.setMetadataXml(queryXml.getMetadata().xmlText());
 
                 newQuery.save(ctx.getUser(), ctx.getContainer());
+
+                metaFilesMap.remove(metaFileName);
             }
 
-            ctx.getLogger().info(sqlFiles.length + " quer" + (1 == sqlFiles.length ? "y" : "ies") + " imported");
+            ctx.getLogger().info(sqlFileNames.size() + " quer" + (1 == sqlFileNames.size() ? "y" : "ies") + " imported");
             ctx.getLogger().info("Done importing " + getDescription());
 
-            // TODO: As a check, remove meta data files from map on each save and check for map.size == 0
+            // check to make sure that each meta xml file was used
+            if (metaFilesMap.size() > 0)
+                throw new ImportException("Not all query meta xml files had corresponding sql.");
         }
     }
 
-    public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
+    public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root) throws Exception
     {
         List<PipelineJobWarning> warnings = new ArrayList<PipelineJobWarning>();
 
@@ -172,11 +177,30 @@ public class QueryImporter implements FolderImporter<FolderDocument.Folder>
         ctx.getLogger().info("Done post-processing " + getDescription());
         return warnings;
     }
+
+    private VirtualFile getQueriesDir(ImportContext ctx, VirtualFile root) throws ImportException
+    {
+        String dirPath = null;
+        if (ctx.getXml() instanceof StudyDocument.Study)
+        {
+            StudyDocument.Study xml = (StudyDocument.Study)ctx.getXml();
+            if (xml.isSetQueries())
+                dirPath = xml.getQueries().getDir();
+        }
+        else if (ctx.getXml() instanceof FolderDocument.Folder)
+        {
+            FolderDocument.Folder xml = (FolderDocument.Folder)ctx.getXml();
+            if (xml.isSetQueries())
+                dirPath = xml.getQueries().getDir();
+        }
+
+        return null != dirPath ? root.getDir(dirPath) : null;
+    }
     
     @Override
     public boolean supportsVirtualFile()
     {
-        return false;
+        return true;
     }
 
     public static class Factory implements FolderImporterFactory

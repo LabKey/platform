@@ -11,7 +11,18 @@ LABKEY.MeasuresDataViewType = {
     SPLIT_PANELS : 'splitpanels'
 };
 
-// TODO: add doc info for input params/options
+/**
+ * Constructs a new LabKey MeasuresDialog using the supplied configuration (Current usage: LABKEY.ext4.ParticipantReport).
+ * @constructor
+ * @augments Ext.window.Window
+ * @param {string} [dataViewType] passed to the LABKEY.ext4.MeasuresPanel definition
+ * @param {boolean} [multiSelect] passed to the LABKEY.ext4.MeasuresPanel definition
+ * @param {string} [closeAction] whether to 'hide' or 'close' the window on select/cancel. Default: close.
+ * @param {object} [filter] passed to the LABKEY.ext4.MeasuresPanel definition
+ * @param {boolean} [allColumns] passed to the LABKEY.ext4.MeasuresPanel definition
+ * @param {boolean} [canShowHidden] passed to the LABKEY.ext4.MeasuresPanel definition
+ * @param {boolean} [forceQuery] passed to the LABKEY.ext4.MeasuresPanel definition
+**/
 Ext4.define('LABKEY.ext4.MeasuresDialog', {
 
     extend : 'Ext.window.Window',
@@ -84,7 +95,19 @@ Ext4.define('LABKEY.ext4.MeasuresDialog', {
     }
 });
 
-// TODO: add doc info for input params/options
+/**
+ * Constructs a new LabKey MeasuresPanel using the supplied configuration.
+ * @constructor
+ * @augments Ext.panel.Panel
+ * @param {string} [dataViewType] which data view version to use for the measure panel (either LABKEY.MeasuresDataViewType.FULL_GRID or LABKEY.MeasuresDataViewType.SPLIT_PANELS), defaults to LABKEY.MeasuresDataViewType.FULL_GRID.
+ * @param {boolean} [multiSelect] passed to LABKEY.ext4.MeasuresDataView.FullGrid definition
+ * @param {object} [filter] passed to LABKEY.ext4.MeasuresDataView.FullGrid definition
+ * @param {boolean} [allColumns] passed to LABKEY.ext4.MeasuresDataView.FullGrid definition
+ * @param {boolean} [canShowHidden] passed to LABKEY.ext4.MeasuresDataView.FullGrid definition
+ * @param {boolean} [forceQuery] passed to LABKEY.ext4.MeasuresDataView.FullGrid definition
+ * @param {boolean} [hideDemographicMeasures] passed to LABKEY.ext4.MeasuresDataView.FullGrid definition
+ * @param {object} [axis] passed to LABKEY.ext4.MeasuresDataView.FullGrid definition
+**/
 Ext4.define('LABKEY.ext4.MeasuresPanel', {
 
     extend: 'Ext.panel.Panel',
@@ -118,7 +141,7 @@ Ext4.define('LABKEY.ext4.MeasuresPanel', {
         {
             this.dataView = Ext4.create('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 allColumns    : this.allColumns,
-                canShowHidden : this.canShowHidden,
+                showHidden : this.canShowHidden,
                 bubbleEvents: ['beforeMeasuresStoreLoad', 'measuresStoreLoaded', 'measureChanged']
             });
         }
@@ -153,7 +176,19 @@ Ext4.define('LABKEY.ext4.MeasuresPanel', {
     }
 });
 
-// TODO: add doc info for input params/options
+/**
+ * Constructs a new LabKey MeasuresDataView to display a grid of all measures with columns for dataset, label, and description using the supplied configuration.
+ * @constructor
+ * @augments Ext.panel.Panel
+ * @param {boolean} [multiSelect] if true, display a grid panel with a checkbox column to allow selection of more than one measure. Default: false.
+ * @param {object} [filter] LABKEY.Visualization.Filter object to allow filtering of the measures returned by the LABKEY.Visualization.getMeasures method.
+ * @param {boolean} [allColumns] passed to LABKEY.Visualization.getMeasures method
+ * @param {boolean} [canShowHidden] if true, add a "Show All" checkbox to the display to tell the LABKEY.Visualization.getMeasures method whether or not the show hidden columns
+ * @param {boolean} [forceQuery] if true, call the getMeasures method on init
+ * @param {boolean} [hideDemographicMeasures] if true, hide the measures from demographic datasets from the display
+ * @param {object} [axis]
+ * @param {boolean} [isDateAxis]
+**/
 Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
 
     extend: 'Ext.panel.Panel',
@@ -581,7 +616,13 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
     }
 });
 
-// TODO: add doc info for input params/options
+/**
+ * Constructs a new LabKey MeasuresDataView to display a grid of all measures with columns for dataset, label, and description using the supplied configuration.
+ * @constructor
+ * @augments Ext.panel.Panel
+ * @param {boolean} [allColumns] passed to LABKEY.Visualization.getMeasures method
+ * @param {boolean} [showHidden] passed to LABKEY.Visualization.getMeasures method
+**/
 Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
     extend: 'Ext.panel.Panel',
@@ -590,7 +631,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
         Ext4.apply(this, config, {
             allColumns : false,
-            canShowHidden : false
+            showHidden : false
         });
 
         this.callParent([config]);
@@ -763,7 +804,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
         LABKEY.Visualization.getMeasures({
             filters      : [filter],
             allColumns   : this.allColumns,
-            showHidden   : this.canShowHidden,
+            showHidden   : this.showHidden,
             success      : function(measures, response){
                 this.isLoading = false;
                 this.measuresStoreData = Ext4.JSON.decode(response.responseText);
@@ -879,7 +920,6 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
     }
 });
 
-// TODO: add doc info for input params/options
 Ext4.define('LABKEY.ext4.MeasuresStore', {
 
     extend: 'Ext.data.Store',

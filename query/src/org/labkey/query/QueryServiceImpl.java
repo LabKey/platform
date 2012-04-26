@@ -80,6 +80,7 @@ import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
@@ -96,6 +97,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.io.Serializable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -519,27 +521,26 @@ public class QueryServiceImpl extends QueryService
         return ret;
     }
 
-    public int importCustomViews(User user, Container container, File viewDir) throws XmlValidationException
+    public int importCustomViews(User user, Container container, VirtualFile viewDir) throws XmlValidationException, IOException
     {
-        File[] viewFiles = viewDir.listFiles(new FilenameFilter() {
-            public boolean accept(File dir, String name)
-            {
-                return name.endsWith(CustomViewXmlReader.XML_FILE_EXTENSION);
-            }
-        });
-
         QueryManager mgr = QueryManager.get();
         HttpServletRequest request = new MockHttpServletRequest();
 
-        for (File viewFile : viewFiles)
+        int count = 0;
+        String[] viewXmlFileNames = viewDir.list();
+        for (String viewFileName : viewXmlFileNames)
         {
-            CustomViewXmlReader reader = CustomViewXmlReader.loadDefinition(viewFile);
+            // skip over any files that don't end with the expected extension
+            if (!viewFileName.endsWith(CustomViewXmlReader.XML_FILE_EXTENSION))
+                continue;
+
+            CustomViewXmlReader reader = CustomViewXmlReader.loadDefinition(viewDir.getInputStream(viewFileName), viewDir.getRelativePath(viewFileName));
 
             QueryDefinition qd = QueryService.get().createQueryDef(user, container, reader.getSchema(), reader.getQuery());
             String viewName = reader.getName();
 
             if (null == viewName)
-                throw new IllegalStateException(viewFile.getName() + ": Must specify a view name");
+                throw new IllegalStateException(viewFileName + ": Must specify a view name");
 
             try
             {
@@ -561,9 +562,11 @@ public class QueryServiceImpl extends QueryService
             cv.setFilterAndSort(reader.getFilterAndSortString());
             cv.setIsHidden(reader.isHidden());
             cv.save(user, request);
+
+            count++;
         }
 
-        return viewFiles.length;
+        return count;
     }
 
 

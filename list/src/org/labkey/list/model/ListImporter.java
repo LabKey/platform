@@ -17,6 +17,7 @@
 package org.labkey.list.model;
 
 import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.ColumnRenderProperties;
@@ -34,19 +35,21 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.FacetingBehaviorType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
 
-import java.io.File;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import java.io.InputStream;
 
 /*
 * User: adam
@@ -56,26 +59,30 @@ import java.util.Set;
 public class ListImporter
 {
     private static final String TYPE_NAME_COLUMN = "ListName";
+    private static final String SCHEMA_FILE_NAME = "lists.xml";
 
-    public void process(File listsDir, Container c, User user, List<String> errors, Logger log) throws Exception
+    public void process(VirtualFile listsDir, Container c, User user, List<String> errors, Logger log) throws Exception
     {
-        File schemaFile = new File(listsDir, "lists.xml");
-
         TablesDocument tablesDoc;
-
         try
         {
-            tablesDoc = TablesDocument.Factory.parse(schemaFile, XmlBeansUtil.getDefaultParseOptions());
-            XmlBeansUtil.validateXmlDocument(tablesDoc);
+            XmlObject listXml = listsDir.getXmlBean(SCHEMA_FILE_NAME);
+            if (listXml instanceof TablesDocument)
+            {
+                tablesDoc = (TablesDocument)listXml;
+                XmlBeansUtil.validateXmlDocument(tablesDoc);
+            }
+            else
+                throw new ImportException("Unable to get an instance of TablesDocument from " + SCHEMA_FILE_NAME);
         }
         catch (XmlValidationException xve)
         {
             // Note: different constructor than the one below
-            throw new InvalidFileException(schemaFile.getName(), xve);
+            throw new InvalidFileException(SCHEMA_FILE_NAME, xve);
         }
         catch (Exception e)
         {
-            throw new InvalidFileException(schemaFile.getName(), e);
+            throw new InvalidFileException(SCHEMA_FILE_NAME, e);
         }
 
         TablesType tablesXml = tablesDoc.getTables();
@@ -112,11 +119,10 @@ public class ListImporter
             if (null != def)
             {
                 String legalName = FileUtil.makeLegalName(name);
-                File tsv = new File(listsDir, legalName + ".tsv");
-
-                if (tsv.exists())
-                {
-                    errors.addAll(def.insertListItems(user, DataLoader.getDataLoaderForFile(tsv), new File(listsDir, legalName), null));
+                InputStream tsv = listsDir.getInputStream(legalName + ".tsv");
+                if (null != tsv)
+                { 
+                    errors.addAll(def.insertListItems(user, DataLoader.getDataLoaderForInputStream(tsv, false), listsDir.getDir(legalName), null));
 
                     // TODO: Error the entire job on import error?
                 }

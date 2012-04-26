@@ -25,6 +25,7 @@ import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
+import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,16 +37,16 @@ import java.util.Collection;
  * Date: May 16, 2009
  * Time: 2:33:52 PM
  */
-public class CustomViewImporter implements FolderImporter<FolderDocument.Folder>
+public class CustomViewImporter implements FolderImporter
 {
     public String getDescription()
     {
         return "custom views";
     }
 
-    public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws IOException, SQLException, ImportException, XmlValidationException
+    public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws IOException, SQLException, ImportException, XmlValidationException
     {
-        File viewDir = ctx.getDir("views");
+        VirtualFile viewDir = getViewsDir(ctx, root);
 
         if (null != viewDir)
         {
@@ -60,16 +61,34 @@ public class CustomViewImporter implements FolderImporter<FolderDocument.Folder>
         }
     }
 
-    public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
+    public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root) throws Exception
     {
-        //nothing for now
-        return null;        
+        return null;
+    }
+
+    private VirtualFile getViewsDir(ImportContext ctx, VirtualFile root) throws ImportException
+    {
+        String dirPath = null;
+        if (ctx.getXml() instanceof StudyDocument.Study)
+        {
+            StudyDocument.Study xml = (StudyDocument.Study)ctx.getXml();
+            if (xml.isSetViews())
+                dirPath = xml.getViews().getDir();
+        }
+        else if (ctx.getXml() instanceof FolderDocument.Folder)
+        {
+            FolderDocument.Folder xml = (FolderDocument.Folder)ctx.getXml();
+            if (xml.isSetViews())
+                dirPath = xml.getViews().getDir();
+        }
+
+        return null != dirPath ? root.getDir(dirPath) : null;
     }
 
     @Override
     public boolean supportsVirtualFile()
     {
-        return false;
+        return true;
     }
 
     public static class Factory implements FolderImporterFactory

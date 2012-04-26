@@ -20,10 +20,12 @@ import org.apache.log4j.Logger;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
+import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
 import java.util.Collection;
@@ -35,16 +37,16 @@ import java.util.List;
 * Date: Aug 27, 2009
 * Time: 2:12:01 PM
 */
-public class FolderListImporter implements FolderImporter<FolderDocument.Folder>
+public class FolderListImporter implements FolderImporter
 {
     public String getDescription()
     {
         return "lists";
     }
 
-    public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
+    public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws Exception
     {
-        File listsDir = ctx.getDir("lists");
+        VirtualFile listsDir = getListsDir(ctx, root);
 
         if (null != listsDir)
         {
@@ -64,16 +66,34 @@ public class FolderListImporter implements FolderImporter<FolderDocument.Folder>
         }
     }
 
-    public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
+    public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root) throws Exception
     {
-        //nothing for now
         return null;
+    }
+
+    private VirtualFile getListsDir(ImportContext ctx, VirtualFile root) throws ImportException
+    {
+        String dirPath = null;
+        if (ctx.getXml() instanceof StudyDocument.Study)
+        {
+            StudyDocument.Study xml = (StudyDocument.Study)ctx.getXml();
+            if (xml.isSetLists())
+                dirPath = xml.getLists().getDir();
+        }
+        else if (ctx.getXml() instanceof FolderDocument.Folder)
+        {
+            FolderDocument.Folder xml = (FolderDocument.Folder)ctx.getXml();
+            if (xml.isSetLists())
+                dirPath = xml.getLists().getDir();
+        }
+
+        return null != dirPath ? root.getDir(dirPath) : null;
     }
 
     @Override
     public boolean supportsVirtualFile()
     {
-        return false;
+        return true;
     }
 
     public static class Factory implements FolderImporterFactory

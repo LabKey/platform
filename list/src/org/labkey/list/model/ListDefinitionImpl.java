@@ -59,6 +59,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.list.client.ListEditorService;
 import org.labkey.list.view.ListController;
 import org.labkey.list.view.ListImportHelper;
@@ -410,7 +411,7 @@ public class ListDefinitionImpl implements ListDefinition
         }
     }
 
-    public List<String> insertListItems(User user, DataLoader loader, @Nullable File attachmentDir, @Nullable ListImportProgress progress) throws IOException
+    public List<String> insertListItems(User user, DataLoader loader, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress) throws IOException
     {
         List<String> errors = new LinkedList<String>();
         Set<String> mvIndicatorColumnNames = new CaseInsensitiveHashSet();
@@ -629,7 +630,7 @@ public class ListDefinitionImpl implements ListDefinition
         return errors;
     }
 
-    private void doBulkInsert(User user, ColumnDescriptor cdKey, Domain domain, Map<String, DomainProperty> properties, List<Map<String, Object>> rows, @Nullable File attachmentDir, List<String> errors, @Nullable ListImportProgress progress)
+    private void doBulkInsert(User user, ColumnDescriptor cdKey, Domain domain, Map<String, DomainProperty> properties, List<Map<String, Object>> rows, @Nullable VirtualFile attachmentDir, List<String> errors, @Nullable ListImportProgress progress)
     {
         try
         {

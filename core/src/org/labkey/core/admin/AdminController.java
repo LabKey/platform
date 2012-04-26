@@ -114,6 +114,7 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.PreferenceService;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
@@ -3929,19 +3930,22 @@ public class AdminController extends SpringActionController
 
                         MemoryVirtualFile vf = new MemoryVirtualFile();
 
-                        // export objects from the source folder, then import then into the new folder
+                        // export objects from the source folder
                         FolderWriterImpl writer = new FolderWriterImpl();
                         FolderExportContext exportCtx = new FolderExportContext(getUser(), sourceContainer, PageFlowUtil.set(form.getTemplateWriterTypes()), "new", Logger.getLogger(FolderWriterImpl.class));
                         writer.write(sourceContainer, exportCtx, vf);
 
-                        FolderImporterImpl importer = new FolderImporterImpl();
+                        // import objects into the target folder
                         XmlObject folderXml = vf.getXmlBean("folder.xml");
                         if (folderXml instanceof FolderDocument)
                         {
-                            // TODO: need to include the MissingValueImporter
-
                             FolderDocument folderDoc = (FolderDocument)folderXml;
                             FolderImportContext importCtx = new FolderImportContext(getUser(), c, folderDoc, Logger.getLogger(FolderImporterImpl.class), vf);
+
+                            // TODO: need to change MissingValueImporter to be included with other registered folder importers
+                            StudyService.get().getMissingValueImporter().process(null, importCtx, vf);
+
+                            FolderImporterImpl importer = new FolderImporterImpl();
                             importer.process(null, importCtx, vf);
                             //importer.postProcess(importCtx, vf);
                         }

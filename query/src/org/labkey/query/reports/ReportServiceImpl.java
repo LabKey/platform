@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -543,9 +544,9 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         _uncacheDependent(view);
     }
 
-    private Report _deserialize(Container container, User user, File file) throws IOException, XmlValidationException
+    private Report _deserialize(Container container, User user, XmlObject reportXml) throws IOException, XmlValidationException
     {
-        ReportDescriptor descriptor = ReportDescriptor.createFromXML(container, user, file);
+        ReportDescriptor descriptor = ReportDescriptor.createFromXmlObject(container, user, reportXml);
 
         if (descriptor != null)
         {
@@ -564,11 +565,11 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         return null;
     }
 
-    private Report deserialize(Container container, User user, File reportFile) throws IOException, XmlValidationException
+    private Report deserialize(Container container, User user, XmlObject reportXml) throws IOException, XmlValidationException
     {
-        if (reportFile.exists())
+        if (null != reportXml)
         {
-            Report report = _deserialize(container, user, reportFile);
+            Report report = _deserialize(container, user, reportXml);
 
             // reset any report identifier, we want to treat an imported report as a new
             // report instance
@@ -577,12 +578,12 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
             return report;
         }
 
-        throw new IllegalArgumentException("Specified file does not exist: " + reportFile.getAbsolutePath());
+        throw new IllegalArgumentException("Report XML file does not exist.");
     }
 
-    public Report importReport(final User user, final Container container, File reportFile) throws IOException, SQLException, XmlValidationException
+    public Report importReport(final User user, final Container container, XmlObject reportXml) throws IOException, SQLException, XmlValidationException
     {
-        Report report = deserialize(container, user, reportFile);
+        Report report = deserialize(container, user, reportXml);
         ReportDescriptor descriptor = report.getDescriptor();
         String key = descriptor.getReportKey();
 

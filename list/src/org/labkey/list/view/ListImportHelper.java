@@ -19,7 +19,7 @@ package org.labkey.list.view;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.FileAttachmentFile;
+import org.labkey.api.attachments.InputStreamAttachmentFile;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
@@ -31,11 +31,13 @@ import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.list.model.FileNameUniquifier;
 import org.labkey.list.model.ListItemImpl;
 import org.labkey.list.model.ListManager;
 
 import java.io.File;
+import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -49,12 +51,12 @@ public class ListImportHelper implements OntologyManager.ImportHelper
     private final DomainProperty[] _properties;
     private final ColumnDescriptor _cdKey;
     @Nullable
-    private final File _attachmentDir;
+    private final VirtualFile _attachmentDir;
     @Nullable
     private final ListImportProgress _progress;
     private final Map<String, FileNameUniquifier> _uniquifiers = new HashMap<String, FileNameUniquifier>();
 
-    public ListImportHelper(User user, ListDefinition list, DomainProperty[] properties, ColumnDescriptor cdKey, @Nullable File attachmentDir, @Nullable ListImportProgress progress)
+    public ListImportHelper(User user, ListDefinition list, DomainProperty[] properties, ColumnDescriptor cdKey, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress)
     {
         _user = user;
         _list = list;
@@ -107,8 +109,9 @@ public class ListImportHelper implements OntologyManager.ImportHelper
                         }
 
                         String filename = file.getName();
-                        File aFile = new File(new File(_attachmentDir, FileUtil.makeLegalName(columnName)), uniquifier.uniquify(filename));
-                        AttachmentFile attachmentFile = new FileAttachmentFile(aFile);
+
+                        InputStream aIS = _attachmentDir.getDir(columnName).getInputStream(uniquifier.uniquify(filename));
+                        AttachmentFile attachmentFile = new InputStreamAttachmentFile(aIS, filename);
                         attachmentFile.setFilename(filename);
                         attachmentFiles.add(attachmentFile);
                     }

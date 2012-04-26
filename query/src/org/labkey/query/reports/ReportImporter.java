@@ -26,6 +26,7 @@ import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
+import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -38,56 +39,78 @@ import java.util.Collection;
  * Date: May 16, 2009
  * Time: 2:33:52 PM
  */
-public class ReportImporter implements FolderImporter<FolderDocument.Folder>
+public class ReportImporter implements FolderImporter
 {
     public String getDescription()
     {
         return "reports";
     }
 
-    public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws IOException, SQLException, ImportException
+    public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws IOException, SQLException, ImportException
     {
-        File reportsDir = ctx.getDir("reports");
+        VirtualFile reportsDir = getReportsDir(ctx, root);
+
         if (null != reportsDir)
         {
             if (null != job)
                 job.setStatus("IMPORT " + getDescription());
             ctx.getLogger().info("Loading " + getDescription());
 
-            File[] reportsFiles = reportsDir.listFiles(new FilenameFilter() {
-                public boolean accept(File dir, String name)
-                {
-                    return name.endsWith(".report.xml");
-                }
-            });
-
-            for (File reportFile : reportsFiles)
+            int count = 0;
+            String[] reportFileNames = reportsDir.list();
+            for (String reportFileName : reportFileNames)
             {
+                // skip over any files that don't end with the expected extension
+                if (!reportFileName.endsWith(".report.xml"))
+                    continue;
+
+                if (null == reportsDir.getXmlBean(reportFileName))
+                    throw new IllegalArgumentException("Specified report does not exist: " + reportFileName);
+
                 try
                 {
-                    ReportService.get().importReport(ctx.getUser(), ctx.getContainer(), reportFile);
+                    ReportService.get().importReport(ctx.getUser(), ctx.getContainer(), reportsDir.getXmlBean(reportFileName));
+                    count++;
                 }
                 catch (XmlValidationException e)
                 {
-                    throw new InvalidFileException(root, reportFile, e);
+                    throw new InvalidFileException(root.getRelativePath(reportFileName), e);
                 }
             }
 
-            ctx.getLogger().info(reportsFiles.length + " report" + (1 == reportsFiles.length ? "" : "s") + " imported");
+            ctx.getLogger().info(count + " report" + (1 == count ? "" : "s") + " imported");
             ctx.getLogger().info("Done importing " + getDescription());
         }
     }
 
-    public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
+    public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root) throws Exception
     {
-        //nothing for now
         return null;
+    }
+
+    private VirtualFile getReportsDir(ImportContext ctx, VirtualFile root) throws ImportException
+    {
+        String dirPath = null;
+        if (ctx.getXml() instanceof StudyDocument.Study)
+        {
+            StudyDocument.Study xml = (StudyDocument.Study)ctx.getXml();
+            if (xml.isSetReports())
+                dirPath = xml.getReports().getDir();
+        }
+        else if (ctx.getXml() instanceof FolderDocument.Folder)
+        {
+            FolderDocument.Folder xml = (FolderDocument.Folder)ctx.getXml();
+            if (xml.isSetReports())
+                dirPath = xml.getReports().getDir();
+        }
+
+        return null != dirPath ? root.getDir(dirPath) : null;
     }
 
     @Override
     public boolean supportsVirtualFile()
     {
-        return false;
+        return true;
     }    
 
     public static class Factory implements FolderImporterFactory

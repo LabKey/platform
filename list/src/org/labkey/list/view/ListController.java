@@ -96,6 +96,7 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.list.model.ListAuditViewFactory;
@@ -1153,7 +1154,7 @@ public class ListController extends SpringActionController
 
                     try
                     {
-                        li.process(dir, getContainer(), getUser(), errorList, Logger.getLogger(ListController.class));
+                        li.process(new FileSystemFile(dir), getContainer(), getUser(), errorList, Logger.getLogger(ListController.class));
 
                         for (String error : errorList)
                             errors.reject(ERROR_MSG, error);

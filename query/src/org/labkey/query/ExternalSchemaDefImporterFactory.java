@@ -16,9 +16,11 @@
 package org.labkey.query;
 
 import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
@@ -65,35 +67,40 @@ public class ExternalSchemaDefImporterFactory implements FolderImporterFactory
         @Override
         public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
-            File externalSchemaDir = ctx.getDir(ExternalSchemaDefWriterFactory.DEFAULT_DIRECTORY);
+            VirtualFile externalSchemaDir = null;
+            if (ctx.getXml().isSetExternalSchemas())
+                externalSchemaDir = root.getDir(ctx.getXml().getExternalSchemas().getDir());
+
             if (null != externalSchemaDir)
             {
                 if (null != job)
                     job.setStatus("IMPORT " + getDescription());
                 ctx.getLogger().info("Loading " + getDescription());
 
-                File[] schemaXmlFiles = externalSchemaDir.listFiles(new FilenameFilter() {
-                    public boolean accept(File dir, String name)
-                    {
-                        return name.endsWith(ExternalSchemaDefWriterFactory.FILE_EXTENSION);
-                    }
-                });
+                String[] schemaXmlFileNames = externalSchemaDir.list();
 
-                for (File schemaFile : schemaXmlFiles)
+                for (String schemaFileName : schemaXmlFileNames)
                 {
+                    // skip over any files that don't end with the expected extension
+                    if (!schemaFileName.endsWith(ExternalSchemaDefWriterFactory.FILE_EXTENSION))
+                        continue;
+
+                    XmlObject schemaXmlFile = externalSchemaDir.getXmlBean(schemaFileName);
+
                     ExternalSchemaDocument schemaDoc;
                     try
                     {
-                        schemaDoc = ExternalSchemaDocument.Factory.parse(schemaFile, XmlBeansUtil.getDefaultParseOptions());
-                        XmlBeansUtil.validateXmlDocument(schemaDoc);
-                    }
-                    catch (XmlException e)
-                    {
-                        throw new InvalidFileException(root, schemaFile, e);
+                        if (schemaXmlFile instanceof ExternalSchemaDocument)
+                        {
+                            schemaDoc = (ExternalSchemaDocument)schemaXmlFile;
+                            XmlBeansUtil.validateXmlDocument(schemaDoc);
+                        }
+                        else
+                            throw new ImportException("Unable to get an instance of ExternalSchemaDocument from " + schemaXmlFile);
                     }
                     catch (XmlValidationException e)
                     {
-                        throw new InvalidFileException(root, schemaFile, e);
+                        throw new InvalidFileException(root.getRelativePath(schemaFileName), e);
                     }
 
                     ExternalSchemaType schemaXml = schemaDoc.getExternalSchema();
@@ -136,7 +143,7 @@ public class ExternalSchemaDefImporterFactory implements FolderImporterFactory
                     form.doInsert();
                 }
 
-                ctx.getLogger().info(schemaXmlFiles.length + " external schema definition" + (schemaXmlFiles.length > 1 ? "s" : "") + " imported");
+                ctx.getLogger().info(schemaXmlFileNames.length + " external schema definition" + (schemaXmlFileNames.length > 1 ? "s" : "") + " imported");
                 ctx.getLogger().info("Done importing " + getDescription());
             }
         }
@@ -150,7 +157,7 @@ public class ExternalSchemaDefImporterFactory implements FolderImporterFactory
         @Override
         public boolean supportsVirtualFile()
         {
-            return false;
+            return true;
         }
     }
 }

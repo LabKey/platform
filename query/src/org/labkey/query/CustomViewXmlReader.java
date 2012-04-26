@@ -244,7 +244,7 @@ public class CustomViewXmlReader
         }
     }
 
-    private static CustomViewXmlReader loadDefinition(InputStream is, String path)
+    public static CustomViewXmlReader loadDefinition(InputStream is, String path)
     {
         try
         {
