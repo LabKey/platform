@@ -20,7 +20,9 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.XmlBeansUtil;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,6 +39,7 @@ public class MemoryVirtualFile extends AbstractVirtualFile
     private String _root;
     private Map<String, XmlObject> _docMap = new HashMap<String, XmlObject>();
     private Map<String, StringWriter> _textDocMap = new HashMap<String, StringWriter>();
+    private Map<String, ByteArrayOutputStream> _byteDocMap = new HashMap<String, ByteArrayOutputStream>();
     private Map<String, MemoryVirtualFile> _folders = new HashMap<String, MemoryVirtualFile>();
 
     public MemoryVirtualFile()
@@ -61,7 +64,10 @@ public class MemoryVirtualFile extends AbstractVirtualFile
     @Override
     public OutputStream getOutputStream(String filename) throws IOException
     {
-        throw new UnsupportedOperationException("getOutputStream not supported by memory virtual files");
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        _byteDocMap.put(filename, os);
+
+        return new BufferedOutputStream(os);
     }
 
     @Override
@@ -78,7 +84,11 @@ public class MemoryVirtualFile extends AbstractVirtualFile
             return new BufferedInputStream(new ByteArrayInputStream(contents.getBytes()));
         }
 
-        // TODO: add new map for output stream here
+        ByteArrayOutputStream os = _byteDocMap.get(filename);
+        if (os != null)
+        {
+            return new BufferedInputStream(new ByteArrayInputStream(os.toByteArray()));
+        }
 
         return null;
     }
@@ -141,6 +151,7 @@ public class MemoryVirtualFile extends AbstractVirtualFile
 
         names.addAll(_docMap.keySet());
         names.addAll(_textDocMap.keySet());
+        names.addAll(_byteDocMap.keySet());
 
         return names.toArray(new String[names.size()]);
     }

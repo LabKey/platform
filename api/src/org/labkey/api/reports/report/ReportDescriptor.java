@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -439,54 +440,82 @@ public class ReportDescriptor extends Entity implements SecurableResource
         return create(props);
     }
 
-    public static ReportDescriptor createFromXML(Container container, User user, File file) throws IOException, XmlValidationException
+    public static ReportDescriptor createFromFile(Container container, User user, File file) throws IOException, XmlValidationException
     {
+        ReportDescriptorDocument doc;
         try
         {
             XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
             options.setLoadSubstituteNamespaces(Collections.singletonMap("", "http://labkey.org/query/xml"));
 
-            ReportDescriptorDocument doc = ReportDescriptorDocument.Factory.parse(file, options);
+            doc = ReportDescriptorDocument.Factory.parse(file, options);
             XmlBeansUtil.validateXmlDocument(doc);
-            ReportDescriptorDocument.ReportDescriptor d = doc.getReportDescriptor();
-
-            ReportDescriptor descriptor = ReportService.get().createDescriptorInstance(d.getDescriptorType());
-            if (descriptor != null)
-            {
-                descriptor.setReportName(d.getReportName());
-                descriptor.setReportKey(d.getReportKey());
-                List<Pair<String, String>> props = new ArrayList<Pair<String, String>>();
-
-                for (ReportPropertyList.Prop prop : d.getProperties().getPropArray())
-                {
-                    props.add(new Pair<String, String>(prop.getName(), prop.getStringValue()));
-                }
-
-                descriptor.init(props.toArray(new Pair[props.size()]));
-
-                if (d.getCategory() != null)
-                {
-                    ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(container, user, d.getCategory());
-                    descriptor.setCategory(category);
-                }
-
-                PropertyList tags = d.getTags();
-                if (tags != null && tags.sizeOfPropertyArray() > 0)
-                {
-                    String entityId = descriptor.getEntityId();
-                    if (entityId == null)
-                        descriptor.setEntityId(GUID.makeGUID());
-
-                    ReportPropsManager.get().importProperties(descriptor.getEntityId(), container, user, tags);
-                }
-                return descriptor;
-            }
-            return null;
         }
         catch (XmlException e)
         {
             throw new IOException(e.getMessage());
         }
+
+        return createFromXML(container, user, doc);
+    }
+
+    public static ReportDescriptor createFromXmlObject(Container container, User user, XmlObject reportXml) throws IOException, XmlValidationException
+    {
+        ReportDescriptorDocument doc;
+        try
+        {
+            if (reportXml instanceof ReportDescriptorDocument)
+            {
+                doc = (ReportDescriptorDocument)reportXml;
+                XmlBeansUtil.validateXmlDocument(doc);
+            }
+            else
+                throw new XmlException("Unable to get an instance of ReportDescriptorDocument");
+        }
+        catch (XmlException e)
+        {
+            throw new IOException(e.getMessage());
+        }
+
+        return createFromXML(container, user, doc);
+    }
+
+    private static ReportDescriptor createFromXML(Container container, User user, ReportDescriptorDocument doc) throws IOException, XmlValidationException
+    {
+        ReportDescriptorDocument.ReportDescriptor d = doc.getReportDescriptor();
+
+        ReportDescriptor descriptor = ReportService.get().createDescriptorInstance(d.getDescriptorType());
+        if (descriptor != null)
+        {
+            descriptor.setReportName(d.getReportName());
+            descriptor.setReportKey(d.getReportKey());
+            List<Pair<String, String>> props = new ArrayList<Pair<String, String>>();
+
+            for (ReportPropertyList.Prop prop : d.getProperties().getPropArray())
+            {
+                props.add(new Pair<String, String>(prop.getName(), prop.getStringValue()));
+            }
+
+            descriptor.init(props.toArray(new Pair[props.size()]));
+
+            if (d.getCategory() != null)
+            {
+                ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(container, user, d.getCategory());
+                descriptor.setCategory(category);
+            }
+
+            PropertyList tags = d.getTags();
+            if (tags != null && tags.sizeOfPropertyArray() > 0)
+            {
+                String entityId = descriptor.getEntityId();
+                if (entityId == null)
+                    descriptor.setEntityId(GUID.makeGUID());
+
+                ReportPropsManager.get().importProperties(descriptor.getEntityId(), container, user, tags);
+            }
+            return descriptor;
+        }
+        return null;
     }
 
     public static List<Pair<String, String>> createPropsFromXML(String xmlString) throws IOException

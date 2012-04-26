@@ -79,10 +79,16 @@ public class FolderImporterImpl implements FolderImporter<FolderDocument.Folder>
         List<PipelineJobWarning> warnings = new ArrayList<PipelineJobWarning>();
         for (FolderImporter importer : _importers)
         {
-            if (null != _job) _job.setStatus("POST-PROCESS " + importer.getDescription());
-            Collection<PipelineJobWarning> importerWarnings = importer.postProcess(ctx, vf);
-            if (null != importerWarnings)
-                warnings.addAll(importerWarnings);
+            if (!_usingVirtualFile || importer.supportsVirtualFile())
+            {
+                if (null != _job)
+                    _job.setStatus("POST-PROCESS " + importer.getDescription());
+
+                Collection<PipelineJobWarning> importerWarnings = importer.postProcess(ctx, vf);
+
+                if (null != importerWarnings)
+                    warnings.addAll(importerWarnings);
+            }
         }
         return warnings;
     }

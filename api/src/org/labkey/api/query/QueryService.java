@@ -34,9 +34,10 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.TableType;
 
-import java.io.File;
+import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -83,7 +84,7 @@ abstract public class QueryService
     abstract public List<CustomView> getCustomViews(User user, Container container, String schema, String query);
     abstract public List<CustomViewInfo> getCustomViewInfos(User user, Container container, String schema, String query);
     abstract public CustomView getCustomView(User user, Container container, String schema, String query, String name);
-    abstract public int importCustomViews(User user, Container container, File viewDir) throws XmlValidationException;
+    abstract public int importCustomViews(User user, Container container, VirtualFile viewDir) throws XmlValidationException, IOException;
     abstract public void updateCustomViewsAfterRename(@NotNull Container c, @NotNull String schema,
             @NotNull String oldQueryName, @NotNull String newQueryName);
 

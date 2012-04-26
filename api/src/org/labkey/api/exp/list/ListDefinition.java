@@ -27,6 +27,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.writer.VirtualFile;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.File;
@@ -191,7 +192,7 @@ public interface ListDefinition extends Comparable<ListDefinition>
     ListItem getListItemForEntityId(String entityId);
 
     int getRowCount();
-    List<String> insertListItems(User user, DataLoader loader, @Nullable File attachmentDir, @Nullable ListImportProgress progress) throws IOException;
+    List<String> insertListItems(User user, DataLoader loader, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress) throws IOException;
 
     TableInfo getTable(User user);
 

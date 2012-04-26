@@ -45,6 +45,7 @@ import javax.servlet.ServletException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -110,6 +111,16 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         return getDataLoaderForFile(file, null);
     }
 
+    public static DataLoader getDataLoaderForInputStream(InputStream is, boolean asCSV) throws ServletException, IOException
+    {
+        Reader r = new InputStreamReader(is);
+        TabLoader loader = new TabLoader(r, true);
+
+        if (asCSV)
+            loader.parseAsCSV();
+
+        return loader;
+    }
 
     public static DataLoader getDataLoaderForFile(MultipartFile file) throws ServletException, IOException
     {
