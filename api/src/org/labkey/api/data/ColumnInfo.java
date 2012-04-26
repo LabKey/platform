@@ -1282,9 +1282,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             if (nonEditableColNames.contains(col.getPropertyName()))
                 col.setUserEditable(false);
 
-            if (col.isAutoIncrement())
-                parentTable.setSequence(reader.getSequence());
-
             colMap.put(col.getName(), col);
         }
 

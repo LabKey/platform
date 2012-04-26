@@ -41,7 +41,6 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.script.ScriptReference;
 import org.labkey.api.script.ScriptService;
-import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -284,11 +283,6 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
             ret.add(getColumn(name.trim()));
         }
         return Collections.unmodifiableList(ret);
-    }
-
-    public String getSequence()
-    {
-        return null;
     }
 
     @Override

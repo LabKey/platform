@@ -119,7 +119,7 @@ public class StatementUtils
         boolean useVariables = false;
 
         // helper for generating procedure/function variation
-        Map<Parameter,String> parameterToVariable = new IdentityHashMap<Parameter,String>();
+        Map<Parameter, String> parameterToVariable = new IdentityHashMap<Parameter, String>();
 
         Timestamp ts = new Timestamp(System.currentTimeMillis());
         Parameter containerParameter = null;
@@ -139,7 +139,8 @@ public class StatementUtils
         //
 
         SQLFragment sqlfDeclare = new SQLFragment();
-        SQLFragment sqlfObject = new SQLFragment();
+        SQLFragment sqlfInsertObject = new SQLFragment();
+        SQLFragment sqlfSelectObject = new SQLFragment();
         SQLFragment sqlfObjectProperty = new SQLFragment();
 
         Domain domain = t.getDomain();
@@ -161,7 +162,7 @@ public class StatementUtils
                 objectIdVar = d.isPostgreSQL() ? "_$objectid$_" : "@_objectid_";
 
                 useVariables = d.isPostgreSQL();
-                sqlfDeclare.append("DECLARE ").append(objectIdVar).append(" INT;\n");
+                sqlfDeclare.append("DECLARE ").append(objectIdVar).append(" INT");
                 containerParameter = new Parameter("container", JdbcType.VARCHAR);
 //                if (autoFillDefaultColumns && null != c)
 //                    containerParameter.setValue(c.getId(), true);
@@ -170,39 +171,39 @@ public class StatementUtils
 
                 // In the update case, it's still possible that there isn't a row in exp.Object - there might have been
                 // no properties in the domain when the row was originally inserted
-                sqlfObject.append("INSERT INTO exp.Object (container, objecturi) ");
-                sqlfObject.append("SELECT ");
-                appendParameterOrVariable(sqlfObject, d, useVariables, containerParameter, parameterToVariable);
-                sqlfObject.append(" AS ObjectURI,");
-                appendParameterOrVariable(sqlfObject, d, useVariables, objecturiParameter, parameterToVariable);
-                sqlfObject.append(" AS Container WHERE NOT EXISTS (SELECT ObjectURI FROM exp.Object WHERE Container = ");
-                appendParameterOrVariable(sqlfObject, d, useVariables, containerParameter, parameterToVariable);
-                sqlfObject.append(" AND ObjectURI = ");
-                appendParameterOrVariable(sqlfObject, d, useVariables, objecturiParameter, parameterToVariable);
-                sqlfObject.append(");\n");
+                sqlfInsertObject.append("INSERT INTO exp.Object (container, objecturi) ");
+                sqlfInsertObject.append("SELECT ");
+                appendParameterOrVariable(sqlfInsertObject, d, useVariables, containerParameter, parameterToVariable);
+                sqlfInsertObject.append(" AS ObjectURI,");
+                appendParameterOrVariable(sqlfInsertObject, d, useVariables, objecturiParameter, parameterToVariable);
+                sqlfInsertObject.append(" AS Container WHERE NOT EXISTS (SELECT ObjectURI FROM exp.Object WHERE Container = ");
+                appendParameterOrVariable(sqlfInsertObject, d, useVariables, containerParameter, parameterToVariable);
+                sqlfInsertObject.append(" AND ObjectURI = ");
+                appendParameterOrVariable(sqlfInsertObject, d, useVariables, objecturiParameter, parameterToVariable);
+                sqlfInsertObject.append(")");
 
                 // Grab the object's ObjectId
-                sqlfObject.append(setKeyword).append(objectIdVar).append(" = (");
-                sqlfObject.append("SELECT ObjectId FROM exp.Object WHERE Container = ");
-                appendParameterOrVariable(sqlfObject, d, useVariables, containerParameter, parameterToVariable);
-                sqlfObject.append(" AND ObjectURI = ");
-                appendParameterOrVariable(sqlfObject, d, useVariables, objecturiParameter, parameterToVariable);
-                sqlfObject.append(");\n");
+                sqlfSelectObject.append(setKeyword).append(objectIdVar).append(" = (");
+                sqlfSelectObject.append("SELECT ObjectId FROM exp.Object WHERE Container = ");
+                appendParameterOrVariable(sqlfSelectObject, d, useVariables, containerParameter, parameterToVariable);
+                sqlfSelectObject.append(" AND ObjectURI = ");
+                appendParameterOrVariable(sqlfSelectObject, d, useVariables, objecturiParameter, parameterToVariable);
+                sqlfSelectObject.append(")");
 
                 if (!insert)
                 {
                     // Clear out any existing property values for this domain
-                    sqlfObject.append("DELETE FROM exp.ObjectProperty WHERE ObjectId = ");
-                    sqlfObject.append(objectIdVar);
-                    sqlfObject.append(" AND PropertyId IN (");
+                    sqlfSelectObject.append("DELETE FROM exp.ObjectProperty WHERE ObjectId = ");
+                    sqlfSelectObject.append(objectIdVar);
+                    sqlfSelectObject.append(" AND PropertyId IN (");
                     String separator = "";
                     for (DomainProperty property : properties)
                     {
-                        sqlfObject.append(separator);
+                        sqlfSelectObject.append(separator);
                         separator = ", ";
-                        sqlfObject.append(property.getPropertyId());
+                        sqlfSelectObject.append(property.getPropertyId());
                     }
-                    sqlfObject.append(");\n");
+                    sqlfSelectObject.append(")");
                 }
             }
         }
@@ -324,11 +325,9 @@ public class StatementUtils
             if (true)
                 throw new UnsupportedOperationException("Re-selecting object ID should work but has not been tested; remove this throw and test carefully");
 
-            sqlfSelectIds = new SQLFragment(";\nSELECT ");
+            sqlfSelectIds = new SQLFragment("SELECT ");
             sqlfSelectIds.append(objectIdVar);
             selectObjectIdIndex = ++countReturnIds;
-
-            sqlfSelectIds.append(";\n");
         }
 
         SQLFragment sqlfInsertInto = new SQLFragment();
@@ -358,7 +357,7 @@ public class StatementUtils
 
             sqlfInsertInto.append(")");
 
-            if (null != autoIncrementColumn)
+            if (selectIds && null != autoIncrementColumn)
             {
                 d.appendSelectAutoIncrement(sqlfInsertInto, table, autoIncrementColumn.getName());
                 selectAutoIncrement = true;
@@ -439,12 +438,13 @@ public class StatementUtils
         if (!useVariables)
         {
             SQLFragment script = new SQLFragment();
-            script.append(sqlfDeclare);
-            script.append(sqlfObject);
-            script.append(sqlfInsertInto);
-            script.append(sqlfObjectProperty);
-            if (null != sqlfSelectIds)
-                script.append(sqlfSelectIds);
+            script.appendStatement(sqlfDeclare, d);
+            script.appendStatement(sqlfInsertObject, d);
+            script.appendStatement(sqlfSelectObject, d);
+            script.appendStatement(sqlfInsertInto, d);
+            script.appendStatement(sqlfObjectProperty, d);
+            script.appendStatement(sqlfSelectIds, d);
+
             ret = new Parameter.ParameterMap(d, conn, script, updatable.remapSchemaColumns());
         }
         else
@@ -491,17 +491,23 @@ public class StatementUtils
                     call.append(" AS x(A int, B int)");
             }
             call.append(";");
+
+            // Append these by hand -- don't want ; in the middle of the function
             fn.append(sqlfDeclare);
-            fn.append("BEGIN\n");
-            fn.append(sqlfObject);
-            fn.append(sqlfInsertInto);
-            fn.append(sqlfObjectProperty);
+
+            // Treat as one statement -- don't want ; inbetween
+            sqlfInsertObject.insert(0, "BEGIN\n");
+
+            fn.appendStatement(sqlfInsertObject, d);
+            fn.appendStatement(sqlfSelectObject, d);
+            fn.appendStatement(sqlfInsertInto, d);
+            fn.appendStatement(sqlfObjectProperty, d);
             if (null != sqlfSelectIds)
             {
-                fn.append("\nRETURN QUERY ");
-                fn.append(sqlfSelectIds);
+                sqlfSelectIds.insert(0, "RETURN QUERY ");
+                fn.appendStatement(sqlfSelectIds, d);
             }
-            fn.append("\nEND;\n$$ LANGUAGE plpgsql;\n");
+            fn.append("END;\n$$ LANGUAGE plpgsql;\n");
 
             Table.execute(table.getSchema(), fn);
             ret = new Parameter.ParameterMap(d, conn, call, updatable.remapSchemaColumns());
@@ -509,7 +515,7 @@ public class StatementUtils
             {
                 try
                 {
-                    Table.execute(ExperimentService.get().getSchema(),drop);
+                    Table.execute(ExperimentService.get().getSchema(), drop);
                 }
                 catch (SQLException x)
                 {

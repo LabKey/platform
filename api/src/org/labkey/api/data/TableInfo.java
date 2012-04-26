@@ -122,8 +122,6 @@ public interface TableInfo extends HasPermission
 
     AggregateRowConfig getAggregateRowConfig();
 
-    String getSequence();
-
     /**
      * Return the default query grid view URL for the table or null.
      * Instead of calling this method directly, callers should pass

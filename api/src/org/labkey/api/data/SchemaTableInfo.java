@@ -80,7 +80,6 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     private String _name;
     private String _description;
     private String _title = null;
-    private String _sequence = null;
     private int _cacheSize = DbCache.DEFAULT_CACHE_SIZE;
     private DetailsURL _gridURL;
     private DetailsURL _insertURL;
@@ -478,12 +477,6 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     }
 
 
-    public String getSequence()
-    {
-        getColumnMetaData();  // Need to initialize column meta data since it contains sequence information
-        return _sequence;
-    }
-
     public ActionURL getGridURL(Container container)
     {
         if (_gridURL != null)
@@ -801,22 +794,6 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         checkLocked();
         getColumnMetaData().setPkColumnNames(pkColumnNames);
     }
-
-    void setSequence(String sequence)
-    {
-        checkLocked();
-        assert isValidSequence(sequence);
-        _sequence = sequence;
-    }
-
-    private boolean isValidSequence(String sequence)
-    {
-        if (null == _sequence)
-            return true;
-        else
-            throw new IllegalStateException("Sequence already set for " + getName() + "! " + _sequence + " vs. " + sequence);
-    }
-
 
     @Override
     public Path getNotificationKey()

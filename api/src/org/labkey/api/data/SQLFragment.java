@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.JdbcUtil;
@@ -169,6 +170,20 @@ public class SQLFragment implements Appendable, CharSequence
         else
             append(f.sql);
         addAll(f.getParams());
+        return this;
+    }
+
+
+    // Append a full statement (using the correct dialect syntax) and its parameters to this SQLFragment
+    public SQLFragment appendStatement(@Nullable SQLFragment statement, SqlDialect dialect)
+    {
+        if (null == statement || statement.isEmpty())
+            return this;
+        if (null != statement.sb)
+            dialect.appendStatement(this, statement.sb.toString());
+        else
+            dialect.appendStatement(this, statement.sql.toString());
+        addAll(statement.getParams());
         return this;
     }
 
