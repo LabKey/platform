@@ -325,9 +325,9 @@ if (LABKEY.Applet)
                     user: LABKEY.user.email,
                     password: LABKEY.user.sessionid,
                     text : params.text,
-                    allowDirectoryUpload : params.allowDirectoryUpload,
+                    allowDirectoryUpload : params.allowDirectoryUpload !== false,
                     overwrite : "true",
-                    autoStart : "false",
+                    autoStart : "true",
                     enabled : !('enabled' in params) || params.enabled,
                     dropFileLimit : 5000,
                     "Common.WindowMode":"true"
