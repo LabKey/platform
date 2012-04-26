@@ -102,7 +102,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             ,metadataDefaults: this.metadataDefaults
             ,columns: this.columns
             ,maxRows: 0
-            ,timeout: 0
+            ,timeout: 30000
             ,scope: this
             ,autoLoad: true
             ,listeners: {

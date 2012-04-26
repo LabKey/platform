@@ -1,6 +1,7 @@
 package org.labkey.api.sequence;
 
 import net.sf.picard.fastq.*;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.Formats;
@@ -28,7 +29,7 @@ import org.apache.log4j.Logger;
  */
 public class IlluminaFastqParser
 {
-    private String _prefix;
+    private String _outputPrefix;
     private List<Integer> _sampleList;
     private File _destinationDir;
     private File[] _files;
@@ -37,21 +38,26 @@ public class IlluminaFastqParser
     private Logger _logger;
     private static FileType FASTQ_FILETYPE = new FileType(Arrays.asList("fastq", "fq"), "fastq", FileType.gzSupportLevel.SUPPORT_GZ);
 
-    public IlluminaFastqParser (String prefix, List<Integer> sampleList, Logger logger, File... files)
+    public IlluminaFastqParser (@Nullable String outputPrefix, List<Integer> sampleList, Logger logger, File... files)
     {
-        _prefix = prefix;
+        _outputPrefix = outputPrefix;
         _sampleList = sampleList;
         _files = files;
         _logger = logger;
     }
 
-    public IlluminaFastqParser (String prefix, List<Integer> sampleList, Logger logger, String sourcePath)
+    public IlluminaFastqParser (String outputPrefix, List<Integer> sampleList, Logger logger, String sourcePath)
     {
-        _prefix = prefix;
+        this(outputPrefix, sampleList, logger, sourcePath, null);
+    }
+
+    public IlluminaFastqParser (String outputPrefix, List<Integer> sampleList, Logger logger, String sourcePath, String fastqPrefix)
+    {
+        _outputPrefix = outputPrefix;
         _sampleList = sampleList;
         _logger = logger;
 
-        List<File> files = inferIlluminaInputsFromPath(sourcePath, prefix);
+        List<File> files = inferIlluminaInputsFromPath(sourcePath, fastqPrefix);
         _files = files.toArray(new File[files.size()]);
     }
 
@@ -163,7 +169,7 @@ public class IlluminaFastqParser
         }
         else
         {
-            String name = _prefix + "-R" + pairNumber + "-" + (sampleId == 0 ? "Control" : sampleId) + ".fastq";
+            String name = (_outputPrefix == null ? "Reads" : _outputPrefix) + "-R" + pairNumber + "-" + (sampleId == 0 ? "Control" : sampleId) + ".fastq";
             File newFile = new File(targetDir, name);
             newFile.createNewFile();
             net.sf.picard.fastq.FastqWriter writer = _writerFactory.newWriter(newFile);

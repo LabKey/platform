@@ -127,6 +127,33 @@ public class Compress
         }
     }
 
+    //create a compressed output file from the input file
+    public static File decompressGzip (File input, File output)
+    {
+        try
+        {
+            GZIPInputStream i = null;
+            FileOutputStream o = null;
+
+            try
+            {
+                i = new GZIPInputStream(new FileInputStream(input));
+                o = new FileOutputStream(output);
+                FileUtil.copyData(i, o);
+            }
+            finally
+            {
+                if (i != null) try { i.close(); } catch (IOException e) {  }
+                if (o != null) try { o.close(); } catch (IOException e) {  }
+            }
+
+            return output;
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
 
     // Compress byte array using the DEFLATE algorithm.  Using DEFLATE is more efficient than GZIP compression
     // (less overhead) but many common browsers don't accept this format directly.  Best for internal use.

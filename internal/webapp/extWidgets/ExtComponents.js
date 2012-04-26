@@ -232,7 +232,8 @@ Ext4.define('LABKEY.ext.LinkButton', {
         Ext4.apply(this.renderData, {
             linkPrefix: this.linkPrefix,
             linkSuffix: this.linkSuffix,
-            linkCls: this.linkCls
+            linkCls: this.linkCls,
+            tooltip: this.tooltip
         });
     },
     showBrackets: true,
@@ -245,11 +246,10 @@ Ext4.define('LABKEY.ext.LinkButton', {
             '{linkPrefix}' +
             '<a id="{id}-btnEl" class="{linkCls}" target="{target}" role="link" ' +
                 '<tpl if="href">href="{href}" </tpl>' +
+                '<tpl if="tooltip">data-qtip="{tooltip}"</tpl>' +
                 '<tpl if="tabIndex"> tabIndex="{tabIndex}"</tpl>' +
             '>' +
             '<span id="{id}-btnInnerEl" class="{baseCls}-inner">{text}</span>' +
-            //TODO: would be better if this image were just part of the CSS
-            '<tpl if="linkCls==\'labkey-text-link\'"></tpl>' +
             '<span id="{id}-btnIconEl" class="{baseCls}-icon"></span>' +
             '</a>' +
             '{linkSuffix}' +
@@ -464,7 +464,7 @@ Ext4.define('LABKEY.ext4.ComboBox', {
     setValue: function(val){
         if(!this.store || !this.store.model || !this.store.model.prototype.fields.getCount()){
             this.value = val;
-            this.mon(this.store, 'load', this.setValue.createDelegate(this, arguments), null, {single: true});
+            this.mon(this.store, 'load', function(){this.setValue(val);this.validate();}, this, {single: true});
         }
         else
             this.callParent(arguments);

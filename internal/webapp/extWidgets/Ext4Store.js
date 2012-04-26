@@ -108,7 +108,7 @@ Ext4.namespace('LABKEY.ext4');
 LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
     extend: 'Ext.data.Store',
     alias: 'store.labkey-store',
-    pageSize: 10000,
+    //pageSize: 10000,
     constructor: function(config) {
         config = config || {};
 
@@ -190,8 +190,11 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
         if(config.ignoreFilter)
             baseParams['query.ignoreFilter'] = 1;
 
-        if(Ext4.isDefined(config.maxRows))
+        if(Ext4.isDefined(config.maxRows)){
             baseParams['query.maxRows'] = config.maxRows;
+            if(config.maxRows === 0)
+                this.pageSize = 0;
+        }
 
         if (config.viewName)
             baseParams['query.viewName'] = config.viewName;
@@ -205,7 +208,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
         if (config.containerPath)
             baseParams.containerPath = config.containerPath;
 
-        if(config.pageSize)
+        if(config.pageSize && config.maxRows !== 0 && this.maxRows !== 0)
             baseParams['limit'] = config.pageSize;
 
         //NOTE: sort() is a method in the store.  it's awkward to support a param, but we do it since selectRows() uses it
@@ -748,6 +751,8 @@ Ext4.define('LABKEY.ext4.ExtendedJsonReader', {
         if(data.metaData){
             this.idProperty = data.metaData.id; //NOTE: normalize which field holds the PK.
             this.model.prototype.idProperty = this.idProperty;
+            this.totalProperty = data.metaData.totalProperty; //NOTE: normalize which field holds total rows.
+            this.model.prototype.totalProperty = this.totalProperty;
 
             //NOTE: it would be interesting to convert this JSON into a more functional object here
             //for example, columns w/ lookups could actually reference their target

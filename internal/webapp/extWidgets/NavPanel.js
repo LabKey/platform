@@ -22,10 +22,7 @@ Ext4.namespace('LABKEY.ext');
  *          style: 'padding-left:5px;'
  *      }
  *  }
-
-
-@example
-
+ * @example
     new LABKEY.ext.NavMenu({
         renderTo: 'vlDiv',
         width: 350,
@@ -55,6 +52,9 @@ Ext4.define('LABKEY.ext.NavPanel', {
     initComponent: function(){
         //calculate size
         var maxHeight = this.maxHeight || 15;
+        Ext4.QuickTips.init({
+            constrainPosition: true
+        });
 
         var size = 0;
         Ext4.each(this.sections, function(i){
@@ -116,79 +116,48 @@ Ext4.define('LABKEY.ext.NavPanel', {
                 if(Ext4.isString(renderer))
                     renderer = this.renderers[renderer];
 
-                item = renderer(sectionCfg.items[j]);
+                item = renderer.call(this, sectionCfg.items[j]);
 
                 section.add(item);
             }
 
-            section.add({tag: 'p', style: 'padding-bottom: 15px;'});
+            section.add({tag: 'span', style: 'padding-bottom: 15px;'});
         }, this);
     },
     renderers: {
         assayRenderer: function(item){
             return {
                 layout: 'hbox',
-                defaults: {
-                    style: 'padding-left:5px;padding-bottom:5px;',
-                    bodyStyle: 'padding-bottom:5px;',
-                    border: false,
-                    target: '_self',
-                    linkCls: 'labkey-text-link'
-                },
-                items: [{
-                    tag: 'div',
-                    html: item.name+':',
-                    width: 250
-                },{
-                    xtype: 'labkey-linkbutton',
-                    href: LABKEY.ActionURL.buildURL('query', 'SearchPanel', null, {schemaName: item.schemaName, 'queryName': item.queryName, defaultContainerFilter: 'CurrentAndSubfolders'}),
-                    text: 'Search'
-                },{
-                    xtype: 'labkey-linkbutton',
-                    href: function(item){
-                        var params = {rowId: item.id}; //schemaName: item.schemaName, 'query.queryName': item.queryName,
-                        params[item.name+'.containerFilterName'] = 'CurrentAndSubfolders';
-                        return LABKEY.ActionURL.buildURL('assay', 'assayResults', null, params)
-                    }(item),
-                    text: 'Browse All'
-                },{
-                    xtype: 'labkey-linkbutton',
-                    text: 'Import Data',
-                    hidden: item.showImport===false  || !LABKEY.Security.currentUser.canInsert,
-                    assayId: item.id,
-                    useSimpleImport: item.simpleImport,
-                    urlParams: {rowId: item.id, srcURL: LABKEY.ActionURL.buildURL('project', 'begin')},
-                    importAction: item.importAction || 'moduleAssayUpload',
-                    importController: item.importController || 'assay',
-                    handler: function(btn){
-                        if(btn.useSimpleImport)
-                            window.location = LABKEY.ActionURL.buildURL(btn.importController, btn.importAction, null, btn.urlParams);
-                        else
-                            Ext4.create('LABKEY.ext.ImportWizardWin', {
-                                title: 'Import Data',
-                                controller: btn.importController,
-                                action: btn.importAction,
-                                urlParams: btn.urlParams,
-                                workbookFolderType: 'Expt Workbook'
-                            }).show();
-                    }
-                }]
+                defaults: this.ITEM_DEFAULTS,
+                items: [
+                    this.getLabelItemCfg(item)
+                ,
+                    this.getSearchItemCfg(item)
+                ,
+                    this.getBrowseItemCfg(item, {
+                        href: LABKEY.ActionURL.buildURL('assay', 'assayResults', null, {rowId: item.id})
+                    })
+                ,
+                    this.getImportItemCfg(item, {
+                        assayId: item.id,
+                        urlParams: {rowId: item.id, srcURL: LABKEY.ActionURL.buildURL('project', 'begin')},
+                        importAction: item.importAction || 'moduleAssayUpload',
+                        importController: item.importController || 'assay',
+                        tooltip: item.importTooltip || 'Click to import data into this assay'
+                    })
+                ]
             };
         },
         defaultRenderer: function(item){
             return {
                 layout: 'hbox',
-                defaults: {
-                    style: 'padding-left:5px;padding-bottom:5px;',
-                    bodyStyle: 'padding-bottom:5px;',
-                    border: false,
-                    target: '_self',
-                    linkCls: 'labkey-text-link'
-                },
+                defaults: this.ITEM_DEFAULTS,
                 items: [{
                     xtype: 'labkey-linkbutton',
+                    style: this.ITEM_STYLE_DEFAULT,
                     text: item.name,
                     href: item.url || LABKEY.ActionURL.buildURL(item.controller, item.action, null, item.urlParams),
+                    tooltip: item.tooltip,
                     showBrackets: false
                 }]
              }
@@ -196,121 +165,168 @@ Ext4.define('LABKEY.ext.NavPanel', {
         queryRenderer: function(item){
             return {
                 layout: 'hbox',
-                defaults: {
-                    style: 'padding-left:5px;padding-bottom:5px;',
-                    bodyStyle: 'padding-bottom:5px;',
-                    border: false,
-                    target: '_self',
-                    linkCls: 'labkey-text-link'
-                },
-                items: [{
-                    tag: 'div',
-                    html: item.name+':',
-                    width: 250
-                },{
-                    xtype: 'labkey-linkbutton',
-                    href: LABKEY.ActionURL.buildURL('query', 'SearchPanel', null, {schemaName: item.schemaName, 'queryName': item.queryName, 'defaultContainerFilter': 'CurrentAndSubfolders'}),
-                    text: 'Search'
-                },{
-                    xtype: 'labkey-linkbutton',
-                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, 'query.queryName': item.queryName, 'query.containerFilterName': 'CurrentAndSubfolders'}),
-                    text: 'Browse All'
-                },{
-                    xtype: 'labkey-linkbutton',
-                    text: 'Import Data',
-                    hidden: item.showImport===false || !LABKEY.Security.currentUser.canInsert,
-                    useSimpleImport: item.simpleImport,
-                    assayId: item.id,
-                    urlParams: {schemaName: item.schemaName, queryName: item.queryName, srcURL: LABKEY.ActionURL.buildURL('project', 'begin')},
-                    handler: function(btn){
-                        if(btn.useSimpleImport)
-                            window.location = LABKEY.ActionURL.buildURL('query', 'importData', null, btn.urlParams);
-                        else
-                            Ext4.create('LABKEY.ext.ImportWizardWin', {
-                                controller: 'query',
-                                action: 'importData',
-                                urlParams: btn.urlParams,
-                                title: 'Import Data',
-                                workbookFolderType: 'Expt Workbook'
-                            }).show();
-                    }
-                }]
+                defaults: this.ITEM_DEFAULTS,
+                items: [
+                    this.getLabelItemCfg(item)
+                ,
+                    this.getSearchItemCfg(item)
+                ,
+                    this.getBrowseItemCfg(item)
+                ,
+                    this.getImportItemCfg(item, {
+                        urlParams: {schemaName: item.schemaName, queryName: item.queryName, srcURL: LABKEY.ActionURL.buildURL('project', 'begin')},
+                        importAction: 'importData',
+                        importController: 'query'
+                    })
+                ]
             };
         },
         sampleSetRenderer: function(item){
             return {
                 layout: 'hbox',
-                defaults: {
-                    style: 'padding-left:5px;padding-bottom:5px;',
-                    bodyStyle: 'padding-bottom:5px;',
-                    border: false,
-                    target: '_self',
-                    linkCls: 'labkey-text-link'
-                },
-                items: [{
-                    tag: 'div',
-                    html: item.name+':',
-                    width: 250
-                },{
-                    xtype: 'labkey-linkbutton',
-                    href: LABKEY.ActionURL.buildURL('query', 'SearchPanel', null, {schemaName: item.schemaName, 'queryName': item.queryName, 'defaultContainerFilter': 'CurrentAndSubfolders'}),
-                    text: 'Search'
-                },{
-                    xtype: 'labkey-linkbutton',
-                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, 'query.queryName': item.queryName, 'query.containerFilterName': 'CurrentAndSubfolders'}),
-                    text: 'Browse All'
-                },{
-                    xtype: 'labkey-linkbutton',
-                    text: 'Import Data',
-                    hidden: item.showImport===false || !LABKEY.Security.currentUser.canInsert,
-                    assayId: item.id,
-                    urlParams: {schemaName: item.schemaName, queryName: item.queryName, name: item.queryName, importMoreSamples: true},
-                    handler: function(btn){
-                        window.location = LABKEY.ActionURL.buildURL('experiment', 'showUploadMaterials', null, btn.urlParams);
-                    }
-                }]
+                defaults: this.ITEM_DEFAULTS,
+                items: [
+                    this.getLabelItemCfg(item)
+                ,
+                    this.getSearchItemCfg(item)
+                ,
+                    this.getBrowseItemCfg(item)
+                ,
+                    this.getImportItemCfg(item, {
+                        urlParams: {schemaName: item.schemaName, queryName: item.queryName, name: item.queryName, importMoreSamples: true},
+                        importAction: 'showUploadMaterials',
+                        importController: 'experiment'
+                    })
+                ]
             };
         },
         fileRenderer: function(item){
             return {
                 layout: 'hbox',
-                defaults: {
-                    style: 'padding-left:5px;padding-bottom:5px;',
-                    bodyStyle: 'padding-bottom:5px;',
-                    border: false,
-                    target: '_self'
-                },
-                items: [{
-                    tag: 'div',
-                    html: item.name+':',
-                    width: 250
-                },{
-                    xtype: 'labkey-linkbutton',
-                    href: LABKEY.ActionURL.buildURL('query', 'SearchPanel', null, {schemaName: item.schemaName, 'queryName': item.queryName, 'defaultContainerFilter': 'CurrentAndSubfolders'}),
-                    text: 'Search'
-                },{
-                    xtype: 'labkey-linkbutton',
-                    href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, 'query.queryName': item.queryName, 'query.containerFilterName': 'CurrentAndSubfolders'}),
-                    text: 'Browse All'
-                },{
-                    xtype: 'labkey-linkbutton',
-                    text: 'Import Data',
-                    hidden: item.showImport===false || !LABKEY.Security.currentUser.canInsert,
-                    useSimpleImport: item.simpleImport,
-                    handler: function(btn){
-                        if(btn.useSimpleImport)
-                            window.location = LABKEY.ActionURL.buildURL('query', 'importData', null, btn.urlParams);
-                        else
-                            Ext4.create('LABKEY.ext.ImportWizardWin', {
-                                controller: 'project',
-                                action: 'begin',
-                                urlParams: btn.urlParams,
-                                workbookFolderType: 'Expt Workbook',
-                                title: 'Import Data'
-                            }).show();
-                    }
-                }]
+                defaults: this.ITEM_DEFAULTS,
+                items: [
+                    this.getLabelItemCfg(item)
+                ,
+                    this.getSearchItemCfg(item)
+                ,
+                    this.getBrowseItemCfg(item)
+                ,
+                    this.getImportItemCfg(item)
+                ]
             };
+        },
+
+        workbookRenderer: function(item){
+            return {
+                layout: 'hbox',
+                defaults: this.ITEM_DEFAULTS,
+                items: [
+                    this.getLabelItemCfg(item)
+                ,
+                    this.getSearchItemCfg(item)
+                ,
+                    this.getBrowseItemCfg(item, {
+                        tooltip: item.browseTooltip || 'Click to display a table of all workbooks'
+                    })
+                ,
+                    this.getImportItemCfg(item, {
+                        xtype: 'labkey-linkbutton',
+                        text: 'Create New Workbook',
+                        hidden: !LABKEY.Security.currentUser.canInsert,
+                        tooltip: 'Click to create a new workbook',
+                        importWizardConfig: {
+                            canAddToExistingExperiment: false,
+                            title: 'Create Workbook'
+                        },
+                        target: '_self',
+                        importAction: 'begin',
+                        importController: 'project'
+                    })
+                ]
+             }
+        },
+
+        summaryCountRenderer: function(item){
+            return {
+                layout: 'hbox',
+                defaults: this.ITEM_DEFAULTS,
+                items: [
+                    this.getLabelItemCfg(item)
+                ,{
+                    xtype: 'labkey-linkbutton',
+                    linkCls: 'labkey-text-link-noarrow',
+                    tooltip: 'Click to view these records',
+                    href: item.queryName ? LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, queryName: item.queryName}): null,
+                    text: item.total
+                }]
+            }
         }
-}
+    },
+    getSearchItemCfg: function(item, config){
+        config = config || {};
+        return Ext4.apply({
+            xtype: 'labkey-linkbutton',
+            tooltip: item.searchTooltip || 'Click to display a search panel',
+            href: LABKEY.ActionURL.buildURL('query', 'SearchPanel', null, {schemaName: item.schemaName, 'queryName': item.queryName, defaultContainerFilter: 'CurrentAndSubfolders'}),
+            text: 'Search'
+        }, config);
+    },
+    getBrowseItemCfg: function(item, config){
+        config = config || {};
+        return Ext4.apply({
+            xtype: 'labkey-linkbutton',
+            text: item.browseTooltip || 'Browse All',
+            tooltip: 'Click to display a table of all records',
+            href: LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, 'query.queryName': item.queryName}) //, 'query.containerFilterName': 'CurrentAndSubfolders'
+        }, config);
+    },
+    getImportItemCfg: function(item, config){
+        config = config || {};
+        return Ext4.apply({
+            xtype: 'labkey-linkbutton',
+            text: 'Import Data',
+            tooltip: item.importTooltip || 'Click to import new data',
+            hidden: item.showImport===false || !LABKEY.Security.currentUser.canInsert,
+            useSimpleImport: item.simpleImport,
+            handler: function(btn){
+                if(btn.useSimpleImport)
+                    window.location = LABKEY.ActionURL.buildURL(btn.importController, btn.importAction, null, btn.urlParams);
+                else {
+                    var wizardCfg = Ext4.apply({
+                        controller: btn.importController,
+                        action: btn.importAction,
+                        urlParams: btn.urlParams,
+                        workbookFolderType: 'Expt Workbook',
+                        title: btn.importTitle || 'Import Data'
+                    }, config.importWizardConfig);
+                    Ext4.create('LABKEY.ext.ImportWizardWin', wizardCfg).show();
+
+                }
+            }
+        }, config);
+    },
+    getLabelItemCfg: function(item, config){
+        config = config || {};
+        return Ext4.apply({
+            tag: 'div',
+            style: this.ITEM_STYLE_DEFAULT,
+            html: '<span' + (item.description ? ' data-qtip="'+Ext4.htmlEncode(item.description)+'"' : '') + '>' + (item.name || item.queryName) + ':' + '</span>',
+            width: 250
+        }, config);
+
+    }
+});
+
+Ext4.apply(LABKEY.ext.NavPanel.prototype, {
+    ITEM_STYLE_DEFAULT: 'padding: 2px;'
+});
+
+Ext4.apply(LABKEY.ext.NavPanel.prototype, {
+    ITEM_DEFAULTS: {
+        bodyStyle: LABKEY.ext.NavPanel.prototype.ITEM_STYLE_DEFAULT,
+        style: 'padding-right: 8px;',
+        border: false,
+        target: '_self',
+        linkCls: 'labkey-text-link'
+    }
 });
