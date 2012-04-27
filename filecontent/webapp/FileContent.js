@@ -24,9 +24,6 @@
  */
 LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.ext.FileBrowser, {
 
-    actionsURL : LABKEY.ActionURL.buildURL('pipeline', 'actions', null, {path:''}),
-    actionsConfigURL : LABKEY.ActionURL.buildURL('pipeline', 'getPipelineActionConfig'),
-
     containerPath : undefined,              // the containerPath of the files being shown
     path : undefined,
 
@@ -58,6 +55,11 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.ext.FileBrowser, {
     {
         LABKEY.FilesWebPartPanel.superclass.initComponent.call(this);
 
+        Ext.apply(this, {
+            actionsURL : LABKEY.ActionURL.buildURL('pipeline', 'actions', this.containerPath, {path:''}),
+            actionsConfigURL : LABKEY.ActionURL.buildURL('pipeline', 'getPipelineActionConfig', this.containerPath)
+        });
+
         this.grid.store.on("datachanged", this.onGridDataChange, this);
         this.on(LABKEY.FileSystem.BROWSER_EVENTS.selectionchange,function(record){this.onSelectionChange(record);}, this);
         this.on(LABKEY.FileSystem.BROWSER_EVENTS.directorychange,function(record){this.onGridDataChanged(false);}, this);
@@ -83,7 +85,11 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.ext.FileBrowser, {
         this.longMsgNoMatch = new Ext.XTemplate('This action can only operate on this list of file(s):<br>', fileListTemplate).compile();
         this.longMsgNoSelection = new Ext.XTemplate('This action requires selection from this list of file(s):<br>', fileListTemplate).compile();
 
-        this.adminOptions = new LABKEY.FileContentConfig();
+        this.adminOptions = new LABKEY.FileContentConfig({
+            inheritedFileConfig: {
+                containerPath: this.containerPath
+            }
+        });
 
         var btnUpdateTask = new Ext.util.DelayedTask(this.updateToolbarButtons, this);
         this.adminOptions.on('actionConfigChanged', function(){btnUpdateTask.delay(250);});
@@ -144,7 +150,10 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.ext.FileBrowser, {
             iconCls: 'iconAuditLog',
             disabledClass:'x-button-disabled',
             tooltip: 'View the files audit log for this folder.',
-            listeners: {click:function(button, event) {window.location = LABKEY.ActionURL.buildURL('filecontent', 'showFilesHistory');}}
+            listeners: {
+                scope: this,
+                click: function(button, event) {window.location = LABKEY.ActionURL.buildURL('filecontent', 'showFilesHistory', this.containerPath);}
+            }
         });
         return actions;
     },
@@ -709,6 +718,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.ext.FileBrowser, {
 
         var configDlg = new LABKEY.ActionsAdminPanel({
             path            : this.currentDirectory.data.path,
+            containerPath   : this.containerPath,
             isPipelineRoot  : this.isPipelineRoot,
             tbarItemsConfig : this.tbarItemsConfig,
             actions         : availableActions,
@@ -955,7 +965,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.ext.FileBrowser, {
 
     onEmailPreferences : function(btn)
     {
-        var prefDlg = new LABKEY.EmailPreferencesPanel();
+        var prefDlg = new LABKEY.EmailPreferencesPanel({containerPath: this.containerPath});
 
         prefDlg.show();
     },

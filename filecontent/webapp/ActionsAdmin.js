@@ -45,10 +45,6 @@ LABKEY.ActionsCheckColumn = Ext.extend(Ext.grid.CheckColumn,{
 
 LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
-    actionsURL : LABKEY.ActionURL.buildURL('pipeline', 'actions', null, {allActions:true}),
-    actionsUpdateURL : LABKEY.ActionURL.buildURL('pipeline', 'updatePipelineActionConfig'),
-    actionsConfigURL : LABKEY.ActionURL.buildURL('pipeline', 'getPipelineActionConfig'),
-
     importDataEnabled : true,
     fileConfig : undefined,
     filePropertiesPanel : undefined,
@@ -71,12 +67,19 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
         Ext.apply(this, config);
         Ext.util.Observable.prototype.constructor.call(this, config);
 
+        //we explicitly set the containerPath
+        Ext.apply(this, {
+            actionsURL : LABKEY.ActionURL.buildURL('pipeline', 'actions', this.containerPath, {allActions:true}),
+            actionsUpdateURL : LABKEY.ActionURL.buildURL('pipeline', 'updatePipelineActionConfig', this.containerPath),
+            actionsConfigURL : LABKEY.ActionURL.buildURL('pipeline', 'getPipelineActionConfig', this.containerPath)
+        });
+
         if (config.path)
         {
             if (LABKEY.FileSystem.Util.startsWith(config.path,"/"))
                 config.path = config.path.substring(1);
 
-            this.actionsURL = LABKEY.ActionURL.buildURL('pipeline', 'actions', null, {allActions:true, path:config.path});
+            this.actionsURL = LABKEY.ActionURL.buildURL('pipeline', 'actions', this.containerPath, {allActions:true, path:config.path});
         }
     },
 
@@ -414,7 +417,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
                     {name:'rangeURI'}]}),
             baseParams: {fileConfig: this.fileConfig},
             proxy: new Ext.data.HttpProxy({
-                url: LABKEY.ActionURL.buildURL("pipeline", "getPipelineFileProperties"),
+                url: LABKEY.ActionURL.buildURL("pipeline", "getPipelineFileProperties", this.containerPath),
                 method: 'GET'}),
             autoLoad: true});
 
@@ -755,7 +758,7 @@ LABKEY.ActionsAdminPanel = Ext.extend(Ext.util.Observable, {
 
     onEditFileProperties : function(btn, evt)
     {
-        var handler = function(){window.location = LABKEY.ActionURL.buildURL('fileContent', 'designer', null, {'returnURL':window.location});};
+        var handler = function(){window.location = LABKEY.ActionURL.buildURL('fileContent', 'designer', this.containerPath, {'returnURL':window.location});};
         this.saveActionConfig(btn, evt, handler);
     },
 
@@ -928,7 +931,7 @@ LABKEY.EmailPreferencesPanel = Ext.extend(Ext.util.Observable, {
     show : function(btn)
     {
         Ext.Ajax.request({
-            url: LABKEY.ActionURL.buildURL("filecontent", "getEmailPref"),
+            url: LABKEY.ActionURL.buildURL("filecontent", "getEmailPref", this.containerPath),
             method:'GET',
             disableCaching:false,
             success : this.getEmailPref,
@@ -1016,18 +1019,20 @@ LABKEY.EmailPreferencesPanel = Ext.extend(Ext.util.Observable, {
                     items: items,
                     buttonAlign: 'left',
                     buttons: [
-                        {text:'Submit', handler:function(){
+                        {text:'Submit', scope: this, handler:function(){
                             formPanel.getForm().doAction('submit', {
-                                url: LABKEY.ActionURL.buildURL("filecontent", "setEmailPref"),
+                                url: LABKEY.ActionURL.buildURL("filecontent", "setEmailPref", this.containerPath),
                                 waitMsg:'Saving Settings...',
                                 method: 'POST',
-                                success: function(){window.location = LABKEY.ActionURL.buildURL('filecontent', 'begin');},
+                                success: function(){window.location = LABKEY.ActionURL.buildURL('filecontent', 'begin', this.containerPath);},
                                 failure: LABKEY.Utils.displayAjaxErrorResponse,
                                 scope: this,
                                 clientValidation: false
                             });}
                         },
-                        {text:'Cancel', handler:function(){window.location = LABKEY.ActionURL.buildURL('filecontent', 'begin');}}
+                        {text:'Cancel', scope: this, handler:function(){
+                            window.location = LABKEY.ActionURL.buildURL('filecontent', 'begin', this.containerPath);
+                        }}
                     ]
                 })
             }
@@ -1044,9 +1049,9 @@ LABKEY.EmailPreferencesPanel = Ext.extend(Ext.util.Observable, {
                     layout: 'fit',
                     items: panel,
                     buttons: [
-                        {text:'Submit', handler:function(){
+                        {text:'Submit', scope: this, handler:function(){
                             formPanel.getForm().doAction('submit', {
-                                url: LABKEY.ActionURL.buildURL("filecontent", "setEmailPref"),
+                                url: LABKEY.ActionURL.buildURL("filecontent", "setEmailPref", this.containerPath),
                                 waitMsg:'Saving Settings...',
                                 method: 'POST',
                                 success: function(){win.close();},

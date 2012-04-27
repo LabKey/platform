@@ -453,10 +453,13 @@ public class FileContentController extends SpringActionController
             {
                 try
                 {
-                    Path offset = Path.decode(form.getRootOffset());
-                    String sep = part.getModelBean().getRootPath().endsWith("/") ? "" : "/";
-                    part.getModelBean().setRootPath(part.getModelBean().getRootPath() + sep + offset);
-                    part.getModelBean().setRootOffset(offset.toString());
+                    String offset = Path.decode(form.getRootOffset()).toString().replaceAll("^/", "").toString();
+                    String path = part.getModelBean().getRootPath();
+                    path += path.endsWith("/") ? "" : "/";
+                    path += part.getModelBean().getRootPath().endsWith("/") ? "" : "/";
+                    path += offset;
+                    part.getModelBean().setRootPath(path);
+                    part.getModelBean().setRootOffset(offset);
                 }
                 catch (Throwable t)
                 {
