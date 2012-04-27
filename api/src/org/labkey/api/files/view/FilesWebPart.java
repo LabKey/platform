@@ -226,8 +226,11 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         getModelBean().setFolderTreeCollapsed(!form.isFolderTreeVisible());
         if (null != form.getRootOffset())
         {
-            String sep = getModelBean().getRootPath().endsWith("/") ? "" : "/";
-            getModelBean().setRootPath(getModelBean().getRootPath() + sep + form.getRootOffset());
+            String path = getModelBean().getRootPath();
+            path += getModelBean().getRootPath().endsWith("/") ? "" : "/";
+            String offset = form.getRootOffset().replaceAll("^/", "");
+            path += offset;
+            getModelBean().setRootPath(path);
         }
         getModelBean().setRootOffset(form.getRootOffset());
 
