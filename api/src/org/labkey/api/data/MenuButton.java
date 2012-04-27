@@ -39,7 +39,7 @@ public class MenuButton extends ActionButton
 
     public MenuButton(String caption, String menuId)
     {
-        super("MenuButton", caption, DataRegion.MODE_GRID, ActionButton.Action.LINK);
+        super(caption, DataRegion.MODE_GRID, ActionButton.Action.LINK);
         NavTree navTree = new NavTree(caption);
         popupMenu = new PopupMenu(navTree, PopupMenu.Align.LEFT, PopupMenu.ButtonStyle.MENUBUTTON);
         if (menuId != null)

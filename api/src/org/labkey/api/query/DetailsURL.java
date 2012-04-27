@@ -259,6 +259,9 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
             return _containerContext.getContainer(context);
         if (null != _context)
             return _context.getContainer();
+        Object c = null==context ? null : context.get("container");
+        if (c instanceof Container)
+            return (Container)c;
         return null;
     }
 

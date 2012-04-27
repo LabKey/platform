@@ -38,7 +38,7 @@ public class PanelButton extends ActionButton
 
     public PanelButton(String caption, String dataRegionName)
     {
-        super("PanelButton", caption, DataRegion.MODE_GRID, ActionButton.Action.LINK);
+        super(caption, DataRegion.MODE_GRID, ActionButton.Action.LINK);
         _dataRegionName = dataRegionName;
         setId("PanelButtonContent" + String.valueOf(System.identityHashCode(this)));
     }

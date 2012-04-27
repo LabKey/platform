@@ -17,9 +17,11 @@
 package org.labkey.api.data;
 
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -84,7 +86,8 @@ public class ActionButton extends DisplayElement implements Cloneable
         BUTTON_SHOW_UPDATE.lock();
         assert MemTracker.remove(BUTTON_SHOW_UPDATE);
 
-        BUTTON_SHOW_GRID = new ActionButton("begin.view?" + DataRegion.LAST_FILTER_PARAM + "=true", "Show Grid");
+        BUTTON_SHOW_GRID = new ActionButton("begin.view", "Show Grid");
+        BUTTON_SHOW_GRID.setURL("begin.view?" + DataRegion.LAST_FILTER_PARAM + "=true");
         BUTTON_SHOW_GRID.setActionType(Action.LINK);
         BUTTON_SHOW_GRID.lock();
         assert MemTracker.remove(BUTTON_SHOW_GRID);
@@ -126,6 +129,12 @@ public class ActionButton extends DisplayElement implements Cloneable
 
     private String _id;
 
+    public ActionButton(String caption)
+    {
+        _caption = StringExpressionFactory.create(caption);
+        setURL("#" + caption);
+    }
+
     public ActionButton(String caption, URLHelper link)
     {
         _caption = StringExpressionFactory.create(caption);
@@ -147,15 +156,19 @@ public class ActionButton extends DisplayElement implements Cloneable
     }
 
     @Deprecated /** Use version that takes an action class instead */
-    public ActionButton(String actionName, String caption)
+    private ActionButton(String actionName, String caption)
     {
+        assert StringUtils.containsNone(actionName,"/:?") : "this is for _actions_, use setUrl() or setScript()";
         _actionName = StringExpressionFactory.create(actionName);
         _caption = StringExpressionFactory.create(caption);
     }
 
     public ActionButton(Class<? extends Controller> action, String caption)
     {
-        this(SpringActionController.getActionName(action) + ".view", caption);
+        _caption = StringExpressionFactory.create(caption);
+        ActionURL url = new ActionURL(action,null);
+        _url = new DetailsURL(url);
+        _actionName = StringExpressionFactory.create(url.getAction());
     }
 
     public ActionButton(ActionURL url, String caption, int displayModes)
@@ -173,13 +186,14 @@ public class ActionButton extends DisplayElement implements Cloneable
 
     public ActionButton(Class<? extends Controller> action, String caption, int displayModes, Action actionType)
     {
-        this(SpringActionController.getActionName(action) + ".view", caption, displayModes, actionType);
+        this(action, caption);
+        setDisplayModes(displayModes);
+        setActionType(actionType);
     }
 
-    @Deprecated /** Use version that takes an action class instead */
-    public ActionButton(String actionName, String caption, int displayModes, Action actionType)
+    protected ActionButton(String caption, int displayModes, Action actionType)
     {
-        this(actionName, caption);
+        this(caption);
         setDisplayModes(displayModes);
         setActionType(actionType);
     }
@@ -267,6 +281,7 @@ public class ActionButton extends DisplayElement implements Cloneable
         if (null != _url)
             return _eval(_url, ctx);
         String action = getActionName(ctx);
+        assert StringUtils.containsNone(action,"/:?") : "this is for _actions_, use setUrl() or setScript()";
         ActionURL url = ctx.getViewContext().cloneActionURL().deleteParameters();
         url.setAction(action);
         return url.getLocalURIString();
