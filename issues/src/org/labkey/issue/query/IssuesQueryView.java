@@ -85,11 +85,11 @@ public class IssuesQueryView extends QueryView
             listDetailsButton.setDisplayPermission(ReadPermission.class);
             bar.add(listDetailsButton);
 
-            ActionButton adminButton = new ActionButton(_context.cloneActionURL().setAction(IssuesController.AdminAction.class).getEncodedLocalURIString(), "Admin", DataRegion.MODE_GRID, ActionButton.Action.LINK);
+            ActionButton adminButton = new ActionButton(IssuesController.AdminAction.class, "Admin", DataRegion.MODE_GRID, ActionButton.Action.LINK);
             adminButton.setDisplayPermission(AdminPermission.class);
             bar.add(adminButton);
 
-            ActionButton prefsButton = new ActionButton(_context.cloneActionURL().setAction(IssuesController.EmailPrefsAction.class).getEncodedLocalURIString(), "Email Preferences", DataRegion.MODE_GRID, ActionButton.Action.LINK);
+            ActionButton prefsButton = new ActionButton(IssuesController.EmailPrefsAction.class, "Email Preferences", DataRegion.MODE_GRID, ActionButton.Action.LINK);
             bar.add(prefsButton);
         }
     }
