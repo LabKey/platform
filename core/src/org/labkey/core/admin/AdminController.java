@@ -2691,6 +2691,7 @@ public class AdminController extends SpringActionController
             this.showFolders = showFolders;
         }
 
+        // TODO: Should be a ReturnUrlForm
         public String getRedir()
         {
             return redir;
