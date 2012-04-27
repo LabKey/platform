@@ -142,6 +142,7 @@ public class StatementUtils
         SQLFragment sqlfInsertObject = new SQLFragment();
         SQLFragment sqlfSelectObject = new SQLFragment();
         SQLFragment sqlfObjectProperty = new SQLFragment();
+        SQLFragment sqlfDelete = new SQLFragment();
 
         Domain domain = t.getDomain();
         DomainKind domainKind = t.getDomainKind();
@@ -193,17 +194,17 @@ public class StatementUtils
                 if (!insert)
                 {
                     // Clear out any existing property values for this domain
-                    sqlfSelectObject.append("DELETE FROM exp.ObjectProperty WHERE ObjectId = ");
-                    sqlfSelectObject.append(objectIdVar);
-                    sqlfSelectObject.append(" AND PropertyId IN (");
+                    sqlfDelete.append("DELETE FROM exp.ObjectProperty WHERE ObjectId = ");
+                    sqlfDelete.append(objectIdVar);
+                    sqlfDelete.append(" AND PropertyId IN (");
                     String separator = "";
                     for (DomainProperty property : properties)
                     {
-                        sqlfSelectObject.append(separator);
+                        sqlfDelete.append(separator);
                         separator = ", ";
-                        sqlfSelectObject.append(property.getPropertyId());
+                        sqlfDelete.append(property.getPropertyId());
                     }
-                    sqlfSelectObject.append(")");
+                    sqlfDelete.append(")");
                 }
             }
         }
@@ -380,7 +381,6 @@ public class StatementUtils
             sqlfInsertInto.append(objectURIColumnName);
             sqlfInsertInto.append(" = ");
             appendParameterOrVariable(sqlfInsertInto, d, useVariables, objecturiParameter, parameterToVariable);
-            sqlfInsertInto.append(";\n");
         }
 
         //
@@ -441,6 +441,7 @@ public class StatementUtils
             script.appendStatement(sqlfDeclare, d);
             script.appendStatement(sqlfInsertObject, d);
             script.appendStatement(sqlfSelectObject, d);
+            script.appendStatement(sqlfDelete, d);
             script.appendStatement(sqlfInsertInto, d);
             script.appendStatement(sqlfObjectProperty, d);
             script.appendStatement(sqlfSelectIds, d);
@@ -500,6 +501,7 @@ public class StatementUtils
 
             fn.appendStatement(sqlfInsertObject, d);
             fn.appendStatement(sqlfSelectObject, d);
+            fn.appendStatement(sqlfDelete, d);
             fn.appendStatement(sqlfInsertInto, d);
             fn.appendStatement(sqlfObjectProperty, d);
             if (null != sqlfSelectIds)
