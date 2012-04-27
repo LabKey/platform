@@ -317,7 +317,7 @@ public class AssayManager implements AssayService.Interface
 
         else
         {
-            ActionButton button = new ActionButton("#", AbstractAssayProvider.IMPORT_DATA_LINK_NAME){
+            ActionButton button = new ActionButton(AbstractAssayProvider.IMPORT_DATA_LINK_NAME){
                 public void render(RenderContext ctx, Writer out) throws IOException
                 {
                     if (!shouldRender(ctx))

@@ -102,7 +102,7 @@ public class SampleSetWebPart extends QueryView
 
     public static void populateButtonBar(ViewContext model, ButtonBar bb, boolean detailsView)
     {
-        ActionButton deleteButton = new ActionButton("deleteMaterialSource.view", "Delete", DataRegion.MODE_GRID, ActionButton.Action.GET);
+        ActionButton deleteButton = new ActionButton(ExperimentController.DeleteMaterialSourceAction.class, "Delete", DataRegion.MODE_GRID, ActionButton.Action.GET);
         deleteButton.setDisplayPermission(DeletePermission.class);
         ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, model.getContainer());
         deleteURL.addParameter(ActionURL.Param.returnUrl, model.getActionURL().toString());

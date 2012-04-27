@@ -299,7 +299,7 @@ public class CohortController extends BaseStudyController
             // In case we reshow due to errors, we need to stuff the row id into the data region
             dataRegion.addHiddenFormField("rowId", Integer.toString(form.getRowId()));
 
-            String cancelURL = new ActionURL(CohortController.ManageCohortsAction.class, getContainer()).getLocalURIString();
+            ActionURL cancelURL = new ActionURL(CohortController.ManageCohortsAction.class, getContainer());
             
             ButtonBar buttonBar = dataRegion.getButtonBar(DataRegion.MODE_UPDATE);
             buttonBar = new ButtonBar(buttonBar); // need to copy since the original is read-only

@@ -24,6 +24,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.view.DataView;
+import org.labkey.biotrue.controllers.BtController;
 
 /**
  * User: Karl Lum
@@ -44,7 +45,7 @@ public class BtServerView extends QueryView
         {
             ButtonBar bar = view.getDataRegion().getButtonBar(DataRegion.MODE_GRID);
 
-            ActionButton adminButton = new ActionButton("admin.view", "Admin", DataRegion.MODE_GRID, ActionButton.Action.LINK);
+            ActionButton adminButton = new ActionButton(BtController.AdminAction.class, "Admin", DataRegion.MODE_GRID, ActionButton.Action.LINK);
             adminButton.setDisplayPermission(AdminPermission.class);
             bar.add(adminButton);
             view.getDataRegion().setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
