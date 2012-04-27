@@ -77,14 +77,14 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
         // TODO: Audit log?
     }
 
-    public static boolean canImpersonateGroup(Container project, User user, Group group)
+    public static boolean canImpersonateGroup(@Nullable Container project, User user, Group group)
     {
         // Site admin can impersonate any group
         if (user.isAdministrator())
             return true;
 
         // Project admin...
-        if (project.hasPermission(user, AdminPermission.class))
+        if (null != project && project.hasPermission(user, AdminPermission.class))
         {
             // ...can impersonate any project group but must be a member of a site group to impersonate it
             if (group.isProjectGroup())
@@ -143,12 +143,7 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
         }
 
         @Override
-        public Container getStartingProject()
-        {
-            return _project;
-        }
-
-        @Override
+        @Nullable
         public Container getImpersonationProject()
         {
             return null;

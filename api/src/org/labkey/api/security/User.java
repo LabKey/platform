@@ -238,7 +238,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         return _impersonationContext.getImpersonatingUser();
     }
 
-    public Container getImpersonationProject()
+    public @Nullable Container getImpersonationProject()
     {
         return _impersonationContext.getImpersonationProject();
     }

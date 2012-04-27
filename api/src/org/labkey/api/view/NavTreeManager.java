@@ -68,12 +68,8 @@ public class NavTreeManager
     private static void collapseAll(Collapsible tree)
     {
         tree.setCollapsed(true);
-
-        if (tree.getChildren() != null)
-        {
-            for (Collapsible child : tree.getChildren())
-                collapseAll(child);
-        }
+        for (Collapsible child : tree.getChildren())
+            collapseAll(child);
     }
 
 

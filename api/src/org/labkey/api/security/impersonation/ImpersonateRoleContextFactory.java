@@ -20,14 +20,13 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.roles.DeveloperRole;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewContext;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -83,10 +82,26 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
 
         private ImpersonateRoleContext(@Nullable Container project, User user, Role role, URLHelper returnURL)
         {
-            // TODO: Check permissions
+            verifyPermissions(project, user);
             _project = project;
             _role = role;
             _returnURL = returnURL;
+        }
+
+        // Throws if user is not authorized.  Throws IllegalStateException because UI should prevent this... could be a code bug.
+        private void verifyPermissions(@Nullable Container project, User user)
+        {
+            // Site admin can impersonate anywhere
+            if (user.isAdministrator())
+                return;
+
+            // Must not be root
+            if (null == project)
+                throw new IllegalStateException("You are not allowed to impersonate a role in this project");
+
+            // Must have admin permissions in project
+            if (!project.hasPermission(user, AdminPermission.class))
+                throw new IllegalStateException("You are not allowed to impersonate a role in this project");
         }
 
         @Override
@@ -102,15 +117,9 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
         }
 
         @Override
-        public Container getStartingProject()
+        public @Nullable Container getImpersonationProject()
         {
             return _project;
-        }
-
-        @Override
-        public Container getImpersonationProject()
-        {
-            return null;
         }
 
         @Override
@@ -122,8 +131,8 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
         @Override
         public String getNavTreeCacheKey()
         {
-            // NavTree for user impersonating a role will be different for each role (TODO:??)
-            return "/impersonationRole=" + _role.getUniqueName();
+            // NavTree for user impersonating a role will be different for each role + project combination
+            return "/impersonationRole=" + _role.getUniqueName() + (null != _project ? "/impersonationProject=" + _project.getId() : "");
         }
 
         @Override

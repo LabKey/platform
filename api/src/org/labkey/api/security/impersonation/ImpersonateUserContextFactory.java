@@ -142,13 +142,7 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
         }
 
         @Override
-        public Container getStartingProject()
-        {
-            return _project;
-        }
-
-        @Override
-        public Container getImpersonationProject()
+        public @Nullable Container getImpersonationProject()
         {
             return _project;
         }
@@ -173,7 +167,7 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
             String suffix = "/impersonatingUser=" + getImpersonatingUser().getUserId();
 
             if (null != _project)
-                suffix += "/impersonationProject=" + getImpersonationProject().getId();
+                suffix += "/impersonationProject=" + _project.getId();
 
             return suffix;
         }

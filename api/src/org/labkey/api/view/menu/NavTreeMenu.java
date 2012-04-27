@@ -18,6 +18,7 @@ package org.labkey.api.view.menu;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.util.PageFlowUtil;
@@ -44,7 +45,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
     private String _collapseId;
     private boolean _highlightSelection = true;
 
-    public NavTreeMenu(ViewContext context, String collapseId, String title, ActionURL titleHref, boolean collapseByDefault, NavTree... elements)
+    public NavTreeMenu(ViewContext context, String collapseId, String title, @Nullable ActionURL titleHref, boolean collapseByDefault, NavTree... elements)
     {
         super(title);
         setFrame(FrameType.LEFT_NAVIGATION);

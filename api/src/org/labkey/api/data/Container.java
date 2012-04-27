@@ -315,7 +315,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         {
             @Nullable Container impersonationProject = user.getImpersonationProject();
 
-            // Current project must match impersonation project (forbids root as well)
+            // Root is never forbidden (site admin case), otherwise, impersonation project must match current project
             if (null != impersonationProject && !impersonationProject.equals(getProject()))
                 return true;
         }

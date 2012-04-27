@@ -19,7 +19,6 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.jsp.JspBase;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.HtmlView;

@@ -491,6 +491,8 @@ public class SecurityManager
     {
         @Nullable Container project = viewContext.getContainer().getProject();
         User user = viewContext.getUser();
+        if (user.isAdministrator())
+            project = null;
         impersonate(viewContext, new ImpersonateRoleContextFactory(project, user, role, returnURL));
     }
 

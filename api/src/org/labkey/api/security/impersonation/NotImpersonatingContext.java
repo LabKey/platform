@@ -15,6 +15,7 @@
  */
 package org.labkey.api.security.impersonation;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.User;
@@ -37,13 +38,7 @@ public class NotImpersonatingContext implements ImpersonationContext
     }
 
     @Override
-    public Container getStartingProject()
-    {
-        return null;
-    }
-
-    @Override
-    public Container getImpersonationProject()
+    public @Nullable Container getImpersonationProject()
     {
         return null;
     }
