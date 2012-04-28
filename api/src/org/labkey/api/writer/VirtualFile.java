@@ -39,6 +39,7 @@ public interface VirtualFile
     public InputStream getInputStream(String filename) throws IOException;
     public String getRelativePath(String filename);
     public String[] list();
+    public String[] listDirs();
 
     public Archive createZipArchive(String name) throws IOException;
     public VirtualFile getDir(String path);

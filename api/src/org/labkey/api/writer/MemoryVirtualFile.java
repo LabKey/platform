@@ -155,4 +155,10 @@ public class MemoryVirtualFile extends AbstractVirtualFile
 
         return names.toArray(new String[names.size()]);
     }
+
+    @Override
+    public String[] listDirs()
+    {
+        return _folders.keySet().toArray(new String[_folders.size()]);
+    }
 }

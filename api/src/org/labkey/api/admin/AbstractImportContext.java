@@ -20,11 +20,11 @@ import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.writer.VirtualFile;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import java.io.File;
 import java.util.Collections;
 import java.util.Set;
 
@@ -37,13 +37,13 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     private final User _user;
     private final Container _c;
     private final Logger _logger;
-    @Nullable private final File _root;
+    @Nullable private final VirtualFile _root;
 
     private transient XmlDocument _xmlDocument;
 
     private boolean _locked = false;
 
-    protected AbstractImportContext(User user, Container c, XmlDocument document, Logger logger, @Nullable File root)
+    protected AbstractImportContext(User user, Container c, XmlDocument document, Logger logger, @Nullable VirtualFile root)
     {
         _user = user;
         _c = c;
@@ -62,7 +62,7 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
         return _c;
     }
 
-    public File getDir(String xmlNodeName) throws ImportException
+    public VirtualFile getDir(String xmlNodeName) throws ImportException
     {
         if (_root == null)
             throw new IllegalStateException("Not supported during export");
@@ -75,13 +75,10 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
             {
                 String dirName = ((Element)childNode).getAttribute("dir");
 
-                File dir = null != dirName ? new File(_root, dirName) : _root;
+                VirtualFile dir = null != dirName ? _root.getDir(dirName) : null;
 
-                if (!dir.exists())
-                    throw new ImportException("Main import file refers to a directory that does not exist: " + ImportException.getRelativePath(_root, dir));
-
-                if (!dir.isDirectory())
-                    throw new ImportException("Main import file refers to " + ImportException.getRelativePath(_root, dir) + ": expected a directory but found a file");
+                if (null == dir)
+                    throw new ImportException("Main import file refers to a directory that does not exist: " + _root.getRelativePath(dirName));
 
                 return dir;
             }
@@ -95,8 +92,11 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
         return _logger;
     }
 
-    public File getRoot()
+    public VirtualFile getRoot()
     {
+        if (_root == null)
+            throw new IllegalStateException("Not supported during export");        
+
         return _root;
     }
 
@@ -113,9 +113,9 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
         return _xmlDocument;
     }
 
-    protected final synchronized void setDocument(XmlDocument folderDoc)
+    protected final synchronized void setDocument(XmlDocument doc)
     {
-        _xmlDocument = folderDoc;
+        _xmlDocument = doc;
     }
 
     @Override

@@ -38,7 +38,7 @@ public class FolderImportContext extends AbstractFolderContext
 {
     private File _folderXml;
 
-    public FolderImportContext(User user, Container c, File folderXml, Logger logger, File root)
+    public FolderImportContext(User user, Container c, File folderXml, Logger logger, VirtualFile root)
     {
         super(user, c, null, logger, root);
         _folderXml = folderXml;
@@ -46,7 +46,7 @@ public class FolderImportContext extends AbstractFolderContext
 
     public FolderImportContext(User user, Container c, FolderDocument folderDoc, Logger logger, VirtualFile root)
     {
-        super(user, c, folderDoc, logger, null); 
+        super(user, c, folderDoc, logger, root);
     }
 
     @Override

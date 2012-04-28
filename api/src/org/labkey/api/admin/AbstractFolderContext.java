@@ -21,6 +21,7 @@ import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.apache.log4j.Logger;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
 
 import java.io.File;
@@ -36,7 +37,7 @@ public abstract class AbstractFolderContext extends AbstractImportContext<Folder
         STUDY
     }
 
-    protected AbstractFolderContext(User user, Container c, FolderDocument folderDoc, Logger logger, @Nullable File root)
+    protected AbstractFolderContext(User user, Container c, FolderDocument folderDoc, Logger logger, @Nullable VirtualFile root)
     {
         super(user, c, folderDoc, logger, root);
     }

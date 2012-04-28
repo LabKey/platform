@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.writer.Writer;
 import org.labkey.folder.xml.FolderDocument;
 
+import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -29,7 +30,7 @@ import java.util.Set;
 public interface FolderWriter extends Writer<Container, ImportContext<FolderDocument.Folder>>
 {
     @Nullable
-    public Set<Writer> getChildren();
+    public Collection<Writer> getChildren();
     public boolean show(Container c);
     public boolean includeInType(AbstractFolderContext.ExportType type);
     /* temporary setting until all importers support using VirtualFile */

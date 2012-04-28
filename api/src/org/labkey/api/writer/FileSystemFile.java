@@ -169,4 +169,22 @@ public class FileSystemFile extends AbstractVirtualFile
 
         return fileNames;
     }
+
+    @Override
+    public String[] listDirs()
+    {
+        File[] dirs = _root.listFiles(new FileFilter() {
+            @Override
+            public boolean accept(File file)
+            {
+                return file.isDirectory();
+            }
+        });
+        String[] dirNames = new String[dirs.length];
+        int i=0;
+        for (File dir : dirs)
+            dirNames[i++] = dir.getName();
+
+        return dirNames;
+    }
 }

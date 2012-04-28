@@ -20,7 +20,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.folder.xml.FolderDocument;
 
-import java.util.Set;
+import java.util.Collection;
 
 /**
  * User: cnathe
@@ -41,7 +41,7 @@ public class BaseFolderWriter implements FolderWriter
     }
 
     @Override
-    public Set<Writer> getChildren()
+    public Collection<Writer> getChildren()
     {
         return null;
     }

@@ -18,6 +18,7 @@ package org.labkey.api.admin;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.api.writer.VirtualFile;
 
 import java.io.File;
 import java.util.Set;
@@ -29,7 +30,7 @@ import java.util.Set;
 public interface ImportContext<XmlType extends XmlObject> extends ContainerUser
 {
     public XmlType getXml() throws ImportException;
-    public File getDir(String xmlNodeName) throws ImportException;
+    public VirtualFile getDir(String xmlNodeName) throws ImportException;
     public Logger getLogger();
     public Set<String> getDataTypes();
     public String getFormat();
