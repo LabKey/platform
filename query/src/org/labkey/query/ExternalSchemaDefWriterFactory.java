@@ -37,7 +37,7 @@ import java.util.List;
  */
 public class ExternalSchemaDefWriterFactory implements FolderWriterFactory
 {
-    public static final String DEFAULT_DIRECTORY = "externalSchemas";
+    private static final String DEFAULT_DIRECTORY = "externalSchemas";
     public static final String FILE_EXTENSION =  ".externalschema.xml";   
 
     @Override

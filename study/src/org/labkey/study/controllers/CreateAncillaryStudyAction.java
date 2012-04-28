@@ -244,7 +244,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
         if (studyXml instanceof StudyDocument)
         {
             StudyDocument studyDoc = (StudyDocument)studyXml;
-            StudyImportContext importContext = new StudyImportContext(user, newStudy.getContainer(), studyDoc, Logger.getLogger(StudyWriter.class));
+            StudyImportContext importContext = new StudyImportContext(user, newStudy.getContainer(), studyDoc, Logger.getLogger(StudyWriter.class), vf);
 
             // missing values and qc states
             new MissingValueImporter().process(null, importContext, vf);
@@ -363,7 +363,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
             if (studyXml instanceof StudyDocument)
             {
                 StudyDocument studyDoc = (StudyDocument)studyXml;
-                StudyImportContext importContext = new StudyImportContext(user, newStudy.getContainer(), studyDoc, Logger.getLogger(StudyWriter.class));
+                StudyImportContext importContext = new StudyImportContext(user, newStudy.getContainer(), studyDoc, Logger.getLogger(StudyWriter.class), vf);
 
                 ParticipantGroupImporter groupImporter = new ParticipantGroupImporter();
                 groupImporter.process(importContext, vf, errors);

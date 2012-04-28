@@ -29,6 +29,8 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.writer.FileSystemFile;
+import org.labkey.api.writer.VirtualFile;
 import org.springframework.validation.BindException;
 
 import java.io.File;
@@ -42,17 +44,17 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport
     private static final Logger LOG = Logger.getLogger(FolderImportJob.class);
 
     private final FolderImportContext _ctx;
-    private final File _root;
+    private final VirtualFile _root;
     private final String _originalFilename;
     private final BindException _errors;
 
     public FolderImportJob(Container c, User user, ActionURL url, File folderXml, String originalFilename, BindException errors, PipeRoot pipeRoot)
     {
         super(null, new ViewBackgroundInfo(c, user, url), pipeRoot);
-        _root = folderXml.getParentFile();
+        _root = new FileSystemFile(folderXml.getParentFile());
         _originalFilename = originalFilename;
         _errors = errors;
-        setLogFile(FolderImportProvider.logForInputFile(new File(_root, "folder_load")));
+        setLogFile(FolderImportProvider.logForInputFile(new File(folderXml.getParentFile(), "folder_load")));
         _ctx = new FolderImportContext(user, c, folderXml, getLogger(), _root);
 
         LOG.info("Pipeline job initialized for importing folder properties to folder " + c.getPath());
@@ -63,7 +65,7 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport
         return _ctx;
     }
 
-    public File getRoot()
+    public VirtualFile getRoot()
     {
         return _root;
     }

@@ -28,8 +28,7 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.LinkedList;
 
 
 /**
@@ -38,7 +37,7 @@ import java.util.Set;
  */
 public class StudyWriterFactory implements FolderWriterFactory
 {
-    public static final String DEFAULT_DIRECTORY = "study";
+    private static final String DEFAULT_DIRECTORY = "study";
 
     @Override
     public FolderWriter create()
@@ -83,14 +82,11 @@ public class StudyWriterFactory implements FolderWriterFactory
         }
 
         @Override
-        public Set<Writer> getChildren()
+        public Collection<Writer> getChildren()
         {
-            Set<Writer> children = new HashSet<Writer>();
+            Collection<Writer> children = new LinkedList<Writer>();
             Collection<InternalStudyWriter> writers = StudySerializationRegistryImpl.get().getInternalStudyWriters();
-            for (InternalStudyWriter writer : writers)
-            {
-                children.add(writer);
-            }
+            children.addAll(writers);
             return children;
         }
     }

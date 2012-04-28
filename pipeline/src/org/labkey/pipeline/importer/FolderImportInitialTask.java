@@ -44,7 +44,7 @@ public class FolderImportInitialTask extends PipelineJob.Task<FolderImportInitia
     {
         PipelineJob job = getJob();
         FolderJobSupport support = job.getJobSupport(FolderJobSupport.class);
-        VirtualFile vf = new FileSystemFile(support.getRoot());
+        VirtualFile vf = support.getRoot();
 
         try
         {

@@ -23,6 +23,7 @@ import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.writer.AbstractContext;
 import org.labkey.study.xml.StudyDocument;
 
@@ -38,15 +39,15 @@ public class StudyImportContext extends AbstractContext
 {
     private File _studyXml;
 
-    public StudyImportContext(User user, Container c, File studyXml, Logger logger, File root)
+    public StudyImportContext(User user, Container c, File studyXml, Logger logger, VirtualFile root)
     {
         super(user, c, null, logger, root);  // XStream can't seem to serialize the StudyDocument XMLBean, so we always read the file on demand
         _studyXml = studyXml;
     }
 
-    public StudyImportContext(User user, Container c, StudyDocument studyDoc, Logger logger)
+    public StudyImportContext(User user, Container c, StudyDocument studyDoc, Logger logger, VirtualFile root)
     {
-        super(user, c, studyDoc, logger, null); 
+        super(user, c, studyDoc, logger, root); 
     }
 
     @Override
@@ -70,6 +71,12 @@ public class StudyImportContext extends AbstractContext
         }
 
         return studyDoc;
+    }
+
+    // TODO: this should go away once study import fully supports using VirtualFile
+    public File getStudyFile(VirtualFile root, VirtualFile dir, String name) throws ImportException
+    {
+        return getStudyFile(new File(root.getLocation()), new File(dir.getLocation()), name, "study.xml");
     }
 
     // Assume file was referenced in study.xml file   // TODO: Context should hold onto the root -- shouldn't have to pass it in

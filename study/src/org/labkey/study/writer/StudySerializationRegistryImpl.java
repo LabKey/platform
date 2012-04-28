@@ -83,16 +83,16 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
     {
         // New up the writers every time since these classes can be stateful
         return Arrays.asList(
-            new VisitMapWriter(),
-            new CohortWriter(),
-            new QcStateWriter(),
-            new DatasetWriter(),
             new AssayDatasetWriter(),
-            new SpecimenArchiveWriter(),
+            new ViewCategoryWriter(),
+            new CohortWriter(),
+            new DatasetWriter(),
             new ParticipantCommentWriter(),
             new ParticipantGroupWriter(),
             new ProtocolDocumentWriter(),
-            new ViewCategoryWriter(),
+            new QcStateWriter(),
+            new SpecimenArchiveWriter(),
+            new VisitMapWriter(),
             new StudyXmlWriter()  // Note: Must be the last study writer since it writes out the study.xml file (to which other writers contribute)
         );
     }

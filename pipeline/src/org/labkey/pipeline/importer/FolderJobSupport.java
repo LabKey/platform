@@ -16,6 +16,7 @@
 package org.labkey.pipeline.importer;
 
 import org.labkey.api.admin.FolderImportContext;
+import org.labkey.api.writer.VirtualFile;
 
 import java.io.File;
 
@@ -26,6 +27,6 @@ import java.io.File;
 public interface FolderJobSupport
 {
     FolderImportContext getImportContext();
-    File getRoot();
+    VirtualFile getRoot();
     String getOriginalFilename();
 }

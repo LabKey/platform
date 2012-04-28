@@ -21,13 +21,13 @@ import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.attachments.FileAttachmentFile;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.attachments.InputStreamAttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.wiki.WikiType;
@@ -39,8 +39,8 @@ import org.labkey.wiki.WikiSelectManager;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
 
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -79,30 +79,32 @@ public class WikiImporterFactory implements FolderImporterFactory
         @Override
         public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
-            File wikisDir = ctx.getDir("wikis");
+            VirtualFile wikisDir = ctx.getDir("wikis");
+            
             if (wikisDir != null)
             {
                 if (null != job)
                     job.setStatus("IMPORT " + getDescription());
                 ctx.getLogger().info("Loading " + getDescription());
 
-                File wikisXmlFile = new File(wikisDir, WikiWriterFactory.WIKIS_FILENAME);
-
-                if (!wikisXmlFile.exists())
-                {
-                    throw new ImportException("Could not find expected file: " + wikisXmlFile);
-                }
-
                 Set<String> importedWikiNames = new CaseInsensitiveHashSet();
                 Map<Wiki, String> parentsToBeSet = new HashMap<Wiki, String>();
 
-                WikisDocument document = WikisDocument.Factory.parse(wikisXmlFile);
+                // since the WikiWriter saves the webdav tree, the files need to be accessed as InputStreams
+                InputStream wikisIS = wikisDir.getInputStream(WikiWriterFactory.WIKIS_FILENAME);
+
+                if (null == wikisIS)
+                {
+                    throw new ImportException("Could not find expected file: " + WikiWriterFactory.WIKIS_FILENAME);
+                }
+
+                WikisDocument document = WikisDocument.Factory.parse(wikisIS);
                 WikisType rootNode = document.getWikis();
                 int displayOrder = 0;
                 for (WikiType wikiXml : rootNode.getWikiArray())
                 {
-                    File wikiSubDir = new File(wikisDir, wikiXml.getName());
-                    if (!wikiSubDir.isDirectory())
+                    VirtualFile wikiSubDir = wikisDir.getDir(wikiXml.getName());
+                    if (null == wikiSubDir)
                     {
                         ctx.getLogger().error("Could not find content subdirectory for wiki with name \"" + wikiXml.getName() + "\"");
                     }
@@ -115,17 +117,19 @@ public class WikiImporterFactory implements FolderImporterFactory
                 }
 
                 // Import any wiki subdirectories that weren't present in the XML metadata using default metadata values
-                for (File wikiSubDir : wikisDir.listFiles())
+                for (String wikiSubDirName : wikisDir.listDirs())
                 {
-                    if (wikiSubDir.isDirectory() && !importedWikiNames.contains(wikiSubDir.getName()))
+                    VirtualFile wikiSubDir = wikisDir.getDir(wikiSubDirName);
+                    if (null != wikiSubDir && !importedWikiNames.contains(wikiSubDirName))
                     {
-                        importWiki(wikiSubDir.getName(), null, true, wikiSubDir, ctx, displayOrder++);
-                        importedWikiNames.add(wikiSubDir.getName());
+                        importWiki(wikiSubDirName, null, true, wikiSubDir, ctx, displayOrder++);
+                        importedWikiNames.add(wikiSubDirName);
                     }
                 }
 
                 setParents(ctx, parentsToBeSet);
 
+                ctx.getLogger().info(importedWikiNames.size() + " wiki" + (1 == importedWikiNames.size() ? "" : "s") + " imported");
                 ctx.getLogger().info("Done importing " + getDescription());
             }
         }
@@ -151,7 +155,7 @@ public class WikiImporterFactory implements FolderImporterFactory
             }
         }
 
-        private Wiki importWiki(String name, String title, boolean showAttachments, File wikiSubDir, ImportContext ctx, int displayOrder) throws IOException, SQLException, ImportException
+        private Wiki importWiki(String name, String title, boolean showAttachments, VirtualFile wikiSubDir, ImportContext ctx, int displayOrder) throws IOException, SQLException, ImportException
         {
             Wiki existingWiki = WikiSelectManager.getWiki(ctx.getContainer(), new HString(name));
             List<String> existingAttachmentNames = new ArrayList<String>();
@@ -173,18 +177,22 @@ public class WikiImporterFactory implements FolderImporterFactory
             wiki.setShowAttachments(showAttachments);
             wiki.setDisplayOrder(displayOrder);
 
-            File contentFile = findContentFile(wikiSubDir, name);
+            // since the WikiWriter saves the webdav tree, the files need to be accessed as InputStreams
+            Pair<String, InputStream> contentSteamPair = findContentStream(wikiSubDir, name);
+            String contentFileName = contentSteamPair.first;
+            InputStream contentSteam = contentSteamPair.second;
 
             WikiVersion wikiversion = new WikiVersion(wiki.getName());
-            wikiversion.setBody(PageFlowUtil.getFileContentsAsString(contentFile));
-            wikiversion.setRendererTypeEnum(WikiRendererType.getType(contentFile.getName()));
+            wikiversion.setBody(PageFlowUtil.getStreamContentsAsString(contentSteam));
+            wikiversion.setRendererTypeEnum(WikiRendererType.getType(contentFileName));
 
             List<AttachmentFile> attachments = new ArrayList<AttachmentFile>();
-            for (File file : wikiSubDir.listFiles())
+            for (String fileName : wikiSubDir.list())
             {
-                if (!file.equals(contentFile) && file.isFile())
+                if (!fileName.equals(contentFileName) && null != wikiSubDir.getInputStream(fileName))
                 {
-                    attachments.add(new FileAttachmentFile(file));
+                    InputStream aIS = wikiSubDir.getInputStream(fileName);
+                    attachments.add(new InputStreamAttachmentFile(aIS, fileName));
                 }
             }
 
@@ -201,23 +209,14 @@ public class WikiImporterFactory implements FolderImporterFactory
             return wiki;
         }
 
-        private File findContentFile(File dir, String wikiName) throws ImportException
+        private Pair<String, InputStream> findContentStream(VirtualFile dir, String wikiName) throws ImportException, IOException
         {
-            Map<String, File> files = new CaseInsensitiveHashMap<File>();
-            for (File file : dir.listFiles())
-            {
-                if (file.isFile())
-                {
-                    files.put(file.getName(), file);
-                }
-            }
-
             for (WikiRendererType wikiRendererType : WikiRendererType.values())
             {
-                File file = files.get(wikiRendererType.getDocumentName(wikiName));
-                if (file != null)
+                InputStream is = dir.getInputStream(wikiRendererType.getDocumentName(wikiName));
+                if (null != is)
                 {
-                    return file;
+                    return new Pair<String, InputStream>(wikiRendererType.getDocumentName(wikiName), is);
                 }
             }
 
@@ -233,7 +232,7 @@ public class WikiImporterFactory implements FolderImporterFactory
         @Override
         public boolean supportsVirtualFile()
         {
-            return false;
+            return true;
         }        
     }
 }

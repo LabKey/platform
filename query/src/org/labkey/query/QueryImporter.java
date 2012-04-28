@@ -33,12 +33,9 @@ import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.query.QueryDocument;
 import org.labkey.data.xml.query.QueryType;
-import org.labkey.folder.xml.FolderDocument;
 import org.labkey.query.persist.QueryManager;
-import org.labkey.study.xml.StudyDocument;
 
 import javax.servlet.ServletException;
-import java.io.InputStream;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
@@ -57,7 +54,7 @@ public class QueryImporter implements FolderImporter
 
     public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws ServletException, XmlException, IOException, SQLException, ImportException
     {
-        VirtualFile queriesDir = getQueriesDir(ctx, root);
+        VirtualFile queriesDir = ctx.getDir("queries");
 
         if (null != queriesDir)
         {
@@ -176,25 +173,6 @@ public class QueryImporter implements FolderImporter
         ctx.getLogger().info("Finished validating queries.");
         ctx.getLogger().info("Done post-processing " + getDescription());
         return warnings;
-    }
-
-    private VirtualFile getQueriesDir(ImportContext ctx, VirtualFile root) throws ImportException
-    {
-        String dirPath = null;
-        if (ctx.getXml() instanceof StudyDocument.Study)
-        {
-            StudyDocument.Study xml = (StudyDocument.Study)ctx.getXml();
-            if (xml.isSetQueries())
-                dirPath = xml.getQueries().getDir();
-        }
-        else if (ctx.getXml() instanceof FolderDocument.Folder)
-        {
-            FolderDocument.Folder xml = (FolderDocument.Folder)ctx.getXml();
-            if (xml.isSetQueries())
-                dirPath = xml.getQueries().getDir();
-        }
-
-        return null != dirPath ? root.getDir(dirPath) : null;
     }
     
     @Override

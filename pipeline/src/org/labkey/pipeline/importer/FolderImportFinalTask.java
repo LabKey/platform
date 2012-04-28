@@ -44,7 +44,7 @@ public class FolderImportFinalTask extends PipelineJob.Task<FolderImportFinalTas
 
         try
         {
-            VirtualFile vf = new FileSystemFile(support.getRoot());
+            VirtualFile vf = support.getRoot();
 
             FolderImporterImpl importer = new FolderImporterImpl(job);
             importer.process(job, support.getImportContext(), vf);

@@ -20,6 +20,7 @@ import org.labkey.api.admin.AbstractImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.xml.StudyDocument;
 import org.apache.log4j.Logger;
 
@@ -32,7 +33,7 @@ import java.io.File;
  */
 public abstract class AbstractContext extends AbstractImportContext<StudyDocument.Study, StudyDocument>
 {
-    protected AbstractContext(User user, Container c, StudyDocument studyDoc, Logger logger, @Nullable File root)
+    protected AbstractContext(User user, Container c, StudyDocument studyDoc, Logger logger, @Nullable VirtualFile root)
     {
         super(user, c, studyDoc, logger, root);
     }

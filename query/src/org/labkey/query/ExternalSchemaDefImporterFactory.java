@@ -15,7 +15,6 @@
  */
 package org.labkey.query;
 
-import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
@@ -34,8 +33,6 @@ import org.labkey.query.controllers.ExternalSchemaForm;
 import org.labkey.query.persist.ExternalSchemaDef;
 import org.labkey.query.persist.QueryManager;
 
-import java.io.File;
-import java.io.FilenameFilter;
 import java.util.Collection;
 
 /**
@@ -67,9 +64,7 @@ public class ExternalSchemaDefImporterFactory implements FolderImporterFactory
         @Override
         public void process(PipelineJob job, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
-            VirtualFile externalSchemaDir = null;
-            if (ctx.getXml().isSetExternalSchemas())
-                externalSchemaDir = root.getDir(ctx.getXml().getExternalSchemas().getDir());
+            VirtualFile externalSchemaDir = ctx.getDir("externalSchemas");
 
             if (null != externalSchemaDir)
             {

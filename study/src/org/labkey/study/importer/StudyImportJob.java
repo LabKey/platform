@@ -25,6 +25,8 @@ import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.writer.FileSystemFile;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -43,7 +45,7 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport
     private static final Logger LOG = Logger.getLogger(StudyImportJob.class);
 
     private final StudyImportContext _ctx;
-    private final File _root;
+    private final VirtualFile _root;
     private final BindException _errors;
     private final boolean _reload;
     private final String _originalFilename;
@@ -52,9 +54,9 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport
     public StudyImportJob(Container c, User user, ActionURL url, File studyXml, String originalFilename, BindException errors, PipeRoot pipeRoot)
     {
         super(null, new ViewBackgroundInfo(c, user, url), pipeRoot);
-        _root = studyXml.getParentFile();
+        _root = new FileSystemFile(studyXml.getParentFile());
         _originalFilename = originalFilename;
-        setLogFile(StudyPipeline.logForInputFile(new File(_root, "study_load")));
+        setLogFile(StudyPipeline.logForInputFile(new File(studyXml.getParentFile(), "study_load")));
         _errors = errors;
         _ctx = new StudyImportContext(user, c, studyXml, getLogger(), _root);
 
@@ -84,7 +86,7 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport
         return _ctx;
     }
 
-    public File getRoot()
+    public VirtualFile getRoot()
     {
         return _root;
     }

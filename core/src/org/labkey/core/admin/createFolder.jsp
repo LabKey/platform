@@ -26,7 +26,6 @@
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="org.labkey.core.admin.writer.FolderSerializationRegistryImpl" %>
 <%@ page import="org.labkey.api.writer.Writer" %>
-<%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AdminController.ManageFoldersForm> me = (JspView<AdminController.ManageFoldersForm>) HttpView.currentView();
@@ -416,7 +415,7 @@
                 {
                     %>folderTemplateWriters.push({xtype: "checkbox", hideLabel: true, boxLabel: "<%=parent%>", name: "templateWriterTypes", itemId: "<%=parent%>", inputValue: "<%=parent%>", checked: true, objectType: "parent"});<%
 
-                    Set<Writer> children = writer.getChildren();
+                    Collection<Writer> children = writer.getChildren();
                     if (null != children && children.size() > 0)
                     {
                         for (Writer child : children)

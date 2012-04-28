@@ -31,7 +31,7 @@ import org.labkey.wiki.WikiWebdavProvider;
  */
 public class WikiWriterFactory implements FolderWriterFactory
 {
-    public static final String DIRECTORY_NAME = "wikis";
+    private static final String DIRECTORY_NAME = "wikis";
     public static final String WIKIS_FILENAME = "wikis.xml";
 
     @Override
@@ -58,6 +58,12 @@ public class WikiWriterFactory implements FolderWriterFactory
             VirtualFile wikiDir = vf.getDir(DIRECTORY_NAME);
             WikiWebdavProvider.WikiProviderResource parent = new WikiWebdavProvider.WikiProviderResource(new DummyWebdavResource(), container);
             wikiDir.saveWebdavTree(parent);
+        }
+
+        @Override
+        public boolean supportsVirtualFile()
+        {
+            return true;
         }
     }
 }

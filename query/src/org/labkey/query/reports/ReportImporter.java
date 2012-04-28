@@ -48,7 +48,7 @@ public class ReportImporter implements FolderImporter
 
     public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws IOException, SQLException, ImportException
     {
-        VirtualFile reportsDir = getReportsDir(ctx, root);
+        VirtualFile reportsDir = ctx.getDir("reports");
 
         if (null != reportsDir)
         {
@@ -86,25 +86,6 @@ public class ReportImporter implements FolderImporter
     public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root) throws Exception
     {
         return null;
-    }
-
-    private VirtualFile getReportsDir(ImportContext ctx, VirtualFile root) throws ImportException
-    {
-        String dirPath = null;
-        if (ctx.getXml() instanceof StudyDocument.Study)
-        {
-            StudyDocument.Study xml = (StudyDocument.Study)ctx.getXml();
-            if (xml.isSetReports())
-                dirPath = xml.getReports().getDir();
-        }
-        else if (ctx.getXml() instanceof FolderDocument.Folder)
-        {
-            FolderDocument.Folder xml = (FolderDocument.Folder)ctx.getXml();
-            if (xml.isSetReports())
-                dirPath = xml.getReports().getDir();
-        }
-
-        return null != dirPath ? root.getDir(dirPath) : null;
     }
 
     @Override

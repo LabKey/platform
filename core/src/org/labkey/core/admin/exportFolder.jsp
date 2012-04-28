@@ -19,13 +19,11 @@
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="org.labkey.core.admin.writer.FolderSerializationRegistryImpl" %>
 <%@ page import="org.labkey.api.admin.FolderWriter" %>
-<%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.writer.Writer" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.admin.AbstractFolderContext" %>
 <%@ page import="org.labkey.core.admin.FolderManagementAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -54,7 +52,7 @@ formItems.push({xtype: "label", text: "Folder objects to export:"});
             boolean checked = writer.includeInType(form.getExportType());
             %>formItems.push({xtype: "checkbox", hideLabel: true, boxLabel: "<%=parent%>", name: "types", itemId: "<%=parent%>", inputValue: "<%=parent%>", checked: <%=checked%>, objectType: "parent"});<%
 
-            Set<Writer> children = writer.getChildren();
+            Collection<Writer> children = writer.getChildren();
             if (null != children && children.size() > 0)
             {
                 for (Writer child : children)

@@ -16,10 +16,9 @@
 
 package org.labkey.study.importer;
 
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
 import org.springframework.validation.BindException;
-
-import java.io.File;
 
 /*
 * User: adam
@@ -34,7 +33,7 @@ public interface StudyJobSupport
 
     StudyImportContext getImportContext();
 
-    File getRoot();
+    VirtualFile getRoot();
 
     String getOriginalFilename();
 

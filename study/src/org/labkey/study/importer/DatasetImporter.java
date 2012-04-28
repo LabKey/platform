@@ -127,22 +127,6 @@ public class DatasetImporter implements InternalStudyImporter
         }
     }
 
-    // TODO: this version of the method should be removed in favor of the version below that takes a VirtualFile as input
-    public static File getDatasetDirectory(StudyImportContext ctx, File root) throws ImportException
-    {
-        StudyDocument.Study.Datasets datasetsXml = ctx.getXml().getDatasets();
-
-        if (null != datasetsXml)
-        {
-            if (null == datasetsXml.getDir())
-                return root;
-
-            return ctx.getDir("datasets");
-        }
-
-        return null;
-    }
-
     public static VirtualFile getDatasetDirectory(StudyImportContext ctx, VirtualFile root) throws ImportException
     {
         StudyDocument.Study.Datasets datasetsXml = ctx.getXml().getDatasets();
