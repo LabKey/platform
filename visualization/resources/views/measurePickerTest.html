@@ -12,9 +12,14 @@
     <div id="measure2div" style="color:green">Selected measure(s):</div>
 </p>
 <p>
-    CDS Measure picker panel: all columns, can show hidden:<BR/>
+    CDS Measure picker panel: all columns = true, show hidden = true:<BR/>
     <input type='button' onclick='showMeasureDialog(3);' value='show'/>
     <div id="measure3div" style="color:green">Selected measure(s):</div>
+</p>
+<p>
+    CDS Measure picker panel: all columns = false, show hidden = false:<BR/>
+    <input type='button' onclick='showMeasureDialog(4);' value='show'/>
+    <div id="measure4div" style="color:green">Selected measure(s):</div>
 </p>
 
 <script type='text/javascript'>
@@ -27,6 +32,7 @@
 var measuresDialog1;
 var measuresDialog2;
 var measuresDialog3;
+var measuresDialog4;
 Ext.onReady(function(){
     measuresDialog1 = Ext4.create('LABKEY.ext4.MeasuresDialog', {
         allColumns: false,
@@ -58,6 +64,16 @@ Ext.onReady(function(){
         updateMeasureSelectionDisplay(recs, 'measure3div');
     }, this);
 
+    measuresDialog4 = Ext4.create('LABKEY.ext4.MeasuresDialog', {
+        dataViewType: LABKEY.MeasuresDataViewType.SPLIT_PANELS,
+        allColumns: false,
+        canShowHidden: false,
+        multiSelect : true,
+        closeAction :'hide'
+    });
+    measuresDialog4.addListener('measuresSelected', function(recs){
+        updateMeasureSelectionDisplay(recs, 'measure4div');
+    }, this);
 });
 
 function updateMeasureSelectionDisplay(recs, divId)
@@ -75,7 +91,9 @@ function showMeasureDialog(number)
     else if (number ==2)
 	    measuresDialog2.show();
     else if (number ==3)
-	    measuresDialog3.show();    
+	    measuresDialog3.show();
+    else if (number ==4)
+	    measuresDialog4.show();
 }
 
 </script>

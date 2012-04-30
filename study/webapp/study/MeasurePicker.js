@@ -694,7 +694,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
             stripeRows: false,
             border: false,
             forceFit: true,
-            columns: [{header: 'Source', dataIndex: 'queryName', cls: ''}]
+            columns: [{header: 'Source', dataIndex: 'queryName', cls: '', renderer: this.formatSourcesWithSelections}]
         });
 
         this.sourcePanel = Ext4.create('Ext.panel.Panel', {
@@ -717,6 +717,16 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
         });
 
         return this.sourcePanel;
+    },
+
+    formatSourcesWithSelections : function(value, metaData, record, rowIndex, colIndex, store, view) {
+        // TODO: could change this to add/remove tdCls so that different styles could be applied
+        if (record.get("numSelected") && record.get("numSelected") > 0)
+            metaData.style = "font-style:italic;";
+        else
+            metaData.style = "";
+
+        return value;
     },
 
     createMeasurePanel : function() {
@@ -744,7 +754,6 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
             stripeRows : true,
             border: false,
             selModel : Ext4.create('Ext.selection.CheckboxModel', {
-                checkOnly: true,
                 listeners: {
                     select: this.onMeasureSelect,
                     deselect: this.onMeasureDeselect,
@@ -811,7 +820,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
                 this.sourcesStoreKeys = [];
                 // initialize the sources grid with the first item as a way to view the selected measures
-                this.sourcesStoreData = [{id: 'SELECTED', schemaName: null, queryName: '0 Selected Measures', label: null}];
+                this.sourcesStoreData = [{id: 'SELECTED', schemaName: '_first', queryName: 'Selected Measures (0)', label: null}];
                 Ext4.each(this.measuresStoreData.measures, function(measure) {
                     var key = measure.schemaName + "|" + measure.queryName;
                     var query = {schemaName: measure.schemaName, queryName: measure.queryName};
@@ -844,7 +853,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
         this.measuresStore.clearFilter();
         this.measuresStore.filter([{
             filterFn: function(measureRecord) {
-                // if the selected source record is the "# Selected Measures", then only show the selected records
+                // if the selected source record is the "Selected Measures (0)", then only show the selected records
                 if (sourceRecord.get("id") == "SELECTED")
                 {
                     return measureRecord.get("selected");
@@ -872,33 +881,47 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
     onMeasureSelect : function(selModel, record, ix) {
         var index = this.getSelectedRecordIndex(record);
-        if (index == -1)
+        if (index == -1 && ix != -1)
         {
             record.set("selected", true);
             record.commit(); // to remove the dirty state
             this.selectedMeasures.push(record);
 
-            this.updateSourcesSelectionEntry();
+            this.updateSourcesSelectionEntry(record, 1);
         }
     },
 
     onMeasureDeselect : function(selModel, record, ix) {
         var index = this.getSelectedRecordIndex(record);
-        if (index > -1)
+        if (index > -1&& ix != -1)
         {
             record.set("selected", false);
             record.commit(); // to remove the dirty state
             this.selectedMeasures.splice(index, 1);
 
-            this.updateSourcesSelectionEntry();
+            this.updateSourcesSelectionEntry(record, -1);
         }
     },
 
-    updateSourcesSelectionEntry : function() {
+    updateSourcesSelectionEntry : function(record, sourceCountUpdate) {
         // update entry in the sources grid which indicates how many selected measures there are
         var selectionEntry = this.sourcesStore.getById('SELECTED');
-        selectionEntry.set('queryName', this.selectedMeasures.length == 1 ? '1 Selected Measure' : this.selectedMeasures.length + ' Selected Measures');
+        selectionEntry.set('queryName', this.selectedMeasures.length == 1 ? 'Selected Measures (1)' : 'Selected Measures (' + this.selectedMeasures.length + ')');
+        selectionEntry.set('numSelected', this.selectedMeasures.length);
         selectionEntry.commit(); // to remove the dirty state
+
+        // update the numSelected value for the source entry
+        var sourceEntryIndex = this.sourcesStore.findExact('queryName', record.get('queryName'));
+        if (sourceEntryIndex > -1)
+        {
+            var sourceEntry = this.sourcesStore.getAt(sourceEntryIndex);
+            if (!sourceEntry.get('numSelected'))
+                sourceEntry.set('numSelected', 0);
+
+            sourceEntry.set('numSelected', sourceEntry.get('numSelected') + sourceCountUpdate);
+            sourceEntry.commit(); // to remove the dirty state
+        }
+
     },
 
     getSelectedRecordIndex : function(record) {
@@ -961,7 +984,7 @@ Ext4.define('LABKEY.ext4.MeasuresStore', {
         this.addEvents("measureStoreSorted");
 
         this.on('load', function(store) {
-            store.sort([{property: 'queryName', direction: 'ASC'},{property: 'label', direction: 'ASC'}]);
+            store.sort([{property: 'schemaName', direction: 'ASC'},{property: 'queryName', direction: 'ASC'},{property: 'label', direction: 'ASC'}]);
             this.fireEvent("measureStoreSorted", this);
         }, this);        
     },
