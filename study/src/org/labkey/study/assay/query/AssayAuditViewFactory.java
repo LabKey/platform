@@ -294,7 +294,9 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
             if (c == null)
                 return null;
 
-            return new DetailsURL(new ActionURL(StudyController.PublishHistoryDetailsAction.class, c), _columns).eval(ctx);
+            DetailsURL url = new DetailsURL(new ActionURL(StudyController.PublishHistoryDetailsAction.class, c), _columns);
+            url.setContainerContext(c);
+            return url.eval(ctx);
         }
 
         @Override
