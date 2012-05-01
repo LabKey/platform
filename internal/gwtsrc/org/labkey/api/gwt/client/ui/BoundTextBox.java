@@ -81,6 +81,13 @@ public class BoundTextBox extends HorizontalPanel
                 _dirty();
             }
         });
+        _box.addKeyUpHandler(new KeyUpHandler()
+        {
+            public void onKeyUp(KeyUpEvent e)
+            {
+                _dirty();
+            }
+        });
         add(_box);
     }
 

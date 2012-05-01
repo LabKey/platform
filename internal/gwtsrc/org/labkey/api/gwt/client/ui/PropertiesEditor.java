@@ -1435,6 +1435,14 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                     pushChange();
                 }
             });
+
+            this.addListener(Events.KeyUp, new Listener<ComponentEvent>(){
+                public void handleEvent(ComponentEvent be)
+                {
+                    _log("Listener.handleEvent(Events.KeyUp, " + getName());
+                    pushChange();
+                }
+            });
         }
 
 
