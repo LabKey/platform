@@ -117,6 +117,12 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
                     {
                         return new ParticipantTable(_schema, true);
                     }
+
+                    @Override
+                    public StringExpression getURL(ColumnInfo parent)
+                    {
+                        return super.getURL(parent, true);
+                    }
                 });
 
                 if (DemoMode.isDemoMode(schema.getContainer(), schema.getUser()))
