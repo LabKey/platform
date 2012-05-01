@@ -324,13 +324,15 @@ public class SpecimenSummaryTable extends BaseStudyTable
             }
         }
 
-        private String getDisplayText(RenderContext ctx, String lineSeparator, String commentFormat)
+        private String getDisplayText(RenderContext ctx, boolean renderHtml)
         {
             if (_specimenHashColumn == null)
                 return "ERROR: SpecimenHash column must be added to query to retrive comment information.";
 
             String maxPossibleCount = (String) getValue(ctx);
             StringBuilder sb = new StringBuilder();
+            String lineSeparator = renderHtml ? LINE_SEPARATOR_HTML : LINE_SEPARATOR;
+
             // the string compare below is a big of a hack, but it's cheaper than converting the string to a number and
             // equally effective.  The column type is string so that exports to excel correctly set the column type as string.
 
@@ -347,19 +349,19 @@ public class SpecimenSummaryTable extends BaseStudyTable
             }
             if (sb.length() > 0)
                 sb.append(lineSeparator);
-            sb.append(formatParticipantComments(ctx, lineSeparator, commentFormat));
+            sb.append(formatParticipantComments(ctx, renderHtml));
 
             return sb.toString();
         }
 
         public Object getDisplayValue(RenderContext ctx)
         {
-            return getDisplayText(ctx, ", ", COMMENT_FORMAT);
+            return getDisplayText(ctx, false);
         }
 
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
-            out.write(getDisplayText(ctx, "<br>", COMMENT_FORMAT_HTML));
+            out.write(getDisplayText(ctx, true));
         }
     }
 }

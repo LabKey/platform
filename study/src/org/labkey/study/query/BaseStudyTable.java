@@ -545,16 +545,23 @@ public abstract class BaseStudyTable extends FilteredTable
             super(commentColumn);
         }
 
+        public Object getDisplayValue(RenderContext ctx)
+        {
+            return formatParticipantComments(ctx, false);
+        }
+
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
-            out.write(formatParticipantComments(ctx, "<br>", COMMENT_FORMAT_HTML));
+            out.write(formatParticipantComments(ctx, true));
         }
     }
 
     protected static final String COMMENT_FORMAT_HTML = "<i>%s:&nbsp;</i>";
     protected static final String COMMENT_FORMAT = "%s: ";
+    protected static final String LINE_SEPARATOR_HTML = "<br>";
+    protected static final String LINE_SEPARATOR = ", ";
 
-    protected static String formatParticipantComments(RenderContext ctx, String lineSeparator, String commentFormat)
+    protected static String formatParticipantComments(RenderContext ctx, boolean renderHtml)
     {
         Map<String, Object> row = ctx.getRow();
 
@@ -562,12 +569,18 @@ public abstract class BaseStudyTable extends FilteredTable
         Object participantComment = row.get(SpecimenCommentColumn.PARTICIPANT_COMMENT_ALIAS);
         Object participantVisitComment = row.get(SpecimenCommentColumn.PARTICIPANTVISIT_COMMENT_ALIAS);
 
+        String lineSeparator = renderHtml ? LINE_SEPARATOR_HTML : LINE_SEPARATOR;
+        String commentFormat = renderHtml ? COMMENT_FORMAT_HTML : COMMENT_FORMAT;
+
         StringBuilder sb = new StringBuilder();
 
         if (vialComment instanceof String)
         {
             sb.append(String.format(commentFormat, "Vial"));
-            sb.append(PageFlowUtil.filter(vialComment));
+            if (renderHtml)
+                sb.append(PageFlowUtil.filter(vialComment));
+            else
+                sb.append(vialComment);
             sb.append(lineSeparator);
         }
         String subjectNoun = StudyService.get().getSubjectNounSingular(ctx.getContainer());
@@ -575,21 +588,37 @@ public abstract class BaseStudyTable extends FilteredTable
         {
             if (sb.length() > 0)
                 sb.append(lineSeparator);
-            sb.append(String.format(commentFormat, PageFlowUtil.filter(subjectNoun)));
-            sb.append(PageFlowUtil.filter(participantComment));
+            if (renderHtml)
+            {
+                sb.append(String.format(commentFormat, PageFlowUtil.filter(subjectNoun)));
+                sb.append(PageFlowUtil.filter(participantComment));
+            }
+            else
+            {
+                sb.append(String.format(commentFormat, subjectNoun));
+                sb.append(participantComment);
+            }
             sb.append(lineSeparator);
         }
         if (participantVisitComment instanceof String)
         {
             if (sb.length() > 0)
                 sb.append(lineSeparator);
-            sb.append(String.format(commentFormat, PageFlowUtil.filter(subjectNoun) +  "/Visit"));
-            sb.append(PageFlowUtil.filter(participantVisitComment));
+
+            if (renderHtml)
+            {
+                sb.append(String.format(commentFormat, PageFlowUtil.filter(subjectNoun) +  "/Visit"));
+                sb.append(PageFlowUtil.filter(participantVisitComment));
+            }
+            else
+            {
+                sb.append(String.format(commentFormat, subjectNoun +  "/Visit"));
+                sb.append(participantVisitComment);
+            }
             sb.append(lineSeparator);
         }
         return sb.toString();
     }
-
 
     /* NOTE getUpdateService() and hasPermission() should usually be overridden together */
 
