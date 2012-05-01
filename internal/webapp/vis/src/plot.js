@@ -18,7 +18,9 @@ LABKEY.vis.Plot = function(config){
 		width: config.width ? config.width : null, // height of the grid where points/lines/etc gets plotted.
 		height: config.height ? config.height: null // widht of the grid.
 	};
-	this.aes = config.aes ? config.aes : null;
+	this.scales = config.scales ? config.scales : null;
+	this.originalAes = config.aes ? config.aes : null;
+    this.aes = LABKEY.vis.convertAes(this.originalAes);
     this.xTitle = config.xTitle ? config.xTitle : null;
     this.leftTitle = config.leftTitle ? config.leftTitle : null;
     this.rightTitle = config.rightTitle ? config.rightTitle : null;
@@ -43,7 +45,28 @@ LABKEY.vis.Plot = function(config){
         this.paper = new Raphael(this.renderTo, this.grid.width, this.grid.height);
     }
 
+    for(var aesthetic in this.aes){
+        LABKEY.vis.createGetter(this.aes[aesthetic]);
+    }
+
 	var initScales = function(){
+        var defaultAxisScale = {
+            scaleType: 'continuous',
+            trans: 'linear'
+        };
+
+        if(!this.scales.x){
+            this.scales.x = defaultAxisScale;
+        }
+
+        if(!this.scales.yLeft){
+            this.scales.yLeft = defaultAxisScale;
+        }
+
+        if(!this.scales.yRight){
+            this.scales.yRight = defaultAxisScale;
+        }
+
 		var leftMargin = 75;
 		var rightMargin = 250;
 		var bottomMargin = 50;
@@ -54,131 +77,74 @@ LABKEY.vis.Plot = function(config){
 		this.grid.topEdge = this.grid.height - topMargin + 10;
 		this.grid.bottomEdge = bottomMargin;
 
-		var getAesScaleInfo = function(aes, data){
-			//Gets the information necessary to create a scale for each aesthetic in a layer.
-			scaleInfo = {};
-
-			if(aes.x){
-				scaleInfo.x = {};
-				scaleInfo.x.scaleType = aes.x.scaleType;
-				scaleInfo.x.trans = aes.x.trans;
-				scaleInfo.x.max = d3.max(data, aes.x.value);
-				scaleInfo.x.min = d3.min(data, aes.x.value);
-			}
-
-			if(aes.left){
-				scaleInfo.left = {};
-				scaleInfo.left.scaleType = aes.left.scaleType;
-				scaleInfo.left.trans = aes.left.trans;
-				scaleInfo.left.max = d3.max(data, aes.left.value);
-				scaleInfo.left.min = d3.min(data, aes.left.value);
-
-			}
-
-			if(aes.right){
-				scaleInfo.right = {};
-				scaleInfo.right.scaleType = aes.right.scaleType;
-				scaleInfo.right.trans = aes.right.trans;
-				scaleInfo.right.max = d3.max(data, aes.right.value);
-				scaleInfo.right.min = d3.min(data, aes.right.value);
-			}
-
-			if(aes.color){
-				scaleInfo.color = {};
-				scaleInfo.color.scaleType = aes.color.scaleType;
-			}
-
-            if(aes.pointType){
-                scaleInfo.pointType = {};
+        var getMinMax = function(scales, parentData, layerData, aes){
+            var data = layerData ? layerData : parentData;
+            if(!data){
+                return;
             }
 
-			return scaleInfo;
-		};
-
-		var compareAxes = function(allMaps, layerMap){
-			// This only takes care of the aesthetic maps that will go on the axes.
-			// We still need to take care of things like color and pointType.
-			var axes = ['x', 'left', 'right'];
-			for(var i = 0; i < axes.length; i++){
-				var axis = axes[i];
-
-				if(layerMap[axis]){
-					if(!allMaps[axis]){
-						allMaps[axis] = layerMap[axis];
-					} else {
-						if(allMaps[axis].scaleType != layerMap[axis].scaleType){
-							console.error("Aesthetic scale types on the same axis must match.");
-						}
-						if(layerMap[axis].max > allMaps[axis].max){
-							allMaps[axis].max = layerMap[axis].max;
-						}
-						if(layerMap[axis].min < allMaps[axis].min){
-							allMaps[axis].min = layerMap[axis].min;
-						}
-						if(layerMap[axis].trans == 'log'){
-							// If one of the layers specifies log then we over ride all of them to use log.
-							allMaps[axis].trans = 'log';
-						}
-					}
-				}
-			}
-		};
-
-		var all_aes_mappings = getAesScaleInfo(this.aes, this.data);
-
-		for(var i = 0; i < this.layers.length; i++){
-			//Cycle through the layers, gather info for the needed scales (min, max, scaleType, etc).
-			var layerAesInfo = this.layers[i].aes ? getAesScaleInfo(this.layers[i].aes, this.data) : null;
-			compareAxes(all_aes_mappings, layerAesInfo);
-		}
-
-		if(all_aes_mappings.x){
-			if(!this.aes.x){
-				this.aes.x = all_aes_mappings.x;
-			}
-			if(all_aes_mappings.x.scaleType = 'continuous'){
-				this.aes.x.scale = new LABKEY.vis.Scale.Continuous(all_aes_mappings.x.trans, this.data, all_aes_mappings.x.value, [all_aes_mappings.x.min, all_aes_mappings.x.max], [leftMargin, this.grid.width - rightMargin]);
-			} else {
-				// Use d3 ordinal scales.
-			}
-		}
-
-		if(all_aes_mappings.left){
-			if(!this.aes.left){
-				this.aes.left = all_aes_mappings.left;
-			}
-			if(all_aes_mappings.left.scaleType == 'continuous'){
-				this.aes.left.scale = new LABKEY.vis.Scale.Continuous(all_aes_mappings.left.trans, this.data, all_aes_mappings.left.value, [all_aes_mappings.left.min, all_aes_mappings.left.max], [bottomMargin, this.grid.height - topMargin]);
-			} else {
-				// Use d3 ordinal scales.
-			}
-
-		}
-
-		if(all_aes_mappings.right){
-			if(!this.aes.right){
-				this.aes.right = all_aes_mappings.right;
-			}
-			if(all_aes_mappings.right.scaleType == 'continuous'){
-				this.aes.right.scale = new LABKEY.vis.Scale.Continuous(all_aes_mappings.right.trans, this.data, all_aes_mappings.right.value, [all_aes_mappings.right.min, all_aes_mappings.right.max], [bottomMargin, this.grid.height - topMargin]);
-			} else {
-				// Use d3 ordinal scales.
-			}
-		}
-
-		if(all_aes_mappings.color){
-			if(this.aes.color.scaleType == 'continuous') {
-				// Dont have this scale type setup yet.
-			} else {
-				this.aes.color.scale = LABKEY.vis.Scale.ColorDiscrete();
-			}
-		}
-
-        if(all_aes_mappings.pointType){
-            if(!this.aes.pointType){
-                this.aes.pointType = all_aes_mappings.pointType;
+            for(var scale in scales){
+                if(aes[scale]){
+                    console.log(scale);
+                    if(scales[scale].scaleType == 'continuous'){
+                        var tempMax = d3.max(data, aes[scale].value);
+                        var tempMin = d3.min(data, aes[scale].value);
+                        if(!scales[scale].min || tempMin < scales[scale].min){
+                            scales[scale].min = tempMin;
+                        }
+                        if(!scales[scale].max || tempMax > scales[scale].max){
+                            scales[scale].max = tempMax;
+                        }
+                    }
+                }
             }
-            this.aes.pointType.scale = LABKEY.vis.Scale.PointType();
+        };
+
+        getMinMax(this.scales, this.data, null, this.aes);
+
+        for(var i = 0; i < this.layers.length; i++){
+            getMinMax(this.scales, this.data, this.layers[i].data, this.layers[i].aes);
+        }
+
+        for(var scaleName in this.scales){
+            var domain = null;
+            var range = null;
+            var scale = this.scales[scaleName];
+            if(scaleName == 'x'){
+                if(scale.scaleType == 'continuous'){
+                    domain = [scale.min, scale.max];
+                    range = [leftMargin, this.grid.width - rightMargin];
+                    scale.scale = new LABKEY.vis.Scale.Continuous(scale.trans, null, null, domain, range);
+                } else {
+
+                }
+            } else if(scaleName == 'yLeft' || scaleName == 'yRight'){
+                if(scale.scaleType == 'continuous' && (scale.min != null && scale.min != undefined) && (scale.max != null && scale.max != undefined)){
+                    domain = [scale.min, scale.max];
+                    range = [bottomMargin, this.grid.height - topMargin];
+                    scale.scale = new LABKEY.vis.Scale.Continuous(scale.trans, null, null, domain, range);
+                } else {
+
+                }
+            } else if(scaleName == 'color'){
+                if(!scale.scaleType || scale.scaleType == 'discrete') {
+                    scale.scale = LABKEY.vis.Scale.ColorDiscrete();
+                }
+            } else if(scaleName == 'pointType'){
+                if(!scale.scaleType || scale.scaleType == 'discrete') {
+                    scale.scale = LABKEY.vis.Scale.PointType();
+                }
+            }
+        }
+
+        if(!this.scales.x.scale){
+            console.error("Unable to create an x scale.");
+            return false;
+        }
+
+        if(!this.scales.yLeft.scale && !this.scales.yRight.scale){
+            console.error("Unable to create a y scale");
+            return false;
         }
 
 		return true; // Return false if we want to cancel rendering. (i.e. no x scale).
@@ -196,20 +162,23 @@ LABKEY.vis.Plot = function(config){
             this.paper.text(this.grid.rightEdge/2, this.grid.height - 10, this.xTitle).attr({font: "14px Arial, sans-serif"});
         }
 
-        var xTicks = this.aes.x.scale.ticks(7);
+        var xTicks = this.scales.x.scale.ticks(7);
         for(var i = 0; i < xTicks.length; i++){
             //Plot x-axis ticks.
-            var x1 = x2 = Math.floor(this.aes.x.scale(xTicks[i])) +.5;
+            var x1 = x2 = Math.floor(this.scales.x.scale(xTicks[i])) +.5;
             var y1 = -this.grid.bottomEdge + 8;
             var y2 = -this.grid.bottomEdge;
 
             var tick = this.paper.path(LABKEY.vis.makeLine(x1, y1, x2, y2)).transform("t0," + this.grid.height);
+            var text = this.paper.text(this.scales.x.scale(xTicks[i])+.5, -this.grid.bottomEdge + 15, xTicks[i]).transform("t0," + this.grid.height);
+
+            if(x1 - .5 == this.grid.leftEdge || x1 - .5 == this.grid.rightEdge) continue;
+
             var gridLine = this.paper.path(LABKEY.vis.makeLine(x1, -this.grid.bottomEdge, x2, -this.grid.topEdge)).attr('stroke', '#DDD').transform("t0," + this.grid.height);
-            var text = this.paper.text(this.aes.x.scale(xTicks[i])+.5, -this.grid.bottomEdge + 15, xTicks[i]).transform("t0," + this.grid.height);
         }
 
-		if(this.aes.left){
-            var leftTicks = this.aes.left.scale.ticks(10);
+		if(this.scales.yLeft.scale){
+            var leftTicks = this.scales.yLeft.scale.ticks(10);
 			this.paper.path(LABKEY.vis.makeLine(this.grid.leftEdge +.5, -this.grid.bottomEdge + 1, this.grid.leftEdge+.5, -this.grid.topEdge)).attr('stroke', '#000').attr('stroke-width', '1').transform("t0," + this.grid.height);
 
             if(this.leftTitle){
@@ -218,7 +187,7 @@ LABKEY.vis.Plot = function(config){
 
 			for(var i = 0; i < leftTicks.length; i++){
 				var x1 = this.grid.leftEdge  - 8;
-				var y1 = y2 = -Math.floor(this.aes.left.scale(leftTicks[i])) + .5; // Floor it and add .5 to keep the lines sharp.
+				var y1 = y2 = -Math.floor(this.scales.yLeft.scale(leftTicks[i])) + .5; // Floor it and add .5 to keep the lines sharp.
 				var x2 = this.grid.leftEdge;
 
                 if(y1 == -this.grid.bottomEdge + .5) continue; // Dont draw a line on top of the x-axis line.
@@ -229,8 +198,8 @@ LABKEY.vis.Plot = function(config){
 			}
 		}
 		
-		if(this.aes.right){
-            var rightTicks = this.aes.right.scale.ticks(10);
+		if(this.scales.yRight.scale){
+            var rightTicks = this.scales.yRight.scale.ticks(10);
             this.paper.path(LABKEY.vis.makeLine(this.grid.rightEdge + .5, -this.grid.bottomEdge + 1, this.grid.rightEdge + .5, -this.grid.topEdge)).attr('stroke', '#000').attr('stroke-width', '1').transform("t0," + this.grid.height);
 
             if(this.rightTitle){
@@ -239,7 +208,7 @@ LABKEY.vis.Plot = function(config){
 
 			for(var i = 0; i < rightTicks.length; i++){
 				var x1 = this.grid.rightEdge;
-				var y1 = y2 = -Math.floor(this.aes.right.scale(rightTicks[i])) + .5;
+				var y1 = y2 = -Math.floor(this.scales.yRight.scale(rightTicks[i])) + .5;
 				var x2 = this.grid.rightEdge + 8;
 
                 if(y1 == -this.grid.bottomEdge + .5) continue; // Dont draw a line on top of the x-axis line.
@@ -286,12 +255,12 @@ LABKEY.vis.Plot = function(config){
         }
 
         // Currently we only have 2 discrete scales that will get put on the legend, color and points.
-        if(this.aes.color && (!this.aes.color.scaleType || this.aes.color.scaleType == 'discrete')){
-            colorRows = this.aes.color.scale.domain();
+        if(this.scales.color && (!this.scales.color.scaleType || this.scales.color.scaleType == 'discrete')){
+            colorRows = this.scales.color.scale.domain();
         }
 
-        if(this.aes.pointType && (!this.aes.pointType.scaleType || this.aes.pointType.scaleType == 'discrete')){
-            pointRows = this.aes.pointType ? this.aes.pointType.scale.domain() : null;
+        if(this.scales.pointType && (!this.scales.pointType.scaleType || this.scales.pointType.scaleType == 'discrete')){
+            pointRows = this.scales.pointType ? this.scales.pointType.scale.domain() : null;
         }
 
         if(!colorRows && !pointRows){
@@ -327,13 +296,13 @@ LABKEY.vis.Plot = function(config){
                         this.paper.text(textX, y, legendRows[i]).attr('text-anchor', 'start');
                         color = "#000000";
                         if(colorRows && colorRows.indexOf(legendRows[i]) != -1){
-                            color = this.aes.color.scale(colorRows[colorRows.indexOf(legendRows[i])]);
+                            color = this.scales.color.scale(colorRows[colorRows.indexOf(legendRows[i])]);
                         }
 
                         for(var j = 0; j < series[s].layers.length; j++){
                             if(series[s].layers[j].geom.type == "Point"){
                                 if(pointRows && pointRows.indexOf(legendRows[i]) !=-1){
-                                    var point = series[s].layers[j].geom.pointMap.scale(pointRows[pointRows.indexOf(legendRows[i])]);
+                                    var point = this.scales.pointType.scale(pointRows[pointRows.indexOf(legendRows[i])]);
                                     point(this.paper, geomX + 10, y, 5).attr('stroke', color).attr('fill', color);
                                 } else if(!pointRows){
                                     this.paper.circle(geomX + 10, y, 5).attr('stroke', color).attr('fill', color);
@@ -354,15 +323,16 @@ LABKEY.vis.Plot = function(config){
     };
 
 	this.render = function(){
+        this.paper.clear();
 
-		if(!initScales.call(this)){  // Sets up the scales.
-			return false; // if we have a critical error when trying to initialize the scales we don't continue with rendering.
-		}
+        if(!initScales.call(this)){  // Sets up the scales.
+            return false; // if we have a critical error when trying to initialize the scales we don't continue with rendering.
+        }
 
 		initGrid.call(this); // renders the grid (axes, grid lines, titles).
         this.paper.setStart();
         for(var i = 0; i < this.layers.length; i++){
-            this.layers[i].render(this.paper, this.grid, this.data, this.aes);
+            this.layers[i].render(this.paper, this.grid, this.scales, this.data, this.aes);
         }
         renderLegend.call(this); // Renders the legend, we do this after the layers render because data is grouped at render time.
         this.paper.setFinish().transform("t0," + this.grid.height);

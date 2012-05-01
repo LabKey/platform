@@ -29,31 +29,28 @@ LABKEY.vis.Layer = function(config){
 			}
 		}
 	*/
-	this.aes = config.aes ? config.aes : {};
+	this.originalAes = config.aes ? config.aes : {};
+    this.aes = LABKEY.vis.convertAes(this.originalAes);
 	this.data = config.data ? config.data : null; // This is the data used on the layer. If not specified it will used the data from the base plot object.
 	this.geom = config.geom ? config.geom : null; // This is the geom object used to render on the grid. It is currently required.
 	this.stat = config.stat ? config.stat : null; // This is the stat object used to format the data, it is optional and not currently implemented.
 	this.position = config.position ? config.position : null; // This is the position type used to control how overlapping is handled (e.g. jittering, stacking, dodging). It is not currently implemented.
     this.name = config.name ? config.name : null;
 
+    for(var aesthetic in this.aes){
+        LABKEY.vis.createGetter(this.aes[aesthetic]);
+    }
+
     this.hasData = function(){
         return this.data && this.data.length > 0;
     }
 
-	this.render = function(paper, grid, data, parentAes){
+	this.render = function(paper, grid, scales, data, parentAes){
 		// This function takes the data an renders it according the mappings, geoms, stats, and positions passed in.
-
-		if(this.aes){
-			for(aesthetic in this.aes){
-				if(parentAes[aesthetic]){
-					this.aes[aesthetic].scale = parentAes[aesthetic].scale;
-				}
-			}
-		}
 
 		if(this.geom){
 			// console.log("Rendering a layer!");
-			this.geom.render(paper, grid, this.data ? this.data : data, this.aes, parentAes, this.name);
+			this.geom.render(paper, grid, scales, this.data ? this.data : data, this.aes, parentAes, this.name);
 		} else {
 			// Without a geom the render function will not do anything.
 			console.log("Unable to render this layer. No geom present");

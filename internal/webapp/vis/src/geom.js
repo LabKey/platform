@@ -21,21 +21,25 @@ LABKEY.vis.Geom.XY = function(){
     this.type = "XY";
     return this;
 };
-LABKEY.vis.Geom.XY.prototype.initAesthetics = function(layerAes, parentAes){
+LABKEY.vis.Geom.XY.prototype.initAesthetics = function(scales, layerAes, parentAes){
     this.xMap = layerAes.x ? layerAes.x : parentAes.x;
     if(!this.xMap){
         console.error('x aesthetic is required for ' + this.type + ' geom to render.');
         return false;
     }
 
-    if(layerAes.left){
-        this.yMap = layerAes.left;
-    } else if(layerAes.right){
-        this.yMap = layerAes.right;
-    } else if(parentAes.left){
-        this.yMap = parentAes.left;
-    } else if(parentAes.right){
-        this.yMap = parentAes.right;
+    if(layerAes.yLeft){
+        this.yMap = layerAes.yLeft;
+        this.yMap.side = 'left';
+    } else if(layerAes.yRight){
+        this.yMap = layerAes.yRight;
+        this.yMap.side = 'right';
+    } else if(parentAes.yLeft){
+        this.yMap = parentAes.yLeft;
+        this.yMap.side = 'left';
+    } else if(parentAes.yRight){
+        this.yMap = parentAes.yRight;
+        this.yMap.side = 'right';
     }
 
     if(!this.yMap){
@@ -63,10 +67,11 @@ LABKEY.vis.Geom.Point = function(){
     return this;
 };
 LABKEY.vis.Geom.Point.prototype = new LABKEY.vis.Geom.XY();
-LABKEY.vis.Geom.Point.prototype.render = function(paper, grid, data, layerAes, parentAes, name){
-    if(!this.initAesthetics(layerAes, parentAes)){
+LABKEY.vis.Geom.Point.prototype.render = function(paper, grid, scales, data, layerAes, parentAes, name){
+    if(!this.initAesthetics(scales, layerAes, parentAes)){
         return false;
     }
+    var yScale = this.yMap.side == "left" ? scales.yLeft.scale : scales.yRight.scale
 
     if(layerAes.pointType){
         this.pointMap = layerAes.pointType;
@@ -75,54 +80,11 @@ LABKEY.vis.Geom.Point.prototype.render = function(paper, grid, data, layerAes, p
     }
 
     for(var i = 0; i < data.length; i++){
-        var x = null;
-        var y = null;
-        var color = null;
-        var size = null;
-        var pointTypeFunction = null;
-
-        if(typeof this.xMap.value === "function"){
-            x = this.xMap.scale(this.xMap.value(data[i]));
-        } else {
-            x = this.xMap.scale(data[i][this.xMap.value]);
-        }
-
-        if(typeof this.yMap.value === "function"){
-            y = this.yMap.scale(this.yMap.value(data[i]));
-        } else {
-            y = this.yMap.scale(data[i][this.yMap.value]);
-        }
-
-        if(this.colorMap){
-            if(typeof this.colorMap.value === 'function'){
-                color = this.colorMap.scale(this.colorMap.value(data[i]) + ' ' + name);
-            } else {
-                color = this.colorMap.scale(data[i][this.colorMap.value] + ' ' + name);
-            }
-        } else {
-            color = "#000000";
-        }
-
-        if(this.pointMap){
-            if(typeof this.pointMap.scale === 'function'){
-                pointTypeFunction = this.pointMap.scale(this.pointMap.value(data[i]) + ' ' + name);
-            } else {
-                pointTypeFunction = this.pointMap.scale(data[i][this.pointMap.value] + ' ' + name);
-            }
-        } else {
-            pointTypeFunction = function(paper, x, y, r){return paper.circle(x, y, r)};
-        }
-
-        if(this.sizeMap){
-            if(typeof this.sizeMap.value == 'function'){
-                size = this.sizeMap.value(data[i]);
-            } else {
-                size = this.sizeMap.value;
-            }
-        } else {
-            size = 5;
-        }
-
+        var x = scales.x.scale(this.xMap.getValue(data[i]));
+        var y = yScale(this.yMap.getValue(data[i]));
+        var color = this.colorMap ? scales.color.scale(this.colorMap.getValue(data[i]) + ' ' + name) : "#000000";
+        var size = this.sizeMap ? this.sizeMap.getValue(data[i]) : 5;
+        var pointTypeFunction = this.pointMap ? scales.pointType.scale(this.pointMap.getValue(data[i]) + ' ' + name) : function(paper, x, y, r){return paper.circle(x, y, r)};
         var point = pointTypeFunction(paper, x, -y, size).attr('fill', color).attr('stroke', color);
 
         if(layerAes.hoverText){
@@ -138,27 +100,19 @@ LABKEY.vis.Geom.Path = function(){
     return this;
 };
 LABKEY.vis.Geom.Path.prototype = new LABKEY.vis.Geom.XY();
-LABKEY.vis.Geom.Path.prototype.render = function(paper, grid, data, layerAes, parentAes, name){
-    if(!this.initAesthetics(layerAes, parentAes)){
+LABKEY.vis.Geom.Path.prototype.render = function(paper, grid, scales, data, layerAes, parentAes, name){
+    if(!this.initAesthetics(scales, layerAes, parentAes)){
         return false;
     }
+    var yScale = this.yMap.side == "left" ? scales.yLeft.scale : scales.yRight.scale;
 
     this.group = layerAes.group ? layerAes.group : parentAes.group;
     var size = 3;
     var pathScope = this;
     var line = d3.svg.line().x(function(d){
-        if(typeof pathScope.xMap.value === 'function'){
-            return pathScope.xMap.scale(pathScope.xMap.value(d));
-        } else {
-            return d[pathScope.xMap.value];
-        }
-
+        return scales.x.scale(pathScope.xMap.getValue(d));
     }).y(function(d){
-        if(typeof pathScope.yMap.value === 'function'){
-            return -pathScope.yMap.scale(pathScope.yMap.value(d));
-        } else {
-            return -pathScope.yMap.scale(d[pathScope.yMap.value]);
-        }
+        return -yScale(pathScope.yMap.getValue(d));
     });
 
     if(this.group){
@@ -166,18 +120,12 @@ LABKEY.vis.Geom.Path.prototype.render = function(paper, grid, data, layerAes, pa
         var groups = {};
         for(var i = 0; i < data.length; i++){
             // Split the data into groups.
-            var value = null;
-            if(typeof this.group.value === 'function'){
-                value = this.group.value(data[i]);
-            } else {
-                value = data[i][this.group.value];
-            }
+            var value = this.group.getValue(data[i]);
 
             if(!groups[value]){
                 groups[value] = [];
             }
             groups[value].push(data[i]);
-
         }
 
         for(var groupTitle in groups){
@@ -186,15 +134,11 @@ LABKEY.vis.Geom.Path.prototype.render = function(paper, grid, data, layerAes, pa
 
             if(this.colorMap && this.colorMap.name == this.group.name){
                 // If we have a colorMap and it maps to the same thing as groups, then we pass in the groupTitle to get the desired color.
-                color = this.colorMap.scale(groupTitle + ' ' + name);
+                color = scales.color.scale(groupTitle + ' ' + name);
             }
 
             if(this.sizeMap){
-                if(typeof this.sizeMap.value != 'function'){
-                    size = this.sizeMap.value;
-                } else {
-                    size = this.sizeMap.value(groupData); // This would allow a user to look at all of the rows in a group
-                }
+                size = this.sizeMap.getValue(groupData);
             }
 
             paper.path(line(groupData)).attr('stroke', color).attr('stroke-width', size).attr('opacity', .6);
@@ -203,13 +147,9 @@ LABKEY.vis.Geom.Path.prototype.render = function(paper, grid, data, layerAes, pa
     } else {
         // No groups, connect all the points.
         if(this.sizeMap){
-            if(typeof this.sizeMap.value != 'function'){
-                size = this.sizeMap.value;
-            } else {
-                size = this.sizeMap.value(data); // This would allow a user to look at all of the rows in a group and calculate size (i.e. a user could average the CD4 in every group and make a line based on that average.)
-            }
+            size = this.sizeMap.getValue(data); // This would allow a user to look at all of the rows in a group and calculate size (i.e. a user could average the CD4 in every group and make a line based on that average.)
         }
-        paper.path(line(data)).attr('shape-rendering', 'crispEdges');
+        paper.path(line(data)).attr('stroke-width', size).attr('opacity', .6);
     }
 
     return true;
@@ -220,10 +160,11 @@ LABKEY.vis.Geom.ErrorBar = function(){
     return this;
 };
 LABKEY.vis.Geom.ErrorBar.prototype = new LABKEY.vis.Geom.XY();
-LABKEY.vis.Geom.ErrorBar.prototype.render = function(paper, grid, data, layerAes, parentAes, name){
-    if(!this.initAesthetics(layerAes, parentAes)){
+LABKEY.vis.Geom.ErrorBar.prototype.render = function(paper, grid, scales, data, layerAes, parentAes, name){
+    if(!this.initAesthetics(scales, layerAes, parentAes)){
         return false;
     }
+    var yScale = this.yMap.side == "left" ? scales.yLeft.scale : scales.yRight.scale;
 
     this.errorMap = layerAes.error ? layerAes.error : parentAes.error;
     if(!this.errorMap){
@@ -232,47 +173,15 @@ LABKEY.vis.Geom.ErrorBar.prototype.render = function(paper, grid, data, layerAes
     }
 
     for(var i = 0; i < data.length; i++){
-        var x = null;
-        var y = null;
-        var yTop = null;
-        var yBottom= null;
-        var color = null;
-        var errorAtPoint = null;
+        var x = scales.x.scale(this.xMap.getValue(data[i]));
+        var y = this.yMap.getValue(data[i]);
+        var errorAtPoint = this.errorMap.getValue(data[i]);
+        var yBottom = -yScale(y - errorAtPoint);
+        var yTop = -yScale(y + errorAtPoint);
+        var color = this.colorMap ? scales.color.scale(this.colorMap.getValue(data[i]) + ' ' + name) : "#000000";
 
-        if(typeof this.xMap.value === "function"){
-            x = this.xMap.scale(this.xMap.value(data[i]));
-        } else {
-            x = this.xMap.scale(data[i][this.xMap.value]);
-        }
-
-        if(typeof this.errorMap.value === "function"){
-            errorAtPoint = this.errorMap.value(data[i]);
-        } else {
-            errorAtPoint = data[i][this.errorMap.value];
-        }
-
-        if(typeof this.yMap.value === "function"){
-            y = Math.floor(-this.yMap.scale(this.yMap.value(data[i]))) +.5;
-            yTop = Math.floor(-this.yMap.scale(this.yMap.value(data[i]) + errorAtPoint)) +.5;
-            yBottom = Math.floor(-this.yMap.scale(this.yMap.value(data[i]) - errorAtPoint)) +.5;
-        } else {
-            y = -this.yMap.scale(data[i][this.yMap.value]);
-            yTop = -this.yMap.scale(data[i][this.yMap.value] + errorAtPoint);
-            yBottom = -this.yMap.scale(data[i][this.yMap.value] - errorAtPoint);
-        }
-
-        yTop = Math.min(yTop, grid.topEdge);
+        yTop = Math.max(yTop, -grid.topEdge);
         yBottom = Math.min(yBottom, -grid.bottomEdge);
-
-        if(this.colorMap){
-            if(typeof this.colorMap.value === 'function'){
-                color = this.colorMap.scale(this.colorMap.value(data[i]) + ' ' + name);
-            } else {
-                color = this.colorMap.scale(data[i][this.colorMap.value] + ' ' + name);
-            }
-        } else {
-            color = "#000000";
-        }
 
         var errorBarPath = LABKEY.vis.makeLine(x - 6, yTop, x+6, yTop) + LABKEY.vis.makeLine(x, yTop, x, yBottom) + LABKEY.vis.makeLine(x-6, yBottom, x+6, yBottom); //top bar, middle bar, bottom bar
         var errorBar = paper.path(errorBarPath).attr('stroke-width', 2);
@@ -290,17 +199,11 @@ LABKEY.vis.Geom.Text = function(){
     return this;
 };
 LABKEY.vis.Geom.Text.prototype = new LABKEY.vis.Geom.XY();
-LABKEY.vis.Geom.Text.prototype.render = function(paper, grid, data, layerAes, parentAes){
-    if(!this.initAesthetics(layerAes, parentAes)){
+LABKEY.vis.Geom.Text.prototype.render = function(paper, grid, scales, data, layerAes, parentAes){
+    if(!this.initAesthetics(scales, layerAes, parentAes)){
         return false;
     }
-
+    var yScale = this.yMap.side == "left" ? scales.yLeft.scale : scales.yRight.scale;
+    
     return true;
-};
-
-/********** Helper Functions **********/
-
-LABKEY.vis.makeLine = function(x1, y1, x2, y2){
-    //Generates a path between two coordinates.
-    return "M " + x1 + " " + y1 + " L " + x2 + " " + y2;
 };

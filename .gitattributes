@@ -5559,4 +5559,5 @@ internal/webapp/vis/src/plot.js -text
 internal/webapp/vis/src/position.js -text
 internal/webapp/vis/src/scale.js -text
 internal/webapp/vis/src/stat.js -text
+internal/webapp/vis/src/utils.js -text
 internal/webapp/wikitoc.js -text
