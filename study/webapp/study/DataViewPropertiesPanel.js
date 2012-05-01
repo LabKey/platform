@@ -76,7 +76,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 queryMode      : 'local',
                 displayField   : 'DisplayName',
                 valueField     : 'UserId',
-                emptyText      : 'Unknown'
+                emptyText      : 'None'
             });
         }
 
@@ -126,10 +126,11 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 xtype       : 'datefield',
                 fieldLabel  : 'Data Cut Date',
                 name        : 'refreshDate',
-                value       : this.data.refreshDate != null && this.data.refreshDate != '' ? new Date(this.data.refreshDate) : '',
+                value       : this.data.refreshDate != null  ? this.data.refreshDate : '',
                 blankText   : 'Date of last refresh',
                 format      : 'Y-m-d',
-                editable    : false
+                editable    : true,
+                altFormats  : LABKEY.Utils.getDateAltFormats()
             });
         }
 
@@ -253,6 +254,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
             listeners : {
                 load : function(s, recs, success, operation, ops) {
                     s.sort('DisplayName', 'ASC');
+                    s.insert(0, {UserId : -1, DisplayName : 'None '});
                 }
             }
         };

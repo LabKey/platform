@@ -674,9 +674,11 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         // as long as there is page break info then we can render the report
         if (config.pageBreakInfo.length > 0) {
 
-            if (qr.measureToColumn[this.subjectVisitColumn + '/Visit/Label'])
+            if (qr.measureToColumn[this.subjectVisitColumn + '/Visit/Label']) {
                 config.gridFields.push(qr.measureToColumn[this.subjectVisitColumn + '/Visit/Label']);
-            
+                config.rowBreakInfo.push({name: qr.measureToColumn[this.subjectVisitColumn + '/Visit/Label'], rowspans : true});
+            }
+
             if (qr.measureToColumn[this.subjectVisitColumn + '/VisitDate'])
                 config.gridFields.push(qr.measureToColumn[this.subjectVisitColumn + '/VisitDate']);
 
@@ -737,6 +739,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             Ext4.get(config.renderTo).update('');
             this.templateReport = Ext4.create('LABKEY.TemplateReport', config);
             this.templateReport.on('afterdatatransform', function(th, reportData) {
+                reportData.gridFields[0].style="border: solid 1px white;"
                 this.lengthReportField.setValue('<i>Showing ' + reportData.pages.length + ' Results</i>');
             }, this);
 
@@ -1025,6 +1028,11 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             sort.values = this.filteredSubjects;
         }
         sorts.push(sort);
+        if (this.visitBased)
+        {
+            sorts.push({name : this.subjectVisitColumn + '/Visit/DisplayOrder', queryName : firstMeasure.queryName,  schemaName : firstMeasure.schemaName});
+            sorts.push({name : this.subjectVisitColumn + '/sequencenum', queryName : firstMeasure.queryName,  schemaName : firstMeasure.schemaName});
+        }
         sorts.push({name : this.subjectVisitColumn + '/VisitDate', queryName : firstMeasure.queryName,  schemaName : firstMeasure.schemaName});
 
         return sorts;

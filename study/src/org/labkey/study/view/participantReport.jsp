@@ -71,6 +71,7 @@
             subjectColumn   : <%=q(org.labkey.api.study.StudyService.get().getSubjectColumnName(me.getViewContext().getContainer()))%>,
             subjectVisitColumn: <%=q(org.labkey.api.study.StudyService.get().getSubjectVisitColumnName(me.getViewContext().getContainer()))%>,
             subjectNoun     : {singular : <%=PageFlowUtil.jsString(s.getSubjectNounSingular())%>, plural : <%=PageFlowUtil.jsString(s.getSubjectNounPlural())%>},
+            visitBased      : <%=s.getTimepointType().isVisitBased()%>,
             renderTo        : '<%= renderId %>',
             id              : '<%= bean.getComponentId() %>',
             reportId        : <%=q(reportId)%>,

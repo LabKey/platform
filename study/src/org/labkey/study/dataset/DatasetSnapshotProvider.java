@@ -30,7 +30,6 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DefaultSchema;
@@ -79,7 +78,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -218,14 +216,10 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                         schema.getScope().ensureTransaction();
 
-                        String domainURI = def.getTypeURI();
-                        Domain d = PropertyService.get().getDomain(qsDef.getContainer(), domainURI);
-                        Map<String, String> columnMap = getColumnMap(d, view, qsDef.getColumns(), tsvWriter.getFieldMap());
-
                         // import the data
                         BatchValidationException ve = new BatchValidationException();
                         StudyManager.getInstance().importDatasetData(study, context.getUser(), def, new TabLoader(sb, true),
-                                columnMap, ve, true, null, null);
+                                new CaseInsensitiveHashMap<String>(), ve, true, null, null);
 
                         for (ValidationException e : ve.getRowErrors())
                             errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
@@ -401,11 +395,11 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                         List<String> importErrors = new ArrayList<String>();
                         numRowsDeleted = StudyManager.getInstance().purgeDataset(study, dsDef, form.getViewContext().getUser());
-                        Domain d = PropertyService.get().getDomain(form.getViewContext().getContainer(), dsDef.getTypeURI());
-                        Map<String, String> columnMap = getColumnMap(d, view, def.getColumns(), tsvWriter.getFieldMap());
 
                         // import the new data
-                        newRows = StudyManager.getInstance().importDatasetData(study, form.getViewContext().getUser(), dsDef, new TabLoader(sb, true), columnMap, importErrors, true, null, null);
+                        newRows = StudyManager.getInstance().importDatasetData(study, form.getViewContext().getUser(),
+                                dsDef, new TabLoader(sb, true), new CaseInsensitiveHashMap<String>(),
+                                importErrors, true, null, null);
 
                         for (String error : importErrors)
                             errors.reject(SpringActionController.ERROR_MSG, error);

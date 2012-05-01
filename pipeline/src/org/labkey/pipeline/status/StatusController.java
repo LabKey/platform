@@ -903,15 +903,20 @@ public class StatusController extends SpringActionController
             if (NetworkDrive.exists(dir) && pipeRoot != null && pipeRoot.isUnderRoot(dir))
             {
                 String relativePath = pipeRoot.relativePath(dir);
-                relativePath = relativePath.replace("\\", "/");
-                if (relativePath.equals("."))
+
+                // Issue 14693: changing the pipeline root or symlinks can result in bad paths.  if we cant locate the file, just dont display the browse button.
+                if(relativePath != null)
                 {
-                    relativePath = "/";
+                    relativePath = relativePath.replace("\\", "/");
+                    if (relativePath.equals("."))
+                    {
+                        relativePath = "/";
+                    }
+                    ActionURL url = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(sf.lookupContainer(), getViewContext().getActionURL().toString(), relativePath);
+                    ActionButton showData = new ActionButton(url, "Browse Files");
+                    showData.setActionType(ActionButton.Action.LINK);
+                    bb.add(showData);
                 }
-                ActionURL url = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(sf.lookupContainer(), getViewContext().getActionURL().toString(), relativePath);
-                ActionButton showData = new ActionButton(url, "Browse Files");
-                showData.setActionType(ActionButton.Action.LINK);
-                bb.add(showData);
             }
         }
 

@@ -218,6 +218,8 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.ext.FileBrowser, {
                     this.onGridDataChanged(true)
                 },
                 failure: function(resp, opt){
+                    if (resp.status == 404) // see issue 14691
+                        return;
                     this.onGridDataChanged(true);
                     LABKEY.Utils.displayAjaxErrorResponse(resp, opt);
                 },
@@ -292,6 +294,11 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.ext.FileBrowser, {
                 disableCaching:false,
                 success : this.updatePipelineActions,
                 failure: LABKEY.Utils.displayAjaxErrorResponse,
+                failure: function(resp, opt){
+                    if (resp.status == 404) // see issue 14691
+                        return;
+                    LABKEY.Utils.displayAjaxErrorResponse(resp, opt);
+                },
                 scope: this,
                 updateSelection: e.updateSelection
             });
