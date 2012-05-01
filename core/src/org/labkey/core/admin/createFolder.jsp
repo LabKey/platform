@@ -44,6 +44,15 @@
         }
     }
 
+    JSONArray templateWriterTypes = new JSONArray();
+    if (form.getTemplateWriterTypes() != null)
+    {
+        for (String type : form.getTemplateWriterTypes())
+        {
+            templateWriterTypes.put(type);
+        }
+    }
+
 %>
 <script type="text/javascript">
     LABKEY.requiresExt4Sandbox(true);
@@ -61,6 +70,8 @@
         <%="var selectedModules = " + modulesOut + ";"%>
         <%="var hasLoaded = " + form.getHasLoaded() + ";"%>
         <%="var defaultTab = '" + form.getDefaultModule() + "';"%>
+        <%="var selectedTemplateFolder = '" + form.getTemplateSourceId() + "';"%>
+        <%="var selectedTemplateWriters = '" + templateWriterTypes + "';"%>
 
         request.add(LABKEY.Security.getFolderTypes, {
             success: function(data){
@@ -122,6 +133,8 @@
                         var target = panel.down('#folderType');
                         if(target.getValue() && target.getValue().folderType == 'None')
                             panel.renderModules();
+                        else if(target.getValue() && target.getValue().folderType == 'Template')
+                            panel.renderTemplateInfo();
                     }
                 },
                 items: [{
@@ -356,6 +369,7 @@
                             allowBlank: false,
                             displayField: 'path',
                             valueField: 'id',
+                            value: hasLoaded ? selectedTemplateFolder : null,
                             editable: false,
                             width: 400, 
                             store: Ext4.create('Ext.data.ArrayStore', {
@@ -370,7 +384,14 @@
                         {
                             xtype: 'panel',
                             border: false,
-                            items: folderTemplateWriters
+                            items: function(){
+                                Ext4.each(folderTemplateWriters, function(writer){
+                                    if (hasLoaded)
+                                        writer.checked = selectedTemplateWriters && selectedTemplateWriters.indexOf(writer.itemId) > -1;
+                                }, this);
+
+                                return folderTemplateWriters;
+                            }()
                         }
                     ]);
                 }

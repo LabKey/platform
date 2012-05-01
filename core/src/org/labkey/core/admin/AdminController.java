@@ -3659,11 +3659,16 @@ public class AdminController extends SpringActionController
             this.templateSourceId = templateSourceId;
         }
 
+        public String getTemplateSourceId()
+        {
+            return templateSourceId;
+        }
+
         public Container getTemplateSourceContainer()
         {
-            if (null == templateSourceId)
+            if (null == getTemplateSourceId())
                 return null;
-            return ContainerManager.getForId(templateSourceId);
+            return ContainerManager.getForId(getTemplateSourceId());
         }
 
         public String[] getTemplateWriterTypes()

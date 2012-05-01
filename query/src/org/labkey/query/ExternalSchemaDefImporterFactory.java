@@ -100,7 +100,6 @@ public class ExternalSchemaDefImporterFactory implements FolderImporterFactory
 
                     ExternalSchemaType schemaXml = schemaDoc.getExternalSchema();
 
-                    // TODO: make this a case-insensitive lookup
                     ExternalSchemaDef existingDef = QueryManager.get().getExternalSchemaDef(ctx.getContainer(), schemaXml.getUserSchemaName());
                     if (null != existingDef)
                     {

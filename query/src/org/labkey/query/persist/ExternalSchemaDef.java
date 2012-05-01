@@ -37,7 +37,7 @@ public class ExternalSchemaDef extends Entity
 
         public void setUserSchemaName(String name)
         {
-            addCondition(Column.userschemaname, name);
+            addCaseInsensitive(Column.userschemaname, name);
         }
     }
 
