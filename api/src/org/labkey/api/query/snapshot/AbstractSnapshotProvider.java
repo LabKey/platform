@@ -135,8 +135,13 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
 
         DomainProperty prop = domain.addProperty();
         prop.setLabel(column.getLabel());
-        prop.setName(AliasManager.makeLegalName(column.getName(), OntologyManager.getSqlDialect()));
+        String name = column.getName();
+        // 14750 replace '/' with '.' so columns can be mapped correctly on import from the exported file
+        if (name.indexOf("/") != -1)
+            name = name.replace('/', '.');
 
+        prop.setName(name);
+        
         Class clz = column.getJavaClass();
         // need to map primitives to object class equivalents
         if (propertyClassMap.containsKey(clz.getName()))

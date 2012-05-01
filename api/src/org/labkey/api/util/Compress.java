@@ -168,24 +168,31 @@ public class Compress
     {
         ByteArrayOutputStream bos = new ByteArrayOutputStream(bytes.length);
         byte[] buffer = new byte[bytes.length];
-
         Deflater deflater = new Deflater(Deflater.BEST_COMPRESSION);
-        deflater.setInput(bytes);
-        deflater.finish();
-
-        while (!deflater.finished())
-        {
-            int count = deflater.deflate(buffer);
-            bos.write(buffer, 0, count);
-        }
 
         try
         {
-            bos.close();
+            deflater.setInput(bytes);
+            deflater.finish();
+
+            while (!deflater.finished())
+            {
+                int count = deflater.deflate(buffer);
+                bos.write(buffer, 0, count);
+            }
         }
-        catch (IOException e)
+        finally
         {
-            //
+            deflater.end();
+
+            try
+            {
+                bos.close();
+            }
+            catch (IOException e)
+            {
+                // Ignore
+            }
         }
 
         return bos.toByteArray();
@@ -195,26 +202,32 @@ public class Compress
     // Decompress a byte array that was compressed using deflate().
     public static String inflate(byte[] source) throws DataFormatException
     {
-        Inflater decompressor = new Inflater();
-        decompressor.setInput(source, 0, source.length);
-
         ByteArrayOutputStream bos = new ByteArrayOutputStream(source.length);
-
         byte[] buffer = new byte[source.length * 3];
-
-        while (!decompressor.finished())
-        {
-            int count = decompressor.inflate(buffer);
-            bos.write(buffer, 0, count);
-        }
+        Inflater decompressor = new Inflater();
 
         try
         {
-            bos.close();
+            decompressor.setInput(source, 0, source.length);
+
+            while (!decompressor.finished())
+            {
+                int count = decompressor.inflate(buffer);
+                bos.write(buffer, 0, count);
+            }
         }
-        catch (IOException e)
+        finally
         {
-            //
+            decompressor.end();
+
+            try
+            {
+                bos.close();
+            }
+            catch (IOException e)
+            {
+                //
+            }
         }
 
         return getString(bos);

@@ -157,7 +157,7 @@
         if (value.rowspan == -1)
             return "";
         var innerHtml = this.getDisplayValueHtml(value, withUrls);
-        var td = "<td";
+        var td = "<td valign=top";
         // align
         if (this.align)
             td += " align=\"" + this.align + "\"";

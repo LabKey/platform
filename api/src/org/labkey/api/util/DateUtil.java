@@ -22,6 +22,7 @@ import org.apache.commons.lang3.time.FastDateFormat;
 import org.junit.Assert;
 import org.junit.Test;
 
+import javax.xml.bind.DatatypeConverter;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -695,9 +696,26 @@ validNum:       {
             ;
         }
 
+        try
+        {
+            return parseXMLDate(s);
+        }
+        catch (IllegalArgumentException ignored2) {}
+
         return parseJsonDateTime(s);
     }
 
+    private static long parseXMLDate(String s)
+    {
+        if (s.indexOf(":") != -1 || s.indexOf("Z") != -1)
+        {
+            return DatatypeConverter.parseDateTime(s).getTimeInMillis();
+        }
+        else
+        {
+            throw new IllegalArgumentException();
+        }
+    }
 
     // Parse using a specific pattern... used where strict parsing or non-standard pattern is required
     // Note: SimpleDateFormat is not thread-safe, so we create a new one for every parse.
@@ -768,7 +786,14 @@ validNum:       {
                 format.setLenient(false);
                 return format.parse(s).getTime();
             }
-            catch (ParseException ignored) {}
+            catch (ParseException ignored)
+            {
+                try
+                {
+                    return parseXMLDate(s);
+                }
+                catch (IllegalArgumentException ignored2) {}
+            }
 
             throw e;
         }
@@ -1191,6 +1216,11 @@ Parse:
             assertEquals(dateExpected, DateUtil.parseDateTime("3 Feb 2001"));
             assertEquals(dateExpected, DateUtil.parseDateTime("February 3, 2001"));
 
+            // Test XML date format
+            assertXmlDateMatches(DateUtil.parseDate("2001-02-03+01:00"));
+            assertXmlDateMatches(DateUtil.parseDate("2001-02-03Z"));
+            assertIllegalDateTime("115468001");
+
             // some zero testing
             datetimeExpected = java.sql.Timestamp.valueOf("2001-02-03 00:00:00.000").getTime();
             assertEquals(datetimeExpected, parseDateTime("2001-02-03 00:00:00.000"));
@@ -1225,6 +1255,15 @@ Parse:
             assertEquals(datetimeUTC, parseDateTimeUS("2001-02-03T04:05:06Z", DateTimeOption.DateTime, true));
         }
 
+        private void assertXmlDateMatches(long millis)
+        {
+            Calendar parsedXml = new GregorianCalendar();
+            parsedXml.setTimeInMillis(millis);
+            assertEquals(2001, parsedXml.get(Calendar.YEAR));
+            assertEquals(Calendar.FEBRUARY, parsedXml.get(Calendar.MONTH));
+            // Depending on your local time zone, you will get different days
+            assertTrue(parsedXml.get(Calendar.DAY_OF_MONTH) == 3 || parsedXml.get(Calendar.DAY_OF_MONTH) == 2);
+        }
 
         @Test
         public void testDate()
@@ -1253,6 +1292,12 @@ Parse:
             assertEquals(dateExpected, DateUtil.parseDate("3 Feb 2001"));
             assertEquals(dateExpected, DateUtil.parseDate("Feb 03 2001"));
             assertEquals(dateExpected, DateUtil.parseDate("February 3, 2001"));
+
+            // Test XML date format
+            assertXmlDateMatches(DateUtil.parseDate("2001-02-03+01:00"));
+            assertXmlDateMatches(DateUtil.parseDate("2001-02-03Z"));
+            assertIllegalDateTime("115468001");
+
             assertIllegalDate("2");
             assertIllegalDate("2/3");
             assertIllegalDate("Feb/Mar/2001");
