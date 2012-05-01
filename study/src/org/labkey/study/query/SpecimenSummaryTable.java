@@ -70,7 +70,7 @@ public class SpecimenSummaryTable extends BaseStudyTable
         {
             public TableInfo getLookupTableInfo()
             {
-                return new ParticipantVisitTable(_schema);
+                return new ParticipantVisitTable(_schema, false);
             }
         });
         _participantSequenceNumColumn.setIsUnselectable(true);

@@ -184,7 +184,8 @@ public class StudyVisualizationProvider extends VisualizationProvider
             // for studies we want to exclude the subject and visit columns
             for (ColumnInfo col : matches.keySet())
             {
-                if (subjectColName.equalsIgnoreCase(col.getName()) || visitColName.equalsIgnoreCase(col.getName()))
+                String columnName = col.getColumnName();
+                if (subjectColName.equalsIgnoreCase(columnName) || visitColName.equalsIgnoreCase(columnName) || "DataSets".equals(columnName))
                     colsToRemove.add(col);
             }
 

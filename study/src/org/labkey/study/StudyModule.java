@@ -201,8 +201,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     public static final WebPartFactory specimenToolsWebPartFactory = new StudyToolsWebPartFactory.Specimens(WebPartFactory.LOCATION_RIGHT);
     public static final WebPartFactory specimenReportWebPartFactory = new SpecimenController.SpecimenReportWebPartFactory();
 
-    public static final String EXPERIMENTAL_REMOVE_PARTICIPANTVISIT_LOOKUPS = "remove-participantvisit-lookups";
-
     public String getName()
     {
         return MODULE_NAME;
@@ -394,9 +392,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         {
             Logger.getLogger(StudyModule.class).error("Error cleanup orphaned domains", sql);
         }
-
-        AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_REMOVE_PARTICIPANTVISIT_LOOKUPS, "Remove ParticipantId/DataSet and ParticipantVisit/DataSet lookups",
-                "Completely remove the ParticipantId/DataSet and ParticipantVisit/DataSet lookups from Datasets for testing the DataSets auto-join lookup.", false);
     }
 
 

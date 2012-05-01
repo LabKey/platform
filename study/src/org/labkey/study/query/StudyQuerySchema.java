@@ -273,7 +273,7 @@ public class StudyQuerySchema extends UserSchema
         }
         if (StudyService.get().getSubjectTableName(getContainer()).equalsIgnoreCase(name))
         {
-            ParticipantTable ret = new ParticipantTable(this);
+            ParticipantTable ret = new ParticipantTable(this, false);
             return ret;
         }
         if (StudyService.get().getSubjectCategoryTableName(getContainer()).equalsIgnoreCase(name))
@@ -313,7 +313,7 @@ public class StudyQuerySchema extends UserSchema
         }
         if (StudyService.get().getSubjectVisitTableName(getContainer()).equalsIgnoreCase(name) && _study.getTimepointType() != TimepointType.CONTINUOUS)
         {
-            ParticipantVisitTable ret = new ParticipantVisitTable(this);
+            ParticipantVisitTable ret = new ParticipantVisitTable(this, false);
             return ret;
         }
         if ("SpecimenRequest".equalsIgnoreCase(name))

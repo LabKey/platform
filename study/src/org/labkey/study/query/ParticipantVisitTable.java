@@ -41,7 +41,7 @@ public class ParticipantVisitTable extends FilteredTable
     StudyQuerySchema _schema;
     Map<String, ColumnInfo> _demographicsColumns;
 
-    public ParticipantVisitTable(StudyQuerySchema schema)
+    public ParticipantVisitTable(StudyQuerySchema schema, boolean hideDataSets)
     {
         super(StudySchema.getInstance().getTableInfoParticipantVisit(), schema.getContainer());
         setName(StudyService.get().getSubjectVisitTableName(schema.getContainer()));
@@ -129,6 +129,7 @@ public class ParticipantVisitTable extends FilteredTable
                 continue;
 
             ColumnInfo datasetColumn = createDataSetColumn(name, dataset, participantSequenceNumColumn);
+            datasetColumn.setHidden(hideDataSets);
 
             // Don't add demographics datasets, but stash it for backwards compatibility with <11.3 queries if needed.
             if (dataset.isDemographicData())

@@ -40,7 +40,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         {
             public TableInfo getLookupTableInfo()
             {
-                return new ParticipantVisitTable(_schema);
+                return new ParticipantVisitTable(_schema, false);
             }
         });
         pvColumn.setIsUnselectable(true);

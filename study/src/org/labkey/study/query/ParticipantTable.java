@@ -46,15 +46,15 @@ public class ParticipantTable extends FilteredTable
 {
     StudyQuerySchema _schema;
 
-    public ParticipantTable(StudyQuerySchema schema)
+    public ParticipantTable(StudyQuerySchema schema, boolean hideDataSets)
     {
         super(StudySchema.getInstance().getTableInfoParticipant(), schema.getContainer());
         setName(StudyService.get().getSubjectTableName(schema.getContainer()));
         _schema = schema;
         ColumnInfo rowIdColumn = new AliasedColumn(this, StudyService.get().getSubjectColumnName(getContainer()), _rootTable.getColumn("ParticipantId"));
         rowIdColumn.setFk(new TitleForeignKey(getBaseDetailsURL(), null, null, "participantId"));
-
         addColumn(rowIdColumn);
+
         ColumnInfo datasetColumn = new AliasedColumn(this, "DataSet", _rootTable.getColumn("ParticipantId"));
         datasetColumn.setKeyField(false);
         datasetColumn.setIsUnselectable(true);
@@ -77,9 +77,9 @@ public class ParticipantTable extends FilteredTable
             {
                 return null;
             }
-        }
-        );
+        });
         addColumn(datasetColumn);
+        datasetColumn.setHidden(hideDataSets);
 
         if (StudyManager.getInstance().showCohorts(schema.getContainer(), schema.getUser()))
         {
