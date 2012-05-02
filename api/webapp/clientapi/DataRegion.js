@@ -1578,6 +1578,16 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                         else
                             this.hideMessage();
 
+                        // If there was an error parsing the query, we won't be able to render the customize view panel.
+                        if (json.exception) {
+                            var viewSourceUrl = LABKEY.ActionURL.buildURL('query', 'viewQuerySource.view', null, {schemaName: this.schemaName, "query.queryName": this.queryName});
+                            var msg = Ext.util.Format.htmlEncode(json.exception) +
+                                    " &nbsp;<a target=_blank class='labkey-button' href='" + viewSourceUrl + "'>View Source</a>";
+
+                            this.showErrorMessage(msg);
+                            return;
+                        }
+
                         var minWidth = Math.max(Math.min(1000, headerOrFooter.getWidth(true)), 700); // >= 700 && <= 1000
                         var renderTo = Ext.getBody().createChild({tag: "div", customizeView: true, style: {display: "none"}});
 
