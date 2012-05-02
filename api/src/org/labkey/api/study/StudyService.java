@@ -189,8 +189,6 @@ public class StudyService
         boolean isValidSubjectNounSingular(Container container, String subjectNounSingular);
 
         DataSet.KeyType getDatasetKeyType(Container container, String datasetName);
-
-        FolderImporter getMissingValueImporter();
     }
 
     public static void register(Service serviceImpl)

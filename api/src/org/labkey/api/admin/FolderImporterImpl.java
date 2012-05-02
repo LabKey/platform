@@ -32,7 +32,6 @@ import java.util.List;
  */
 public class FolderImporterImpl implements FolderImporter<FolderDocument.Folder>
 {
-    private FolderSerializationRegistry _registry;
     private Collection<FolderImporter> _importers;
     private PipelineJob _job;
     private boolean _usingVirtualFile = false;
@@ -45,14 +44,14 @@ public class FolderImporterImpl implements FolderImporter<FolderDocument.Folder>
 
     public FolderImporterImpl(@Nullable PipelineJob job)
     {
-        _registry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
-        if (null == _registry)
+        FolderSerializationRegistry registry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
+        if (null == registry)
         {
             throw new RuntimeException();
         }
 
-        _importers = _registry.getRegisteredInitialFolderImporters();
-        _importers.addAll(_registry.getRegisteredFinalFolderImporters());
+        _importers = registry.getRegisteredInitialFolderImporters();
+        _importers.addAll(registry.getRegisteredFinalFolderImporters());
 
         _job = job;
     }
