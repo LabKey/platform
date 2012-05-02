@@ -1904,7 +1904,7 @@ public class PageFlowUtil
 
     public static String getJavaScriptIncludes()
     {
-        boolean combinedJS = true;
+        boolean combinedJS = false;
 
         String contextPath = AppProps.getInstance().getContextPath();
         String serverHash = getServerSessionHash();
