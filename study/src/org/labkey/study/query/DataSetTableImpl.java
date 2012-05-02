@@ -115,7 +115,11 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
                     @Override
                     public TableInfo getLookupTableInfo()
                     {
-                        return new ParticipantTable(_schema, true);
+                        // Ideally we could just ask the schema for the ParticipantTable (e.g., _schema.getTable(...)),
+                        // but we need to pass arguments to ParticipantTable constructor to hide datasets.
+                        TableInfo table = new ParticipantTable(_schema, true);
+                        table.overlayMetadata(StudyService.get().getSubjectTableName(_schema.getContainer()), schema, new ArrayList<QueryException>());
+                        return table;
                     }
 
                     @Override

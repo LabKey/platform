@@ -555,6 +555,7 @@
       <ns:column columnName="_key">
         <ns:propertyURI>http://cpas.labkey.com/Study#_Key</ns:propertyURI>
         <ns:datatype>Varchar</ns:datatype>
+        <ns:isHidden>true</ns:isHidden>
       </ns:column>
       <ns:column columnName="QCState">
         <ns:columnTitle>QC State</ns:columnTitle>

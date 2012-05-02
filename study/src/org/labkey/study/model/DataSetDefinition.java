@@ -487,7 +487,13 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             ColumnInfo t = template.getColumn(pss.getName());
             // The column may be null if the dataset is being deleted in the background
             if (null != t && c != null)
+            {
                 c.setExtraAttributesFrom(t);
+
+                // When copying a column, the hidden bit is not propagated, so we need to do it manually
+                if (t.isHidden())
+                    c.setHidden(true);
+            }
         }
 
         return ti;
