@@ -23,7 +23,6 @@ Ext4.define('LABKEY.ext.IconPanel', {
         Ext4.QuickTips.init();
 
         Ext4.applyIf(this, {
-            width: 535,
             bodyStyle: 'padding:5px',
             cls: 'labkey-iconpanel',
             iconSizeBtnHandler: function(btn){
@@ -139,6 +138,14 @@ Ext4.define('LABKEY.ext.IconPanel', {
         }
 
         this.callParent(arguments);
+
+        //resize panel on window resize
+        this.on('afterrender', function(panel, opts ){
+            Ext4.EventManager.onWindowResize(function (h, w, options) {
+                this.setWidth(this.container.getWidth());  //get the width of the DIV containing it
+                this.down('dataview').refresh();
+            }, this);
+        }, this);
 
         //poor solution to firefox Ext4 layout issue that occurs when adding items from store after panel has rendered
         //TODO: should revisit with future Ext4 versions
