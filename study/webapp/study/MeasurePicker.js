@@ -273,12 +273,6 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
                         }
                         this.fireEvent('beforeMeasuresStoreLoad', this, this.measuresStoreData);
                         this.measuresStore.loadRawData(this.measuresStoreData);
-
-                        var value = this.searchBox.getValue();
-                        if (value && clearCache) {
-                            // refilter the grid, if a filter was present
-                            this.filterMeasures(value);
-                        }
                     },
                     failure      : function(info, response, options) {
                         this.isLoading = false;
@@ -301,21 +295,45 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
         this.measuresStore = Ext4.create('LABKEY.ext4.MeasuresStore', {
             listeners : {
                 measureStoreSorted : function(store) {
-
                     this.loaded = true;
-                    //Prefilter list
+
+                    // Re-select any measures on store reload (i.e. if "Show All" checkbox selected
+                    if (this.reloadingStore && this.recordsForReselect)
+                    {
+                        Ext4.each(this.recordsForReselect, function(record) {
+                            var index = this.measuresStore.findBy(function(r) {
+                                return (
+                                    record.data.schemaName == r.data.schemaName &&
+                                    record.data.queryName  == r.data.queryName &&
+                                    record.data.name       == r.data.name
+                                );
+                            }, this);
+
+                            if (index > -1)
+                                this.getSelectionModel().select(index, true, true);
+                        }, this);
+                    }
+
+                    //Prefilter list by queryName on initial load
                     var datasetName = LABKEY.ActionURL.getParameter("queryName");
-                    if (datasetName)
+                    if (!this.reloadingStore && datasetName)
                     {
                         this.searchBox.setValue(LABKEY.ActionURL.getParameter("queryName"));
                         this.searchBox.focus(true, 100);
-                        this.filterMeasures(datasetName);
+                    }
+
+                    // filter the list based on the search box value
+                    if (this.searchBox.getValue() != "")
+                    {
+                        this.filterMeasures(this.searchBox.getValue());
                     }
 
                     if (this.rendered)
                         this.getEl().unmask();
 
                     this.fireEvent('measuresStoreLoaded', this);
+
+                    this.reloadingStore = false;
                 },
                 exception : function(proxy, type, action, options, resp) {
                     LABKEY.Utils.displayAjaxErrorResponse(resp, options);
@@ -416,8 +434,14 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
                 boxLabel: 'Show all',
                 width: 75,
                 handler : function(cmp, checked){
-                    this.showHidden = checked;
                     this.getEl().mask("loading measures...", "x-mask-loading");
+
+                    this.showHidden = checked;
+                    this.reloadingStore = true;
+                    this.recordsForReselect = this.getSelectionModel().getSelection();
+
+                    // clear the filter, it will be re-applied after reload of store
+                    this.measuresStore.clearFilter();
                     this.getMeasures(cmp, true);
                 },
                 scope   : this
@@ -806,7 +830,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
         return this.measurePanel;        
     },
 
-    getMeasures : function(cmp, clearCache) {
+    getMeasures : function(cmp) {
 
         var filter = LABKEY.Visualization.Filter.create({schemaName: 'study'});
 

@@ -49,16 +49,6 @@ public class FolderXmlWriter implements InternalFolderWriter
         folderXml.setArchiveVersion(ModuleLoader.getInstance().getCoreModule().getVersion());
         folderXml.setLabel(c.getName()); // TODO: change to setName
 
-        // Export the MV indicators -- always write these, even if they're blank
-        Map<String, String> mvMap = MvUtil.getIndicatorsAndLabels(c);
-        MissingValueIndicatorsType mvXml = folderXml.addNewMissingValueIndicators();
-        for (Map.Entry<String, String> mv : mvMap.entrySet())
-        {
-            MissingValueIndicatorsType.MissingValueIndicator indXml = mvXml.addNewMissingValueIndicator();
-            indXml.setIndicator(mv.getKey());
-            indXml.setLabel(mv.getValue());
-        }
-
         // Save the folder.xml file.  This gets called last, after all other writers have populated the other sections.
         vf.saveXmlBean("folder.xml", ctx.getDocument());
 

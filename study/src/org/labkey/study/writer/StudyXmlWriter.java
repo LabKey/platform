@@ -76,16 +76,6 @@ class StudyXmlWriter implements InternalStudyWriter
 
         studyXml.setSecurityType(SecurityType.Enum.forString(study.getSecurityType().name()));
 
-        // Export the MV indicators -- always write these, even if they're blank
-        Map<String, String> mvMap = MvUtil.getIndicatorsAndLabels(study.getContainer());
-        MissingValueIndicatorsType mvXml = studyXml.addNewMissingValueIndicators();
-        for (Map.Entry<String, String> mv : mvMap.entrySet())
-        {
-            MissingValueIndicatorsType.MissingValueIndicator indXml = mvXml.addNewMissingValueIndicator();
-            indXml.setIndicator(mv.getKey());
-            indXml.setLabel(mv.getValue());
-        }
-
         // Save the study.xml file.  This gets called last, after all other writers have populated the other sections.
         vf.saveXmlBean("study.xml", ctx.getDocument());
 

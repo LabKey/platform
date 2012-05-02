@@ -92,7 +92,8 @@ public class QueryWriter extends BaseFolderWriter
     @Override
     public boolean supportsVirtualFile()
     {
-        return true;
+        // TODO: this should be turned back on once we support study datasets via VirtualFile
+        return false;
     }
 
     public static class Factory implements FolderWriterFactory

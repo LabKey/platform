@@ -138,10 +138,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
                     timepointType = studyXml.getDateBased() ? TimepointType.DATE : TimepointType.VISIT;
 
                 if (study.getTimepointType() != timepointType)
-                {
-                    job.error("Can't change timepoint style from '" + study.getTimepointType() + "' to '" + timepointType + "' when reloading an existing study.");
-                    return;
-                }
+                    throw new PipelineJobException("Can't change timepoint style from '" + study.getTimepointType() + "' to '" + timepointType + "' when reloading an existing study.");
 
                 // TODO: Change these props and save only if values have changed
                 study = study.createMutable();
@@ -169,7 +166,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
 
             VirtualFile vf = ctx.getRoot();
 
-            new MissingValueImporter().process(job, ctx, vf);
+            new MissingValueImporterFactory().create().process(job, ctx, vf);
             new QcStatesImporter().process(ctx, vf, errors);
 
             new VisitImporter().process(ctx, vf, errors);

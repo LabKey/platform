@@ -3948,12 +3948,8 @@ public class AdminController extends SpringActionController
                             FolderDocument folderDoc = (FolderDocument)folderXml;
                             FolderImportContext importCtx = new FolderImportContext(getUser(), c, folderDoc, Logger.getLogger(FolderImporterImpl.class), vf);
 
-                            // TODO: need to change MissingValueImporter to be included with other registered folder importers
-                            StudyService.get().getMissingValueImporter().process(null, importCtx, vf);
-
                             FolderImporterImpl importer = new FolderImporterImpl();
                             importer.process(null, importCtx, vf);
-                            //importer.postProcess(importCtx, vf);
                         }
                     }
                     else

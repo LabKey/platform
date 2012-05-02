@@ -156,8 +156,6 @@ import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.writer.FileSystemFile;
-import org.labkey.api.writer.ZipFile;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.folder.xml.FolderDocument;
 import org.labkey.study.CohortFilter;
@@ -212,8 +210,6 @@ import org.labkey.study.view.StudyGWTView;
 import org.labkey.study.view.SubjectsWebPart;
 import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.visitmanager.VisitManager.VisitStatistic;
-import org.labkey.study.writer.StudyExportContext;
-import org.labkey.study.writer.StudyWriter;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
@@ -4368,131 +4364,6 @@ public class StudyController extends BaseStudyController
         }
     }
 
-
-    @RequiresPermissionClass(AdminPermission.class)
-    public class ExportStudyAction extends FormViewAction<ExportForm>
-    {
-        private ActionURL _successURL = null;
-
-        public ModelAndView getView(ExportForm form, boolean reshow, BindException errors) throws Exception
-        {
-            // In export-to-browser case, base action will attempt to reshow the view since we returned null as the success
-            // URL; returning null here causes the base action to stop pestering the action.
-            if (reshow)
-                return null;
-
-            if (PipelineService.get().hasValidPipelineRoot(getContainer()))
-                return new JspView<ExportForm>("/org/labkey/study/view/exportStudy.jsp", form, errors);
-            else
-                return new PipelineSetupView("exporting a study");
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            _appendManageStudy(root);
-            return root.addChild("Export Study");
-        }
-
-        public void validateCommand(ExportForm form, Errors errors)
-        {
-        }
-
-        public boolean handlePost(ExportForm form, BindException errors) throws Exception
-        {
-            StudyImpl study = getStudy();
-            StudyWriter writer = new StudyWriter();
-            StudyExportContext ctx = new StudyExportContext(getStudy(), getUser(), getContainer(), "old".equals(form.getFormat()), PageFlowUtil.set(form.getTypes()), Logger.getLogger(StudyWriter.class));
-
-            switch(form.getLocation())
-            {
-                case 0:
-                {
-                    PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-                    if (root == null || !root.isValid())
-                    {
-                        throw new NotFoundException("No valid pipeline root found");
-                    }
-                    File exportDir = root.resolvePath("export");
-                    writer.write(study, ctx, new FileSystemFile(exportDir));
-                    _successURL = new ActionURL(ManageStudyAction.class, getContainer());
-                    break;
-                }
-                case 1:
-                {
-                    PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-                    if (root == null || !root.isValid())
-                    {
-                        throw new NotFoundException("No valid pipeline root found");
-                    }
-                    File exportDir = root.resolvePath("export");
-                    exportDir.mkdir();
-                    ZipFile zip = new ZipFile(exportDir, FileUtil.makeFileNameWithTimestamp(study.getLabel(), "study.zip"));
-                    writer.write(study, ctx, zip);
-                    zip.close();
-                    _successURL = new ActionURL(ManageStudyAction.class, getContainer());
-                    break;
-                }
-                case 2:
-                {
-                    ZipFile zip = null;
-                    try
-                    {
-                        zip = new ZipFile(getViewContext().getResponse(), FileUtil.makeFileNameWithTimestamp(study.getLabel(), "study.zip"));
-                        writer.write(study, ctx, zip);
-                    }
-                    finally
-                    {
-                        if (zip != null) { zip.close(); }
-                    }
-                    break;
-                }
-            }
-
-            return true;
-        }
-
-        public ActionURL getSuccessURL(ExportForm form)
-        {
-            return _successURL;
-        }
-    }
-
-    public static class ExportForm
-    {
-        private String[] _types;
-        private int _location;
-        private String _format;
-
-        public String[] getTypes()
-        {
-            return _types;
-        }
-
-        public void setTypes(String[] types)
-        {
-            _types = types;
-        }
-
-        public int getLocation()
-        {
-            return _location;
-        }
-
-        public void setLocation(int location)
-        {
-            _location = location;
-        }
-
-        public String getFormat()
-        {
-            return _format;
-        }
-
-        public void setFormat(String format)
-        {
-            _format = format;
-        }
-    }
 
     @RequiresPermissionClass(DeletePermission.class)
     public class PurgeDatasetAction extends SimpleRedirectAction

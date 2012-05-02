@@ -83,7 +83,7 @@ public class FolderListImporter implements FolderImporter
         @Override
         public boolean isFinalImporter()
         {
-            return false;
+            return true;
         }
     }
 }

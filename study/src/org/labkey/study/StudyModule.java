@@ -105,6 +105,7 @@ import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
+import org.labkey.study.importer.MissingValueImporterFactory;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.importer.StudyImportProvider;
 import org.labkey.study.importer.StudyImporterFactory;
@@ -154,6 +155,7 @@ import org.labkey.study.view.StudyToolsWebPartFactory;
 import org.labkey.study.view.StudyViewLoader;
 import org.labkey.study.view.SubjectDetailsWebPartFactory;
 import org.labkey.study.view.SubjectsWebPart;
+import org.labkey.study.writer.MissingValueWriterFactory;
 import org.labkey.study.writer.StudySerializationRegistryImpl;
 import org.labkey.study.writer.StudyWriter;
 import org.labkey.study.writer.StudyWriterFactory;
@@ -381,6 +383,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         FolderSerializationRegistry folderRegistry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
         if (null != folderRegistry)
         {
+            folderRegistry.addFactories(new MissingValueWriterFactory(), new MissingValueImporterFactory());
             folderRegistry.addFactories(new StudyWriterFactory(), new StudyImporterFactory());
         }        
 

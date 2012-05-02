@@ -52,8 +52,8 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudyFolderType;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.DatasetImporter;
+import org.labkey.study.importer.MissingValueImporterFactory;
 import org.labkey.study.importer.StudyImportContext;
-import org.labkey.study.importer.MissingValueImporter;
 import org.labkey.study.importer.ParticipantGroupImporter;
 import org.labkey.study.importer.QcStatesImporter;
 import org.labkey.study.importer.VisitImporter;
@@ -247,7 +247,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
             StudyImportContext importContext = new StudyImportContext(user, newStudy.getContainer(), studyDoc, Logger.getLogger(StudyWriter.class), vf);
 
             // missing values and qc states
-            new MissingValueImporter().process(null, importContext, vf);
+            new MissingValueImporterFactory().create().process(null, importContext, vf);
             new QcStatesImporter().process(importContext, vf, errors);
 
             // dataset definitions

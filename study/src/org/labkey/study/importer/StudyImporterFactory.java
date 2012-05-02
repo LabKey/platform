@@ -55,7 +55,7 @@ public class StudyImporterFactory implements FolderImporterFactory
     @Override
     public boolean isFinalImporter()
     {
-        return false;
+        return true;
     }
 
     public class StudyFolderImporter implements FolderImporter<FolderDocument.Folder>

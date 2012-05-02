@@ -178,7 +178,7 @@ public class QueryImporter implements FolderImporter
     @Override
     public boolean supportsVirtualFile()
     {
-        return true;
+        return false;
     }
 
     public static class Factory implements FolderImporterFactory

@@ -15,13 +15,9 @@
  */
 package org.labkey.pipeline.importer;
 
-import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterImpl;
-import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.pipeline.*;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileType;
-import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 
 import java.util.*;
@@ -30,9 +26,9 @@ import java.util.*;
 * User: cnathe
 * Date: Jan 19, 2012
 */
-public class FolderImportFinalTask extends PipelineJob.Task<FolderImportFinalTask.Factory>
+public class FolderImportTask extends PipelineJob.Task<FolderImportTask.Factory>
 {
-    private FolderImportFinalTask(Factory factory, PipelineJob job)
+    private FolderImportTask(Factory factory, PipelineJob job)
     {
         super(factory, job);
     }
@@ -58,6 +54,7 @@ public class FolderImportFinalTask extends PipelineJob.Task<FolderImportFinalTas
         }
         catch (Exception e)
         {
+            // TODO: can we just do job.error() here?
             throw new PipelineJobException(e);
         }
 
@@ -69,12 +66,12 @@ public class FolderImportFinalTask extends PipelineJob.Task<FolderImportFinalTas
     {
         public Factory()
         {
-            super(FolderImportFinalTask.class);
+            super(FolderImportTask.class);
         }
 
         public PipelineJob.Task createTask(PipelineJob job)
         {
-            return new FolderImportFinalTask(this, job);
+            return new FolderImportTask(this, job);
         }
 
         public List<FileType> getInputTypes()

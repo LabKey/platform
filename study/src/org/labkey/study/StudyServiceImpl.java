@@ -47,7 +47,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
-import org.labkey.study.importer.MissingValueImporter;
 import org.labkey.study.model.*;
 import org.labkey.study.query.DataSetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
@@ -772,10 +771,5 @@ public class StudyServiceImpl implements StudyService.Service
             return DataSet.KeyType.SUBJECT;
         }
         return null;
-    }
-
-    public FolderImporter getMissingValueImporter()
-    {
-        return new MissingValueImporter.Factory().create();
     }
 }
