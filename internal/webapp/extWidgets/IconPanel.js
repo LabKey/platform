@@ -141,8 +141,15 @@ Ext4.define('LABKEY.ext.IconPanel', {
 
         //resize panel on window resize
         this.on('afterrender', function(panel, opts ){
+            this._previousWidth = this.container.getWidth();
+
             Ext4.EventManager.onWindowResize(function (h, w, options) {
-                this.setWidth(this.container.getWidth());  //get the width of the DIV containing it
+                if(this._previousWidth && this._previousWidth == this.container.getWidth()){
+                    return;
+                }
+
+                this._previousWidth = this.container.getWidth();
+                this.setWidth(this._previousWidth);  //get the width of the DIV containing it
                 this.down('dataview').refresh();
             }, this);
         }, this);

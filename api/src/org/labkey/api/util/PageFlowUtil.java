@@ -1754,40 +1754,6 @@ public class PageFlowUtil
     static final String extBase = extJsRoot + "/adapter/ext/ext-base.js";
     static final String ext4ThemeRoot = "labkey-ext-theme";
 
-    static String[] clientExploded = new String[]
-    {
-        "clientapi/ExtJsConfig.js",
-        "clientapi/ActionURL.js",
-        "clientapi/Ajax.js",
-        "clientapi/Assay.js",
-        "clientapi/Chart.js",
-        "clientapi/DataRegion.js",
-        "clientapi/Domain.js",
-        "clientapi/Experiment.js",
-        "clientapi/LongTextEditor.js",
-        "clientapi/EditorGridPanel.js",
-        "clientapi/Filter.js",
-        "clientapi/GridView.js",
-        "clientapi/NavTrail.js",
-        "clientapi/Query.js",
-        "clientapi/ExtendedJsonReader.js",
-        "clientapi/Store.js",
-        "clientapi/Utils.js",
-        "clientapi/WebPart.js",
-        "clientapi/QueryWebPart.js",
-        "clientapi/Security.js",
-        "clientapi/SecurityPolicy.js",
-        "clientapi/Specimen.js",
-        "clientapi/MultiRequest.js",
-        "clientapi/HoverPopup.js",
-        "clientapi/Form.js",
-        "clientapi/PersistentToolTip.js",
-        "clientapi/Message.js",
-        "clientapi/FormPanel.js",
-        "clientapi/Pipeline.js",
-        "clientapi/FileSystem.js",
-        "clientapi/Portal.js"
-    };
     static String clientDebug = "clientapi/clientapi.js";
     static String clientMin = "clientapi/clientapi.min.js";
 
@@ -1873,20 +1839,34 @@ public class PageFlowUtil
         scripts.add("util.js");
 
         // CLIENT
-        for (String e : clientExploded)
+        if(explodedClient)
         {
-            //included.add(e);
-            if (explodedClient)
+            for (String e : getClientExploded())
                 scripts.add(e);
         }
-        if (!explodedClient)
+        else
+        {
             scripts.add(AppProps.getInstance().isDevMode() ? clientDebug : clientMin);
+        }
+
         included.add(clientDebug);
         included.add(clientMin);
 
         included.addAll(scripts);
     }
 
+    private static String[] getClientExploded()
+    {
+        List<String> files = new ArrayList<String>();
+        File dir = new File(ModuleLoader.getInstance().getWebappDir(), "/clientapi");
+        FileType js = new FileType(".js");
+        for (File f : dir.listFiles())
+        {
+            if(js.isType(f) && !f.getName().startsWith("clientapi"))
+                files.add("clientapi/" + f.getName());
+        }
+        return files.toArray(new String[files.size()]);
+    }
 
     public static String getLabkeyJS()
     {
@@ -2074,6 +2054,10 @@ public class PageFlowUtil
             containerProps.put("id", container.getId());
             containerProps.put("name", container.getName());
             containerProps.put("type", container.getContainerNoun());
+            Container parent = container.getParent();
+            containerProps.put("parentPath", parent==null ? null : parent.getPath());
+            containerProps.put("parentId", parent==null ? null : parent.getId());
+
             json.put("container", containerProps);
             json.put("demoMode", DemoMode.isDemoMode(container, user));
         }
