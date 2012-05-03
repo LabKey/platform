@@ -359,12 +359,10 @@ LABKEY.vis.Plot = function(config){
             this.layers[i].render(this.paper, this.grid, this.scales, this.data, this.aes);
         }
 
-        var gridSet = this.paper.setFinish().transform("t0," + this.grid.height);
-        if(Raphael.svg){
-            // Currently the clip-rect attribute only seems to work with SVG. 
-            gridSet.attr('clip-rect', (this.grid.leftEdge - 6) + ", " + (-this.grid.topEdge) + ", " + (this.grid.rightEdge - this.grid.leftEdge  + 10) + ", " + (this.grid.topEdge - this.grid.bottomEdge + 9));
-        }
-
+        var gridSet = this.paper.setFinish();
+        gridSet.attr('clip-rect', (this.grid.leftEdge - 6) + ", " + (this.grid.height - this.grid.topEdge) + ", " + (this.grid.rightEdge - this.grid.leftEdge  + 10) + ", " + (this.grid.topEdge - this.grid.bottomEdge + 9));
+        gridSet.transform("t0," + this.grid.height);
+        
         this.paper.setStart();
         renderLegend.call(this); // Renders the legend, we do this after the layers render because data is grouped at render time.
         this.paper.setFinish().transform("t0," + this.grid.height);
