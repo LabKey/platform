@@ -22,6 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.json.JSONWriter;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.SpringAttachmentFile;
@@ -313,7 +314,22 @@ public class DavController extends SpringActionController
                 if (null == StringUtils.trimToNull(message))
                     response.sendError(status.code);
                 else
-                    response.sendError(status.code, message);
+                {
+                    if("XMLHttpRequest".equals(getRequest().getHeader("x-requested-with")) &&
+                        "application/json".equals(getRequest().getHeader("Content-Type")))
+                    {
+                        JSONObject o = new JSONObject();
+                        o.put("status", status.code);
+                        o.put("exception", message);
+                        response.setHeader("Content-Type", "application/json");
+                        response.getWriter().write(o.toString());
+                        response.setStatus(HttpServletResponse.SC_OK);
+                    }
+                    else
+                    {
+                        response.sendError(status.code, message);
+                    }
+                }
                 _status = status;
                 _sendError = true;
             }
@@ -2711,7 +2727,7 @@ public class DavController extends SpringActionController
             // Removing any lock-null resource which would be present at
             // the destination path
             lockNullResources.remove(destinationPath);
-            
+
             return exists ? WebdavStatus.SC_OK : WebdavStatus.SC_CREATED;
         }
     }
