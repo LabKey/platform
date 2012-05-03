@@ -180,8 +180,8 @@ LABKEY.vis.Geom.ErrorBar.prototype.render = function(paper, grid, scales, data, 
         var yTop = -yScale(y + errorAtPoint);
         var color = this.colorMap ? scales.color.scale(this.colorMap.getValue(data[i]) + ' ' + name) : "#000000";
 
-        yTop = Math.max(yTop, -grid.topEdge);
-        yBottom = Math.min(yBottom, -grid.bottomEdge);
+//        yTop = Math.max(yTop, -grid.topEdge);
+//        yBottom = Math.min(yBottom, -grid.bottomEdge);
 
         var errorBarPath = LABKEY.vis.makeLine(x - 6, yTop, x+6, yTop) + LABKEY.vis.makeLine(x, yTop, x, yBottom) + LABKEY.vis.makeLine(x-6, yBottom, x+6, yBottom); //top bar, middle bar, bottom bar
         var errorBar = paper.path(errorBarPath).attr('stroke-width', 2);

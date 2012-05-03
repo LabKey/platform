@@ -13,12 +13,25 @@ if(!LABKEY.vis){
 }
 
 LABKEY.vis.Plot = function(config){
+    var copyUserScales = function(origScales){
+        // This copies the user's scales, but not the max/min because we don't want to over-write that, so we store the original
+        // scales separately (this.originalScales).
+        var scales = {};
+        for(scale in origScales){
+            scales[scale] = {};
+            scales[scale].scaleType = origScales[scale].scaleType ? origScales[scale].scaleType : null;
+            scales[scale].trans = origScales[scale].trans ? origScales[scale].trans : null;
+            scales[scale].tickFormat = origScales[scale].tickFormat ? origScales[scale].tickFormat : null;
+        }
+        return scales;
+    };
 	this.renderTo = config.renderTo ? config.renderTo : null; // The id of the DOM element to render the plot to, required.
 	this.grid = {
 		width: config.width ? config.width : null, // height of the grid where points/lines/etc gets plotted.
 		height: config.height ? config.height: null // widht of the grid.
 	};
-	this.scales = config.scales ? config.scales : null;
+	this.originalScales = config.scales ? config.scales : null;
+    this.scales = copyUserScales(this.originalScales);
 	this.originalAes = config.aes ? config.aes : null;
     this.aes = LABKEY.vis.convertAes(this.originalAes);
     this.xTitle = config.xTitle ? config.xTitle : null;
@@ -77,7 +90,7 @@ LABKEY.vis.Plot = function(config){
 		this.grid.topEdge = this.grid.height - topMargin + 10;
 		this.grid.bottomEdge = bottomMargin;
 
-        var getMinMax = function(scales, parentData, layerData, aes){
+        var getMinMax = function(origScales, scales, parentData, layerData, aes){
             var data = layerData ? layerData : parentData;
             if(!data){
                 return;
@@ -85,25 +98,33 @@ LABKEY.vis.Plot = function(config){
 
             for(var scale in scales){
                 if(aes[scale]){
-                    console.log(scale);
                     if(scales[scale].scaleType == 'continuous'){
-                        var tempMax = d3.max(data, aes[scale].value);
-                        var tempMin = d3.min(data, aes[scale].value);
-                        if(!scales[scale].min || tempMin < scales[scale].min){
-                            scales[scale].min = tempMin;
+                        if(origScales[scale] && origScales[scale].min){
+                            scales[scale].min = origScales[scale].min;
+                        } else {
+                            var tempMin = d3.min(data, aes[scale].value);
+                            if(scales[scale].min == null || scales[scale].min == undefined || tempMin < scales[scale].min){
+                                scales[scale].min = tempMin;
+                            }
                         }
-                        if(!scales[scale].max || tempMax > scales[scale].max){
-                            scales[scale].max = tempMax;
+
+                        if(origScales[scale] && origScales[scale].max){
+                            scales[scale].max = origScales[scale].max;
+                        } else {
+                            var tempMax = d3.max(data, aes[scale].value);
+                            if(scales[scale].max == null || scales[scale].max == undefined || tempMax > scales[scale].max){
+                                scales[scale].max = tempMax;
+                            }
                         }
                     }
                 }
             }
         };
 
-        getMinMax(this.scales, this.data, null, this.aes);
+        getMinMax(this.originalScales, this.scales, this.data, null, this.aes);
 
         for(var i = 0; i < this.layers.length; i++){
-            getMinMax(this.scales, this.data, this.layers[i].data, this.layers[i].aes);
+            getMinMax(this.originalScales, this.scales, this.data, this.layers[i].data, this.layers[i].aes);
         }
 
         for(var scaleName in this.scales){
@@ -170,7 +191,8 @@ LABKEY.vis.Plot = function(config){
             var y2 = -this.grid.bottomEdge;
 
             var tick = this.paper.path(LABKEY.vis.makeLine(x1, y1, x2, y2)).transform("t0," + this.grid.height);
-            var text = this.paper.text(this.scales.x.scale(xTicks[i])+.5, -this.grid.bottomEdge + 15, xTicks[i]).transform("t0," + this.grid.height);
+            var tickText = this.scales.x.tickFormat ? this.scales.x.tickFormat(xTicks[i]) : xTicks[i];
+            var text = this.paper.text(this.scales.x.scale(xTicks[i])+.5, -this.grid.bottomEdge + 15, tickText).transform("t0," + this.grid.height);
 
             if(x1 - .5 == this.grid.leftEdge || x1 - .5 == this.grid.rightEdge) continue;
 
@@ -193,11 +215,12 @@ LABKEY.vis.Plot = function(config){
                 if(y1 == -this.grid.bottomEdge + .5) continue; // Dont draw a line on top of the x-axis line.
 
 				var tick = this.paper.path(LABKEY.vis.makeLine(x1, y1, x2, y2)).transform("t0," + this.grid.height);
+                var tickText = this.scales.yLeft.tickFormat ? this.scales.yLeft.tickFormat(leftTicks[i]) : leftTicks[i];
 				var gridLine = this.paper.path(LABKEY.vis.makeLine(x2 + 1, y1, this.grid.rightEdge, y2)).attr('stroke', '#DDD').transform("t0," + this.grid.height);
-				var text = this.paper.text(x1 - 15, y1, leftTicks[i]).transform("t0," + this.grid.height);
+				var text = this.paper.text(x1 - 15, y1, tickText).transform("t0," + this.grid.height);
 			}
 		}
-		
+
 		if(this.scales.yRight.scale){
             var rightTicks = this.scales.yRight.scale.ticks(10);
             this.paper.path(LABKEY.vis.makeLine(this.grid.rightEdge + .5, -this.grid.bottomEdge + 1, this.grid.rightEdge + .5, -this.grid.topEdge)).attr('stroke', '#000').attr('stroke-width', '1').transform("t0," + this.grid.height);
@@ -214,8 +237,9 @@ LABKEY.vis.Plot = function(config){
                 if(y1 == -this.grid.bottomEdge + .5) continue; // Dont draw a line on top of the x-axis line.
 
 				var tick = this.paper.path(LABKEY.vis.makeLine(x1, y1, x2, y2)).transform("t0," + this.grid.height);
+                var tickText = this.scales.yRight.tickFormat ? this.scales.yRight.tickFormat(leftTicks[i]) : rightTicks[i];
 				var gridLine = this.paper.path(LABKEY.vis.makeLine(this.grid.leftEdge + 1, y1, x1, y2)).attr('stroke', '#DDD').transform("t0," + this.grid.height);
-				var text = this.paper.text(x2 + 15, y1, rightTicks[i]).transform("t0," + this.grid.height);
+				var text = this.paper.text(x2 + 15, y1, tickText).transform("t0," + this.grid.height);
 			}
 		}
 	};
@@ -334,6 +358,14 @@ LABKEY.vis.Plot = function(config){
         for(var i = 0; i < this.layers.length; i++){
             this.layers[i].render(this.paper, this.grid, this.scales, this.data, this.aes);
         }
+
+        var gridSet = this.paper.setFinish().transform("t0," + this.grid.height);
+        if(Raphael.svg){
+            // Currently the clip-rect attribute only seems to work with SVG. 
+            gridSet.attr('clip-rect', (this.grid.leftEdge - 6) + ", " + (-this.grid.topEdge) + ", " + (this.grid.rightEdge - this.grid.leftEdge  + 10) + ", " + (this.grid.topEdge - this.grid.bottomEdge + 9));
+        }
+
+        this.paper.setStart();
         renderLegend.call(this); // Renders the legend, we do this after the layers render because data is grouped at render time.
         this.paper.setFinish().transform("t0," + this.grid.height);
     };
