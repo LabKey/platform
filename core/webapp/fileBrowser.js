@@ -1817,7 +1817,7 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
     showFileListMenu : function(part)
     {
         this.hideFileListMenu();
-        this._filelistmenu = new LABKEY.FileSystem.Util.FileListMenu(this.fileSystem, part.path, this.fileFilter, this.changeDirectory.createDelegate(this));
+        this._filelistmenu = new LABKEY.FileSystem.FileListMenu(this.fileSystem, part.path, this.fileFilter, this.changeDirectory.createDelegate(this));
         this._filelistmenu.show(Ext.get(part.idImg) || Ext.get('addressBar'));
     },
 
@@ -2056,7 +2056,7 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
         // GRID
         //
 
-        this.store = new LABKEY.FileSystem.Util.FileStore({recordType:this.fileSystem.FileRecord});
+        this.store = new LABKEY.FileSystem.FileStore({recordType:this.fileSystem.FileRecord});
         this.grid = this.createGrid();
 
         this.grid.getSelectionModel().on("rowselect", this.Grid_onRowselect, this);
@@ -2867,7 +2867,7 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
             return;
         var img = Ext.fly(id,"previewAncor");
         if (!img) return;
-        var preview = new LABKEY.FileSystem.Util.PreviewResource({title:id, target:id, record:record});
+        var preview = new LABKEY.FileSystem.PreviewResource({title:id, target:id, record:record});
         if (!this.allPreviews)
             this.allPreviews = [];
         this.allPreviews.push(preview);
@@ -2902,3 +2902,217 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
     }
 });
 
+// PREVIEW
+//
+LABKEY.FileSystem.PreviewResource = Ext.extend(LABKEY.ext.PersistentToolTip, {
+
+    baseCls    : 'x-panel',
+    minWidth   : 40,
+    maxWidth   : 800,
+    frame      : true,
+    connection : new Ext.data.Connection({autoAbort:true, method:'GET', disableCaching:false}),
+
+    // we're not really ready to show anything, we have to get the resource still
+    show : function ()
+    {
+        this.showAt(this.getTargetXY());
+    },
+
+    // we're not really ready to show anything, we have to get the resource still
+    showAt : function(xy)
+    {
+        this.showAt_xy = xy;
+        this.loadResource();
+    },
+
+    previewAt : function(xy)
+    {
+        LABKEY.FileSystem.PreviewResource.superclass.showAt.call(this, xy);
+    },
+
+    onRender : function(ct, position)
+    {
+        this.title = false;
+        LABKEY.FileSystem.PreviewResource.superclass.onRender.call(this, ct, position);
+        this.body.update($dom.markup(this.html));
+    },
+
+    loadResource : function()
+    {
+        var record = this.record;
+        var name = record.data.name;
+        var uri = record.data.uri;
+        var contentType = record.data.contentType;
+        var size = record.data.size;
+
+        if (!uri || !contentType || !size)
+            return;
+
+        if (LABKEY.FileSystem.Util.startsWith(contentType,'image/'))
+        {
+            var image = new Image();
+            image.onload = (function()
+            {
+                var img = {tag:'img', src:uri, border:'0', width:image.width, height:image.height};
+                this.constrain(img, 400, 400);
+                this.html = img;
+                this.previewAt(this.showAt_xy);
+            }).createDelegate(this);
+            image.src = uri;
+        }
+        //IFRAME
+        else if (contentType == 'text/html')
+        {
+            var base = uri.substr(0,uri.lastIndexOf('/')+1)
+            var headers = {};
+            var requestid = this.connection.request({
+                autoAbort:true,
+                url:uri,
+                headers:headers,
+                method:'GET',
+                disableCaching:false,
+                success : (function(response)
+                {
+                    var contentType = response.getResponseHeader("Content-Type") || "text/html";
+                    if (LABKEY.FileSystem.Util.startsWith(contentType,"text/"))
+                    {
+                        var id = 'iframePreview' + (++Ext.Component.AUTO_ID);
+                        var body = response.responseText;
+                        body = Ext.util.Format.stripScripts(body);
+                        this.html = {tag:'iframe', id:id, name:id, width:600, height:400, frameborder:'no', src:(Ext.isIE ? Ext.SSL_SECURE_URL : "javascript:;")};
+                        this.previewAt(this.showAt_xy);
+                        var frame = Ext.getDom(id);
+                        if (!frame)
+                        {
+                            this.hide();
+                        }
+                        else
+                        {
+                            var doc = Ext.isIE ? frame.contentWindow.document : frame.contentDocument || window.frames[id].document;
+                            doc.open();
+                            if (base)
+                                body = '<base href="' + $h(base) + '" />' + body;
+                            doc.write(body);
+                            doc.close();
+                        }
+                    }
+                }).createDelegate(this)
+            });
+        }
+        // DIV
+        else if (LABKEY.FileSystem.Util.startsWith(contentType,'text/') || contentType == 'application/javascript' || endsWith(name,".log"))
+        {
+            var headers = {};
+            if (contentType != 'text/html' && size > 10000)
+                headers['Range'] = 'bytes 0-10000';
+            var requestid = this.connection.request({
+                autoAbort:true,
+                url:uri,
+                headers:headers,
+                method:'GET',
+                disableCaching:false,
+                success : (function(response)
+                {
+                    var contentType = response.getResponseHeader("Content-Type") || "text/plain";
+                    if (LABKEY.FileSystem.Util.startsWith(contentType,"text/"))
+                    {
+                        var text = response.responseText;
+                        if (headers['Range']) text += "\n. . .";
+                        this.html = {tag:'div', style:{width:'600px', height:'400px', overflow:'auto'}, children:{tag:'pre', children:$h(text)}};
+                        this.previewAt(this.showAt_xy);
+                    }
+                }).createDelegate(this)
+            });
+        }
+    },
+
+    constrain : function(img,w,h)
+    {
+        var X = img.width;
+        var Y = img.height;
+        if (X > w)
+        {
+            img.width = w;
+            img.height = Math.round(Y * (1.0*w/X));
+        }
+        X = img.width;
+        Y = img.height;
+        if (Y > h)
+        {
+            img.height = h;
+            img.width = Math.round(X * (1.0*h/Y));
+        }
+    }
+});
+
+LABKEY.FileSystem.FileListMenu = Ext.extend(Ext.menu.Menu, {
+    constructor: function(fileSystem, path, folderFilter, fn)
+    {
+        LABKEY.FileSystem.FileListMenu.superclass.constructor.call(this, {items:[], cls:'extContainer'});
+        this.showFiles = false;
+        this.fileSystem = fileSystem;
+        this.path = path;
+        this.folderFilter = folderFilter;
+
+        var records = fileSystem.directoryFromCache(path);
+        var populate = function(filesystem, success, path, records)
+            {
+                for (var i=0 ; i<records.length ; i++)
+                {
+                    var record = records[i];
+                    var data = record.data;
+                    if (!this.showFiles && data.file)
+                        continue;
+
+                    else if (this.folderFilter && !this.folderFilter.test(data))
+                        continue;
+
+                    this.addMenuItem(new Ext.menu.Item({text:data.name, icon:data.iconHref, path:record.data.path}));
+                }
+            };
+        if (records)
+            populate.call(this, null, true, path, records);
+        else
+            fileSystem.listFiles({
+                path: path,
+                success: populate,
+                scope: this
+            });
+        if (typeof fn == "function")
+        {
+            this.on("click", function(menu,item,event)
+            {
+                var path = item.initialConfig.path;
+                fn(path);
+            });
+        }
+    }
+});
+
+LABKEY.FileSystem.FileStore = Ext.extend(Ext.data.Store, {
+    constructor : function(config)
+    {
+        LABKEY.FileSystem.FileStore.superclass.constructor.call(this,config);
+        this.setDefaultSort("name","ASC");
+    },
+
+    sortData : function()
+    {
+        this.sortInfo.direction = this.sortInfo.direction || 'ASC';
+        var f = this.sortInfo.field;
+        var st = this.fields.get(f).sortType;
+        var d = this.sortInfo.direction=="DESC" ? -1 : 1;
+        var fn = function(r1, r2)
+        {
+            if (r1.data.file != r2.data.file)
+                return d * (r1.data.file ? 1 : -1);
+            var v1 = st(r1.data[f]), v2 = st(r2.data[f]);
+            return v1 > v2 ? 1 : (v1 < v2 ? -1 : 0);
+        };
+        this.data.sort(this.sortInfo.direction, fn);
+        if (this.snapshot && this.snapshot != this.data)
+        {
+            this.snapshot.sort(this.sortInfo.direction, fn);
+        }
+    }
+});
