@@ -247,6 +247,24 @@ LABKEY.FileSystem.Util = new function(){
 
         formatWithCommas : function(value) {
             return formatWithCommas(value);
+        },
+
+        _processAjaxResponse: function(response){
+            if (response &&
+                response.responseText &&
+                response.getResponseHeader('Content-Type') &&
+                response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
+            {
+                try
+                {
+                    response.jsonResponse = Ext.util.JSON.decode(response.responseText);
+                    if(response.jsonResponse.status)
+                        response.status = response.jsonResponse.status
+                }
+                catch (error){
+                    //ignore
+                }
+            }
         }
     }
 }
@@ -728,6 +746,7 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
 
         var cb = function(response, args, success)
         {
+            LABKEY.FileSystem.Util._processAjaxResponse(response);
             if (success && typeof config.success == 'function')
                 config.success.call(config.scope, args.filesystem, args.path, response.records);
             else if (!success & typeof config.failure == 'function')
@@ -823,6 +842,7 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
             scope: this,
             success: function(response, options){
                 var success = false;
+                LABKEY.FileSystem.Util._processAjaxResponse(response);
                 if (204 == response.status || 404 == response.status) // NO_CONTENT (success)
                     success = true;
                 else if (405 == response.status) // METHOD_NOT_ALLOWED
@@ -843,6 +863,7 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
             failure: function(response, options)
             {
                 var success = false;
+                LABKEY.FileSystem.Util._processAjaxResponse(response);
                 if (response.status == 404)  //NOT_FOUND - not sure if this is the correct behavior or not
                     success = true;
 
@@ -1018,8 +1039,13 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
             method: "MOVE",
             url: resourcePath,
             scope: this,
-            failure: config.failure,
+            failure: function(response){
+                LABKEY.FileSystem.Util._processAjaxResponse(response);
+                if(typeof config.failure == 'function')
+                    config.failure.apply(config.scope, arguments);
+            },
             success: function(response, options){
+                LABKEY.FileSystem.Util._processAjaxResponse(response);
                 var success = false;
                 if (201 == response.status || 204 == response.status) //CREATED,  NO_CONTENT (success)
                     success = true;
@@ -1086,6 +1112,7 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
             url: resourcePath,
             scope: this,
             success: function(response, options){
+                LABKEY.FileSystem.Util._processAjaxResponse(response);
                 var success = false;
                 if (200 == response.status || 201 == response.status){   // OK, CREATED
                     if(!response.responseText)
@@ -1101,7 +1128,11 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
                 if (!success && typeof config.failure == 'function')
                     config.failure.call(config.scope, response, options);
             },
-            failure: config.failure,
+            failure: function(response){
+                LABKEY.FileSystem.Util._processAjaxResponse(response);
+                if(typeof config.failure == 'function')
+                    config.failure.apply(config.scope, arguments);
+            },
             headers: {
                 'Content-Type': 'application/json'
             }
