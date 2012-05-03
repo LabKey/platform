@@ -1056,7 +1056,7 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
                 }
                 else {
                     if (typeof config.failure == 'function')
-                        config.failure.call(response, options);
+                        config.failure.call(config.scope, response, options);
                 }
             },
             failure: function(response, options)
@@ -1069,6 +1069,9 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
                     config.failure.call(config.scope, response, options);
                 if (success && typeof config.success == 'function')
                     config.success.call(config.scope, fileSystem, config.path);
+            },
+            headers: {
+                'Content-Type': 'application/json'
             }
         });
 
@@ -1263,7 +1266,8 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
                 }
             },
             headers: {
-                Destination: destinationPath
+                Destination: destinationPath,
+                'Content-Type': 'application/json'
             }
         };
 
@@ -1302,8 +1306,12 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
             scope: this,
             success: function(response, options){
                 var success = false;
-                if (200 == response.status || 201 == response.status)   // OK, CREATED
-                    success = true;
+                if (200 == response.status || 201 == response.status){   // OK, CREATED
+                    if(!response.responseText)
+                        success = true;
+                    else
+                        success = false;
+                }
                 else if (405 == response.status) // METHOD_NOT_ALLOWED
                     success = false;
 
@@ -1312,7 +1320,10 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
                 if (!success && typeof config.failure == 'function')
                     config.failure.call(config.scope, response, options);
             },
-            failure: config.failure
+            failure: config.failure,
+            headers: {
+                'Content-Type': 'application/json'
+            }
         });
 
         return true;
