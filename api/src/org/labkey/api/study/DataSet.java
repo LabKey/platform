@@ -100,6 +100,13 @@ public interface DataSet<T extends DataSet> extends StudyEntity, StudyCachable<T
      */
     String getKeyTypeDescription();
 
+    /**
+     * Compares the extra key for this dataset with the passed in dataset
+     * @param pkDataSet dataset to compare
+     * @return true if the extra key for this DataSet matches the extra key for the passed in dataset
+     */
+    public boolean hasMatchingExtraKey(DataSet pkDataSet);
+
     // constants for dataset types
     public static final String TYPE_STANDARD = "Standard";
     public static final String TYPE_PLACEHOLDER = "Placeholder";
