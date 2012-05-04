@@ -2021,7 +2021,7 @@ public class PageFlowUtil
         AppProps props = AppProps.getInstance();
         String contextPath = props.getContextPath();
         JSONObject json = new JSONObject();
-        json.put("experimentalContainerRelativeURL", !AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_CONTAINER_RELATIVE_URL));
+        json.put("experimentalContainerRelativeURL", AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_CONTAINER_RELATIVE_URL));
         json.put("contextPath", contextPath);
         json.put("imagePath", contextPath + "/_images");
         json.put("extJsRoot", extJsRoot);
