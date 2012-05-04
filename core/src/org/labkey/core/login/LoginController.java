@@ -16,6 +16,7 @@
 
 package org.labkey.core.login;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiResponse;
@@ -296,11 +297,7 @@ public class LoginController extends SpringActionController
                     SecurityManager.setTermsOfUseApproved(getViewContext(), termsProject, true);
 
                 // Login page is container qualified, but we need to store the cookie at /labkey/login/ or /cpas/login/ or /login/
-                String search = "/login/";
-                String url = getViewContext().getActionURL().getLocalURIString();
-                int index = url.indexOf(search);
-                assert index > -1;
-                String path = url.substring(0, index + search.length());
+                String path = StringUtils.defaultIfEmpty(getViewContext().getContextPath(), "/");
 
                 if (form.isRemember())
                 {
@@ -1265,7 +1262,7 @@ public class LoginController extends SpringActionController
         public final String message;
         public final NamedObjectList nonPasswordInputs;
         public final NamedObjectList passwordInputs;
-        public final String actionName;
+        public final Class action;
         public final boolean cancellable;
         public final String buttonText;
 
@@ -1277,7 +1274,7 @@ public class LoginController extends SpringActionController
             this.message = message;
             this.nonPasswordInputs = nonPasswordInputs;
             this.passwordInputs = passwordInputs;
-            this.actionName = getActionName(clazz);
+            this.action = clazz;
             this.cancellable = cancellable;
             this.buttonText = buttonText;
         }
