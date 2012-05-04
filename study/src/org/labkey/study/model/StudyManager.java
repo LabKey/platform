@@ -1663,7 +1663,7 @@ public class StudyManager
             if (null != c && null != study)
             {
                 DataSetDefinition ret = StudyManager.getInstance().getDataSetDefinition(study, p.second);
-                if (null != ret && StringUtils.equalsIgnoreCase(ret.getDomain().getTypeURI(), domainURI))
+                if (null != ret && null != ret.getDomain() && StringUtils.equalsIgnoreCase(ret.getDomain().getTypeURI(), domainURI))
                     return ret;
             }
             domainCache.remove(domainURI);
