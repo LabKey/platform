@@ -212,22 +212,8 @@ public class DataSetAutoJoinTable extends VirtualTable
         assert !dsd.isDemographicData() && dsd.getKeyPropertyName() != null;
         assert !_source.isDemographicData() && _keyPropertyName != null;
 
-        // Key property name must match
-        if (!_keyPropertyName.equalsIgnoreCase(dsd.getKeyPropertyName()))
+        if (!_source.hasMatchingExtraKey(dsd))
             return null;
-
-        DomainProperty fkDomainProperty = _source.getDomain().getPropertyByName(_keyPropertyName);
-        DomainProperty pkDomainProperty = dsd.getDomain().getPropertyByName(_keyPropertyName);
-        if (fkDomainProperty == null || pkDomainProperty == null)
-            return null;
-
-        // Key property types must match
-        PropertyType fkPropertyType = fkDomainProperty.getPropertyDescriptor().getPropertyType();
-        PropertyType pkPropertyType = pkDomainProperty.getPropertyDescriptor().getPropertyType();
-        if (!LOOKUP_KEY_TYPES.contains(fkPropertyType) || fkPropertyType != pkPropertyType)
-            return null;
-
-        // NOTE: Also consider comparing ConceptURI of the properties
 
         DataSetForeignKey fk = new DataSetForeignKey(dsd);
         if (_sequenceNumFieldKey != null && _keyFieldKey != null)
@@ -241,13 +227,6 @@ public class DataSetAutoJoinTable extends VirtualTable
                 "/" + _keyPropertyName);
         return fk;
     }
-
-    // The set of allowed extra key lookup types that we can join across.
-    private static final EnumSet<PropertyType> LOOKUP_KEY_TYPES = EnumSet.of(
-            PropertyType.DATE_TIME,
-            PropertyType.DOUBLE, // Attempting to allow this
-            PropertyType.STRING,
-            PropertyType.INTEGER);
 
     @Override
     protected ColumnInfo resolveColumn(String name)

@@ -101,6 +101,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -696,6 +697,41 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         return sb.toString();
     }
 
+    @Override
+    public boolean hasMatchingExtraKey(DataSet pkDataSet)
+    {
+        if (pkDataSet == null)
+            return false;
+
+        if (getKeyPropertyName() == null || pkDataSet.getKeyPropertyName() == null)
+            return false;
+
+        // Key property name must match
+        if (!getKeyPropertyName().equalsIgnoreCase(pkDataSet.getKeyPropertyName()))
+            return false;
+
+        DomainProperty fkDomainProperty = getDomain().getPropertyByName(getKeyPropertyName());
+        DomainProperty pkDomainProperty = pkDataSet.getDomain().getPropertyByName(getKeyPropertyName());
+        if (fkDomainProperty == null || pkDomainProperty == null)
+            return false;
+
+        // Key property types must match
+        PropertyType fkPropertyType = fkDomainProperty.getPropertyDescriptor().getPropertyType();
+        PropertyType pkPropertyType = pkDomainProperty.getPropertyDescriptor().getPropertyType();
+        if (!LOOKUP_KEY_TYPES.contains(fkPropertyType) || fkPropertyType != pkPropertyType)
+            return false;
+
+        // NOTE: Also consider comparing ConceptURI of the properties
+
+        return true;
+    }
+
+    // The set of allowed extra key lookup types that we can join across.
+    private static final EnumSet<PropertyType> LOOKUP_KEY_TYPES = EnumSet.of(
+            PropertyType.DATE_TIME,
+            PropertyType.DOUBLE, // Attempting to allow this
+            PropertyType.STRING,
+            PropertyType.INTEGER);
 
     /** most external users should use this */
     public String getVisitDateColumnName()
