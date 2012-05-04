@@ -135,7 +135,7 @@ public class PipelinePathForm extends ViewForm
 
                 if (!allowNonExistentFiles && !NetworkDrive.exists(data.getFile()))
                 {
-                    throw new NotFoundException("Could not find file '" + data.getFile());
+                    throw new NotFoundException("Could not find file '" + data.getFile() + "'");
                 }
                 result.add(data.getFile());
             }
