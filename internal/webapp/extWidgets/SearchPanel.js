@@ -93,7 +93,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
 
         this.callParent();
 
-        this.store = Ext4.create('LABKEY.ext4.Store', {
+        this.store = this.store || Ext4.create('LABKEY.ext4.Store', {
             containerPath: this.containerPath
             ,queryName: this.queryName
             ,schemaName: this.schemaName
@@ -107,10 +107,14 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             ,autoLoad: true
             ,listeners: {
                 scope: this,
-                load: this.onLoad,
                 exception: LABKEY.Utils.onError
             }
         });
+
+        if(this.store.hasLoaded())
+            this.onLoad(this.store, true);
+        else
+            this.mon(this.store, 'load', this.onLoad, this, {single: true});
 
         Ext4.Ajax.timeout = 0; //in milliseconds
     },

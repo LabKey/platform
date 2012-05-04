@@ -354,11 +354,13 @@ LABKEY.ext4.FORMBUTTONS = {
         return Ext4.Object.merge({
             text: 'Submit',
             formBind: true,
+            successURL: LABKEY.ActionURL.getParameter('srcURL'),
             handler: function(btn, key){
                 var panel = btn.up('form');
 
                 if(!panel.store.getNewRecords().length && !panel.store.getUpdatedRecords().length && !panel.store.getRemovedRecords().length){
                     Ext4.Msg.alert('No changes', 'There are no changes, nothing to do');
+                    window.location = btn.successURL || LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: this.store.schemaName, 'query.queryName': this.store.queryName})
                     return;
                 }
 
