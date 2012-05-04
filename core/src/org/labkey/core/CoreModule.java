@@ -72,6 +72,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.study.Study;
@@ -529,6 +530,15 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             fsr.addFactories(new SearchSettingsWriterFactory(), new SearchSettingsImporterFactory());
             fsr.addFactories(new PageWriterFactory(), new PageImporterFactory());
         }
+
+        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_CONTAINER_RELATIVE_URL,
+                "Container Relative URL",
+                "Use container relative URLs of the form /labkey/container/controller-action instead of the current /labkey/controller/container/action URLs.",
+                false);
+        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP,
+                "Client-side Exception Logging",
+                "Report unhandled JavaScript exceptions to mothership.",
+                false);
     }
 
     @Override

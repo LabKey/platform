@@ -44,6 +44,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -621,6 +622,34 @@ public class MothershipController extends SpringActionController
         }
     }
 
+    // API for reporting client-side exceptions.
+    // UNDONE: Throttle by IP to avoid DOS from buggy clients.
+    @RequiresNoPermission
+    public class LogErrorAction extends SimpleViewAction<ExceptionForm>
+    {
+        @Override
+        public ModelAndView getView(ExceptionForm exceptionForm, BindException errors) throws Exception
+        {
+            ExceptionUtil.logExceptionToMothership(
+                    exceptionForm.getStackTrace(),
+                    exceptionForm.getExceptionMessage(),
+                    exceptionForm.getBrowser(),
+                    exceptionForm.getSqlState(),
+                    exceptionForm.getRequestURL(),
+                    exceptionForm.getReferrerURL(),
+                    exceptionForm.getUsername()
+            );
+            return null;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+    // API for inserting exceptions reported from this or other LabKey servers.
     @RequiresNoPermission
     public class ReportExceptionAction extends SimpleViewAction<ExceptionForm>
     {
