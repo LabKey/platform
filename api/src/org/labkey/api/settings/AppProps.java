@@ -529,9 +529,6 @@ public class AppProps extends AbstractWriteableSettingsGroup
     }
 
 
-    // default to use backward compatible
-    public boolean useBackwardCompatibleURL()
-    {
-        return !"false".equals(System.getProperty("useBackwardCompatibleURL", "true"));
-    }
+    public static final String EXPERIMENTAL_CONTAINER_RELATIVE_URL = "containerRelativeURL";
+    public static final String EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP = "javascriptMothership";
 }

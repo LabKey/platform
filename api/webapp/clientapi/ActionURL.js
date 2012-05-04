@@ -281,10 +281,10 @@ that points back to the current page:
             var query = LABKEY.ActionURL.queryString(parameters);
 
             var newUrl;
-            if (LABKEY.useBackwardCompatibleURL)
-                newUrl = LABKEY.contextPath + "/" + controller + containerPath + action;
-            else
+            if (LABKEY.experimentalContainerRelativeURL)
                 newUrl = LABKEY.contextPath + containerPath + controller + "-" + action;
+            else
+                newUrl = LABKEY.contextPath + "/" + controller + containerPath + action;
             if (query)
                 newUrl += '?' + query;
             return newUrl;

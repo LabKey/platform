@@ -5283,6 +5283,7 @@ internal/webapp/index.jsp -text
 internal/webapp/js_color_picker_v2.css -text
 internal/webapp/js_color_picker_v2.js -text
 internal/webapp/labkey.js -text
+internal/webapp/mothership.js -text
 internal/webapp/query/column.gif -text
 internal/webapp/query/expressionColumn.gif -text
 internal/webapp/slider/css/boxsizing.htc -text
@@ -5294,6 +5295,7 @@ internal/webapp/slider/css/rangeslider.css -text
 internal/webapp/slider/range.js -text
 internal/webapp/slider/rangeslider.js -text
 internal/webapp/slider/slidertimer.js -text
+internal/webapp/stacktrace-0.3.js -text
 internal/webapp/tiny_mce/langs/en.js -text
 internal/webapp/tiny_mce/license.txt -text
 internal/webapp/tiny_mce/plugins/advhr/css/advhr.css -text

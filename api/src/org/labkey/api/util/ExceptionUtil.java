@@ -189,8 +189,6 @@ public class ExceptionUtil
         if (isIgnorable(ex))
             return;
 
-        _logStatic.error("Exception detected and logged to mothership", ex);
-
         String originalURL = request == null ? null : (String) request.getAttribute(ViewServlet.ORIGINAL_URL_STRING);
         ExceptionReportingLevel level = AppProps.getInstance().getExceptionReportingLevel();
 
@@ -202,65 +200,109 @@ public class ExceptionUtil
         if (originalURL != null && MothershipReport.isMothershipExceptionReport(originalURL))
             return;
 
+        String exceptionMessage = null;
+        if (!decorations.isEmpty() && (level == ExceptionReportingLevel.MEDIUM || level == ExceptionReportingLevel.HIGH))
+            exceptionMessage = getExtendedMessage(ex);
+
+        StringWriter stringWriter = new StringWriter();
+        PrintWriter printWriter = new PrintWriter(stringWriter, true);
+        ex.printStackTrace(printWriter);
+        if (ex instanceof ServletException && ((ServletException)ex).getRootCause() != null)
+        {
+            printWriter.println("Nested ServletException cause is:");
+            ((ServletException)ex).getRootCause().printStackTrace(printWriter);
+        }
+        String browser = request == null ? null : request.getHeader("User-Agent");
+
+        String stackTrace = stringWriter.getBuffer().toString();
+        String sqlState = null;
+        for (Throwable t = ex ; t != null ; t = t.getCause())
+        {
+
+            if (t instanceof RuntimeSQLException)
+            {
+                // Unwrap RuntimeSQLExceptions
+                t = ((RuntimeSQLException)t).getSQLException();
+            }
+
+            if (t instanceof SQLException)
+            {
+                SQLException sqlException = (SQLException) t;
+                if (sqlException.getMessage() != null && sqlException.getMessage().contains("terminating connection due to administrator command"))
+                {
+                    // Don't report exceptions from Postgres shutting down
+                    return;
+                }
+                sqlState = sqlException.getSQLState();
+                String extraInfo = CoreSchema.getInstance().getSqlDialect().getExtraInfo(sqlException);
+                if (extraInfo != null)
+                {
+                    stackTrace = stackTrace + "\n" + extraInfo;
+                }
+            }
+
+            if (sqlState != null)
+                break;
+        }
+
+        String referrerURL = null;
+        String username = "NOT SET";
+        if (request != null)
+        {
+            referrerURL = request.getHeader("Referer");
+            if (request.getUserPrincipal() != null)
+            {
+                User user = (User)request.getUserPrincipal();
+                username = user.getEmail() == null ? "Guest" : user.getEmail();
+            }
+        }
+
+        logExceptionToMothership(
+                stackTrace,
+                exceptionMessage,
+                browser,
+                sqlState,
+                originalURL,
+                referrerURL,
+                username);
+    }
+
+    public static void logExceptionToMothership(
+            String stackTrace,
+            String exceptionMessage,
+            String browser,
+            String sqlState,
+            String requestURL,
+            String referrerURL,
+            String username)
+    {
+        //if (isIgnorable(stackTrace))
+        //    return;
+
+        _logStatic.error("Exception detected and logged to mothership:\n" + stackTrace);
+
+        ExceptionReportingLevel level = AppProps.getInstance().getExceptionReportingLevel();
+        if (level == ExceptionReportingLevel.NONE)
+            return;
+
+        // Need this extra check to make sure we're not in an infinite loop if there's
+        // an exception when trying to submit an exception
+        if (requestURL != null && MothershipReport.isMothershipExceptionReport(requestURL))
+            return;
+
         try
         {
             MothershipReport report = new MothershipReport(MothershipReport.Type.ReportException);
-
-            if (!decorations.isEmpty() && (level == ExceptionReportingLevel.MEDIUM || level == ExceptionReportingLevel.HIGH))
-                report.addParam("exceptionMessage", getExtendedMessage(ex));
-
-            StringWriter stringWriter = new StringWriter();
-            PrintWriter printWriter = new PrintWriter(stringWriter, true);
-            ex.printStackTrace(printWriter);
-            if (ex instanceof ServletException && ((ServletException)ex).getRootCause() != null)
-            {
-                printWriter.println("Nested ServletException cause is:");
-                ((ServletException)ex).getRootCause().printStackTrace(printWriter);
-            }
-            report.addParam("browser", request == null ? null : request.getHeader("User-Agent"));
-
-            String stackTrace = stringWriter.getBuffer().toString();
-            for (Throwable t = ex ; t != null ; t = t.getCause())
-            {
-                String sqlState = null;
-
-                if (t instanceof RuntimeSQLException)
-                {
-                    // Unwrap RuntimeSQLExceptions
-                    t = ((RuntimeSQLException)t).getSQLException();
-                }
-
-                if (t instanceof SQLException)
-                {
-                    SQLException sqlException = (SQLException) t;
-                    if (sqlException.getMessage() != null && sqlException.getMessage().contains("terminating connection due to administrator command"))
-                    {
-                        // Don't report exceptions from Postgres shutting down
-                        return;
-                    }
-                    sqlState = sqlException.getSQLState();
-                    String extraInfo = CoreSchema.getInstance().getSqlDialect().getExtraInfo(sqlException);
-                    if (extraInfo != null)
-                    {
-                        stackTrace = stackTrace + "\n" + extraInfo;
-                    }
-                }
-
-                if (sqlState != null)
-                {
-                    report.addParam("sqlState", sqlState);
-                    break;
-                }
-            }
-
-            report.addParam("stackTrace", stackTrace);
-
             report.addServerSessionParams();
-            if (originalURL != null)
+            report.addParam("stackTrace", stackTrace);
+            report.addParam("sqlState", sqlState);
+            report.addParam("browser", browser);
+
+            if (requestURL != null)
             {
                 try
                 {
-                    ActionURL url = new ActionURL(originalURL);
+                    ActionURL url = new ActionURL(requestURL);
                     report.addParam("pageflowName", url.getPageFlow());
                     report.addParam("pageflowAction", url.getAction());
                 }
@@ -269,25 +311,18 @@ public class ExceptionUtil
                     // fall through
                 }
             }
+
             if (level == ExceptionReportingLevel.MEDIUM || level == ExceptionReportingLevel.HIGH)
             {
-                if (originalURL != null)
-                {
-                    report.addParam("requestURL", originalURL);
-                    report.addParam("referrerURL", request == null ? null : request.getHeader("Referer"));
-                }
+                report.addParam("exceptionMessage", exceptionMessage);
+                report.addParam("requestURL", requestURL);
+                report.addParam("referrerURL", referrerURL);
 
                 if (level == ExceptionReportingLevel.HIGH)
                 {
-                    User user = request == null ? null : (User) request.getUserPrincipal();
-                    if (user == null)
-                    {
-                        report.addParam("username", "NOT SET");
-                    }
-                    else
-                    {
-                        report.addParam("username", user.getEmail() == null ? "Guest" : user.getEmail());
-                    }
+                    if (username == null)
+                        username = "NOT SET";
+                    report.addParam("username", username);
                 }
             }
 

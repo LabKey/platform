@@ -41,7 +41,10 @@ import java.util.Map;
  */
 public class ActionURL extends URLHelper implements Cloneable
 {
-    private static final boolean _useBackwardCompatibleURL = AppProps.getInstance().useBackwardCompatibleURL();
+    private static boolean useContainerRelativeURL()
+    {
+        return AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_CONTAINER_RELATIVE_URL);
+    }
 
     public static enum Param
     {
@@ -172,10 +175,10 @@ public class ActionURL extends URLHelper implements Cloneable
 
     private static String toPathString(Path contextPath, String pageFlow, String action, Path extraPath, boolean encode)
     {
-        if (_useBackwardCompatibleURL)
-            return toPathStringOld(contextPath, pageFlow, action, extraPath, encode);
-        else
+        if (useContainerRelativeURL())
             return toPathStringNew(contextPath, pageFlow, action, extraPath, encode);
+        else
+            return toPathStringOld(contextPath, pageFlow, action, extraPath, encode);
     }
 
     private static String toPathStringOld(Path contextPath, String pageFlow, String action, Path extraPath, boolean encode)
@@ -513,11 +516,11 @@ public class ActionURL extends URLHelper implements Cloneable
         {
             controller = action.substring(0, dash);
             action = action.substring(dash+1);
-            setIsCanonical(!_useBackwardCompatibleURL);
+            setIsCanonical(useContainerRelativeURL());
         }
         else
         {
-            setIsCanonical(_useBackwardCompatibleURL);
+            setIsCanonical(!useContainerRelativeURL());
         }
 
         // parse controller
