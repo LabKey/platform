@@ -1874,10 +1874,20 @@ public class PageFlowUtil
         String serverHash = getServerSessionHash();
 
         StringBuilder sb = new StringBuilder();
+
         sb.append("    <script src=\"").append(contextPath).append("/labkey.js?").append(serverHash).append("\" type=\"text/javascript\"></script>\n");
+
+        // Include client-side error reporting scripts only if necessary and as early as possible.
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP) &&
+            AppProps.getInstance().getExceptionReportingLevel() != ExceptionReportingLevel.NONE)
+        {
+            sb.append("    <script src=\"").append(contextPath).append("/stacktrace-0.3.js").append("\" type=\"text/javascript\"></script>\n");
+            sb.append("    <script src=\"").append(contextPath).append("/mothership.js?").append(serverHash).append("\" type=\"text/javascript\"></script>\n");
+        }
         sb.append("    <script type=\"text/javascript\">\n");
         sb.append("        LABKEY.init(").append(jsInitObject()).append(");\n");
         sb.append("    </script>\n");
+
         return sb.toString();
     }
 
@@ -2011,7 +2021,7 @@ public class PageFlowUtil
         AppProps props = AppProps.getInstance();
         String contextPath = props.getContextPath();
         JSONObject json = new JSONObject();
-        json.put("useBackwardCompatibleURL", AppProps.getInstance().useBackwardCompatibleURL());
+        json.put("experimentalContainerRelativeURL", !AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_CONTAINER_RELATIVE_URL));
         json.put("contextPath", contextPath);
         json.put("imagePath", contextPath + "/_images");
         json.put("extJsRoot", extJsRoot);
