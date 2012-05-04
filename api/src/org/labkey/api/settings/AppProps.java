@@ -438,8 +438,12 @@ public class AppProps extends AbstractWriteableSettingsGroup
 
     public boolean isExperimentalFeatureEnabled(String feature)
     {
-        return isDevMode() &&
-               lookupBooleanValue(EXPERIMENTAL_FEATURE_PREFIX + feature, false);
+        feature = EXPERIMENTAL_FEATURE_PREFIX + feature;
+        if (null != System.getProperty(feature))
+            return Boolean.getBoolean(feature);
+        if (!isDevMode())
+            return false;
+        return lookupBooleanValue(feature, false);
     }
 
     public boolean isDevMode()
