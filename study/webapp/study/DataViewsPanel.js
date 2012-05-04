@@ -24,7 +24,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             layout : 'border',
             minWidth: 625,
             frame  : false, border : false,
-//            height : 700,
             allowCustomize : true
         });
 
@@ -124,7 +123,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         // secondary display panels
         this.customPanel = this.initCustomization();
 
-        this.callParent([arguments]);
+        this.callParent();
     },
 
     initializeBorderLayout : function() {
@@ -493,12 +492,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                         }
                     }
                 },
-/*
-                reconfigure : function() {
-                    this.hiddenFilter();
-                    this.customize();
-                },
-*/
                 scope : this
             },
             scope     : this
@@ -731,8 +724,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             layout : 'fit',
             border : false, frame : false,
             flex   : 1
-//            hidden : true,
-//            disabled : !this.isCustomizable()
         });
 
         this.north.setHeight(185);
