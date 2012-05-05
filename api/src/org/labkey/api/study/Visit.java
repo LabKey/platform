@@ -34,6 +34,8 @@ public interface Visit extends StudyEntity
 
     Integer getCohortId();
 
+    Integer getId();
+
     Cohort getCohort();
 
     int getChronologicalOrder();
