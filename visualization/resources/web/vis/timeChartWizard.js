@@ -8,7 +8,6 @@ Ext.namespace("LABKEY.vis");
 LABKEY.requiresVisualization();
 LABKEY.requiresCss("_images/icons.css");
 LABKEY.requiresScript("vis/measuresPanel.js");
-LABKEY.requiresScript("vis/ChartComponent.js");
 LABKEY.requiresScript("vis/timeChartPanel.js");
 
 Ext.QuickTips.init();

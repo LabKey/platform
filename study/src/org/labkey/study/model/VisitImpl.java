@@ -169,6 +169,12 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
         return getRowId();
     }
 
+    @Override
+    public Integer getId()
+    {
+        return getRowId();
+    }
+
     public double getSequenceNumMin()
     {
         return _sequenceMin;

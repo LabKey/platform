@@ -68,6 +68,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.DataSetTable;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.Visit;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
@@ -742,12 +743,33 @@ public class VisualizationController extends SpringActionController
             Map<String, Object> extraProperties = new HashMap<String, Object>();
             Map<String, String> measureNameToColumnName = sqlGenerator.getColumnMapping();
             extraProperties.put("measureToColumn", measureNameToColumnName);
+            extraProperties.put("visitMap", getVisitMetaData());
             String filterDescription = sqlGenerator.getFilterDescription();
             if (filterDescription != null && filterDescription.length() > 0)
                 extraProperties.put("filterDescription", filterDescription);
             response.setExtraReturnProperties(extraProperties);
 
             return response;
+        }
+
+        private Map<String, Map<String, Object>> getVisitMetaData()
+        {
+            Map<String, Map<String, Object>> metaData = new HashMap<String, Map<String, Object>>();
+            Study study = StudyService.get().getStudy(getContainer());
+
+            int i=1;
+            for (Visit visit : study.getVisits(Visit.Order.DISPLAY))
+            {
+                Map<String, Object> visitInfo = new HashMap<String, Object>();
+
+                visitInfo.put("displayOrder", i++);
+                visitInfo.put("displayName", visit.getDisplayString());
+                visitInfo.put("sequenceNumMin", visit.getSequenceNumMin());
+                visitInfo.put("sequenceNumMax", visit.getSequenceNumMax());
+
+                metaData.put(visit.getId().toString(), visitInfo);
+            }
+            return metaData;
         }
 
         private ApiQueryResponse getApiResponse(ViewContext context, UserSchema schema, String sql, BindException errors) throws Exception
