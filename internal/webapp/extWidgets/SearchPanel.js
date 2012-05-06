@@ -124,7 +124,6 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
 
         if (!success || !store || !store.hasLoaded()){
             this.add({tag: 'div', html: 'Error loading data'});
-            this.doLayout();            
             return;
         }
 

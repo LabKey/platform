@@ -60,6 +60,11 @@ public interface WorkDirectory
     File outputFile(File fileWork, String nameDest) throws IOException;
 
     /**
+     * @return copies the file to the specified location
+     */
+    File outputFile(File fileWork, File dest) throws IOException;
+
+    /**
      * Delete a file
      * @throws IOException
      */

@@ -94,7 +94,6 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
 
         if (!this.store.getCount()){
             this.add({html: 'No records found'});
-            this.doLayout();
             return;
         }
 
@@ -123,7 +122,6 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
 
             delete this.queryConfig.listeners;
             var target = this.add({tag: 'span'});
-            this.doLayout();
             new LABKEY.QueryWebPart(this.queryConfig).render(target.id);
             return;
         }
@@ -162,7 +160,7 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
                     panel.items.push({
                         fieldLabel: field.label || field.caption || field.name,
                         xtype: 'displayfield',
-                        fieldCls: 'labkey-display-field',
+                        fieldCls: 'labkey-display-field',  //enforce line wrapping
                         width: 600,
                         value: value
                     });
@@ -176,7 +174,5 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
 
             this.add(panel)
         }, this);
-
-        this.doLayout();
     }
 });

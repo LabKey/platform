@@ -114,43 +114,12 @@ Ext4.define('LABKEY.ext4.RemoteRadioGroup', {
 });
 
 
-//The purpose of this field is to allow a display value to hold one value, but display another
-//experimental
-Ext4.define('LABKEY.ext4.DisplayField', {
-    extend: 'Ext.form.field.Display',
-    alias: 'widget.labkey-displayfield',
-    initComponent: function()
-    {
-        if(!this.fieldMetadata){
-            console.log('must provide the field metadata');
-            return;
-        }
-        this.callParent(arguments);
-    },
-    getDisplayValue: function(v){
-        if(this.lookup && this.lookups !== false){
-            return v;
-        }
-        else if(Ext4.isDate(v)){
-            return this.format ? v.format(this.format) : v.format('Y-m-d H:i');
-        }
-        else
-            return v;
-    },
 
-    setValue: function(v){
-        this.rawValue = v;
-        this.displayValue = this.getDisplayValue(v);
-        this.callParent([this.displayValue]);
-    },
-
-    getValue: function(){
-        return this.rawValue ? this.rawValue : this.callParent();
-    }
-});
-
-
-//this is a combobox containing operators as might be used in a search form
+/**
+ * This is a combobox containing operators as might be used in a search form.
+ * @cfg {LABKEY.Query.FieldMetaData} meta The metadata object for the field to display
+ * @cfg {String} initialValue The initial value for this field
+ */
 Ext4.define('LABKEY.ext.OperatorCombo', {
     extend: 'Ext.form.field.ComboBox',
     alias: 'widget.labkey-operatorcombo',
@@ -217,11 +186,17 @@ Ext4.define('LABKEY.ext.OperatorCombo', {
     }
 });
 
-/*
-    a simple extention of an ext buttons that looks like a basic HTML link.
-    useful b/c it can fire events and have a normal ext handler
- */
 
+
+/**
+ * A simple extension of an ext button that will render to appear like simple link.
+ * The advantage of extending button is that it supports handlers, custom menus, etc.
+ * @cfg linkPrefix
+ * @cfg linkSuffix
+ * @cfg linkCls
+ * @cfg linkTarget
+ * @cfg tooltip
+ */
 Ext4.define('LABKEY.ext.LinkButton', {
     extend: 'Ext.button.Button',
     alias: 'widget.labkey-linkbutton',
@@ -233,6 +208,7 @@ Ext4.define('LABKEY.ext.LinkButton', {
             linkPrefix: this.linkPrefix,
             linkSuffix: this.linkSuffix,
             linkCls: this.linkCls,
+            linkTarget: this.linkTarget,
             tooltip: this.tooltip
         });
     },
@@ -244,8 +220,9 @@ Ext4.define('LABKEY.ext.LinkButton', {
     renderTpl:
         '<em id="{id}-btnWrap" class="{splitCls}">' +
             '{linkPrefix}' +
-            '<a id="{id}-btnEl" class="{linkCls}" target="{target}" role="link" ' +
+            '<a id="{id}-btnEl" class="{linkCls}" role="link" ' +
                 '<tpl if="href">href="{href}" </tpl>' +
+                '<tpl if="href">target="{linkTarget}" </tpl>' +
                 '<tpl if="tooltip">data-qtip="{tooltip}"</tpl>' +
                 '<tpl if="tabIndex"> tabIndex="{tabIndex}"</tpl>' +
             '>' +
@@ -256,7 +233,9 @@ Ext4.define('LABKEY.ext.LinkButton', {
         '</em>'
 });
 
-
+/**
+ * A combo extension that can be used instead of a checkbox.  It has the values true/false, and will use yes/no as the display values.
+ */
 Ext4.define('LABKEY.ext4.BooleanCombo', {
     extend: 'Ext.form.field.ComboBox',
     alias: 'widget.labkey-booleancombo',
@@ -289,7 +268,12 @@ Ext4.define('LABKEY.ext4.BooleanCombo', {
     }
 });
 
-
+/**
+ * A store extension that will load the views for a given query
+ * @cfg containerPath
+ * @cfg schemaName
+ * @cfg queryName
+ */
 Ext4.define('LABKEY.ext4.ViewStore', {
     extend: 'Ext.data.ArrayStore',
     alias: 'widget.labkey-viewstore',
@@ -338,6 +322,12 @@ Ext4.define('LABKEY.ext4.ViewStore', {
     }
 });
 
+/**
+ * A combo extension that will display a list of views for a query.
+ * @cfg containerPath
+ * @cfg schemaName
+ * @cfg queryName
+ */
 Ext4.define('LABKEY.ext4.ViewCombo', {
     extend: 'Ext.form.field.ComboBox',
     alias: 'widget.labkey-viewcombo',
@@ -347,6 +337,7 @@ Ext4.define('LABKEY.ext4.ViewCombo', {
             ,valueField: 'value'
             ,queryMode: 'local'
             ,store: Ext4.create('LABKEY.ext4.ViewStore', {
+                containerPath: config.containerPath,
                 schemaName: config.schemaName,
                 queryName: config.queryName,
                 listeners: {
@@ -363,7 +354,9 @@ Ext4.define('LABKEY.ext4.ViewCombo', {
     }
 });
 
-
+/**
+ * A combo extension that will display LABKEY container filters.  Used in SearchPanel.
+ */
 Ext4.define('LABKEY.ext.ContainerFilterCombo', {
     extend: 'Ext.form.field.ComboBox',
     alias: 'widget.labkey-containerfiltercombo',
@@ -397,12 +390,13 @@ Ext4.define('LABKEY.ext.ContainerFilterCombo', {
 
 
 
-/*
-  config:
-  showValueInList
-  lookupNullCaption
-
-*/
+/**
+ * An extension to the Ext4 combobox.  The primary features this provides are more control over
+ * how the display values are rendered and auto-resizing of the pick list based on the size of
+ * the items.
+ * @cfg showValueInList If true, the underlying value will also be shown in the pick menu, in addition to the display value.
+ * @cfg lookupNullCaption
+ */
 Ext4.define('LABKEY.ext4.ComboBox', {
     extend: 'Ext.form.field.ComboBox',
     alias: 'widget.labkey-combo',

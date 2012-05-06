@@ -919,6 +919,7 @@ api/src/org/labkey/api/security/roles/RoleManager.java -text
 api/src/org/labkey/api/security/roles/SiteAdminRole.java -text
 api/src/org/labkey/api/security/roles/SubmitterRole.java -text
 api/src/org/labkey/api/security/roles/TroubleshooterRole.java -text
+api/src/org/labkey/api/sequence/FastqFileInspector.java -text
 api/src/org/labkey/api/sequence/IlluminaFastqParser.java -text
 api/src/org/labkey/api/services/ServiceRegistry.java -text
 api/src/org/labkey/api/settings/AbstractSettingsGroup.java -text
@@ -6865,7 +6866,6 @@ internal/webapp/extWidgets/ImportWizard.js -text
 internal/webapp/extWidgets/MetaHelper.js -text
 internal/webapp/extWidgets/NavPanel.js -text
 internal/webapp/extWidgets/SearchPanel.js -text
-internal/webapp/extWidgets/TabbedReportPanel.js -text
 internal/webapp/gxt/css/gxt-all.css -text
 internal/webapp/gxt/css/gxt-gray.css -text
 internal/webapp/gxt/images/default/box/corners-blue.gif -text

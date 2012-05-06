@@ -137,6 +137,7 @@ Ext4.define('LABKEY.ext.ImportWizard', {
         target.removeAll();
         target.add({
             xtype: 'form',
+            itemId: 'workbookForm',
             border: false,
             defaults: {
                 border: false,
@@ -157,7 +158,6 @@ Ext4.define('LABKEY.ext.ImportWizard', {
                 height: 200
             }]
         });
-        target.doLayout();
     },
     renderExistingWorkbookForm: function(){
         var target = this.down('#renderArea');
@@ -200,11 +200,10 @@ Ext4.define('LABKEY.ext.ImportWizard', {
                 }
             }
         });
-        target.doLayout();
     },
     listeners: {
-        render: function(){
-            this.renderWorkbookForm();
+        beforerender: function(win){
+            win.renderWorkbookForm();
         }
     }
 });
@@ -230,6 +229,24 @@ Ext4.define('LABKEY.ext.ImportWizardWin', {
                 canAddToExistingExperiment: this.canAddToExistingExperiment,
                 buttons: []
             }],
+            listeners: {
+                scope: this,
+                delay: 100,
+                show: function(win){
+                    listeners: {
+                        win.down('#titleField').focus(20);
+
+                        new Ext4.util.KeyNav(win.getEl(), {
+                            "enter" : function(e){
+                                console.log('e')
+                                var form = this.down('#theForm');
+                                form.formSubmit.call(form, form);
+                            },
+                            scope : this
+                        });
+                    }
+                }
+            },
             buttons: [{
                 text: 'Submit'
                 ,width: 50

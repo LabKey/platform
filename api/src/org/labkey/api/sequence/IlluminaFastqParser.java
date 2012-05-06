@@ -34,6 +34,7 @@ public class IlluminaFastqParser
     private File _destinationDir;
     private File[] _files;
     private Map<Pair<Integer, Integer>, Pair<File, net.sf.picard.fastq.FastqWriter>> _fileMap;
+    private Map<Pair<Integer, Integer>, Integer> _sequenceTotals;
     private FastqWriterFactory _writerFactory = new FastqWriterFactory();
     private Logger _logger;
     private static FileType FASTQ_FILETYPE = new FileType(Arrays.asList("fastq", "fq"), "fastq", FileType.gzSupportLevel.SUPPORT_GZ);
@@ -88,6 +89,8 @@ public class IlluminaFastqParser
     public Map<Pair<Integer, Integer>, File> parseFastqFiles () throws PipelineJobException
     {
         _fileMap = new HashMap<Pair<Integer, Integer>, Pair<File, net.sf.picard.fastq.FastqWriter>>();
+        _sequenceTotals = new HashMap<Pair<Integer, Integer>, Integer>();
+
         FastqReader reader;
         int _parsedReads;
 
@@ -108,12 +111,15 @@ public class IlluminaFastqParser
                     String header = fq.getReadHeader();
                     IlluminaReadHeader parsedHeader = new IlluminaReadHeader(header);
                     int sampleIdx = parsedHeader.getSampleNum();
+                    int pairNumber = parsedHeader.getPairNumber();
 
-                    writer = getWriter(sampleIdx, targetDir, parsedHeader.getPairNumber());
+                    writer = getWriter(sampleIdx, targetDir, pairNumber);
                     if(writer != null)
                         writer.write(fq);
 
                     _parsedReads++;
+                    updateCount(sampleIdx, pairNumber);
+
                     if (0 == _parsedReads % 25000)
                         logReadsProgress(_parsedReads);
                 }
@@ -123,7 +129,6 @@ public class IlluminaFastqParser
 
                 _logger.info("Finished parsing file: " + f.getName());
                 reader.close();
-
             }
             catch (Exception e)
             {
@@ -150,6 +155,16 @@ public class IlluminaFastqParser
     {
         String formattedCount = Formats.commaf0.format(count);
         _logger.info(formattedCount + " reads processed");
+    }
+
+    private void updateCount(int sampleIdx, int pairNumber)
+    {
+        Pair<Integer, Integer> key = Pair.of(_sampleList.get(sampleIdx), pairNumber);
+
+        if(!_sequenceTotals.containsKey(key))
+            _sequenceTotals.put(key, 0);
+
+        _sequenceTotals.put(key, (_sequenceTotals.get(key) + 1));
     }
 
     private net.sf.picard.fastq.FastqWriter getWriter (int sampleIdx, File targetDir, int pairNumber) throws IOException, PipelineJobException
@@ -189,6 +204,16 @@ public class IlluminaFastqParser
         _destinationDir = destinationDir;
     }
 
+    public Map<Pair<Integer, Integer>, Integer> getReadCounts()
+    {
+        return _sequenceTotals;
+    }
+
+    public File[] getFiles()
+    {
+        return _files;
+    }
+
     public class IlluminaReadHeader
     {
         private String _instrument;
@@ -210,7 +235,7 @@ public class IlluminaFastqParser
                 String[] h = header.split(":| ");
 
                 if(h.length < 10)
-                    throw new IllegalArgumentException("Improperly formatted header");
+                    throw new IllegalArgumentException("Improperly formatted header: " + header);
 
                 _instrument = h[0];
                 _runId = Integer.parseInt(h[1]);

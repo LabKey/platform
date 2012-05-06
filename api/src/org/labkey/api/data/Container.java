@@ -986,6 +986,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if (null != getDescription())
             containerProps.put("description", getDescription());
         containerProps.put("isWorkbook", isWorkbook());
+        containerProps.put("type", getContainerNoun());
+
+        Container parent = getParent();
+        containerProps.put("parentPath", parent==null ? null : parent.getPath());
+        containerProps.put("parentId", parent==null ? null : parent.getId());
+
+
         if (null != getTitle())
             containerProps.put("title", getTitle());
 

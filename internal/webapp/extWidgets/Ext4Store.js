@@ -786,9 +786,11 @@ Ext4.define('LABKEY.ext4.ExtendedJsonReader', {
 
         Ext.apply(this, meta);
 
+        //NOTE: In Ext4.1 the store restores the metachange event, so we can probably simplify this
         if (fields) {
             newModel = Ext4.define("Ext.data.reader.Json-Model" + Ext4.id(), {
                 extend: 'Ext.data.Model',
+                idProperty: this.model.prototype.idProperty,
                 fields: fields
             });
             this.setModel(newModel, true);
