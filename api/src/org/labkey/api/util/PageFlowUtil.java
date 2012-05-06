@@ -1876,6 +1876,9 @@ public class PageFlowUtil
         StringBuilder sb = new StringBuilder();
 
         sb.append("    <script src=\"").append(contextPath).append("/labkey.js?").append(serverHash).append("\" type=\"text/javascript\"></script>\n");
+        sb.append("    <script type=\"text/javascript\">\n");
+        sb.append("        LABKEY.init(").append(jsInitObject()).append(");\n");
+        sb.append("    </script>\n");
 
         // Include client-side error reporting scripts only if necessary and as early as possible.
         if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP) &&
@@ -1884,9 +1887,6 @@ public class PageFlowUtil
             sb.append("    <script src=\"").append(contextPath).append("/stacktrace-0.3.js").append("\" type=\"text/javascript\"></script>\n");
             sb.append("    <script src=\"").append(contextPath).append("/mothership.js?").append(serverHash).append("\" type=\"text/javascript\"></script>\n");
         }
-        sb.append("    <script type=\"text/javascript\">\n");
-        sb.append("        LABKEY.init(").append(jsInitObject()).append(");\n");
-        sb.append("    </script>\n");
 
         return sb.toString();
     }

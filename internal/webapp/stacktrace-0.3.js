@@ -195,7 +195,7 @@ printStackTrace.implementation.prototype = {
         var ANON = '{anonymous}', fnRE = /function\s*([\w\-$]+)?\s*\(/i,
             stack = [], j = 0, fn, args;
         
-        var maxStackSize = 10;
+        var maxStackSize = 20;
         while (curr && stack.length < maxStackSize) {
             fn = fnRE.test(curr.toString()) ? RegExp.$1 || ANON : ANON;
             args = Array.prototype.slice.call(curr['arguments']);
