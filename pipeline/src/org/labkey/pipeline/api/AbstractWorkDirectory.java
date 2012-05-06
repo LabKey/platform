@@ -346,7 +346,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         return outputFile(fileWork, _support.findOutputFile(nameDest));
     }
 
-    protected File outputFile(File fileWork, File fileDest) throws IOException
+    public File outputFile(File fileWork, File fileDest) throws IOException
     {
         NetworkDrive.ensureDrive(fileDest.getAbsolutePath());
 
