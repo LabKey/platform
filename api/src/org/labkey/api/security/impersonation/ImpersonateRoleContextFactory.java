@@ -27,6 +27,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewContext;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -38,14 +39,14 @@ import java.util.Set;
 public class ImpersonateRoleContextFactory implements ImpersonationContextFactory
 {
     private final GUID _projectId;
-    private final int _impersonatingUserId;
+    private final int _adminUser;
     private final String _roleName;
     private final URLHelper _returnURL;
 
-    public ImpersonateRoleContextFactory(Container project, User impersonatingUser, Role role, URLHelper returnURL)
+    public ImpersonateRoleContextFactory(Container project, User adminUser, Role role, URLHelper returnURL)
     {
         _projectId = null != project ? project.getEntityId() : null;
-        _impersonatingUserId = impersonatingUser.getUserId();
+        _adminUser = adminUser.getUserId();
         _roleName = role.getUniqueName();
         _returnURL = returnURL;
     }
@@ -55,9 +56,8 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
     {
         Container project = (null != _projectId ? ContainerManager.getForId(_projectId) : null);
         Role role = RoleManager.getRole(_roleName);
-        User impersonatingUser = UserManager.getUser(_impersonatingUserId);
 
-        return new ImpersonateRoleContext(project, impersonatingUser, role, _returnURL);
+        return new ImpersonateRoleContext(project, getAdminUser(), role, _returnURL);
     }
 
     @Override
@@ -68,8 +68,14 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
         // TODO: Audit log?
     }
 
+    public User getAdminUser()
+    {
+        return UserManager.getUser(_adminUser);
+    }
+
+
     @Override
-    public void stopImpersonating(ViewContext context)
+    public void stopImpersonating(HttpServletRequest request)
     {
         // TODO: Audit log?
     }
@@ -97,11 +103,11 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
 
             // Must not be root
             if (null == project)
-                throw new IllegalStateException("You are not allowed to impersonate a role in this project");
+                throw new UnauthorizedImpersonationException("You are not allowed to impersonate a role in this project", getFactory());
 
             // Must have admin permissions in project
             if (!project.hasPermission(user, AdminPermission.class))
-                throw new IllegalStateException("You are not allowed to impersonate a role in this project");
+                throw new UnauthorizedImpersonationException("You are not allowed to impersonate a role in this project", getFactory());
         }
 
         @Override

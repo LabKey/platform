@@ -20,6 +20,8 @@ import org.labkey.api.module.FirstRequestHandler;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SafeFlushResponseWrapper;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.security.impersonation.ImpersonationContextFactory;
+import org.labkey.api.security.impersonation.UnauthorizedImpersonationException;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
@@ -132,12 +134,33 @@ public class AuthFilter implements Filter
 
         if (null == user)
         {
-            user = SecurityManager.getAuthenticatedUser((HttpServletRequest) request);
+            UnauthorizedImpersonationException e = null;
+
+            try
+            {
+                user = SecurityManager.getAuthenticatedUser((HttpServletRequest) request);
+            }
+            catch (UnauthorizedImpersonationException uie)
+            {
+                // Impersonating admin must have had permissions revoked. Save away the details now, we'll then stash
+                // the admin user in the request, then render unauthorized impersonation exception, then stop impersonating.
+                ImpersonationContextFactory factory = uie.getFactory();
+                user = factory.getAdminUser();
+                e = uie;
+            }
 
             if (null != user)
                 UserManager.updateActiveUser(user);
 
             req = new AuthenticatedRequest(req, resp, user);
+
+            if (null != e)
+            {
+                // Render unauthorized impersonation exception so admin knows what's going on
+                ExceptionUtil.handleException(req, resp, e, null, false);
+                SecurityManager.stopImpersonating(req, e.getFactory());    // Needs to happen after rendering exception page, otherwise session gets messed up
+                return;
+            }
         }
 
         QueryService.get().setEnvironment(QueryService.Environment.USERID, null==user ? User.guest.getUserId() : user.getUserId());

@@ -15,8 +15,10 @@
  */
 package org.labkey.api.security.impersonation;
 
+import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 
 /**
@@ -30,5 +32,6 @@ public interface ImpersonationContextFactory extends Serializable
 {
     public ImpersonationContext getImpersonationContext();
     public void startImpersonating(ViewContext context);
-    public void stopImpersonating(ViewContext context);
+    public void stopImpersonating(HttpServletRequest request);
+    public User getAdminUser();
 }

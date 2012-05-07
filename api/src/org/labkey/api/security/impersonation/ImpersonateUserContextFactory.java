@@ -23,6 +23,7 @@ import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.URLHelper;
@@ -58,7 +59,7 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
     }
 
 
-    private User getAdminUser()
+    public User getAdminUser()
     {
         return UserManager.getUser(_adminUserId);
     }
@@ -69,13 +70,14 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
     {
         Container project = (null != _projectId ? ContainerManager.getForId(_projectId) : null);
 
-        return new ImpersonateUserContext(project, getAdminUser(), _returnURL);
+        return new ImpersonateUserContext(project, getAdminUser(), UserManager.getUser(_impersonatedUserId), _returnURL);
     }
 
 
     @Override
     public void startImpersonating(ViewContext context)
     {
+        getImpersonationContext();
         HttpServletRequest request = context.getRequest();
         User impersonatedUser = UserManager.getUser(_impersonatedUserId);
         User adminUser = getAdminUser();
@@ -95,30 +97,34 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
         // This clears the session; caller will add the factory (including the admin's session attributes)
         SecurityManager.setAuthenticatedUser(request, impersonatedUser);
 
-        AuditLogService.get().addEvent(context, UserManager.USER_AUDIT_EVENT, adminUser.getUserId(),
+        AuditLogService.get().addEvent(adminUser, context.getContainer(), UserManager.USER_AUDIT_EVENT, adminUser.getUserId(),
                 adminUser.getEmail() + " impersonated " + impersonatedUser.getEmail());
-        AuditLogService.get().addEvent(context, UserManager.USER_AUDIT_EVENT, impersonatedUser.getUserId(),
+        AuditLogService.get().addEvent(adminUser, context.getContainer(), UserManager.USER_AUDIT_EVENT, impersonatedUser.getUserId(),
                 impersonatedUser.getEmail() + " was impersonated by " + adminUser.getEmail());
     }
 
 
     @Override
-    public void stopImpersonating(ViewContext context)
+    public void stopImpersonating(HttpServletRequest request)
     {
-        User impersonatedUser = context.getUser();
-        User adminUser = getAdminUser();
-
-        HttpServletRequest request = context.getRequest();
         SecurityManager.invalidateSession(request);
         HttpSession adminSession = request.getSession(true);
 
         for (Map.Entry<String, Object> entry : _adminSessionAttributes.entrySet())
             adminSession.setAttribute(entry.getKey(), entry.getValue());
 
-        AuditLogService.get().addEvent(context, UserManager.USER_AUDIT_EVENT, impersonatedUser.getUserId(),
-            impersonatedUser.getEmail() + " was no longer impersonated by " + adminUser.getEmail());
-        AuditLogService.get().addEvent(context, UserManager.USER_AUDIT_EVENT, adminUser.getUserId(),
-            adminUser.getEmail() + " stopped impersonating " + impersonatedUser.getEmail());
+        User impersonatedUser = UserManager.getUser(_impersonatedUserId);
+
+        if (null != impersonatedUser)
+        {
+            User adminUser = getAdminUser();
+            Container project = null == _projectId ? ContainerManager.getRoot() : ContainerManager.getForId(_projectId);
+
+            AuditLogService.get().addEvent(adminUser, project, UserManager.USER_AUDIT_EVENT, impersonatedUser.getUserId(),
+                impersonatedUser.getEmail() + " was no longer impersonated by " + adminUser.getEmail());
+            AuditLogService.get().addEvent(adminUser, project, UserManager.USER_AUDIT_EVENT, adminUser.getUserId(),
+                adminUser.getEmail() + " stopped impersonating " + impersonatedUser.getEmail());
+        }
     }
 
 
@@ -128,11 +134,27 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
         private final User _adminUser;
         private final URLHelper _returnURL;
 
-        private ImpersonateUserContext(@Nullable Container project, User adminUser, URLHelper returnURL)
+        private ImpersonateUserContext(@Nullable Container project, User adminUser, User impersonatedUser, URLHelper returnURL)
         {
+            verifyPermissions(project, impersonatedUser, adminUser);
             _project = project;
             _adminUser = adminUser;
             _returnURL = returnURL;
+        }
+
+        private void verifyPermissions(@Nullable Container project, User impersonatedUser, User adminUser)
+        {
+            if (impersonatedUser.equals(adminUser))
+                throw new UnauthorizedImpersonationException("Can't impersonate yourself", getFactory());
+
+            if (adminUser.isAdministrator())
+                return;
+
+            // Project admin...
+            if (null != project && project.hasPermission(adminUser, AdminPermission.class) && SecurityManager.getProjectUsersIds(project).contains(impersonatedUser.getUserId()))
+                return;
+
+            throw new UnauthorizedImpersonationException("Can't impersonate this user", getFactory());
         }
 
         @Override

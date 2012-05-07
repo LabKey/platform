@@ -473,17 +473,20 @@ public class SecurityManager
     }
 
 
-    public static void impersonateUser(ViewContext viewContext, User impersonatedUser, @Nullable Container project, URLHelper returnURL)
+    public static void impersonateUser(ViewContext viewContext, User impersonatedUser, URLHelper returnURL)
     {
-        impersonate(viewContext, new ImpersonateUserContextFactory(project, viewContext.getUser(), impersonatedUser, returnURL));
+        @Nullable Container project = viewContext.getContainer().getProject();
+        User user = viewContext.getUser();
+        if (user.isAdministrator())
+            project = null;
+        impersonate(viewContext, new ImpersonateUserContextFactory(project, user, impersonatedUser, returnURL));
     }
 
 
     public static void impersonateGroup(ViewContext viewContext, Group group, URLHelper returnURL)
     {
         @Nullable Container project = viewContext.getContainer().getProject();
-        User user = viewContext.getUser();
-        impersonate(viewContext, new ImpersonateGroupContextFactory(project, user, group, returnURL));
+        impersonate(viewContext, new ImpersonateGroupContextFactory(project, viewContext.getUser(), group, returnURL));
     }
 
 
@@ -509,14 +512,11 @@ public class SecurityManager
     }
 
 
-    public static void stopImpersonating(ViewContext viewContext, User impersonatingUser)
+    public static void stopImpersonating(HttpServletRequest request, ImpersonationContextFactory factory)
     {
-        assert impersonatingUser.isImpersonated();
-
-        impersonatingUser.getImpersonationContext().getFactory().stopImpersonating(viewContext);
+        factory.stopImpersonating(request);
 
         // Remove factory from session
-        HttpServletRequest request = viewContext.getRequest();
         HttpSession session = request.getSession(true);
         session.removeAttribute(IMPERSONATION_CONTEXT_FACTORY_KEY);
     }

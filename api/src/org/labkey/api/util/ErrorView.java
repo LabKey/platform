@@ -120,12 +120,18 @@ class ErrorView extends HttpView
             out.println("<h3 class=\"labkey-error\">" + PageFlowUtil.filter(_renderer.getHeading()) + "</h3>");
         }
 
+        // Why don't we just use c below?
+        Container contextContainer = getContextContainer();
+
+        if (null == contextContainer)
+            contextContainer = c;
+
         // These buttons are useless if the server fails to start up.  Also, they try to hit a database that probably doesn't exist.
         if (!_startupFailure)
         {
             if (_renderer.getStatus() == HttpServletResponse.SC_UNAUTHORIZED)
             {
-                LookAndFeelProperties props = LookAndFeelProperties.getInstance(getContextContainer());
+                LookAndFeelProperties props = LookAndFeelProperties.getInstance(contextContainer);
                 if (!StringUtils.isBlank(props.getSupportEmail()))
                 {
                     out.println("<p>If you believe you should have permission to perform this action, please <a href=\"mailto:");

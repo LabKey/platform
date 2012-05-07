@@ -29,6 +29,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewContext;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.LinkedList;
 import java.util.Set;
 
@@ -42,12 +43,12 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
     private final @Nullable GUID _projectId;
     private final int _groupId;
     private final URLHelper _returnURL;
-    private final int _impersonatingUserId;
+    private final int _adminUserId;
 
-    public ImpersonateGroupContextFactory(@Nullable Container project, User impersonatingUser, Group group, URLHelper returnURL)
+    public ImpersonateGroupContextFactory(@Nullable Container project, User adminUser, Group group, URLHelper returnURL)
     {
         _projectId = null != project ? project.getEntityId() : null;
-        _impersonatingUserId = impersonatingUser.getUserId();
+        _adminUserId = adminUser.getUserId();
         _groupId = group.getUserId();
         _returnURL = returnURL;
     }
@@ -57,9 +58,8 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
     {
         Container project = (null != _projectId ? ContainerManager.getForId(_projectId) : null);
         Group group = SecurityManager.getGroup(_groupId);
-        User impersonatingUser = UserManager.getUser(_impersonatingUserId);
 
-        return new ImpersonateGroupContext(project, impersonatingUser, group, _returnURL);
+        return new ImpersonateGroupContext(project, getAdminUser(), group, _returnURL);
     }
 
 
@@ -72,9 +72,15 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
     }
 
     @Override
-    public void stopImpersonating(ViewContext context)
+    public void stopImpersonating(HttpServletRequest request)
     {
         // TODO: Audit log?
+    }
+
+    @Override
+    public User getAdminUser()
+    {
+        return UserManager.getUser(_adminUserId);
     }
 
     public static boolean canImpersonateGroup(@Nullable Container project, User user, Group group)
@@ -98,7 +104,6 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
 
     public class ImpersonateGroupContext implements ImpersonationContext
     {
-        private final @Nullable Container _project;
         private final Group _group;
         private final int[] _groups;
         private final URLHelper _returnURL;
@@ -106,7 +111,7 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
         private ImpersonateGroupContext(@Nullable Container project, User user, Group group, URLHelper returnURL)
         {
             if (!canImpersonateGroup(project, user, group))
-                throw new IllegalStateException("You are not allowed to impersonate this group");
+                throw new UnauthorizedImpersonationException("You are not allowed to impersonate this group", getFactory());
 
             // Seed the group list with guests, site users, and the passed in group (as appropriate)
             LinkedList<Integer> seedGroups = new LinkedList<Integer>();
@@ -125,7 +130,6 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
 
             // Now expand the list of groups to include all groups they belong to (see #13802)
             _groups = GroupMembershipCache.computeAllGroups(seedGroups);
-            _project = project;
             _returnURL = returnURL;
             _group = group;
         }
