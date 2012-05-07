@@ -4361,6 +4361,29 @@ public class ExperimentController extends SpringActionController
             return new ActionURL(ShowRunGraphDetailAction.class, run.getContainer()).addParameter("rowId", run.getRowId());
         }
 
+        public ActionURL getRunGraphDetailURL(ExpRun run, ExpData focus)
+        {
+            return getRunGraphDetailURL(run, focus, DotGraph.TYPECODE_DATA);
+        }
+
+        public ActionURL getRunGraphDetailURL(ExpRun run, ExpMaterial focus)
+        {
+            return getRunGraphDetailURL(run, focus, DotGraph.TYPECODE_MATERIAL);
+        }
+
+        public ActionURL getRunGraphDetailURL(ExpRun run, ExpProtocolApplication focus)
+        {
+            return getRunGraphDetailURL(run, focus, DotGraph.TYPECODE_PROT_APP);
+        }
+
+        private ActionURL getRunGraphDetailURL(ExpRun run, ExpObject focus, String typeCode)
+        {
+            return new ActionURL(ShowRunGraphDetailAction.class, run.getContainer())
+                    .addParameter("rowId", run.getRowId())
+                    .addParameter("detail", "true")
+                    .addParameter("focus", typeCode + focus.getRowId());
+        }
+
         public ActionURL getRunGraphURL(Container container, int runId)
         {
             return new ActionURL(ShowRunGraphAction.class, container).addParameter("rowId", runId);
