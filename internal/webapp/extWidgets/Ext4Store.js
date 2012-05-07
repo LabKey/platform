@@ -108,7 +108,9 @@ Ext4.namespace('LABKEY.ext4');
 LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
     extend: 'Ext.data.Store',
     alias: 'store.labkey-store',
-    //pageSize: 10000,
+    //the page size defaults to 25, which can give odd behavior for combos or other applications.
+    //applications that want to use paging should modify this.
+    pageSize: 10000,
     constructor: function(config) {
         config = config || {};
 
