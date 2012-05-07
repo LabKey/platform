@@ -1874,22 +1874,13 @@ public class UserController extends SpringActionController
             if (null == impersonatedUser)
                 throw new NotFoundException("User doesn't exist");
 
-            if (impersonatedUser.equals(getUser()))
-                throw new UnauthorizedException("Can't impersonate yourself");
-
-            authorizeUserAction(impersonatedUser.getUserId(), "impersonate", false);
+            SecurityManager.impersonateUser(getViewContext(), impersonatedUser, form.getReturnURLHelper());
             Container c = getContainer();
 
             if (c.isRoot())
-            {
-                SecurityManager.impersonateUser(getViewContext(), impersonatedUser, null, form.getReturnURLHelper());
                 return AppProps.getInstance().getHomePageActionURL();
-            }
             else
-            {
-                SecurityManager.impersonateUser(getViewContext(), impersonatedUser, c.getProject(), form.getReturnURLHelper());
                 return PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
-            }
         }
     }
 

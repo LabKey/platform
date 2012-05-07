@@ -753,7 +753,7 @@ public class LoginController extends SpringActionController
             User user = getUser();
 
             if (user.isImpersonated())
-                SecurityManager.stopImpersonating(getViewContext(), user);
+                SecurityManager.stopImpersonating(getViewContext().getRequest(), user.getImpersonationContext().getFactory());
             else
                 SecurityManager.logoutUser(getViewContext().getRequest(), user);
 
