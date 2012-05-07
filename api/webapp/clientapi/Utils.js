@@ -443,7 +443,7 @@ LABKEY.Utils.convertToExcel(
                     json = new Object();
                 }
 
-                if (!json.exception && isErrorCallback)
+                if (json && !json.exception && isErrorCallback)
                 {
                     // Try to make sure we don't show an empty error message
                     json.exception = (response && response.statusText ? response.statusText : "Communication failure.");
