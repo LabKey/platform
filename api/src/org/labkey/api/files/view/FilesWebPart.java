@@ -181,7 +181,8 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         if (policy.hasPermission(getViewContext().getUser(), UpdatePermission.class))
         {
             actions.add(FilesForm.actions.renamePath);
-            actions.add(FilesForm.actions.movePath);
+            //TODO: restore after testing complete
+            //actions.add(FilesForm.actions.movePath);
         }
 
         if (policy.hasPermission(getViewContext().getUser(), InsertPermission.class))
@@ -401,7 +402,8 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             download,
             deletePath,
             renamePath,
-            movePath,
+            //TODO: restore after testing complete
+            //movePath,
             refresh,
             uploadTool,
             configure,
