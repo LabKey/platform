@@ -3000,7 +3000,7 @@ LABKEY.FileSystem.PreviewResource = Ext.extend(LABKEY.ext.PersistentToolTip, {
             });
         }
         // DIV
-        else if (LABKEY.FileSystem.Util.startsWith(contentType,'text/') || contentType == 'application/javascript' || endsWith(name,".log"))
+        else if (LABKEY.FileSystem.Util.startsWith(contentType,'text/') || contentType == 'application/javascript' || LABKEY.FileSystem.Util.endsWith(name,".log"))
         {
             var headers = {};
             if (contentType != 'text/html' && size > 10000)
