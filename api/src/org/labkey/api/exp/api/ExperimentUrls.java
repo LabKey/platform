@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.URLHelper;
@@ -29,6 +30,8 @@ public interface ExperimentUrls extends UrlProvider
 {
     ActionURL getRunGraphURL(ExpRun run);
     ActionURL getRunGraphURL(Container c, int rowId);
+
+    ActionURL getRunGraphDetailURL(ExpRun run, @Nullable ExpData focus);
 
     ActionURL getRunTextURL(Container c, int rowId);
     ActionURL getRunTextURL(ExpRun run);
