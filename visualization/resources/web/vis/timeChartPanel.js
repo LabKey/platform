@@ -947,24 +947,9 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         this.loaderName = 'renderLineChart';
 
         // TODO: report if a series doesn't have any data.
-        // check to see if any of the measures don't have data, and display a message accordingly
-//        if (force !== true) {
-//            var msg = ""; var sep = "";
-//            Ext.iterate(this.individualHasData, function(key, value, obj){
-//                if (!value)
-//                {
-//                    msg += sep + key;
-//                    sep = ", ";
-//                }
-//            }, this);
-//            if (msg.length > 0) {
-//                this.addWarningText("No data found in: " + msg + " for the selected " + this.viewInfo.subjectNounPlural + ".");
-//            }
-//        }
 
 	    // one series per y-axis subject/measure/dimensionvalue combination
 	    var seriesList = this.getSeriesList();
-        this.longestCaption = '';
 
         // TODO: Use the same max/min for every chart if displaying more than one chart.
 
@@ -1010,6 +995,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
         // remove any existing charts, purge listeners from exportPdfSingleBtn, and remove items from the exportPdfMenu button
         this.chart.removeAll();
+        this.firstChartComponent = null;
         this.exportPdfSingleBtn.purgeListeners();
         this.exportPdfMenu.removeAll();
 
@@ -1055,6 +1041,12 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             return dataByGroup;
         };
 
+        var createExportMenuHandler = function(id){
+            return function(){
+                LABKEY.vis.SVGConverter.convert(Ext.get(id).child('svg').dom, 'pdf');
+            }
+        };
+
         // four options: all series on one chart, one chart per subject, one chart per group, or one chart per measure/dimension
         if (this.chartInfo.chartLayout == "per_subject")
         {
@@ -1074,7 +1066,20 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
                 var dataPerParticipant = generateParticipantSeries(this.individualData, this.viewInfo.subjectColumn);
                 for(var participant in dataPerParticipant){
-                    charts.push(this.generatePlot(this.chart, this.editorXAxisPanel.getTime(), this.viewInfo, this.chartInfo, this.chartInfo.title + ': ' + participant, seriesList, dataPerParticipant[participant], this.individualData.measureToColumn, this.individualData.visitMap));
+                    var newChart = this.generatePlot(this.chart, this.editorXAxisPanel.getTime(), this.viewInfo, this.chartInfo, this.chartInfo.title + ': ' + participant, seriesList, dataPerParticipant[participant], this.individualData.measureToColumn, this.individualData.visitMap)
+                    charts.push(newChart);
+
+                    if(!this.firstChartComponent){
+                        this.firstChartComponent = newChart.renderTo;
+                    }
+
+                    this.exportPdfMenu.add({
+                        text: this.chartInfo.title + ': ' + participant,
+                        handler: createExportMenuHandler(newChart.renderTo),
+                        scope: this
+                    });
+                    this.toggleExportPdfBtns(false);
+
                     if(charts.length > this.maxCharts){
                         break;
                     }
@@ -1102,7 +1107,23 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 for (var i = 0; i < (this.chartInfo.subject.groups.length > this.maxCharts ? this.maxCharts : this.chartInfo.subject.groups.length); i++)
                 {
                     var group = this.chartInfo.subject.groups[i];
-                    charts.push(this.generatePlot(this.chart, this.editorXAxisPanel.getTime(), this.viewInfo, this.chartInfo, this.chartInfo.title + ': ' + group.label, seriesList, groupData[group.label], this.individualData.measureToColumn, this.individualData.visitMap));
+                    var newChart = this.generatePlot(this.chart, this.editorXAxisPanel.getTime(), this.viewInfo, this.chartInfo, this.chartInfo.title + ': ' + group.label, seriesList, groupData[group.label], this.individualData.measureToColumn, this.individualData.visitMap);
+                    charts.push(newChart);
+
+                    if(!this.firstChartComponent){
+                        this.firstChartComponent = newChart.renderTo;
+                    }
+
+                    this.exportPdfMenu.add({
+                        text: this.chartInfo.title + ': ' + group.label,
+                        handler: createExportMenuHandler(newChart.renderTo),
+                        scope: this
+                    });
+                    this.toggleExportPdfBtns(false);
+
+                    if(charts.length > this.maxCharts){
+                        break;
+                    }
                 }
             }
         }
@@ -1125,7 +1146,23 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 }
                 for (var i = 0; i < (seriesList.length > this.maxCharts ? this.maxCharts : seriesList.length); i++)
                 {
-                    charts.push(this.generatePlot(this.chart, this.editorXAxisPanel.getTime(), this.viewInfo, this.chartInfo, this.chartInfo.title + ': ' + seriesList[i].name, [seriesList[i]], this.individualData.rows, this.individualData.measureToColumn, this.individualData.visitMap));
+                    var newChart = this.generatePlot(this.chart, this.editorXAxisPanel.getTime(), this.viewInfo, this.chartInfo, this.chartInfo.title + ': ' + seriesList[i].name, [seriesList[i]], this.individualData.rows, this.individualData.measureToColumn, this.individualData.visitMap);
+                    charts.push(newChart);
+
+                    if(!this.firstChartComponent){
+                        this.firstChartComponent = newChart.renderTo;
+                    }
+
+                    this.exportPdfMenu.add({
+                        text: this.chartInfo.title + ': ' + seriesList[i].name,
+                        handler: createExportMenuHandler(newChart.renderTo),
+                        scope: this
+                    });
+                    this.toggleExportPdfBtns(false);
+
+                    if(charts.length > this.maxCharts){
+                        break;
+                    }
                 }
             }
         }
@@ -1137,14 +1174,23 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 this.addWarningText("Please select at least one group.");
             } else {
                 //Single Line Chart, with all participants or groups.
-                charts.push(this.generatePlot(this.chart, this.editorXAxisPanel.getTime(), this.viewInfo, this.chartInfo, this.chartInfo.title, seriesList,
+                var newChart = this.generatePlot(this.chart, this.editorXAxisPanel.getTime(), this.viewInfo, this.chartInfo, this.chartInfo.title, seriesList,
                         this.individualData ? this.individualData.rows : null,
                         this.individualData ? this.individualData.measureToColumn : null,
                         this.individualData ? this.individualData.visitMap : null,
                         this.aggregateData ? this.aggregateData.rows : null,
                         this.aggregateData ? this.aggregateData.measureToColumn : null,
                         this.aggregateData ? this.aggregateData.visitMap : null
-                ));
+                );
+                charts.push(newChart);
+
+                this.firstChartComponent = newChart.renderTo;
+
+                this.exportPdfSingleBtn.addListener('click', function(){
+                    LABKEY.vis.SVGConverter.convert(Ext.get(newChart.renderTo).child('svg').dom, 'pdf');
+                }, this);
+
+                this.toggleExportPdfBtns(true);
             }
         }
 
@@ -1602,7 +1648,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         var schema = this.saveReportInfo ? this.saveReportInfo.schemaName : (LABKEY.ActionURL.getParameter("schemaName") || null);
         var query = this.saveReportInfo ? this.saveReportInfo.queryName : (LABKEY.ActionURL.getParameter("queryName") || null);
 
-        var reportSvg = (this.firstChartComponent && this.firstChartComponent.canExport() ? LABKEY.vis.SVGConverter.svgToStr(this.firstChartComponent.rootVisPanel.scene.$g) : null);
+        var reportSvg = (this.firstChartComponent && Raphael.svg ? LABKEY.vis.SVGConverter.svgToStr(Ext.get(this.firstChartComponent).child('svg').dom) : null);
 
         // if the Save button was clicked, save the report using the name and description provided
         if(saveBtnName == 'Save'){
