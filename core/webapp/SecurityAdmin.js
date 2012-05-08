@@ -930,17 +930,15 @@ var UserInfoPopup = Ext.extend(Ext.Window,{
             return;
 
         email = email.trim();
+
+        // the selected combo value is an existing group or user
+        if (combo.getStore().find('Name', email) > -1)
+            return;
         
         var config = {
             name : email,
             success : function(info, response) {
-                if (info && info.users && info.users.length == 1) {
-                    var user = info.users[0];
-                    if(user.email.toLowerCase() == email.toLowerCase()) {
-                        this.cache.addMembership(this.user.UserId, user.userId,this._redraw.createDelegate(this));
-                    }
-                }
-                else if(info && info.users && info.users.length == 0){
+                if(info && info.users && info.users.length == 0){
                     Ext.Msg.show({
                         title: 'Create New User',
                         msg : 'User was not found. Would you like to create the user for \'' + email + '\'?',
