@@ -22,7 +22,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RowIdForeignKey;
 
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class LookupColumn extends ColumnInfo
@@ -66,8 +66,8 @@ public class LookupColumn extends ColumnInfo
     protected ColumnInfo _lookupKey;
     /** The display column to show */
     protected ColumnInfo _lookupColumn;
-    /** Additional column pairs if this is a multi-column join */
-    protected Map<ColumnInfo, ColumnInfo> _additionalJoins = new HashMap<ColumnInfo, ColumnInfo>();
+    /** Additional column pairs if this is a multi-column join. Maintain original order using LinkedHashMap to ensure that generated SQL is identical */
+    protected Map<ColumnInfo, ColumnInfo> _additionalJoins = new LinkedHashMap<ColumnInfo, ColumnInfo>();
 
     public LookupColumn(ColumnInfo foreignKey, ColumnInfo lookupKey, ColumnInfo lookupColumn)
     {

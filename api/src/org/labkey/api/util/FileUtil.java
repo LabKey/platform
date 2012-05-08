@@ -177,7 +177,7 @@ public class FileUtil
      */
     public static String getExtension(String name)
     {
-        if (name.lastIndexOf('.') != -1)
+        if (name != null && name.lastIndexOf('.') != -1)
         {
             return name.substring(name.lastIndexOf('.') + 1, name.length());
         }
@@ -315,7 +315,7 @@ public class FileUtil
             is = new FileInputStream(src);
             in = is.getChannel();
             lockIn = in.lock(0L, Long.MAX_VALUE, true);
-            os = new FileOutputStream(dst); 
+            os = new FileOutputStream(dst);
             out = os.getChannel();
             lockOut = out.lock();
             in.transferTo(0, in.size(), out);
@@ -402,7 +402,7 @@ public class FileUtil
     /**
      * always returns path starting with /.  Tries to leave trailing '/' as is
      * (unless ends with /. or /..)
-     * 
+     *
      * @param path path to normalize
      * @return cleaned path or null if path goes outside of 'root'
      * @deprecated use java.util.Path
@@ -619,7 +619,7 @@ quickScan:
     //
     //  NOTE: IOUtil uses fairly small buffers for copy
     //
-    
+
     final static int BUFFERSIZE = 32*1024;
 
     // Closes input stream
