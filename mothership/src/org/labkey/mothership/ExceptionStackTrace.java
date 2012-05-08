@@ -105,7 +105,8 @@ public class ExceptionStackTrace
                 {
                     // Don't include lines that vary based on reflection
                     // Don't include lines that depend on Groovy view numbers
-                    if (!line.trim().startsWith("at sun.reflect.")
+                    if (line.trim().startsWith("at ") && 
+                            !line.trim().startsWith("at sun.reflect.")
                             && !(line.trim().startsWith("..."))
                             && !(line.trim().startsWith("at script") && line.contains("run(script") && line.contains(".groovy:"))
                             && !line.trim().startsWith("Position: ")    // Postgres stack traces can include a third line that indicates the position of the error in the SQL
@@ -175,6 +176,69 @@ public class ExceptionStackTrace
 
     public static class TestCase extends Assert
     {
+        @Test
+        public void testJSONExceptionCombining()
+        {
+            ExceptionStackTrace stackTrace1 = new ExceptionStackTrace();
+            stackTrace1.setStackTrace("org.json.JSONException: Expected a ',' or '}' at character 95 of {\"schemaName\": \"lists\",\n" +
+                    "           \"queryName\": \"VBD-list\",\n" +
+                    "           \"sql\": \"select * from \"VBD-list\" where repositoryName=\"Breast Specimen Repository\"\"\n" +
+                    "         }\n" +
+                    "\tat org.json.JSONTokener.syntaxError(JSONTokener.java:450)\n" +
+                    "\tat org.json.JSONObject.<init>(JSONObject.java:169)\n" +
+                    "\tat org.json.JSONObject.<init>(JSONObject.java:292)\n" +
+                    "\tat org.labkey.api.action.ApiAction.getJsonObject(ApiAction.java:255)\n" +
+                    "\tat org.labkey.api.action.ApiAction.handlePost(ApiAction.java:108)\n" +
+                    "\tat org.labkey.api.action.ApiAction.handleRequest(ApiAction.java:85)\n" +
+                    "\tat org.labkey.api.action.BaseViewAction.handleRequestInternal(BaseViewAction.java:173)\n" +
+                    "\tat org.springframework.web.servlet.mvc.AbstractController.handleRequest(AbstractController.java:153)\n" +
+                    "\tat org.labkey.api.action.SpringActionController.handleRequest(SpringActionController.java:346)\n" +
+                    "\tat org.labkey.api.module.DefaultModule.dispatch(DefaultModule.java:874)\n" +
+                    "\tat org.labkey.api.view.ViewServlet.service(ViewServlet.java:156)\n");
+
+            ExceptionStackTrace stackTrace2 = new ExceptionStackTrace();
+            stackTrace2.setStackTrace("org.json.JSONException: Expected a ',' or '}' at character 127 of {\"schemaName\": \"lists\",\n" +
+                    "           \"queryName\": \"VBD-list\",\n" +
+                    "           \"sql\": \"select * from 'VBD-list' where repositoryName=\"Breast Specimen Repository\"\"\n" +
+                    "         }\n" +
+                    "\tat org.json.JSONTokener.syntaxError(JSONTokener.java:450)\n" +
+                    "\tat org.json.JSONObject.<init>(JSONObject.java:169)\n" +
+                    "\tat org.json.JSONObject.<init>(JSONObject.java:292)\n" +
+                    "\tat org.labkey.api.action.ApiAction.getJsonObject(ApiAction.java:255)\n" +
+                    "\tat org.labkey.api.action.ApiAction.handlePost(ApiAction.java:108)\n" +
+                    "\tat org.labkey.api.action.ApiAction.handleRequest(ApiAction.java:85)\n" +
+                    "\tat org.labkey.api.action.BaseViewAction.handleRequestInternal(BaseViewAction.java:173)\n" +
+                    "\tat org.springframework.web.servlet.mvc.AbstractController.handleRequest(AbstractController.java:153)\n" +
+                    "\tat org.labkey.api.action.SpringActionController.handleRequest(SpringActionController.java:346)\n" +
+                    "\tat org.labkey.api.module.DefaultModule.dispatch(DefaultModule.java:874)\n" +
+                    "\tat org.labkey.api.view.ViewServlet.service(ViewServlet.java:156)\n");
+
+            stackTrace1.hashStackTrace();
+            stackTrace2.hashStackTrace();
+            assertEquals(stackTrace1.getStackTraceHash(), stackTrace2.getStackTraceHash());
+
+            // Change a line number and make sure we get a different hash
+            ExceptionStackTrace stackTrace3 = new ExceptionStackTrace();
+            stackTrace3.setStackTrace("org.json.JSONException: Expected a ',' or '}' at character 127 of {\"schemaName\": \"lists\",\n" +
+                    "           \"queryName\": \"VBD-list\",\n" +
+                    "           \"sql\": \"select * from 'VBD-list' where repositoryName=\"Breast Specimen Repository\"\"\n" +
+                    "         }\n" +
+                    "\tat org.json.JSONTokener.syntaxError(JSONTokener.java:451)\n" +
+                    "\tat org.json.JSONObject.<init>(JSONObject.java:169)\n" +
+                    "\tat org.json.JSONObject.<init>(JSONObject.java:292)\n" +
+                    "\tat org.labkey.api.action.ApiAction.getJsonObject(ApiAction.java:255)\n" +
+                    "\tat org.labkey.api.action.ApiAction.handlePost(ApiAction.java:108)\n" +
+                    "\tat org.labkey.api.action.ApiAction.handleRequest(ApiAction.java:85)\n" +
+                    "\tat org.labkey.api.action.BaseViewAction.handleRequestInternal(BaseViewAction.java:173)\n" +
+                    "\tat org.springframework.web.servlet.mvc.AbstractController.handleRequest(AbstractController.java:153)\n" +
+                    "\tat org.labkey.api.action.SpringActionController.handleRequest(SpringActionController.java:346)\n" +
+                    "\tat org.labkey.api.module.DefaultModule.dispatch(DefaultModule.java:874)\n" +
+                    "\tat org.labkey.api.view.ViewServlet.service(ViewServlet.java:156)\n");
+
+            stackTrace3.hashStackTrace();
+            assertNotSame(stackTrace1.getStackTraceHash(), stackTrace3.getStackTraceHash());
+        }
+
         @Test
         public void testReflectionHashCombining()
         {
