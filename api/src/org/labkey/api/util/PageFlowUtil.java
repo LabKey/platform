@@ -726,7 +726,7 @@ public class PageFlowUtil
         return contentType;
     }
 
-    private static void prepareResponseForFile(HttpServletResponse response, Map<String, String> responseHeaders, String filename, boolean asAttachment)
+    public static void prepareResponseForFile(HttpServletResponse response, Map<String, String> responseHeaders, String filename, boolean asAttachment)
     {
         String contentType = responseHeaders.get("Content-Type");
         if (null == contentType && null != filename)

@@ -634,7 +634,8 @@ public class DataRegion extends AbstractDataRegion
             _aggregateResults = ctx.getAggregates(_displayColumns, getTable(), getName(), newAggregates, getQueryParameters(), isAllowAsync());
             List<Aggregate.Result> result = _aggregateResults.remove(Aggregate.STAR);
 
-            if (result.size() > 0)
+            //Issue 14863: add null check
+            if (result != null && result.size() > 0)
                 _totalRows = (Long)(result.get(0)).getValue();
         }
         else

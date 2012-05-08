@@ -1,6 +1,9 @@
 package org.labkey.api.sequence;
 
-import net.sf.picard.fastq.*;
+import net.sf.picard.fastq.FastqReader;
+import net.sf.picard.fastq.FastqRecord;
+import net.sf.picard.fastq.FastqWriterFactory;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.util.FileType;
@@ -14,8 +17,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.log4j.Logger;
 
 /**
  * This is designed to parse the FASTQ files produced by a single run on an illumina instructment and produce one gzipped FASTQ
