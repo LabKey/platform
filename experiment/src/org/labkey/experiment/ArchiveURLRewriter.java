@@ -75,7 +75,7 @@ public class ArchiveURLRewriter extends URLRewriter
         return "Run" + run.getRowId();
     }
 
-    private String addFile(ExpData data, File f, String directoryName, File rootDir, ExperimentDataHandler dataHandler)
+    public String addFile(ExpData data, File f, String directoryName, File rootDir, ExperimentDataHandler dataHandler)
             throws ExperimentException
     {
         String name;

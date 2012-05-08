@@ -30,6 +30,7 @@ import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.*;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.defaults.DefaultValueService;
+import org.labkey.api.util.FileUtil;
 import org.labkey.experiment.api.*;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.labkey.experiment.xar.XarExportSelection;
@@ -71,6 +72,7 @@ public class XarExporter
 
     private Set<String> _sampleSetLSIDs = new HashSet<String>();
     private Set<String> _domainLSIDs = new HashSet<String>();
+    private Set<Integer> _expDataIDs = new HashSet<Integer>();
 
     private final LSIDRelativizer.RelativizedLSIDs _relativizedLSIDs;
     private Logger _log;
@@ -116,6 +118,19 @@ public class XarExporter
     public void setXarXmlFileName(String fileName)
     {
         _xarXmlFileName = fileName;
+    }
+
+    public void addExpData(ExpData data) throws ExperimentException{
+        if(_expDataIDs.contains(data.getRowId()))
+        {
+            return;
+        }
+        logProgress("Adding experiment data " + data.getRowId());
+
+        ArchiveURLRewriter u = (ArchiveURLRewriter)_urlRewriter;
+
+        File rootPath = FileUtil.getAbsoluteCaseSensitiveFile(data.getFile().getParentFile());
+        u.addFile(data, data.getFile(), "", rootPath, data.findDataHandler());
     }
 
     public void addExperimentRun(ExpRunImpl run) throws ExperimentException

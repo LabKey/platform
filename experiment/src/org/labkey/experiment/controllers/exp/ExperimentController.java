@@ -2986,6 +2986,7 @@ public class ExperimentController extends SpringActionController
         private String _fileExportType;
         private Integer _protocolId;
         private Integer _sampleSetId;
+        private int[] _dataIds;
         private String[] _roles = new String[0];
 
         public String getError()
@@ -3076,6 +3077,16 @@ public class ExperimentController extends SpringActionController
         public void setSampleSetId(Integer sampleSetId)
         {
             _sampleSetId = sampleSetId;
+        }
+
+        public int[] getDataIds()
+        {
+            return _dataIds;
+        }
+
+        public void setDataIds(int[] dataIds)
+        {
+            _dataIds = dataIds;
         }
 
         public List<ExpProtocol> lookupProtocols(ViewContext context, boolean clearSelection)
@@ -3341,6 +3352,44 @@ public class ExperimentController extends SpringActionController
             catch (NumberFormatException e)
             {
                 throw new NotFoundException(runIds.toString());
+            }
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ExportFilesAction extends AbstractExportAction
+    {
+        public boolean handlePost(ExportOptionsForm form, BindException errors) throws Exception
+        {
+            int[] dataIds = form.getDataIds();
+            if (dataIds == null || dataIds.length == 0)
+            {
+                throw new NotFoundException();
+            }
+
+            try
+            {
+                List<ExpData> files = new ArrayList<ExpData>();
+                for (int id : dataIds)
+                {
+                    ExpData data = ExperimentService.get().getExpData(id);
+                    if (data == null || !data.getContainer().hasPermission(getUser(), ReadPermission.class))
+                    {
+                        throw new NotFoundException("Could not find file " + id);
+                    }
+                    files.add(data);
+                }
+
+                XarExportSelection selection = new XarExportSelection();
+                selection.setIncludeXarXml(false);
+                selection.addDataIds(dataIds);
+
+                _resultURL = exportXAR(selection, null, null, form.getZipFileName());
+                return true;
+            }
+            catch (NumberFormatException e)
+            {
+                throw new NotFoundException(dataIds.toString());
             }
         }
     }

@@ -39,6 +39,7 @@ public class XarExportSelection implements Serializable
 {
     private List<Integer> _expIds = new ArrayList<Integer>();
     private List<Integer> _runIds = new ArrayList<Integer>();
+    private List<Integer> _dataIds = new ArrayList<Integer>();
     private List<Integer> _sampleSetIds = new ArrayList<Integer>();
     private List<Integer> _protocolIds = new ArrayList<Integer>();
     private boolean _includeXarXml = true;
@@ -57,6 +58,14 @@ public class XarExportSelection implements Serializable
         for (int runId : runIds)
         {
             _runIds.add(runId);
+        }
+    }
+
+    public void addDataIds(int... dataIds)
+    {
+        for (int dataId : dataIds)
+        {
+            _dataIds.add(dataId);
         }
     }
 
@@ -98,7 +107,7 @@ public class XarExportSelection implements Serializable
         {
             exporter.addExperimentRun(ExperimentServiceImpl.get().getExpRun(runId));
         }
-        
+
         for (int protocolId : _protocolIds)
         {
             ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolId);
@@ -108,6 +117,11 @@ public class XarExportSelection implements Serializable
         for (int sampleSetId : _sampleSetIds)
         {
             exporter.addSampleSet(ExperimentServiceImpl.get().getSampleSet(sampleSetId));
+        }
+
+        for (int dataId : _dataIds)
+        {
+            exporter.addExpData(ExperimentServiceImpl.get().getExpData(dataId));
         }
     }
 

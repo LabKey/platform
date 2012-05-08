@@ -121,4 +121,10 @@ abstract class DataLinkColumn extends DataColumn
         }
         return data;
     }
-}
+
+    @Override
+    public Object getJsonValue(RenderContext ctx)
+    {
+        ExpData data = getData(ctx);
+        return getURL(data);
+    }}
