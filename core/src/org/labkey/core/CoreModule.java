@@ -221,6 +221,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         RhinoService.register();
         ServiceRegistry.get().registerService(ThumbnailService.class, new ThumbnailServiceImpl());
 
+        ModuleStaticResolverImpl.get();
+
         DefaultSchema.registerProvider("core", new DefaultSchema.SchemaProvider()
         {
             public QuerySchema getSchema(DefaultSchema schema)

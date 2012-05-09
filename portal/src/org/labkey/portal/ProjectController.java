@@ -71,6 +71,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
+import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -420,9 +421,8 @@ public class ProjectController extends SpringActionController
         {
             FolderType ft = getContainer().getFolderType();
             String iconPath = ft.getFolderIconPath();
-
-            iconPath = ModuleLoader.getServletContext().getRealPath(iconPath);
-            File iconFile = new File(iconPath);
+            WebdavResource dir = WebdavService.get().getRootResolver().lookup(Path.parse(iconPath));
+            File iconFile = dir.getFile();
 
             if (!NetworkDrive.exists(iconFile))
             {

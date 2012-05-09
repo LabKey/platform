@@ -31,6 +31,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.ModuleStaticResolverImpl;
 import org.labkey.api.webdav.WebdavResolverImpl;
+import org.labkey.api.webdav.WebdavService;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -104,6 +105,8 @@ public class WebdavServlet extends HttpServlet
             _resolver = WebdavResolverImpl.get();
         else
             throw new IllegalArgumentException("resolver");
+
+        WebdavService.get().setRootResolver(_resolver);
     }
 
     WebdavResolver _resolver;
