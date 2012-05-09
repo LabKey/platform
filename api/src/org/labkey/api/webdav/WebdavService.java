@@ -18,6 +18,7 @@ package org.labkey.api.webdav;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.webdav.AbstractWebdavResource;
@@ -38,6 +39,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class WebdavService
 {
     WebdavResolver _resolver = null;
+    WebdavResolver _rootResolver = null;
     CopyOnWriteArrayList<Provider> _providers = new CopyOnWriteArrayList<Provider>();
 
     final static WebdavService _instance = new WebdavService();
@@ -166,5 +168,15 @@ public class WebdavService
     public List<Provider> getProviders()
     {
         return _providers;
+    }
+
+    public WebdavResolver getRootResolver()
+    {
+        return ServiceRegistry.get(WebdavResolver.class);
+    }
+
+    public void setRootResolver(WebdavResolver rootResolver)
+    {
+        _rootResolver = rootResolver;
     }
 }
