@@ -16,11 +16,11 @@
  */
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.query.AbstractQueryImportAction" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.util.Pair" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%
     ViewContext context = HttpView.currentContext();
@@ -29,9 +29,31 @@
     final String uploadFileDivId = "uploadFileDiv" + getRequestScopedUID();
     String tsvId = "tsv" + getRequestScopedUID();
     String errorDivId = "errorDiv" + getRequestScopedUID();
+
 %>
-<% if (!StringUtils.isBlank(bean.urlExcelTemplate)) {
-    %><%=generateButton("Download Template", bean.urlExcelTemplate)%><br>&nbsp;<br><%
+<% if (bean.importMessage != null) {
+        %><div><b><%=bean.importMessage%></b></div><p></p><%
+
+   }
+%>
+<% if (bean.urlExcelTemplates != null && bean.urlExcelTemplates.size() > 0) {
+    if (bean.urlExcelTemplates.size() == 1)
+    {
+        Pair<String, String> p = bean.urlExcelTemplates.get(0);
+        %><%=generateButton(p.first, p.second)%><br>&nbsp;<br><%
+    }
+    else
+    {
+        %>Choose Template: <select id="importTemplate"><%
+        for (Pair<String, String> p : bean.urlExcelTemplates)
+        {
+            %><option value="<%=h(p.second)%>"><%=h(p.first)%></option><%
+        }
+        %></select>
+        <%=generateButton("Download", "javascript:void(0);", "window.location = document.getElementById('importTemplate').value;")%><br>&nbsp;<br>
+        <%
+
+    }
 }%>
 <div id="<%=errorDivId%>" class="labkey-error">
 <labkey:errors></labkey:errors>&nbsp;

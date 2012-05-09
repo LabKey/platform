@@ -35,7 +35,7 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.util.FileStream;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
@@ -52,6 +52,7 @@ import javax.servlet.ServletException;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,7 +71,8 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         public String urlCancel = null;
         public String urlReturn = null;
         public String urlEndpoint = null;
-        public String urlExcelTemplate = null;
+        public List<Pair<String, String>> urlExcelTemplates = null;
+        public String importMessage = null;
     }
 
     protected AbstractQueryImportAction(Class<? extends FORM> formClass)
@@ -116,12 +118,18 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             bean.urlCancel = bean.urlReturn;
 
         bean.urlEndpoint = url.getLocalURIString();
-        ActionURL xl = PageFlowUtil.urlProvider(QueryUrls.class).urlCreateExcelTemplate(c, _target.getPublicSchemaName(), _target.getName());
-        if (null != xl)
+        bean.importMessage = _target.getImportMessage();
+        bean.urlExcelTemplates = new ArrayList<Pair<String, String>>();
+
+        List<Pair<String, ActionURL>> it = _target.getImportTemplates(getViewContext().getContainer());
+        if(it != null)
         {
-            xl.addParameter("captionType", ExcelWriter.CaptionType.Name.name());
-            bean.urlExcelTemplate = xl.getLocalURIString();
+            for (Pair<String, ActionURL> pair : it)
+            {
+                bean.urlExcelTemplates.add(Pair.of(pair.first, pair.second.toString()));
+            }
         }
+
         return new JspView<ImportViewBean>(AbstractQueryImportAction.class, "import.jsp", bean, errors);
     }
 

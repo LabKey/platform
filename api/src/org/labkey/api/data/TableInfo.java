@@ -35,6 +35,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.HasPermission;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
@@ -193,6 +194,19 @@ public interface TableInfo extends HasPermission
      * language.  Most tables do not have methods. 
      */
     MethodInfo getMethod(String name);
+
+    /**
+     * Returns a string that will appear on the default import page and as the top line
+     * of the default excel template
+     */
+    public String getImportMessage();
+
+    /**
+     * Returns a list of templates (label / URL) that should be used as the options for excel upload
+     * Each URL should either point to a static template file or an action to generate the template.
+     * If no custom templates have been provided, it will return the default URL
+     */
+    public List<Pair<String, ActionURL>> getImportTemplates(Container c);
 
     public boolean isPublic();
 

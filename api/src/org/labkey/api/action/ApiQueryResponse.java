@@ -15,12 +15,16 @@
  */
 package org.labkey.api.action;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
 import java.sql.SQLException;
@@ -215,6 +219,23 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
             metaData.put("id", pkCols.get(0).getName());
 
         metaData.put("fields", fields);
+
+        metaData.put("description", _tinfo.getDescription());
+        metaData.put("importMessage", _tinfo.getImportMessage());
+
+        JSONArray templates = new JSONArray();
+        List<Pair<String, ActionURL>> it = _tinfo.getImportTemplates(_ctx.getContainer());
+        if(it != null && it.size() > 0)
+        {
+            for (Pair<String, ActionURL> pair : it)
+            {
+                JSONObject o = new JSONObject();
+                o.put("label", pair.getKey());
+                o.put("url", pair.second);
+                templates.put(o);
+            }
+        }
+        metaData.put("importTemplates", templates);
 
         return metaData;
     }

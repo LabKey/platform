@@ -174,9 +174,4 @@ public class WebdavService
     {
         return ServiceRegistry.get(WebdavResolver.class);
     }
-
-    public void setRootResolver(WebdavResolver rootResolver)
-    {
-        _rootResolver = rootResolver;
-    }
 }

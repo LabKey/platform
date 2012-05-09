@@ -36,6 +36,7 @@ import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.resource.Resource;
@@ -48,12 +49,15 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.ImportTemplateType;
 import org.labkey.data.xml.PositionTypeEnum;
 import org.labkey.data.xml.TableType;
 
@@ -83,6 +87,8 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     private Map<String, MethodInfo> _methodMap;
     protected String _name;
     protected String _description;
+    protected String _importMsg;
+    protected List<Pair<String, DetailsURL>> _importTemplates;
 
     protected DetailsURL _gridURL;
     protected DetailsURL _insertURL;
@@ -722,6 +728,12 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         if (xmlTable.isSetCacheSize())
             _cacheSize = xmlTable.getCacheSize();
 
+        if(xmlTable.getImportMessage() != null)
+            setImportMessage(xmlTable.getImportMessage());
+
+        if(xmlTable.getImportTemplates() != null)
+            setImportTemplates(xmlTable.getImportTemplates().getTemplateArray());
+
         if (xmlTable.getColumns() != null)
         {
             List<ColumnType> wrappedColumns = new ArrayList<ColumnType>();
@@ -1114,5 +1126,53 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     public boolean supportsContainerFilter()
     {
         return this instanceof ContainerFilterable;
+    }
+
+    @Override
+    public String getImportMessage()
+    {
+        return _importMsg;
+    }
+
+    public void setImportMessage(String msg)
+    {
+        checkLocked();
+        _importMsg = msg;
+    }
+
+    @Override
+    public List<Pair<String, ActionURL>> getImportTemplates(Container c)
+    {
+        List<Pair<String, ActionURL>> templates = new ArrayList<Pair<String, ActionURL>>();
+        if(_importTemplates != null)
+        {
+            for (Pair<String, DetailsURL> pair : _importTemplates)
+            {
+                templates.add(Pair.of(pair.first, pair.second.copy(c).getActionURL()));
+            }
+        }
+
+        if (templates.size() == 0)
+        {
+            ActionURL url = PageFlowUtil.urlProvider(QueryUrls.class).urlCreateExcelTemplate(c, getPublicSchemaName(), getName());
+            url.addParameter("captionType", ExcelWriter.CaptionType.Name.name());
+            if(url != null)
+                templates.add(Pair.of("Download Template", url));
+        }
+
+        return templates;
+    }
+
+    public void setImportTemplates(ImportTemplateType[] templates)
+    {
+        checkLocked();
+        List<Pair<String, DetailsURL>> list = new ArrayList<Pair<String, DetailsURL>>();
+        for (ImportTemplateType t : templates)
+        {
+            list.add(Pair.of(t.getLabel(), DetailsURL.fromString(t.getUrl()).fromString(t.getUrl())));
+        }
+
+
+        _importTemplates = list;
     }
 }

@@ -45,22 +45,16 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
             ,bodyStyle:'padding:5px'
             ,frame: false
             ,defaults: {
-                bodyStyle:'padding:5px'
+                bodyStyle:'padding:5px',
+                border: false
             }
             ,buttonAlign: 'left'
             ,monitorValid: true
             ,items: [{
-                xtype: 'button'
-                ,text: 'Download Excel Template'
-                ,border: false
-                ,listeners: {
-                    scope: this,
-                    click: this.makeExcel
-                },
-                scope: this,
-                handler: this.makeExcel
+                xtype: 'container',
+                itemId: 'templateArea'
             },{
-                xtype: 'panel',
+                xtype: 'container',
                 itemId: 'errorArea',
                 border: false,
                 defaults: {
@@ -200,16 +194,13 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
             }]
         })
 
-        this.store = this.store || Ext4.create('LABKEY.ext4.Store', {
+        LABKEY.Query.getQueryDetails({
             containerPath: this.containerPath
             ,schemaName: this.schemaName
             ,queryName: this.queryName
             ,viewName: this.viewName
-            ,columns: this.columns
-            ,metadata: this.metadata
-            ,metadataDefaults: this.metadataDefaults
-            ,maxRows: 0
-            ,autoLoad: true
+            ,scope: this
+            ,success: this.populateTemplates
         });
 
         this.uploadType = 'text';
@@ -221,26 +212,79 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
         this.addEvents('uploadexception', 'uploadcomplete');
     },
 
-    makeExcel: function(){
-        //TODO: potentially convert to use ExportExcelTemplateAction
-        var header = [];
+    populateTemplates: function(meta){
+        var toAdd = [];
 
-        this.store.getFields().each(function(f){
-            if (LABKEY.ext.MetaHelper.shouldShowInInsertView(f)){
-                header.push(f.fieldLabel || f.name);
-            }
-        }, this);
+        if(meta.importMessage){
+            toAdd.push({
+                html: '<b>' + meta.importMessage + '</b>',
+                style: 'padding-bottom: 20px;',
+                border: false
+            });
+        }
 
-        //TODO: Add formatting or validation in the excel sheet?
-        var config = {
-            fileName : this.queryName + '_' + (new Date().format('Y-m-d H_i_s')) + '.xls',
-            sheets : [{
-                name: 'data',
-                data: [header]
-            }]
-        };
+        if(meta.importTemplates && meta.importTemplates.length > 1)
+        {
+            toAdd.push({
+                layout: 'hbox',
+                style: 'padding-bottom: 20px;',
+                border: false,
+                items: [{
+                    xtype: 'combo',
+                    itemId: 'selectedTemplate',
+                    fieldLabel: 'Choose Template',
+                    width: 400,
+                    value: meta.importTemplates[0].url,
+                    labelWidth: 120,
+                    displayField: 'label',
+                    valueField: 'url',
+                    store: Ext4.create('Ext.data.Store', {
+                        data: meta.importTemplates,
+                        fields: ['label', 'url'],
+                        proxy: {
+                            type: 'memory'
+                        }
+                    }),
+                    queryMode: 'local'
+                },{
+                    xtype: 'button',
+                    text: 'Download',
+                    scope: this,
+                    handler: function(btn){
+                        var field = this.down('#selectedTemplate');
+                        if(!field.getValue()){
+                            alert('Must pick a template');
+                            return;
+                        }
 
-        LABKEY.Utils.convertToExcel(config);
+                        this.generateExcelTemplate({
+                            templateUrl: field.getValue()
+                        })
+                    },
+                    style: 'margin-left: 5px;'
+                }]
+            });
+        }
+        else {
+            toAdd.push({
+                xtype: 'button',
+                style: 'margin-bottom: 10px;',
+                text: meta.importTemplates[0].label,
+                border: false,
+                handler: this.generateExcelTemplate,
+                templateUrl: meta.importTemplates[0].url
+
+            })
+        }
+
+        this.down('#templateArea').add(toAdd);
+    },
+
+    generateExcelTemplate: function(btn){
+        Ext4.create('Ext.form.Panel', {
+            url: btn.templateUrl,
+            standardSubmit: true
+        }).submit();
     },
 
     formSubmit: function(){
@@ -296,7 +340,6 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
         if(!response || !response.success){
             var msg = response ? response.exception || response.message : null;
             alert(msg || 'There was a problem with the upload');
-            console.log(response)
             this.fireEvent('uploadexception', response);
         }
         else {

@@ -1717,18 +1717,59 @@ public class QueryView extends WebPartView<Object>
     }
 
     // Set up an ExcelWriter that exports no data -- used to export templates on upload pages
-    protected ExcelWriter getExcelTemplateWriter() throws Exception
+    protected ExcelWriter getExcelTemplateWriter(boolean respectView) throws Exception
     {
         // The template should be based on the actual columns in the table, not the user's default view,
         // which may be hiding columns or showing values joined through lookups
+
+        //NOTE: if the the user passed a viewName param on the URL, we will use these columns
+        //with the caveat that we will skip and non-user editable columns or those that do
+        //map to fields in this table (ie. lookups).  we will also append any missing
+        //required columns.
+
+        //TODO: the latter might be problematic if the value of required column is set
+        //in a validation script.  however, the dev could always set it to userEditable=false or nullable=true
         List<FieldKey> fieldKeys = new ArrayList<FieldKey>();
-        for (ColumnInfo columnInfo : createTable().getColumns())
+        TableInfo t = createTable();
+
+        if (!respectView)
         {
-            if (columnInfo.isUserEditable())
+            for (ColumnInfo columnInfo : t.getColumns())
             {
-                fieldKeys.add(columnInfo.getFieldKey());
+                if (columnInfo.isUserEditable())
+                {
+                    fieldKeys.add(columnInfo.getFieldKey());
+                }
             }
         }
+        else
+        {
+            //get list of required columns so we can verify presence
+            Set<FieldKey> requiredCols = new HashSet<FieldKey>();
+            for (ColumnInfo c : t.getColumns())
+            {
+                if(!c.isNullable() && c.isUserEditable())
+                    requiredCols.add(c.getFieldKey());
+            }
+
+
+            for (FieldKey key : getCustomView().getColumns())
+            {
+                if (key.getParent() != null)
+                    continue;
+
+                Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(t, Collections.singleton(key));
+                ColumnInfo col = cols.get(key);
+                if (col != null && col.isUserEditable())
+                {
+                    fieldKeys.add(key);
+                    if(requiredCols.contains(key))
+                        requiredCols.remove(key);
+                }
+            }
+            fieldKeys.addAll(requiredCols);
+        }
+
         // Force the view to use our special list
         getSettings().setFieldKeys(fieldKeys);
 
@@ -1754,24 +1795,31 @@ public class QueryView extends WebPartView<Object>
 
     public void exportToExcel(HttpServletResponse response, ExcelWriter.ExcelDocumentType docType) throws Exception
     {
-        exportToExcel(response, false, ExcelWriter.CaptionType.Label, false, docType);
+        exportToExcel(response, false, ExcelWriter.CaptionType.Label, false, docType, false, null);
+    }
+
+    public void exportToExcelTemplate(HttpServletResponse response, ExcelWriter.CaptionType captionType, boolean insertColumnsOnly) throws Exception
+    {
+        exportToExcelTemplate(response, captionType, insertColumnsOnly, false, null);
     }
 
     // Export with no data rows -- just captions
-    public void exportToExcelTemplate(HttpServletResponse response, ExcelWriter.CaptionType captionType, boolean insertColumnsOnly) throws Exception
+    public void exportToExcelTemplate(HttpServletResponse response, ExcelWriter.CaptionType captionType, boolean insertColumnsOnly, boolean respectView, @Nullable String prefix) throws Exception
     {
-        exportToExcel(response, true, captionType, insertColumnsOnly, ExcelWriter.ExcelDocumentType.xls);
+        exportToExcel(response, true, captionType, insertColumnsOnly, ExcelWriter.ExcelDocumentType.xls, respectView, prefix);
     }
 
-    private void exportToExcel(HttpServletResponse response, boolean templateOnly, ExcelWriter.CaptionType captionType, boolean insertColumnsOnly, ExcelWriter.ExcelDocumentType docType) throws Exception
+    private void exportToExcel(HttpServletResponse response, boolean templateOnly, ExcelWriter.CaptionType captionType, boolean insertColumnsOnly, ExcelWriter.ExcelDocumentType docType, boolean respectView, @Nullable String prefix) throws Exception
     {
         _exportView = true;
         TableInfo table = getTable();
         if (table != null)
         {
-            ExcelWriter ew = templateOnly ? getExcelTemplateWriter() : getExcelWriter(docType);
+            ExcelWriter ew = templateOnly ? getExcelTemplateWriter(respectView) : getExcelWriter(docType);
             ew.setCaptionType(captionType);
             ew.setShowInsertableColumnsOnly(insertColumnsOnly);
+            if(prefix != null)
+                ew.setFilenamePrefix(prefix);
             ew.write(response);
         }
     }
