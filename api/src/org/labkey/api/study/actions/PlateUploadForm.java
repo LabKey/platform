@@ -15,6 +15,7 @@
  */
 package org.labkey.api.study.actions;
 
+import org.labkey.api.study.assay.AssayRunUploadContext;
 import org.labkey.api.study.assay.PlateBasedAssayProvider;
 import org.labkey.api.study.assay.PlateSamplePropertyHelper;
 
@@ -22,19 +23,11 @@ import org.labkey.api.study.assay.PlateSamplePropertyHelper;
  * User: brittp
  * Date: Aug 23, 2010 3:23:03 PM
  */
-public abstract class PlateUploadForm<ProviderType extends PlateBasedAssayProvider> extends AssayRunUploadForm<ProviderType>
+public interface PlateUploadForm<ProviderType extends PlateBasedAssayProvider> extends AssayRunUploadContext<ProviderType>
 {
-    private PlateSamplePropertyHelper _samplePropertyHelper;
+    public PlateSamplePropertyHelper getSamplePropertyHelper();
 
-    public PlateSamplePropertyHelper getSamplePropertyHelper()
-    {
-        return _samplePropertyHelper;
-    }
+    public void setSamplePropertyHelper(PlateSamplePropertyHelper helper);
 
-    public void setSamplePropertyHelper(PlateSamplePropertyHelper helper)
-    {
-        _samplePropertyHelper = helper;
-    }
-
-    public abstract Integer getReRunId();
+    public Integer getReRunId();
 }
