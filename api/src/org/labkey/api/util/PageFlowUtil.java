@@ -53,6 +53,8 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebTheme;
 import org.labkey.api.view.WebThemeManager;
+import org.labkey.api.webdav.WebdavResource;
+import org.labkey.api.webdav.WebdavService;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.web.servlet.ModelAndView;
@@ -1858,10 +1860,12 @@ public class PageFlowUtil
     private static String[] getClientExploded()
     {
         List<String> files = new ArrayList<String>();
-        File dir = new File(ModuleLoader.getInstance().getWebappDir(), "/clientapi");
-        FileType js = new FileType(".js");
-        for (File f : dir.listFiles())
+        WebdavResource dir = WebdavService.get().getRootResolver().lookup(Path.parse("/clientapi"));
+
+        FileType js = new FileType(".js", FileType.gzSupportLevel.NO_GZ);
+        for (WebdavResource r : dir.list())
         {
+            File f = r.getFile();
             if(js.isType(f) && !f.getName().startsWith("clientapi"))
                 files.add("clientapi/" + f.getName());
         }
