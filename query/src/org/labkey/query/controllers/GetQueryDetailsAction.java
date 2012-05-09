@@ -45,6 +45,7 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.query.CustomViewUtil;
@@ -145,6 +146,22 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
 
             if (null != tinfo.getDescription())
                 resp.put("description", tinfo.getDescription());
+            if(null != tinfo.getImportMessage())
+                    resp.put("importMessage", tinfo.getImportMessage());
+
+            JSONArray templates = new JSONArray();
+            List<Pair<String, ActionURL>> it = tinfo.getImportTemplates(getViewContext().getContainer());
+            if(null != it && it.size() > 0)
+            {
+                for (Pair<String, ActionURL> pair : it)
+                {
+                    JSONObject o = new JSONObject();
+                    o.put("label", pair.getKey());
+                    o.put("url", pair.second);
+                    templates.put(o);
+                }
+            }
+            resp.put("importTemplates", templates);
 
             Collection<FieldKey> fields = Collections.emptyList();
             if (null != form.getAdditionalFields() && form.getAdditionalFields().length > 0)

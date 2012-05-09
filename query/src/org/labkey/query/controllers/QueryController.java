@@ -1245,6 +1245,7 @@ public class QueryController extends SpringActionController
     {
         ExcelWriter.CaptionType captionType = ExcelWriter.CaptionType.Label;
         boolean insertColumnsOnly = true;
+        String filenamePrefix;
 
         public void setCaptionType(String s)
         {
@@ -1262,10 +1263,29 @@ public class QueryController extends SpringActionController
         {
             return captionType.name();
         }
+
+        public String getFilenamePrefix()
+        {
+            return filenamePrefix;
+        }
+
+        public void setFilenamePrefix(String prefix)
+        {
+            this.filenamePrefix = prefix;
+        }
     }
 
-
     @RequiresPermissionClass(ReadPermission.class)
+
+    /**
+     * Can be used to generate an excel template for import into a table.  Supported URL params include:
+     * filenamePrefix: the prefix of the excel file that is generated, defaults to '_data'
+     * query.viewName: if provided, the resulting excel file will use the fields present in this view, with the caveat
+     * that any non-existent columns (like a lookup) or non-usereditable columns will be skipped.  Any required columns
+     * missing from this view will be appended to the end of the query.
+     * captionType: determines which column property is used in the header.  either Label or Name
+     *
+     */
     public class ExportExcelTemplateAction extends _ExportQuery<TemplateForm>
     {
         public ExportExcelTemplateAction()
@@ -1275,7 +1295,8 @@ public class QueryController extends SpringActionController
 
         void _export(TemplateForm form, QueryView view) throws Exception
         {
-            view.exportToExcelTemplate(getViewContext().getResponse(), form.captionType, form.insertColumnsOnly);
+            boolean respectView = form.getViewName() != null;
+            view.exportToExcelTemplate(getViewContext().getResponse(), form.captionType, form.insertColumnsOnly, respectView, form.getFilenamePrefix());
         }
     }
 
@@ -1285,7 +1306,7 @@ public class QueryController extends SpringActionController
     {
         void _export(QueryForm form, QueryView view) throws Exception
         {
-                view.exportToTsv(getViewContext().getResponse(), form.isExportAsWebPage());
+            view.exportToTsv(getViewContext().getResponse(), form.isExportAsWebPage());
         }
     }
 

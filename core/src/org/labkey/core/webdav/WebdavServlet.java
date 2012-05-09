@@ -105,8 +105,6 @@ public class WebdavServlet extends HttpServlet
             _resolver = WebdavResolverImpl.get();
         else
             throw new IllegalArgumentException("resolver");
-
-        WebdavService.get().setRootResolver(_resolver);
     }
 
     WebdavResolver _resolver;
