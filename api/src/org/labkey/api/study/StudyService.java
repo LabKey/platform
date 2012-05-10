@@ -143,10 +143,10 @@ public class StudyService
          * @param c The container
          * @param datasetId The dataset Id
          * @param lsids The row LSIDs
-         * @return An array of maps of the dataset row columns, null if no records found
+         * @return An array of maps of the dataset row columns
          * @throws SQLException Thrown if there's a database error
          */
-        public Map<String, Object>[] getDatasetRows(User u, Container c, int datasetId, Collection<String> lsids) throws SQLException;
+        @NotNull public Map<String, Object>[] getDatasetRows(User u, Container c, int datasetId, Collection<String> lsids) throws SQLException;
 
         /**
          * Applies the administrator-configured default QC filter for a dataset data view.
