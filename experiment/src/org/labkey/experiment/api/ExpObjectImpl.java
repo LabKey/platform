@@ -22,12 +22,17 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.*;
 import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.exp.property.ValidatorContext;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.query.ValidationException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.ObjectUtils;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.sql.SQLException;
 import java.io.Serializable;
@@ -118,6 +123,14 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
                 ObjectProperty oprop = new ObjectProperty(getLSID(), getContainer(), pd.getPropertyURI(), value, pd.getPropertyType());
                 oprop.setPropertyId(pd.getPropertyId());
                 OntologyManager.insertProperties(getContainer(), getOwnerObjectLSID(), oprop);
+            }
+            else
+            {
+                // We still need to validate blanks
+                List<ValidationError> errors = new ArrayList<ValidationError>();
+                OntologyManager.validateProperty(PropertyService.get().getPropertyValidators(pd), pd, value, errors, new ValidatorContext(pd.getContainer(), user));
+                if (!errors.isEmpty())
+                    throw new ValidationException(errors);
             }
             ExperimentService.get().commitTransaction();
         }
