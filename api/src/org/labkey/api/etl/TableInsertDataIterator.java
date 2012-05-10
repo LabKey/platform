@@ -23,6 +23,7 @@ import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -57,7 +58,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         for (ColumnInfo col : table.getColumns())
         {
             Integer index = map.get(col.getName());
-            String mvColumnName = col.getMvColumnName();
+            FieldKey mvColumnName = col.getMvColumnName();
             if (null == index || null == mvColumnName)
                 continue;
             data.getColumnInfo(index).setMvColumnName(mvColumnName);

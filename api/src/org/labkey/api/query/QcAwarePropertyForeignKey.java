@@ -105,7 +105,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
         {
             // Just need to set the display column factory
             ColumnInfo col = super.constructColumnInfo(parent, name, pd);
-            col.setMvColumnName(pd.getName() + MvColumn.MV_INDICATOR_SUFFIX);
+            col.setMvColumnName(new FieldKey(null, pd.getName() + MvColumn.MV_INDICATOR_SUFFIX));
             col.setDisplayColumnFactory(new MVDisplayColumnFactory());
             return col;
         }

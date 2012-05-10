@@ -327,15 +327,27 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     }
 
 
+    @Override
     public ColumnInfo getColumn(String colName)
     {
         return getColumnMetaData().getColumn(colName);
     }
 
+
+    @Override
+    public ColumnInfo getColumn(FieldKey name)
+    {
+        if (null != name.getParent())
+            return null;
+        return getColumn(name.getName());
+    }
+
+
     @Deprecated
     public String getMetaDataSchemaName()
     {
         return _metaDataSchemaName;
+
     }
 
     @Deprecated
@@ -343,6 +355,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     {
         _metaDataSchemaName = metaDataSchemaName;
     }
+
 
     protected SchemaColumnMetaData getColumnMetaData()
     {

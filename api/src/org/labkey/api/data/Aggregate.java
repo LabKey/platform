@@ -149,6 +149,7 @@ public class Aggregate
         return _type.getSQLColumnFragment(dialect, alias, _aggregateColumnName);
     }
 
+    // TODO FieldKey getColumnName()
     public String getColumnName()
     {
         return _columnName;

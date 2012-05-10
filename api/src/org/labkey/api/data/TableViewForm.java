@@ -389,7 +389,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         {
             String str = _stringValues.get(propName);
             String caption = _dynaClass.getPropertyCaption(propName);
-            
+
             if (null != str && "".equals(str.trim()))
                 str = null;
 
@@ -451,7 +451,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
     public boolean isValid()
     {
         BindException bind = populateValues((BindException)null);
-        return bind.getErrorCount() == 0 && bind.getFieldErrorCount() == 0;        
+        return bind.getErrorCount() == 0 && bind.getFieldErrorCount() == 0;
     }
 
     public Object getTypedValue(String propName)

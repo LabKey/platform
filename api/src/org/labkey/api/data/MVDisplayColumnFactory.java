@@ -38,11 +38,8 @@ public class MVDisplayColumnFactory implements DisplayColumnFactory
 {
     public DisplayColumn createRenderer(ColumnInfo colInfo)
     {
-        String mvColumnName = colInfo.getMvColumnName();
-        assert mvColumnName != null : "Attempt to render MV state for a non-mv column";
-
-        FieldKey key = FieldKey.fromString(colInfo.getName());
-        FieldKey qcKey = new FieldKey(key.getParent(), mvColumnName);
+        FieldKey qcKey = colInfo.getMvColumnName();
+        assert qcKey != null : "Attempt to render MV state for a non-mv column";
 
         Map<FieldKey,ColumnInfo> map = QueryService.get().getColumns(colInfo.getParentTable(), Collections.singletonList(qcKey));
 
@@ -79,7 +76,7 @@ public class MVDisplayColumnFactory implements DisplayColumnFactory
 
         mvColumn.setParentIsObjectId(true);
         
-        valueColumn.setMvColumnName(mvColumn.getName());
+        valueColumn.setMvColumnName(mvColumn.getFieldKey());
 
         ColumnInfo rawValueCol = new RawValueColumn(table, valueColumn);
 

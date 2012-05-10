@@ -298,7 +298,7 @@ public class Sort
                 // Note: The columns we're passed won't necessarily contain
                 // our mv column at this point -- we need to let the caller
                 // know it should be added
-                requiredColumnNames.add(col.getMvColumnName());
+                requiredColumnNames.add(col.getMvColumnName().getName());
             }
         }
         return requiredColumnNames;

@@ -22,6 +22,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.ResultSetUtil;
 
 import java.io.IOException;
@@ -100,8 +101,8 @@ class StatementDataIterator extends AbstractDataIterator
                 to = _stmt.getParameter(col.getName());
             if (null != to)
             {
-                String mvName = col.getMvColumnName();
-                Parameter mv = null==mvName ? null : _stmt.getParameter(mvName);
+                FieldKey mvName = col.getMvColumnName();
+                Parameter mv = null==mvName ? null : _stmt.getParameter(mvName.getName());
                 bindings.add(new Triple(i, to, mv));
             }
         }

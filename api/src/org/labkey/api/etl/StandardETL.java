@@ -184,9 +184,8 @@ public class StandardETL implements DataIteratorBuilder
                     setupError.addGlobalError("Two columns mapped to target column: " + to.target.getName());
                 unusedCols.remove(to.target.getFieldKey());
                 to.indexFrom = i;
-                Integer indexMv = null==to.target.getMvColumnName() ? null : sourceColumnsMap.get(to.target.getMvColumnName());
-                to.indexMv = null==indexMv ? 0 : indexMv.intValue();
-                targetCols.add(to);
+                Integer indexMv = null==to.target.getMvColumnName() ? null : sourceColumnsMap.get(to.target.getMvColumnName().getName());
+                to.indexMv = null==indexMv ? 0 : indexMv.intValue();                targetCols.add(to);
             }
             else
             {

@@ -122,7 +122,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     private boolean _lockName = false;
 
     // Only set if we have an associated mv column for this column
-    private String _mvColumnName = null;
+    private FieldKey _mvColumnName = null;
     // indicates that this is an mv column for another column
     private boolean _isMvIndicatorColumn = false;
     private boolean _isRawValueColumn = false;
@@ -1498,12 +1498,12 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         return _mvColumnName != null;
     }
 
-    public String getMvColumnName()
+    public FieldKey getMvColumnName()
     {
         return _mvColumnName;
     }
 
-    public void setMvColumnName(String mvColumnName)
+    public void setMvColumnName(FieldKey mvColumnName)
     {
         checkLocked();
         this._mvColumnName = mvColumnName;
@@ -1644,9 +1644,9 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         // TODO should mvColumnName be a fieldkey so we can reparent etc?
         if (null != getMvColumnName())
         {
-            FieldKey r = null==remap ? null : remap.get(new FieldKey(null, getMvColumnName()));
+            FieldKey r = null==remap ? null : remap.get(getMvColumnName());
             if (null != r && r.getParent()==null)
-                    setMvColumnName(r.getName());
+                    setMvColumnName(r);
         }
 
         remapUrlFieldKeys(parent, remap);

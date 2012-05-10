@@ -339,6 +339,15 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         return resolveColumn(name);
     }
 
+    @Override
+    public ColumnInfo getColumn(FieldKey name)
+    {
+        if (null != name.getParent())
+            return null;
+        return getColumn(name.getName());
+    }
+
+
     /**
      * If a column wasn't found in the standard column list, give the table a final chance to locate it.
      * Useful for preserving backwards compatibility with saved queries when a column is renamed.

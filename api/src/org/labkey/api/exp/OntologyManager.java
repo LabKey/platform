@@ -55,6 +55,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.gwt.client.ui.domain.CancellationException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
@@ -452,10 +453,10 @@ public class OntologyManager
                             parameterMap.put(key, p.first);
                             if (null != p.second)
                             {
-                                String mvName = col.getMvColumnName();
+                                FieldKey mvName = col.getMvColumnName();
                                 if (mvName != null)
                                 {
-                                    parameterMap.put(mvName, p.second);
+                                    parameterMap.put(mvName.getName(), p.second);
                                 }
                             }
                         }

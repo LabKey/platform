@@ -505,7 +505,7 @@ public class StorageProvisioner
                     assert mvColumn != null : "No MV column found for " + p.getName();
                     if (mvColumn != null)
                     {
-                        c.setMvColumnName(mvColumn.getName());
+                        c.setMvColumnName(mvColumn.getFieldKey());
                         mvColumn.setMvIndicatorColumn(true);
                         // The UI for the main column will include MV input as well, so no need for another column in insert/update views
                         mvColumn.setShownInUpdateView(false);

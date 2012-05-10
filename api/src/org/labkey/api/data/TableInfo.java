@@ -104,6 +104,9 @@ public interface TableInfo extends HasPermission
 
     ColumnInfo getColumn(String colName);
 
+    // same as getColumn(colName.getName()), does not need to support lookup columns
+    ColumnInfo getColumn(FieldKey colName);
+
     List<ColumnInfo> getColumns();
 
     List<ColumnInfo> getUserEditableColumns();

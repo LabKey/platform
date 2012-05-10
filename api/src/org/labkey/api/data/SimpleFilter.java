@@ -126,6 +126,7 @@ public class SimpleFilter implements Filter
                 sb.append(sqlf);
         }
 
+        // TODO List<FieldKey> getColumnNames()
         abstract public List<String> getColumnNames();
 
         /** @return whether the value meets the criteria of this filter */

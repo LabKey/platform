@@ -1388,7 +1388,7 @@ public class Table
     public static void ensureRequiredColumns(TableInfo table, Map<String, ColumnInfo> cols, @Nullable Filter filter, @Nullable Sort sort, @Nullable List<Aggregate> aggregates)
     {
         List<ColumnInfo> allColumns = table.getColumns();
-        Set<String> requiredColumns = new CaseInsensitiveHashSet();
+        Set<String> requiredColumns = new HashSet();
 
         if (null != filter)
             requiredColumns.addAll(filter.getWhereParamNames());
@@ -1400,6 +1400,7 @@ public class Table
 
         if (null != aggregates)
         {
+            // UNDONE: use fieldkeys
             for (Aggregate agg : aggregates)
                 requiredColumns.add(agg.getColumnName());
         }
@@ -1410,7 +1411,7 @@ public class Table
         {
             if (cols.containsKey(column.getAlias()))
                 continue;
-            if (requiredColumns.contains(column.getAlias()) || requiredColumns.contains(column.getPropertyName()))
+            if (requiredColumns.contains(column.getFieldKey()) || requiredColumns.contains(new FieldKey(null,column.getAlias())) || requiredColumns.contains(new FieldKey(null,column.getPropertyName())))
                 cols.put(column.getAlias(), column);
             else if (column.isKeyField())
                 cols.put(column.getAlias(), column);
