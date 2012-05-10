@@ -87,20 +87,14 @@ public class QueryTable extends QueryRelation
     @Override
     RelationColumn getColumn(@NotNull String name)
     {
-        return getColumn(new FieldKey(null, name));
-    }
-
-
-    /* ONLY for one part names */
-    private RelationColumn getColumn(@NotNull FieldKey k)
-    {
+        FieldKey k = new FieldKey(null,name);
         TableColumn ret = _selectedColumns.get(k);
-        if (null != ret || k.getParent() != null)
+        if (null != ret)
             return ret;
-        ColumnInfo ci = _tableInfo.getColumn(k.getName());
+        ColumnInfo ci = _tableInfo.getColumn(name);
         if (ci == null)
             return null;
-        ret = new TableColumn(k, ci);
+        ret = new TableColumn(k, ci, null, null);
         _selectedColumns.put(k,ret);
         return ret;
     }
@@ -132,12 +126,13 @@ public class QueryTable extends QueryRelation
         TableColumn ret = _selectedColumns.get(k);
         if (null != ret)
             return ret;
-        if (parent._col.getFk() == null)
+        ForeignKey foreignKey = parent._col.getFk();
+        if (null == foreignKey)
             return null;
         ColumnInfo lk = parent._col.getFk().createLookupColumn(parent._col, name);
         if (lk == null)
             return null;
-        ret = new TableColumn(k,lk);
+        ret = new TableColumn(k, lk, parent, foreignKey);
         _selectedColumns.put(k,ret);
         return ret;
     }
@@ -164,7 +159,7 @@ public class QueryTable extends QueryRelation
         if (null == qfk)
             return null;
         ColumnInfo lk = qfk.createLookupColumn(parent._col, name);
-        ret = new TableColumn(k,lk);
+        ret = new TableColumn(k, lk, parent, qfk);
         _selectedColumns.put(k,ret);
         return ret;
     }
@@ -248,13 +243,18 @@ public class QueryTable extends QueryRelation
     {
         FieldKey _key;
         ColumnInfo _col;
+        TableColumn _parent;
+        ForeignKey _foreignKey;
         String _alias;
         boolean _setHidden = false;
 
-        TableColumn(FieldKey key, ColumnInfo col)
+        TableColumn(FieldKey key, ColumnInfo col, TableColumn parent, ForeignKey foreignKey)
         {
+            assert (null == parent && null == foreignKey) || (null != parent && null != foreignKey);
             _key = key;
             _col = col;
+            _parent = parent;
+            _foreignKey = foreignKey;
             _alias = _aliasManager.decideAlias(col.getAlias());
         }
 
@@ -334,15 +334,47 @@ public class QueryTable extends QueryRelation
             addSuggestedColumn(suggested, k);
     }
 
+
     private void addSuggestedColumn(Set<RelationColumn> suggested, FieldKey k)
     {
         boolean existed = _selectedColumns.containsKey(k);
-        TableColumn tc = (TableColumn)getColumn(k);
+
+        RelationColumn tc = _resolve(k);
         if (null == tc)
             return;
-        if (!existed)
-            tc._setHidden = true;
+
+        if (!existed && tc instanceof TableColumn)
+            ((TableColumn)tc)._setHidden = true;
+
         suggested.add(tc);
+    }
+
+
+    private void addSuggestedContainerColumn(Set<RelationColumn> suggested, TableColumn sibling)
+    {
+        // UNDONE: let tableinfo specify the container column in some way
+        // foreignKey().createLookupContainerColumn()
+        // or foreignKey.getTable().getContainerColumn()
+        // or column.getContainerColumnFieldKey()
+
+        addSuggestedColumn(suggested, new FieldKey(sibling.getFieldKey().getParent(), "container"));
+        addSuggestedColumn(suggested, new FieldKey(sibling.getFieldKey().getParent(), "folder"));
+    }
+
+
+    private RelationColumn _resolve(FieldKey k)
+    {
+        TableColumn tc = _selectedColumns.get(k);
+        if (null != tc)
+            return tc;
+
+        if (null == k.getParent())
+            return getColumn(k.getName());
+
+        RelationColumn parent = _resolve(k.getParent());
+        if (null == parent)
+            return null;
+        return getLookupColumn(parent, k.getName());
     }
 
 
@@ -353,23 +385,18 @@ public class QueryTable extends QueryRelation
     public Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
     {
         Set<RelationColumn> suggested = new HashSet<RelationColumn>();
-//        for (RelationColumn rc : selected)
-//        {
-//            if (!(rc instanceof TableColumn) || ((TableColumn)rc).getTable()  != this)
-//                throw new IllegalArgumentException("Wrong column passed to getSuggestedColumn(): " + rc.getAlias());
-//            TableColumn tc = (TableColumn)rc;
-//            fks.add(tc._key);
-//        }
+        Set<FieldKey> suggestedContainerColumns = new HashSet<FieldKey>();
+
         for (RelationColumn rc : selected)
         {
             TableColumn tc = (TableColumn)rc;
             FieldKey fk = tc._col.getFieldKey();
-            // TODO not handling lookup columns yet
-            if (fk.getParent()  != null)
-                continue;
+
+            if (suggestedContainerColumns.add(fk.getParent()))
+                addSuggestedContainerColumn(suggested, tc);
 
             if (null != tc._col.getMvColumnName())
-                addSuggestedColumn(suggested, new FieldKey(null, tc._col.getMvColumnName()));
+                addSuggestedColumn(suggested, new FieldKey(tc.getFieldKey().getParent(), tc._col.getMvColumnName()));
 
             StringExpression se = tc._col.getURL();
             if (se instanceof StringExpressionFactory.FieldKeyStringExpression)
@@ -389,19 +416,4 @@ public class QueryTable extends QueryRelation
         suggested.removeAll(selected);
         return suggested;
     }
-
-
-//    // an unwrapped lookup column
-//    class LookupColumnInfoColumn extends TableColumn
-//    {
-//        LookupColumnInfoColumn(FieldKey key, ColumnInfo col)
-//        {
-//            super(key, col);
-//        }
-//
-//        public SQLFragment getValueSql(String tableAlias)
-//        {
-//            return _col.getValueSql(_innerAlias);
-//        }
-//    }
 }

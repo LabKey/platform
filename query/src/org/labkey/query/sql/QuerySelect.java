@@ -254,10 +254,8 @@ groupByLoop:
             if (relation == null)
                 continue;
             qtable.setQueryRelation(relation);
-            if (!AliasManager.isLegalName(relation.getAlias()))
-                relation.setAlias(AliasManager.makeLegalName(relation.getAlias(), getSqlDialect()) + "_" + _query.incrementAliasCounter());
-            else
-                relation.setAlias(relation.getAlias() + "_" + _query.incrementAliasCounter());
+            String relationAlias = makeRelationName(relation.getAlias());
+            relation.setAlias(relationAlias);
             _tables.put(qtable.getAlias(), relation);
         }
 
@@ -604,6 +602,15 @@ groupByLoop:
     {
         QueryRelation ret = _tables.get(key);
         return ret;
+    }
+
+
+    String makeRelationName(String name)
+    {
+        if (!AliasManager.isLegalName(name) || name.length() > 40)
+            return AliasManager.makeLegalName(name, getSqlDialect()) + "_" + _query.incrementAliasCounter();
+        else
+            return name + "_" + _query.incrementAliasCounter();
     }
 
 
@@ -1483,7 +1490,7 @@ groupByLoop:
             for (RelationColumn s : suggestedColumns)
             {
                 QField field = new QField(s, null);
-                SelectColumn selectColumn = new SelectColumn(field);
+                SelectColumn selectColumn = new SelectColumn(field, true);
                 this._columns.put(selectColumn.getFieldKey(), selectColumn);
                 ret.add(selectColumn);
             }
@@ -1537,6 +1544,10 @@ groupByLoop:
         QIdentifier _aliasId;
         String _alias;
 
+        private SelectColumn()
+        {
+        }
+
         public SelectColumn(FieldKey fk)
         {
             _field = QFieldKey.of(fk);
@@ -1586,10 +1597,23 @@ groupByLoop:
 
         public SelectColumn(QField field)
         {
+            this(field, false);
+        }
+
+        public SelectColumn(QField field, boolean generateName)
+        {
             _field = field;
             _resolved = field;
-            _key = new FieldKey(null, field.getName());
-            _alias = _aliasManager.decideAlias(getName());
+            if (generateName)
+            {
+                _alias = _aliasManager.decideAlias(field.getName());
+                _key = new FieldKey(null, _alias);
+            }
+            else
+            {
+                _key = new FieldKey(null, field.getName());
+                _alias = _aliasManager.decideAlias(getName());
+            }
         }
 
         SQLFragment getInternalSql()

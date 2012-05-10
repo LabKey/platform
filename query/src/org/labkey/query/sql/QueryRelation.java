@@ -205,6 +205,12 @@ public abstract class QueryRelation
         {
             return c.getTable()._schema.getDbSchema().getSqlDialect();
         }
+
+        @Override
+        public String toString()
+        {
+            return (null == getFieldKey() ? "" : (getFieldKey().getDisplayString() + " ")) + super.toString();
+        }
     }
 
 
