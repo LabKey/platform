@@ -229,13 +229,13 @@ public class User extends UserPrincipal implements Serializable, Cloneable
 
     public boolean isImpersonated()
     {
-        return _impersonationContext.isImpersonated();
+        return _impersonationContext.isImpersonating();
     }
 
-    // Can be null even when isImpersonated() is true -- e.g., when impersonating a group
-    public @Nullable User getImpersonatingUser()
+    // @NotNull when isImpersonated() is true... returns the admin user, with all normal roles & groups
+    public User getImpersonatingUser()
     {
-        return _impersonationContext.getImpersonatingUser();
+        return _impersonationContext.getAdminUser();
     }
 
     public @Nullable Container getImpersonationProject()

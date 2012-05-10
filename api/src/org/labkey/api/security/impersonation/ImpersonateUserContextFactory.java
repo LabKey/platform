@@ -16,6 +16,7 @@
 package org.labkey.api.security.impersonation;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -23,10 +24,14 @@ import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.UserUrls;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
@@ -128,6 +133,16 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
     }
 
 
+    static void addMenu(NavTree menu, Container c, User user)
+    {
+        UserUrls userURLs = PageFlowUtil.urlProvider(UserUrls.class);
+        AdminUrls adminURLs = PageFlowUtil.urlProvider(AdminUrls.class);
+        ActionURL impersonateURL = user.isAdministrator() ? adminURLs.getAdminConsoleURL() : userURLs.getProjectUsersURL(c.getProject());
+        NavTree userMenu = new NavTree("User", impersonateURL);
+        menu.addChild(userMenu);
+    }
+
+
     private class ImpersonateUserContext implements ImpersonationContext
     {
         private final @Nullable Container _project;
@@ -158,7 +173,7 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
         }
 
         @Override
-        public boolean isImpersonated()
+        public boolean isImpersonating()
         {
             return true;
         }
@@ -177,7 +192,7 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
         }
 
         @Override
-        public User getImpersonatingUser()
+        public User getAdminUser()
         {
             return _adminUser;
         }
@@ -186,7 +201,7 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
         public String getNavTreeCacheKey()
         {
             // NavTree for user being impersonated will be different per impersonating user per project
-            String suffix = "/impersonatingUser=" + getImpersonatingUser().getUserId();
+            String suffix = "/impersonatingUser=" + getAdminUser().getUserId();
 
             if (null != _project)
                 suffix += "/impersonationProject=" + _project.getId();
@@ -216,6 +231,12 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
         public Set<Role> getContextualRoles(User user)
         {
             return user.getStandardContextualRoles();
+        }
+
+        @Override
+        public void addMenu(NavTree menu, Container c, User user, ActionURL currentURL)
+        {
+            // If impersonating a user, don't add an impersonation menu
         }
     }
 }

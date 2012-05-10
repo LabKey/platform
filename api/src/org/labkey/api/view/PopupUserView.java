@@ -15,9 +15,12 @@
  */
 package org.labkey.api.view;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserUrls;
+import org.labkey.api.security.impersonation.ImpersonationContext;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 
 /**
@@ -32,6 +35,30 @@ public class PopupUserView extends PopupMenuView
         User user = context.getUser();
         NavTree tree = new NavTree(user.getFriendlyName());
         tree.addChild("My Account", PageFlowUtil.urlProvider(UserUrls.class).getUserDetailsURL(context.getContainer(), user.getUserId(), context.getActionURL()));
+
+        Container c = context.getContainer();
+
+        // TODO: Allow limited impersonation in root?
+        if (!c.isRoot())
+        {
+            ImpersonationContext impersonationContext = user.getImpersonationContext();
+            Container project = c.getProject();
+            assert project != null;
+
+            // If user is already impersonating then we need to check permissions on the actual admin user
+            User adminUser = impersonationContext.isImpersonating() ? impersonationContext.getAdminUser() : user;
+
+            // Must be project or site admin (folder admins can't impersonate)
+            if (project.hasPermission(adminUser, AdminPermission.class))
+            {
+                ActionURL currentURL = context.getActionURL();
+                NavTree impersonateMenu = new NavTree("Impersonate");
+                impersonationContext.addMenu(impersonateMenu, c, user, currentURL);
+
+                if (impersonateMenu.hasChildren())
+                    tree.addChild(impersonateMenu);
+            }
+        }
 
         if (user.isImpersonated())
         {

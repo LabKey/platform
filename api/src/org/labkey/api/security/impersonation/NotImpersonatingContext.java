@@ -21,7 +21,10 @@ import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
 
+import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -32,7 +35,7 @@ import java.util.Set;
 public class NotImpersonatingContext implements ImpersonationContext
 {
     @Override
-    public boolean isImpersonated()
+    public boolean isImpersonating()
     {
         return false;
     }
@@ -50,7 +53,7 @@ public class NotImpersonatingContext implements ImpersonationContext
     }
 
     @Override
-    public User getImpersonatingUser()
+    public User getAdminUser()
     {
         return null;
     }
@@ -83,5 +86,13 @@ public class NotImpersonatingContext implements ImpersonationContext
     public Set<Role> getContextualRoles(User user)
     {
         return user.getStandardContextualRoles();
+    }
+
+    @Override
+    public void addMenu(NavTree menu, Container c, User user, ActionURL currentURL)
+    {
+        ImpersonateUserContextFactory.addMenu(menu, c, user);
+        ImpersonateGroupContextFactory.addMenu(menu, c, user, currentURL);
+        ImpersonateRoleContextFactory.addMenu(menu, c, currentURL, Collections.<Role>emptySet());
     }
 }

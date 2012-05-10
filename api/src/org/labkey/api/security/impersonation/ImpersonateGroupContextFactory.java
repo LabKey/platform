@@ -23,10 +23,14 @@ import org.labkey.api.security.GroupMembershipCache;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.UserUrls;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
@@ -83,7 +87,7 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
         return UserManager.getUser(_adminUserId);
     }
 
-    public static boolean canImpersonateGroup(@Nullable Container project, User user, Group group)
+    private static boolean canImpersonateGroup(@Nullable Container project, User user, Group group)
     {
         // Site admin can impersonate any group
         if (user.isAdministrator())
@@ -102,11 +106,47 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
         return false;
     }
 
+    static void addMenu(NavTree menu, Container c, User user, ActionURL currentURL)
+    {
+        NavTree groupMenu = new NavTree("Group");
+        UserUrls userURLs = PageFlowUtil.urlProvider(UserUrls.class);
+        Group[] groups = SecurityManager.getGroups(c.getProject(), true);
+
+        boolean addSeparator = false;
+
+        // Site groups are always first, followed by project groups
+        for (Group group : groups)
+        {
+            if (!canImpersonateGroup(c, user, group))
+                continue;
+
+            String display = group.getName();
+
+            if (!group.isProjectGroup())
+            {
+                display = "Site: " + display;
+                // We have at least one site group... so add a separator (if we also have project groups)
+                addSeparator = true;
+            }
+            else if (addSeparator)
+            {
+                // Our first project group after site groups... add a separator
+                groupMenu.addSeparator();
+                addSeparator = false;
+            }
+
+            groupMenu.addChild(display, userURLs.getImpersonateGroupURL(c, group.getUserId(), currentURL));
+        }
+
+        menu.addChild(groupMenu);
+    }
+
     public class ImpersonateGroupContext implements ImpersonationContext
     {
         private final Group _group;
         private final int[] _groups;
         private final URLHelper _returnURL;
+        private final User _adminUser;
 
         private ImpersonateGroupContext(@Nullable Container project, User user, Group group, URLHelper returnURL)
         {
@@ -132,10 +172,11 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
             _groups = GroupMembershipCache.computeAllGroups(seedGroups);
             _returnURL = returnURL;
             _group = group;
+            _adminUser = user;
         }
 
         @Override
-        public boolean isImpersonated()
+        public boolean isImpersonating()
         {
             return true;
         }
@@ -154,9 +195,9 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
         }
 
         @Override
-        public User getImpersonatingUser()
+        public User getAdminUser()
         {
-            return null;
+            return _adminUser;
         }
 
         @Override
@@ -188,6 +229,12 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
         public Set<Role> getContextualRoles(User user)
         {
             return user.getStandardContextualRoles();
+        }
+
+        @Override
+        public void addMenu(NavTree menu, Container c, User user, ActionURL currentURL)
+        {
+            // If impersonating a group, don't add an impersonation menu
         }
     }
 }

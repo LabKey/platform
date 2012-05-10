@@ -16,25 +16,16 @@
 
 package org.labkey.api.view;
 
-import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.Group;
-import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserUrls;
-import org.labkey.api.security.impersonation.ImpersonateGroupContextFactory;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.AdminReadPermission;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.FolderDisplayMode;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.menu.FolderAdminMenu;
 import org.labkey.api.view.menu.MenuService;
 import org.labkey.api.view.menu.ProjectAdminMenu;
@@ -65,7 +56,6 @@ public class PopupAdminView extends PopupMenuView
     public PopupAdminView(final ViewContext context)
     {
         User user = context.getUser();
-        ActionURL currentURL = context.getActionURL();
 
         boolean isAdminInThisFolder = context.hasPermission(AdminPermission.class);
         boolean hasAdminReadInRoot = ContainerManager.getRoot().hasPermission(user, AdminReadPermission.class);
@@ -76,8 +66,8 @@ public class PopupAdminView extends PopupMenuView
         
         NavTree navTree = new NavTree("Admin");
         Container c = context.getContainer();
-
         LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
+
         //Allow Admins to turn the folder bar on & off
         if (laf.getFolderDisplayMode() != FolderDisplayMode.ALWAYS && !"POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
         {
@@ -108,64 +98,6 @@ public class PopupAdminView extends PopupMenuView
                 folderAdmin.addSeparator();
                 folderAdmin.addChildren(ProjectAdminMenu.getNavTree(context));
                 navTree.addChild(folderAdmin);
-            }
-
-            // Don't allow folder admins to impersonate
-            if (project.hasPermission(user, AdminPermission.class) && !user.isImpersonated())
-            {
-                UserUrls userURLs = PageFlowUtil.urlProvider(UserUrls.class);
-                AdminUrls adminURLs = PageFlowUtil.urlProvider(AdminUrls.class);
-                NavTree impersonateMenu = new NavTree("Impersonate");
-
-                ActionURL impersonateURL = user.isAdministrator() ? adminURLs.getAdminConsoleURL() : userURLs.getProjectUsersURL(project);
-                NavTree userMenu = new NavTree("User", impersonateURL);
-                impersonateMenu.addChild(userMenu);
-                NavTree groupMenu = new NavTree("Group");
-
-                Group[] groups = SecurityManager.getGroups(c.getProject(), true);
-
-                boolean addSeparator = false;
-
-                // Site groups are always first, followed by project groups
-                for (Group group : groups)
-                {
-                    if (!ImpersonateGroupContextFactory.canImpersonateGroup(c, user, group))
-                        continue;
-
-                    String display = group.getName();
-
-                    if (!group.isProjectGroup())
-                    {
-                        display = "Site: " + display;
-                        // We have at least one site group... so add a separator (if we also have project groups)
-                        addSeparator = true;
-                    }
-                    else if (addSeparator)
-                    {
-                        // Our first project group after site groups... add a separator
-                        groupMenu.addSeparator();
-                        addSeparator = false;
-                    }
-
-                    groupMenu.addChild(display, userURLs.getImpersonateGroupURL(c, group.getUserId(), currentURL));
-                }
-
-                impersonateMenu.addChild(groupMenu);
-
-                SecurityPolicy policy = SecurityManager.getPolicy(c);
-                NavTree roleMenu = new NavTree("Role");
-
-                // Add the relevant roles
-                for (Role role : RoleManager.getAllRoles())
-                {
-                    if (role.isAssignable() && role.isApplicable(policy, c))
-                        roleMenu.addChild(role.getName(), userURLs.getImpersonateRoleURL(c, role.getUniqueName(), currentURL));
-                }
-
-                if (roleMenu.hasChildren())
-                    impersonateMenu.addChild(roleMenu);
-
-                navTree.addChild(impersonateMenu);
             }
         }
 
