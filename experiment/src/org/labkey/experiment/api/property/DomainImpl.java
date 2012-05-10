@@ -17,6 +17,7 @@
 package org.labkey.experiment.api.property;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ColumnInfo;
@@ -45,6 +46,7 @@ import org.labkey.api.exp.property.DomainAuditViewFactory;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.UnexpectedException;
@@ -219,7 +221,7 @@ public class DomainImpl implements Domain
         return getDomainKind().urlShowData(this);
     }
 
-    public void delete(User user) throws DomainNotFoundException
+    public void delete(@Nullable User user) throws DomainNotFoundException
     {
         DefaultValueService.get().clearDefaultValues(getContainer(), this);
         OntologyManager.deleteDomain(getTypeURI(), getContainer());
@@ -337,7 +339,7 @@ public class DomainImpl implements Domain
         }
     }
 
-    private void addAuditEvent(User user, String comment)
+    private void addAuditEvent(@Nullable User user, String comment)
     {
         if (user != null)
         {
@@ -421,7 +423,7 @@ public class DomainImpl implements Domain
             result.add(column);
             if (property.isMvEnabled())
             {
-                column.setMvColumnName(column.getName() + MvColumn.MV_INDICATOR_SUFFIX);
+                column.setMvColumnName(new FieldKey(null, column.getName() + MvColumn.MV_INDICATOR_SUFFIX));
                 result.addAll(MVDisplayColumnFactory.createMvColumns(column, property.getPropertyDescriptor(), lsidColumn));
             }
         }
