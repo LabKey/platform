@@ -138,7 +138,14 @@ abstract public class QueryService
      */
     abstract public TableType findMetadataOverride(UserSchema schema, String tableName, boolean customQuery, boolean allModules, @NotNull Collection<QueryException> errors, @Nullable Path dir);
 
-	abstract public ResultSet select(QuerySchema schema, String sql) throws SQLException;
+	public ResultSet select(QuerySchema schema, String sql) throws SQLException
+    {
+        return select(schema, sql, false);
+    }
+
+    /* strictColumnList requires that query not add any addition columns to the query result */
+    abstract public ResultSet select(QuerySchema schema, String sql, boolean strictColumnList) throws SQLException;
+
     public Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
     {
         return select(table, columns, filter, sort, Collections.<String, Object>emptyMap());
