@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -34,6 +35,8 @@ import java.sql.Types;
 
 public class PropertyForeignKey extends AbstractForeignKey implements PropertyColumnDecorator
 {
+    private static final Logger LOG = Logger.getLogger(PropertyForeignKey.class);
+
     Map<String, PropertyDescriptor> _pdMap;
     protected QuerySchema _schema;
     protected boolean _parentIsObjectId = false;
@@ -159,7 +162,14 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
             if (column != null)
             {
                 column.setParentTable(ret);
-                ret.addColumn(column);
+                if (ret.getColumn(column.getName()) == null)
+                {
+                    ret.addColumn(column);
+                }
+                else
+                {
+                    LOG.warn("Duplicate property name found with " + column.getName() + ", PropertyURI: " + entry.getValue().getPropertyURI());
+                }
             }
         }
         return ret;

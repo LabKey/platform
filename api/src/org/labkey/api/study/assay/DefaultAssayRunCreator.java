@@ -27,6 +27,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.DataType;
@@ -38,6 +39,7 @@ import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.qc.DataTransformer;
 import org.labkey.api.qc.DefaultTransformResult;
 import org.labkey.api.qc.TransformDataHandler;
@@ -46,7 +48,6 @@ import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -430,13 +431,25 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         {
             for (Map.Entry<DomainProperty, String> entry : properties.entrySet())
             {
+                DomainProperty pd = entry.getKey();
+                String value = entry.getValue();
                 // Treat the empty string as a null in the database, which is our normal behavior when receiving data
                 // from HTML forms.
-                String value = entry.getValue();
-                if (value != null && !value.equals(""))
+                if ("".equals(value))
                 {
-                    DomainProperty pd = entry.getKey();
+                    value = null;
+                }
+                if (value != null)
+                {
                     object.setProperty(user, pd.getPropertyDescriptor(), value);
+                }
+                else
+                {
+                    // We still need to validate blanks
+                    List<ValidationError> errors = new ArrayList<ValidationError>();
+                    OntologyManager.validateProperty(pd.getValidators(), pd.getPropertyDescriptor(), value, errors, new ValidatorContext(pd.getContainer(), user));
+                    if (!errors.isEmpty())
+                        throw new ValidationException(errors);
                 }
             }
         }

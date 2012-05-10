@@ -56,6 +56,7 @@ import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.gwt.client.ui.domain.CancellationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
@@ -506,6 +507,12 @@ public class OntologyManager
             List<ValidationError> errors, ValidatorContext validatorCache)
     {
         boolean ret = true;
+
+        if (prop.isRequired() && value == null)
+        {
+            errors.add(new PropertyValidationError("Field is required", prop.getName()));
+            ret = false;
+        }
 
         if (validators != null)
         {
