@@ -23,7 +23,6 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.core.user.UserController" %>
-<%@ page import="org.jetbrains.annotations.Nullable" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<UserController.ImpersonateUserBean> me = (HttpView<UserController.ImpersonateUserBean>) HttpView.currentView();
@@ -48,8 +47,8 @@
 
             if (user.isImpersonated())
             {
-                @Nullable User impersonatingUser = user.getImpersonatingUser();
-                String changeBackMessage = null != impersonatingUser ? "change back to " + impersonatingUser.getDisplayName(user) : "stop impersonating";
+                User impersonatingUser = user.getImpersonatingUser();
+                String changeBackMessage = user.equals(impersonatingUser) ? "stop impersonating" : "change back to " + impersonatingUser.getDisplayName(user);
         %>
             <tr><td>Already impersonating; click <a href="<%=h(urlProvider(LoginUrls.class).getStopImpersonatingURL(c, user.getImpersonationContext().getReturnURL()))%>">here</a> to <%=h(changeBackMessage)%>.</td></tr><%
             }

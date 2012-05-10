@@ -28,6 +28,8 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.impersonation.ImpersonateRoleContextFactory;
+import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -671,14 +673,27 @@ public class UserController extends SpringActionController
 
     private void requiresProjectOrSiteAdmin() throws UnauthorizedException
     {
-        if (!(getUser().isAdministrator() || isProjectAdmin()))
+        requiresProjectOrSiteAdmin(getUser());
+    }
+
+
+    private void requiresProjectOrSiteAdmin(User user) throws UnauthorizedException
+    {
+        if (!(user.isAdministrator() || isProjectAdmin(user)))
             throw new UnauthorizedException();
     }
 
+
     private boolean isProjectAdmin()
     {
+        return isProjectAdmin(getUser());
+    }
+
+
+    private boolean isProjectAdmin(User user)
+    {
         Container project = getContainer().getProject();
-        return (null != project && project.hasPermission(getUser(), AdminPermission.class));
+        return (null != project && project.hasPermission(user, AdminPermission.class));
     }
 
 
@@ -1943,21 +1958,32 @@ public class UserController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
+    @RequiresNoPermission  // Permissions are handled below
     public class ImpersonateRoleAction extends SimpleRedirectAction<ImpersonateRoleForm>
     {
         @Override
         public void checkPermissions() throws TermsOfUseException, UnauthorizedException
         {
             super.checkPermissions();
-            requiresProjectOrSiteAdmin();     // TODO: Check spec
+
+            User user = getUser();
+
+            if (user.isImpersonated())
+            {
+                ImpersonationContext impersonationContext = user.getImpersonationContext();
+                if (!(impersonationContext instanceof ImpersonateRoleContextFactory.ImpersonateRoleContext))
+                    throw new UnauthorizedException("Can't impersonate; you're already impersonating");
+
+                requiresProjectOrSiteAdmin(impersonationContext.getAdminUser());
+            }
+            else
+            {
+                requiresProjectOrSiteAdmin();
+            }
         }
 
         public ActionURL getRedirectURL(ImpersonateRoleForm form) throws Exception
         {
-            if (getUser().isImpersonated())
-                throw new UnauthorizedException("Can't impersonate; you're already impersonating");
-
             String roleName = StringUtils.trimToNull(form.getRoleName());
 
             if (null == roleName)
