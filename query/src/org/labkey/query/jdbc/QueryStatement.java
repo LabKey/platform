@@ -47,7 +47,7 @@ public class QueryStatement implements Statement
     public ResultSet executeQuery(String s) throws SQLException
     {
         QuerySchema schema = _conn.getQuerySchema();
-        _rs = QueryService.get().select(schema, s);
+        _rs = QueryService.get().select(schema, s, true);
         return _rs;
     }
 

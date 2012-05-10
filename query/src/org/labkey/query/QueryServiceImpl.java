@@ -1177,9 +1177,10 @@ public class QueryServiceImpl extends QueryService
     }
 
 
-    public ResultSet select(@NotNull QuerySchema schema, String sql) throws SQLException
+    public ResultSet select(@NotNull QuerySchema schema, String sql, boolean strictColumnList) throws SQLException
 	{
 		Query q = new Query(schema);
+        q.setStrictColumnList(strictColumnList);
 		q.parse(sql);
 
 		if (q.getParseErrors().size() > 0)

@@ -97,6 +97,7 @@ public class Query
     String _name = null;
     private final QuerySchema _schema;
 	String _querySource;
+    boolean _strictColumnList = false;
 	private ArrayList<QueryException> _parseErrors = new ArrayList<QueryException>();
 
     private TablesDocument _metadata = null;
@@ -132,6 +133,10 @@ public class Query
         assert MemTracker.put(this);
     }
 
+    public void setStrictColumnList(boolean b)
+    {
+        _strictColumnList = b;
+    }
 
     /* for debugging */
     public void setName(String name)

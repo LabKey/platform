@@ -33,6 +33,7 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.data.xml.ColumnType;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -384,6 +385,9 @@ public class QueryTable extends QueryRelation
     @Override
     public Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
     {
+        if (_query._strictColumnList)
+            return Collections.emptySet();
+
         Set<RelationColumn> suggested = new HashSet<RelationColumn>();
         Set<FieldKey> suggestedContainerColumns = new HashSet<FieldKey>();
 
