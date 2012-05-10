@@ -2584,7 +2584,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         var filterDef;
 
         if(!this.allowFilterDiscard && oldTab && oldTab.filterType == 'default' && newTab.filterType != 'default' && !this.shouldShowFacetedUI(newTab.filterType)){
-            var msgBox = Ext.Msg.confirm('Confirm change', 'If you switch tabs you will loose one or more filters.  Do you want to continue?', function(input){
+            var msgBox = Ext.Msg.confirm('Confirm change', 'If you switch tabs you will lose one or more filters.  Do you want to continue?', function(input){
                 if(input == 'yes'){
                     this.allowFilterDiscard = true;
                     this.find('tabpanel')[0].setActiveTab(newTab);
