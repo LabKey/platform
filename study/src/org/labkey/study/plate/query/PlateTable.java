@@ -56,6 +56,7 @@ public class PlateTable extends BasePlateTable
         addWrapColumn(_rootTable.getColumn("Created"));
         visibleColumns.add(FieldKey.fromParts("Created"));
         addWrapColumn(_rootTable.getColumn("CreatedBy"));
+        addWrapColumn(_rootTable.getColumn("Type"));
         visibleColumns.add(FieldKey.fromParts("CreatedBy"));
 
         //String sqlObjectId = "( SELECT objectid FROM exp.object WHERE exp.object.objecturi = " + ExprColumn.STR_TABLE_ALIAS + ".lsid)";

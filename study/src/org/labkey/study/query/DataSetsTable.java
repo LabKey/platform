@@ -16,6 +16,7 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -66,5 +67,7 @@ public class DataSetsTable extends FilteredTable
         addColumn(result);
 
         setTitleColumn("Label");
+
+        getColumn("Container").setFk(new ContainerForeignKey(schema));
     }
 }

@@ -1205,7 +1205,7 @@ public class StudyManager
         if (!def.isDemographicData())
             lsidVisits = getVisitsForDataRows(container, datasetId, lsids);
         Map<String, Object>[] rows = StudyService.get().getDatasetRows(user, container, datasetId, lsids);
-        if (rows == null)
+        if (rows.length == 0)
             return;
 
         Map<String, String> oldQCStates = new HashMap<String, String>();

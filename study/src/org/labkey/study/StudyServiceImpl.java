@@ -229,10 +229,10 @@ public class StudyServiceImpl implements StudyService.Service
     public Map<String,Object> getDatasetRow(User u, Container c, int datasetId, String lsid) throws SQLException
     {
         Map<String, Object>[] rows = getDatasetRows(u, c, datasetId, Collections.singleton(lsid));
-        return rows != null && rows.length > 0 ? rows[0] : null;
+        return rows.length > 0 ? rows[0] : null;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("unchecked") @NotNull
     public Map<String,Object>[] getDatasetRows(User u, Container c, int datasetId, Collection<String> lsids) throws SQLException
     {
         StudyImpl study = StudyManager.getInstance().getStudy(c);
@@ -276,7 +276,7 @@ public class StudyServiceImpl implements StudyService.Service
         Map<String,Object>[] datas = Table.select(tInfo, selectColumns, filter, null, Map.class);
 
         if (datas.length == 0)
-            return null;
+            return datas;
 
         if (datas[0] instanceof ArrayListMap)
         {
