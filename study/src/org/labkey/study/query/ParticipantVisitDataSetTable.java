@@ -262,12 +262,6 @@ public class ParticipantVisitDataSetTable extends VirtualTable
     }
 
 
-    public ColumnInfo getColumn(String name)
-    {
-        return super.getColumn(name);
-    }
-
-    
     protected ColumnInfo resolveColumn(String name)
     {
         double seq = -1;

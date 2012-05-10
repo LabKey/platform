@@ -3971,7 +3971,7 @@ public class StudyController extends BaseStudyController
             {
                 if (col.isMvEnabled())
                 {
-                    ignoreColumns.add(col.getMvColumnName());
+                    ignoreColumns.add(col.getMvColumnName().getName());
                     ignoreColumns.add(col.getName() + RawValueColumn.RAW_VALUE_SUFFIX);
                 }
             }

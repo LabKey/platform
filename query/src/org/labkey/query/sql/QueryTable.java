@@ -396,7 +396,7 @@ public class QueryTable extends QueryRelation
                 addSuggestedContainerColumn(suggested, tc);
 
             if (null != tc._col.getMvColumnName())
-                addSuggestedColumn(suggested, new FieldKey(tc.getFieldKey().getParent(), tc._col.getMvColumnName()));
+                addSuggestedColumn(suggested, tc._col.getMvColumnName());
 
             StringExpression se = tc._col.getURL();
             if (se instanceof StringExpressionFactory.FieldKeyStringExpression)

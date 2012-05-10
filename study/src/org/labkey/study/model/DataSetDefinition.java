@@ -1020,7 +1020,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     addColumn(mvColumn);
                     addColumn(rawValueCol);
 
-                    wrapped.setMvColumnName(mvColumn.getName());
+                    wrapped.setMvColumnName(mvColumn.getFieldKey());
                 }
             }
 
@@ -1162,7 +1162,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             {
                 if (null == col.getMvColumnName())
                     continue;
-                m.put(col.getName() + "_" + MvColumn.MV_INDICATOR_SUFFIX, col.getMvColumnName());                
+                m.put(col.getName() + "_" + MvColumn.MV_INDICATOR_SUFFIX, col.getMvColumnName().getName());
             }
 
             // shouldn't getStorageTableInfo().getColumn("date").getPropertyURI() == getVisitDateURI()?
