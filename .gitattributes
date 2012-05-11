@@ -3570,6 +3570,16 @@ visualization/resources/web/vis/chartPanel.js -text
 visualization/resources/web/vis/groupSelector.js -text
 visualization/resources/web/vis/measuresPanel.js -text
 visualization/resources/web/vis/subjectSeriesSelector.js -text
+visualization/resources/web/vis/temp/chartsOptionsPanel.js -text
+visualization/resources/web/vis/temp/groupsSelector.js -text
+visualization/resources/web/vis/temp/measureOptionsPanel.js -text
+visualization/resources/web/vis/temp/newTimeChartPanel.js -text
+visualization/resources/web/vis/temp/overviewOptionsPanel.js -text
+visualization/resources/web/vis/temp/participantsSelector.js -text
+visualization/resources/web/vis/temp/saveOptionsPanel.js -text
+visualization/resources/web/vis/temp/statisticsOptionsPanel.js -text
+visualization/resources/web/vis/temp/xAxisOptionsPanel.js -text
+visualization/resources/web/vis/temp/yAxisOptionsPanel.js -text
 visualization/resources/web/vis/timeChartPanel.js -text
 visualization/resources/web/vis/timeChartWizard.js -text
 visualization/resources/web/vis/visualizationWizard.js -text

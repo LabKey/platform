@@ -51,7 +51,8 @@
     LABKEY.requiresClientAPI(true);
     LABKEY.requiresScript("vis/measuresPanel.js");
     LABKEY.requiresVisualization();
-    LABKEY.requiresScript("vis/timeChartPanel.js");
+    LABKEY.requiresScript("vis/timeChartPanel.js");     // to test the new Time Chart UI, comment out this line and uncomment the next line
+//    LABKEY.requiresScript("vis/temp/newTimeChartPanel.js");
     Ext.QuickTips.init();
 </script>
 

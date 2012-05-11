@@ -1280,7 +1280,7 @@ public class VisualizationController extends SpringActionController
             JspView timeChartWizard = new JspView<GetVisualizationForm>("/org/labkey/visualization/views/timeChartWizard.jsp", form);
 
             timeChartWizard.setTitle(TITLE);
-            timeChartWizard.setFrame(WebPartView.FrameType.PORTAL);
+            timeChartWizard.setFrame(WebPartView.FrameType.NONE);
 
             VBox boxView = new VBox(timeChartWizard);
 
