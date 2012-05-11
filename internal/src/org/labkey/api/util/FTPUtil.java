@@ -19,6 +19,7 @@ package org.labkey.api.util;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPReply;
+import org.jetbrains.annotations.Nullable;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -43,7 +44,7 @@ public class FTPUtil
 
 
     // Return a list of filenames in the specified directory that match the specified regex pattern
-    public static List<String> listFiles(String user, String password, String url, String directory, String filterPattern) throws IOException, ServletException
+    public static List<String> listFiles(String user, String password, String url, String directory, @Nullable String filterPattern) throws IOException, ServletException
     {
         FTPClient ftp = null;
 
