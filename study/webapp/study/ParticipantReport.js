@@ -1033,7 +1033,8 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             sorts.push({name : this.subjectVisitColumn + '/Visit/DisplayOrder', queryName : firstMeasure.queryName,  schemaName : firstMeasure.schemaName});
             sorts.push({name : this.subjectVisitColumn + '/sequencenum', queryName : firstMeasure.queryName,  schemaName : firstMeasure.schemaName});
         }
-        sorts.push({name : this.subjectVisitColumn + '/VisitDate', queryName : firstMeasure.queryName,  schemaName : firstMeasure.schemaName});
+        else
+            sorts.push({name : this.subjectVisitColumn + '/VisitDate', queryName : firstMeasure.queryName,  schemaName : firstMeasure.schemaName});
 
         return sorts;
     },

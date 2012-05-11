@@ -51,6 +51,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
             query.addSelect(factory.create(query.getSchema(), query.getQueryName(), subjectNounSingular + "Visit/sequencenum", true), false);
             query.addSelect(factory.create(query.getSchema(), query.getQueryName(), subjectNounSingular + "Visit/Visit/Label", true), false);
             query.addSelect(factory.create(query.getSchema(), query.getQueryName(), subjectNounSingular + "Visit/Visit/DisplayOrder", true), false);
+            query.addSelect(factory.create(query.getSchema(), query.getQueryName(), subjectNounSingular + "Visit/VisitDate", true), false);
         }
     }
 

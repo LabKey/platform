@@ -239,6 +239,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
         var config = {
             model   : 'LABKEY.data.User',
             autoLoad: true,
+            pageSize: 10000,
             proxy   : {
                 type   : 'ajax',
                 url : LABKEY.ActionURL.buildURL('query', 'selectRows.api'),
