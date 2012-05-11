@@ -21,6 +21,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupMembershipCache;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserUrls;
@@ -182,7 +183,7 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
         }
 
         @Override
-        public boolean isAllowedRoles()
+        public boolean isAllowedGlobalRoles()
         {
             return false;
         }
@@ -226,7 +227,7 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
         }
 
         @Override
-        public Set<Role> getContextualRoles(User user)
+        public Set<Role> getContextualRoles(User user, SecurityPolicy policy)
         {
             return user.getStandardContextualRoles();
         }

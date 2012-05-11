@@ -20,7 +20,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.roles.Role;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -132,7 +131,7 @@ public class Group extends UserPrincipal
     }
 
     @Override
-    public Set<Role> getContextualRoles()
+    public Set<Role> getContextualRoles(SecurityPolicy policy)
     {
         return new HashSet<Role>();
     }

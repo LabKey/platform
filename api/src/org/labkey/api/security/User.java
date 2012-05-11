@@ -23,11 +23,13 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.impersonation.NotImpersonatingContext;
 import org.labkey.api.security.roles.DeveloperRole;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -46,7 +48,8 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     private ImpersonationContext _impersonationContext = new NotImpersonatingContext();
 
     public static final User guest = new GuestUser("guest");
-    private static final User search = new GuestUser("search");
+    // Search user is guest plus Reader everywhere
+    private static final User search = new LimitedUser(new GuestUser("search"), new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
 
 
     public User()
@@ -150,18 +153,18 @@ public class User extends UserPrincipal implements Serializable, Cloneable
 
     public boolean isAdministrator()
     {
-        return isAllowedRoles() && isInGroup(Group.groupAdministrators);
+        return isAllowedGlobalRoles() && isInGroup(Group.groupAdministrators);
     }
 
     // Note: site administrators are always developers; see GroupManager.computeAllGroups().
     public boolean isDeveloper()
     {
-        return isAllowedRoles() && isInGroup(Group.groupDevelopers);
+        return isAllowedGlobalRoles() && isInGroup(Group.groupDevelopers);
     }
 
-    public boolean isAllowedRoles()
+    public boolean isAllowedGlobalRoles()
     {
-        return _impersonationContext.isAllowedRoles();
+        return _impersonationContext.isAllowedGlobalRoles();
     }
 
     public boolean isInGroup(int group)
@@ -171,9 +174,9 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     }
 
     @Override
-    public Set<Role> getContextualRoles()
+    public Set<Role> getContextualRoles(SecurityPolicy policy)
     {
-        return _impersonationContext.getContextualRoles(this);
+        return _impersonationContext.getContextualRoles(this, policy);
     }
 
     // Return the usual contextual roles
@@ -253,10 +256,14 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         _active = active;
     }
 
-
     public static User getSearchUser()
     {
         return search;
+    }
+
+    public boolean isSearchUser()
+    {
+        return this == search;
     }
 
     public String getPhone()

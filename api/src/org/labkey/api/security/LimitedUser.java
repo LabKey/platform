@@ -16,6 +16,11 @@
 
 package org.labkey.api.security;
 
+import org.labkey.api.security.roles.Role;
+
+import java.util.HashSet;
+import java.util.Set;
+
 /*
 * User: adam
 * Date: Sep 10, 2011
@@ -23,9 +28,11 @@ package org.labkey.api.security;
 */
 public class LimitedUser extends User
 {
-    private int[] _groups;
+    private final int[] _groups;
+    private final Set<Role> _roles;
+    private final boolean _allowedGlobalRoles;
 
-    public LimitedUser(User user, int[] groups)
+    public LimitedUser(User user, int[] groups, Set<Role> roles, boolean allowedGlobalRoles)
     {
         super(user.getEmail(), user.getUserId());
         setFirstName(user.getFirstName());
@@ -35,17 +42,25 @@ public class LimitedUser extends User
         setLastLogin(user.getLastLogin());
         setPhone(user.getPhone());
         _groups = groups;
+        _roles = roles;
+        _allowedGlobalRoles = allowedGlobalRoles;
     }
 
     @Override
-    public boolean isAllowedRoles()
+    public boolean isAllowedGlobalRoles()
     {
-        return false;
+        return _allowedGlobalRoles;
     }
 
     @Override
     public int[] getGroups()
     {
         return _groups;
+    }
+
+    @Override
+    public Set<Role> getContextualRoles(SecurityPolicy policy)
+    {
+        return new HashSet<Role>(_roles);
     }
 }

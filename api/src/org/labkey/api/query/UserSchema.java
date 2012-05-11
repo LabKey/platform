@@ -91,7 +91,7 @@ abstract public class UserSchema extends AbstractSchema
         User user = getUser();
         if (user == null)
             return false;
-        return user == User.getSearchUser() || getContainer().hasPermission(user, ReadPermission.class);
+        return getContainer().hasPermission(user, ReadPermission.class);
     }
 
     @Nullable

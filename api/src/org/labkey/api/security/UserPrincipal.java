@@ -94,7 +94,7 @@ public abstract class UserPrincipal implements Principal, Serializable
 
     public abstract int[] getGroups();
 
-    public abstract Set<Role> getContextualRoles();
+    public abstract Set<Role> getContextualRoles(SecurityPolicy policy);
 
     public abstract boolean isInGroup(int group);
 

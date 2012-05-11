@@ -1966,7 +1966,7 @@ public class SecurityManager
 
     public static boolean isTermsOfUseRequired(ViewContext ctx)
     {
-        if (User.getSearchUser() == ctx.getUser())  // TODO: Should be property of user
+        if (ctx.getUser().isSearchUser())
             return false;
 
         Container c = ctx.getContainer();

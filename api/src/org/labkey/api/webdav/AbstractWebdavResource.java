@@ -256,8 +256,6 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
     {
         if ("/".equals(getPath()))
             return true;
-        if (user == User.getSearchUser())
-            return true;
         return hasAccess(user) && getPermissions(user).contains(ReadPermission.class);
     }
 

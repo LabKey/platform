@@ -18,6 +18,7 @@ package org.labkey.api.security.impersonation;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.GroupManager;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.URLHelper;
@@ -47,7 +48,7 @@ public class NotImpersonatingContext implements ImpersonationContext
     }
 
     @Override
-    public boolean isAllowedRoles()
+    public boolean isAllowedGlobalRoles()
     {
         return true;
     }
@@ -83,7 +84,7 @@ public class NotImpersonatingContext implements ImpersonationContext
     }
 
     @Override
-    public Set<Role> getContextualRoles(User user)
+    public Set<Role> getContextualRoles(User user, SecurityPolicy policy)
     {
         return user.getStandardContextualRoles();
     }

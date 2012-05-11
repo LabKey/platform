@@ -193,7 +193,7 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
         }
 
         @Override
-        public boolean isAllowedRoles()
+        public boolean isAllowedGlobalRoles()
         {
             return false;
         }
@@ -238,7 +238,7 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
         }
 
         @Override
-        public Set<Role> getContextualRoles(User user)
+        public Set<Role> getContextualRoles(User user, SecurityPolicy policy)
         {
             return new HashSet<Role>(_roles);
         }
@@ -246,7 +246,7 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
         @Override
         public void addMenu(NavTree menu, Container c, User user, ActionURL currentURL)
         {
-            ImpersonateRoleContextFactory.addMenu(menu, c, currentURL, getContextualRoles(user));
+            ImpersonateRoleContextFactory.addMenu(menu, c, currentURL, _roles);
         }
     }
 }

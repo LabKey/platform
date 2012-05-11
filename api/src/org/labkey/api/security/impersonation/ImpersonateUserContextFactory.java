@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserUrls;
@@ -185,7 +186,7 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
         }
 
         @Override
-        public boolean isAllowedRoles()
+        public boolean isAllowedGlobalRoles()
         {
             // Don't allow global roles (site admin, developer, etc.) if user is being impersonated within a project
             return null == _project;
@@ -228,7 +229,7 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
         }
 
         @Override
-        public Set<Role> getContextualRoles(User user)
+        public Set<Role> getContextualRoles(User user, SecurityPolicy policy)
         {
             return user.getStandardContextualRoles();
         }

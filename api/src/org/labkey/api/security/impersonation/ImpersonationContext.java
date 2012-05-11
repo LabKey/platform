@@ -17,6 +17,7 @@ package org.labkey.api.security.impersonation;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.util.URLHelper;
@@ -34,13 +35,13 @@ import java.util.Set;
 public interface ImpersonationContext extends Serializable
 {
     public boolean isImpersonating();
-    public boolean isAllowedRoles();
+    public boolean isAllowedGlobalRoles();
     public @Nullable Container getImpersonationProject();
     public User getAdminUser();
     public String getNavTreeCacheKey();  // Caching permission-related state is very tricky with impersonation; context needs to provide the cache key suffix
     public URLHelper getReturnURL();
     public int[] getGroups(User user);
-    public Set<Role> getContextualRoles(User user);
+    public Set<Role> getContextualRoles(User user, SecurityPolicy policy);
     public ImpersonationContextFactory getFactory();
     public void addMenu(NavTree menu, Container c, User user, ActionURL currentURL);
 }

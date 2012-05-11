@@ -360,7 +360,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         }
         catch (Throwable x)
         {
-            handleException(action, request, response, x);
+            handleException(request, response, x);
         }
         finally
         {
@@ -374,7 +374,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
     }
 
 
-    protected void handleException(Controller action, HttpServletRequest request, HttpServletResponse response, Throwable x)
+    protected void handleException(HttpServletRequest request, HttpServletResponse response, Throwable x)
     {
         ActionURL errorURL = ExceptionUtil.handleException(request, response, x, null, false);
         if (null != errorURL)
@@ -405,7 +405,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 User user = (User)request.getUserPrincipal();
 
                 // Don't redirect the indexer... let it get the page content, #12042 and #11345
-                if (user == User.getSearchUser())
+                if (user.isSearchUser())
                     return null;
 
                 if (user.isGuest())
