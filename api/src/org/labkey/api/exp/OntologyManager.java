@@ -510,7 +510,7 @@ public class OntologyManager
 
         if (prop.isRequired() && value == null)
         {
-            errors.add(new PropertyValidationError("Field is required", prop.getName()));
+            errors.add(new PropertyValidationError("Field '" + prop.getName() + "' is required", prop.getName()));
             ret = false;
         }
 
