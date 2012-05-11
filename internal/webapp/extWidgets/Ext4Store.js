@@ -153,7 +153,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
         //Add this here instead of allowing Ext.store to autoLoad to make sure above listeners are added before 1st load
         if(autoLoad){
             this.autoLoad = autoLoad;
-            this.load.defer(10, this, [
+            Ext4.defer(this.load, 10, this, [
                 typeof this.autoLoad == 'object' ? this.autoLoad : undefined
             ]);
         }

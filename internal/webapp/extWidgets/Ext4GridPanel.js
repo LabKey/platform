@@ -4,8 +4,6 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-LABKEY.requiresExt4ClientAPI();
-
 Ext4.namespace('LABKEY.ext4');
 
 /**
@@ -195,7 +193,7 @@ Ext4.define('LABKEY.ext4.GridPanel', {
     /*
      * The intent of this method is to infer column widths based on the data being shown
      */
-    ,_charWidth: 12 //TODO: this should be measured, but measuring is expensive so we only want to do it once
+    ,_charWidth: 6 //TODO: this should be measured, but measuring is expensive so we only want to do it once
     ,_colPadding: 10 //TODO: also should be calculated
     ,_maxColWidth: 400
 
