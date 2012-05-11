@@ -211,11 +211,16 @@ public class StudyQuerySchema extends UserSchema
         return null;
     }
 
-    public TableInfo getDataSetTable(DataSetDefinition definition)
+    /*
+     * CONSIDER: use Schema.getTable() instead, use this only if you intend to manipulate the tableinfo in some way
+     * UserSchema will call afterConstruct() for tables constructed the usual way
+     */
+    public DataSetTableImpl createDataSetTableInternal(DataSetDefinition definition)
     {
         try
         {
             DataSetTableImpl ret = new DataSetTableImpl(this, definition);
+            ret.afterConstruct();
             return ret;
         }
         catch (UnauthorizedException e)
@@ -389,7 +394,16 @@ public class StudyQuerySchema extends UserSchema
         if (dsd == null)
             dsd = getDataSetDefinitions().get(name);
         if (null != dsd)
-            return getDataSetTable(dsd);
+        {
+            try
+            {
+                return new DataSetTableImpl(this, dsd);
+            }
+            catch (UnauthorizedException e)
+            {
+                return null;
+            }
+        }
         
         return null;
     }

@@ -2214,7 +2214,7 @@ public class StudyController extends BaseStudyController
                 return;
 
             User user = getViewContext().getUser();
-            TableInfo t = new StudyQuerySchema((StudyImpl)_study, user, true).getDataSetTable(_def);
+            TableInfo t = new StudyQuerySchema((StudyImpl)_study, user, true).createDataSetTableInternal(_def);
             setTarget(t);
 
             if (!t.hasPermission(user, InsertPermission.class) && getUser().isGuest())
@@ -2688,7 +2688,7 @@ public class StudyController extends BaseStudyController
                     keys.add(Collections.<String, Object>singletonMap("lsid", lsid));
 
                 StudyQuerySchema schema = new StudyQuerySchema(study, getViewContext().getUser(), true);
-                TableInfo datasetTable = schema.getDataSetTable((DataSetDefinition)dataset);
+                TableInfo datasetTable = schema.createDataSetTableInternal((DataSetDefinition) dataset);
 
                 QueryUpdateService qus = datasetTable.getUpdateService();
                 assert qus != null;

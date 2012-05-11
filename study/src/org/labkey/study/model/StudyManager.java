@@ -3075,7 +3075,7 @@ public class StudyManager
         body.append(searchTitle).append("\n");
 
         StudyQuerySchema schema = new StudyQuerySchema(dsd.getStudy(), User.getSearchUser(), false);
-        TableInfo tableInfo = schema.getDataSetTable(dsd);
+        TableInfo tableInfo = schema.createDataSetTableInternal(dsd);
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, tableInfo.getDefaultVisibleColumns());
         String sep = "";
         for (ColumnInfo column : columns.values())

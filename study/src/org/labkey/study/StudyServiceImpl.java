@@ -20,7 +20,6 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.ArrayListMap;
@@ -246,7 +245,7 @@ public class StudyServiceImpl implements StudyService.Service
         // Unfortunately we need to use two tableinfos: one to get the column names with correct casing,
         // and one to get the data.  We should eventually be able to convert to using Query completely.
         StudyQuerySchema querySchema = new StudyQuerySchema(study, u, true);
-        TableInfo queryTableInfo = querySchema.getDataSetTable(def);
+        TableInfo queryTableInfo = querySchema.createDataSetTableInternal(def);
 
         TableInfo tInfo = def.getTableInfo(u, true);
         SimpleFilter filter = new SimpleFilter();

@@ -253,7 +253,7 @@ public class DataSetAutoJoinTable extends VirtualTable
         {
             try
             {
-                DataSetTableImpl ret = new DataSetTableImpl(_schema, dsd);
+                DataSetTableImpl ret = _schema.createDataSetTableInternal(dsd);
                 ret.hideParticipantLookups();
                 return ret;
             }

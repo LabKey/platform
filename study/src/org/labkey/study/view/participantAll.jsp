@@ -69,7 +69,6 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="java.util.TreeSet" %>
-<%@ page import="org.labkey.study.query.DataSetTableImpl" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
@@ -251,7 +250,7 @@
             }
 
             // get the data for this dataset and group rows by SequenceNum/Key
-            TableInfo table = new DataSetTableImpl(querySchema, dataset);
+            TableInfo table = querySchema.createDataSetTableInternal(dataset);
             Map<Double,Map<Object,Map>> seqKeyRowMap = new HashMap();
             FieldKey keyColumnName = null==dataset.getKeyPropertyName() ? null : new FieldKey(null, dataset.getKeyPropertyName());
 

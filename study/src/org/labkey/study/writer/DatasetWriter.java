@@ -186,7 +186,7 @@ public class DatasetWriter implements InternalStudyWriter
         // Write out all the dataset .tsv files
         for (DataSetDefinition def : datasets)
         {
-            TableInfo ti = new DataSetTableImpl(schema, def);
+            TableInfo ti = schema.createDataSetTableInternal(def);
             Collection<ColumnInfo> columns = getColumnsToExport(ti, def, false);
             // Sort the data rows by PTID & sequence, #11261
             Sort sort = new Sort(StudyService.get().getSubjectColumnName(ctx.getContainer()) + ", SequenceNum");
