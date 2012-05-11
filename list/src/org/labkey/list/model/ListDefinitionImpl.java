@@ -715,9 +715,11 @@ public class ListDefinitionImpl implements ListDefinition
         edit().setTitleColumn(titleColumn);
     }
 
+    /** NOTE consisiduer using ListSchema.getTable(), unless you have a good reason */
     public TableInfo getTable(User user)
     {
         ListTable ret = new ListTable(user, this);
+        ret.afterConstruct();
         return ret;
     }
 

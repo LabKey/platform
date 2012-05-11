@@ -19,18 +19,15 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.VirtualTable;
-import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.study.StudyService;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
 
-import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
