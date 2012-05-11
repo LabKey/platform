@@ -23,7 +23,7 @@
     JspView<WikiController.CopyBean> me = (JspView<WikiController.CopyBean>) HttpView.currentView();
     WikiController.CopyBean bean = me.getModelBean();
 %>
-<form name="copy" action="copyWiki.post" method="POST">
+<form name="copy" action="<%=h(buildURL(WikiController.CopyWikiAction.class))%>" method="POST">
 
 <input type="hidden" name="sourceContainer" value="<%=h(bean.sourceContainer)%>">
 <input type="hidden" name="destContainer" value="<%=h(bean.destContainer)%>">

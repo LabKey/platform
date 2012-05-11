@@ -25,7 +25,6 @@
 <%@ page import="org.springframework.validation.Errors" %>
 <%@ page import="org.springframework.validation.FieldError" %>
 <%@ page import="org.labkey.wiki.model.WikiTree" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.wiki.WikiController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -94,7 +93,7 @@
     }
 </script>
 
-<form method="post" name="manage" action="manage.post" enctype="multipart/form-data" onsubmit="return checkWikiName(name.value)">
+<form method="post" name="manage" action="<%=h(buildURL(WikiController.ManageAction.class))%>" enctype="multipart/form-data" onsubmit="return checkWikiName(name.value)">
 <input type="hidden" name="containerPath" value="<%=h(c.getPath())%>">
 
 <table>

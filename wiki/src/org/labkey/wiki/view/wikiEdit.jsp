@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.wiki.WikiController.DownloadAction" %>
 <%@ page import="org.labkey.wiki.model.WikiEditModel" %>
 <%@ page import="org.labkey.wiki.model.WikiTree" %>
+<%@ page import="org.labkey.wiki.WikiController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<WikiEditModel> me = (JspView<WikiEditModel>) HttpView.currentView();
@@ -187,7 +188,7 @@
                                     Show Attached Files</td>
                             </tr>
                         </table>
-                        <form action="attachFiles.post" method="POST" enctype="multipart/form-data" id="form-files">
+                        <form action="<%=h(buildURL(WikiController.AttachFilesAction.class))%>" method="POST" enctype="multipart/form-data" id="form-files">
                             <table id="wiki-existing-attachments">
                             </table>
                             <table id="wiki-new-attachments">
