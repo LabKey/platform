@@ -38,9 +38,6 @@ public class SecureMessageBoardPermissions extends NormalMessageBoardPermissions
 
     public boolean allowRead(@Nullable AnnouncementModel ann)
     {
-        if (_user == User.getSearchUser())
-            return true;
-        
         // Editors can read all messages
         if (hasPermission(SecureMessageBoardReadPermission.class))
             return true;

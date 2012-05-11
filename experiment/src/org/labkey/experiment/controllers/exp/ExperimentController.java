@@ -648,14 +648,6 @@ public class ExperimentController extends SpringActionController
     {
         protected ExpMaterialImpl _material;
 
-        @Override
-        protected Set<Role> getContextualRoles()
-        {
-            if (getViewContext().getUser() == User.getSearchUser())
-                return Collections.singleton(RoleManager.getRole(ReaderRole.class));
-            return null;
-        }
-
         public VBox getView(ExpObjectForm form, BindException errors) throws Exception
         {
             Container c = getContainer();

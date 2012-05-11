@@ -941,130 +941,130 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         InvocationTimer<SEARCH_PHASE> iTimer = TIMER.getInvocationTimer();
         try
         {
-                String sort = null;  // TODO: add sort parameter
-                int hitsToRetrieve = offset + limit;
-                boolean requireCategories = (null != categories);
+            String sort = null;  // TODO: add sort parameter
+            int hitsToRetrieve = offset + limit;
+            boolean requireCategories = (null != categories);
 
-                if (!requireCategories)
+            if (!requireCategories)
+            {
+                iTimer.setPhase(SEARCH_PHASE.determineParticipantId);
+                // Boost "subject" results if this is a participant id
+                if (isParticipantId(user, StringUtils.strip(queryString, " +-")))
+                    categories = getCategories("subject");
+            }
+
+            iTimer.setPhase(SEARCH_PHASE.createQuery);
+
+            Query query;
+            Analyzer analyzer = null;
+
+            try
+            {
+                analyzer = getAnalyzer();
+                QueryParser queryParser = new MultiFieldQueryParser(LUCENE_VERSION, standardFields, analyzer, boosts);
+                query = queryParser.parse(queryString);
+            }
+            catch (ParseException x)
+            {
+                // The default ParseException message is quite awful, not suitable for users.  Unfortunately, the exception
+                // doesn't provide the useful bits individually, so we have to parse the message to get them. #10596
+                LuceneMessageParser mp = new LuceneMessageParser(x.getMessage());
+
+                if (mp.isParseable())
                 {
-                    iTimer.setPhase(SEARCH_PHASE.determineParticipantId);
-                    // Boost "subject" results if this is a participant id
-                    if (isParticipantId(user, StringUtils.strip(queryString, " +-")))
-                        categories = getCategories("subject");
-                }
+                    String message;
+                    int problemLocation;
 
-                iTimer.setPhase(SEARCH_PHASE.createQuery);
-
-                Query query;
-                Analyzer analyzer = null;
-
-                try
-                {
-                    analyzer = getAnalyzer();
-                    QueryParser queryParser = new MultiFieldQueryParser(LUCENE_VERSION, standardFields, analyzer, boosts);
-                    query = queryParser.parse(queryString);
-                }
-                catch (ParseException x)
-                {
-                    // The default ParseException message is quite awful, not suitable for users.  Unfortunately, the exception
-                    // doesn't provide the useful bits individually, so we have to parse the message to get them. #10596
-                    LuceneMessageParser mp = new LuceneMessageParser(x.getMessage());
-
-                    if (mp.isParseable())
+                    if ("<EOF>".equals(mp.getEncountered()))
                     {
-                        String message;
-                        int problemLocation;
-
-                        if ("<EOF>".equals(mp.getEncountered()))
+                        message = PageFlowUtil.filter("Query string is incomplete");
+                        problemLocation = queryString.length();
+                    }
+                    else
+                    {
+                        if (1 == mp.getLine())
                         {
-                            message = PageFlowUtil.filter("Query string is incomplete");
-                            problemLocation = queryString.length();
+                            message = "Problem character is <span " + SearchUtils.getHighlightStyle() + ">highlighted</span>";
+                            problemLocation = mp.getColumn();
                         }
                         else
                         {
-                            if (1 == mp.getLine())
-                            {
-                                message = "Problem character is <span " + SearchUtils.getHighlightStyle() + ">highlighted</span>";
-                                problemLocation = mp.getColumn();
-                            }
-                            else
-                            {
-                                // Multiline query?!?  Don't try to highlight, just report the location (1-based)
-                                message = PageFlowUtil.filter("Problem at line " + (mp.getLine() + 1) + ", character location " + (mp.getColumn() + 1));
-                                problemLocation = -1;
-                            }
-                        }
-
-                        throw new HtmlParseException(message, queryString, problemLocation);
-                    }
-                    else
-                    {
-                        throw new IOException(x.getMessage());  // Default message starts with "Cannot parse '<query string>':"
-                    }
-                }
-                catch (IllegalArgumentException x)
-                {
-                    throw new IOException(SearchUtils.getStandardPrefix(queryString) + x.getMessage());
-                }
-                finally
-                {
-                    if (null != analyzer)
-                        analyzer.close();
-                }
-
-                if (null != categories)
-                {
-                    BooleanQuery bq = new BooleanQuery();
-                    bq.add(query, BooleanClause.Occur.MUST);
-                    Iterator itr = categories.iterator();
-
-                    if (requireCategories)
-                    {
-                        BooleanQuery requiresBQ = new BooleanQuery();
-
-                        while (itr.hasNext())
-                        {
-                            Query categoryQuery = new TermQuery(new Term(SearchService.PROPERTY.categories.toString(), itr.next().toString().toLowerCase()));
-                            requiresBQ.add(categoryQuery, BooleanClause.Occur.SHOULD);
-                        }
-
-                        bq.add(requiresBQ, BooleanClause.Occur.MUST);
-                    }
-                    else
-                    {
-                        while (itr.hasNext())
-                        {
-                            Query categoryQuery = new TermQuery(new Term(SearchService.PROPERTY.categories.toString(), itr.next().toString().toLowerCase()));
-                            categoryQuery.setBoost(3.0f);
-                            bq.add(categoryQuery, BooleanClause.Occur.SHOULD);
+                            // Multiline query?!?  Don't try to highlight, just report the location (1-based)
+                            message = PageFlowUtil.filter("Problem at line " + (mp.getLine() + 1) + ", character location " + (mp.getColumn() + 1));
+                            problemLocation = -1;
                         }
                     }
-                    query = bq;
+
+                    throw new HtmlParseException(message, queryString, problemLocation);
                 }
-
-                IndexSearcher searcher = _indexManager.getSearcher();
-
-                try
+                else
                 {
-                    iTimer.setPhase(SEARCH_PHASE.buildSecurityFilter);
-                    Filter securityFilter = user==User.getSearchUser() ? null : new SecurityFilter(user, scope.getRoot(current), current, scope.isRecursive());
-
-                    iTimer.setPhase(SEARCH_PHASE.search);
-
-                    TopDocs topDocs;
-
-                    if (null == sort)
-                        topDocs = searcher.search(query, securityFilter, hitsToRetrieve);
-                    else
-                        topDocs = searcher.search(query, securityFilter, hitsToRetrieve, new Sort(new SortField(sort, SortField.STRING)));
-
-                    iTimer.setPhase(SEARCH_PHASE.processHits);
-                    return createSearchResult(offset, hitsToRetrieve, topDocs, searcher);
+                    throw new IOException(x.getMessage());  // Default message starts with "Cannot parse '<query string>':"
                 }
-                finally
+            }
+            catch (IllegalArgumentException x)
+            {
+                throw new IOException(SearchUtils.getStandardPrefix(queryString) + x.getMessage());
+            }
+            finally
+            {
+                if (null != analyzer)
+                    analyzer.close();
+            }
+
+            if (null != categories)
+            {
+                BooleanQuery bq = new BooleanQuery();
+                bq.add(query, BooleanClause.Occur.MUST);
+                Iterator itr = categories.iterator();
+
+                if (requireCategories)
                 {
-                    _indexManager.releaseSearcher(searcher);
+                    BooleanQuery requiresBQ = new BooleanQuery();
+
+                    while (itr.hasNext())
+                    {
+                        Query categoryQuery = new TermQuery(new Term(SearchService.PROPERTY.categories.toString(), itr.next().toString().toLowerCase()));
+                        requiresBQ.add(categoryQuery, BooleanClause.Occur.SHOULD);
+                    }
+
+                    bq.add(requiresBQ, BooleanClause.Occur.MUST);
                 }
+                else
+                {
+                    while (itr.hasNext())
+                    {
+                        Query categoryQuery = new TermQuery(new Term(SearchService.PROPERTY.categories.toString(), itr.next().toString().toLowerCase()));
+                        categoryQuery.setBoost(3.0f);
+                        bq.add(categoryQuery, BooleanClause.Occur.SHOULD);
+                    }
+                }
+                query = bq;
+            }
+
+            IndexSearcher searcher = _indexManager.getSearcher();
+
+            try
+            {
+                iTimer.setPhase(SEARCH_PHASE.buildSecurityFilter);
+                Filter securityFilter = user.isSearchUser() ? null : new SecurityFilter(user, scope.getRoot(current), current, scope.isRecursive());
+
+                iTimer.setPhase(SEARCH_PHASE.search);
+
+                TopDocs topDocs;
+
+                if (null == sort)
+                    topDocs = searcher.search(query, securityFilter, hitsToRetrieve);
+                else
+                    topDocs = searcher.search(query, securityFilter, hitsToRetrieve, new Sort(new SortField(sort, SortField.STRING)));
+
+                iTimer.setPhase(SEARCH_PHASE.processHits);
+                return createSearchResult(offset, hitsToRetrieve, topDocs, searcher);
+            }
+            finally
+            {
+                _indexManager.releaseSearcher(searcher);
+            }
         }
         finally
         {

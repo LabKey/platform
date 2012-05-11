@@ -1230,7 +1230,7 @@ public class SearchController extends SpringActionController
     
     protected void audit(User user, @Nullable Container c, String query, String comment)
     {
-        if (user == User.getSearchUser() || StringUtils.isEmpty(query))
+        if (user.isSearchUser() || StringUtils.isEmpty(query))
             return;
 
         AuditLogService.I audit = AuditLogService.get();

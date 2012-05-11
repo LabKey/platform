@@ -1120,15 +1120,6 @@ public class WikiController extends SpringActionController
             _wikiversion = wikiversion;
         }
 
-        @Override
-        protected Set<Role> getContextualRoles()
-        {
-            if (getViewContext().getUser() == User.getSearchUser())
-                return Collections.singleton(RoleManager.getRole(ReaderRole.class));
-            return null;
-        }
-
-
         public ModelAndView getView(WikiNameForm form, BindException errors) throws Exception
         {
             HString name = null != form.getName() ? form.getName().trim() : null;

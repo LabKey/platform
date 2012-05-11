@@ -1294,14 +1294,6 @@ public class AnnouncementsController extends SpringActionController
     {
         private String _title;
 
-        @Override
-        protected Set<Role> getContextualRoles()
-        {
-            if (getViewContext().getUser() == User.getSearchUser())
-                return Collections.singleton(RoleManager.getRole(ReaderRole.class));
-            return null;
-        }
-
         public ThreadView getView(AnnouncementForm form, BindException errors) throws Exception
         {
             ThreadView threadView = new ThreadView(form, getContainer(), getActionURL(), getPermissions(), isPrint());

@@ -514,15 +514,8 @@ public class StudyController extends BaseStudyController
     @RequiresPermissionClass(ReadPermission.class)
     public class DatasetDetailsAction extends SimpleViewAction<IdForm>
     {
-        @Override
-        protected Set<Role> getContextualRoles()
-        {
-            if (getViewContext().getUser() == User.getSearchUser())
-                return Collections.singleton(RoleManager.getRole(ReaderRole.class));
-            return null;
-        }
-
         private DataSetDefinition _def;
+
         public ModelAndView getView(IdForm form, BindException errors) throws Exception
         {
             _def = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getId());
@@ -1126,14 +1119,6 @@ public class StudyController extends BaseStudyController
     {
         ParticipantForm _form;
         Study _study;
-
-        @Override
-        protected Set<Role> getContextualRoles()
-        {
-            if (getViewContext().getUser() == User.getSearchUser())
-                return Collections.singleton(RoleManager.getRole(ReaderRole.class));
-            return null;
-        }
 
         @Override
         public ModelAndView getView(ParticipantForm form, BindException errors) throws Exception

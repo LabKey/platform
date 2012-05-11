@@ -50,8 +50,6 @@ public class NormalMessageBoardPermissions implements Permissions
 
     public boolean allowRead(@Nullable AnnouncementModel ann)
     {
-        if (_user == User.getSearchUser())
-            return true;
         return hasPermission(ReadPermission.class);
     }
 

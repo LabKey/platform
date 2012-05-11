@@ -436,7 +436,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         if (user == null && checkPermission)
             throw new IllegalArgumentException("user cannot be null");
 
-        if (checkPermission && !canRead(user) && user != User.getSearchUser())
+        if (checkPermission && !canRead(user))
         {
             throw new UnauthorizedException();
         }
