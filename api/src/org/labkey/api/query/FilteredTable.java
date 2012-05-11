@@ -455,7 +455,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
     @Override
     public String toString()
     {
-        return "FilteredTable over " + _rootTable;
+        return getName() + " - FilteredTable over " + _rootTable;
     }
 
     public boolean isPublic()
