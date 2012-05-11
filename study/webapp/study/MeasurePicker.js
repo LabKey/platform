@@ -3,8 +3,6 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-LABKEY.requiresExt4Sandbox(true);
-LABKEY.requiresClientAPI();
 
 LABKEY.MeasuresDataViewType = {
     FULL_GRID : 'fullgrid',
@@ -62,6 +60,7 @@ Ext4.define('LABKEY.ext4.MeasuresDialog', {
             filter        : this.filter,
             allColumns    : this.allColumns,
             canShowHidden : this.canShowHidden,
+            ui: this.ui,
             multiSelect : this.multiSelect,
             forceQuery  : this.forceQuery,
             bubbleEvents: ['beforeMeasuresStoreLoad', 'measuresStoreLoaded'],
@@ -91,7 +90,7 @@ Ext4.define('LABKEY.ext4.MeasuresDialog', {
 
         this.buttons.push({text : 'Cancel', handler : function(){this.closeAction == 'hide' ? this.hide() : this.close();}, scope : this});
 
-        this.callParent([arguments]);
+        this.callParent();
     }
 });
 
@@ -141,6 +140,7 @@ Ext4.define('LABKEY.ext4.MeasuresPanel', {
         {
             this.dataView = Ext4.create('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 allColumns    : this.allColumns,
+                ui : this.ui,
                 showHidden : this.canShowHidden,
                 bubbleEvents: ['beforeMeasuresStoreLoad', 'measuresStoreLoaded', 'measureChanged']
             });
@@ -154,6 +154,7 @@ Ext4.define('LABKEY.ext4.MeasuresPanel', {
                     label: "Choose a data measure"
                 }],
                 filter        : this.filter,
+                ui: this.ui,
                 allColumns    : this.allColumns,
                 canShowHidden : this.canShowHidden,
                 multiSelect : this.multiSelect,
@@ -164,7 +165,7 @@ Ext4.define('LABKEY.ext4.MeasuresPanel', {
 
         this.items = [this.dataView];
 
-        this.callParent([arguments]);
+        this.callParent();
     },
 
     getSelectionModel : function() {
@@ -237,7 +238,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
                 this.getEl().mask("loading measures...", "x-mask-loading");
         });
 
-        this.callParent([arguments]);
+        this.callParent();
     },
 
     getMeasures : function(cmp, clearCache) {
@@ -356,6 +357,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
                 cls: 'measuresGridPanel', // for selenium test usage                
                 store: this.measuresStore,
                 flex: 1,
+                ui: this.ui,
                 border: false,
                 stripeRows : true,
                 selModel : Ext4.create('Ext.selection.CheckboxModel'),
@@ -373,6 +375,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
             this.view = Ext4.create('Ext.list.ListView', {
                 store: this.measuresStore,
                 flex: 1,
+                ui: this.ui,
                 border: false,
                 multiSelect: false,
                 columns: [
@@ -475,6 +478,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
         var items = [];
         items.push(Ext4.create('Ext.Toolbar', {
             style : 'padding: 5px 2px',
+            ui: this.ui,
             border : false, 
             items: tbarItems
         }));
@@ -482,7 +486,8 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
 
         return Ext4.create('Ext.Panel', {
             region: 'center',
-            border: false, 
+            border: false,
+            ui: this.ui,
             layout: {
                 type: 'vbox',
                 align: 'stretch',
@@ -623,6 +628,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
         return Ext4.create('Ext.form.FormPanel', {
             labelWidth: 175,
             border: false,
+            ui: this.ui,
             bodyStyle:'padding:15px;',
             region: 'north',
             layout: 'hbox',
@@ -694,7 +700,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 this.getEl().mask("loading measures...", "x-mask-loading");
         });
 
-        this.callParent([arguments]);
+        this.callParent();
     },
 
     createSourcePanel : function() {
@@ -712,6 +718,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 }
             }),
             flex: 1,
+            ui: this.ui,
             hideHeaders: true,
             enableColumnHide: false,
             enableColumnResize: false,
@@ -723,6 +730,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
         this.sourcePanel = Ext4.create('Ext.panel.Panel', {
             flex: 1,
+            ui: this.ui,
             layout: {
                 type: 'vbox',
                 align: 'stretch'
@@ -785,6 +793,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 }
             }),
             flex: 1,
+            ui: this.ui,
             hidden: true, // starts hidden until a source query is chosen
             hideHeaders: true,
             enableColumnHide: false,
@@ -808,6 +817,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
         this.measurePanel = Ext4.create('Ext.panel.Panel', {
             flex: 1,
+            ui: this.ui,
             layout: {
                 type: 'vbox',
                 align: 'stretch'
@@ -1015,6 +1025,6 @@ Ext4.define('LABKEY.ext4.MeasuresStore', {
 
     initComponent : function() {
 
-        this.callParent([arguments]);
+        this.callParent();
     }
 });
