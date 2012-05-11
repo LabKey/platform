@@ -1835,21 +1835,27 @@ public class QueryView extends WebPartView<Object>
         TableInfo table = getTable();
         if (table != null)
         {
-            // Wrap the TSV export in a transaction and change some obscure settings to coerce the Postgres JDBC driver
-            // to stream what could be very large results.
             DbScope scope = getSchema().getDbSchema().getScope();
 
             try
             {
-                // We need to start a transaction so that we end up using the same Connection when we
-                // execute the query.
-                Connection connection = scope.ensureTransaction();
-                scope.getSqlDialect().configureToDisableResultSetCaching(connection);
+                // On PostgreSQL only, wrap the TSV export in a transaction and change some obscure settings to coerce
+                // the Postgres JDBC driver to stream what could be very large results. We need to start a transaction
+                // so that we end up using the same Connection when we execute the query.
+                // TODO: PostgreSQL checks below address #14785. In 12.2, move connection handling into dialect as well.
+                if (scope.getSqlDialect().isPostgreSQL())
+                {
+                    Connection connection = scope.ensureTransaction();
+                    scope.getSqlDialect().configureToDisableResultSetCaching(connection);
+                }
                 doExport(response, isExportAsWebPage);
             }
             finally
             {
-                scope.closeConnection();
+                if (scope.getSqlDialect().isPostgreSQL())
+                {
+                    scope.closeConnection();
+                }
             }
         }
     }
