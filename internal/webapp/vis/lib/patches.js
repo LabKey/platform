@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2012 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
 
 // Taken from MDN on 4-24-2012
 // https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/IndexOf

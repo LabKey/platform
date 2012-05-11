@@ -1,4 +1,9 @@
-/********** Helper Functions **********/
+/*
+ * Copyright (c) 2012 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
+
 // Contains helpers that aren't specific to plot, layer, geom, etc. and are used throughout the API.
 
 LABKEY.vis.makeLine = function(x1, y1, x2, y2){
