@@ -221,9 +221,15 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
 
     public DetailsURL copy(ContainerContext cc)
     {
+        return copy(cc, false);
+    }
+
+
+    public DetailsURL copy(ContainerContext cc, boolean overwrite)
+    {
         DetailsURL ret = (DetailsURL)copy();
-        if (null != cc)
-            ret._containerContext = cc;
+        if (null == ret._containerContext || (null != cc && overwrite))
+            setContainerContext(cc);
         return ret;
     }
 
