@@ -28,4 +28,7 @@ public interface VisualizationUrls extends UrlProvider
     public ActionURL getTimeChartDesignerURL(Container container, User user, QuerySettings settings);
     public ActionURL getTimeChartDesignerURL(Container container, Report report);
     public ActionURL getViewerURL(Container container, Report report);
+
+    // generic chart urls
+    public ActionURL getGenericChartDesignerURL(Container container, User user, QuerySettings settings, GenericChartReport.RenderType type);
 }

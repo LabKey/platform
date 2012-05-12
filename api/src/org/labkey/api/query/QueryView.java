@@ -54,6 +54,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.visualization.GenericChartReport;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
@@ -165,6 +166,7 @@ public class QueryView extends WebPartView<Object>
             if (QuerySnapshotService.TYPE.equals(type)) return true;
             if (CrosstabReport.TYPE.equals(type)) return true;
             if (JavaScriptReport.TYPE.equals(type)) return true;
+            if (GenericChartReport.TYPE.equals(type)) return true;
             return ChartQueryReport.TYPE.equals(type);
         }
     };
