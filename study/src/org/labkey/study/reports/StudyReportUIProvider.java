@@ -33,6 +33,7 @@ import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.api.visualization.TimeChartReport;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.DataSetDefinition;
@@ -61,6 +62,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
                 if (TimeChartReport.TYPE.equals(reportType)) return true;
                 if (JavaScriptReport.TYPE.equals(reportType)) return true;
                 if (ParticipantReport.TYPE.equals(reportType)) return true;
+                if (GenericChartReport.TYPE.equals(reportType)) return true;
                 return false;
             }
         };

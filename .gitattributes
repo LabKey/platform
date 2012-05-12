@@ -3599,7 +3599,9 @@ visualization/src/org/labkey/visualization/sql/VisualizationProvider.java -text
 visualization/src/org/labkey/visualization/sql/VisualizationSQLGenerator.java -text
 visualization/src/org/labkey/visualization/sql/VisualizationSourceColumn.java -text
 visualization/src/org/labkey/visualization/sql/VisualizationSourceQuery.java -text
+visualization/src/org/labkey/visualization/views/genericChartWizard.jsp -text
 visualization/src/org/labkey/visualization/views/timeChartWizard.jsp -text
+visualization/webapp/visualization/report/box_plot.png -text
 visualization/webapp/visualization/report/timechart.gif -text
 wiki/lib/radeox-api.jar -text
 wiki/lib/radeox.jar -text

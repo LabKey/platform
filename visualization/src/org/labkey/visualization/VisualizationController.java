@@ -74,6 +74,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
@@ -81,6 +82,8 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.visualization.GenericChartReport;
+import org.labkey.api.visualization.GenericChartReportDescriptor;
 import org.labkey.api.visualization.VisualizationReportDescriptor;
 import org.labkey.api.visualization.VisualizationUrls;
 import org.labkey.visualization.report.TimeChartReportImpl;
@@ -133,6 +136,13 @@ public class VisualizationController extends SpringActionController
         public ActionURL getTimeChartDesignerURL(Container container, User user, QuerySettings settings)
         {
             ActionURL url = getBaseTimeChartURL(container, true);
+            addQueryParams(url, container, user, settings);
+
+            return url;
+        }
+
+        protected void addQueryParams(ActionURL url, Container container, User user, QuerySettings settings)
+        {
             String queryName = settings.getQueryName();
             if (queryName != null)
                 url.addParameter(VISUALIZATION_QUERY_PARAM, queryName);
@@ -153,7 +163,6 @@ public class VisualizationController extends SpringActionController
                 view.applyFilterAndSortToURL(filterURL, FILTER_DATAREGION);
 
             url.addParameter(VISUALIZATION_FILTER_URL, filterURL.getLocalURIString());
-            return url;
         }
 
         @Override
@@ -190,6 +199,17 @@ public class VisualizationController extends SpringActionController
         {
             ActionURL url = new ActionURL(TimeChartWizardAction.class, container);
             url.addParameter(VISUALIZATION_EDIT_PARAM, editMode);
+            return url;
+        }
+
+        @Override
+        public ActionURL getGenericChartDesignerURL(Container container, User user, QuerySettings settings, GenericChartReport.RenderType type)
+        {
+            ActionURL url = new ActionURL(GenericChartWizardAction.class, container);
+            addQueryParams(url, container, user, settings);
+
+            url.addParameter(GenericChartReportDescriptor.Prop.renderType, type.getId());
+
             return url;
         }
     }
@@ -1014,6 +1034,7 @@ public class VisualizationController extends SpringActionController
         private String _schemaName;
         private String _queryName;
         private String _name;
+        private String _renderType;
         private ReportIdentifier _reportId;
 
         public String getName()
@@ -1054,6 +1075,16 @@ public class VisualizationController extends SpringActionController
         public void setReportId(ReportIdentifier reportId)
         {
             _reportId = reportId;
+        }
+
+        public String getRenderType()
+        {
+            return _renderType;
+        }
+
+        public void setRenderType(String renderType)
+        {
+            _renderType = renderType;
         }
     }
 
@@ -1301,6 +1332,49 @@ public class VisualizationController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild(TITLE);
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GenericChartWizardAction extends SimpleViewAction<GetVisualizationForm>
+    {
+        private GenericChartReport.RenderType _renderType;
+
+        @Override
+        public ModelAndView getView(GetVisualizationForm form, BindException errors) throws Exception
+        {
+            JspView chartWizard = new JspView<GetVisualizationForm>("/org/labkey/visualization/views/genericChartWizard.jsp", form);
+
+            _renderType = GenericChartReport.getRenderType(form.getRenderType());
+            VBox view = new VBox();
+
+            if (_renderType != null)
+            {
+                chartWizard.setTitle(TITLE);
+                chartWizard.setFrame(WebPartView.FrameType.NONE);
+
+                view.addView(chartWizard);
+            }
+            else
+                view.addView(new HtmlView("No renderer for specified type: " + form.getRenderType()));
+
+            Report report = getReport(form);
+
+            if (report != null)
+            {
+                String title = "Discuss report - " + report.getDescriptor().getReportName();
+                DiscussionService.Service service = DiscussionService.get();
+                HttpView discussion = service.getDisussionArea(getViewContext(), report.getEntityId(), getViewContext().getActionURL(), title, true, false);
+                view.addView(discussion);
+            }
+
+            return view;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild(_renderType.getName() + " Wizard");
         }
     }
 }

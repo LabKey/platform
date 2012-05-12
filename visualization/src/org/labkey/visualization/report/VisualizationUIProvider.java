@@ -18,12 +18,13 @@ package org.labkey.visualization.report;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.view.DefaultReportUIProvider;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.visualization.GenericChartReport;
+import org.labkey.api.visualization.GenericChartReportDescriptor;
 import org.labkey.api.visualization.TimeChartReport;
 import org.labkey.api.visualization.VisualizationUrls;
 
@@ -41,12 +42,25 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
     {
         List<ReportService.DesignerInfo> info = new ArrayList<ReportService.DesignerInfo>();
         info.addAll(super.getDesignerInfo(context, settings));
+        VisualizationUrls urlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
         if ("study".equalsIgnoreCase(settings.getSchemaName()))
         {
-            VisualizationUrls urlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
             ActionURL designerURL = urlProvider.getTimeChartDesignerURL(context.getContainer(), context.getUser(), settings);
             info.add(new DesignerInfoImpl(TimeChartReport.TYPE, "Time Chart", designerURL));
         }
+
+        GenericChartReport.RenderType boxType = GenericChartReport.RenderType.BOX_PLOT;
+
+        ActionURL boxPlotURL = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), settings, boxType);
+        info.add(new DesignerInfoImpl(GenericChartReport.TYPE, boxType.getName(), boxPlotURL));
+        
+/*
+        GenericChartReport.RenderType scatterType = GenericChartReport.RenderType.SCATTER_PLOT;
+
+        ActionURL scatterPlotURL = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), settings, scatterType);
+        info.add(new DesignerInfoImpl(GenericChartReport.TYPE, scatterType.getName(), scatterPlotURL));
+*/
+
         return info;
     }
 
@@ -76,6 +90,9 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
     {
         if (TimeChartReport.TYPE.equals(reportType))
             return context.getContextPath() + "/visualization/report/timechart.gif";
+        if (GenericChartReport.TYPE.equals(reportType))
+            return context.getContextPath() + "/visualization/report/box_plot.png";
+
         return super.getReportIcon(context, reportType);
     }
 }
