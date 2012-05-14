@@ -36,18 +36,30 @@ LABKEY.vis.Stat.summary = function(data, accessor){
 };
 
 LABKEY.vis.Stat.Q1 = function(numbers){
+    /*
+        Returns the 1st quartile for a sorted (asc) array.
+     */
     return d3.quantile(numbers,0.25);
 };
 
 LABKEY.vis.Stat.Q2 = LABKEY.vis.Stat.median = function(numbers){
+    /*
+        Returns the 2nd quartile for an sorted (asc) array.
+     */
     return d3.quantile(numbers,0.5);
 };
 
 LABKEY.vis.Stat.Q3 = function(numbers){
+    /*
+        Returns the 3rd quartile for an sorted (asc) array.
+     */
     return d3.quantile(numbers,0.75);
 };
 
 LABKEY.vis.Stat.sortNumericAscending = function(data, accessor){
+    /*
+        Sorts an array of data in ascending order.
+     */
     var numbers = [];
     for(var i = 0; i < data.length; i++){
         numbers.push(accessor(data[i]));
@@ -57,6 +69,9 @@ LABKEY.vis.Stat.sortNumericAscending = function(data, accessor){
 };
 
 LABKEY.vis.Stat.sortNumericDescending = function(data, accessor){
+    /*
+        Sorts an array of data in descending order.
+     */
     var numbers = [];
     for(var i = 0; i < data.length; i++){
         numbers.push(accessor(data[i]));

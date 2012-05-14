@@ -13,6 +13,18 @@ if(!LABKEY.vis){
 }
 
 LABKEY.vis.Plot = function(config){
+
+    this.error = function(msg){
+        console.error(msg);
+        if(console.trace){
+            console.trace();
+        }
+        if(this.paper){
+            this.paper.clear();
+            this.paper.text(this.paper.width / 2, this.paper.height / 2, "Error rendering chart:\n" + msg).attr('font-size', '12px').attr('fill', 'red');
+        }
+    };
+
     var copyUserScales = function(origScales){
         // This copies the user's scales, but not the max/min because we don't want to over-write that, so we store the original
         // scales separately (this.originalScales).
@@ -27,7 +39,7 @@ LABKEY.vis.Plot = function(config){
     };
 	this.renderTo = config.renderTo ? config.renderTo : null; // The id of the DOM element to render the plot to, required.
 	this.grid = {
-		width: config.width ? config.width : null, // height of the grid where points/lines/etc gets plotted.
+		width: config.width ? config.width : null, // height of the grid where shapes/lines/etc gets plotted.
 		height: config.height ? config.height: null // widht of the grid.
 	};
 	this.originalScales = config.scales ? config.scales : null;
@@ -42,56 +54,46 @@ LABKEY.vis.Plot = function(config){
 	this.layers = config.layers ? config.layers : []; // An array of layers, required. (e.g. a layer for a CD4 line chart over time, and a layer for a Hemoglobin line chart over time).
 
     if(this.grid.width == null){
-		console.error("Unable to create plot, width not specified");
+		this.error("Unable to create plot, width not specified");
 		return null;
 	}
 
 	if(this.grid.height == null){
-		console.error("Unable to create plot, height not specified");
+		this.error("Unable to create plot, height not specified");
 		return null;
 	}
 
 	if(this.renderTo == null){
-		console.error("Unable to create plot, renderTo not specified");
+		this.error("Unable to create plot, renderTo not specified");
 		return null;
-	} else {
-        this.paper = new Raphael(this.renderTo, this.grid.width, this.grid.height);
-    }
+	}
 
     for(var aesthetic in this.aes){
         LABKEY.vis.createGetter(this.aes[aesthetic]);
     }
 
 	var initScales = function(){
-        var defaultAxisScale = {
-            scaleType: 'continuous',
-            trans: 'linear'
+        // initScales sets up default scales if needed, gets the domain of each required scale,
+        // and news up all required scales. Returns true if there were no problems, returns false if there were problems.
+
+        var setupDefaultScales = function(scales, aes){
+            var defaultAxisScale = {scaleType: 'continuous', trans: 'linear'};
+            var defaultDiscreteScale = {scaleType: 'discrete'};
+
+            for(aesthetic in aes){
+                if(!scales[aesthetic]){
+                    if(aesthetic == 'x' || aesthetic == 'yLeft' || aesthetic == 'yRight'){
+                        scales[aesthetic] = defaultAxisScale;
+                    } else if(aesthetic == 'color' || aesthetic == 'shape'){
+                        scales[aesthetic] = defaultDiscreteScale;
+                    }
+                }
+            }
         };
 
-        if(!this.scales.x){
-            this.scales.x = defaultAxisScale;
-        }
+        var getDomain = function(origScales, scales, data, aes){
+            // Gets the domains for a given set of aesthetics and data.
 
-        if(!this.scales.yLeft){
-            this.scales.yLeft = defaultAxisScale;
-        }
-
-        if(!this.scales.yRight){
-            this.scales.yRight = defaultAxisScale;
-        }
-
-		var leftMargin = 75;
-		var rightMargin = 250;
-		var bottomMargin = 50;
-		var topMargin = 75;
-
-		this.grid.leftEdge = leftMargin;
-		this.grid.rightEdge = this.grid.width - rightMargin + 10; // Add 10 units of space to top and right of scale as a little padding for the grid area.
-		this.grid.topEdge = this.grid.height - topMargin + 10;
-		this.grid.bottomEdge = bottomMargin;
-
-        var getMinMax = function(origScales, scales, parentData, layerData, aes){
-            var data = layerData ? layerData : parentData;
             if(!data){
                 return;
             }
@@ -99,21 +101,40 @@ LABKEY.vis.Plot = function(config){
             for(var scale in scales){
                 if(aes[scale]){
                     if(scales[scale].scaleType == 'continuous'){
-                        if(origScales[scale] && origScales[scale].min){
+                        if(origScales[scale] && origScales[scale].min != null && origScales[scale].min != undefined){
                             scales[scale].min = origScales[scale].min;
                         } else {
-                            var tempMin = d3.min(data, aes[scale].value);
+                            var tempMin = d3.min(data, aes[scale].getValue);
                             if(scales[scale].min == null || scales[scale].min == undefined || tempMin < scales[scale].min){
                                 scales[scale].min = tempMin;
                             }
                         }
 
-                        if(origScales[scale] && origScales[scale].max){
+                        if(origScales[scale] && origScales[scale].max != null && origScales[scale].max != undefined){
                             scales[scale].max = origScales[scale].max;
                         } else {
-                            var tempMax = d3.max(data, aes[scale].value);
+                            var tempMax = d3.max(data, aes[scale].getValue);
                             if(scales[scale].max == null || scales[scale].max == undefined || tempMax > scales[scale].max){
                                 scales[scale].max = tempMax;
+                            }
+                        }
+                    } else if((scale != 'shape' && scale != 'color' ) && (scales[scale].scaleType == 'ordinal' || scales[scale].scaleType == 'discrete' || scales[scale].scaleType == 'categorical')){
+                        if(origScales[scale] && origScales[scale].domain){
+                            if(!scales[scale].domain){
+                                // If we already have a domain then we need to set it from the user input.
+                                scales[scale].domain = origScales[scale].domain;
+                            }
+                        } else {
+                            if(!scales[scale].domain){
+                                scales[scale].domain = [];
+                            }
+
+                            for(var i = 0; i < data.length; i++){
+                                // Cycle through the data and add the unique values.
+                                var val = aes[scale].getValue(data[i]);
+                                if(scales[scale].domain.indexOf(val) == -1){
+                                    scales[scale].domain.push(val);
+                                }
                             }
                         }
                     }
@@ -121,11 +142,30 @@ LABKEY.vis.Plot = function(config){
             }
         };
 
-        getMinMax(this.originalScales, this.scales, this.data, null, this.aes);
-
+        setupDefaultScales(this.scales, this.aes);
         for(var i = 0; i < this.layers.length; i++){
-            getMinMax(this.originalScales, this.scales, this.data, this.layers[i].data, this.layers[i].aes);
+            setupDefaultScales(this.scales, this.layers[i].aes);
         }
+        //layerData ? layerData : parentData
+        getDomain(this.originalScales, this.scales, this.data, this.aes);
+        for(var i = 0; i < this.layers.length; i++){
+            getDomain(this.originalScales, this.scales, this.layers[i].data ? this.layers[i].data : this.data, this.layers[i].aes);
+        }
+
+        var leftMargin = 75;
+        var rightMargin = 75;
+        var bottomMargin = 50;
+        var topMargin = 75;
+
+        if(this.scales.color || this.scales.shape){
+            rightMargin = rightMargin + 175;
+        }
+        
+		this.grid.leftEdge = leftMargin;
+
+        this.grid.rightEdge = this.grid.width - rightMargin; // Add 10 units of space to top and right of scale as a little padding for the grid area.
+        this.grid.topEdge = this.grid.height - topMargin + 10;
+        this.grid.bottomEdge = bottomMargin;
 
         for(var scaleName in this.scales){
             var domain = null;
@@ -136,39 +176,43 @@ LABKEY.vis.Plot = function(config){
                     domain = [scale.min, scale.max];
                     range = [leftMargin, this.grid.width - rightMargin];
                     scale.scale = new LABKEY.vis.Scale.Continuous(scale.trans, null, null, domain, range);
-                } else {
-
+                } else if(scale.scaleType == 'ordinal' || scale.scaleType == 'discrete' || scale.scaleType == 'categorical'){
+                    if(scale.domain){
+                        scale.scale = new LABKEY.vis.Scale.Discrete(scale.domain, [this.grid.leftEdge, this.grid.rightEdge]);
+                    }
                 }
             } else if(scaleName == 'yLeft' || scaleName == 'yRight'){
+                range = [bottomMargin, this.grid.height - topMargin];
                 if(scale.scaleType == 'continuous' && (scale.min != null && scale.min != undefined) && (scale.max != null && scale.max != undefined)){
                     domain = [scale.min, scale.max];
-                    range = [bottomMargin, this.grid.height - topMargin];
                     scale.scale = new LABKEY.vis.Scale.Continuous(scale.trans, null, null, domain, range);
                 } else {
-
+                    if(scale.domain){
+                        scale.scale = new LABKEY.vis.Scale.Discrete(scale.domain, range);
+                    }
                 }
             } else if(scaleName == 'color'){
                 if(!scale.scaleType || scale.scaleType == 'discrete') {
                     scale.scale = LABKEY.vis.Scale.ColorDiscrete();
                 }
-            } else if(scaleName == 'pointType'){
+            } else if(scaleName == 'shape'){
                 if(!scale.scaleType || scale.scaleType == 'discrete') {
-                    scale.scale = LABKEY.vis.Scale.PointType();
+                    scale.scale = LABKEY.vis.Scale.Shape();
                 }
             }
         }
 
-        if(!this.scales.x.scale){
-            console.error("Unable to create an x scale.");
+        if(!this.scales.x || !this.scales.x.scale){
+            this.error('Unable to create an x scale, rendering aborted.');
             return false;
         }
 
         if(!this.scales.yLeft.scale && !this.scales.yRight.scale){
-            console.error("Unable to create a y scale");
+            this.error("Unable to create a y scale, rendering aborted.");
             return false;
         }
 
-		return true; // Return false if we want to cancel rendering. (i.e. no x scale).
+		return true;
 	};
 
 	var initGrid = function(){
@@ -183,7 +227,13 @@ LABKEY.vis.Plot = function(config){
             this.paper.text(this.grid.rightEdge/2, this.grid.height - 10, this.xTitle).attr({font: "14px Arial, sans-serif"});
         }
 
-        var xTicks = this.scales.x.scale.ticks(7);
+        var xTicks;
+        if(this.scales.x.scaleType == 'continuous'){
+            xTicks = this.scales.x.scale.ticks(7);
+        } else {
+            xTicks = this.scales.x.domain;
+        }
+
         for(var i = 0; i < xTicks.length; i++){
             //Plot x-axis ticks.
             var x1 = x2 = Math.floor(this.scales.x.scale(xTicks[i])) +.5;
@@ -199,8 +249,14 @@ LABKEY.vis.Plot = function(config){
             var gridLine = this.paper.path(LABKEY.vis.makeLine(x1, -this.grid.bottomEdge, x2, -this.grid.topEdge)).attr('stroke', '#DDD').transform("t0," + this.grid.height);
         }
 
-		if(this.scales.yLeft.scale){
-            var leftTicks = this.scales.yLeft.scale.ticks(10);
+		if(this.scales.yLeft && this.scales.yLeft.scale){
+            var leftTicks;
+            if(this.scales.yLeft.scaleType == 'continuous'){
+                leftTicks = this.scales.yLeft.scale.ticks(10);
+            } else {
+                leftTicks = this.scales.yLeft.domain();
+            }
+
 			this.paper.path(LABKEY.vis.makeLine(this.grid.leftEdge +.5, -this.grid.bottomEdge + 1, this.grid.leftEdge+.5, -this.grid.topEdge)).attr('stroke', '#000').attr('stroke-width', '1').transform("t0," + this.grid.height);
 
             if(this.leftTitle){
@@ -221,8 +277,14 @@ LABKEY.vis.Plot = function(config){
 			}
 		}
 
-		if(this.scales.yRight.scale){
-            var rightTicks = this.scales.yRight.scale.ticks(10);
+		if(this.scales.yRight && this.scales.yRight.scale){
+            var rightTicks;
+            if(this.scales.yLeft.scaleType == 'continuous'){
+                rightTicks = this.scales.yRight.scale.ticks(10);
+            } else {
+                rightTicks = this.scales.yRight.domain();
+            }
+
             this.paper.path(LABKEY.vis.makeLine(this.grid.rightEdge + .5, -this.grid.bottomEdge + 1, this.grid.rightEdge + .5, -this.grid.topEdge)).attr('stroke', '#000').attr('stroke-width', '1').transform("t0," + this.grid.height);
 
             if(this.rightTitle){
@@ -247,7 +309,7 @@ LABKEY.vis.Plot = function(config){
     var renderLegend = function(){
         var series = null;
         var colorRows = null;
-        var pointRows = null;
+        var shapeRows = null;
         var legendY = 0;
         var textX = null;
         var geomX = null;
@@ -278,16 +340,16 @@ LABKEY.vis.Plot = function(config){
             return; //None of the layers were named, we have no knowledge of series, we cannot continue.
         }
 
-        // Currently we only have 2 discrete scales that will get put on the legend, color and points.
+        // Currently we only have 2 discrete scales that will get put on the legend, color and shapes.
         if(this.scales.color && (!this.scales.color.scaleType || this.scales.color.scaleType == 'discrete')){
             colorRows = this.scales.color.scale.domain();
         }
 
-        if(this.scales.pointType && (!this.scales.pointType.scaleType || this.scales.pointType.scaleType == 'discrete')){
-            pointRows = this.scales.pointType ? this.scales.pointType.scale.domain() : null;
+        if(this.scales.shape && (!this.scales.shape.scaleType || this.scales.shape.scaleType == 'discrete')){
+            shapeRows = this.scales.shape ? this.scales.shape.scale.domain() : null;
         }
 
-        if(!colorRows && !pointRows){
+        if(!colorRows && !shapeRows){
             // We have no discrete scales to map on the legend so we'll plot a super basic legend.
             color = "#000000";
             for(var s in series){
@@ -309,7 +371,7 @@ LABKEY.vis.Plot = function(config){
                 legendY = legendY + 18;
             }
         } else {
-            var legendRows = colorRows ? colorRows : pointRows;
+            var legendRows = colorRows ? colorRows : shapeRows;
 
             for(var i = 0 ; i < legendRows.length; i++){
                 textX = this.grid.rightEdge + 100;
@@ -325,10 +387,10 @@ LABKEY.vis.Plot = function(config){
 
                         for(var j = 0; j < series[s].layers.length; j++){
                             if(series[s].layers[j].geom.type == "Point"){
-                                if(pointRows && pointRows.indexOf(legendRows[i]) !=-1){
-                                    var point = this.scales.pointType.scale(pointRows[pointRows.indexOf(legendRows[i])]);
-                                    point(this.paper, geomX + 10, y, 5).attr('stroke', color).attr('fill', color);
-                                } else if(!pointRows){
+                                if(shapeRows && shapeRows.indexOf(legendRows[i]) !=-1){
+                                    var shape = this.scales.shape.scale(shapeRows[shapeRows.indexOf(legendRows[i])]);
+                                    shape(this.paper, geomX + 10, y, 5).attr('stroke', color).attr('fill', color);
+                                } else if(!shapeRows){
                                     this.paper.circle(geomX + 10, y, 5).attr('stroke', color).attr('fill', color);
                                 }
 
@@ -347,7 +409,16 @@ LABKEY.vis.Plot = function(config){
     };
 
 	this.render = function(){
+
+        if(!this.paper){
+            this.paper = new Raphael(this.renderTo, this.grid.width, this.grid.height);
+        }
         this.paper.clear();
+        
+        if(!this.layers || this.layers.length < 1){
+            this.error('No layers added to the plot, nothing to render.');
+            return false;
+        }
 
         if(!initScales.call(this)){  // Sets up the scales.
             return false; // if we have a critical error when trying to initialize the scales we don't continue with rendering.
@@ -360,7 +431,7 @@ LABKEY.vis.Plot = function(config){
         }
 
         var gridSet = this.paper.setFinish();
-        gridSet.attr('clip-rect', (this.grid.leftEdge - 6) + ", " + (this.grid.height - this.grid.topEdge) + ", " + (this.grid.rightEdge - this.grid.leftEdge  + 10) + ", " + (this.grid.topEdge - this.grid.bottomEdge + 9));
+        gridSet.attr('clip-rect', (this.grid.leftEdge - 6) + ", " + (this.grid.height - this.grid.topEdge) + ", " + (this.grid.rightEdge - this.grid.leftEdge  + 20) + ", " + (this.grid.topEdge - this.grid.bottomEdge + 9));
         gridSet.transform("t0," + this.grid.height);
         
         this.paper.setStart();

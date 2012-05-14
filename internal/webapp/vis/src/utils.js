@@ -17,11 +17,6 @@ LABKEY.vis.createGetter = function(aes){
         aes.getValue = function(row){
             return aes.value(row);
         };
-    } else if(!isNaN(parseFloat(aes.value)) && isFinite(aes.value)){
-        // This is for size aesthetics which can specify just a number.
-        aes.getValue = function(){
-            return aes.value;
-        }
     } else {
         aes.getValue = function(row){
             return row[aes.value];
@@ -37,4 +32,21 @@ LABKEY.vis.convertAes = function(aes){
     }
 
     return newAes;
+};
+
+LABKEY.vis.groupData = function(data, groupAccessor){
+    /*
+        Groups data by the groupAccessor passed in.
+        Ex: A set of rows with participantIds in them, would return an object that has one attribute
+         per participant id. Each attribute will be an array of all of the rows the participant is in.
+     */
+    var groupedData = {};
+    for(var i = 0; i < data.length; i++){
+        var value = groupAccessor(data[i]);
+        if(!groupedData[value]){
+            groupedData[value] = [];
+        }
+        groupedData[value].push(data[i]);
+    }
+    return groupedData;
 };

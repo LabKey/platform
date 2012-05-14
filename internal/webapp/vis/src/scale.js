@@ -18,19 +18,19 @@ if(!LABKEY.vis.Scale){
 	LABKEY.vis.Scale = {};
 }
 
-LABKEY.vis.Scale.Discrete = function(config){
+LABKEY.vis.Scale.Discrete = function(domain, range){
 	// This is a discrete scale, used for categorical data (e.g. visits).
-	this.type = "Discrete";
-	return this;
+	return d3.scale.ordinal().domain(domain).rangeBands(range, 1);
 };
 
 LABKEY.vis.Scale.Continuous = function(trans, data, value, domain, range){
 	// This is a continuous scale (e.g. dates, numbers).
 	var scale = null;
+    
 	if(!domain){
 		var max = d3.max(data, value);
 		var min = d3.min(data, value);
-		domain = [min, max]
+		domain = [min, max];
 	}
 	
 	if(trans == 'linear'){
@@ -43,12 +43,6 @@ LABKEY.vis.Scale.Continuous = function(trans, data, value, domain, range){
 	return scale;
 };
 
-LABKEY.vis.Scale.ColorContinuous = function(config){
-	// This is a scale used for continuous color scales. (e.g. a  heatmap)
-
-	return this;
-};
-
 LABKEY.vis.Scale.ColorDiscrete = function(){
 	// Used for discrete color scales (color assigned to categorical data)
     return d3.scale.ordinal().range([ "#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854", "#FFD92F", "#E5C494", "#B3B3B3"]);
@@ -59,14 +53,13 @@ LABKEY.vis.Scale.DarkColorDiscrete = function(){
     return d3.scale.ordinal().range(["#378a70", "#f34704", "#4b67a6", "#d53597", "#72a124", "#c8a300", "#d19641", "#808080"]);
 };
 
-LABKEY.vis.Scale.PointType = function(){
+LABKEY.vis.Scale.Shape = function(){
+    // Used in pointType geom.
     var circle = function(paper, x, y, r){ return paper.circle(x, y, r)};
     var square = function(paper, x, y, r){ return paper.rect(x-r, y-r, r*2, r*2)};
     var diamond = function(paper, x, y, r){r = (Math.sqrt(2*Math.pow(r*2, 2)))/2; return paper.path('M' + x + ' ' + (y+r) + ' L ' + (x+r) + ' ' + y + ' L ' + x + ' ' + (y-r) + ' L ' + (x-r) + ' ' + y + ' Z')};
     var triangle = function(paper, x, y, r){return paper.path('M ' + x + ' ' + (y + (r)) + ' L ' + (x + (r)) + ' ' + (y-(r)) + ' L ' + (x - (r)) + ' ' + (y - (r)) + ' Z')};
     var x = function(paper, x, y, r){ return paper.path('M' + (x-r) + ' ' + (y+r) + ' L '  + (x+r) + ' ' + (y-r) + 'M' + (x-r) + ' ' + (y-r) + ' L '  + (x+r) + ' ' + (y+r)).attr('stroke-width', 3)};
     
-    var scale = d3.scale.ordinal().range([circle, triangle, square, diamond, x]);
-
-    return scale;
-}
+    return d3.scale.ordinal().range([circle, triangle, square, diamond, x]);
+};
