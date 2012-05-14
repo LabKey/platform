@@ -917,4 +917,11 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
         _importTemplates = list;
     }
+
+    @Override
+    public FieldKey getContainerFieldKey()
+    {
+        ColumnInfo col = getColumn("container");
+        return null==col ? null : col.getFieldKey();
+    }
 }

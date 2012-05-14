@@ -67,4 +67,19 @@ public class MvFieldWrapper
     {
         return value == null && mvIndicator == null;
     }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (o instanceof MvFieldWrapper)
+            return _equals(value, ((MvFieldWrapper)o).value) && _equals(mvIndicator, ((MvFieldWrapper)o).mvIndicator);
+        return null==mvIndicator && _equals(value,o);
+    }
+
+    private boolean _equals(Object a, Object b)
+    {
+        if (null==a || null==b)
+            return a==b;
+        return a.equals(b);
+    }
 }

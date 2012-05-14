@@ -30,6 +30,7 @@ import org.springframework.web.servlet.mvc.Controller;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Collection;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 
@@ -191,14 +192,37 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
 
 
     @Override
+    public Set<FieldKey> getFieldKeys()
+    {
+        Set<FieldKey> set = super.getFieldKeys();
+        if (_containerContext instanceof ContainerContext.FieldKeyContext)
+            set.add(((ContainerContext.FieldKeyContext) _containerContext).getFieldKey());
+        return set;
+    }
+
+
+    @Override
     public DetailsURL remapFieldKeys(FieldKey parent, Map<FieldKey, FieldKey> remap)
     {
         DetailsURL copy = (DetailsURL)super.remapFieldKeys(parent, remap);
+        if (copy._containerContext instanceof ContainerContext.FieldKeyContext)
+        {
+            FieldKey key = ((ContainerContext.FieldKeyContext)copy._containerContext).getFieldKey();
+            FieldKey re = _remap(key, parent, remap);
+            copy._containerContext = new ContainerContext.FieldKeyContext(re);
+        }
         // copy changes backwards
         copy._parsedUrl.setRawQuery(copy._source);
         copy._url = copy._parsedUrl;
         copy._urlSource = null;
         return copy;
+    }
+
+
+    @Override
+    public StringExpressionFactory.FieldKeyStringExpression dropParent(String parentName)
+    {
+        return super.dropParent(parentName);    //To change body of overridden methods use File | Settings | File Templates.
     }
 
 

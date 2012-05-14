@@ -501,17 +501,26 @@ public class StringExpressionFactory
                 if (p instanceof FieldPart)
                 {
                     FieldPart fp = (FieldPart)p;
-                    FieldKey replace = remap == null ? null : remap.get(fp.key);
-                    if (null != replace)
-                        fp.key = replace;
-                    else if (null != parent)
-                        fp.key = FieldKey.fromParts(parent, fp.key);
+                    fp.key = _remap(fp.key, parent, remap);
                 }
                 source.append(p.toString());
             }
             clone._source = source.toString();
             return clone;
         }
+
+
+        protected FieldKey _remap(FieldKey key, FieldKey parent, Map<FieldKey,FieldKey> remap)
+        {
+            FieldKey replace = remap == null ? null : remap.get(key);
+            if (null != replace)
+                return replace;
+            else if (null != parent)
+                return FieldKey.fromParts(parent, key);
+            // TODO I think we want this to be strict sometimes, and return null
+            return key;
+        }
+
 
         /**
          * @param set set of FieldKeys

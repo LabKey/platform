@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 
@@ -195,6 +196,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         return ret;
     }
 
+
     @Override
     public boolean hasContainerContext()
     {
@@ -202,11 +204,22 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         return t instanceof AbstractTableInfo && ((AbstractTableInfo)t).hasContainerContext();
     }
 
+
     @Override
-    public Container getContainer(Map context)
+    public ContainerContext getContainerContext()
     {
         TableInfo t = getRealTable();
-        return ((AbstractTableInfo)t).getContainer(context);
+        if (t instanceof AbstractTableInfo)
+            return ((AbstractTableInfo)t).getContainerContext();
+        return null;
+    }
+
+
+    @Override
+    public FieldKey getContainerFieldKey()
+    {
+        TableInfo t = getRealTable();
+        return t.getContainerFieldKey();
     }
 
 
@@ -214,6 +227,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
 	{
 		return c.getAlias();
 	}
+
 
     final public void addCondition(SQLFragment condition, String... columnNames)
     {

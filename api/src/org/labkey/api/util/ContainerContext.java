@@ -16,6 +16,8 @@
 package org.labkey.api.util;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.query.FieldKey;
 
 import java.util.Map;
 
@@ -30,4 +32,44 @@ import java.util.Map;
 public interface ContainerContext
 {
     public Container getContainer(Map context);
+
+    public static class FieldKeyContext implements ContainerContext
+    {
+        FieldKey _key;
+
+        public FieldKeyContext(FieldKey key)
+        {
+            setFieldKey(key);
+        }
+
+        public FieldKeyContext copy()
+        {
+            return new FieldKeyContext(_key);
+        }
+
+        @Override
+        public Container getContainer(Map context)
+        {
+            Object o = context.get(_key);
+            if (null == o && null == _key.getParent())
+                o = context.get(_key.getName());
+            if (null == o)
+                return null;
+            if (o instanceof Container)
+                return (Container)o;
+            if (o instanceof String)
+                return ContainerManager.getForId((String)o);
+            return null;
+        }
+
+        public FieldKey getFieldKey()
+        {
+            return _key;
+        }
+
+        public void setFieldKey(FieldKey key)
+        {
+            _key = key;
+        }
+    }
 }

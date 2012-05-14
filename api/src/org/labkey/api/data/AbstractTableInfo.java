@@ -75,7 +75,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-abstract public class AbstractTableInfo implements TableInfo, ContainerContext
+abstract public class AbstractTableInfo implements TableInfo
 {
     protected Iterable<FieldKey> _defaultVisibleColumns;
     protected DbSchema _schema;
@@ -125,19 +125,20 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 
     public void afterConstruct()
     {
-         if (hasContainerContext())
-         {
-             for (ColumnInfo c : getColumns())
-             {
-                 if (c.getURL() instanceof DetailsURL)
-                     ((DetailsURL)c.getURL()).setContainerContext(this);
-             }
-             for (DetailsURL detailsURL : _detailsURLs)
-             {
-                 detailsURL.setContainerContext(this);
-             }
-         }
-     }
+        ContainerContext cc;
+        if (hasContainerContext() && null != (cc = getContainerContext()))
+        {
+            for (ColumnInfo c : getColumns())
+            {
+                if (c.getURL() instanceof DetailsURL)
+                    ((DetailsURL)c.getURL()).setContainerContext(cc);
+            }
+            for (DetailsURL detailsURL : _detailsURLs)
+            {
+                detailsURL.setContainerContext(cc);
+            }
+        }
+    }
 
 
     protected Map<String, ColumnInfo> constructColumnMap()
@@ -494,7 +495,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
 
     public StringExpression getDetailsURL(Set<FieldKey> columns, Container container)
     {
-        ContainerContext containerContext = hasContainerContext() ? this : container;
+        ContainerContext containerContext = hasContainerContext() ? this.getContainerContext() : container;
 
         for (DetailsURL dUrl : _detailsURLs)
         {
@@ -915,11 +916,18 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
         return false;
     }
 
-    public Container getContainer(Map context)
+    public ContainerContext getContainerContext()
     {
+//        FieldKey fk = getContainerFieldKey();
+//        return null==fk ? null : new ContainerContext.FieldKeyContext(fk);
         return null;
     }
 
+    @Override
+    public FieldKey getContainerFieldKey()
+    {
+        return null;
+    }
 
     public boolean hasTriggers(Container c)
     {

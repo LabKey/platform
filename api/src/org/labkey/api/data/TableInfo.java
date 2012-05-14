@@ -390,4 +390,6 @@ public interface TableInfo extends HasPermission
     public boolean isLocked();
 
     public boolean supportsContainerFilter();
+
+    public FieldKey getContainerFieldKey();
 }
