@@ -1214,20 +1214,17 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
     generatePlot: function(chart, studyType, viewInfo, chartInfo, mainTitle, seriesList, individualData, individualMeasureToColumn, individualVisitMap, aggregateData, aggregateMeasureToColumn, aggregateVisitMap){
         // This function generates a plot config and renders a plot for given data.
         // Should be used in per_subject, single, per_measure, and per_group
-        var generateLayerAes = function(name, yAxisSide, columnName, intervalKey, subjectColumn, hoverText, lineWidth){
+        var generateLayerAes = function(name, yAxisSide, columnName, intervalKey, subjectColumn, hoverText){
             var yName = yAxisSide == "left" ? "yLeft" : "yRight";
             var aes = {};
             aes[yName] = function(row){return parseFloat(row[columnName].value)}; // Have to parseFlot because for some reason ObsCon from Luminex was returning strings not floats/ints.
             if(hoverText){
                 aes.hoverText = function(row){return row[subjectColumn].value + ' '  + name + ', ' + intervalKey + ' ' + row[intervalKey].value + ', ' + row[columnName].value};
             }
-            if(lineWidth){
-                aes.size = lineWidth;
-            }
             return aes;
         };
 
-        var generateAggregateLayerAes = function(name, yAxisSide, columnName, intervalKey, subjectColumn, hoverText, lineWidth, errorColumn, errorType){
+        var generateAggregateLayerAes = function(name, yAxisSide, columnName, intervalKey, subjectColumn, hoverText, errorColumn, errorType){
             var yName = yAxisSide == "left" ? "yLeft" : "yRight";
             var aes = {};
             aes[yName] = function(row){return parseFloat(row[columnName].value)}; // Have to parseFlot because for some reason ObsCon from Luminex was returning strings not floats/ints.
@@ -1243,10 +1240,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     aes.hoverText = function(row){return row[subjectColumn].displayValue + ' '  + name + ', ' + intervalKey + ' ' + row[intervalKey].value + ', ' + row[columnName].value};
                 }
             }
-            if(lineWidth){
-                aes.size = lineWidth;
-            }
-            aes.group = aes.color = aes.pointType = function(row){return row[subjectColumn].displayValue};
+            aes.group = aes.color = aes.shape = function(row){return row[subjectColumn].displayValue};
             aes.error = function(row){return row[errorColumn].value};
             return aes;
         };
@@ -1305,8 +1299,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             if(individualData && individualMeasureToColumn){
                 var pathLayerConfig = {
                     name: chartSeries.name,
-                    geom: new LABKEY.vis.Geom.Path(),
-                    aes: generateLayerAes(chartSeries.name, chartSeries.yAxisSide, columnName, intervalKey, individualSubjectColumn, false, chartInfo.lineWidth)
+                    geom: new LABKEY.vis.Geom.Path({size: chartInfo.lineWidth}),
+                    aes: generateLayerAes(chartSeries.name, chartSeries.yAxisSide, columnName, intervalKey, individualSubjectColumn, false)
                 };
                 layers.push(new LABKEY.vis.Layer(pathLayerConfig));
 
@@ -1314,7 +1308,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     var pointLayerConfig = {
                         name: chartSeries.name,
                         geom: new LABKEY.vis.Geom.Point(),
-                        aes: generateLayerAes(chartSeries.name, chartSeries.yAxisSide, columnName, intervalKey, individualSubjectColumn, true, null)
+                        aes: generateLayerAes(chartSeries.name, chartSeries.yAxisSide, columnName, intervalKey, individualSubjectColumn, true)
                     };
                     layers.push(new LABKEY.vis.Layer(pointLayerConfig));
                 }
@@ -1328,13 +1322,12 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     errorBarType = '_STDERR';
                 }
                 var errorColumnName = errorBarType ? aggregateMeasureToColumn[chartSeries.name] + errorBarType : null;
-                var errorAes = generateAggregateLayerAes(chartSeries.name, chartSeries.yAxisSide, columnName, intervalKey, aggregateSubjectColumn, errorColumnName, chartInfo.errorBars);
 
                 var aggregatePathLayerConfig = {
                     name: chartSeries.name,
                     data: aggregateData,
-                    geom: new LABKEY.vis.Geom.Path(),
-                    aes: generateAggregateLayerAes(chartSeries.name, chartSeries.yAxisSide, columnName, intervalKey, aggregateSubjectColumn, false, chartInfo.lineWidth, errorColumnName, chartInfo.errorBars)
+                    geom: new LABKEY.vis.Geom.Path({size: chartInfo.lineWidth}),
+                    aes: generateAggregateLayerAes(chartSeries.name, chartSeries.yAxisSide, columnName, intervalKey, aggregateSubjectColumn, false, errorColumnName, chartInfo.errorBars)
                 };
                 layers.push(new LABKEY.vis.Layer(aggregatePathLayerConfig));
 
@@ -1343,7 +1336,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                         name: chartSeries.name,
                         data: aggregateData,
                         geom: new LABKEY.vis.Geom.ErrorBar(),
-                        aes: generateAggregateLayerAes(chartSeries.name, chartSeries.yAxisSide, columnName, intervalKey, aggregateSubjectColumn, false, null, errorColumnName, chartInfo.errorBars)
+                        aes: generateAggregateLayerAes(chartSeries.name, chartSeries.yAxisSide, columnName, intervalKey, aggregateSubjectColumn, false, errorColumnName, chartInfo.errorBars)
                     };
                     layers.push(new LABKEY.vis.Layer(aggregateErrorLayerConfig));
                 }
@@ -1353,7 +1346,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                         name: chartSeries.name,
                         data: aggregateData,
                         geom: new LABKEY.vis.Geom.Point(),
-                        aes: generateAggregateLayerAes(chartSeries.name, chartSeries.yAxisSide, columnName, intervalKey, aggregateSubjectColumn, true, null, errorColumnName, chartInfo.errorBars)
+                        aes: generateAggregateLayerAes(chartSeries.name, chartSeries.yAxisSide, columnName, intervalKey, aggregateSubjectColumn, true, errorColumnName, chartInfo.errorBars)
                     };
                     layers.push(new LABKEY.vis.Layer(aggregatePointLayerConfig));
                 }
@@ -1392,7 +1385,9 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 x: xAes,
                 color: function(row){return row[individualSubjectColumn].value},
                 group: function(row){return row[individualSubjectColumn].value},
-                pointType: function(row){return row[individualSubjectColumn].value}
+                shape: function(row){
+                    return row[individualSubjectColumn].value
+                }
             },
             scales: {
                 x: {
@@ -1413,10 +1408,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     min: yRightMin,
                     max: yRightMax
                 },
-                color: {
-                    scaleType: 'discrete'
-                },
-                pointType: {
+                shape: {
                     scaleType: 'discrete'
                 }
             },
