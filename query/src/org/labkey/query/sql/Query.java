@@ -566,7 +566,7 @@ public class Query
         try
         {
             if (schema instanceof UserSchema)
-                t  = ((UserSchema)schema)._getTableOrQuery(key.getName(), true, _parseErrors);
+                t  = ((UserSchema)schema)._getTableOrQuery(key.getName(), true, false, _parseErrors);
             else
                 t = schema.getTable(key.getName());
 

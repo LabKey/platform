@@ -934,7 +934,6 @@ public class StudyController extends BaseStudyController
             QueryView queryView = schema.createView(getViewContext(), settings, errors);
 
             final ActionURL url = context.getActionURL();
-            setColumnURL(url, queryView, schema, def);
 
             // clear the property map cache and the sort map cache
             getParticipantPropsMap(context).clear();
@@ -943,6 +942,8 @@ public class StudyController extends BaseStudyController
             final TableInfo table = queryView.getTable();
             if (table != null)
             {
+                setColumnURL(url, queryView, schema, def);
+
                 // Clear any cached participant lists, since the filter/sort may have changed
                 removeParticipantListFromCache(context, def.getDataSetId(), viewName, _cohortFilter, form.getQCState());
                 getExpandedState(context, def.getDataSetId()).clear();
@@ -2787,36 +2788,27 @@ public class StudyController extends BaseStudyController
         {
             return;
         }
+
+        // push any filter, sort params, and viewname
+        ActionURL base = new ActionURL(ParticipantAction.class, querySchema.getContainer());
+        base.addParameter(DataSetDefinition.DATASETKEY, Integer.toString(def.getDataSetId()));
+        for (Pair<String, String> param : url.getParameters())
+        {
+            if ((param.getKey().contains(".sort")) ||
+                (param.getKey().contains("~")) ||
+                (CohortFilter.isCohortFilterParameterName(param.getKey())) ||
+                (SharedFormParameters.QCState.name().equals(param.getKey())) ||
+                (DATASET_VIEW_NAME_PARAMETER_NAME.equals(param.getKey())))
+            {
+                base.addParameter(param.getKey(), param.getValue());
+            }
+        }
+
         for (DisplayColumn col : columns)
         {
             String subjectColName = StudyService.get().getSubjectColumnName(def.getContainer());
             if (subjectColName.equalsIgnoreCase(col.getName()))
-            {
-                col.getColumnInfo().setFk(new QueryForeignKey(querySchema, StudyService.get().getSubjectTableName(def.getContainer()),
-                        subjectColName, subjectColName)
-                {
-                    public StringExpression getURL(ColumnInfo parent)
-                    {
-                        ActionURL base = new ActionURL(ParticipantAction.class, querySchema.getContainer());
-                        base.addParameter(DataSetDefinition.DATASETKEY, Integer.toString(def.getDataSetId()));
-
-                        // push any filter, sort params, and viewname
-                        for (Pair<String, String> param : url.getParameters())
-                        {
-                            if ((param.getKey().contains(".sort")) ||
-                                (param.getKey().contains("~")) ||
-                                (CohortFilter.isCohortFilterParameterName(param.getKey())) ||
-                                (SharedFormParameters.QCState.name().equals(param.getKey())) ||
-                                (DATASET_VIEW_NAME_PARAMETER_NAME.equals(param.getKey())))
-                            {
-                                base.addParameter(param.getKey(), param.getValue());
-                            }
-                        }
-                        return new DetailsURL(base, "participantId", parent.getFieldKey());
-                    }
-                });
-                return;
-            }
+                col.setURLExpression(new DetailsURL(base, "participantId", col.getColumnInfo().getFieldKey()));
         }
     }
 

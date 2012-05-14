@@ -2004,7 +2004,7 @@ public class QueryController extends SpringActionController
             {
                 throw new NotFoundException("Schema not found");
             }
-            _table = _schema.getTable(form.getQueryName());
+            _table = _schema.getTable(form.getQueryName(), true, true);
             if (null == _table)
             {
                 throw new NotFoundException("Query not found");
