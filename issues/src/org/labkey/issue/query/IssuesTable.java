@@ -79,6 +79,11 @@ public class IssuesTable extends FilteredTable
         issueIdColumn.setKeyField(true);
         issueIdColumn.setLabel(names.singularName.toString() + " ID");
         addColumn(issueIdColumn);
+
+        ColumnInfo folder = new AliasedColumn(this, "Folder", _rootTable.getColumn("container"));
+        folder.setHidden(true);
+        addColumn(folder);
+
         addColumn(new AliasedColumn(this, getCustomCaption("Type", customColumnCaptions), _rootTable.getColumn("Type")));
         addColumn(new AliasedColumn(this, getCustomCaption("Area", customColumnCaptions), _rootTable.getColumn("Area")));
         addWrapColumn(_rootTable.getColumn("Title"));
@@ -143,5 +148,17 @@ public class IssuesTable extends FilteredTable
             visibleColumns.add(FieldKey.fromParts(columnName));
 
         return new ArrayList<FieldKey>(visibleColumns);
+    }
+
+    @Override
+    public boolean hasContainerContext()
+    {
+        return true;
+    }
+
+    @Override
+    public FieldKey getContainerFieldKey()
+    {
+        return new FieldKey(null, "Folder");
     }
 }

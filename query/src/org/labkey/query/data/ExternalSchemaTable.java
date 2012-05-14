@@ -17,12 +17,14 @@
 package org.labkey.query.data;
 
 import org.labkey.api.data.*;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SimpleQueryUpdateService;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.data.xml.TableType;
 import org.labkey.query.ExternalSchema;
 
@@ -81,11 +83,19 @@ public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable implements
     
 
     @Override
-    public Container getContainer(Map context)
+    public ContainerContext getContainerContext()
     {
         assert null == getRealTable().getColumn("container") || null != _container;
         ExternalSchema s = getUserSchema();
         return null != _container ? _container : s.getContainer();
+    }
+
+
+    @Override
+    public FieldKey getContainerFieldKey()
+    {
+        ColumnInfo colContainer = getRealTable().getColumn("container");
+        return null==colContainer ? null : colContainer.getFieldKey();
     }
 
 

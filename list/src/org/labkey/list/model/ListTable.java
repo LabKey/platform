@@ -43,6 +43,7 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.list.view.AttachmentDisplayColumn;
 import org.labkey.list.view.ListController;
@@ -181,7 +182,7 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
     }
 
     @Override
-    public Container getContainer(Map m)
+    public ContainerContext getContainerContext()
     {
         return _list.getContainer();
     }

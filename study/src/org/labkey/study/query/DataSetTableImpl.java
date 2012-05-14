@@ -38,6 +38,7 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.SpecimenForeignKey;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
@@ -530,7 +531,7 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
     }
 
     @Override
-    public Container getContainer(Map m)
+    public ContainerContext getContainerContext()
     {
         return _dsd.getContainer();
     }

@@ -32,6 +32,7 @@ import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.TitleForeignKey;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.StudySchema;
@@ -189,7 +190,7 @@ public class ParticipantTable extends FilteredTable
     }
 
     @Override
-    public Container getContainer(Map context)
+    public ContainerContext getContainerContext()
     {
         return _schema.getContainer();
     }

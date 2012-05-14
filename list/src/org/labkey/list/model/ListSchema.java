@@ -68,8 +68,8 @@ public class ListSchema extends UserSchema
         ListDefinition def = ListService.get().getLists(getContainer()).get(name);
         if (def != null)
         {
-            // don't call def.getTable()
-            // UserSchema may not be done with the table info and call afterConstruct()
+            // don't call def.getTable(),
+            // UserSchema will call afterConstruct()
             return new ListTable(getUser(), def);
         }
         return null;

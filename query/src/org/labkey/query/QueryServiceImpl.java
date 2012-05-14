@@ -95,8 +95,6 @@ import org.springframework.mock.web.MockHttpServletRequest;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.Serializable;
 import java.sql.ResultSet;
@@ -811,6 +809,9 @@ public class QueryServiceImpl extends QueryService
             {
                 List<ColumnInfo> pkColumns = table.getPkColumns();
                 Set<FieldKey> pkColumnMap = new HashSet<FieldKey>();
+                FieldKey ck = table.getContainerFieldKey();
+                if (null != ck)
+                    pkColumnMap.add(ck);
 
                 for (ColumnInfo column : pkColumns)
                     pkColumnMap.add(column.getFieldKey());

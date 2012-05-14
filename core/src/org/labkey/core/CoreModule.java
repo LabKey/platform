@@ -29,6 +29,7 @@ import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.etl.CachingDataIterator;
+import org.labkey.api.etl.RemoveDuplicatesDataIterator;
 import org.labkey.api.etl.ResultSetDataIterator;
 import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.exp.Lsid;
@@ -625,6 +626,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 RhinoService.TestCase.class,
                 ValidEmail.TestCase.class,
                 SimpleTranslator.TranslateTestCase.class,
+                RemoveDuplicatesDataIterator.DeDuplicateTestCase.class,
                 CachingDataIterator.ScrollTestCase.class,
                 ResultSetDataIterator.TestCase.class,
                 ExceptionUtil.TestCase.class,

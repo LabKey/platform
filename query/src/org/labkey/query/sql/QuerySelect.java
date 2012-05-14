@@ -1455,11 +1455,7 @@ groupByLoop:
 
     @Override
     public Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
-    {
-        if (_query._strictColumnList)
-            return Collections.emptySet();
-
-        resolveFields();
+    { resolveFields();
 
         if (!getParseErrors().isEmpty())
             return Collections.emptySet();
