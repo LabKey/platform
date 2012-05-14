@@ -757,7 +757,7 @@ public class VisualizationController extends SpringActionController
                 return null;
             }
 
-            ApiQueryResponse response = getApiResponse(getViewContext(), sqlGenerator.getPrimarySchema(), sql, errors);
+            ApiQueryResponse response = getApiResponse(getViewContext(), sqlGenerator.getPrimarySchema(), sql, sqlGenerator.isMetaDataOnly(), errors);
 
             // Note: extra properties can only be gathered after the query has executed, since execution populates the name maps.
             Map<String, Object> extraProperties = new HashMap<String, Object>();
@@ -792,7 +792,7 @@ public class VisualizationController extends SpringActionController
             return metaData;
         }
 
-        private ApiQueryResponse getApiResponse(ViewContext context, UserSchema schema, String sql, BindException errors) throws Exception
+        private ApiQueryResponse getApiResponse(ViewContext context, UserSchema schema, String sql, boolean metaDataOnly, BindException errors) throws Exception
         {
             String schemaName = schema.getName();
             //create a temp query settings object initialized with the posted LabKey SQL
@@ -810,9 +810,6 @@ public class VisualizationController extends SpringActionController
 
             //by default, return all rows
             settings.setShowRows(ShowRows.ALL);
-
-            //apply optional settings (maxRows, offset)
-            boolean metaDataOnly = false;
 
             //build a query view using the schema and settings
             QueryView view = new QueryView(schema, settings, errors);

@@ -15,6 +15,7 @@
  */
 package org.labkey.visualization.sql;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.labkey.api.action.CustomApiForm;
@@ -56,6 +57,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
     private ViewContext _viewContext;
     private VisualizationSourceColumn.Factory _columnFactory = new VisualizationSourceColumn.Factory();
+    private boolean _metaDataOnly;
 
     @Override
     public void setViewContext(ViewContext context)
@@ -244,6 +246,8 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         }
 
         ensureJoinColumns();
+        
+        _metaDataOnly = BooleanUtils.toBooleanDefaultIfNull((Boolean)properties.get("metaDataOnly"), false);
     }
 
     private void ensureJoinColumns()
@@ -668,5 +672,15 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             }
         }
         return builder.toString();
+    }
+
+    public boolean isMetaDataOnly()
+    {
+        return _metaDataOnly;
+    }
+
+    public void setMetaDataOnly(boolean metaDataOnly)
+    {
+        _metaDataOnly = metaDataOnly;
     }
 }
