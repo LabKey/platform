@@ -32,6 +32,7 @@ public abstract class AbstractExpSchema extends UserSchema
     public AbstractExpSchema(String name, String description, User user, Container container, DbSchema dbSchema)
     {
         super(name, description, user, container, dbSchema);
+        _cacheTableInfos = false;
     }
 
     protected <T extends ExpTable> T setupTable(T table)

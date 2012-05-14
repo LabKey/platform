@@ -402,6 +402,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
 
     public void setContainerFilter(@NotNull ContainerFilter filter)
     {
+        checkLocked();
         //noinspection ConstantConditions
         if (filter == null) // this really can happen, if other callers ignore warnings
             throw new IllegalArgumentException("filter cannot be null");

@@ -2022,6 +2022,9 @@ public class QueryView extends WebPartView<Object>
         return null;
     }
 
+
+    List<DisplayColumn> _queryDefDisplayColumns = null;
+
     public List<DisplayColumn> getDisplayColumns()
     {
         List<DisplayColumn> ret = new ArrayList<DisplayColumn>();
@@ -2058,7 +2061,9 @@ public class QueryView extends WebPartView<Object>
             }
         }
 
-        ret.addAll(getQueryDef().getDisplayColumns(_customView, table));
+        if (null == _queryDefDisplayColumns)
+            _queryDefDisplayColumns = getQueryDef().getDisplayColumns(_customView, table);
+        ret.addAll(_queryDefDisplayColumns);
 
         if (_linkTarget != null)
         {

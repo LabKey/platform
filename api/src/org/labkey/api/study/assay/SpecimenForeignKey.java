@@ -69,7 +69,7 @@ public class SpecimenForeignKey extends LookupForeignKey
         }
         
         UserSchema studySchema = QueryService.get().getUserSchema(_schema.getUser(), permissionsCheckContainer, "study");
-        FilteredTable tableInfo = (FilteredTable)studySchema.getTable("Vial");
+        FilteredTable tableInfo = (FilteredTable)studySchema.getTable("Vial", true, true);
         tableInfo.setContainerFilter(_studyContainerFilter);
 
         String specimenAlias = ExprColumn.STR_TABLE_ALIAS + SPECIMEN_SUBQUERY_SUFFIX;
@@ -159,6 +159,7 @@ public class SpecimenForeignKey extends LookupForeignKey
         }
 
         tableInfo.addColumn(new ExprColumn(tableInfo, AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME, sql, JdbcType.BOOLEAN));
+        tableInfo.setLocked(true);
         return tableInfo;
     }
 

@@ -1106,7 +1106,7 @@ abstract public class AbstractTableInfo implements TableInfo, ContainerContext
     }
 
 
-    private void checkLocked()
+    protected void checkLocked()
     {
         if (_locked)
             throw new IllegalStateException("TableInfo is locked: " + getName());

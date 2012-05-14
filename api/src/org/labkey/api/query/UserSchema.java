@@ -97,8 +97,15 @@ abstract public class UserSchema extends AbstractSchema
     @Nullable
     public TableInfo getTable(String name, boolean includeExtraMetadata)
     {
+        return getTable(name, includeExtraMetadata, false);
+    }
+
+
+    /** if forWrite==true, do not return a cached version */
+    public TableInfo getTable(String name, boolean includeExtraMetadata, boolean forWrite)
+    {
         ArrayList<QueryException> errors = new ArrayList<QueryException>();
-        Object o = _getTableOrQuery(name, includeExtraMetadata, errors);
+        Object o = _getTableOrQuery(name, includeExtraMetadata, forWrite, errors);
         if (o instanceof TableInfo)
         {
             return (TableInfo)o;
@@ -116,7 +123,7 @@ abstract public class UserSchema extends AbstractSchema
 
     Map<Pair<String, Boolean>, Object> cache = new HashMap<Pair<String, Boolean>, Object>();
 
-    public Object _getTableOrQuery(String name, boolean includeExtraMetadata, Collection<QueryException> errors)
+    public Object _getTableOrQuery(String name, boolean includeExtraMetadata, boolean forWrite, Collection<QueryException> errors)
     {
         if (name == null)
             return null;
@@ -125,9 +132,15 @@ abstract public class UserSchema extends AbstractSchema
             throw new UnauthorizedException("Cannot read query " + getSchemaName() + "." + name + " in " + getContainer().getPath());
 
         Pair<String,Boolean> key = new Pair(name.toLowerCase(),includeExtraMetadata);
-        Object torq = cache.get(key);
-        if (null != torq)
-            return torq;
+        boolean useCache = _cacheTableInfos && !forWrite;
+        Object torq = null;
+
+        if (useCache)
+        {
+            torq = cache.get(key);
+            if (null != torq)
+                return torq;
+        }
 
         TableInfo table = createTable(name);
         if (table != null)
@@ -135,7 +148,8 @@ abstract public class UserSchema extends AbstractSchema
             if (includeExtraMetadata)
                 overlayMetadata(table, name, errors);
             afterConstruct(table);
-            if (_cacheTableInfos)
+            // should just be !forWrite, but exp schema is still a problem
+            if (useCache)
                 table.setLocked(true);
             torq = table;
         }
@@ -151,9 +165,10 @@ abstract public class UserSchema extends AbstractSchema
             torq = def;
         }
 
-//        cache.put(key,torq);
-        assert MemTracker.put(torq);
+      if (false && useCache)
+         cache.put(key,torq);
 
+        assert MemTracker.put(torq);
         return torq;
     }
 
