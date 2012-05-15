@@ -43,13 +43,13 @@
 <br>
 <table>
 <tr><td>
-    <%=generateButton("Back to " + bean.entryTypeNames.pluralName, "list.view?" + DataRegion.LAST_FILTER_PARAM + "=true")%>
+    <%=generateButton("Back to " + bean.entryTypeNames.pluralName, buildURL(IssuesController.ListAction.class) + DataRegion.LAST_FILTER_PARAM + "=true")%>
     <%=generateButton("Customize Email Template", urlProvider(AdminUrls.class).getCustomizeEmailURL(c, IssueUpdateEmailTemplate.class, me.getViewContext().getActionURL()))%>
 </td></tr>
 <tr><td>&nbsp;</td></tr>
 <%=formatMissedErrorsInTable("form", 1)%>
 </table>
-<form name="entryTypeNames" action="configureIssues.post" method="POST">
+<form name="entryTypeNames" action="<%=h(buildURL(IssuesController.ConfigureIssuesAction.class))%>" method="POST">
 
 <table><tr>
     <td valign=top>

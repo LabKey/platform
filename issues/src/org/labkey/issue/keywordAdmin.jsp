@@ -22,6 +22,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.HashMap" %>
+<%@ page import="org.labkey.issue.IssuesController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<List<KeywordPicker>> me = (HttpView<List<KeywordPicker>>) HttpView.currentView();
@@ -41,7 +42,7 @@
     <!--<%=kwp.plural%>-->
     <td style="vertical-align:top">
     <div class="labkey-form-label"><b><%=kwp.plural%></b></div>
-    <form id="form<%=kwp.plural%>" method="POST" action="deleteKeyword.post">
+    <form id="form<%=kwp.plural%>" method="POST" action="<%=h(buildURL(IssuesController.DeleteKeywordAction.class))%>">
 <%
     if (kwp.keywords.length == 0)
     {
@@ -81,7 +82,7 @@
     {
 %>
 <td align="center">
-    <form method="POST" name="add<%=kwp.name%>" action="addKeyword.post">
+    <form method="POST" name="add<%=kwp.name%>" action="<%=h(buildURL(IssuesController.AddKeywordAction.class))%>">
     <input name="keyword" value=""><br>
         <%=generateSubmitButton("Add " + kwp.name)%><br>
     <input type="hidden" name="type" value="<%=kwp.type%>">
@@ -97,6 +98,8 @@ function callAction(action, form, word)
 {
     f = document.forms[form];
     f['keyword'].value = word;
+    if (-1 != window.location.pathname.indexOf('issues-') && -1 == action.indexOf('-'))
+        action = "issues-" + action;
     f.action = action + ".post";
     f.submit();
 }

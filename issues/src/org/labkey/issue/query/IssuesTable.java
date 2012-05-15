@@ -21,6 +21,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.*;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.model.IssueManager;
@@ -154,6 +155,14 @@ public class IssuesTable extends FilteredTable
     public boolean hasContainerContext()
     {
         return true;
+    }
+
+    @Override
+    public ContainerContext getContainerContext()
+    {
+        // super doesn't work because FilteredTable tries to do a passthrough to the schema table
+//        return new ContainerContext.FieldKeyContext(getContainerFieldKey());
+        return null;
     }
 
     @Override
