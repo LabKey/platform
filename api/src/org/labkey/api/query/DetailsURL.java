@@ -253,7 +253,7 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
     {
         DetailsURL ret = (DetailsURL)copy();
         if (null == ret._containerContext || (null != cc && overwrite))
-            setContainerContext(cc);
+            ret.setContainerContext(cc);
         return ret;
     }
 
