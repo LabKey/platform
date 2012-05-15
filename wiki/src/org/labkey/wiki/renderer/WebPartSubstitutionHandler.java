@@ -93,7 +93,7 @@ public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHand
             {
                 view.include(view, sw);
             }
-            catch (Exception e)
+            catch (Throwable e)
             {
                 return null;
             }

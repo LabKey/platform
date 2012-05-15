@@ -17,6 +17,7 @@
 package org.labkey.wiki;
 
 import org.apache.commons.collections15.MultiMap;
+import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -50,7 +51,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
@@ -65,7 +65,6 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.DeveloperRole;
 import org.labkey.api.security.roles.OwnerRole;
-import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
@@ -94,6 +93,7 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiEditModel;
@@ -124,6 +124,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 public class WikiController extends SpringActionController
 {
@@ -2770,6 +2771,84 @@ public class WikiController extends SpringActionController
             PropertyManager.saveProperties(properties);
 
             return new ApiSimpleResponse("success", true);
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class BackLinksAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            Container c = getContainer();
+            MultiMap<String, Wiki> mmap = new MultiHashMap<String, Wiki>();
+            Set<WikiTree> trees = WikiSelectManager.getWikiTrees(c);
+            WikiManager mgr = getWikiManager();
+
+            for (WikiTree tree : trees)
+            {
+                Wiki wiki = WikiSelectManager.getWiki(c, tree.getRowId());
+                FormattedHtml html = mgr.formatWiki(c, wiki, wiki.getLatestVersion());
+
+                for (String name : html.getDependencies())
+                    mmap.put(name, wiki);
+            }
+
+            StringBuilder html = new StringBuilder();
+            html.append(renderTable(c, mmap, "Links to valid wikis", true));
+            html.append(renderTable(c, mmap, "Invalid links or links to non-wikis", false));
+
+            return new HtmlView(html.toString());
+        }
+
+        private StringBuilder renderTable(Container c, MultiMap<String, Wiki> mmap, String title, boolean validWiki)
+        {
+            StringBuilder html = new StringBuilder();
+            Set<String> names =  new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+            names.addAll(mmap.keySet());
+
+            for (String name : names)
+            {
+                Wiki page = WikiSelectManager.getWiki(c, new HString(name));
+
+                if (null == page ^ validWiki)
+                {
+                    html.append("    <tr><td>");
+                    html.append(getSimpleLink(name, getPageURL(c, new HString(name))));
+                    Collection<Wiki> wikis = mmap.get(name);
+
+                    html.append("</td><td>");
+                    String sep = "";
+
+                    for (Wiki wiki : wikis)
+                    {
+                        html.append(sep);
+                        html.append(getSimpleLink(wiki.getName().getSource(), getPageURL(wiki, c)));
+                        sep = ", ";
+                    }
+
+                    html.append("</td></tr>\n");
+                }
+            }
+
+            if (html.length() > 0)
+            {
+                html.insert(0, "<table>\n<tr><td colspan=2>").append(PageFlowUtil.filter(title)).append("</td></tr>\n");
+                html.append("</table><br>\n");
+            }
+
+            return html;
+        }
+
+        private String getSimpleLink(String name, ActionURL url)
+        {
+            return "<a href=\"" + PageFlowUtil.filter(url) + "\">" + PageFlowUtil.filter(name) + "</a>";
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Back Links");
         }
     }
 
