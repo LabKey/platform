@@ -16,6 +16,7 @@
 
 package org.labkey.api.audit;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.User;
 
 import java.util.Date;
@@ -69,7 +70,7 @@ public class AuditLogEvent
         return _createdBy;
     }
     
-    public void setCreatedBy(User user)
+    public void setCreatedBy(@Nullable User user)
     {
         if (user != null)
         {

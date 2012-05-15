@@ -54,7 +54,7 @@ public interface Domain extends IPropertyType
 
     List<ColumnInfo> getColumns(TableInfo sourceTable, ColumnInfo lsidColumn, Container container, User user);
 
-    void delete(User user) throws DomainNotFoundException;
+    void delete(@Nullable User user) throws DomainNotFoundException;
     void save(User user) throws ChangePropertyDescriptorException;
 
     /**
