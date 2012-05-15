@@ -3,31 +3,41 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-Ext.namespace("LABKEY.vis");
 
-Ext.QuickTips.init();
+LABKEY.requiresExt4ClientAPI();
 
-LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
+Ext4.namespace("LABKEY.vis");
+
+Ext4.QuickTips.init();
+
+Ext4.define('LABKEY.vis.SubjectSeriesSelector', {
+
+    extend : 'Ext.panel.Panel',
 
     constructor : function(config){
-        Ext.applyIf(config, {
+        Ext4.applyIf(config, {
             title: config.subjectNounPlural,
             border: false,
             autoScroll: true
         });
+
+        Ext4.define('SimpleValue', {
+            extend: 'Ext.data.Model',
+            fields: [{name: 'value', type: 'string'}]
+        });
+
+        this.callParent([config]);
 
         this.addEvents(
             'chartDefinitionChanged',
             'measureMetadataRequestPending',
             'measureMetadataRequestComplete'
         );
-
-        LABKEY.vis.SubjectSeriesSelector.superclass.constructor.call(this, config);
     },
 
     getSubjectValues: function() {
         // if the subjects gridpanel is already available, then return
-        if(this.items && this.getComponent(this.subjectListViewId)){
+        if(this.subjectGridPanel){
             return;
         }
 
@@ -40,7 +50,7 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
 
         // this is the query/column we need to get the subject IDs for the selected measure
         this.fireEvent('measureMetadataRequestPending');
-        Ext.Ajax.request({
+        Ext4.Ajax.request({
             url : LABKEY.ActionURL.buildURL("visualization", "getDimensionValues", null, subjectInfo),
             method:'GET',
             disableCaching:false,
@@ -54,7 +64,7 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
 
     renderSubjects: function(response, e) {
         // decode the JSON responseText
-        var subjectValues = Ext.util.JSON.decode(response.responseText);
+        var subjectValues = Ext4.decode(response.responseText);
 
         // if this is not a saved chart with pre-selected values, initially select the first 5 values (after sorting)
         this.selectDefault = false;
@@ -77,20 +87,20 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
             }
         }
 
-        this.defaultDisplayField = new Ext.form.DisplayField({
+        this.defaultDisplayField = Ext4.create('Ext.form.field.Display', {
             hideLabel: true,
             hidden: true,
-            value: 'Selecting 5 values by default',
-            style: 'font-size:75%;color:red;'
+            width: 210,
+            html: '<span style="font-size:75%;color:red;">Selecting 5 values by default</span>'
         });
         this.add(this.defaultDisplayField);
 
         // selection model for subject series selector
-        var sm = new  Ext.grid.CheckboxSelectionModel({checkOnly: true});
+        var sm = Ext4.create('Ext.selection.CheckboxModel', {checkOnly: true});
         sm.on('selectionchange', function(selModel){
             // add the selected subjects to the subject object
             this.subject.values = [];
-            var selectedRecords = selModel.getSelections();
+            var selectedRecords = selModel.getSelection();
             for(var i = 0; i < selectedRecords.length; i++) {
                 this.subject.values.push(selectedRecords[i].get('value'));
             }
@@ -102,15 +112,13 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
         }, this, {buffer: 1000}); // buffer allows single event to fire if bulk changes are made within the given time (in ms)
 
         var ttRenderer = function(value, p, record) {
-            var msg = Ext.util.Format.htmlEncode(value);
-            p.attr = 'ext:qtip="' + msg + '"';
+            var msg = Ext4.util.Format.htmlEncode(value);
+            p.tdAttr = 'data-qtip="' + msg + '"';
             return msg;
         };
 
-        this.subjectListViewId = Ext.id();
         // initialize the subject gridPanel with the subjectValues from the getDimensionValues call
-        var subjectGridPanel = new Ext.grid.GridPanel({
-            id: this.subjectListViewId,
+        this.subjectGridPanel = Ext4.create('Ext.grid.Panel', {
             autoHeight: true,
             viewConfig: {forceFit: true},
             border: false,
@@ -118,19 +126,20 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
             selModel: sm,
             header: false,
             enableHdMenu: false,
-            store: new Ext.data.JsonStore({
+            store: Ext4.create('Ext.data.Store', {
+                model: 'SimpleValue',
+                proxy: {
+                    type: 'memory',
+                    reader: {
+                        type: 'json',
+                        root:'values',
+                        idProperty:'value'
+                    }
+                },
                 data: subjectValues,
-                root: 'values',
-                fields: ['value'],
-                sortInfo: {
-                    field: 'value',
-                    direction: 'ASC'
-                }
+                sorters: {property: 'value', direction: 'ASC'}
             }),
-            columns: [
-                sm,
-                {header: this.subjectNounPlural, dataIndex:'value', renderer: ttRenderer}
-            ],
+            columns: [{header: this.subjectNounPlural, dataIndex:'value', renderer: ttRenderer, flex: 1}],
             listeners: {
                 scope: this,
                 'viewready': function(grid){
@@ -151,13 +160,13 @@ LABKEY.vis.SubjectSeriesSelector = Ext.extend(Ext.Panel, {
                     sm.suspendEvents(false);
                     for(var i = 0; i < this.subject.values.length; i++){
                         var index = grid.getStore().find('value', this.subject.values[i]);
-                        sm.selectRow(index, true);
+                        sm.select(index, true);
                     }
                     sm.resumeEvents();
                 }
             }
          });
-         this.add(subjectGridPanel);
+         this.add(this.subjectGridPanel);
          this.doLayout();
 
         // this is one of the requests being tracked, see if the rest are done

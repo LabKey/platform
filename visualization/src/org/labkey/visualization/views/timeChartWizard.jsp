@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.reports.Report" %>
-<%@ page import="org.labkey.api.reports.report.AbstractReportIdentifier" %>
 <%@ page import="org.labkey.api.reports.report.ReportIdentifier" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
@@ -48,17 +47,19 @@
 %>
 
 <script type="text/javascript">
+    LABKEY.requiresExt4Sandbox(true);
     LABKEY.requiresClientAPI(true);
-    LABKEY.requiresScript("vis/measuresPanel.js");
-    LABKEY.requiresVisualization();
-    LABKEY.requiresScript("vis/timeChartPanel.js");     // to test the new Time Chart UI, comment out this line and uncomment the next line
-//    LABKEY.requiresScript("vis/temp/newTimeChartPanel.js");
-    Ext.QuickTips.init();
+    LABKEY.requiresVisualization();    
+    LABKEY.requiresScript("vis/measuresPanel.js");  // to test the new Time Chart UI, comment out these two lines and uncomment the lines with "enable for new Time Chart UI"
+    LABKEY.requiresScript("vis/timeChartPanel.js");
+//    LABKEY.requiresScript("study/MeasurePicker.js");     // TODO: enable for new Time Chart UI
+//    LABKEY.requiresScript("vis/temp/newTimeChartPanel.js");    // TODO: enable for new Time Chart UI
 </script>
 
 <script type="text/javascript">
+    Ext4.QuickTips.init();
 
-    Ext.onReady(function(){
+    Ext4.onReady(function(){
         showTimeChartWizard({
             reportId: '<%=id != null ? id.toString() : ""%>',
             elementId: '<%=elementId%>',
@@ -116,10 +117,11 @@
 
     function initializeTimeChartPanel(config, chartInfo, saveReportInfo) {
         // create a new chart panel and insert into the wizard
+//        var panel = Ext4.create('Ext.panel.Panel', {       // TODO: enable for new Time Chart UI
         var panel = new Ext.Panel({
             renderTo: config.elementId,
             height: 650,
-            resizable: true,
+            resizable: false,
             layout: 'border',
             frame: false,
             border: false,

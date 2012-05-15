@@ -3,41 +3,56 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-Ext.namespace("LABKEY.vis");
 
-Ext.QuickTips.init();
+LABKEY.requiresExt4ClientAPI();
 
-LABKEY.vis.GroupSelector = Ext.extend(Ext.Panel, {
+Ext4.namespace("LABKEY.vis");
+
+Ext4.QuickTips.init();
+
+Ext4.define('LABKEY.vis.GroupSelector', {
+
+    extend : 'Ext.panel.Panel',
 
     constructor : function(config){
-        Ext.apply(config, {
+        Ext4.apply(config, {
             title: 'Groups',
             border: false,
             autoScroll: true
         });
 
+        Ext4.define('ParticipantCategory', {
+            extend: 'Ext.data.Model',
+            fields: [
+                {name: 'rowId', type: 'integer'},
+                {name: 'label', type: 'string'},
+                {name: 'created', type: 'date'},
+                {name: 'participantIds'}
+            ]
+        });
+
+        this.callParent([config]);
+
         this.addEvents(
             'chartDefinitionChanged'
         );
-
-        LABKEY.vis.GroupSelector.superclass.constructor.call(this, config);
     },
 
     initComponent : function(){
         // add a hiden display field to show what is selected by default
-        this.defaultDisplayField = new Ext.form.DisplayField({
+        this.defaultDisplayField = Ext4.create('Ext.form.field.Display', {
             hideLabel: true,
             hidden: true,
-            value: 'Selecting 5 values by default',
-            style: 'font-size:75%;color:red;'
+            width: 210,
+            html: '<span style="font-size:75%;color:red;">Selecting 5 values by default</span>'
         });
 
         // selection model for group selector gridPanel
-        var sm = new  Ext.grid.CheckboxSelectionModel({checkOnly:true});
+        var sm = Ext4.create('Ext.selection.CheckboxModel', {checkOnly: true});
         sm.on('selectionchange', function(selModel){
             // add the selected groups/subjects to the subject object
             this.subject.groups = [];
-            var selectedRecords = selModel.getSelections();
+            var selectedRecords = selModel.getSelection();
             for (var i = 0; i < selectedRecords.length; i++)
             {
                 this.subject.groups.push({
@@ -61,12 +76,12 @@ LABKEY.vis.GroupSelector = Ext.extend(Ext.Panel, {
         }, this, {buffer: 1000}); // buffer allows single event to fire if bulk changes are made within the given time (in ms)
 
         var ttRenderer = function(value, p, record) {
-            var msg = Ext.util.Format.htmlEncode(value);
+            var msg = Ext4.util.Format.htmlEncode(value);
             p.attr = 'ext:qtip="' + msg + '"';
             return msg;
         };
 
-        this.groupGridPanel = new Ext.grid.GridPanel({
+        this.groupGridPanel = Ext4.create('Ext.grid.Panel', {
             autoHeight: true,
             viewConfig: {forceFit: true},
             border: false,
@@ -74,23 +89,18 @@ LABKEY.vis.GroupSelector = Ext.extend(Ext.Panel, {
             selModel: sm,
             header: false,
             enableHdMenu: false,
-            store: new Ext.data.JsonStore({
-                proxy: new Ext.data.HttpProxy({
+            store: Ext4.create('Ext.data.Store', {
+                model: 'ParticipantCategory',
+                proxy: {
+                    type: 'ajax',
                     url : LABKEY.ActionURL.buildURL("participant-group", "getParticipantCategories"),
-                    method : 'POST'
-                }),
-                root: 'categories',
-                idProperty: 'rowId',
-                fields: [
-                    {name: 'rowId', type: 'integer'},
-                    {name: 'label', type: 'string'},
-                    {name: 'created', type: 'date'},
-                    {name: 'participantIds'}
-                ],
-                sortInfo: {
-                    field: 'created',
-                    direction: 'ASC'
+                    reader: {
+                        type: 'json',
+                        root:'categories',
+                        idProperty:'rowId'
+                    }
                 },
+                sorters: {property: 'created', direction: 'ASC'},
                 autoLoad: true,
                 listeners: {
                     scope: this,
@@ -153,8 +163,7 @@ LABKEY.vis.GroupSelector = Ext.extend(Ext.Panel, {
                 }
             }),
             columns: [
-                sm,
-                {header: 'Groups', dataIndex:'label', renderer: ttRenderer}
+                {header: 'Groups', dataIndex:'label', renderer: ttRenderer, flex: 1}
             ],
             listeners: {
                 scope: this,
@@ -175,11 +184,13 @@ LABKEY.vis.GroupSelector = Ext.extend(Ext.Panel, {
 
                     // check selected groups in grid panel (but suspend events during selection)
                     sm.suspendEvents(false);
-                    if(this.subject.groups){
+                    if (this.subject.groups)
+                    {
                         for (var i = 0; i < this.subject.groups.length; i++)
                         {
                             var index = grid.getStore().find('label', this.subject.groups[i].label);
-                            sm.selectRow(index, true);
+                            if (index > -1)
+                                sm.select(index, true);          
                         }
                     }
                     sm.resumeEvents();
@@ -188,25 +199,26 @@ LABKEY.vis.GroupSelector = Ext.extend(Ext.Panel, {
         });
 
         // add a text link to the manage participant groups page
-        this.manageGroupsLink = new Ext.form.DisplayField({
+        this.manageGroupsLink = Ext4.create('Ext.form.field.Display', {
             hideLabel: true,
+            width: 175,
             html: LABKEY.Utils.textLink({href: LABKEY.ActionURL.buildURL("study", "manageParticipantCategories"), text: 'Manage Groups'})
         });
 
         // add a hidden display field that will be shown if there are no groups in the gridPanel
-        this.noGroupsDisplayField = new Ext.form.DisplayField({
+        this.noGroupsDisplayField = Ext4.create('Ext.form.field.Display', {
             hideLabel: true,
             hidden: true,
-            html: 'No participant groups have been configured or shared in this study.<BR/><BR/>Click the \'Manage Groups\' link below to begin configuring groups.',
-            style: 'font-size:90%;font-style:italic;'
+            width: 220,
+            html: '<span style="font-size:90%;font-style:italic;">No participant groups have been configured or shared in this study.<BR/><BR/>Click the \'Manage Groups\' link below to begin configuring groups.</span>'
         });
 
-        this.groupsRemovedDisplayField = new Ext.form.DisplayField({
+        this.groupsRemovedDisplayField = Ext4.create('Ext.form.field.Display', {
             hideLabel: true,
             hidden: true,
-            html: 'One or more of the participant groups originally saved with this chart are not currently visible. ' +
-                    'The group(s) may have been deleted or you may not have permission to view them. <br> <br>',
-            style: 'font-size:90%;font-style:italic;'
+            width: 220,
+            html: '<span style="font-size:90%;font-style:italic;">One or more of the participant groups originally saved with this chart are not currently visible. ' +
+                    'The group(s) may have been deleted or you may not have permission to view them.</span><br> <br>'
         });
 
         this.items = [
@@ -217,14 +229,14 @@ LABKEY.vis.GroupSelector = Ext.extend(Ext.Panel, {
             this.groupGridPanel
         ];
 
-        LABKEY.vis.GroupSelector.superclass.initComponent.call(this);
+        this.callParent();
     },
 
     getUniqueGroupSubjectValues: function(groups){
         var values = [];
         for (var i = 0; i < groups.length; i++)
         {
-            values = Ext.unique(values.concat(groups[i].participantIds));
+            values = Ext4.Array.unique(values.concat(groups[i].participantIds));
         }
         return values.sort();
     },

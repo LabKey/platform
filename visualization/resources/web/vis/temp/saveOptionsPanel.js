@@ -3,32 +3,36 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-Ext.namespace("LABKEY.vis");
+LABKEY.requiresExt4ClientAPI();
 
-Ext.QuickTips.init();
-$h = Ext.util.Format.htmlEncode;
+Ext4.namespace("LABKEY.vis");
 
-LABKEY.vis.ChartEditorSavePanel = Ext.extend(Ext.FormPanel, {
+Ext4.QuickTips.init();
+$h = Ext4.util.Format.htmlEncode;
+
+Ext4.define('LABKEY.vis.ChartEditorSavePanel', {
+
+    extend : 'Ext.form.Panel',
+
     constructor : function(config){
-        Ext.applyIf(config, {
+        Ext4.applyIf(config, {
             header: false,
             border: false,
             autoHeight: true,
             autoWidth: true,
             padding: 5,
-            labelWidth: 125,
             monitorValid: true,
             items: [],
             buttonAlign: 'right',
             buttons: []
         });
 
+        this.callParent([config]);
+
         this.addEvents(
             'saveChart',
             'closeOptionsWindow'
         );
-
-        LABKEY.vis.ChartEditorSavePanel.superclass.constructor.call(this, config);
     },
 
     initComponent : function() {
@@ -39,60 +43,64 @@ LABKEY.vis.ChartEditorSavePanel = Ext.extend(Ext.FormPanel, {
         this.createdBy = this.isSavedReport() ? this.reportInfo.createdBy : LABKEY.Security.currentUser.id;
 
         this.items = [
-            new Ext.form.TextField({
+            Ext4.create('Ext.form.field.Text', {
                 itemId: 'reportName',
                 name: 'reportName',
                 fieldLabel: 'Report Name',
+                labelWidth: 125,
                 hidden: this.isSavedReport() || !this.canSaveChanges(),
                 value: (this.isSavedReport() ? this.reportInfo.name : null),
                 allowBlank: true,
                 anchor: '100%',
                 maxLength: 200
             }),
-            new Ext.form.DisplayField({
+            Ext4.create('Ext.form.field.Display', {
                 itemId: 'reportNameDisplay',
                 name: 'reportNameDisplay',
                 fieldLabel: 'Report Name',
+                labelWidth: 125,
                 hidden: !this.isSavedReport() && this.canSaveChanges(),
                 value: $h(this.isSavedReport() ? this.reportInfo.name : null),
                 anchor: '100%'
             }),
-            new Ext.form.TextArea({
+            Ext4.create('Ext.form.field.TextArea', {
                 itemId: 'reportDescription',
                 name: 'reportDescription',
                 fieldLabel: 'Report Description',
+                labelWidth: 125,
                 hidden: !this.canSaveChanges(),
                 value: (this.isSavedReport() ? this.reportInfo.description : null),
                 allowBlank: true,
                 anchor: '100%',
                 height: 35
             }),
-            new Ext.form.DisplayField({
+            Ext4.create('Ext.form.field.Display', {
                 itemId: 'reportDescriptionDisplay',
                 name: 'reportDescriptionDisplay',
                 fieldLabel: 'Report Description',
+                labelWidth: 125,
                 hidden: this.canSaveChanges(),
                 value: $h(this.isSavedReport() ? this.reportInfo.description : null),
                 anchor: '100%'
             }),
-            new Ext.form.RadioGroup({
+            Ext4.create('Ext.form.RadioGroup', {
                 itemId: 'reportShared',
-                name: 'reportShared',
                 fieldLabel: 'Viewable By',
-                width: 250,
+                labelWidth: 125,
+                width: 350,
                 items : [
-                        { name: 'reportShared', boxLabel: 'All readers', inputValue: 'true', disabled: !this.canSaveSharedCharts(), checked: this.currentlyShared },
-                        { name: 'reportShared', boxLabel: 'Only me', inputValue: 'false', disabled: !this.canSaveSharedCharts(), checked: !this.currentlyShared }
+                        { itemId: 'allReaders', name: 'reportShared', boxLabel: 'All readers', inputValue: 'true', disabled: !this.canSaveSharedCharts(), checked: this.currentlyShared },
+                        { itemId: 'onlyMe', name: 'reportShared', boxLabel: 'Only me', inputValue: 'false', disabled: !this.canSaveSharedCharts(), checked: !this.currentlyShared }
                     ]
             }),
-            new Ext.form.Checkbox({
+            Ext4.create('Ext.form.field.Checkbox', {
                 itemId: 'reportSaveThumbnail',
                 name: 'reportSaveThumbnail',
                 fieldLabel: 'Save Thumbnail',
-                anchor: '100%',
+                labelWidth: 125,
                 checked: this.saveThumbnail,
                 value: this.saveThumbnail,
-                hidden: (Ext.isIE6 || Ext.isIE7 || Ext.isIE8)
+                hidden: (Ext4.isIE6 || Ext4.isIE7 || Ext4.isIE8)
             })
         ];
 
@@ -106,11 +114,11 @@ LABKEY.vis.ChartEditorSavePanel = Ext.extend(Ext.FormPanel, {
 
                     // report name is required for saving
                     if(!formVals.reportName){
-                       Ext.Msg.show({
+                       Ext4.Msg.show({
                             title: "Error",
                             msg: "Report name must be specified when saving a chart.",
-                            buttons: Ext.MessageBox.OK,
-                            icon: Ext.MessageBox.ERROR
+                            buttons: Ext4.MessageBox.OK,
+                            icon: Ext4.MessageBox.ERROR
                        });
                        return;
                     }
@@ -137,7 +145,7 @@ LABKEY.vis.ChartEditorSavePanel = Ext.extend(Ext.FormPanel, {
             {text: 'Cancel', handler: function(){this.fireEvent('closeOptionsWindow');}, scope: this}
         ];
 
-        LABKEY.vis.ChartEditorSavePanel.superclass.initComponent.call(this);
+        this.callParent();
     },
 
     isSavedReport : function()
@@ -162,30 +170,31 @@ LABKEY.vis.ChartEditorSavePanel = Ext.extend(Ext.FormPanel, {
         // reset the report name and description fields
         if (this.isSaveAs || !this.isSavedReport())
         {
-            this.find('itemId', 'reportName')[0].show();        // TODO: convert to this.down('#foo'); with Ext4
-            this.find('itemId', 'reportName')[0].setValue("");
-            this.find('itemId', 'reportNameDisplay')[0].hide();
-            this.find('itemId', 'reportDescription')[0].setValue("");
-            this.find('itemId', 'reportShared')[0].setValue('true');
-            this.find('itemId', 'reportSaveThumbnail')[0].setValue(true);            
+            this.down('#reportName').show();      
+            this.down('#reportName').setValue("");
+            this.down('#reportNameDisplay').hide();
+            this.down('#reportDescription').setValue("");
+            this.down('#reportShared').setValue('true');
+            this.down('#reportSaveThumbnail').setValue(true);
         }
         else
         {
-            this.find('itemId', 'reportName')[0].hide();
-            this.find('itemId', 'reportNameDisplay')[0].show();
+            this.down('#reportName').hide();
+            this.down('#reportNameDisplay').show();
             if (this.isSavedReport())
             {
-                this.find('itemId', 'reportNameDisplay')[0].setValue($h(this.reportInfo.name));
-                this.find('itemId', 'reportName')[0].setValue(this.reportInfo.name);
-                this.find('itemId', 'reportDescription')[0].setValue(this.reportInfo.description);
-                this.find('itemId', 'reportShared')[0].setValue(this.currentlyShared);
-                this.find('itemId', 'reportSaveThumbnail')[0].setValue(this.saveThumbnail);
+                this.down('#reportNameDisplay').setValue($h(this.reportInfo.name));
+                this.down('#reportName').setValue(this.reportInfo.name);
+                this.down('#reportDescription').setValue(this.reportInfo.description);
+                if (this.currentlyShared)
+                    this.down('#allReaders').setValue(true);
+                this.down('#reportSaveThumbnail').setValue(this.saveThumbnail);
 
             }
         }
     },
 
     getSaveThumbnail: function() {
-        return this.find('itemId', 'reportSaveThumbnail')[0].checked;
+        return this.down('#reportSaveThumbnail').checked;
     }
 });

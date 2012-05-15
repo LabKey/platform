@@ -3,13 +3,18 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-Ext.namespace("LABKEY.vis");
+LABKEY.requiresExt4ClientAPI();
 
-Ext.QuickTips.init();
+Ext4.namespace("LABKEY.vis");
 
-LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
+Ext4.QuickTips.init();
+
+Ext4.define('LABKEY.vis.ChartEditorYAxisPanel', {
+
+    extend : 'Ext.form.Panel',
+
     constructor : function(config){
-        Ext.apply(config, {
+        Ext4.apply(config, {
             header: false,
             autoHeight: true,
             autoWidth: true,
@@ -22,7 +27,7 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
         });
 
         // set axis defaults, if not a saved chart
-        Ext.applyIf(config.axis, {
+        Ext4.applyIf(config.axis, {
             name: "y-axis",
             side: "left",
             scale: "linear",
@@ -36,9 +41,9 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
             config.userEditedLabel = false;
         }
 
-        this.addEvents('chartDefinitionChanged', 'closeOptionsWindow');
+        this.callParent([config]);
 
-        LABKEY.vis.ChartEditorYAxisPanel.superclass.constructor.call(this, config);
+        this.addEvents('chartDefinitionChanged', 'closeOptionsWindow');
     },
 
     initComponent : function() {
@@ -49,10 +54,10 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
         // track if the panel has changed in a way that would require a chart refresh
         this.hasChanges = false;
 
-        this.scaleCombo = new Ext.form.ComboBox({
+        this.scaleCombo = Ext4.create('Ext.form.field.ComboBox', {
             triggerAction: 'all',
-            mode: 'local',
-            store: new Ext.data.ArrayStore({
+            queryMode: 'local',
+            store: Ext4.create('Ext.data.ArrayStore', {
                 fields: ['value', 'display'],
                 data: [['linear', 'Linear'], ['log', 'Log']]
             }),
@@ -63,7 +68,7 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
             forceSelection: true,
             listeners: {
                 scope: this,
-                'select': function(cmp, record, index) {
+                'select': function(cmp) {
                     this.axis.scale = cmp.getValue();
                     this.hasChanges = true;
                 }
@@ -71,7 +76,7 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
         });
         columnOneItems.push(this.scaleCombo);
 
-        this.labelTextField = new Ext.form.TextField({
+        this.labelTextField = Ext4.create('Ext.form.field.Text', {
             fieldLabel: 'Axis label',
             value: this.axis.label,
             width: 300,
@@ -92,18 +97,19 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
             }, this, {buffer: 500});
         columnOneItems.push(this.labelTextField);
 
-        this.rangeAutomaticRadio = new Ext.form.Radio({
+        this.rangeAutomaticRadio = Ext4.create('Ext.form.field.Radio', {
             fieldLabel: 'Range',
+            labelAlign: 'top',
             inputValue: 'automatic',
             boxLabel: 'Automatic',
-            height: 15,
             checked: this.axis.range.type == "automatic",
             listeners: {
                 scope: this,
-                'check': function(field, checked){
+                'change': function(field, checked){
                     // if checked, remove any manual axis min value
                     if(checked) {
                         this.axis.range.type = 'automatic';
+                        this.setRangeFormOptions(this.axis.range.type);
                         this.hasChanges = true;
                     }
                 }
@@ -111,38 +117,42 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
         });
         columnTwoItems.push(this.rangeAutomaticRadio);
 
-        this.rangeManualRadio = new Ext.form.Radio({
+        this.rangeManualRadio = Ext4.create('Ext.form.field.Radio', {
             inputValue: 'manual',
             boxLabel: 'Manual',
             width: 85,
-            height: 1,
+            flex: 1,
             checked: this.axis.range.type == "manual",
             listeners: {
                 scope: this,
-                'check': function(field, checked){
+                'change': function(field, checked){
                     // if checked, enable the min and max textfields and give min focus
                     if(checked) {
                         this.axis.range.type = 'manual';
                         this.setRangeFormOptions(this.axis.range.type);
+                        this.hasChanges = true;
                     }
                 }
             }
         });
 
-        this.rangeMinNumberField = new Ext.form.NumberField({
+        this.rangeMinNumberField = Ext4.create('Ext.form.field.Number', {
             emptyText: 'Min',
             selectOnFocus: true,
             enableKeyEvents: true,
             width: 75,
+            flex: 1,
             disabled: this.axis.range.type == "automatic",
-            value: this.axis.range.min
+            value: this.axis.range.min,
+            hideTrigger: true,
+            mouseWheelEnabled: false
         });
 
         this.rangeMinNumberField.addListener('keyup', function(cmp){
             var newVal = cmp.getValue();
             // check to make sure that, if set, the min value is <= to max
             if(typeof this.axis.range.max == "number" && typeof newVal == "number" && newVal > this.axis.range.max){
-                Ext.Msg.alert("ERROR", "Range 'min' value must be less than or equal to 'max' value.", function(){
+                Ext4.Msg.alert("ERROR", "Range 'min' value must be less than or equal to 'max' value.", function(){
                     this.rangeMinNumberField.focus();
                 }, this);
                 return;
@@ -152,13 +162,16 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
             this.hasChanges = true;
         }, this, {buffer:500});
 
-        this.rangeMaxNumberField = new Ext.form.NumberField({
+        this.rangeMaxNumberField = Ext4.create('Ext.form.field.Number', {
             emptyText: 'Max',
             selectOnFocus: true,
             enableKeyEvents: true,
             width: 75,
+            flex: 1,
             disabled: this.axis.range.type == "automatic",
-            value: this.axis.range.max
+            value: this.axis.range.max,
+            hideTrigger: true,
+            mouseWheelEnabled: false
         });
 
         this.rangeMaxNumberField.addListener('keyup', function(cmp){
@@ -167,7 +180,7 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
             this.axis.range.max = newVal;
             var min = typeof this.axis.range.min == "number" ? this.axis.range.min : 0;
             if(typeof this.axis.range.min == "number" && typeof newVal == "number" && newVal < this.axis.range.min){
-                Ext.Msg.alert("ERROR", "Range 'max' value must be greater than or equal to 'min' value.", function(){
+                Ext4.Msg.alert("ERROR", "Range 'max' value must be greater than or equal to 'min' value.", function(){
                     this.rangeMaxNumberField.focus();
                 }, this);
                 return;
@@ -177,8 +190,8 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
         }, this, {buffer: 500});
 
         columnTwoItems.push({
-            xtype: 'compositefield',
-            defaults: {flex: 1},
+            xtype: 'fieldcontainer',
+            layout: 'hbox',
             items: [
                 this.rangeManualRadio,
                 this.rangeMinNumberField,
@@ -191,15 +204,15 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
             layout: 'column',
             items: [{
                 columnWidth: .5,
-                layout: 'form',
+                xtype: 'form',
                 border: false,
-                bodyStyle: 'padding: 5px',
+                padding: 5,
                 items: columnOneItems
             },{
                 columnWidth: .5,
-                layout: 'form',
+                xtype: 'form',
                 border: false,
-                bodyStyle: 'padding: 5px',
+                padding: 5,
                 items: columnTwoItems
             }]
         }];
@@ -213,7 +226,7 @@ LABKEY.vis.ChartEditorYAxisPanel = Ext.extend(Ext.FormPanel, {
             scope: this
         }];
 
-        LABKEY.vis.ChartEditorYAxisPanel.superclass.initComponent.call(this);
+        this.callParent();
     },
 
     getAxis: function(){

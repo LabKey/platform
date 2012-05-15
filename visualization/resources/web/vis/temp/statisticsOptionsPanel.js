@@ -3,61 +3,68 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-Ext.namespace("LABKEY.vis");
+LABKEY.requiresExt4ClientAPI();
 
-Ext.QuickTips.init();
+Ext4.namespace("LABKEY.vis");
 
-LABKEY.vis.ChartEditorStatisticsPanel = Ext.extend(Ext.FormPanel, {
+Ext4.QuickTips.init();
+
+Ext4.define('LABKEY.vis.ChartEditorStatisticsPanel', {
+
+    extend : 'Ext.form.Panel',
+
     constructor : function(config){
-        Ext.apply(config, {
+        Ext4.apply(config, {
             header: false,
             autoHeight: true,
             autoWidth: true,
             border: false,
+            bodyStyle: 'padding: 5px',
             labelAlign: 'top',
             items: [],
             buttonAlign: 'right',
             buttons: []
         });
 
-        Ext.applyIf(config, {
+        Ext4.applyIf(config, {
             displayIndividual: true,
             displayAggregate: false,
             errorBars: "None"
         });
 
+        this.callParent([config]);
+
         this.addEvents(
             'chartDefinitionChanged',
             'closeOptionsWindow'
         );
-
-        LABKEY.vis.ChartEditorStatisticsPanel.superclass.constructor.call(this, config);
     },
 
     initComponent : function(){
         // track if the panel has changed in a way that would require a chart/data refresh
         this.requireDataRefresh = false;
 
-        this.displayIndividualCheckbox = new Ext.form.Checkbox({
+        this.displayIndividualCheckbox = Ext4.create('Ext.form.field.Checkbox', {
             boxLabel  : 'Show Individual Lines',
             name      : 'Show Individual Lines',
             checked   : this.displayIndividual,
             value     : this.displayIndividual,
             listeners : {
-                check : function(cmp, checked){
+                change : function(cmp, checked){
                     this.requireDataRefresh = true;
                 },
                 scope : this
             }
         });
 
-        this.displayAggregateCheckbox = new Ext.form.Checkbox({
+        this.displayAggregateCheckbox = Ext4.create('Ext.form.field.Checkbox', {
             boxLabel  : 'Show Mean',
             name      : 'Show Mean',
             checked   : this.displayAggregate,
             value     : this.displayAggregate,
+            flex: 1,
             listeners : {
-                check : function(cmp, checked){
+                change : function(cmp, checked){
                     // enable/disable the aggregate combo box accordingly
                     this.displayAggregateComboBox.setDisabled(!checked);
                     this.displayErrorComboBox.setDisabled(!checked);
@@ -70,10 +77,10 @@ LABKEY.vis.ChartEditorStatisticsPanel = Ext.extend(Ext.FormPanel, {
             }
         });
 
-        this.displayErrorComboBox = new Ext.form.ComboBox({
+        this.displayErrorComboBox = Ext4.create('Ext.form.field.ComboBox', {
             triggerAction : 'all',
             mode          : 'local',
-            store         : new Ext.data.ArrayStore({
+            store         : Ext4.create('Ext.data.ArrayStore', {
                    fields : ['value'],
                    data   : [['None'], ['SD'], ['SEM']]
             }),
@@ -84,8 +91,9 @@ LABKEY.vis.ChartEditorStatisticsPanel = Ext.extend(Ext.FormPanel, {
             displayField  : 'value',
             value         : this.errorBars,
             width         : 75,
+            flex: 1,
             listeners     : {
-                select    : function(cb){
+                select    : function(){
                     this.requireDataRefresh = true;
                 },
                 scope     : this
@@ -93,10 +101,10 @@ LABKEY.vis.ChartEditorStatisticsPanel = Ext.extend(Ext.FormPanel, {
         });
 
         // combobox for selecting which aggregate to display when checkbox is selected
-        this.displayAggregateComboBox = new Ext.form.ComboBox({
+        this.displayAggregateComboBox = Ext4.create('Ext.form.field.ComboBox', {
             triggerAction : 'all',
             mode          : 'local',
-            store         : new Ext.data.ArrayStore({
+            store         : Ext4.create('Ext.data.ArrayStore', {
                    fields : ['value'],
                    data   : [['Mean'], ['Count']]
             }),
@@ -108,7 +116,7 @@ LABKEY.vis.ChartEditorStatisticsPanel = Ext.extend(Ext.FormPanel, {
             value         : 'Mean',
             width         : 75,
             listeners     : {
-                select    : function(cb){
+                select    : function(){
                     this.requireDataRefresh = true;
                 },
                 scope     : this
@@ -118,8 +126,8 @@ LABKEY.vis.ChartEditorStatisticsPanel = Ext.extend(Ext.FormPanel, {
         this.items = [
             this.displayIndividualCheckbox,
             {
-                xtype: 'compositefield',
-                hideLabel: true,
+                xtype: 'fieldcontainer',
+                layout: 'hbox',
                 items: [
                     this.displayAggregateCheckbox,
                     this.displayErrorComboBox
@@ -138,7 +146,7 @@ LABKEY.vis.ChartEditorStatisticsPanel = Ext.extend(Ext.FormPanel, {
             }
         ];
 
-        LABKEY.vis.ChartEditorStatisticsPanel.superclass.initComponent.call(this);
+        this.callParent();
     },
 
     getDisplayIndividual : function() {

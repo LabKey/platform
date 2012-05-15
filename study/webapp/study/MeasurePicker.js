@@ -53,7 +53,6 @@ Ext4.define('LABKEY.ext4.MeasuresDialog', {
 
         this.buttons = [];
         this.items = [];
-        this.measureSelectionBtnId = Ext4.id();
 
         this.measurePanel = Ext4.create('LABKEY.ext4.MeasuresPanel', {
             dataViewType: this.dataViewType,
@@ -67,14 +66,14 @@ Ext4.define('LABKEY.ext4.MeasuresDialog', {
             listeners: {
                 scope: this,
                 'measureChanged': function (axisId, data) {
-                    Ext4.getCmp(this.measureSelectionBtnId).setDisabled(false);
+                    this.down('#selectButton').enable();
                 }
             }
         });
         this.items.push(this.measurePanel);
 
         this.buttons.push({
-            id: this.measureSelectionBtnId,
+            itemId: 'selectButton',
             text:'Select',
             disabled:true,
             handler: function(){
@@ -159,7 +158,7 @@ Ext4.define('LABKEY.ext4.MeasuresPanel', {
                 canShowHidden : this.canShowHidden,
                 multiSelect : this.multiSelect,
                 forceQuery  : this.forceQuery,
-                bubbleEvents: ['beforeMeasuresStoreLoad', 'measuresStoreLoaded', 'measureChanged']
+                bubbleEvents: ['beforeMeasuresStoreLoad', 'measuresStoreLoaded', 'measureChanged', 'measuresSelected']
             });
         }
 
@@ -385,11 +384,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
                 ],
                 listeners: {
                     itemdblclick: function (view, record, item, index, event){
-                        var recs = view.getSelectedRecords();
-                        if (recs && recs.length > 0)
-                        {
-                            this.fireEvent('measuresSelected', recs, true);
-                        }
+                        this.fireEvent('measuresSelected', [record], true);
                     },
                     scope: this
                 }

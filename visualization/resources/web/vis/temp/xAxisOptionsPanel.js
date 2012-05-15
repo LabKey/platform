@@ -3,34 +3,55 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-Ext.namespace("LABKEY.vis");
+LABKEY.requiresExt4ClientAPI();
 
-Ext.QuickTips.init();
+Ext4.namespace("LABKEY.vis");
 
-LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
+Ext4.QuickTips.init();
+
+Ext4.define('LABKEY.vis.ChartEditorXAxisPanel', {
+
+    extend : 'Ext.form.Panel',
+
     constructor : function(config){
-        Ext.apply(config, {
+        Ext4.apply(config, {
             header: false,
             autoHeight: true,
             autoWidth: true,
             bodyStyle: 'padding:5px',
             border: false,
-            labelAlign: 'top',
             items: [],
             buttonAlign: 'right',
             buttons: []
         });
 
         //Set time to 'date' if not already set.
-        Ext.applyIf(config, {
+        Ext4.applyIf(config, {
             time: 'date'
         });
 
         // set axis defaults, if not a saved chart
-        Ext.applyIf(config.axis, {
+        Ext4.applyIf(config.axis, {
             name: "x-axis",
             range: {type: "automatic"}
         });
+
+        Ext4.define('DimensionValue', {
+            extend: 'Ext.data.Model',
+            fields: [
+                {name: 'id'},
+                {name:'name'},
+                {name:'label'},
+                {name:'longlabel'},
+                {name:'description'},
+                {name:'isUserDefined'},
+                {name:'queryName'},
+                {name:'schemaName'},
+                {name:'type'}
+            ]
+        });
+
+        this.callParent([config]);
 
         this.addEvents(
             'chartDefinitionChanged',
@@ -39,8 +60,6 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             'noDemographicData',
             'closeOptionsWindow'
         );
-
-        LABKEY.vis.ChartEditorXAxisPanel.superclass.constructor.call(this, config);
     },
 
     initComponent : function() {
@@ -53,15 +72,17 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
         var columnTwoItems = [];
 
         //Radio Buttons for Date/Visit based chart.
-        this.dateChartRadio = new Ext.form.Radio({
+        this.dateChartRadio = Ext4.create('Ext.form.field.Radio', {
             name: 'chartType',
             fieldLabel: 'Chart Type',
+            labelAlign: 'top',
             inputValue: 'date',
             boxLabel: 'Date Based Chart',
             checked: this.time == "date", //|| !this.time, //For old charts we default to date based chart.
+            flex: 1,
             listeners: {
                 scope: this,
-                'check': function(field, checked){
+                'change': function(field, checked){
                     if(checked) {
                         this.time = "date"; //This will have to be changed to take into account the new data configuration.
                         this.zeroDateCombo.enable();
@@ -95,15 +116,16 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             }
         });
 
-        this.visitChartRadio = new Ext.form.Radio({
+        this.visitChartRadio = Ext4.create('Ext.form.field.Radio', {
             name: 'chartType',
             inputValue: 'visit',
             boxLabel: 'Visit Based Chart',
             checked: this.time == "visit",
             disabled: this.timepointType == "date",
+            flex: 1,
             listeners: {
                 scope: this,
-                'check': function(field, checked){
+                'change': function(field, checked){
                     if(checked) {
                         this.time = "visit";
                         this.zeroDateCombo.disable();
@@ -141,8 +163,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
 
 
         columnOneItems.push({
-            xtype: 'compositefield',
-            defaults: {flex: 1},
+            xtype: 'fieldcontainer',
             items: [
                 this.dateChartRadio,
                 this.visitChartRadio
@@ -150,17 +171,17 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
         });
 
         // combobox for the selection of the date axis interval unit
-        this.intervalCombo = new Ext.form.ComboBox({
+        this.intervalCombo = Ext4.create('Ext.form.field.ComboBox', {
             cls: 'x-axis-interval-combo-test',
             disabled: this.time == 'visit', //disable combo if the chart is visit based.
             triggerAction: 'all',
-            mode: 'local',
-            store: new Ext.data.ArrayStore({
+            queryMode: 'local',
+            store: Ext4.create('Ext.data.ArrayStore', {
                 fields: ['value'],
                 data: [['Days'], ['Weeks'], ['Months'], ['Years']],
                 listeners: {
                     scope: this,
-                    'load': function(cmp, records, options) {
+                    'load': function() {
                         // if this is not a saved chart and the zerodatecol value has loaded, then set the default axis label
                         if(!this.axis.label && this.zeroDateCombo && this.zeroDateCombo.getValue()) {
                             var zeroDateLabel = this.zeroDateCombo.getStore().getAt(this.zeroDateCombo.getStore().find('longlabel', this.zeroDateCombo.getValue())).data.label;
@@ -175,10 +196,11 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             valueField: 'value',
             displayField: 'value',
             fieldLabel: 'Draw x-axis as',
+            labelAlign: 'top',
             forceSelection: true,
             listeners: {
                 scope: this,
-                'select': function(cmp, record, index) {
+                'select': function(cmp, records) {
                     // change the axis label if it has not been customized by the user
                     // note: assume unchanged if contains part of the original label, i.e. " Since <Zero Date Label>"
                     var zeroDateLabel = '';
@@ -192,8 +214,8 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
                     }
 
                     var ending = " Since " + zeroDateLabel;
-                    if(this.labelTextField.getValue().indexOf(ending) > -1) {
-                        var newLabel = record.data.value + " Since " + zeroDateLabel;
+                    if(this.labelTextField.getValue().indexOf(ending) > -1 && records.length > 0) {
+                        var newLabel = records[0].data.value + " Since " + zeroDateLabel;
                         this.labelTextField.setValue(newLabel);
 
                         this.axis.label = newLabel;
@@ -208,45 +230,46 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
         columnOneItems.push(this.intervalCombo);
 
         // combobox to select the "starting date" to be used for the x-axis interval calculation
-        this.zeroDateCombo = new Ext.form.ComboBox({
+        this.zeroDateCombo = Ext4.create('Ext.form.field.ComboBox', {
             disabled: this.time == 'visit', //disable combo if the chart is visit based.
             fieldLabel: 'Calculate time interval(s) relative to',
+            labelAlign: 'top',
             triggerAction: 'all',
-            mode: 'local',
-            store: new Ext.data.Store(),
+            queryMode: 'local',
+            store: Ext4.create('Ext.data.Store', {fields: [], data: []}),
             valueField: 'longlabel',
             displayField: 'longlabel',
             forceSelection: true,
-            width: 250,
+            width: 350,
             minListWidth : 350,
             listeners: {
                 scope: this,
-                'select': function(cmp, record, index) {
+                'select': function(cmp, records) {
                     // change the axis label if it has not been customized by the user
                     // note: assume unchanged if contains part of the original label, i.e. " Since <Zero Date Label>"
                     var beginning = this.intervalCombo.getValue() + " Since ";
-                    if(this.labelTextField.getValue().indexOf(beginning) == 0) {
-                       var newLabel = this.intervalCombo.getValue() + " Since " + record.data.label;
+                    if(this.labelTextField.getValue().indexOf(beginning) == 0 && records.length > 0) {
+                       var newLabel = this.intervalCombo.getValue() + " Since " + records[0].data.label;
                         this.labelTextField.setValue(newLabel);
 
                         this.axis.label = newLabel;
                     }
 
-                    Ext.apply(this.zeroDateCol, record.data);
+                    Ext4.apply(this.zeroDateCol, record.data);
                     this.hasChanges = true;
                     this.requireDataRefresh = true;
                 }
             }
         });
-
         columnOneItems.push(this.zeroDateCombo);
 
-        this.labelTextField = new Ext.form.TextField({
+        this.labelTextField = Ext4.create('Ext.form.field.Text', {
             cls: 'x-axis-label-textfield-test',
             name: 'x-axis-label-textfield',
             fieldLabel: 'Axis label',
+            labelAlign: 'top',
             value: this.axis.label,
-            width: 300,
+            anchor: '100%',
             enableKeyEvents: true,
             listeners: {
                 scope: this,
@@ -262,17 +285,17 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             }, this, {buffer: 500});
         columnTwoItems.push(this.labelTextField);
 
-        this.rangeAutomaticRadio = new Ext.form.Radio({
+        this.rangeAutomaticRadio = Ext4.create('Ext.form.field.Radio', {
             name: 'xaxis_range',
             fieldLabel: 'Range',
+            labelAlign: 'top',
             inputValue: 'automatic',
             disabled: this.time == "visit",
             boxLabel: 'Automatic',
-            height: 15,
             checked: this.axis.range.type == "automatic",
             listeners: {
                 scope: this,
-                'check': function(field, checked){
+                'change': function(field, checked){
                     // if checked, remove any manual axis min value
                     if(checked) {
                         this.axis.range.type = 'automatic';
@@ -284,33 +307,37 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
         });
         columnTwoItems.push(this.rangeAutomaticRadio);
 
-        this.rangeManualRadio = new Ext.form.Radio({
+        this.rangeManualRadio = Ext4.create('Ext.form.field.Radio', {
             name: 'xaxis_range',
             inputValue: 'manual',
             disabled: this.time == "visit",
             boxLabel: 'Manual',
             width: 85,
-            height: 1,
+            flex: 1,
             checked: this.axis.range.type == "manual",
             listeners: {
                 scope: this,
-                'check': function(field, checked){
+                'change': function(field, checked){
                     // if checked, enable the min and max fields and give min focus
                     if(checked) {
                         this.axis.range.type = 'manual';
                         this.setRangeFormOptions(this.axis.range.type);
+                        this.hasChanges = true;
                     }
                 }
             }
         });
 
-        this.rangeMinNumberField = new Ext.form.NumberField({
+        this.rangeMinNumberField = Ext4.create('Ext.form.field.Number', {
             emptyText: 'Min',
             selectOnFocus: true,
             enableKeyEvents: true,
             width: 75,
+            flex: 1,
             disabled: this.axis.range.type == "automatic" || this.time == "visit",
-            value: this.axis.range.min
+            value: this.axis.range.min,
+            hideTrigger: true,
+            mouseWheelEnabled: false
         });
 
         this.rangeMinNumberField.addListener('keyup', function(cmp){
@@ -318,7 +345,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             // check to make sure that, if set, the min value is <= to max
             this.axis.range.min = newVal;
             if(typeof this.axis.range.max == "number" && typeof newVal == "number" && newVal > this.axis.range.max){
-                Ext.Msg.alert("ERROR", "Range 'min' value must be less than or equal to 'max' value.", function(){
+                Ext4.Msg.alert("ERROR", "Range 'min' value must be less than or equal to 'max' value.", function(){
                     this.rangeMinNumberField.focus();
                 }, this);
                 return;
@@ -326,13 +353,16 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             this.hasChanges = true;
         }, this, {buffer: 500});
 
-        this.rangeMaxNumberField = new Ext.form.NumberField({
+        this.rangeMaxNumberField = Ext4.create('Ext.form.field.Number', {
             emptyText: 'Max',
             selectOnFocus: true,
             enableKeyEvents: true,
             width: 75,
+            flex: 1,
             disabled: this.axis.range.type == "automatic" || this.time == "visit",
-            value: this.axis.range.max
+            value: this.axis.range.max,
+            hideTrigger: true,
+            mouseWheelEnabled: false
         });
 
         this.rangeMaxNumberField.addListener('keyup', function(cmp){
@@ -342,9 +372,9 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             var min = typeof this.axis.range.min == "number" ? this.axis.range.min : 0;
             if(typeof newVal == "number" && newVal <= min){
                 this.rangeMaxNumberField.suspendEvents(false);
-                Ext.Msg.alert("ERROR", "Range 'max' value must be greater than or equal to 'min' value.", function(){
+                Ext4.Msg.alert("ERROR", "Range 'max' value must be greater than or equal to 'min' value.", function(){
                     this.rangeMaxNumberField.focus();
-                    var task = new Ext.util.DelayedTask(function(){
+                    var task = new Ext4.util.DelayedTask(function(){
                         this.rangeMaxNumberField.resumeEvents();
                     }, this);
                     task.delay(100);
@@ -355,9 +385,8 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             this.hasChanges = true;
         }, this, {buffer: 500});
 
-        this.rangeCompositeField = new Ext.form.CompositeField({
-            xtype: 'compositefield',
-            defaults: {flex: 1},
+        this.rangeCompositeField = Ext4.create('Ext.form.FieldContainer', {
+            layout: 'hbox',
             items: [
                 this.rangeManualRadio,
                 this.rangeMinNumberField,
@@ -372,15 +401,15 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             layout: 'column',
             items: [{
                 columnWidth: .5,
-                layout: 'form',
+                xtype: 'form',
                 border: false,
-                bodyStyle: 'padding: 5px',
+                padding: 5,
                 items: columnOneItems
             },{
                 columnWidth: .5,
-                layout: 'form',
+                xtype: 'form',
                 border: false,
-                bodyStyle: 'padding: 5px',
+                padding: 5,
                 items: columnTwoItems
             }]
         }];
@@ -396,36 +425,33 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
             }
         ];
 
-        LABKEY.vis.ChartEditorXAxisPanel.superclass.initComponent.call(this);
+        this.callParent();
     },
 
     newZeroDateStore: function() {
-        return new Ext.data.Store({
-            autoLoad: true,
-            reader: new Ext.data.JsonReader({
-                    root:'measures',
-                    idProperty:'id'
-                },
-                [{name: 'id'}, {name:'name'},{name:'label'},{name:'longlabel'},{name:'description'}, {name:'isUserDefined'}, {name:'queryName'}, {name:'schemaName'}, {name:'type'}]
-            ),
-            proxy: new Ext.data.HttpProxy({
-                method: 'GET',
+        return Ext4.create('Ext.data.Store', {
+            model: 'DimensionValue',
+            proxy: {
+                type: 'ajax',
                 url : LABKEY.ActionURL.buildURL('visualization', 'getZeroDate', LABKEY.ActionURL.getContainer(), {
                     filters: [LABKEY.Visualization.Filter.create({schemaName: 'study'})],
                     dateMeasures: false
-                })
-            }),
-            sortInfo: {
-                field: 'longlabel',
-                direction: 'ASC'
+                }),
+                reader: {
+                    type: 'json',
+                    root: 'measures',
+                    idProperty:'id'
+                }
             },
+            autoLoad: true,
+            sorters: {property: 'longlabel', direction: 'ASC'},
             listeners: {
                 scope: this,
                 'load': function(store, records, options) {
                     // if there are no zero date option for this study, warn the user
                     if (store.getTotalCount() == 0 && this.timepointType == "DATE")
                     {
-                        Ext.Msg.alert("Error", "There are no demographic date options available in this study. "
+                        Ext4.Msg.alert("Error", "There are no demographic date options available in this study. "
                             + "Please contact an administrator to have them configure the study to work with the Time Chart wizard.", function(){this.fireEvent('noDemographicData');}, this);
                         return;
                     }
@@ -462,7 +488,7 @@ LABKEY.vis.ChartEditorXAxisPanel = Ext.extend(Ext.FormPanel, {
 
                     if(store.getAt(index)){
                         this.zeroDateCombo.setValue(store.getAt(index).get('longlabel'));
-                        Ext.apply(this.zeroDateCol, store.getAt(index).data);
+                        Ext4.apply(this.zeroDateCol, store.getAt(index).data);
                     }
 
                     // if this is not a saved chart and the interval value has loaded, then set the default axis label

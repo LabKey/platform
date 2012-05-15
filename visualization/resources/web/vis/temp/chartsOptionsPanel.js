@@ -3,22 +3,27 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-Ext.namespace("LABKEY.vis");
 
-Ext.QuickTips.init();
+LABKEY.requiresExt4ClientAPI();
 
-LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
+Ext4.namespace("LABKEY.vis");
+
+Ext4.QuickTips.init();
+
+Ext4.define('LABKEY.vis.ChartEditorChartsPanel', {
+
+    extend : 'Ext.form.Panel',
+
     constructor : function(config){
-        Ext.applyIf(config, {
+        Ext4.applyIf(config, {
             chartSubjectSelection: 'subjects'
         });
-        Ext.apply(config, {
+        Ext4.apply(config, {
             header: false,
             autoHeight: true,
             autoWidth: true,
             bodyStyle: 'padding: 5px',
             border: false,
-            labelAlign: 'top',
             items: [],
             buttonAlign: 'right',
             buttons: []
@@ -27,13 +32,13 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
         // track if the axis label is something other than the default
         config.userEditedTitle = (config.mainTitle ? true : false);
 
+        this.callParent([config]);
+
         this.addEvents(
                 'chartDefinitionChanged',
                 'groupLayoutSelectionChanged',
                 'closeOptionsWindow'
         );
-
-        LABKEY.vis.ChartEditorChartsPanel.superclass.constructor.call(this, config);
     },
 
     initComponent : function(){
@@ -45,15 +50,16 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
         var colTwoItems = [];
         var colThreeItems = [];
 
-        this.subjectRadio = new Ext.form.Radio({
+        this.subjectRadio = Ext4.create('Ext.form.field.Radio', {
             name: 'subject_selection',
             inputValue: 'subjects',
+            labelAlign: 'top',
             fieldLabel: this.subjectNounSingular + ' Selection',
             boxLabel: this.subjectNounPlural,
             checked: this.chartSubjectSelection == 'subjects',
             listeners: {
                 scope: this,
-                'check': function(cmp, checked){
+                'change': function(cmp, checked){
                     if(checked){
                         this.oneChartPerGroupRadio.setVisible(false);
                         this.oneChartPerSubjectRadio.setVisible(true);
@@ -67,14 +73,15 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
                 }
             }
         });
-        this.groupsRadio =  new Ext.form.Radio({
+
+        this.groupsRadio =  Ext4.create('Ext.form.field.Radio', {
             name: 'subject_selection',
             inputValue: 'groups',
             boxLabel: this.subjectNounSingular + ' Groups',
             checked: this.chartSubjectSelection == 'groups',
             listeners: {
                 scope: this,
-                'check': function(cmp, checked){
+                'change': function(cmp, checked){
                     if(checked){
                         this.oneChartPerGroupRadio.setVisible(true);
                         this.oneChartPerSubjectRadio.setVisible(false);
@@ -88,32 +95,36 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
                 }
             }
         });
-        this.subjectSelection = new Ext.form.RadioGroup({
-            name: 'subject_selection',
-            fieldLabel: 'Participant Selection',
+        this.subjectSelectionRadioGroup = new Ext.form.RadioGroup({
+            border: false,
             columns: 1,
             items:[
                 this.subjectRadio,
                 this.groupsRadio
             ]
         });
-        colOneItems.push(this.subjectSelection);
+        colOneItems.push(this.subjectSelectionRadioGroup);
 
-        this.oneChartRadio = new Ext.form.Radio({
+        this.oneChartRadio = Ext4.create('Ext.form.field.Radio', {
             name: 'number_of_charts',
+            labelAlign: 'top',
+            fieldLabel: 'Number of Charts',
+            labelWidth: 160,
             boxLabel: 'One Chart',
             inputValue: 'single',
             checked: this.chartLayout == 'single',
             listeners: {
                 scope:this,
-                'check': function(cmp, checked){
+                'change': function(cmp, checked){
                     if(checked){
                         this.chartPerRadioChecked(cmp, checked);
                     }
                 }
             }
         });
-        this.oneChartPerGroupRadio = new Ext.form.Radio({
+        colTwoItems.push(this.oneChartRadio);
+
+        this.oneChartPerGroupRadio = Ext4.create('Ext.form.field.Radio', {
             name: 'number_of_charts',
             checked: this.chartLayout == 'per_group',
             inputValue: 'per_group',
@@ -121,14 +132,16 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
             boxLabel: 'One Chart Per Group',
             listeners: {
                 scope:this,
-                'check': function(cmp, checked){
+                'change': function(cmp, checked){
                     if(checked){
                         this.chartPerRadioChecked(cmp, checked);
                     }
                 }
             }
         });
-        this.oneChartPerSubjectRadio = new Ext.form.Radio({
+        colTwoItems.push(this.oneChartPerGroupRadio);
+        
+        this.oneChartPerSubjectRadio = Ext4.create('Ext.form.field.Radio', {
             name: 'number_of_charts',
             checked: this.chartLayout == 'per_subject',
             inputValue: 'per_subject',
@@ -136,45 +149,37 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
             hidden: this.chartSubjectSelection ==  'groups',
             listeners: {
                 scope:this,
-                'check': function(cmp, checked){
+                'change': function(cmp, checked){
                     if(checked){
                         this.chartPerRadioChecked(cmp, checked);
                     }
                 }
             }
         });
-        this.oneChartPerDimensionRadio = new Ext.form.Radio({
+        colTwoItems.push(this.oneChartPerSubjectRadio);
+
+        this.oneChartPerDimensionRadio = Ext4.create('Ext.form.field.Radio', {
             name: 'number_of_charts',
             boxLabel: 'One Chart Per Measure/Dimension',
             checked: this.chartLayout == 'per_dimension',
             inputValue: 'per_dimension',
             listeners: {
                 scope:this,
-                'check': function(cmp, checked){
+                'change': function(cmp, checked){
                     if(checked){
                         this.chartPerRadioChecked(cmp, checked);
                     }
                 }
             }
         });
-        this.numCharts = new Ext.form.RadioGroup({
-            name: 'number_of_charts',
-            fieldLabel: 'Number of Charts',
-            columns: 1,
-            items:[
-                this.oneChartRadio,
-                this.oneChartPerSubjectRadio,
-                this.oneChartPerGroupRadio,
-                this.oneChartPerDimensionRadio
-            ]
-        });
-        colTwoItems.push(this.numCharts);
+        colTwoItems.push(this.oneChartPerDimensionRadio);
 
-        this.chartTitleTextField = new Ext.form.TextField({
+        this.chartTitleTextField = Ext4.create('Ext.form.field.Text', {
             name: 'chart-title-textfield',
+            labelAlign: 'top',
             fieldLabel: 'Chart Title',
             value: this.mainTitle,
-            width: '100%',
+            anchor: '100%',
             enableKeyEvents: true,
             listeners: {
                 scope: this,
@@ -193,28 +198,30 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
         colThreeItems.push(this.chartTitleTextField);
 
         // slider field to set the line width for the chart(s)
-        this.lineWidthSliderField = new Ext.form.SliderField({
+        this.lineWidthSlider = Ext4.create('Ext.slider.Single', {
+            anchor: '95%',
+            labelAlign: 'top',
             fieldLabel: 'Line Width',
             value: this.lineWidth || 3, // default to 3 if not specified
             increment: 1,
             minValue: 1,
             maxValue: 10
         });
-        this.lineWidthSliderField.slider.on('changecomplete', function(cmp, newVal, thumb) {
+        this.lineWidthSlider.on('changecomplete', function(cmp, newVal, thumb) {
             this.lineWidth = newVal;
             this.hasChanges = true;
         }, this);
-        colThreeItems.push(this.lineWidthSliderField);
+        colThreeItems.push(this.lineWidthSlider);
 
         // checkbox to hide/show data points
-        this.hideDataPointCheckbox = new Ext.form.Checkbox({
+        this.hideDataPointCheckbox = Ext4.create('Ext.form.field.Checkbox', {
             boxLabel: 'Hide Data Points',
             hideLabel: true,
             checked: this.hideDataPoints || false, // default to show data points
             value: this.hideDataPoints || false, // default to show data points
             listeners: {
                 scope: this,
-                'check': function(cmp, checked){
+                'change': function(cmp, checked){
                     this.hideDataPoints = checked;
                     this.hasChanges = true;
                 }
@@ -227,26 +234,24 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
             layout: 'column',
             items:[
                 {
+                    xtype: 'form',
                     columnWidth: (1/3),
-                    width: 160,
-                    layout: 'form',
                     border: false,
-                    bodyStyle: 'padding: 3px',
+                    padding: 5,
                     items: [colOneItems]
                 },
                 {
+                    xtype: 'form',
                     columnWidth: (1/3),
-                    width: 260,
-                    layout: 'form',
                     border: false,
-                    bodyStyle: 'padding: 3px',
+                    padding: 5,
                     items: [colTwoItems]
                 },
                 {
+                    xtype: 'form',
                     columnWidth: (1/3),
-                    layout: 'form',
+                    padding: 5,
                     border: false,
-                    bodyStyle: 'padding: 10px',
                     items: [colThreeItems]
                 }
             ]
@@ -263,11 +268,7 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
             }
         ];
 
-        this.on('activate', function(){ // TOOD: is this needed?
-           this.doLayout();
-        }, this);
-
-        LABKEY.vis.ChartEditorChartsPanel.superclass.initComponent.call(this);
+        this.callParent();
     },
 
     getMainTitle: function(){
@@ -309,9 +310,11 @@ LABKEY.vis.ChartEditorChartsPanel = Ext.extend(Ext.FormPanel, {
     },
 
     checkForChangesAndFireEvents : function() {
-        this.fireEvent('groupLayoutSelectionChanged', this.groupsRadio.checked);
         if (this.hasChanges)
+        {
+            this.fireEvent('groupLayoutSelectionChanged', this.getChartSubjectSelection() == "groups");
             this.fireEvent('chartDefinitionChanged', this.requireDataRefresh);
+        }
 
         // reset the changes flags
         this.requireDataRefresh = false;
