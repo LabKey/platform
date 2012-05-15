@@ -41,7 +41,7 @@
 
     NavTree copyButton = createCopyCommentButton(bean.getParticipantVisitMap(), StudyManager.getInstance().getStudy(container), getViewContext().getUser());
 %>
-<form action="updateComments.post" name="updateComments" id="updateCommentForm" method="POST">
+<form action="<%=h(buildURL(SpecimenController.UpdateCommentsAction.class))%>" name="updateComments" id="updateCommentForm" method="POST">
     <input type="hidden" name="copyToParticipant" value="false">
     <input type="hidden" name="deleteVialComment" value="false">
     <input type="hidden" name="copyParticipantId" value="0">

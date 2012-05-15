@@ -37,7 +37,7 @@
     WebPartView.startTitleFrame(out, "QC State Change", null, null, null);
 %>
 <labkey:errors/>
-<form action="updateQCState.post" method="POST">
+<form action="<%=h(buildURL(StudyController.UpdateQCStateAction.class))%>" method="POST">
     <input type="hidden" name="update" value="true" />
     <input type="hidden" name="datasetId" value="<%= bean.getDatasetId() %>" />
     <input type="hidden" name="<%= DataRegionSelection.DATA_REGION_SELECTION_KEY %>" value="<%= bean.getDataRegionSelectionKey() %>" />

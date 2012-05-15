@@ -29,6 +29,7 @@
 <%@ page import="org.labkey.api.exp.query.SamplesSchema" %>
 <%@ page import="org.labkey.api.exp.api.ExperimentUrls" %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
+<%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -98,7 +99,7 @@
     }
 %>
 
-<form onSubmit="return validateKey();" action="showUploadMaterials.view" method="post">
+<form onSubmit="return validateKey();" action="<%=h(buildURL(ExperimentController.ShowUploadMaterialsAction.class))%>" method="post">
 <labkey:errors />
     <p>If you have an existing sample set definition in the XAR file format (a .xar or .xar.xml file), you can
         <a href="<%= urlProvider(ExperimentUrls.class).getUploadXARURL(getViewContext().getContainer()) %>">upload the XAR file directly</a>

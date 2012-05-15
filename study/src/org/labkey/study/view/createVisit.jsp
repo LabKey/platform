@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.StudyController.VisitForm" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -32,7 +33,7 @@ Use this form to create a new visit. A visit is a point in time defined in the s
 to this study must be assigned to a visit. The assignment happens using a "Sequence Number" (otherwise known as Visit Id) that
 is uploaded along with the data. This form allows you to define a range of sequence numbers that will be correspond to the visit.
 <br>
-<form action="createVisit.post" method="POST">
+<form action="<%=h(buildURL(StudyController.CreateVisitAction.class))%>" method="POST">
     <table>
 <%--        <tr>
             <th align="right">Name&nbsp;<%=helpPopup("Name", "Short unique name, e.g. 'Enroll'")%></th>

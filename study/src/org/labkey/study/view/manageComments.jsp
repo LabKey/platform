@@ -66,7 +66,7 @@
 %>
 <labkey:errors/>
 
-<form action="manageSpecimenComments.post" name="manageComments" method="post">
+<form action="<%=h(buildURL(SpecimenController.ManageSpecimenCommentsAction.class))%>" name="manageComments" method="post">
     <table width="70%">
         <tr><td><b>Note:</b> Only users with read access to the selected dataset(s) will be able to view comment information.</td></tr>
         <tr><td/></tr>

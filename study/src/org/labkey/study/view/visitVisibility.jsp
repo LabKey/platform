@@ -19,11 +19,12 @@
 <%@ page import="org.labkey.study.model.CohortImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.api.study.Visit" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(getStudy().getContainer(), getViewContext().getUser());
 %>
-<form action="visitVisibility.post" method="POST">
+<form action="<%=h(buildURL(StudyController.VisitVisibilityAction.class))%>" method="POST">
     <table>
         <tr>
             <th align="left">ID</th>

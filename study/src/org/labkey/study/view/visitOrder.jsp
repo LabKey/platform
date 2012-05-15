@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <script type="text/javascript">
 function saveList(listName, hiddenElName)
@@ -70,7 +71,7 @@ function orderModule(listName, hiddenElName, down)
     return false;
 }
 </script>
-<form method="post" name="reorder" action="visitOrder.post" enctype="multipart/form-data">
+<form method="post" name="reorder" action="<%=h(buildURL(StudyController.VisitOrderAction.class))%>" enctype="multipart/form-data">
     <table>
         <tr>
             <th>Display Order<%= helpPopup("Display Order", "Display order determines the order in which visits appear in reports and views for all " +

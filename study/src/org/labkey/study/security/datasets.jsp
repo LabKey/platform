@@ -30,6 +30,7 @@
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.study.controllers.security.SecurityController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
     String groupName(Group g)
@@ -127,7 +128,7 @@ else
 }
 %>
 
-<form id="datasetSecurityForm" action="applyDatasetPermissions.post" method="POST">
+<form id="datasetSecurityForm" action="<%=h(buildURL(SecurityController.ApplyDatasetPermissionsAction.class))%>" method="POST">
 <%
     String redir = (String)HttpView.currentContext().get("redirect");
     if (redir != null)

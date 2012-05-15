@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <script>
 function saveList(listName)
@@ -78,7 +79,7 @@ function orderModule(down)
     return false;
 }
 </script>
-<form method="post" name="reorder" action="dataSetDisplayOrder.post" enctype="multipart/form-data">
+<form method="post" name="reorder" action="<%=h(buildURL(StudyController.DataSetDisplayOrderAction.class))%>" enctype="multipart/form-data">
     <input type="hidden" name="resetOrder" value="false">
     <table>
         <tr>

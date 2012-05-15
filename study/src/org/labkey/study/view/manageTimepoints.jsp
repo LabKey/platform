@@ -52,7 +52,7 @@
 </table>
 
 <%WebPartView.startTitleFrame(out, "Start Date", null, "600", null);%>
-<form action="manageVisits.post" method="POST">
+<form action="<%=h(buildURL(StudyController.ManageVisitsAction.class))%>" method="POST">
     <table>
            <tr><td colspan="2">Data in this study is grouped using date-based timepoints rather than visit ids.
                <ul>

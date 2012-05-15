@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.study.model.SecurityType" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
+<%@ page import="org.labkey.study.controllers.security.SecurityController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     HttpView<StudyImpl> me = (HttpView<StudyImpl>) HttpView.currentView();
@@ -33,7 +34,7 @@
     boolean includeEditOption = study.getSecurityType() == SecurityType.ADVANCED_WRITE;
 %>
 Any user with READ access to this folder may view some summary data.  However, access to detail data must be explicitly granted.
-    <form id="groupUpdateForm" action="saveStudyPermissions.post" method="post">
+    <form id="groupUpdateForm" action="<%=h(buildURL(SecurityController.SaveStudyPermissionsAction.class))%>" method="post">
 <%
     String redir = (String)HttpView.currentContext().get("redirect");
     if (redir != null)

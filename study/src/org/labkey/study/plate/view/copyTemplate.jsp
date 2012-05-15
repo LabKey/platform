@@ -35,7 +35,7 @@
     <tr>
         <td>
             <br>
-            <form action="handleCopy.post" method="POST">
+            <form action="<%=h(buildURL(PlateController.HandleCopyAction.class))%>" method="POST">
                 <input type="hidden" name="destination" value="<%= h(bean.getSelectedDestination()) %>">
                 <input type="hidden" name="templateName" value="<%= h(bean.getTemplateName()) %>">
                 <%= generateButton("Cancel", "plateTemplateList.view")%>

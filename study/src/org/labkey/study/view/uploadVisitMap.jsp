@@ -1,3 +1,4 @@
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%
 /*
  * Copyright (c) 2006-2011 LabKey Corporation
@@ -26,7 +27,7 @@ VisitMap data can be imported to quickly define a study.  VisitMap data generall
     30|T|Termination Visit|9|9 (mm/dd/yy)|21|0| 11 12||
 </pre></p>
 <labkey:errors/>
-<form action="uploadVisitMap.post" method="post">
+<form action="<%=h(buildURL(StudyController.UploadVisitMapAction.class))%>" method="post">
     Paste VisitMap content here:<br>
     <textarea name="content" cols="80" rows="30"></textarea><br>
     <%= generateSubmitButton("Import")%>&nbsp;<%= generateButton("Cancel", "manageVisits.view")%>

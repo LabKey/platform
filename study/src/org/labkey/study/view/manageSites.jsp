@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.model.SiteImpl"%>
 <%@ page import="org.labkey.study.model.StudyImpl"%>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -26,7 +27,7 @@
     StudyImpl study = me.getModelBean();
 %>
 <labkey:errors/>
-<form action="manageSites.post" method="POST">
+<form action="<%=h(buildURL(StudyController.ManageSitesAction.class))%>" method="POST">
     <table>
         <tr>
             <th>&nbsp;</th>

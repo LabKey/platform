@@ -43,7 +43,7 @@ if (null == ss)
 }
 else
 {
-    %><p><form method="POST" action="admin.view">
+    %><p><form method="POST" action="<%=h(buildURL(SearchController.AdminAction.class))%>">
         <table>
             <tr>
                 <td>Path to primary full-text search index:</td>
@@ -55,7 +55,7 @@ else
         </table>
     </form></p>
 
-    <p><form method="POST" action="admin.view">
+    <p><form method="POST" action="<%=h(buildURL(SearchController.AdminAction.class))%>">
         <table><%
 
     if (ss.isRunning())
@@ -86,7 +86,7 @@ else
     if (user.isAdministrator())
     {
     %>
-    <p><form method="POST" action="admin.view">
+    <p><form method="POST" action="<%=h(buildURL(SearchController.AdminAction.class))%>">
         <table>
             <tr><td>Deleting the search index isn't usually necessary; it causes re-indexing of all data, which can be very expensive.</td></tr>
             <tr><td><input type="hidden" name="delete" value="1"></td></tr>

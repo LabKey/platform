@@ -31,6 +31,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.study.Cohort" %>
+<%@ page import="org.labkey.study.controllers.CohortController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -42,7 +43,7 @@
     if (study.isManualCohortAssignment()) // Need to create a form for submitting the assignments
     {
 %>
-<form action="manageCohorts.post" name="manualAssignment" method="POST">
+<form action="<%=h(buildURL(CohortController.ManageCohortsAction.class))%>" name="manualAssignment" method="POST">
     <input type="hidden" name="reshow" value="false">
     <input type="hidden" name="manualCohortAssignment" value="true">
 <%

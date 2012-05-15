@@ -15,10 +15,9 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.view.ActionURL"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page import="java.util.Collection" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <script>
     function deleteStudy_onSubmit()
@@ -33,7 +32,7 @@
         return true;
     }
 </script>
-<form action="deleteStudy.post" method="post" onsubmit="return deleteStudy_onSubmit();">
+<form action="<%=h(buildURL(StudyController.DeleteStudyAction.class))%>" method="post" onsubmit="return deleteStudy_onSubmit();">
 This will delete all study data in this folder.
 <ul>
 <%

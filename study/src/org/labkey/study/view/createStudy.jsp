@@ -29,7 +29,7 @@
         This folder does not contain a study. Please contact an administrator.
 <%  } else { %>
 <labkey:errors/>
-<form action="createStudy.post" method="POST">
+<form action="<%=h(buildURL(StudyController.CreateStudyAction.class))%>" method="POST">
     <table>
         <tr>
             <td colspan="2" class="labkey-announcement-title"><span>Look and Feel</span></td>

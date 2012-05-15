@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.StudyController.VisitForm" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -32,7 +33,7 @@ Use this form to create a new timepoint. A timepoint is a range of days defined 
 to this study is assigned to a timepoint using the Date field. The assignment happens by computing the number of days between the Date
 field in the uploaded data and that subject's StartDate.
 <br>
-<form action="createVisit.post" method="POST">
+<form action="<%=h(buildURL(StudyController.CreateVisitAction.class))%>" method="POST">
     <table>
 <%--        <tr>
             <th align="right">Name&nbsp;<%=helpPopup("Name", "Short unique name, e.g. 'Enroll'")%></th>

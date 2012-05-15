@@ -18,6 +18,7 @@
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     String cancelLink = getViewContext().getActionURL().getParameter("returnURL");
@@ -65,7 +66,7 @@
         }
     }
 </script>
-<form action="updateStudyProperties.post" method="POST" enctype="multipart/form-data">
+<form action="<%=h(buildURL(StudyController.UpdateStudyPropertiesAction.class))%>" method="POST" enctype="multipart/form-data">
     <input type="hidden" name="returnURL" value="<%= h(getViewContext().getActionURL().getParameter("returnURL")) %>">
     <table>
         <tr>

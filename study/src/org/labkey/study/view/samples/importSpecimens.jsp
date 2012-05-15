@@ -72,7 +72,7 @@
         else
         {
 %>
-    <form action="submitSpecimenBatchImport.post" method=POST>
+    <form action="<%=h(buildURL(SpecimenController.SubmitSpecimenBatchImport.class))%>" method=POST>
         <input type="hidden" name="path" value="<%= h(bean.getPath()) %>">
         <%
             for (String file : bean.getFiles())

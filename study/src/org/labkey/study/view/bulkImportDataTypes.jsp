@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.study.controllers.BaseStudyController.StudyJspView"%>
 <%@ page import="org.labkey.study.controllers.StudyController.BulkImportTypesForm"%>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     StudyJspView<BulkImportTypesForm> me = (StudyJspView<BulkImportTypesForm>) HttpView.currentView();
@@ -110,7 +111,7 @@ For more information about the schema definition format, see <%=helpLink("Datase
     </tr>
 </table>
 
-<form action="bulkImportDataTypes.post" method="POST" enctype="multipart/form-data">
+<form action="<%=h(buildURL(StudyController.BulkImportDataTypesAction.class))%>" method="POST" enctype="multipart/form-data">
     <table>
         <tr>
             <td class=labkey-form-label>Header of column containing dataset Name (e.g., platename)<span class="labkey-error">*</span></td>

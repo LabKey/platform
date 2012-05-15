@@ -79,7 +79,7 @@
     VisitImpl[] visits = manager.getVisits(study, selectedCohort, user, Visit.Order.DISPLAY);
     DataSetDefinition[] datasets = manager.getDataSetDefinitions(study, selectedCohort);
     boolean cantReadOneOrMoreDatasets = false;
-    String basePage = "overview.view?";
+    String basePage = buildURL(StudyController.OverviewAction.class);
 
     if (selectedCohort != null)
         basePage += "cohortId=" + selectedCohort.getRowId() + "&";
@@ -102,7 +102,7 @@
         out.write(viewLink);
     }
 %>
-<form action="overview.view" name="changeFilterForm" method="GET">
+<form action="<%=h(buildURL(StudyController.OverviewAction.class))%>" name="changeFilterForm" method="GET">
     <input type="hidden" name="showAll" value="<%= bean.showAll ? "1" : "0" %>">
     <br><br>
 <%

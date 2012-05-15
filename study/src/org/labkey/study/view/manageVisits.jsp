@@ -79,7 +79,7 @@
         {
     %>
         <tr>
-            <td><%= textLink("edit", "visitSummary.view?id=" + visit.getRowId()) %></td>
+            <td><%= textLink("edit", buildURL(VisitSummaryAction.class)+ "id=" + visit.getRowId()) %></td>
             <th align=left><%= visit.getDisplayString() %></th>
             <td><%= visit.getSequenceNumMin() %><%= visit.getSequenceNumMin()!= visit.getSequenceNumMax() ? "-" + visit.getSequenceNumMax() : ""%></td>
             <td><%= visit.getCohort() != null ? h(visit.getCohort().getLabel()) : "All"%></td>

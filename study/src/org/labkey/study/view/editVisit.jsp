@@ -20,11 +20,7 @@
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.controllers.StudyController"%>
 <%@ page import="org.labkey.study.model.*" %>
-<%@ page import="org.springframework.validation.BindException" %>
-<%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.HashMap" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.study.controllers.BaseStudyController" %>
 <%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.study.CohortFilter" %>
@@ -37,7 +33,7 @@
     CohortImpl[] cohorts = StudyManager.getInstance().getCohorts(me.getViewContext().getContainer(), me.getViewContext().getUser());
 %>
 <labkey:errors/>
-<form action="visitSummary.post" method="POST">
+<form action="<%=h(buildURL(StudyController.VisitSummaryAction.class))%>" method="POST">
 <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(visit)%>">
 <input type="hidden" name="id" value="<%=visit.getRowId()%>">
 

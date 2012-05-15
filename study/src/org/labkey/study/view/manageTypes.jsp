@@ -153,7 +153,7 @@
 <% WebPartView.startTitleFrame(out, "Default Time/Date, Number Formats", null, null, null); %>
 <labkey:errors/>
 
-<form id="manageTypesForm" action="manageTypes.view" method="POST">
+<form id="manageTypesForm" action="<%=h(buildURL(ManageTypesAction.class))%>" method="POST">
     <table>
         <tr><td>Default Study Date format string:<%=PageFlowUtil.helpPopup("Date format string", dateFormatHelp, true)%></td>
             <td><input id="dateFormat" name="dateFormat" value="<%=StringUtils.trimToEmpty(dateFormat)%>"></td></tr>
@@ -185,10 +185,11 @@
     ActionURL details = new ActionURL(DatasetDetailsAction.class, c);
     for (DataSet def : datasets)
     {
+        details.replaceParameter("id",String.valueOf(def.getDataSetId()));
     %><tr>
-        <td align=right><a href="<%="datasetDetails.view?id=" + def.getDataSetId()%>"><%=def.getDataSetId()%></a></td>
-        <td><a href="<%=buildURL(DatasetDetailsAction.class)%>id=<%=def.getDataSetId()%>"><%= h(def.getName()) %></a></td>
-        <td><% if (!def.getName().equals(def.getLabel())) {%><a href="<%=details.replaceParameter("id",String.valueOf(def.getDataSetId()))%>"><%= h(def.getLabel()) %></a><%}%>&nbsp;</td>
+        <td align=right><a href="<%=h(details)%>"><%=def.getDataSetId()%></a></td>
+        <td><a href="<%=h(details)%>"><%= h(def.getName()) %></a></td>
+        <td><% if (!def.getName().equals(def.getLabel())) {%><a href="<%=h(details)%>"><%= h(def.getLabel()) %></a><%}%>&nbsp;</td>
         <td><%= def.getCategory() != null ? h(def.getCategory()) : "&nbsp;" %>&nbsp;</td>
         <td><%= def.getType()%>&nbsp;</td>
         <td><%= def.getCohort() != null ? h(def.getCohort().getLabel()) : "All" %></td>

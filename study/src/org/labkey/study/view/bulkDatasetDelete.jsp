@@ -22,11 +22,12 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.study.controllers.DatasetController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <p>Please select the datasets you want to delete:</p>
-<form action="bulkDatasetDelete.post" name="bulkDatasetDelete" method="POST">
+<form action="<%=h(buildURL(DatasetController.BulkDatasetDeleteAction.class))%>" name="bulkDatasetDelete" method="POST">
 <table class="labkey-data-region labkey-show-borders">
     <tr>
         <th><input type="checkbox" onchange="toggleAllRows(this);"></th>
