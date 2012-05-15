@@ -223,20 +223,24 @@ public class ParticipantVisitDataSetTable extends VirtualTable
             ret = new AliasedColumn(name, _colParticipantId);
         }
         ret.setFk(new AbstractForeignKey() {
-            public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
+            public ColumnInfo createLookupColumn(ColumnInfo parent, String displayFieldName)
             {
                 TableInfo table = getLookupTableInfo();
                 if (table == null)
                     return null;
-                if (displayField == null)
+                if (displayFieldName == null)
                 {
                     //displayField = table.getTitleColumn();
                     // Data Set tables don't have an interesting title column.
                     return null;
                 }
+                ColumnInfo displayField = table.getColumn(displayFieldName);
+                if (null == displayField)
+                    return null;
+
                 return new PVDatasetLookupColumn(
                         _study, visit, sequenceNum,
-                        parent, table.getColumn(_study.getSubjectColumnName()), table.getColumn(displayField));
+                        parent, table.getColumn(_study.getSubjectColumnName()), displayField);
             }
 
             public TableInfo getLookupTableInfo()
