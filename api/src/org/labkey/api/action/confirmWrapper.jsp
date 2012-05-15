@@ -35,7 +35,7 @@
     PropertyValues propertyValues = confirmAction.getPropertyValues();
     URLHelper cancelUrl = confirmAction.getCancelUrl();
 %>
-<form action="<%=context.getActionURL().getAction()%>.post" method="POST">
+<form action="<%=h(context.getActionURL().clone().deleteParameters())%>.post" method="POST">
     <labkey:csrf/>
     <%
     me.include(me.getBody(), out);
