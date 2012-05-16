@@ -17,9 +17,14 @@ package org.labkey.api.view;
 
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.data.Container;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.QueryUrls;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.writer.ZipUtil;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,7 +59,55 @@ public class PopupDeveloperView extends PopupMenuView
         nt.setScript("window.open('" + console + "','javascriptconsole','width=400,height=400,location=0,menubar=0,resizable=1,status=0,alwaysRaised=yes')");
         items.add(nt);
         items.add(new NavTree("JavaScript API Reference", "https://www.labkey.org/download/clientapi_docs/javascript-api/"));
+        if (AppProps.getInstance().isExperimentalFeatureEnabled("experimental-jsdoc"))
+        {
+            if (ensureDocsDeployed())
+            {
+                NavTree node = new NavTree("Experimental: JavaScript API Reference");
+                node.setScript("window.open('" + context.getContextPath() + "/jsdoc/index.html" + "','_blank')");
+                items.add(node);
+            }
+        }
         items.add(new NavTree("XML Schema Reference", "https://www.labkey.org/download/schema-docs/xml-schemas"));
         return items;
+    }
+
+    private static boolean _docDeployed;
+    private static boolean ensureDocsDeployed()
+    {
+        if (!_docDeployed)
+        {
+            File explodedPath = ModuleLoader.getInstance().getCoreModule().getExplodedPath();
+
+            File root = explodedPath.getParentFile();
+            if (root != null)
+            {
+                if (root.getParentFile() != null)
+                    root = root.getParentFile();
+
+                File webRoot = new File(root, "labkeyWebapp");
+                if (webRoot.exists())
+                {
+                    File docFile = new File(webRoot, "js_doc.zip");
+                    if (docFile.exists())
+                    {
+                        try {
+                            File docRoot = new File(webRoot, "jsdoc");
+
+                            if (!docRoot.exists())
+                                docRoot.mkdirs();
+
+                            ZipUtil.unzipToDirectory(docFile, docRoot);
+                            _docDeployed = true;
+                        }
+                        catch (IOException e)
+                        {
+                            // todo: log the error but don't throw
+                        }
+                    }
+                }
+            }
+        }
+        return _docDeployed;
     }
 }
