@@ -1180,6 +1180,12 @@ abstract public class AbstractTableInfo implements TableInfo
         return templates;
     }
 
+    @Override
+    public List<Pair<String, DetailsURL>> getRawImportTemplates()
+    {
+        return _importTemplates;
+    }
+
     public void setImportTemplates(ImportTemplateType[] templates)
     {
         checkLocked();

@@ -126,6 +126,7 @@ public class ExcelWriter
     private String _footer;
     private String _filenamePrefix;
     private List<String> _headers;
+    private List<String> _commentLines;
     private CaptionType _captionType = CaptionType.Label;
     private boolean _insertableColumnsOnly = false;
     private ArrayList<ExcelColumn> _columns = new ArrayList<ExcelColumn>(10);
@@ -598,6 +599,7 @@ public class ExcelWriter
 
             try
             {
+                renderCommentLines(sheet);
                 renderSheetHeaders(sheet, visibleColumns.size());
                 renderColumnCaptions(sheet, visibleColumns);
 
@@ -692,6 +694,27 @@ public class ExcelWriter
         return _nonWrappingTextFormat;
     }
 
+    public void renderCommentLines(Sheet sheet) throws MaxRowsExceededException
+    {
+        if (null != _commentLines)
+        {
+            for (String line : _commentLines)
+            {
+                Row row = sheet.getRow(getCurrentRow());
+                if (row == null)
+                {
+                    row = sheet.createRow(getCurrentRow());
+                }
+
+                Cell cell = row.getCell(0, Row.CREATE_NULL_AS_BLANK);
+                cell.setCellValue("#" + line);
+
+                incrementRow();
+            }
+
+
+        }
+    }
 
     public void renderSheetHeaders(Sheet sheet, int columnCount) throws MaxRowsExceededException
     {
@@ -801,5 +824,15 @@ public class ExcelWriter
     public ExcelDocumentType getDocumentType()
     {
         return _docType;
+    }
+
+    public List<String> getCommentLines()
+    {
+        return _commentLines;
+    }
+
+    public void setCommentLines(List<String> commentLines)
+    {
+        _commentLines = commentLines;
     }
 }

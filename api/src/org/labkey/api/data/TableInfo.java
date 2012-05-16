@@ -211,6 +211,13 @@ public interface TableInfo extends HasPermission
      */
     public List<Pair<String, ActionURL>> getImportTemplates(Container c);
 
+    /**
+     * Returns a list of the raw import templates (without substituting the container).  This is intended to be
+     * used by FilteredTable or other instances that need to copy the raw values from a parent table.  In general,
+     * getImportTemplates() should be used instead
+     */
+    public List<Pair<String, DetailsURL>> getRawImportTemplates();
+
     public boolean isPublic();
 
     public String getPublicName();

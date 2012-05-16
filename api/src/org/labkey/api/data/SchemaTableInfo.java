@@ -905,6 +905,12 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         return templates;
     }
 
+    @Override
+    public List<Pair<String, DetailsURL>> getRawImportTemplates()
+    {
+        return _importTemplates;
+    }
+
     public void setImportTemplates(ImportTemplateType[] templates)
     {
         checkLocked();

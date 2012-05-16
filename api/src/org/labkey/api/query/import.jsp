@@ -32,7 +32,7 @@
 
 %>
 <% if (bean.importMessage != null) {
-        %><div><b><%=bean.importMessage%></b></div><p></p><%
+        %><div><b><%=h(bean.importMessage)%></b></div><p></p><%
 
    }
 %>

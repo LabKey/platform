@@ -58,6 +58,8 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         _rootTable = table;
         _name = _rootTable.getName();
         _description = _rootTable.getDescription();
+        _importMsg = _rootTable.getImportMessage();
+        _importTemplates = _rootTable.getRawImportTemplates();
         // UNDONE: lazy load button bar config????
         _buttonBarConfig = _rootTable.getButtonBarConfig();
 
