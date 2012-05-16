@@ -42,7 +42,7 @@ LABKEY.vis.Plot = function(config){
 		width: config.width ? config.width : null, // height of the grid where shapes/lines/etc gets plotted.
 		height: config.height ? config.height: null // widht of the grid.
 	};
-	this.originalScales = config.scales ? config.scales : null;
+	this.originalScales = config.scales ? config.scales : {};
     this.scales = copyUserScales(this.originalScales);
 	this.originalAes = config.aes ? config.aes : null;
     this.aes = LABKEY.vis.convertAes(this.originalAes);
@@ -75,17 +75,27 @@ LABKEY.vis.Plot = function(config){
 	var initScales = function(){
         // initScales sets up default scales if needed, gets the domain of each required scale,
         // and news up all required scales. Returns true if there were no problems, returns false if there were problems.
+        for(var scale in this.scales){
+            if(this.scales[scale].scale){
+                delete this.scales[scale].scale;
+            }
+
+            if(this.scales[scale].min && (this.originalScales[scale] && !this.originalScales[scale].min)){
+                delete this.scales[scale].min;
+            }
+
+            if(this.scales[scale].max && (this.originalScales[scale] && !this.originalScales[scale].max)){
+                delete this.scales[scale].max;
+            }
+        }
 
         var setupDefaultScales = function(scales, aes){
-            var defaultAxisScale = {scaleType: 'continuous', trans: 'linear'};
-            var defaultDiscreteScale = {scaleType: 'discrete'};
-
             for(aesthetic in aes){
                 if(!scales[aesthetic]){
                     if(aesthetic == 'x' || aesthetic == 'yLeft' || aesthetic == 'yRight'){
-                        scales[aesthetic] = defaultAxisScale;
+                        scales[aesthetic] = {scaleType: 'continuous', trans: 'linear'};
                     } else if(aesthetic == 'color' || aesthetic == 'shape'){
-                        scales[aesthetic] = defaultDiscreteScale;
+                        scales[aesthetic] = {scaleType: 'discrete'};
                     }
                 }
             }
@@ -216,6 +226,8 @@ LABKEY.vis.Plot = function(config){
 	};
 
 	var initGrid = function(){
+        var i, x1, y1, x2, y2, tick, tickText, text, gridLine;
+
         if(this.mainTitle){
             this.paper.text(this.grid.width / 2, 30, this.mainTitle).attr({font: "18px Arial, sans-serif"});
         }
@@ -224,7 +236,7 @@ LABKEY.vis.Plot = function(config){
 		this.paper.path(LABKEY.vis.makeLine(this.grid.leftEdge, -this.grid.bottomEdge +.5, this.grid.rightEdge, -this.grid.bottomEdge+.5)).attr('stroke', '#000').attr('stroke-width', '1').transform("t0," + this.grid.height);
 
         if(this.xTitle){
-            this.paper.text(this.grid.rightEdge/2, this.grid.height - 10, this.xTitle).attr({font: "14px Arial, sans-serif"});
+            this.paper.text(this.grid.leftEdge + (this.grid.rightEdge - this.grid.leftEdge)/2, this.grid.height - 10, this.xTitle).attr({font: "14px Arial, sans-serif"}).attr({'text-anchor': 'middle'});
         }
 
         var xTicks;
@@ -234,19 +246,19 @@ LABKEY.vis.Plot = function(config){
             xTicks = this.scales.x.domain;
         }
 
-        for(var i = 0; i < xTicks.length; i++){
+        for(i = 0; i < xTicks.length; i++){
             //Plot x-axis ticks.
-            var x1 = x2 = Math.floor(this.scales.x.scale(xTicks[i])) +.5;
-            var y1 = -this.grid.bottomEdge + 8;
-            var y2 = -this.grid.bottomEdge;
+            x1 = x2 = Math.floor(this.scales.x.scale(xTicks[i])) +.5;
+            y1 = -this.grid.bottomEdge + 8;
+            y2 = -this.grid.bottomEdge;
 
-            var tick = this.paper.path(LABKEY.vis.makeLine(x1, y1, x2, y2)).transform("t0," + this.grid.height);
-            var tickText = this.scales.x.tickFormat ? this.scales.x.tickFormat(xTicks[i]) : xTicks[i];
-            var text = this.paper.text(this.scales.x.scale(xTicks[i])+.5, -this.grid.bottomEdge + 15, tickText).transform("t0," + this.grid.height);
+            tick = this.paper.path(LABKEY.vis.makeLine(x1, y1, x2, y2)).transform("t0," + this.grid.height);
+            tickText = this.scales.x.tickFormat ? this.scales.x.tickFormat(xTicks[i]) : xTicks[i];
+            text = this.paper.text(this.scales.x.scale(xTicks[i])+.5, -this.grid.bottomEdge + 15, tickText).transform("t0," + this.grid.height);
 
             if(x1 - .5 == this.grid.leftEdge || x1 - .5 == this.grid.rightEdge) continue;
 
-            var gridLine = this.paper.path(LABKEY.vis.makeLine(x1, -this.grid.bottomEdge, x2, -this.grid.topEdge)).attr('stroke', '#DDD').transform("t0," + this.grid.height);
+            gridLine = this.paper.path(LABKEY.vis.makeLine(x1, -this.grid.bottomEdge, x2, -this.grid.topEdge)).attr('stroke', '#DDD').transform("t0," + this.grid.height);
         }
 
 		if(this.scales.yLeft && this.scales.yLeft.scale){
@@ -263,17 +275,17 @@ LABKEY.vis.Plot = function(config){
                 this.paper.text(this.grid.leftEdge - 55, this.grid.height / 2, this.leftTitle).attr({font: "14px Arial, sans-serif"}).transform("t0," + this.h+"r270");
             }
 
-			for(var i = 0; i < leftTicks.length; i++){
-				var x1 = this.grid.leftEdge  - 8;
-				var y1 = y2 = -Math.floor(this.scales.yLeft.scale(leftTicks[i])) + .5; // Floor it and add .5 to keep the lines sharp.
-				var x2 = this.grid.leftEdge;
+			for(i = 0; i < leftTicks.length; i++){
+				x1 = this.grid.leftEdge  - 8;
+				y1 = y2 = -Math.floor(this.scales.yLeft.scale(leftTicks[i])) + .5; // Floor it and add .5 to keep the lines sharp.
+				x2 = this.grid.leftEdge;
 
                 if(y1 == -this.grid.bottomEdge + .5) continue; // Dont draw a line on top of the x-axis line.
 
-				var tick = this.paper.path(LABKEY.vis.makeLine(x1, y1, x2, y2)).transform("t0," + this.grid.height);
-                var tickText = this.scales.yLeft.tickFormat ? this.scales.yLeft.tickFormat(leftTicks[i]) : leftTicks[i];
-				var gridLine = this.paper.path(LABKEY.vis.makeLine(x2 + 1, y1, this.grid.rightEdge, y2)).attr('stroke', '#DDD').transform("t0," + this.grid.height);
-				var text = this.paper.text(x1 - 15, y1, tickText).transform("t0," + this.grid.height);
+				tick = this.paper.path(LABKEY.vis.makeLine(x1, y1, x2, y2)).transform("t0," + this.grid.height);
+                tickText = this.scales.yLeft.tickFormat ? this.scales.yLeft.tickFormat(leftTicks[i]) : leftTicks[i];
+				gridLine = this.paper.path(LABKEY.vis.makeLine(x2 + 1, y1, this.grid.rightEdge, y2)).attr('stroke', '#DDD').transform("t0," + this.grid.height);
+				text = this.paper.text(x1 - 15, y1, tickText).transform("t0," + this.grid.height);
 			}
 		}
 
@@ -291,17 +303,17 @@ LABKEY.vis.Plot = function(config){
                 this.paper.text(this.grid.rightEdge + 55, this.grid.height / 2, this.rightTitle).attr({font: "14px Arial, sans-serif"}).transform("t0," + this.h+"r90");
             }
 
-			for(var i = 0; i < rightTicks.length; i++){
-				var x1 = this.grid.rightEdge;
-				var y1 = y2 = -Math.floor(this.scales.yRight.scale(rightTicks[i])) + .5;
-				var x2 = this.grid.rightEdge + 8;
+			for(i = 0; i < rightTicks.length; i++){
+				x1 = this.grid.rightEdge;
+				y1 = y2 = -Math.floor(this.scales.yRight.scale(rightTicks[i])) + .5;
+				x2 = this.grid.rightEdge + 8;
 
                 if(y1 == -this.grid.bottomEdge + .5) continue; // Dont draw a line on top of the x-axis line.
 
-				var tick = this.paper.path(LABKEY.vis.makeLine(x1, y1, x2, y2)).transform("t0," + this.grid.height);
-                var tickText = this.scales.yRight.tickFormat ? this.scales.yRight.tickFormat(leftTicks[i]) : rightTicks[i];
-				var gridLine = this.paper.path(LABKEY.vis.makeLine(this.grid.leftEdge + 1, y1, x1, y2)).attr('stroke', '#DDD').transform("t0," + this.grid.height);
-				var text = this.paper.text(x2 + 15, y1, tickText).transform("t0," + this.grid.height);
+				tick = this.paper.path(LABKEY.vis.makeLine(x1, y1, x2, y2)).transform("t0," + this.grid.height);
+                tickText = this.scales.yRight.tickFormat ? this.scales.yRight.tickFormat(leftTicks[i]) : rightTicks[i];
+				gridLine = this.paper.path(LABKEY.vis.makeLine(this.grid.leftEdge + 1, y1, x1, y2)).attr('stroke', '#DDD').transform("t0," + this.grid.height);
+				text = this.paper.text(x2 + 15, y1, tickText).transform("t0," + this.grid.height);
 			}
 		}
 	};
@@ -431,7 +443,7 @@ LABKEY.vis.Plot = function(config){
         }
 
         var gridSet = this.paper.setFinish();
-        gridSet.attr('clip-rect', (this.grid.leftEdge - 6) + ", " + (this.grid.height - this.grid.topEdge) + ", " + (this.grid.rightEdge - this.grid.leftEdge  + 20) + ", " + (this.grid.topEdge - this.grid.bottomEdge + 9));
+        gridSet.attr('clip-rect', (this.grid.leftEdge - 10) + ", " + (this.grid.height - this.grid.topEdge) + ", " + (this.grid.rightEdge - this.grid.leftEdge  + 20) + ", " + (this.grid.topEdge - this.grid.bottomEdge + 12));
         gridSet.transform("t0," + this.grid.height);
         
         this.paper.setStart();

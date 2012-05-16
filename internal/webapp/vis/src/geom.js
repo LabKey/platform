@@ -70,6 +70,8 @@ LABKEY.vis.Geom.Point = function(config){
     }
     this.color = config.color ? config.color : '#000000';
     this.size = config.size ? config.size : 5;
+    this.opacity = config.opacity ? config.opacity : 1;
+    this.plotNullPoints = config.plotNullPoints ? config.plotNullPoints : false;
 
     return this;
 };
@@ -88,12 +90,25 @@ LABKEY.vis.Geom.Point.prototype.render = function(paper, grid, scales, data, lay
     }
 
     for(var i = 0; i < data.length; i++){
-        var x = scales.x.scale(this.xMap.getValue(data[i]));
-        var y = yScale(this.yMap.getValue(data[i]));
+        var xVal = this.xMap.getValue(data[i]);
+        var yVal = this.yMap.getValue(data[i]);
+        var x, y;
+        if(this.plotNullPoints){
+             x = (xVal != null && xVal != undefined) ? scales.x.scale(xVal) : grid.leftEdge - 5;
+             y = (yVal != null && yVal != undefined) ? yScale(yVal) : grid.bottomEdge - 5;
+        } else {
+            if(xVal == undefined || xVal == null || yVal == undefined || yVal == null){
+                continue;
+            } else {
+                x = scales.x.scale(xVal);
+                y = yScale(yVal);
+            }
+        }
+
         var color = this.colorMap ? scales.color.scale(this.colorMap.getValue(data[i]) + ' ' + name) : this.color;
         var size = this.sizeMap ? this.sizeMap.getValue(data[i]) : this.size;
         var shapeFunction = this.shapeMap ? scales.shape.scale(this.shapeMap.getValue(data[i]) + ' ' + name) : function(paper, x, y, r){return paper.circle(x, y, r)};
-        var point = shapeFunction(paper, x, -y, size).attr('fill', color).attr('stroke', color);
+        var point = shapeFunction(paper, x, -y, size).attr('fill', color).attr('stroke', color).attr('stroke-opacity', this.opacity/2).attr('fill-opacity', this.opacity);
 
         if(hoverText){
             point.attr('title', hoverText.value(data[i]));
@@ -111,6 +126,7 @@ LABKEY.vis.Geom.Path = function(config){
     }
     this.color = config.color ? config.color : '#000000';
     this.size = config.size ? config.size : 3;
+    this.opacity = config.opacity ? config.opacity : 1;
 
     return this;
 };
@@ -147,14 +163,14 @@ LABKEY.vis.Geom.Path.prototype.render = function(paper, grid, scales, data, laye
                 size = this.sizeMap.getValue(groupData);
             }
 
-            paper.path(line(groupData)).attr('stroke', color).attr('stroke-width', size).attr('opacity', .6);
+            paper.path(line(groupData)).attr('stroke', color).attr('stroke-width', size).attr('opacity', this.opacity);
         }
     } else {
         // No groups, connect all the points.
         if(this.sizeMap){
             size = this.sizeMap.getValue(data); // This would allow a user to look at all of the rows in a group and calculate size (i.e. a user could average the CD4 in every group and make a line based on that average.)
         }
-        paper.path(line(data)).attr('stroke-width', size).attr('opacity', .6);
+        paper.path(line(data)).attr('stroke-width', size).attr('opacity', this.opacity);
     }
 
     return true;
