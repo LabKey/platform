@@ -54,7 +54,10 @@ public class PropertyColumn extends LookupColumn
         super(lsidColumn, OntologyManager.getTinfoObject().getColumn("ObjectURI"), OntologyManager.getTinfoObjectProperty().getColumn(getPropertyCol(pd)));
         _joinOnContainer = joinOnContainer;
         setName(pd.getName());
-        setAlias(ColumnInfo.legalNameFromName(pd.getName()));
+        String name = pd.getName() + "$" + pd.getPropertyId();
+        if (!Character.isJavaIdentifierStart(name.charAt(0)))
+            name = "_" + name;
+        setAlias(ColumnInfo.legalNameFromName(name));
 
         _pd = pd;
         _container = container;
