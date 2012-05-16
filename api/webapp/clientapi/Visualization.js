@@ -643,6 +643,8 @@ LABKEY.Visualization.Filter = new function()
             BUILT_IN : 'builtIn',
             /** Return only queries that are custom (user defined) */
             CUSTOM : 'custom',
+            /** Return only datasets */
+            DATASETS : 'datasets',
             /** Return all queries (both built-in and custom) */
             ALL : 'all'
         },
