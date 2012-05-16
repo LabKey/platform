@@ -15,6 +15,8 @@
  */
 package org.labkey.api.gwt.client;
 
+import com.google.gwt.user.client.rpc.IsSerializable;
+
 import java.io.Serializable;
 
 /*
@@ -23,7 +25,7 @@ import java.io.Serializable;
  * Time: 2:55:25 PM
  */
 
-public enum DefaultValueType implements Serializable
+public enum DefaultValueType implements Serializable, IsSerializable
 {
     FIXED_EDITABLE("Editable default", "An editable default value will be entered for the user.  The default value will be the same for every user for every upload."),
     FIXED_NON_EDITABLE("Fixed value", "Fixed values cannot be edited by the user.  This option is used to save fixed data with each inserted data row."),
@@ -32,6 +34,9 @@ public enum DefaultValueType implements Serializable
     private String _label;
     private String _helpText;
     private static String _helpPopupHtml;
+
+    // Needed for GWT serialization to work correctly, at least in dev mode
+    DefaultValueType() {}
 
     DefaultValueType(String label, String helpText)
     {

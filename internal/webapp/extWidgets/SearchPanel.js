@@ -4,11 +4,7 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-LABKEY.requiresExt4ClientAPI();
-
 Ext4.namespace('LABKEY.ext4');
-
-//LABKEY.requiresScript("/extWidgets/ExtComponents.js");
 
 /**
  * Constructs a new LabKey Search Panel using the supplied configuration.

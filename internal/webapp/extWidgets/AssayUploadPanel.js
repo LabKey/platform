@@ -4,14 +4,11 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-LABKEY.requiresExt4ClientAPI();
-//LABKEY.NavTrail.setTrail(window.document.title, []);
-
 Ext4.namespace('LABKEY.ext');
 /**
  * This class is designed to override the default assay upload page.  The primary purpose was to support multiple 'import methods', which are alternate configurations
  * of fields or parsers.  This can be used to support outputs from multiple instruments imported through one pathway.  It also provides the ability to directly enter results into the browser through an Ext4 grid.
- *
+ * @name LABKEY.ext.AssayUploadPanel
  * @param {string} [config.assayName]
  * @param {array} [config.importMethods]
  * @param {function} [config.rowTransform]
