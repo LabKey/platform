@@ -82,4 +82,10 @@ public interface Study extends StudyEntity
     Study getSourceStudy();
 
     boolean isEmptyStudy();
+
+    /**
+     * Attempts to resolve an existing visit.
+     * visitID is used for visit-based studies. Date and participant are used for date-based.
+     */
+    Visit getVisit(String participantID, Double visitID, Date date);
 }

@@ -17,6 +17,7 @@
 package org.labkey.api.study.query;
 
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
@@ -37,6 +38,7 @@ import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.Visit;
 import org.labkey.api.study.actions.StudyPickerColumn;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.util.DateUtil;
@@ -209,7 +211,7 @@ public class PublishResultsQueryView extends ResultsQueryView
                     current.setVisible(false);
                 }
             }
-            if (current instanceof DetailsColumn)
+            if (current instanceof DetailsColumn || current instanceof UpdateColumn)
             {
                 it.remove();
             }
@@ -354,7 +356,10 @@ public class PublishResultsQueryView extends ResultsQueryView
             String specimenID = _specimenIDCol == null ? null : (_specimenIDCol.getValue(ctx) == null ? null : _specimenIDCol.getValue(ctx).toString());
             String participantID = _ptidCol == null ? null : (_ptidCol.getValue(ctx) == null ? null : _ptidCol.getValue(ctx).toString());
 
-            return resolver.resolve(specimenID, participantID, visitID instanceof Double ? (Double) visitID : null, date instanceof Date ? (Date)date : null, targetStudyContainer);
+            Double visitDouble = visitID instanceof Number ? ((Number) visitID).doubleValue() : null;
+            Date dateDate = date instanceof Date ? (Date)date : null;
+
+            return resolver.resolve(specimenID, participantID, visitDouble, dateDate, targetStudyContainer);
         }
 
         public Object getUserVisitId(RenderContext ctx) throws IOException
@@ -403,7 +408,7 @@ public class PublishResultsQueryView extends ResultsQueryView
                 ParticipantVisit pv = resolve(ctx);
                 result = pv == null ? null : pv.getDate();
             }
-            return result;
+            return DateUtil.formatDate(result);
         }
 
         public Container getUserTargetStudy(RenderContext ctx) throws IOException
@@ -732,7 +737,6 @@ public class PublishResultsQueryView extends ResultsQueryView
             }
             else
             {
-                super.renderGridCellContents(ctx, out);
                 out.write("<input type=\"hidden\" name=\"" + _formElementName +
                         "\" value=\"" + PageFlowUtil.filter(getValue(ctx)) + "\">");
             }
@@ -801,18 +805,46 @@ public class PublishResultsQueryView extends ResultsQueryView
         }
     }
 
-    private class ObjectIDDataInputColumn extends DataInputColumn
+    private class TimepointPreviewColumn extends SimpleDisplayColumn
     {
-        public ObjectIDDataInputColumn(String completionBase, ResolverHelper resolverHelper, ColumnInfo objectIdCol)
+        private final ParticipantIDDataInputColumn _participantColumn;
+        private final VisitIDDataInputColumn _visitColumn;
+        private final DateDataInputColumn _dateColumn;
+        private final TargetStudyInputColumn _targetStudyInputColumn;
+
+        public TimepointPreviewColumn(ParticipantIDDataInputColumn participantColumn, VisitIDDataInputColumn visitColumn, DateDataInputColumn dateColumn, TargetStudyInputColumn targetStudyInputColumn)
         {
-            super("Object ID", "objectId", false, completionBase, resolverHelper, objectIdCol);
+            _participantColumn = participantColumn;
+            _visitColumn = visitColumn;
+            _dateColumn = dateColumn;
+            _targetStudyInputColumn = targetStudyInputColumn;
+            setName("TimepointPreview");
+            setCaption("Timepoint Preview");
         }
 
-        protected Object calculateValue(RenderContext ctx)
+        @Override
+        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
-            if (_requiredColumn == null)
-                return null;
-            return ctx.getRow().get(_requiredColumn.getAlias());
+            Object visitObject = _visitColumn.calculateValue(ctx);
+            Object dateObject = _dateColumn.calculateValue(ctx);
+            Object participantObject = _participantColumn.calculateValue(ctx);
+            Object targetStudyObject = _targetStudyInputColumn == null ? null : _targetStudyInputColumn.calculateValue(ctx);
+            Container targetStudyContainer = null;
+            if (targetStudyObject != null)
+            {
+                targetStudyContainer = ConvertHelper.convert(targetStudyContainer, Container.class);
+            }
+            if (targetStudyContainer == null)
+            {
+                targetStudyContainer = _targetStudyContainer;
+            }
+            Study study = StudyService.get().getStudy(targetStudyContainer);
+            Double visitDouble = visitObject == null ? null : (Double) ConvertUtils.convert(visitObject.toString(), Double.class);
+            Date dateDate = dateObject == null ? null : (Date) ConvertUtils.convert(dateObject.toString(), Date.class);
+            String participantID = participantObject == null ? null : participantObject.toString();
+            
+            Visit visit = study == null ? null : study.getVisit(participantID, visitDouble, dateDate);
+            out.write(visit == null ? "" : visit.getDisplayString());
         }
     }
 
@@ -838,35 +870,6 @@ public class PublishResultsQueryView extends ResultsQueryView
             {
                 throw new RuntimeException(e);
             }
-        }
-    }
-
-    private abstract class DataInputColumn extends InputColumn
-    {
-        protected ColumnInfo _requiredColumn;
-
-        public DataInputColumn(String caption, String formElementName, boolean editable, String completionBase, ResolverHelper resolverHelper,
-                               ColumnInfo requiredColumn)
-        {
-            super(caption, editable, formElementName, completionBase, resolverHelper);
-            _requiredColumn = requiredColumn;
-        }
-
-        protected abstract Object calculateValue(RenderContext ctx) throws IOException;
-
-        public Object getValue(RenderContext ctx)
-        {
-            try
-            {
-                return calculateValue(ctx);
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException(e);
-            }
-//            if (_requiredColumn == null)
-//                return null;
-//            return ctx.getRow().get(_requiredColumn.getAlias());
         }
     }
 
@@ -921,8 +924,12 @@ public class PublishResultsQueryView extends ResultsQueryView
                 runIdCol, objectIdCol, assayPTIDCol, assayVisitIDCol, assayDateCol, specimenIDCol, matchCol, specimenPTIDCol, specimenVisitCol, specimenDateCol, targetStudyCol);
         resolverHelper.setReshow(_reshowVisits, _reshowDates, _reshowPtids, _reshowTargetStudies);
 
+        TargetStudyInputColumn targetStudyInputColumn = null;
         if (targetStudyCol != null)
-            columns.add(new TargetStudyInputColumn(resolverHelper, targetStudyCol));
+        {
+            targetStudyInputColumn = new TargetStudyInputColumn(resolverHelper, targetStudyCol);
+            columns.add(targetStudyInputColumn);
+        }
 
         if (specimenPTIDCol != null)
         {
@@ -963,18 +970,25 @@ public class PublishResultsQueryView extends ResultsQueryView
 
         columns.add(new ValidParticipantVisitDisplayColumn(resolverHelper));
 
-        columns.add(new RunDataLinkDisplayColumn(_protocol, runIdCol));
+        columns.add(new RunDataLinkDisplayColumn(null, resolverHelper, runIdCol, objectIdCol));
 
-        columns.add(new ObjectIDDataInputColumn(null, resolverHelper, objectIdCol));
-
-        columns.add(new ParticipantIDDataInputColumn(resolverHelper, assayPTIDCol));
+        ParticipantIDDataInputColumn participantColumn = new ParticipantIDDataInputColumn(resolverHelper, assayPTIDCol);
+        columns.add(participantColumn);
 
         // UNDONE: If selected ids contain studies of different timepoint types, include both Date and Visit columns and enable and disable the inputs when the study picker changes.
         // For now, just include both Date and Visit columns if the target study isn't known yet.
+        VisitIDDataInputColumn visitIDInputColumn = new VisitIDDataInputColumn(resolverHelper, assayVisitIDCol);
+        DateDataInputColumn dateInputColumn = new DateDataInputColumn(null, resolverHelper, assayDateCol);
         if (_timepointType == null || _timepointType == TimepointType.VISIT)
-            columns.add(new VisitIDDataInputColumn(resolverHelper, assayVisitIDCol));
+        {
+            columns.add(visitIDInputColumn);
+        }
         if (_timepointType == null || _timepointType == TimepointType.DATE || _timepointType == TimepointType.CONTINUOUS)
-            columns.add(new DateDataInputColumn(null, resolverHelper, assayDateCol));
+        {
+            columns.add(dateInputColumn);
+        }
+
+        columns.add(new TimepointPreviewColumn(participantColumn, visitIDInputColumn, dateInputColumn, targetStudyInputColumn));
 
         if (_mismatched)
         {

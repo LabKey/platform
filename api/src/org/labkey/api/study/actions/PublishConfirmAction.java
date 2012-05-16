@@ -38,6 +38,7 @@ import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.query.PublishResultsQueryView;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.ActionURL;
@@ -492,6 +493,7 @@ public class PublishConfirmAction extends BaseAssayAction<PublishConfirmAction.P
 
     public NavTree appendNavTrail(NavTree root)
     {
+        getPageConfig().setHelpTopic(new HelpTopic("publishAssayData"));
         NavTree result = super.appendNavTrail(root);
         result.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
         result.addChild("Copy to " + (_targetStudyName == null ? "Study" : _targetStudyName) + ": Verify Results");

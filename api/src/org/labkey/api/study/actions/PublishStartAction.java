@@ -21,12 +21,11 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.study.assay.*;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.template.AppBar;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.HString;
-import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.FieldKey;
@@ -241,6 +240,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
 
     public NavTree appendNavTrail(NavTree root)
     {
+        getPageConfig().setHelpTopic(new HelpTopic("publishAssayData"));
         NavTree result = super.appendNavTrail(root);
         result.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
         result.addChild("Copy to Study: Choose Target");

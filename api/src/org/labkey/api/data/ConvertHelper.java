@@ -513,6 +513,16 @@ public class ConvertHelper implements PropertyEditorRegistrar
         }
     }
 
+    /** Simple genericized wrapper around ConvertUtils.convert(). Also handles calling toString() on value, if non-null */
+    public static <T> T convert(Object value, Class<T> cl)
+    {
+        if (value == null)
+        {
+            return null;
+        }
+        return (T)ConvertUtils.convert(value.toString(), cl);
+    }
+
     public static class ConvertUtilsEditor extends PropertyEditorSupport
         {
         Class _class;

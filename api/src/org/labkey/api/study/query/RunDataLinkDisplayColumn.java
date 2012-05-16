@@ -18,42 +18,58 @@ package org.labkey.api.study.query;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
-import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.study.actions.AssayDetailRedirectAction;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Set;
 
 /**
+ * Serves the dual purpose of adding a hidden <input> element for the object id and showing a link to the originating run
  * User: jgarms
  * Date: Dec 19, 2008
  */
-public class RunDataLinkDisplayColumn extends SimpleDisplayColumn
+public class RunDataLinkDisplayColumn extends DataInputColumn
 {
-    private final ExpProtocol protocol;
-    private final ColumnInfo runIdCol;
+    private final ColumnInfo _runIdCol;
+    private final ColumnInfo _objectIdCol;
 
-    public RunDataLinkDisplayColumn(ExpProtocol protocol, ColumnInfo runIdCol)
+    public RunDataLinkDisplayColumn(String completionBase, PublishResultsQueryView.ResolverHelper resolverHelper, ColumnInfo runIdCol, ColumnInfo objectIdCol)
     {
-        this.protocol = protocol;
-        this.runIdCol = runIdCol;
+        super("Originating Run", "objectId", false, completionBase, resolverHelper, objectIdCol);
+        _runIdCol = runIdCol;
+        _objectIdCol = objectIdCol;
     }
 
+    protected Object calculateValue(RenderContext ctx)
+    {
+        if (_requiredColumn == null)
+            return null;
+        return ctx.getRow().get(_requiredColumn.getAlias());
+    }
+    
     @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        int runId = ((Integer)runIdCol.getValue(ctx)).intValue();
+        super.renderGridCellContents(ctx, out);
+        int runId = ((Integer) _runIdCol.getValue(ctx)).intValue();
         ActionURL runURL = new ActionURL(AssayDetailRedirectAction.class, ctx.getContainer());
         runURL.addParameter("runId", runId);
-        out.write("<a href=\"");
-        out.write(runURL.getLocalURIString());
-        out.write("\">View Run</a>");
+        out.write(PageFlowUtil.textLink("View Run", runURL));
     }
 
     @Override
     public void renderTitle(RenderContext ctx, Writer out) throws IOException
     {
         out.write("Originating Run");
+    }
+
+    @Override
+    public void addQueryColumns(Set<ColumnInfo> columns)
+    {
+        columns.add(_runIdCol);
+        columns.add(_objectIdCol);
     }
 }
