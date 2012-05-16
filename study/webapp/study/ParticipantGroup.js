@@ -43,9 +43,9 @@ LABKEY.study.ParticipantGroupDialog = Ext.extend(Ext.Window, {
 
 /**
  * Panel to take user input for the label and list of participant ids for a classfication to be created or edited
- * @param categoryRowId = the rowId of the category to be edited (null if create new)
- * @param categoryLabel = the current label of the category to be edited (null if create new)
- * @param categoryParticipantIds = the string representation of the ptid ids array of the category to be edited (null if create new)
+ * @cfg {Integer} categoryRowId the rowId of the category to be edited (null if create new)
+ * @cfg {String} categoryLabel the current label of the category to be edited (null if create new)
+ * @cfg {Array} categoryParticipantIds the string representation of the ptid ids array of the category to be edited (null if create new)
  */
 LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
     constructor : function(config){
@@ -233,6 +233,9 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
         return true;
     },
 
+    /**
+     * Saves the selected categories. 
+     */
     saveCategory: function()
     {
          if (!this.validate())

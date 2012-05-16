@@ -173,6 +173,8 @@ import java.util.Set;
  */
 public class CoreModule extends SpringModule implements SearchService.DocumentProvider
 {
+    public static final String EXPERIMENTAL_JSDOC = "experimental-jsdoc";
+
     @Override
     public String getName()
     {
@@ -255,6 +257,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 break;
             }
         }
+
+        AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_JSDOC, "Javascript Documentation", "Displays LabKey javascript API's from the Developer Links menu.", false);
     }
 
     @Override
