@@ -37,8 +37,8 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.util.Version;
-import org.apache.poi.EncryptedDocumentException;
 import org.apache.poi.hpsf.NoPropertySetStreamException;
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
@@ -472,9 +472,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 // Malformed zip file
                 logAsWarning(r, "Malformed zip file");
             }
-            else if (cause instanceof EncryptedDocumentException)
+            else if (e instanceof EncryptedDocumentException)
             {
-                // Encrypted office document
+                // Encrypted office document, examples: encrypted.xlsx, MS Tracking Sheet.xls, HRP_AE_21MAY2008_version1.xls, encrypted.docx
                 logAsWarning(r, "Document is password protected");
             }
             else if (topMessage.startsWith("Error creating OOXML extractor"))
