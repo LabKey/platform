@@ -44,10 +44,8 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Site;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
@@ -60,7 +58,6 @@ import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.study.SampleManager;
@@ -70,14 +67,14 @@ import org.labkey.study.samples.settings.RepositorySettings;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -578,7 +575,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
         if (description == null || description.length() == 0)
         {
-            long count = StudyManager.getInstance().getParticipantCount(this);;
+            long count = StudyManager.getInstance().getParticipantCount(this);
             String subjectNoun = (count == 1 ? this.getSubjectNounSingular() : this.getSubjectNounPlural());
             TimepointType timepointType = getTimepointType();
             return PageFlowUtil.filter(getLabel() + " tracks data in ") + "<a href=\"" + new ActionURL(StudyController.DatasetsAction.class, getContainer()) + "\">" + getDataSets().size() + " datasets</a>" + PageFlowUtil.filter(" over " + getVisits(Visit.Order.DISPLAY).length + " " + (timepointType.isVisitBased() ? "visits" : "time points") +
@@ -678,14 +675,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     {
         List<DataSetDefinition> datasets = getDataSets();
         Visit visits[] = getVisits(Visit.Order.DISPLAY);
-        if (visits.length < 1 && datasets.size() < 1)
-        {
-           return true;
-        }
-        else
-        {
-            return false;
-        }
+        return visits.length < 1 && datasets.size() < 1;
     }
 
     public void removeProtocolDocument(String name, User user)
@@ -827,6 +817,58 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         }
     }
 
+    @Override
+    public Visit getVisit(String participantID, Double visitID, Date date)
+    {
+        Double sequenceNum = null;
+        if (visitID != null && getTimepointType().isVisitBased())
+        {
+            sequenceNum = visitID;
+        }
+        if (participantID != null && date != null && !getTimepointType().isVisitBased())
+        {
+            // Translate the date into a sequencenum based on the particpant's start date
+            Participant participant = StudyManager.getInstance().getParticipant(this, participantID);
+            if (participant != null && participant.getStartDate() != null)
+            {
+                Calendar startCal = new GregorianCalendar();
+                startCal.setTime(participant.getStartDate());
+                Calendar timepointCal = new GregorianCalendar();
+                timepointCal.setTime(date);
+                sequenceNum = (double)daysBetween(startCal, timepointCal);
+            }
+        }
+
+        if (sequenceNum != null)
+        {
+            // Look up the visit if we have a sequencenum
+            return StudyManager.getInstance().getVisitForSequence(this, sequenceNum);
+        }
+
+        return null;
+    }
+
+    /**
+     * Implementation based on posting at http://tripoverit.blogspot.com/2007/07/java-calculate-difference-between-two.html
+     **/
+    public static int daysBetween(Calendar startDate, Calendar endDate)
+    {
+        boolean flipped = startDate.after(endDate);
+        if (flipped)
+        {
+            Calendar temp = startDate;
+            startDate = endDate;
+            endDate = temp;
+        }
+        Calendar date = (Calendar) startDate.clone();
+        int daysBetween = 0;
+        while (date.before(endDate))
+        {
+            date.add(Calendar.DAY_OF_MONTH, 1);
+            daysBetween++;
+        }
+        return daysBetween * (flipped ? -1 : 1);
+    }
 
     @Override
     public boolean equals(Object o)

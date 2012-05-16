@@ -25,8 +25,6 @@ import static org.labkey.api.util.PageFlowUtil.filter;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 
-import java.sql.SQLException;
-
 /**
  * User: brittp
  * Created: May 2, 2008 2:13:02 PM
@@ -128,7 +126,7 @@ public class SubjectDetailsWebPartFactory extends BaseWebPartFactory
                                    final int sourceDatasetId,
                                    final String currentUrl,
                                    DataType type,
-                                   final String encodedQCState) throws SQLException
+                                   final String encodedQCState)
     {
         String subjectNoun = StudyService.get().getSubjectNounSingular(container);
         if (participantId == null)

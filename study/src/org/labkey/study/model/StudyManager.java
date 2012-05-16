@@ -1385,7 +1385,7 @@ public class StudyManager
         return _cohortHelper.get(container,"Label");
     }
 
-    public CohortImpl getCurrentCohortForParticipant(Container container, User user, String participantId) throws SQLException
+    public CohortImpl getCurrentCohortForParticipant(Container container, User user, String participantId)
     {
         assertCohortsViewable(container, user);
         Participant participant = getParticipant(getStudy(container), participantId);
@@ -2848,14 +2848,14 @@ public class StudyManager
         return container.getId() + "/" + Participant.class.toString();
     }
 
-    private Map<String, Participant> getParticipantMap(Study study) throws SQLException
+    private Map<String, Participant> getParticipantMap(Study study)
     {
         Map<String, Participant> participantMap = (Map<String, Participant>) DbCache.get(StudySchema.getInstance().getTableInfoParticipant(), getParticipantCacheName(study.getContainer()));
         if (participantMap == null)
         {
             SimpleFilter filter = new SimpleFilter("Container", study.getContainer());
-            Participant[] participants = Table.select(StudySchema.getInstance().getTableInfoParticipant(), Table.ALL_COLUMNS,
-                    filter, new Sort("ParticipantId"), Participant.class);
+            Participant[] participants = new TableSelector(StudySchema.getInstance().getTableInfoParticipant(), Table.ALL_COLUMNS,
+                    filter, new Sort("ParticipantId")).getArray(Participant.class);
             participantMap = new LinkedHashMap<String, Participant>();
             for (Participant participant : participants)
                 participantMap.put(participant.getParticipantId(), participant);
@@ -2874,7 +2874,7 @@ public class StudyManager
         return participants;
     }
 
-    public Participant getParticipant(Study study, String participantId) throws SQLException
+    public Participant getParticipant(Study study, String participantId)
     {
         Map<String, Participant> participantMap = getParticipantMap(study);
         return participantMap.get(participantId);

@@ -22,14 +22,12 @@ import org.labkey.study.model.*;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
 
 import java.util.*;
-import java.sql.SQLException;
 
 /**
  * User: brittp
@@ -89,35 +87,28 @@ public class TypeParticipantReportFactory extends TypeReportFactory
         {
             SimpleFilter filter = new SimpleFilter(StudyService.get().getSubjectColumnName(getContainer()), participantId);
             addBaseFilters(filter);
-            try
+            VisitImpl[] visits = null;
+            if (showCohorts)
             {
-                VisitImpl[] visits = null;
-                if (showCohorts)
+                CohortImpl cohort = StudyManager.getInstance().getCurrentCohortForParticipant(getContainer(), getUser(), participantId);
+                if (cohort != null)
                 {
-                    CohortImpl cohort = StudyManager.getInstance().getCurrentCohortForParticipant(getContainer(), getUser(), participantId);
-                    if (cohort != null)
+                    visits = visitListCache.get(cohort.getRowId());
+                    if (visits == null)
                     {
-                        visits = visitListCache.get(cohort.getRowId());
-                        if (visits == null)
-                        {
-                            visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), cohort);
-                            visitListCache.put(cohort.getRowId(), visits);
-                        }
+                        visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), cohort);
+                        visitListCache.put(cohort.getRowId(), visits);
                     }
                 }
+            }
 
-                if (visits == null)
-                {
-                    if (allVisits == null)
-                        allVisits = StudyManager.getInstance().getVisits(study, Visit.Order.DISPLAY);
-                    visits = allVisits;
-                }
-                reports.add(new SpecimenTypeVisitReport(DemoMode.id(participantId, getContainer(), getUser()), visits, filter, this));
-            }
-            catch (SQLException e)
+            if (visits == null)
             {
-                throw new RuntimeSQLException(e);
+                if (allVisits == null)
+                    allVisits = StudyManager.getInstance().getVisits(study, Visit.Order.DISPLAY);
+                visits = allVisits;
             }
+            reports.add(new SpecimenTypeVisitReport(DemoMode.id(participantId, getContainer(), getUser()), visits, filter, this));
         }
         return reports;
     }
