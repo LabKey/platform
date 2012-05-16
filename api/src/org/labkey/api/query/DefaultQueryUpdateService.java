@@ -441,13 +441,14 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
     protected Object[] getKeys(Map<String, Object> map) throws InvalidKeyException
     {
-        if (map == null || map.isEmpty())
-            return new Object[0];
-
         //build an array of pk values based on the table info
         TableInfo table = getDbTable();
         List<ColumnInfo> pks = table.getPkColumns();
         Object[] pkVals = new Object[pks.size()];
+
+        if (map == null || map.isEmpty())
+            return pkVals;
+
         for (int idx = 0; idx < pks.size(); ++idx)
         {
             ColumnInfo pk = pks.get(idx);
