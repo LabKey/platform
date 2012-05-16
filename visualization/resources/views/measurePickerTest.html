@@ -12,7 +12,7 @@
     <div id="measure2div" style="color:green">Selected measure(s):</div>
 </p>
 <p>
-    CDS Measure picker panel: all columns = true, show hidden = true:<BR/>
+    CDS Measure picker panel: all columns = true, show hidden = true, filtered to just datasets:<BR/>
     <input type='button' onclick='showMeasureDialog(3);' value='show'/>
     <div id="measure3div" style="color:green">Selected measure(s):</div>
 </p>
@@ -55,6 +55,7 @@ Ext.onReady(function(){
 
     measuresDialog3 = Ext4.create('LABKEY.ext4.MeasuresDialog', {
         dataViewType: LABKEY.MeasuresDataViewType.SPLIT_PANELS,
+        filter : LABKEY.Visualization.Filter.create({schemaName: 'study', queryType: LABKEY.Visualization.Filter.QueryType.DATASETS}),
         allColumns: true,
         canShowHidden: true,
         multiSelect : true,

@@ -271,39 +271,48 @@ public class StudyVisualizationProvider extends VisualizationProvider
     }
 
     @Override
+    protected Map<QueryDefinition, TableInfo> getQueryDefinitions(ViewContext context, VisualizationController.QueryType queryType, ColumnMatchType matchType)
+    {
+        if (queryType == VisualizationController.QueryType.datasets)
+        {
+            Map<QueryDefinition, TableInfo> queries = new HashMap<QueryDefinition, TableInfo>();
+            Study study = StudyService.get().getStudy(context.getContainer());
+            UserSchema schema = getUserSchema(context.getContainer(), context.getUser());
+            addDatasetQueryDefinitions(context, schema, study, queries);
+            return queries;
+        }
+        else
+            return super.getQueryDefinitions(context, queryType, matchType);
+    }
+
+    @Override
     /**
      * All columns for a study if builtIn types were requested would be constrained to datasets only
      */
     public Map<ColumnInfo, QueryDefinition> getAllColumns(ViewContext context, VisualizationController.QueryType queryType, boolean showHidden)
     {
-        if (queryType == VisualizationController.QueryType.builtIn)
+        if (queryType == VisualizationController.QueryType.builtIn || queryType == VisualizationController.QueryType.datasets)
         {
             Map<QueryDefinition, TableInfo> queries = new HashMap<QueryDefinition, TableInfo>();
             Study study = StudyService.get().getStudy(context.getContainer());
             UserSchema schema = getUserSchema(context.getContainer(), context.getUser());
             if (study != null)
             {
-                for (DataSet ds : study.getDataSets())
+                addDatasetQueryDefinitions(context, schema, study, queries);
+
+                if (queryType == VisualizationController.QueryType.builtIn)
                 {
-                    if (ds.isShowByDefault())
+                    for (String name : schema.getTableAndQueryNames(true))
                     {
-                        Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(context, schema, ds.getLabel(), ColumnMatchType.All_VISIBLE, false);
+                        if (!StringUtils.startsWithIgnoreCase(name, "Primary Type Vial Counts") &&
+                            !StringUtils.startsWithIgnoreCase(name, "Primary/Derivative Type Vial Counts") &&
+                            !StringUtils.startsWithIgnoreCase(name, "Vial Counts by Requesting Location"))
+                            continue;
+                        Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(context, schema, name, ColumnMatchType.All_VISIBLE, false);
                         if (entry != null)
                         {
                             queries.put(entry.getKey(), entry.getValue());
                         }
-                    }
-                }
-                for (String name : schema.getTableAndQueryNames(true))
-                {
-                    if (!StringUtils.startsWithIgnoreCase(name, "Primary Type Vial Counts") &&
-                        !StringUtils.startsWithIgnoreCase(name, "Primary/Derivative Type Vial Counts") &&
-                        !StringUtils.startsWithIgnoreCase(name, "Vial Counts by Requesting Location"))
-                        continue;
-                    Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(context, schema, name, ColumnMatchType.All_VISIBLE, false);
-                    if (entry != null)
-                    {
-                        queries.put(entry.getKey(), entry.getValue());
                     }
                 }
             }
@@ -311,5 +320,23 @@ public class StudyVisualizationProvider extends VisualizationProvider
         }
         else
             return super.getAllColumns(context, queryType, showHidden);
+    }
+
+    private void addDatasetQueryDefinitions(ViewContext context, UserSchema schema, Study study, Map<QueryDefinition, TableInfo> queries)
+    {
+        if (study != null)
+        {
+            for (DataSet ds : study.getDataSets())
+            {
+                if (ds.isShowByDefault())
+                {
+                    Pair<QueryDefinition, TableInfo> entry = getTableAndQueryDef(context, schema, ds.getLabel(), ColumnMatchType.All_VISIBLE, false);
+                    if (entry != null)
+                    {
+                        queries.put(entry.getKey(), entry.getValue());
+                    }
+                }
+            }
+        }
     }
 }

@@ -201,7 +201,10 @@ public abstract class VisualizationProvider
                     {
                         ColumnInfo lookupCol = col.getFk().createLookupColumn(col, null);
                         if (lookupCol != null)
+                        {
+                            lookupCol.setLabel(col.getLabel());
                             col = lookupCol;
+                        }
                     }
 
                     matches.put(col, query);

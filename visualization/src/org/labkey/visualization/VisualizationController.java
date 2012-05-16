@@ -348,6 +348,7 @@ public class VisualizationController extends SpringActionController
     public enum QueryType {
         builtIn,
         custom,
+        datasets,
         all,
     }
     

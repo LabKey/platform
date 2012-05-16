@@ -138,6 +138,7 @@ Ext4.define('LABKEY.ext4.MeasuresPanel', {
         if (this.dataViewType == LABKEY.MeasuresDataViewType.SPLIT_PANELS)
         {
             this.dataView = Ext4.create('LABKEY.ext4.MeasuresDataView.SplitPanels', {
+                filter        : this.filter,
                 allColumns    : this.allColumns,
                 ui : this.ui,
                 showHidden : this.canShowHidden,
@@ -645,6 +646,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
  * Constructs a new LabKey MeasuresDataView to display a grid of all measures with columns for dataset, label, and description using the supplied configuration.
  * @constructor
  * @augments Ext.panel.Panel
+ * @param {object} [filter] LABKEY.Visualization.Filter object to allow filtering of the measures returned by the LABKEY.Visualization.getMeasures method. 
  * @param {boolean} [allColumns] passed to LABKEY.Visualization.getMeasures method
  * @param {boolean} [showHidden] passed to LABKEY.Visualization.getMeasures method
 **/
@@ -837,7 +839,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
     getMeasures : function(cmp) {
 
-        var filter = LABKEY.Visualization.Filter.create({schemaName: 'study'});
+        var filter = this.filter || LABKEY.Visualization.Filter.create({schemaName: 'study'});
 
         LABKEY.Visualization.getMeasures({
             filters      : [filter],
