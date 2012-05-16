@@ -1887,7 +1887,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         @Override
         public boolean next() throws BatchValidationException
         {
-            assert getKeyManagementType() != KeyManagementType.RowId || Thread.holdsLock(getManagedKeyLock());
+//            assert getKeyManagementType() != KeyManagementType.RowId || Thread.holdsLock(getManagedKeyLock());
 //            assert DbSchema.get("study").getScope().isTransactionActive();
 
             boolean hasNext = super.next();
