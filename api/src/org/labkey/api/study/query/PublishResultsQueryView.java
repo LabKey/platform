@@ -832,13 +832,14 @@ public class PublishResultsQueryView extends ResultsQueryView
             Container targetStudyContainer = null;
             if (targetStudyObject != null)
             {
-                targetStudyContainer = ConvertHelper.convert(targetStudyContainer, Container.class);
+                targetStudyContainer = ContainerManager.getForId(targetStudyObject.toString());
             }
             if (targetStudyContainer == null)
             {
                 targetStudyContainer = _targetStudyContainer;
             }
-            Study study = StudyService.get().getStudy(targetStudyContainer);
+            // We may not have either a row-level or a default target study 
+            Study study = targetStudyContainer == null ? null : StudyService.get().getStudy(targetStudyContainer);
             Double visitDouble = visitObject == null ? null : (Double) ConvertUtils.convert(visitObject.toString(), Double.class);
             Date dateDate = dateObject == null ? null : (Date) ConvertUtils.convert(dateObject.toString(), Date.class);
             String participantID = participantObject == null ? null : participantObject.toString();
