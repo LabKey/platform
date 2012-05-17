@@ -18,9 +18,12 @@ package org.labkey.api.query;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.util.PageFlowUtil;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Collections;
 import java.util.ArrayList;
@@ -253,13 +256,6 @@ public class FieldKey implements Comparable
         return ColumnInfo.labelFromName(getName());
     }
 
-    public int compareTo(Object o)
-    {
-        if (null == o)
-            return 1;
-        return String.CASE_INSENSITIVE_ORDER.compare(toString(), String.valueOf(o));
-    }
-
     /**
      * Returns a string appropriate for display to the user.
      */
@@ -272,5 +268,64 @@ public class FieldKey implements Comparable
     {
         return false;
         // return getName().equals("*");
+    }
+
+
+    public int compareTo(Object o)
+    {
+        return CASE_INSENSITIVE_ORDER.compare(this,(FieldKey)o);
+    }
+
+
+    public static final Comparator<FieldKey> CASE_INSENSITIVE_ORDER = new Comparator<FieldKey>()
+    {
+        @Override
+        public int compare(FieldKey a, FieldKey b)
+        {
+            if (a==b) return 0;
+            if (null==a) return -1;
+            if (null==b) return 1;
+            int c = compare(a.getParent(), b.getParent());
+            return c!=0 ? c : String.CASE_INSENSITIVE_ORDER.compare(a.getName(),b.getName());
+        }
+    };
+
+    public static final Comparator<FieldKey> CASE_SENSITIVE_ORDER = new Comparator<FieldKey>()
+    {
+        @Override
+        public int compare(FieldKey a, FieldKey b)
+        {
+            if (a==b) return 0;
+            if (null==a) return -1;
+            if (null==b) return 1;
+            int c = compare(a.getParent(), b.getParent());
+            return c!=0 ? c : a.getName().compareTo(b.getName());
+        }
+    };
+
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void test()
+        {
+            assertTrue(new FieldKey(null,"a").compareTo(new FieldKey(null,"a")) == 0);
+            assertTrue(new FieldKey(null,"a").compareTo(new FieldKey(null,"A")) == 0);
+            assertTrue(new FieldKey(null,"a").compareTo(new FieldKey(null,"b")) < 0);
+            assertTrue(new FieldKey(null,"a").compareTo(new FieldKey(null,"B")) < 0);
+            assertTrue(new FieldKey(null,"A").compareTo(new FieldKey(null,"a")) == 0);
+            assertTrue(new FieldKey(null,"A").compareTo(new FieldKey(null,"A")) == 0);
+            assertTrue(new FieldKey(null,"A").compareTo(new FieldKey(null,"b")) < 0);
+            assertTrue(new FieldKey(null,"A").compareTo(new FieldKey(null,"B")) < 0);
+
+            assertTrue(fromParts("a","b").compareTo(fromParts("a","b")) == 0);
+            assertTrue(fromParts("a","b").compareTo(fromParts("b","a")) < 0);
+            assertTrue(fromParts("b","a").compareTo(fromParts("a","b")) > 0);
+            assertTrue(fromParts("a","b").compareTo(fromParts("a","c")) < 0);
+
+            // shorter sorts first, don't really care but that's easier given the datastructure
+            assertTrue(FieldKey.fromParts("z").compareTo(fromParts("a","b")) < 0);
+            assertTrue(FieldKey.fromParts("a","b").compareTo(fromParts("z")) > 0);
+        }
     }
 }
