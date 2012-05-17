@@ -381,6 +381,8 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
             }
 
             //add creator of parent to responder set
+            responderSet.add(UserManager.getUser(a.getCreatedBy()));
+            //add creator of this message/response
             responderSet.add(UserManager.getUser(getCreatedBy()));
 
             _authors = responderSet;

@@ -33,6 +33,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.StudyService;
+import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.QCState;
 import org.labkey.study.model.StudyImpl;
@@ -101,6 +102,8 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         {
             for (Map<String, Object> row : result)
             {
+                StudyServiceImpl.addDatasetAuditEvent(user, container, _dataset, null, row);
+
                 try
                 {
                     String participantID = getParticipant(row, user, container);

@@ -291,7 +291,7 @@ public class StudyServiceImpl implements StudyService.Service
         return canonicalDatas;
     }
 
-    public String insertDatasetRow(User u, Container c, int datasetId, Map<String, Object> data, List<String> errors) throws SQLException
+/*    public String insertDatasetRow(User u, Container c, int datasetId, Map<String, Object> data, List<String> errors) throws SQLException
     {
         StudyImpl study = StudyManager.getInstance().getStudy(c);
         DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
@@ -339,6 +339,8 @@ public class StudyServiceImpl implements StudyService.Service
             closeConnection();
         }
     }
+    */
+
 
     public void deleteDatasetRow(User u, Container c, int datasetId, String lsid) throws SQLException
     {
@@ -415,7 +417,7 @@ public class StudyServiceImpl implements StudyService.Service
      * if oldRecord is null, it's an insert, if newRecord is null, it's delete,
      * if both are set, it's an edit
      */
-    private void addDatasetAuditEvent(User u, Container c, DataSet def, Map<String,Object>oldRecord, Map<String,Object> newRecord)
+    public static void addDatasetAuditEvent(User u, Container c, DataSet def, @Nullable Map<String,Object>oldRecord, @Nullable Map<String,Object> newRecord)
     {
         String comment;
         if (oldRecord == null)
@@ -431,7 +433,7 @@ public class StudyServiceImpl implements StudyService.Service
      * if oldRecord is null, it's an insert, if newRecord is null, it's delete,
      * if both are set, it's an edit
      */
-    private void addDatasetAuditEvent(User u, Container c, DataSet def, Map<String,Object> oldRecord, Map<String,Object> newRecord, String auditComment)
+    public static void addDatasetAuditEvent(User u, Container c, DataSet def, Map<String,Object> oldRecord, Map<String,Object> newRecord, String auditComment)
     {
         AuditLogEvent event = new AuditLogEvent();
         event.setCreatedBy(u);
@@ -505,7 +507,7 @@ public class StudyServiceImpl implements StudyService.Service
                 */
     }
 
-    private String encodeAuditMap(Map<String,Object> data)
+    static String encodeAuditMap(Map<String,Object> data)
     {
         if (data == null) return null;
         
