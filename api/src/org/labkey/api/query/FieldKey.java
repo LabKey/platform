@@ -255,7 +255,9 @@ public class FieldKey implements Comparable
 
     public int compareTo(Object o)
     {
-        return toString().compareTo(String.valueOf(o));
+        if (null == o)
+            return 1;
+        return String.CASE_INSENSITIVE_ORDER.compare(toString(), String.valueOf(o));
     }
 
     /**
