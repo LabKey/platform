@@ -741,10 +741,10 @@ public class QueryController extends SpringActionController
         public ApiResponse execute(SourceForm form, BindException errors) throws Exception
         {
             if (form.getQueryDef() == null)
-                throw new IllegalArgumentException("Query definition not found, schemaName and queryName are required.");
+                throw new NotFoundException("Query definition not found, schemaName and queryName are required.");
 
             if (!form.canEdit())
-                throw new RuntimeException("Edit permissions are required.");
+                throw new UnauthorizedException("Edit permissions are required.");
 
             ApiSimpleResponse response = new ApiSimpleResponse();
 
@@ -1730,12 +1730,12 @@ public class QueryController extends SpringActionController
         {
             JSONObject json = form.getJsonObject();
             if (json == null)
-                throw new IllegalArgumentException("Empty request");
+                throw new NotFoundException("Empty request");
 
             String schemaName = json.getString(QueryParam.schemaName.toString());
             String queryName = json.getString(QueryParam.queryName.toString());
             if (schemaName == null || queryName == null)
-                throw new IllegalArgumentException("schemaName and queryName are required");
+                throw new NotFoundException("schemaName and queryName are required");
 
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), schemaName);
             if (schema == null)
