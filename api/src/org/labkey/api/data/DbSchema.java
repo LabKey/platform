@@ -218,7 +218,8 @@ public class DbSchema
             ti.loadTablePropertiesFromXml(xmlTable);
         }
 
-        ti.setLocked(true);
+        if (null != ti)
+            ti.setLocked(true);
         return ti;
     }
 
