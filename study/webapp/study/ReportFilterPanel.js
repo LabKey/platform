@@ -5,10 +5,22 @@
  */
 LABKEY.requiresExt4Sandbox(true);
 LABKEY.requiresCss("study/DataViewsPanel.css");
+Ext4.ns('LABKEY.ext4.filter')
 
-Ext4.define('LABKEY.ext4.FilterPanel', {
+/**
+ * Base class that will render one section of a FilterPanel, displaying a list of checkboxes.
+ * In general, it will display the UI to filter a single table.
+ * @name LABKEY.ext4.FilterSelectList
+ * @cfg description If provided, this HTML will be displayed as a header above the list
+ * @cfg store An ext store containing the records to display
+ * @cfg fn A filter function that will be applied to the Ext store
+ * @cfg labelField The name of the store field used to render the label for each item.  Defaults to 'label'
+ * @cfg allowAll If true, a checkbox will be added to toggle selection across all items
+ */
+Ext4.define('LABKEY.ext4.filter.SelectList', {
 
     extend : 'Ext.panel.Panel',
+    alias: 'widget.labkey-filterselectlist',
 
     layout : 'fit',
     border : false,
@@ -16,6 +28,11 @@ Ext4.define('LABKEY.ext4.FilterPanel', {
     bubbleEvents : ['select', 'selectionchange', 'itemmouseenter', 'itemmouseleave'],
 
     initComponent : function() {
+        Ext4.applyIf(this, {
+            labelField: 'label',
+            idField: 'id',
+            bodyStyle: 'padding-bottom: 10px;'
+        });
 
         this.items = [];
 
@@ -24,31 +41,73 @@ Ext4.define('LABKEY.ext4.FilterPanel', {
                 xtype : 'box',
                 autoEl: {
                     tag : 'div',
+                    //style: 'padding-left: 5px;',
                     html: this.description
                 }
             });
         }
+
+        if (this.allowAll) {
+            var cfg = this.getGridCfg();
+            Ext4.apply(cfg, {
+                itemId: 'selectAllToggle',
+                bubbleEvents: [],
+                store  : Ext4.create('Ext.data.Store',{
+                    fields : ['id', 'label'],
+                    data   : [{id: -1, label : 'All'}]
+                }),
+                listeners: {
+                    selectionchange: function(model, selected) {
+                        !selected.length ? this.deselectAll() : this.selectAll();
+                    },
+                    scope: this
+                },
+                select: this.select,
+                deselect: this.deselect,
+                getGrid: function(){return this;}
+            });
+            this.items.push(cfg);
+
+            this.on('selectionchange', function(){
+                this.allSelected();
+                return true;
+            }, this, {stopPropogation: false});
+        }
+
         if (this.store) {
-            this.items.push(this.initGrid());
+            //TODO: investigate how this is used
+            if (this.fn)
+                this.store.filterBy(this.fn);
+
+            this.mon(this.store, 'load', this.allSelected, this, {single: true});
+
+            this.items.push(this.getGridCfg());
         }
 
         this.callParent([arguments]);
+
+        if(this.store){
+            //perhaps should be {single: true}?
+            this.mon(this.store, 'load', this.onStoreLoad, this);
+        }
+
+        //account for situation where store is already loaded
+        if(!this.rendered){
+            this.getGrid().on('afterrender', this.initSelection, this, {single: true, delay: 50});
+        }
+        else {
+            this.initSelection();
+        }
     },
 
-    initGrid : function() {
-        if (this.target)
-            return this.target;
-
-        if (this.fn)
-            this.store.filterBy(this.fn);
-
+    getGridCfg : function() {
         function initToolTip(view) {
-
+            var labelField = this.labelField;
             var _active;
 
             function renderTip(tip) {
                 if (_active)
-                    tip.update(_active.data.label);
+                    tip.update(_active.data[labelField]);
             }
 
 
@@ -80,49 +139,17 @@ Ext4.define('LABKEY.ext4.FilterPanel', {
             });
         }
 
-        this.store.on('load', function() {
-
-            function selectionHandler() {
-                this.target.suspendEvents(); // queueing of events id depended on
-
-                if (!this.selection) {
-                    this.target.getSelectionModel().selectAll();
-                }
-                else {
-                    this.target.getSelectionModel().deselectAll();
-                    for (var s=0; s < this.selection.length; s++) {
-                        var rec = this.target.getStore().findRecord('id', this.selection[s].id);
-                        if (rec)
-                        {
-                            // Compare ID && Label if dealing with virtual groups (e.g. not in cohorts, etc)
-                            if (this.selection[s].id < 0 && (rec.data.label != this.selection[s].label))
-                                continue;
-                            this.target.getSelectionModel().select(rec, true);
-                        }
-                    }
-                }
-
-                this.target.resumeEvents();
-            }
-
-            // allows for proper selection even if render is delayed
-            if (this.target) {
-                if (this.target.rendered)
-                    selectionHandler.call(this);
-                else {
-                    this.target.on('afterrender', selectionHandler, this, {single: true});
-                }
-            }
-        }, this);
-
-        this.target = Ext4.create('Ext.grid.Panel', {
+        return {
+            xtype       : 'grid',
+            itemId      : 'selectGrid',
+            gridId      : this.itemId,
             store       : this.store,
             border      : false, frame : false,
             bodyStyle   : 'border: none;',
             layout      : 'fit',
             hideHeaders : true,
             multiSelect : true,
-            columns     : this.initTargetColumns(),
+            columns     : this.getColumnCfg(),
             viewConfig : {
                 stripeRows : false,
                 listeners  : {
@@ -133,36 +160,80 @@ Ext4.define('LABKEY.ext4.FilterPanel', {
             selType     : 'checkboxmodel',
             bubbleEvents: ['select', 'selectionchange', 'itemmouseenter', 'itemmouseleave'],
             scope       : this
-        });
-
-        return this.target;
+        };
     },
 
-    initTargetColumns : function() {
-        if (this.columns)
-            return this.columns;
+    onStoreLoad: function(){
+        // allows for proper selection even if render is delayed
+        var target = this.getGrid();
+        if (target) {
+            if (target.rendered)
+                this.initSelection();
+            else {
+                target.on('afterrender', this.initSelection, this, {single: true});
+            }
+        }
+    },
 
-        this.columns = [];
+    initSelection: function() {
+        var target = this.getGrid();
 
-        this.columns.push({
+        if(!target.store.getCount() || !target.getView().viewReady){
+            this.initSelection.defer(10, this);
+            return;
+        }
+
+        target.suspendEvents(); // queueing of events id depended on
+        if (!this.selection || !this.selection.length) {
+            target.getSelectionModel().selectAll();
+            if(this.allowAll){
+                this.getSelectAllToogle().select(-1, true);
+            }
+        }
+        else {
+            target.getSelectionModel().deselectAll();
+            for (var s=0; s < this.selection.length; s++) {
+                var rec = target.getStore().findRecord('id', this.selection[s].id);
+                if (rec)
+                {
+                    // Compare ID && Label if dealing with virtual groups (e.g. not in cohorts, etc)
+                    if (this.selection[s].id < 0 && (rec.data.label != this.selection[s].label))
+                        continue;
+                    target.getSelectionModel().select(rec, true);
+                }
+            }
+        }
+
+        target.resumeEvents();
+    },
+
+    getGrid: function(){
+        return this.down('#selectGrid');
+    },
+
+    getColumnCfg : function() {
+        return [{
             xtype     : 'templatecolumn',
             flex      : 1,
             dataIndex : 'label',
             tdCls     : 'x4-label-column-cell',
-            tpl       : '<div>{label:htmlEncode}</div>',
+            tpl       : '<div>{'+this.labelField+':htmlEncode}</div>',
             scope     : this
         },{
             dataIndex : 'type',
             hidden    : true,
             scope     : this
-        });
-
-        return this.columns;
+        }];
     },
 
-    getSelection : function() {
-        if (this.target)
-            return this.target.getSelectionModel().getSelection();
+    getSelection : function(skipIfAllSelected) {
+        //if all are checked, this is treated the same as none checked
+        if(skipIfAllSelected && this.allSelected())
+            return;
+
+        var target = this.getGrid();
+        if (target)
+            return target.getSelectionModel().getSelection();
         // return undefined -- same as getSelection()
     },
 
@@ -170,9 +241,10 @@ Ext4.define('LABKEY.ext4.FilterPanel', {
         if (stopEvents)
             this.suspendEvents();
 
-        var rec = this.target.getStore().findRecord('id', id);
+        var target = this.getGrid();
+        var rec = target.getStore().findRecord('id', id);
         if (rec)
-            this.target.getSelectionModel().select(rec);
+            target.getSelectionModel().select(rec);
 
         if (stopEvents)
             this.resumeEvents();
@@ -183,9 +255,10 @@ Ext4.define('LABKEY.ext4.FilterPanel', {
         if (stopEvents)
             this.suspendEvents();
 
-        var rec = this.target.getStore().findRecord('id', id);
+        var target = this.getGrid();
+        var rec = target.getStore().findRecord('id', id);
         if (rec)
-            this.target.getSelectionModel().deselect(rec);
+            target.getSelectionModel().deselect(rec);
 
         if (stopEvents)
             this.resumeEvents();
@@ -193,12 +266,62 @@ Ext4.define('LABKEY.ext4.FilterPanel', {
 
     getDescription : function() {
         return this.description;
+    },
+
+    /**
+     * Not currently used, since existing UI relies on the Ext records, rather than doing traditional server-side filtering.
+     */
+    getFilterArray: function(){
+        return [];
+    },
+
+    /**
+     * Used to update the state of the 'toogle all' checkbox whenever selection changes
+     */
+    allSelected : function() {
+        var target = this.getGrid();
+        if (target.getSelectionModel().getCount() != target.getStore().getCount()) {
+            if (this.allowAll) {
+                this.getSelectAllToogle().deselect(-1, true);
+            }
+
+            return false;
+        }
+
+        if (this.allowAll) {
+            this.getSelectAllToogle().select(-1, true);
+        }
+        return true;
+    },
+
+    getSelectAllToogle: function(){
+        return this.down('#selectAllToggle');
+    },
+
+    deselectAll : function() {
+        if(!this.getGrid().getView().viewReady)
+            this.deselectAll.defer(100, this);
+        else
+            this.getGrid().getSelectionModel().deselectAll();
+    },
+
+    selectAll : function() {
+        if(!this.getGrid().getView().viewReady)
+            this.selectAll.defer(100, this);
+        else
+            this.getGrid().getSelectionModel().selectAll();
     }
 });
 
-Ext4.define('LABKEY.ext4.ReportFilterPanel', {
+/**
+ * The basic unit of a filter panel.  Can contain one or more FilterSelectLists.
+ * @name LABKEY.ext4.filter.SelectListPanel
+ * @cfg sections Array of config objects for LABKEY.ext4.filter.SelectList
+ */
+Ext4.define('LABKEY.ext4.filter.SelectPanel', {
 
     extend : 'Ext.panel.Panel',
+    alias: 'widget.labkey-filterselectpanel',
 
     bubbleEvents : ['select', 'selectionchange', 'itemmouseenter', 'itemmouseleave'],
 
@@ -214,51 +337,26 @@ Ext4.define('LABKEY.ext4.ReportFilterPanel', {
 
     initComponent : function() {
         this.items = [this.initSelectionPanel()];
-
-        if (this.allowAll) {
-            this.on('selectionchange', function(){
-                this.allSelected();
-                return true;
-            }, this, {stopPropogation: false});
-        }
-
         this.callParent([arguments]);
     },
 
     initSelectionPanel : function() {
+        var filterPanels = [];
 
-        if (this.selectionPanel)
-            return this.selectionPanel;
-
-        this.filterPanels = [];
-        if (this.allowAll) {
-            this.filterPanels.push(Ext4.create('LABKEY.ext4.FilterPanel', {
-                border : false, frame : false,
-                store  : Ext4.create('Ext.data.Store',{
-                    fields : ['id', 'label'],
-                    data   : [{id: -1, label : 'All'}]
-                })
+        for (var f=0; f < this.sections.length; f++) {
+            filterPanels.push(Ext4.apply(this.sections[f],{
+                xtype : 'labkey-filterselectlist',
+                allowAll : true,
+                border : false,
+                frame : false
             }));
-
-            // this will only fire on selectionchange fired when clicking the All
-            this.filterPanels[0].on('selectionchange', function(model, selected) {
-                !selected.length ? this.deselectAll() : this.selectAll();
-            }, this);
-        }
-        for (var f=0; f < this.filters.length; f++) {
-            this.filterPanels.push(Ext4.create('LABKEY.ext4.FilterPanel',Ext4.apply(this.filters[f],{
-                border : false, frame : false
-            })));
-            this.filterPanels[f].store.on('load', this.allSelected, this, {single: true});
         }
 
-        this.selectionPanel = Ext4.create('Ext.panel.Panel', {
+        return {
             layout : 'fit',
             border : false, frame : false,
-            items  : this.filterPanels
-        });
-
-        return this.selectionPanel;
+            items  : filterPanels
+        };
     },
 
     /**
@@ -266,13 +364,12 @@ Ext4.define('LABKEY.ext4.ReportFilterPanel', {
      * return value.
      * @param collapsed When true the function will return a single array of all selected records. Defaults to false.
      */
-    getSelection : function(collapsed) {
+    getSelection : function(collapsed, skipIfAllSelected) {
         var selections = [], select;
-        var i= this.allowAll ? 1 : 0;
-        if (this.filterPanels) {
-            for (i; i < this.filterPanels.length; i++) {
-                select = this.filterPanels[i].getSelection();
-
+        var filterPanels = this.getFilterPanels();
+        if (filterPanels) {
+            for (var i=0; i < filterPanels.length; i++) {
+                select = filterPanels[i].getSelection(skipIfAllSelected);
                 if (!collapsed) {
                     if (select && select.length > 0)
                         selections.push(select);
@@ -292,38 +389,60 @@ Ext4.define('LABKEY.ext4.ReportFilterPanel', {
         return selections;
     },
 
-    allSelected : function() {
-        var i= this.allowAll ? 1 : 0;
-        if (this.filterPanels) {
-            for (i; i < this.filterPanels.length; i++) {
-                if (this.filterPanels[i].target.getSelectionModel().getCount() != this.filterPanels[i].target.getStore().getCount()) {
-
-                    if (this.allowAll) {
-                        this.filterPanels[0].deselect(-1, true);
-                    }
-
-                    return false;
-                }
-            }
+    /**
+     * @return An array of all filter sections in this panel.  Often this will only be a single panel.
+     */
+    getFilterPanels: function(){
+        var panels = this.query('labkey-filterselectlist');
+        var filterPanels = [];
+        for (var i=0;i<panels.length;i++){
+            if(panels[i].itemId != 'selectAllToggle')
+                filterPanels.push(panels[i]);
         }
+        return filterPanels;
+    },
 
-        if (this.allowAll) {
-            this.filterPanels[0].select(-1, true);
+    /**
+     * Not currently used, since existing UI relies on the Ext records, rather than doing traditional server-side filtering.
+     */
+    getFilterArray : function() {
+        var filterArray = [];
+        var filterPanels = this.getFilterPanels();
+        for (var i=0; i < filterPanels.length; i++) {
+            var filters = filterPanels[i].getFilterArray();
+            if(filters.length)
+                filterArray = filterArray.concat(filters);
         }
-
-        return true;
     },
 
     deselectAll : function() {
-        for (var i=0; i < this.filterPanels.length; i++) {
-            this.filterPanels[i].target.getSelectionModel().deselectAll();
+        var filterPanels = this.getFilterPanels();
+        for (var i=0; i < filterPanels.length; i++) {
+            filterPanels[i].deselectAll();
         }
     },
 
     selectAll : function() {
-        for (var i=0; i < this.filterPanels.length; i++) {
-            this.filterPanels[i].target.getSelectionModel().selectAll();
+        var filterPanels = this.getFilterPanels();
+        for (var i=0; i < filterPanels.length; i++) {
+            filterPanels[i].selectAll();
         }
+    },
+
+    initSelection : function() {
+        var filterPanels = this.getFilterPanels();
+        for (var i=0; i < filterPanels.length; i++) {
+            filterPanels[i].initSelection();
+        }
+    },
+
+    allSelected : function() {
+        var filterPanels = this.getFilterPanels();
+        for (var i=0; i < filterPanels.length; i++) {
+            if(!filterPanels[i].allSelected())
+                return false;
+        }
+        return true;
     }
 });
 
@@ -350,10 +469,10 @@ Ext4.define('LABKEY.ext4.ReportFilterWindow', {
 
     initComponent : function() {
 
-        if (!this.items && this.filters) {
-            this.filterPanel = Ext4.create('LABKEY.ext4.ReportFilterPanel', {
+        if (!this.items && this.sections) {
+            this.filterPanel = Ext4.create('LABKEY.ext4.filter.SelectPanel', {
                 layout  : 'fit',
-                filters : this.filters,
+                filters : this.sections,
                 border  : false, frame : false
             });
 

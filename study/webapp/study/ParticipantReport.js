@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-LABKEY.requiresExt4Sandbox(true);
+LABKEY.requiresExt4ClientAPI(true);
 LABKEY.requiresScript("study/ParticipantFilterPanel.js");
 
 Ext4.tip.QuickTipManager.init();
@@ -98,7 +98,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             printMode : LABKEY.ActionURL.getParameter('_print') != undefined,
             fitted    : false,
             allowCustomize : false,
-            subjectNoun    : {singular : 'Participant', plural : 'Participants'}
+            subjectNoun    : {singular : 'Participant', plural : 'Participants', columnName: 'Participant'}
         });
 
         this.callParent([config]);
@@ -627,11 +627,11 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             }
             this.gridFieldStore.loadRawData({measures : rawData});
 
-            if (!this.reportGroups && config.groups)
-                this.reportGroups = config.groups;
+            if (!this.filterSet && config.groups)
+                this.filterSet = config.groups;
 
-            if (this.initialRender && this.reportGroups)
-                this.runFilterSet(this.reportGroups);
+            if (this.initialRender && this.filterSet)
+                this.runFilterSet(this.filterSet);
             else
                 this.generateTemplateConfig();
             this.initialRender = false;
@@ -754,7 +754,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
             if (!this.printMode) {
                 this.on('resize', this.showFilter, this);
-                this.showFilter(this.reportGroups ? this.reportGroups : []);
+                this.showFilter(this.filterSet ? this.filterSet : []);
             }
         }
     },
@@ -835,7 +835,11 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         var me = this, panel;
 
         if (!this.filterPanel) {
+            var filterType = selection.length && selection[0].type == 'participant' ? 'participant' : 'group'
             var pConfig = {
+                filterType: filterType,
+                subjectNoun: this.subjectNoun,
+                displayMode: 'BOTH',
                 listeners : {
                     selectionchange : function(){
                         this.filterTask.delay(1500);
@@ -850,7 +854,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 pConfig.selection = selection;
 
             panel = Ext4.create('LABKEY.study.ParticipantFilterPanel', pConfig);
-            this.filterPanel = panel.getFilterPanel();
+            this.filterPanel = panel;
 
         }
 
@@ -905,12 +909,17 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
     runFilterSet : function(filterSet) {
         var json = [];
+        var participants = [];
         if (filterSet) {
-            for (var i=0; i < filterSet.length; i++)
-                json.push(filterSet[i]);
+            for (var i=0; i < filterSet.length; i++){
+                if(filterSet[i].type != 'participant')
+                    json.push(filterSet[i]);
+                else
+                    participants.push(filterSet[i].id)
+            }
         }
 
-        this.resolveSubjects(json, function(subjects){
+        this.resolveSubjects(json, participants, function(subjects){
             this.filteredSubjects = subjects;
 
             // in this case the query resulted in no matching subjects
@@ -922,7 +931,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
     },
 
     runFilters : function() {
-        var all = this.filterPanel.allSelected();
+        var all = this.filterPanel.getFilterPanel().allSelected();
         if (all) {
             if (this.filteredSubjects)
                 this.filteredSubjects = undefined;
@@ -930,16 +939,20 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         }
         else {
             var json = [];
-            var filters = this.filterPanel.getSelection(true);
+            var participants = [];
+            var filters = this.filterPanel.getSelection(true, true);
 
             if (filters.length == 0)
                 return this.empty();
 
             for (var f=0; f < filters.length; f++) {
-                json.push(filters[f].data);
+                if(filters[f].get('type') != 'participant')
+                    json.push(filters[f].data);
+                else
+                    participants.push(filters[f].get('id'))
             }
 
-            this.resolveSubjects(json, function(subjects){
+            this.resolveSubjects(json, participants, function(subjects){
                 this.filteredSubjects = subjects;
 
                 // in this case the query resulted in no matching subjects
@@ -951,23 +964,29 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         }
     },
 
-    resolveSubjects : function(groups, callback, scope) {
-        Ext4.Ajax.request({
-            url      : LABKEY.ActionURL.buildURL('participant-group', 'getSubjectsFromGroups.api'),
-            method   : 'POST',
-            jsonData : Ext4.encode({
-                groups : groups
-            }),
-            success  : function(response){
+    resolveSubjects : function(groups, participants, callback, scope) {
+        if(participants && participants.length && !groups)
+            callback.call(scope || this, participants);
+        else {
+            Ext4.Ajax.request({
+                url      : LABKEY.ActionURL.buildURL('participant-group', 'getSubjectsFromGroups.api'),
+                method   : 'POST',
+                jsonData : Ext4.encode({
+                    groups : groups
+                }),
+                success  : function(response){
 
-                var json = Ext4.decode(response.responseText);
-                var subjects = json.subjects ? json.subjects : [];
-                callback.call(scope || this, subjects);
+                    var json = Ext4.decode(response.responseText);
+                    var subjects = json.subjects ? json.subjects : [];
+                    if(participants && participants.length)
+                        subjects = subjects.concat(participants);
+                    callback.call(scope || this, subjects);
 
-            },
-            failure  : this.onFailure,
-            scope    : this
-        });
+                },
+                failure  : this.onFailure,
+                scope    : this
+            });
+        }
     },
 
     onFailure : function(resp) {
@@ -1053,7 +1072,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         // persist filters
         if (this.filterPanel) {
             var groups = [];
-            var filters = this.filterPanel.getSelection(true);
+            var filters = this.filterPanel.getSelection(true, true);
             for (var f=0; f < filters.length; f++) {
                 groups.push(filters[f].data);
             }

@@ -70,7 +70,7 @@
             height          : 600,
             subjectColumn   : <%=q(org.labkey.api.study.StudyService.get().getSubjectColumnName(me.getViewContext().getContainer()))%>,
             subjectVisitColumn: <%=q(org.labkey.api.study.StudyService.get().getSubjectVisitColumnName(me.getViewContext().getContainer()))%>,
-            subjectNoun     : {singular : <%=PageFlowUtil.jsString(s.getSubjectNounSingular())%>, plural : <%=PageFlowUtil.jsString(s.getSubjectNounPlural())%>},
+            subjectNoun     : {singular : <%=PageFlowUtil.jsString(s.getSubjectNounSingular())%>, plural : <%=PageFlowUtil.jsString(s.getSubjectNounPlural())%>, columnName: <%=PageFlowUtil.jsString(s.getSubjectColumnName())%>},
             visitBased      : <%=s.getTimepointType().isVisitBased()%>,
             renderTo        : '<%= renderId %>',
             id              : '<%= bean.getComponentId() %>',
