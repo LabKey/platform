@@ -42,7 +42,9 @@ public class SpecimenForeignKey extends LookupForeignKey
     private static final String VIAL_SUBQUERY_SUFFIX = "$VialJoin";
     private static final String STUDY_SUBQUERY_SUFFIX = "$StudyJoin";
     private static final String DRAW_DT_COLUMN_NAME = "DrawDT";
+
     private Container _targetStudyOverride;
+    private SimpleFilter _specimenFilter;
 
     public SpecimenForeignKey(AssaySchema schema, AssayProvider provider, ExpProtocol protocol)
     {
@@ -166,6 +168,13 @@ public class SpecimenForeignKey extends LookupForeignKey
     public void setTargetStudyOverride(Container targetStudy)
     {
         _targetStudyOverride = targetStudy;
+    }
+
+    public void addSpecimenFilter(SimpleFilter filter)
+    {
+        if (_specimenFilter == null)
+            _specimenFilter = new SimpleFilter();
+        _specimenFilter.addAllClauses(filter);
     }
 
 
@@ -294,7 +303,12 @@ public class SpecimenForeignKey extends LookupForeignKey
                 }
                 // Select all the study-side specimen columns that we'll need to do the comparison
                 sql.append("\n\tLEFT OUTER JOIN (SELECT RowId, Container, PTID AS ParticipantId, drawtimestamp AS Date, VisitValue AS Visit ");
-                sql.append(" FROM study.Specimen) AS " + specimenSubqueryAlias + " ON " + specimenSubqueryAlias + ".RowId = " + vialSubqueryAlias + ".SpecimenID");
+                sql.append(" FROM study.Specimen ");
+                if (_specimenFilter != null)
+                {
+                    sql.append(_specimenFilter.getSQLFragment(getParentTable().getSqlDialect()));
+                }
+                sql.append("\n\t) AS " + specimenSubqueryAlias + " ON " + specimenSubqueryAlias + ".RowId = " + vialSubqueryAlias + ".SpecimenID");
                 sql.append("\n\tLEFT OUTER JOIN study.study AS " + studySubqueryAlias);
                 sql.append(" ON " + studySubqueryAlias + ".Container = " + specimenSubqueryAlias + ".Container");
 

@@ -113,7 +113,9 @@ public class StudyService
         public String updateDatasetRow(User u, Container c, int datasetId, String lsid, Map<String,Object> data, List<String> errors)
                 throws SQLException;
 
-        /**
+        /*
+         * USE DatasetUpdateService
+         *
          * Insert a single dataset row
          * @return the lsid for the new dataset row
          * @param u the user performing the insert
@@ -121,9 +123,9 @@ public class StudyService
          * @param datasetId the dataset definition id
          * @param data the data to be updated
          * @param errors any errors during update will be added to this list
-         */
         public String insertDatasetRow(User u, Container c, int datasetId, Map<String,Object> data, List<String> errors)
                 throws SQLException;
+         */
 
 
         /**
