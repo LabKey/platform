@@ -6858,6 +6858,7 @@ internal/webapp/ext-exploded.js -text
 internal/webapp/extWidgets/AssayUploadPanel.js -text
 internal/webapp/extWidgets/DetailsPanel.js -text
 internal/webapp/extWidgets/ExcelUploadPanel.js -text
+internal/webapp/extWidgets/Ext4DefaultFilterPanel.js -text
 internal/webapp/extWidgets/Ext4DetailsPanel.css -text
 internal/webapp/extWidgets/Ext4FormPanel.js -text
 internal/webapp/extWidgets/Ext4GridPanel.js -text
