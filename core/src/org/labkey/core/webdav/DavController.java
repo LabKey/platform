@@ -21,6 +21,7 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.log4j.Logger;
+import org.apache.log4j.Priority;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.json.JSONWriter;
@@ -513,7 +514,11 @@ public class DavController extends SpringActionController
 
         public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception
         {
-            _log.debug(">>>> " + request.getMethod() + " " + getResourcePath());
+            if (_log.isEnabledFor(Priority.DEBUG))
+            {
+                long modified = getRequest().getDateHeader("If-Modified-Since");
+                _log.debug(">>>> " + request.getMethod() + " " + getResourcePath() + (modified==-1? "" : "   (If-Modified-Since:" + DateUtil.toISO(modified) + ")"));
+            }
 
             try
             {
@@ -574,7 +579,7 @@ public class DavController extends SpringActionController
                     _log.debug(getResponse().sbLogResponse);
                 WebdavStatus status = getResponse().getStatus();
                 String message = getResponse().getMessage();
-                _log.debug("<<<< " + (status != null ? status.code : 0) + (message == null ? "" : (": " + message)));
+                _log.debug("<<<< " + (status != null ? status.code : 0) + ": " + StringUtils.defaultString(message, status.message));
             }
 
             return null;
@@ -2896,6 +2901,28 @@ public class DavController extends SpringActionController
     }
 
 
+    WebdavResource getGzipResource(WebdavResource r) throws DavException, IOException
+    {
+        // kinda hacky, but good enough for now
+        assert isStaticContent(r.getPath());
+        if (!supportStaticGzFiles || !isStaticContent(r.getPath()))
+            return null;
+        Boolean hasZip = hasZipMap.get(r.getPath());
+        if (Boolean.FALSE == hasZip)
+            return null;
+
+        WebdavResource gz = (WebdavResource)r.parent().find(r.getName() + ".gz");
+        if (null != gz && gz.exists())
+        {
+            if (null == hasZip)
+                hasZipMap.put(r.getPath(), Boolean.TRUE);
+            return gz;
+        }
+
+        hasZipMap.put(r.getPath(), Boolean.FALSE);
+        return null;
+    }
+
 
     Path extPath = new Path(PageFlowUtil.extJsRoot());
     Path mcePath = new Path("timymce");
@@ -2958,34 +2985,13 @@ public class DavController extends SpringActionController
         long contentLength = resource.getContentLength();
 
         // Special case for zero length files, which would cause a
-        // (silent) ISE when setting the output buffer size
+        // (silent) IllegalStateException when setting the output buffer size
         if (contentLength == 0L)
             content = false;
 
         boolean fullContent = (((ranges == null) || (ranges.isEmpty())) && (getRequest().getHeader("Range") == null)) || (ranges == FULL);
         OutputStream ostream = null;
         Writer writer = null;
-
-        if (content)
-        {
-            // Trying to retrieve the servlet output stream
-            try
-            {
-                ostream = getResponse().getOutputStream();
-            }
-            catch (IllegalStateException e)
-            {
-                // If it fails, we try to get a Writer instead if we're trying to serve a text file
-                if (fullContent && ((contentType == null) || (contentType.startsWith("text")) || (contentType.endsWith("xml"))))
-                {
-                    writer = getResponse().getWriter();
-                }
-                else
-                {
-                    throw e;
-                }
-            }
-        }
 
         if (fullContent)
         {
@@ -2995,28 +3001,63 @@ public class DavController extends SpringActionController
                 getResponse().setContentType(contentType);
             }
 
-            InputStream is = null;
+            WebdavResource gz = null;
 
             // if static content look for gzip version
             if (isStatic && !AppProps.getInstance().isDevMode())
             {
                 String accept = getRequest().getHeader("accept-encoding");
-                if (null != accept && -1 != accept.indexOf("gzip"))
+                if (null != accept && accept.contains("gzip"))
                 {
-                    is = getGzipStream(resource);
-                    if (null != is)
+                    gz = getGzipResource(resource);
+                    if (null != gz)
                         getResponse().setContentEncoding("gzip");
                 }
             }
 
-            if (null == is)
-                is = getResourceInputStream(resource,getUser());
-            if (ostream != null)
-                copy(is, ostream);
-            else if (writer != null)
-                copy(is, writer);
+            if (!content)
+            {
+                getResponse().setContentLength(resource.getContentLength());
+            }
             else
-                assert !content;
+            {
+                File file = null==gz ? resource.getFile() : gz.getFile();
+                HttpServletRequest request = getRequest();
+                if (true && null != file && Boolean.TRUE == request.getAttribute("org.apache.tomcat.sendfile.support"))
+                {
+                    request.setAttribute("org.apache.tomcat.sendfile.filename", file.getAbsolutePath());
+                    request.setAttribute("org.apache.tomcat.sendfile.start", new Long(0L));
+                    request.setAttribute("org.apache.tomcat.sendfile.end", new Long(file.length()));
+                    request.setAttribute("org.apache.tomcat.sendfile.token", this);
+                    getResponse().setContentLength(file.length());
+                    _log.debug("sendfile: " + file.getAbsolutePath());
+                }
+                else
+                {
+                    try
+                    {
+                        ostream = getResponse().getOutputStream();
+                    }
+                    catch (IllegalStateException e)
+                    {
+                        // If it fails, we try to get a Writer instead if we're trying to serve a text file
+                        if (fullContent && ((contentType == null) || (contentType.startsWith("text")) || (contentType.endsWith("xml"))))
+                        {
+                            writer = getResponse().getWriter();
+                        }
+                        else
+                        {
+                            throw e;
+                        }
+                    }
+
+                    InputStream is = getResourceInputStream(gz==null?resource:gz,getUser());
+                    if (ostream != null)
+                        copy(is, ostream);
+                    else if (writer != null)
+                        copy(is, writer);
+                }
+            }
         }
         else
         {
@@ -3025,6 +3066,8 @@ public class DavController extends SpringActionController
 
             // Partial content response.
             getResponse().setStatus(WebdavStatus.SC_PARTIAL_CONTENT);
+
+            ostream = getResponse().getOutputStream();
 
             if (ranges.size() == 1)
             {
