@@ -3,14 +3,13 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-LABKEY.requiresExt4ClientAPI();
 
 Ext4.namespace("LABKEY.vis");
 
 Ext4.QuickTips.init();
 $h = Ext4.util.Format.htmlEncode;
 
-Ext4.define('LABKEY.vis.ChartEditorSavePanel', {
+Ext4.define('LABKEY.vis.SaveOptionsPanel', {
 
     extend : 'Ext.form.Panel',
 
@@ -170,7 +169,7 @@ Ext4.define('LABKEY.vis.ChartEditorSavePanel', {
         // reset the report name and description fields
         if (this.isSaveAs || !this.isSavedReport())
         {
-            this.down('#reportName').show();      
+            this.down('#reportName').show();
             this.down('#reportName').setValue("");
             this.down('#reportNameDisplay').hide();
             this.down('#reportDescription').setValue("");

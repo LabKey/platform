@@ -111,7 +111,7 @@
             initializeTimeChartPanel(response.initialConfig, result.visualizationConfig, saveReportInfo);
         }
         else {
-            Ext.Msg.alert("Error", "The saved chart is not of type = TimeChart");
+            Ext4.Msg.alert("Error", "The saved chart is not of type = TimeChart");
         }
     }
 

@@ -4,8 +4,6 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-LABKEY.requiresExt4ClientAPI();
-
 Ext4.namespace("LABKEY.vis");
 
 Ext4.QuickTips.init();
@@ -89,6 +87,7 @@ Ext4.define('LABKEY.vis.GroupSelector', {
             selModel: sm,
             header: false,
             enableHdMenu: false,
+            columns: [{header: 'Groups', dataIndex:'label', renderer: ttRenderer, flex: 1}],
             store: Ext4.create('Ext.data.Store', {
                 model: 'ParticipantCategory',
                 proxy: {
@@ -155,16 +154,13 @@ Ext4.define('LABKEY.vis.GroupSelector', {
                             this.noGroupsDisplayField.show();
                         }
                         // else if the grid is already rendered, call the 'viewready' event for it
-                        else if (this.groupGridPanel.isVisible())
+                        else if (this.isVisible())
                         {
                             this.groupGridPanel.fireEvent('viewready', this.groupGridPanel);
                         }
                     }
                 }
             }),
-            columns: [
-                {header: 'Groups', dataIndex:'label', renderer: ttRenderer, flex: 1}
-            ],
             listeners: {
                 scope: this,
                 'viewready': function(grid){
@@ -174,10 +170,8 @@ Ext4.define('LABKEY.vis.GroupSelector', {
                         // show the display for 5 seconds before hiding it again
                         var refThis = this;
                         refThis.defaultDisplayField.show();
-                        refThis.doLayout();
                         setTimeout(function(){
                             refThis.defaultDisplayField.hide();
-                            refThis.doLayout();
                         },5000);
                         this.selectDefault = false;
                     }
@@ -190,7 +184,7 @@ Ext4.define('LABKEY.vis.GroupSelector', {
                         {
                             var index = grid.getStore().find('label', this.subject.groups[i].label);
                             if (index > -1)
-                                sm.select(index, true);          
+                                sm.select(index, true);
                         }
                     }
                     sm.resumeEvents();

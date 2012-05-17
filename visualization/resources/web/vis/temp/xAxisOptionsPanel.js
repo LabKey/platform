@@ -3,13 +3,12 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-LABKEY.requiresExt4ClientAPI();
 
 Ext4.namespace("LABKEY.vis");
 
 Ext4.QuickTips.init();
 
-Ext4.define('LABKEY.vis.ChartEditorXAxisPanel', {
+Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
 
     extend : 'Ext.form.Panel',
 
@@ -198,6 +197,7 @@ Ext4.define('LABKEY.vis.ChartEditorXAxisPanel', {
             fieldLabel: 'Draw x-axis as',
             labelAlign: 'top',
             forceSelection: true,
+            editable: false,
             listeners: {
                 scope: this,
                 'select': function(cmp, records) {
@@ -240,24 +240,29 @@ Ext4.define('LABKEY.vis.ChartEditorXAxisPanel', {
             valueField: 'longlabel',
             displayField: 'longlabel',
             forceSelection: true,
+            editable: false,
             width: 350,
             minListWidth : 350,
             listeners: {
                 scope: this,
                 'select': function(cmp, records) {
-                    // change the axis label if it has not been customized by the user
-                    // note: assume unchanged if contains part of the original label, i.e. " Since <Zero Date Label>"
-                    var beginning = this.intervalCombo.getValue() + " Since ";
-                    if(this.labelTextField.getValue().indexOf(beginning) == 0 && records.length > 0) {
-                       var newLabel = this.intervalCombo.getValue() + " Since " + records[0].data.label;
-                        this.labelTextField.setValue(newLabel);
+                    if (records.length > 0)
+                    {
+                        // change the axis label if it has not been customized by the user
+                        // note: assume unchanged if contains part of the original label, i.e. " Since <Zero Date Label>"
+                        var beginning = this.intervalCombo.getValue() + " Since ";
+                        if (this.labelTextField.getValue().indexOf(beginning) == 0)
+                        {
+                           var newLabel = this.intervalCombo.getValue() + " Since " + records[0].data.label;
+                           this.labelTextField.setValue(newLabel);
 
-                        this.axis.label = newLabel;
+                           this.axis.label = newLabel;
+                        }
+
+                        Ext4.apply(this.zeroDateCol, records[0].data);
+                        this.hasChanges = true;
+                        this.requireDataRefresh = true;
                     }
-
-                    Ext4.apply(this.zeroDateCol, record.data);
-                    this.hasChanges = true;
-                    this.requireDataRefresh = true;
                 }
             }
         });

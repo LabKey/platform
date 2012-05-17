@@ -3,13 +3,12 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-LABKEY.requiresExt4ClientAPI();
 
 Ext4.namespace("LABKEY.vis");
 
 Ext4.QuickTips.init();
 
-Ext4.define('LABKEY.vis.ChartEditorStatisticsPanel', {
+Ext4.define('LABKEY.vis.StatisticsOptionsPanel', {
 
     extend : 'Ext.form.Panel',
 

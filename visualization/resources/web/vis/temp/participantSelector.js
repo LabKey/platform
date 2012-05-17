@@ -4,13 +4,11 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-LABKEY.requiresExt4ClientAPI();
-
 Ext4.namespace("LABKEY.vis");
 
 Ext4.QuickTips.init();
 
-Ext4.define('LABKEY.vis.SubjectSeriesSelector', {
+Ext4.define('LABKEY.vis.ParticipantSelector', {
 
     extend : 'Ext.panel.Panel',
 
@@ -148,10 +146,8 @@ Ext4.define('LABKEY.vis.SubjectSeriesSelector', {
                         // show the display for 5 seconds before hiding it again
                         var refThis = this;
                         refThis.defaultDisplayField.show();
-                        refThis.doLayout();
                         setTimeout(function(){
                             refThis.defaultDisplayField.hide();
-                            refThis.doLayout();
                         },5000);
                         this.selectDefault = false;
                     }
@@ -167,7 +163,6 @@ Ext4.define('LABKEY.vis.SubjectSeriesSelector', {
             }
          });
          this.add(this.subjectGridPanel);
-         this.doLayout();
 
         // this is one of the requests being tracked, see if the rest are done
         this.fireEvent('measureMetadataRequestComplete');

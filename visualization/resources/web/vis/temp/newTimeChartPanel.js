@@ -4,8 +4,6 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-LABKEY.requiresExt4Sandbox(true);
-
 Ext4.namespace("LABKEY.vis");
 
 LABKEY.requiresScript('vis/src/geom.js');
@@ -25,8 +23,8 @@ LABKEY.requiresScript("vis/temp/yAxisOptionsPanel.js");
 LABKEY.requiresScript("vis/temp/xAxisOptionsPanel.js");
 LABKEY.requiresScript("vis/temp/chartsOptionsPanel.js");
 LABKEY.requiresScript("vis/temp/statisticsOptionsPanel.js");
-LABKEY.requiresScript("vis/temp/participantsSelector.js");
-LABKEY.requiresScript("vis/temp/groupsSelector.js");
+LABKEY.requiresScript("vis/temp/participantSelector.js");
+LABKEY.requiresScript("vis/temp/groupSelector.js");
 
 LABKEY.requiresCss("_images/icons.css");
 
@@ -116,7 +114,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         // chartInfo will be all of the information needed to render the line chart (axis info and data)
         if(typeof this.chartInfo != "object") {
-            this.chartInfo = this.getInitializedChartInfo();   
+            this.chartInfo = this.getInitializedChartInfo();
             this.savedChartInfo = null;
         } else {
             // If we have a saved chart we want to save a copy of config.chartInfo so we know if any chart settings
@@ -141,7 +139,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 }
                 else
                 {
-                    this.chart.add(Ext4.create('LABKEY.vis.ChartEditorOverviewPanel', {
+                    this.chart.add(Ext4.create('LABKEY.vis.OverviewOptionsPanel', {
                         listeners: {
                             scope: this,
                             'initialMeasuresStoreLoaded': function(data) {
@@ -163,16 +161,17 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         var items = [];
 
-        this.subjectSelector = Ext4.create('LABKEY.vis.SubjectSeriesSelector', {
+        this.subjectSelector = Ext4.create('LABKEY.vis.ParticipantSelector', {
             subject: (this.chartInfo.chartSubjectSelection != "groups" ? this.chartInfo.subject : {}),
             subjectNounPlural: this.viewInfo.subjectNounPlural,
             subjectNounSingular: this.viewInfo.subjectNounSingular,
             subjectColumn: this.viewInfo.subjectColumn,
+            collapsed: this.chartInfo.chartSubjectSelection != "subjects",
             listeners: {
                 scope: this,
                 'chartDefinitionChanged': function(requiresDataRefresh){
                     if(requiresDataRefresh){
-                        this.refreshChart.delay(500); //Delay is only 500ms here because there is already a buffer when selecting participants/groups
+                        this.refreshChart.delay(100);
                     }
                     else{
                         this.loaderFn();
@@ -185,11 +184,12 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         this.groupsSelector = Ext4.create('LABKEY.vis.GroupSelector', {
             subject: (this.chartInfo.chartSubjectSelection == "groups" ? this.chartInfo.subject : {}),
+            collapsed: this.chartInfo.chartSubjectSelection != "groups",
             listeners: {
                 scope: this,
                 'chartDefinitionChanged': function(requiresDataRefresh){
                     if(requiresDataRefresh){
-                        this.refreshChart.delay(500); //Delay is only 500ms here because there is already a buffer when selecting participants/groups
+                        this.refreshChart.delay(100);
                     }
                     else{
                         this.loaderFn();
@@ -222,7 +222,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         });
         items.push(this.filtersPanel);
 
-        this.editorSavePanel = Ext4.create('LABKEY.vis.ChartEditorSavePanel', {
+        this.editorSavePanel = Ext4.create('LABKEY.vis.SaveOptionsPanel', {
             reportInfo: this.saveReportInfo,
             saveThumbnail: this.chartInfo.saveThumbnail == undefined ? true : this.chartInfo.saveThumbnail,
             canEdit: this.canEdit,
@@ -234,8 +234,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             }
         });
 
-        this.editorMeasurePanel = Ext4.create('LABKEY.vis.ChartEditorMeasurePanel', {
-//            floating: true,
+        this.editorMeasurePanel = Ext4.create('LABKEY.vis.MeasureOptionsPanel', {
             origMeasures: this.chartInfo.measures,
             filterUrl: this.chartInfo.filterUrl ? this.chartInfo.filterUrl : LABKEY.Visualization.getDataFilterFromURL(),
             filterQuery: this.chartInfo.filterQuery ? this.chartInfo.filterQuery : this.getFilterQuery(),
@@ -248,7 +247,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     if(requiresDataRefresh)
                     {
                         this.measureSelectionChange(true);
-                        this.refreshChart.delay(500);
+                        this.refreshChart.delay(100);
                     }
                     else
                     {
@@ -258,7 +257,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             }
         });
 
-        this.editorXAxisPanel = Ext4.create('LABKEY.vis.ChartEditorXAxisPanel', {
+        this.editorXAxisPanel = Ext4.create('LABKEY.vis.XAxisOptionsPanel', {
             axis: this.chartInfo.axis[xAxisIndex] ? this.chartInfo.axis[xAxisIndex] : {},
             zeroDateCol: this.chartInfo.measures.length > 0 && this.chartInfo.measures[0].dateOptions ? this.chartInfo.measures[0].dateOptions.zeroDateCol : {},
             interval: this.chartInfo.measures.length > 0 && this.chartInfo.measures[0].dateOptions ? this.chartInfo.measures[0].dateOptions.interval : "Days",
@@ -270,7 +269,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 scope: this,
                 'chartDefinitionChanged': function(requiresDataRefresh){
                     if(requiresDataRefresh){
-                        this.refreshChart.delay(1000);
+                        this.refreshChart.delay(100);
                     }
                     else{
                         this.loaderFn();
@@ -282,7 +281,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             }
         });
 
-        this.editorYAxisLeftPanel = Ext4.create('LABKEY.vis.ChartEditorYAxisPanel', {
+        this.editorYAxisLeftPanel = Ext4.create('LABKEY.vis.YAxisOptionsPanel', {
             axis: this.chartInfo.axis[leftAxisIndex] ? this.chartInfo.axis[leftAxisIndex] : {side: "left"},
             defaultLabel: this.editorMeasurePanel.getDefaultLabel("left"),
             bubbleEvents: ['closeOptionsWindow'],
@@ -290,7 +289,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 scope: this,
                 'chartDefinitionChanged': function(requiresDataRefresh){
                     if(requiresDataRefresh){
-                        this.refreshChart.delay(1000);
+                        this.refreshChart.delay(100);
                     }
                     else{
                         this.loaderFn();
@@ -303,14 +302,14 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.editorYAxisLeftPanel.rangeAutomaticRadio.name = "leftaxis_range";
         this.editorYAxisLeftPanel.labelTextField.name = "left-axis-label-textfield";
 
-        this.editorYAxisRightPanel = Ext4.create('LABKEY.vis.ChartEditorYAxisPanel', {
+        this.editorYAxisRightPanel = Ext4.create('LABKEY.vis.YAxisOptionsPanel', {
             axis: this.chartInfo.axis[rightAxisIndex] ? this.chartInfo.axis[rightAxisIndex] : {side: "right"},
             bubbleEvents: ['closeOptionsWindow'],
             listeners: {
                 scope: this,
                 'chartDefinitionChanged': function(requiresDataRefresh){
                     if(requiresDataRefresh){
-                        this.refreshChart.delay(1000);
+                        this.refreshChart.delay(100);
                     }
                     else{
                         this.loaderFn();
@@ -323,7 +322,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.editorYAxisRightPanel.rangeAutomaticRadio.name = "rightaxis_range";
         this.editorYAxisRightPanel.labelTextField.name = "right-axis-label-textfield";
 
-        this.editorChartsPanel = Ext4.create('LABKEY.vis.ChartEditorChartsPanel', {
+        this.editorChartsPanel = Ext4.create('LABKEY.vis.ChartsOptionsPanel', {
             chartLayout: this.chartInfo.chartLayout,
             chartSubjectSelection: this.chartInfo.chartSubjectSelection,
             mainTitle: this.chartInfo.title,
@@ -339,7 +338,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                         this.editorChartsPanel.groupLayoutChanged = false;
                     }
                     if(requiresDataRefresh){
-                        this.refreshChart.delay(1000);
+                        this.refreshChart.delay(100);
                     }
                     else{
                         this.loaderFn();
@@ -349,7 +348,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             }
         });
 
-        this.editorStatisticsPanel = Ext4.create('LABKEY.vis.ChartEditorStatisticsPanel', {
+        this.editorStatisticsPanel = Ext4.create('LABKEY.vis.StatisticsOptionsPanel', {
             displayIndividual: this.chartInfo.displayIndividual != undefined ? this.chartInfo.displayIndividual : true,
             displayAggregate: this.chartInfo.displayAggregate != undefined ? this.chartInfo.displayAggregate : false,
             errorBars: this.chartInfo.errorBars != undefined ? this.chartInfo.errorBars : "None",
@@ -358,7 +357,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 scope: this,
                 'chartDefinitionChanged': function(requiresDataRefresh){
                     if(requiresDataRefresh){
-                        this.refreshChart.delay(1000);
+                        this.refreshChart.delay(100);
                     }
                     else{
                         this.loaderFn();
@@ -391,7 +390,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             scope: this
         });
 
-        // setup buttons for the charting options panels (items to be added to the toolbar)      
+        // setup buttons for the charting options panels (items to be added to the toolbar)
         this.measuresButton = Ext4.create('Ext.button.Button', {text: 'Measures', disabled: true,
                                 handler: function(){this.showOptionsWindow(this.editorMeasurePanel);}, scope: this});
         this.chartsButton = Ext4.create('Ext.button.Button', {text: 'Chart(s)', disabled: true,
@@ -451,7 +450,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             Ext4.EventManager.onWindowResize(function(w,h){
                 this.resizeToViewport(w,h);
             }, this);
-//            this.on("render", function(){Ext4.EventManager.fireWindowResize();}, this);    // TODO: how do we fire this event in ext4?
         }
 
         this.items = items;
@@ -486,7 +484,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             closeAction: 'close',
             items: [panel],
             listeners: {
-                'closeOptionsWindow': function() {
+                'closeOptionsWindow': function() {     // TODO: fix the z-index issue with reshowing combobox in window
                     optionWindow.close();
                 },
                 scope: this
@@ -498,7 +496,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
     setOptionsForGroupLayout : function(groupLayoutSelected){
         if (groupLayoutSelected)
         {
-            this.subjectSelector.hide();           
+            this.subjectSelector.hide();
             this.groupsSelector.show();
             this.statisticsButton.enable();
         }
@@ -638,7 +636,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         {
            this.clearChartPanel("No measure selected. Please click the \"Measures\" button to add a measure.");
            return;
-        }                                       
+        }
 
         if (this.statisticsButton.disabled || (!this.statisticsButton.disabled && this.editorStatisticsPanel.getDisplayIndividual()))
         {
@@ -731,7 +729,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         }
     },
 
-    getSimplifiedConfig: function(config)        
+    getSimplifiedConfig: function(config)
     {
         // Here we generate a config that is similar, but strips out info that isnt neccessary.
         // We use this to compare two configs to see if the user made any changes to the chart.
@@ -772,16 +770,20 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         // get the updated chart information from the various options panels
         this.chartInfo = this.getChartInfoFromOptionPanels();
 
-        if(this.savedChartInfo){
-                if(this.getSimplifiedConfig(Ext4.decode(this.savedChartInfo)) == this.getSimplifiedConfig(this.chartInfo)){
-                    this.markDirty(false);
-                } else {
-                    //Don't mark dirty if the user can't edit the report, that's just mean.
-                    if(this.canEdit)
-                    {
-                        this.markDirty(true);
-                    }
+        if (this.savedChartInfo)
+        {
+            if (this.getSimplifiedConfig(Ext4.decode(this.savedChartInfo)) == this.getSimplifiedConfig(this.chartInfo))
+            {
+                this.markDirty(false);
+            }
+            else
+            {
+                //Don't mark dirty if the user can't edit the report, that's just mean.
+                if (this.canEdit)
+                {
+                    this.markDirty(true);
                 }
+            }
         }
 
         // enable/disable the left and right axis panels
@@ -1126,7 +1128,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 style: "font-style:italic;width:100%;padding:5px;text-align:center;"
             }));
         }
-        this.chart.doLayout();
 
         // unmask the panel if needed
         if (this.chart.getEl().isMasked()){
@@ -1147,7 +1148,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             return aes;
         };
 
-        var generateAggregateLayerAes = function(name, yAxisSide, columnName, intervalKey, subjectColumn, hoverText, errorColumn, errorType){            
+        var generateAggregateLayerAes = function(name, yAxisSide, columnName, intervalKey, subjectColumn, hoverText, errorColumn, errorType){
             var yName = yAxisSide == "left" ? "yLeft" : "yRight";
             var aes = {};
             aes[yName] = function(row){return parseFloat(row[columnName].value)}; // Have to parseFlot because for some reason ObsCon from Luminex was returning strings not floats/ints.
@@ -1182,7 +1183,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             autoEl: {tag: 'div'}
         });
         chart.add(newChartDiv);
-        chart.doLayout();
 
         for(var i = 0; i < chartInfo.axis.length; i++){
             var axis = chartInfo.axis[i];
@@ -1246,7 +1246,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     name: chartSeries.name,
                     data: aggregateData,
                     geom: new LABKEY.vis.Geom.Path({size: chartInfo.lineWidth}),
-                    aes: generateAggregateLayerAes(chartSeries.name, chartSeries.yAxisSide, columnName, intervalKey, aggregateSubjectColumn, false, errorColumnName, chartInfo.errorBars)                    
+                    aes: generateAggregateLayerAes(chartSeries.name, chartSeries.yAxisSide, columnName, intervalKey, aggregateSubjectColumn, false, errorColumnName, chartInfo.errorBars)
                 };
                 layers.push(new LABKEY.vis.Layer(aggregatePathLayerConfig));
 
@@ -1418,50 +1418,51 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             this.viewGridBtn.hide();
 
             // add a panel to put the queryWebpart in
+            var qwpPanelDiv = Ext4.create('Ext.container.Container', {
+                autoHeight: true,
+                anchor: '100%',
+                autoEl: {tag: 'div'}
+            });
             var dataGridPanel = Ext4.create('Ext.panel.Panel', {
                 autoScroll: true,
                 border: false,
                 padding: 10,
-                items: [{
-                    xtype: 'displayfield',
-                    value: 'Note: filters applied to the data grid will not be reflected in the chart view.',
-                    style: 'font-style:italic;padding:10px'
-                },
-                {
-                    xtype: 'panel',
-                    height: 1000,     // TODO: fix to not set a static height
-                    listeners: {
-                        scope: this,
-                        'afterrender': function(cmp) {
-                            // create the queryWebpart using the temp grid schema and query name
-                            var chartQueryWebPart = new LABKEY.QueryWebPart({
-                                renderTo: cmp.getId(),
-                                schemaName: this.tempGridInfo.schema,
-                                queryName: this.tempGridInfo.query,
-                                sort: this.tempGridInfo.subjectCol + ', ' + this.tempGridInfo.sortCols.join(", "),
-                                allowChooseQuery: false,
-                                allowChooseView: false,
-                                title: "",
-                                frame: "none"
-                            });
-
-                            // re-enable the View Charts button once the QWP has rendered
-                            chartQueryWebPart.on('render', function(){
-                                this.viewChartBtn.enable();
-
-                                // unmask the panel if needed
-                                if (this.chart.getEl().isMasked())
-                                    this.chart.getEl().unmask();
-                            }, this);
-                        }
-                    }
-                }]
+                items: [
+                    {
+                        xtype: 'displayfield',
+                        value: 'Note: filters applied to the data grid will not be reflected in the chart view.',
+                        style: 'font-style:italic;padding:10px'
+                    },
+                    qwpPanelDiv
+                ]
             });
 
+            // create the queryWebpart using the temp grid schema and query name
+            var chartQueryWebPart = new LABKEY.QueryWebPart({
+                renderTo: qwpPanelDiv.getId(),
+                schemaName: this.tempGridInfo.schema,
+                queryName: this.tempGridInfo.query,
+                sort: this.tempGridInfo.subjectCol + ', ' + this.tempGridInfo.sortCols.join(", "),
+                allowChooseQuery: false,
+                allowChooseView: false,
+                title: "",
+                frame: "none"
+            });
+
+            // re-enable the View Charts button once the QWP has rendered
+            chartQueryWebPart.on('render', function(){
+                this.viewChartBtn.enable();
+
+                // redo the layout of the qwp panel to set reset the auto height
+                qwpPanelDiv.doLayout();
+
+                // unmask the panel if needed
+                if (this.chart.getEl().isMasked())
+                    this.chart.getEl().unmask();
+            }, this);
+
             this.chart.removeAll();
-            this.chart.doLayout();
             this.chart.add(dataGridPanel);
-            this.chart.doLayout();
         }
     },
 
@@ -1480,7 +1481,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         }
     },
 
-    getChartInfoFromOptionPanels: function(){      
+    getChartInfoFromOptionPanels: function(){
         var config = {
             title: this.editorChartsPanel.getMainTitle(),
             chartLayout: this.editorChartsPanel.getChartLayout(),
@@ -1640,7 +1641,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
     executeSaveChart: function(config){
 
         // get the chart info to be saved
-        this.chartInfo = this.getChartInfoFromOptionPanels(); 
+        this.chartInfo = this.getChartInfoFromOptionPanels();
 
         LABKEY.Visualization.save({
             name: config.reportName,
@@ -1703,7 +1704,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             if (this.chart.getEl().isMasked)
                 this.chart.getEl().unmask();
         }
-        this.chart.doLayout();
     },
 
     clearWarningText: function(){

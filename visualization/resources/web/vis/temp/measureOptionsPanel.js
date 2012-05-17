@@ -3,13 +3,12 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-LABKEY.requiresExt4ClientAPI();
 
 Ext4.namespace("LABKEY.vis");
 
 Ext4.QuickTips.init();
 
-Ext4.define('LABKEY.vis.ChartEditorMeasurePanel', {
+Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
 
     extend : 'Ext.form.Panel',
 
@@ -126,7 +125,7 @@ Ext4.define('LABKEY.vis.ChartEditorMeasurePanel', {
                 'afterrender': function(listView){
                     // select the last measure in the list
                     if (listView.getStore().getCount() > 0)
-                        listView.getSelectionModel().select(listView.getStore().getCount()-1, false, true);                    
+                        listView.getSelectionModel().select(listView.getStore().getCount()-1, false, true);
                 },
                 'selectionchange': function(listView, selections){
                     // set the UI components for the measures series information
@@ -332,7 +331,7 @@ Ext4.define('LABKEY.vis.ChartEditorMeasurePanel', {
 
         columnTwoItems.push({
             xtype: 'fieldcontainer',
-            layout: 'hbox', 
+            layout: 'hbox',
             hideLabel: true,
             items: [
                 this.seriesPerDimensionRadio,
@@ -390,7 +389,7 @@ Ext4.define('LABKEY.vis.ChartEditorMeasurePanel', {
 
         columnTwoItems.push({
             xtype: 'fieldcontainer',
-            layout: 'hbox', 
+            layout: 'hbox',
             hideLabel: true,
             items: [
                 this.dimensionAggregateLabel,
@@ -501,7 +500,7 @@ Ext4.define('LABKEY.vis.ChartEditorMeasurePanel', {
     setMeasureDateStore: function(measure, measureIndex){
         // add a store for measureDateCombo to a measure.
         this.measures[measureIndex].dateColStore = this.newMeasureDateStore(measure, measureIndex);
-        this.measureDateCombo.bindStore(this.measures[measureIndex].dateColStore); 
+        this.measureDateCombo.bindStore(this.measures[measureIndex].dateColStore);
     },
 
     newMeasureDateStore: function(measure, measureIndex) {
@@ -534,7 +533,10 @@ Ext4.define('LABKEY.vis.ChartEditorMeasurePanel', {
                             queryName: measure.queryName,
                             name: visitDateStr,
                             label: "Visit Date",
-                            type: "TIMESTAMP"
+                            type: "TIMESTAMP",
+                            longlabel: "",
+                            description: "",
+                            isUserDefined: ""
                         };
                         store.add(newDateRecordData);
                     }
@@ -808,10 +810,8 @@ Ext4.define('LABKEY.vis.ChartEditorMeasurePanel', {
                                         // show the display for 5 seconds before hiding it again
                                         var refThis = this;
                                         refThis.defaultDisplayField.show();
-                                        refThis.doLayout();
                                         setTimeout(function(){
                                             refThis.defaultDisplayField.hide();
-                                            refThis.doLayout();
                                         },5000);
                                     }
 
@@ -824,9 +824,6 @@ Ext4.define('LABKEY.vis.ChartEditorMeasurePanel', {
                          })
                     ]
                 });
-                this.measures[index].dimensionSelectorPanel.on('activate', function(pnl){
-                   pnl.doLayout();
-                }, this);
 
                 // if there is an active filter panel item, collapse it
                 if (this.filtersParentPanel.layout.activeItem)

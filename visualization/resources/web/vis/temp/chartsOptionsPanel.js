@@ -4,13 +4,11 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-LABKEY.requiresExt4ClientAPI();
-
 Ext4.namespace("LABKEY.vis");
 
 Ext4.QuickTips.init();
 
-Ext4.define('LABKEY.vis.ChartEditorChartsPanel', {
+Ext4.define('LABKEY.vis.ChartsOptionsPanel', {
 
     extend : 'Ext.form.Panel',
 
@@ -140,7 +138,7 @@ Ext4.define('LABKEY.vis.ChartEditorChartsPanel', {
             }
         });
         colTwoItems.push(this.oneChartPerGroupRadio);
-        
+
         this.oneChartPerSubjectRadio = Ext4.create('Ext.form.field.Radio', {
             name: 'number_of_charts',
             checked: this.chartLayout == 'per_subject',
