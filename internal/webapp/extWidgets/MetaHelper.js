@@ -559,21 +559,27 @@ LABKEY.ext.MetaHelper = {
         var displayValue = value;
         var shouldCache;
 
+        //NOTE: the labkey 9.1 API returns both the value of the field and the display value
+        //the server is already doing the work, so we should rely on this
+        //this does have a few problems:
+        //if the displayValue equals the value, the API omits displayValue.  because we cant
+        // count on the server returning the right value unless explicitly providing a displayValue,
+        // we only attempt to use that
+        if(record && record.raw && record.raw[meta.name]){
+            if(Ext4.isDefined(record.raw[meta.name].displayValue))
+                return record.raw[meta.name].displayValue;
+            //TODO: this needs testing before enabling.  would be nice if we could rely on this, but i dont think we will be able to (dates, for example)
+            //perhaps only try this for lookups?
+            //else if(Ext4.isDefined(record.raw[meta.name].value))
+            //    return record.raw[meta.name].value;
+        }
+
         //NOTE: this is substantially changed over LABKEY.ext.FormHelper
         if(meta.lookup && meta.lookups!==false){
             displayValue = LABKEY.ext.MetaHelper.getLookupDisplayValue(meta, displayValue, record, store);
             meta.usingLookup = true;
             shouldCache = false;
             displayType = 'string';
-        }
-
-        //NOTE: the labkey 9.1 API returns both the value of the field and the display value
-        //this is accessing the raw JSON object to obtain the latter
-        if(record && record.raw && record.raw[meta.name] && record.raw[meta.name]){
-            //TODO: do we really want to circumvent the lookup renderer?
-            if(Ext4.isDefined(record.raw[meta.name].displayValue)){
-                return record.raw[meta.name].displayValue;
-            }
         }
 
         if(meta.extFormatFn && Ext4.isFunction(meta.extFormatFn)){
