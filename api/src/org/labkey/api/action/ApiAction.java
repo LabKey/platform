@@ -33,6 +33,7 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.Iterator;
@@ -107,7 +108,16 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
             if (null != contentType && contentType.contains(ApiJsonWriter.CONTENT_TYPE_JSON))
             {
                 _reqFormat = ApiResponseWriter.Format.JSON;
-                JSONObject jsonObj = getJsonObject();
+                JSONObject jsonObj;
+                try
+                {
+                    jsonObj = getJsonObject();
+                }
+                catch (JSONException x)
+                {
+                    getViewContext().getResponse().sendError(HttpServletResponse.SC_BAD_REQUEST, x.getMessage());
+                    return null;
+                }
                 saveRequestedApiVersion(getViewContext().getRequest(), jsonObj);
 
                 form = getCommand();
