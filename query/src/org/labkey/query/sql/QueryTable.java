@@ -407,11 +407,7 @@ public class QueryTable extends QueryRelation
             {
                 Set<FieldKey> keys = ((StringExpressionFactory.FieldKeyStringExpression) se).getFieldKeys();
                 for (FieldKey key : keys)
-                {
-                    if (key.getParent() != null)
-                        continue;
                     addSuggestedColumn(suggested, key);
-                }
             }
 
             if (tc._col.getFk() != null)
