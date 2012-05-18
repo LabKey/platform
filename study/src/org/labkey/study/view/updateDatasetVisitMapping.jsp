@@ -149,5 +149,5 @@
         </tr>
     </table>
 <% WebPartView.endTitleFrame(out); %>
-<%= this.generateSubmitButton("Save")%>&nbsp;<%= this.generateButton("Cancel", buildURL(StudyController.DatasetDetailsAction.class), "id=" + dataset.getDataSetId()))%>
+<%= this.generateSubmitButton("Save")%>&nbsp;<%= this.generateButton("Cancel", buildURL(StudyController.DatasetDetailsAction.class), "id=" + dataset.getDataSetId())%>
 </form>
