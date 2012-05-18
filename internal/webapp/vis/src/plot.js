@@ -54,6 +54,7 @@ LABKEY.vis.Plot = function(config){
     this.bgColor = config.bgColor ? config.bgColor : null;
     this.gridColor = config.gridColor ? config.gridColor : null;
     this.gridLineColor = config.gridLineColor ? config.gridLineColor : null;
+    this.clipRect = config.clipRect ? config.clipRect : false;
 
     if(this.grid.width == null){
 		this.error("Unable to create plot, width not specified");
@@ -464,7 +465,9 @@ LABKEY.vis.Plot = function(config){
         }
 
         var gridSet = this.paper.setFinish();
-        gridSet.attr('clip-rect', (this.grid.leftEdge - 10) + ", " + (this.grid.height - this.grid.topEdge) + ", " + (this.grid.rightEdge - this.grid.leftEdge  + 20) + ", " + (this.grid.topEdge - this.grid.bottomEdge + 12));
+        if(this.clipRect){
+            gridSet.attr('clip-rect', (this.grid.leftEdge - 10) + ", " + (this.grid.height - this.grid.topEdge) + ", " + (this.grid.rightEdge - this.grid.leftEdge  + 20) + ", " + (this.grid.topEdge - this.grid.bottomEdge + 12));
+        }
         gridSet.transform("t0," + this.grid.height);
         
         this.paper.setStart();
