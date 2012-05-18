@@ -37,6 +37,8 @@ LABKEY.vis.Plot = function(config){
         }
         return scales;
     };
+
+    var labelElements = {}; // These are all of the Raphael elements for the labels.
 	this.renderTo = config.renderTo ? config.renderTo : null; // The id of the DOM element to render the plot to, required.
 	this.grid = {
 		width: config.width ? config.width : null, // height of the grid where shapes/lines/etc gets plotted.
@@ -46,10 +48,7 @@ LABKEY.vis.Plot = function(config){
     this.scales = copyUserScales(this.originalScales);
 	this.originalAes = config.aes ? config.aes : null;
     this.aes = LABKEY.vis.convertAes(this.originalAes);
-    this.xTitle = config.xTitle ? config.xTitle : null;
-    this.leftTitle = config.leftTitle ? config.leftTitle : null;
-    this.rightTitle = config.rightTitle ? config.rightTitle : null;
-    this.mainTitle = config.mainTitle ? config.mainTitle : null;
+    this.labels = config.labels ? config.labels : {};
 	this.data = config.data ? config.data : null; // An array of rows, required. Each row could have several pieces of data. (e.g. {subjectId: '249534596', hemoglobin: '350', CD4:'1400', day:'120'})
 	this.layers = config.layers ? config.layers : []; // An array of layers, required. (e.g. a layer for a CD4 line chart over time, and a layer for a Hemoglobin line chart over time).
 
@@ -228,15 +227,15 @@ LABKEY.vis.Plot = function(config){
 	var initGrid = function(){
         var i, x1, y1, x2, y2, tick, tickText, text, gridLine;
 
-        if(this.mainTitle){
-            this.paper.text(this.grid.width / 2, 30, this.mainTitle).attr({font: "18px Arial, sans-serif"});
+        if(this.labels.main && this.labels.main.value){
+            this.setMainLabel(this.labels.main.value);
         }
 
 		// Now that we have all the scales situated we need to render the axis lines, tick marks, and titles.
 		this.paper.path(LABKEY.vis.makeLine(this.grid.leftEdge, -this.grid.bottomEdge +.5, this.grid.rightEdge, -this.grid.bottomEdge+.5)).attr('stroke', '#000').attr('stroke-width', '1').transform("t0," + this.grid.height);
 
-        if(this.xTitle){
-            this.paper.text(this.grid.leftEdge + (this.grid.rightEdge - this.grid.leftEdge)/2, this.grid.height - 10, this.xTitle).attr({font: "14px Arial, sans-serif"}).attr({'text-anchor': 'middle'});
+        if(this.labels.x && this.labels.x.value){
+            this.setXLabel(this.labels.x.value);
         }
 
         var xTicks;
@@ -271,8 +270,8 @@ LABKEY.vis.Plot = function(config){
 
 			this.paper.path(LABKEY.vis.makeLine(this.grid.leftEdge +.5, -this.grid.bottomEdge + 1, this.grid.leftEdge+.5, -this.grid.topEdge)).attr('stroke', '#000').attr('stroke-width', '1').transform("t0," + this.grid.height);
 
-            if(this.leftTitle){
-                this.paper.text(this.grid.leftEdge - 55, this.grid.height / 2, this.leftTitle).attr({font: "14px Arial, sans-serif"}).transform("t0," + this.h+"r270");
+            if(this.labels.yLeft && this.labels.yLeft.value){
+                this.setYLeftLabel(this.labels.yLeft.value);
             }
 
 			for(i = 0; i < leftTicks.length; i++){
@@ -299,8 +298,8 @@ LABKEY.vis.Plot = function(config){
 
             this.paper.path(LABKEY.vis.makeLine(this.grid.rightEdge + .5, -this.grid.bottomEdge + 1, this.grid.rightEdge + .5, -this.grid.topEdge)).attr('stroke', '#000').attr('stroke-width', '1').transform("t0," + this.grid.height);
 
-            if(this.rightTitle){
-                this.paper.text(this.grid.rightEdge + 55, this.grid.height / 2, this.rightTitle).attr({font: "14px Arial, sans-serif"}).transform("t0," + this.h+"r90");
+            if(this.labels.yRight && this.labels.yRight.value){
+                this.setYRightLabel(this.labels.yRight.value);
             }
 
 			for(i = 0; i < rightTicks.length; i++){
@@ -424,6 +423,9 @@ LABKEY.vis.Plot = function(config){
 
         if(!this.paper){
             this.paper = new Raphael(this.renderTo, this.grid.width, this.grid.height);
+        } else if(this.paper.width != this.grid.width || this.paper.height != this.grid.height){
+            // If the user changed the size of the chart we need to alter the canvas size.
+            this.paper.setSize(this.grid.width, this.grid.height);
         }
         this.paper.clear();
         
@@ -451,7 +453,130 @@ LABKEY.vis.Plot = function(config){
         this.paper.setFinish().transform("t0," + this.grid.height);
     };
 
-	this.addLayer = function(layer){
+    var renderLabel = function(x, y, value){
+        return this.paper.text(x, y, value);
+    };
+
+    var setLabel = function(name, x, y, value, render){
+        if(!this.labels[name]){
+            this.labels[name] = {};
+        }
+
+        this.labels[name].value = value;
+
+        if(render){
+            if(labelElements[name]){
+                labelElements[name].remove();
+            }
+
+            labelElements[name] = renderLabel.call(this, x, y, value);
+
+            // Replace the listeners.
+            if(this.labels[name].listeners){
+                for(var listener in this.labels[name].listeners){
+                    this.addLabelListener(name, listener, this.labels[name].listeners[listener]);
+
+                }
+            }
+
+            return labelElements[name];
+        }
+    };
+
+    this.setMainLabel = function(value){
+        if(this.paper){
+            setLabel.call(this, 'main', this.grid.width / 2, 30, value, true).attr({font: "18px Arial, sans-serif"});
+        } else {
+            setLabel.call(this, 'main', this.grid.width / 2, 30, value, false);
+        }
+    };
+
+    this.setXLabel = function(value){
+        if(this.paper){
+            setLabel.call(this, 'x', this.grid.leftEdge + (this.grid.rightEdge - this.grid.leftEdge)/2, this.grid.height - 10, value, true).attr({font: "14px Arial, sans-serif"}).attr({'text-anchor': 'middle'});
+        } else {
+            setLabel.call(this, 'x', this.grid.leftEdge + (this.grid.rightEdge - this.grid.leftEdge)/2, this.grid.height - 10, value, false);
+        }
+    };
+
+    this.setYRightLabel = function(value){
+        if(this.paper){
+            setLabel.call(this, 'yRight', this.grid.rightEdge + 55, this.grid.height / 2, value, true).attr({font: "14px Arial, sans-serif"}).transform("t0," + this.h+"r90");
+        } else {
+            setLabel.call(this, 'yRight', this.grid.rightEdge + 55, this.grid.height / 2, value, false);
+        }
+    };
+    
+    this.setYLeftLabel = function(value){
+        if(this.paper){
+            setLabel.call(this, 'yLeft', this.grid.leftEdge - 55, this.grid.height / 2, value, true).attr({font: "14px Arial, sans-serif"}).transform("t0," + this.h+"r270");
+        } else {
+            setLabel.call(this, 'yLeft', this.grid.leftEdge - 55, this.grid.height / 2, value, false);
+        }
+    };
+
+    this.addLabelListener = function(title, listener, fn){
+        var availableListeners = {
+            click: 'click', dblclick:'dblclick', drag: 'drag', hover: 'hover', mousedown: 'mousedown',
+            mousemove: 'mousemove', mouseout: 'mouseout', mouseover: 'mouseover', mouseup: 'mouseup',
+            touchcancel: 'touchcancel', touchend: 'touchend', touchmove: 'touchmove', touchstart: 'touchstart'
+        };
+
+        if(availableListeners[listener]){
+            if(labelElements[title]){
+                // Store the listener in the labels object.
+                if(!this.labels[title].listeners){
+                    this.labels[title].listeners = {};
+                }
+
+                if(this.labels[title].listeners[listener]){
+                    // There is already a listener of the requested type, so we should purge it.
+                    var unEvent = 'un' + listener;
+                    labelElements[title][unEvent].call(labelElements[title], this.labels[title].listeners[listener]);
+                }
+
+                this.labels[title].listeners[listener] = fn;
+
+                // Need to call the listener function and keep it within the scope of the Raphael object that we're accessing,
+                // so we pass itself into the call function as the scope object. It's essentially doing something like:
+                // labelElements.x.click.call(labelElements.x, fn);
+                labelElements[title][listener].call(labelElements[title], fn);
+                return true;
+            } else {
+                console.error('The ' + title + ' title is not available.');
+                return false;
+            }
+        } else {
+            console.error('The ' + listener + ' listener is not available.');
+            return false;
+        }
+    };
+
+    this.setHeight = function(h, render){
+        if(render == null || render == undefined){
+            render = true;
+        }
+
+        this.grid.height = h;
+
+        if(render){
+            this.render();
+        }
+    };
+
+    this.setWidth = function(w, render){
+        if(render == null || render == undefined){
+            render = true;
+        }
+
+        this.grid.width = w;
+        
+        if(render){
+            this.render();
+        }
+    };
+
+    this.addLayer = function(layer){
 		layer.parent = this; // Set the parent of each layer to the plot so we can grab things like data from it later.
 		this.layers.push(layer);
 	};
