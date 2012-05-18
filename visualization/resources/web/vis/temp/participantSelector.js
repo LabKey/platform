@@ -6,7 +6,7 @@
 
 Ext4.namespace("LABKEY.vis");
 
-Ext4.QuickTips.init();
+Ext4.tip.QuickTipManager.init();
 
 Ext4.define('LABKEY.vis.ParticipantSelector', {
 

@@ -28,7 +28,7 @@ LABKEY.requiresScript("vis/temp/groupSelector.js");
 
 LABKEY.requiresCss("_images/icons.css");
 
-Ext4.QuickTips.init();
+Ext4.tip.QuickTipManager.init();
 $h = Ext4.util.Format.htmlEncode;
 
 Ext4.define('LABKEY.vis.TimeChartPanel', {

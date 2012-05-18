@@ -6,7 +6,7 @@
 
 Ext4.namespace("LABKEY.vis");
 
-Ext4.QuickTips.init();
+Ext4.tip.QuickTipManager.init();
 $h = Ext4.util.Format.htmlEncode;
 
 Ext4.define('LABKEY.vis.SaveOptionsPanel', {

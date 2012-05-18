@@ -6,7 +6,7 @@
 
 Ext4.namespace("LABKEY.vis");
 
-Ext4.QuickTips.init();
+Ext4.tip.QuickTipManager.init();
 
 Ext4.define('LABKEY.vis.GroupSelector', {
 
@@ -75,7 +75,7 @@ Ext4.define('LABKEY.vis.GroupSelector', {
 
         var ttRenderer = function(value, p, record) {
             var msg = Ext4.util.Format.htmlEncode(value);
-            p.attr = 'ext:qtip="' + msg + '"';
+            p.tdAttr = 'data-qtip="' + msg + '"';
             return msg;
         };
 

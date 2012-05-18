@@ -6,7 +6,7 @@
 
 Ext4.namespace("LABKEY.vis");
 
-Ext4.QuickTips.init();
+Ext4.tip.QuickTipManager.init();
 
 Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
 
@@ -461,8 +461,8 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
         text = LABKEY.Utils.encodeHtml(text);
         if(text.length > 25) {
             tipText = text;
-            Ext4.tip.QuickTip.register({
-                target: this.dataFilterWarning,
+            Ext4.tip.QuickTipManager.register({
+                target: this.dataFilterWarning.getId(),
                 text: tipText
             });
             text = text.substr(0, 24) + "...";
@@ -747,7 +747,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
 
                 var ttRenderer = function(value, p, record) {
                     var msg = Ext4.util.Format.htmlEncode(value);
-                    p.attr = 'ext:qtip="' + msg + '"';
+                    p.tdAttr = 'data-qtip="' + msg + '"';
                     return msg;
                 };
 
