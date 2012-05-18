@@ -31,6 +31,7 @@
     SampleRequestRequirement[] receiverRequirements = bean.getReceiverRequirements();
     SampleRequestRequirement[] generalRequirements = bean.getGeneralRequirements();
     SampleRequestActor[] actors = bean.getActors();
+    ActionURL deleteDefaultRequirement = new ActionURL(SpecimenController.DeleteDefaultRequirementAction.class, getViewContext().getContainer()).addParameter("id",0);
 %>
 <script type="text/javascript">
 function verifyNewRequirement(prefix)
@@ -51,7 +52,7 @@ function verifyNewRequirement(prefix)
     return true;
 }
 </script>
-<form action="manageDefaultReqs.post" name="manageDefaultReqs" method="POST">
+<form action="<%=h(buildURL(SpecimenController.ManageDefaultReqsAction.class))%>" name="manageDefaultReqs" method="POST">
     <table class="labkey-manage-default-reqs">
     <tr class="labkey-wp-header">
         <th align="left">Requirements of Each Originating Lab</th>
@@ -69,7 +70,7 @@ function verifyNewRequirement(prefix)
                     {
                 %>
                 <tr>
-                    <td><%= textLink("Delete", "deleteDefaultRequirement.view?id=" + requirement.getRowId())%></td>
+                    <td><%= textLink("Delete", deleteDefaultRequirement.replaceParameter("id", String.valueOf(requirement.getRowId())))%></td>
                     <td><%= h(requirement.getActor().getLabel()) %></td>
                     <td
                             colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
@@ -116,7 +117,7 @@ function verifyNewRequirement(prefix)
                     {
                 %>
                 <tr>
-                    <td><%= textLink("Delete", "deleteDefaultRequirement.view?id=" + requirement.getRowId())%></td>
+                    <td><%= textLink("Delete", deleteDefaultRequirement.replaceParameter("id", String.valueOf(requirement.getRowId())))%></td>
                     <td><%= h(requirement.getActor().getLabel()) %></td>
                     <td
                             colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
@@ -163,7 +164,7 @@ function verifyNewRequirement(prefix)
                         {
                     %>
                     <tr>
-                        <td><%= textLink("Delete", "deleteDefaultRequirement.view?id=" + requirement.getRowId())%></td>
+                        <td><%= textLink("Delete", deleteDefaultRequirement.replaceParameter("id", String.valueOf(requirement.getRowId())))%></td>
                         <td><%= h(requirement.getActor().getLabel()) %></td>
                         <td colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
                     </tr>
@@ -209,7 +210,7 @@ function verifyNewRequirement(prefix)
                         {
                     %>
                     <tr>
-                        <td><%= textLink("Delete", "deleteDefaultRequirement.view?id=" + requirement.getRowId())%></td>
+                        <td><%= textLink("Delete", deleteDefaultRequirement.replaceParameter("id", String.valueOf(requirement.getRowId())))%></td>
                         <td><%= h(requirement.getActor().getLabel()) %></td>
                         <td colspan="2"><%= requirement.getDescription() != null ? h(requirement.getDescription()) : "&nbsp;" %></td>
                     </tr>

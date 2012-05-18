@@ -32,7 +32,7 @@
     SampleRequestStatus[] statuses = SampleManager.getInstance().getRequestStatuses(context.getContainer(), context.getUser());
 %>
 <labkey:errors />
-<form action="manageRequestStatus.post" enctype="multipart/form-data" method="POST">
+<form action="<%=h(buildURL(SpecimenController.ManageRequestStatusAction.class))%>m" enctype="multipart/form-data" method="POST">
     <input type="hidden" name="id" value="<%= bean.getSampleRequest().getRowId()%>">
     <table  class="labkey-manage-display">
         <tr>
@@ -97,7 +97,7 @@
             <th>&nbsp;</th>
             <td>
                 <%= generateSubmitButton("Save Changes and Send Notifications")%>&nbsp;
-                <%= generateButton("Cancel", "manageRequest.view?id=" + bean.getSampleRequest().getRowId())%>
+                <%= generateButton("Cancel", buildURL(SpecimenController.ManageRequestAction.class, "id=" + bean.getSampleRequest().getRowId()))%>
             </td>
         </tr>
     </table>

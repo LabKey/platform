@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.study.importer.StudyReload.ReloadInterval" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -70,7 +71,7 @@
         </tr>
         <tr>
             <td width=200>&nbsp;</td>
-            <td><%=allowReload ? PageFlowUtil.generateButton("Attempt Reload Now", "checkForReload.view?ui=1", null, "id=\"reloadNow\"") :
+            <td><%=allowReload ? PageFlowUtil.generateButton("Attempt Reload Now", buildURL(StudyController.CheckForReload.class, "ui=1"), null, "id=\"reloadNow\"") :
                                  PageFlowUtil.generateButton("Attempt Reload Now", "javascript:void(0);", null, "id=\"reloadNow\"")%></td>
         </tr>
         <tr>

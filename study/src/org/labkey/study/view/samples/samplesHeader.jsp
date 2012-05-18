@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController.AutoReportListAction" %>
 <%@ page import="java.util.Iterator" %>
+<%@ page import="org.labkey.study.controllers.samples.ShowSearchAction" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenController.SpecimenHeaderBean> me = (JspView<SpecimenController.SpecimenHeaderBean>) HttpView.currentView();
@@ -71,7 +72,7 @@
     }
 %>
 <%=textLink(vialLinkText, bean.getOtherViewURL())%>&nbsp;
-<%=textLink("Search", "showSearch.view?showVials=" + (bean.isShowingVials() ? "true" : "false"))%>&nbsp;
+<%=textLink("Search", buildURL(ShowSearchAction.class, "showVials=" + (bean.isShowingVials() ? "true" : "false")))%>&nbsp;
 <%=textLink("Reports", AutoReportListAction.class) %>
 <%
     if (!bean.getFilteredPtidVisits().isEmpty())

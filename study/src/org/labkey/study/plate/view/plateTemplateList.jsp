@@ -47,21 +47,21 @@
             if (context.getContainer().hasPermission(context.getUser(), UpdatePermission.class))
             {
         %>
-        <td><%= textLink("edit", "designer.view?templateName=" + PageFlowUtil.encode(template.getName())) %></td>
+        <td><%= textLink("edit", buildURL(PlateController.DesignerAction.class, "templateName=" + PageFlowUtil.encode(template.getName()))) %></td>
         <%
             }
             if (context.getContainer().hasPermission(context.getUser(), InsertPermission.class))
             {
         %>
-        <td><%= textLink("edit a copy", "designer.view?copy=true&templateName=" + PageFlowUtil.encode(template.getName())) %></td>
-        <td><%= textLink("copy to another folder", "copyTemplate.view?templateName=" + PageFlowUtil.encode(template.getName())) %></td>
+        <td><%= textLink("edit a copy", buildURL(PlateController.DesignerAction.class, "copy=true&templateName=" + PageFlowUtil.encode(template.getName()))) %></td>
+        <td><%= textLink("copy to another folder", buildURL(PlateController.CopyTemplateAction.class, "templateName=" + PageFlowUtil.encode(template.getName()))) %></td>
         <%
             }
             if (context.getContainer().hasPermission(context.getUser(), DeletePermission.class))
             {
         %>
         <td><%= ((plateTemplates !=null && plateTemplates.length > 1) ?
-                textLink("delete", "delete.view?templateName=" + PageFlowUtil.encode(template.getName()),
+                textLink("delete", buildURL(PlateController.DeleteAction.class, "templateName=" + PageFlowUtil.encode(template.getName())),
                         "return confirm('Permanently delete this plate template?')", null) :
                 "Cannot delete the final template.") %></td>
         <%

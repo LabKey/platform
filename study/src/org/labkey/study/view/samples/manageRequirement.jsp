@@ -32,12 +32,12 @@
     Site site = requirement.getSite();
     String siteLabel = site != null ? site.getDisplayName() : "N/A";
 
-    String deleteURL = "deleteRequirement.view?id=" + requirement.getRequestId() +
-            "&requirementId=" + requirement.getRowId();
+    String deleteURL = buildURL(SpecimenController.DeleteRequestAction.class, "id=" + requirement.getRequestId() +
+            "&requirementId=" + requirement.getRowId());
 %>
 <table class="labkey-manage-display">
     <tr>
-        <td align="left"><%= textLink("View Request", "manageRequest.view?id=" + requirement.getRequestId())%></td>
+        <td align="left"><%= textLink("View Request", buildURL(SpecimenController.ManageRequestAction.class) + "id=" + requirement.getRequestId())%></td>
     </tr>
 <%
     if (bean.isRequestManager() && bean.isFinalState())
@@ -49,7 +49,7 @@
     <tr>
         <td class="labkey-form-label">
             This request is in a final state; no changes are allowed.<br>
-            To make changes, you must <a href="manageRequestStatus.view?id=<%= requirement.getRequestId() %>">
+            To make changes, you must <a href="<%=buildURL(SpecimenController.ManageRequestAction.class) + "id=" + requirement.getRequestId() %>">
             change the request's status</a> to a non-final state.
         </td>
     </tr>
@@ -105,7 +105,7 @@
     %>
     <tr>
         <td>
-            <form action="manageRequirement.post" enctype="multipart/form-data" method="post">
+            <form action="<%=h(buildURL(SpecimenController.ManageRequirementAction.class))%>" enctype="multipart/form-data" method="post">
                 <input type="hidden" name="id" value="<%= requirement.getRequestId() %>">
                 <input type="hidden" name="requirementId" value="<%= requirement.getRowId() %>">
                 <table>
@@ -158,7 +158,7 @@
                         <td>
                             <%= generateSubmitButton("Save Changes and Send Notifications") %>&nbsp;
                             <%= PageFlowUtil.generateSubmitButton("Delete Requirement", "this.form.action='" + deleteURL + "'")%>&nbsp;
-                            <%= generateButton("Cancel", "manageRequest.view?id=" + requirement.getRequestId())%>
+                            <%= generateButton("Cancel", buildURL(SpecimenController.ManageRequestAction.class, "id=" + requirement.getRequestId()))%>
                         </td>
                     </tr>
                 </table>

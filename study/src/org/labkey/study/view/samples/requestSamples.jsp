@@ -90,7 +90,7 @@ function setDefaults()
     return true;
 }
 </script>
-<form name="CreateSampleRequest" action="handleCreateSampleRequest.post" method="POST">
+<form name="CreateSampleRequest" action="<%=h(buildURL(SpecimenController.HandleCreateSampleRequestAction.class))%>" method="POST">
     <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>">
     <%
         if (specimens != null)

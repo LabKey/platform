@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.study.model.SampleRequestStatus"%>
 <%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -80,7 +81,7 @@ function orderModule(down)
 }
 </script>
 
-<form action="manageStatusOrder.post" name="reorder" method="POST">
+<form action="<%=h(buildURL(SpecimenController.ManageStatusOrderAction.class))%>" name="reorder" method="POST">
 <table>
         <tr>
             <td>

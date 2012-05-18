@@ -27,7 +27,7 @@
     SpecimenController.LabSpecimenListsBean bean = me.getModelBean();
     boolean originating = bean.getType() == SpecimenController.LabSpecimenListsBean.Type.ORIGINATING;
 %>
-<form action="emailLabSpecimenLists.post" method="POST" enctype="multipart/form-data">
+<form action="<%=h(buildURL(SpecimenController.EmailLabSpecimenListsAction.class))%>" method="POST" enctype="multipart/form-data">
 <input type="hidden" name="id" value="<%= bean.getSampleRequest().getRowId() %>">
 <input type="hidden" name="listType" value="<%= bean.getType().toString() %>">
 <%
@@ -53,7 +53,7 @@
         int rowCount = 0;
         for (SiteImpl site : bean.getLabs())
         {
-            String downloadURLPrefix = "downloadSpecimenList.view?id=" + bean.getSampleRequest().getRowId() +
+            String downloadURLPrefix =  buildURL(SpecimenController.DownloadSpecimenListAction.class) + "id=" + bean.getSampleRequest().getRowId() +
                     "&destSiteId=" + bean.getSampleRequest().getDestinationSiteId() +
                     "&listType=" + bean.getType().toString() +
                     "&sourceSiteId=" + site.getRowId() + "&export=";
@@ -169,7 +169,7 @@
     </tr>
     <tr>
         <th>&nbsp;</th>
-        <td><%= generateSubmitButton("Send Email")%> <%= generateButton("Cancel", "manageRequest.view?id=" + bean.getSampleRequest().getRowId())%></td>
+        <td><%= generateSubmitButton("Send Email")%> <%= generateButton("Cancel", buildURL(SpecimenController.ManageRequestAction.class) + "id=" + bean.getSampleRequest().getRowId())%></td>
     </tr>
 </table>
 </form>

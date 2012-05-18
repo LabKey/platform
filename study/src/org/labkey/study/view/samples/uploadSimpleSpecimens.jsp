@@ -32,7 +32,7 @@
 Use this form to insert or update specimens in the repository.<br>
 <%=textLink("Download a template workbook", new ActionURL(SpecimenController.GetSpecimenExcelAction.class, c))%><br><br>
 Paste data in the area below
-<form action="showUploadSpecimens.post" method="post" enctype="multipart/form-data">
+<form action="<%=h(buildURL(ShowUploadSpecimensAction.class))%>" method="post" enctype="multipart/form-data">
     <textarea name=tsv id="tsv" rows=20 cols="70"><%=h(bean.getTsv())%></textarea><br>
 
     <p>

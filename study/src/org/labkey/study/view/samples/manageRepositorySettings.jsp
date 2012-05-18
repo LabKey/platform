@@ -16,6 +16,7 @@
  */
 %>
 <%@ page import="org.labkey.study.samples.settings.RepositorySettings" %>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
@@ -23,7 +24,7 @@
 %>
 <labkey:errors/>
 
-<form action="manageRepositorySettings.post" method="POST">
+<form action="<%=h(buildURL(SpecimenController.ManageRepositorySettingsAction.class))%>" method="POST">
     <div>
         <input type="radio" name="simple" value="true" <%=settings.isSimple() ? "CHECKED" : "" %>> Standard Specimen Repository - allows you to upload a list of available specimens
     </div>

@@ -2295,7 +2295,7 @@ public class SpecimenController extends BaseStudyController
         public ModelAndView getView(IdForm form, BindException errors) throws Exception
         {
             _requestId = form.getId();
-            HtmlView header = new HtmlView(PageFlowUtil.textLink("View Request", "manageRequest.view?id=" + form.getId()));
+            HtmlView header = new HtmlView(PageFlowUtil.textLink("View Request", new ActionURL(ManageRequestAction.class,getContainer()).addParameter("id",form.getId())));
             SimpleFilter filter = new SimpleFilter("RequestId", form.getId());
             GridView historyGrid = getUtils().getRequestEventGridView(getViewContext().getRequest(), errors, filter);
             return new VBox(header, historyGrid);

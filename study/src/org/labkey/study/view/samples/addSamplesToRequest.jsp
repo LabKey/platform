@@ -35,7 +35,7 @@
     else
     {
 %>
-<form action="<%= "showCreateSampleRequest.post" %>" method="POST">
+<form action="<%=h(buildURL(SpecimenController.ShowCreateSampleRequestAction.class))%>" method="POST">
     Please select a request below to which to add the selected specimens.<br>
     Note that only the creator of a request or an administrator can add specimens to an existing request.<br>
     <br>

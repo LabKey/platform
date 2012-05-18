@@ -43,7 +43,7 @@
 </style>
 <%=errorHTML%>
 
-<form action="customizeEmail.view" method="post">
+<form action="<%=h(buildURL(AdminController.CustomizeEmailAction.class))%>" method="post">
     <% if (bean.getReturnUrl() != null) { %>
         <input type="hidden" name="returnUrl" value="<%= bean.getReturnUrl()%>" />
     <% } %>

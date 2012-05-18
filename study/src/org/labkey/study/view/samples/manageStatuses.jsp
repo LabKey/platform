@@ -44,7 +44,7 @@ function showSystemRows(value)
 }
 
 </script>
-<form action="manageStatuses.post" name="manageStatuses" method="POST">
+<form action="<%=h(buildURL(SpecimenController.ManageStatusesAction.class))%>" name="manageStatuses" method="POST">
 <table width="600px">
     <tr>
         <td class="labkey-form-label" style="padding-top:4px;padding-bottom:4px;">Allowing users to build up specimen requests over multiple
@@ -87,7 +87,7 @@ function showSystemRows(value)
                     else
                     {
                 %>
-                        <td><%= textLink("delete", "deleteStatus.view?id=" + status.getRowId())%></td>
+                        <td><%= textLink("delete", buildURL(SpecimenController.DeleteStatusAction.class, "id=" + status.getRowId()))%></td>
                 <%
                     }
                 %>

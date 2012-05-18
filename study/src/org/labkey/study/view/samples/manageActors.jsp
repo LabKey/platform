@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
+<%@ page import="org.labkey.study.controllers.samples.ShowGroupMembersAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -46,7 +47,7 @@
     }
 %>
 <labkey:errors/>
-<form action="manageActors.post" name="manageActors" method="POST">
+<form action="<%=h(buildURL(SpecimenController.ManageActorsAction.class))%>=" name="manageActors" method="POST">
     <table>
         <tr>
             <th>&nbsp;</th>
@@ -63,10 +64,10 @@
                 if (actor.isPerSite())
                 {
                     if (showMemberSitesId != actor.getRowId())
-                        updateMembersLink = "manageActors.view?showMemberSites=" + + actor.getRowId();
+                        updateMembersLink =  buildURL(SpecimenController.ManageActorsAction.class) + "showMemberSites=" + actor.getRowId();
                 }
                 else
-                    updateMembersLink = "showGroupMembers.view?id=" + actor.getRowId();
+                    updateMembersLink = buildURL(ShowGroupMembersAction.class) + "id=" + actor.getRowId();
         %>
         <tr>
             <td align="center">&nbsp;</td>
@@ -87,7 +88,7 @@
                         <%
                             for (SiteImpl site : study.getSites())
                             {
-                            %><a href="<%= "showGroupMembers.view?id=" + actor.getRowId() + "&siteId=" + site.getRowId() %>"><%= site.getDisplayName() %></a><br><%
+                            %><a href="<%= h(buildURL(ShowGroupMembersAction.class)) + "id=" + actor.getRowId() + "&siteId=" + site.getRowId() %>"><%= site.getDisplayName() %></a><br><%
                             }
                         }
                         else
@@ -102,7 +103,7 @@
                 %>
                 <%= textLink("Update Members", updateMembersLink) %>
                 <%=  inUseActorIds.contains(actor.getRowId()) ? "" :
-                        textLink("Delete", "deleteActor.view?id=" + actor.getRowId(), "return confirm('Deleting this actor will delete all information about its membership.  All member emails will need to be entered again if you recreate this actor.')", null) %>
+                        textLink("Delete", buildURL(SpecimenController.DeleteActorAction.class) + "id=" + actor.getRowId(), "return confirm('Deleting this actor will delete all information about its membership.  All member emails will need to be entered again if you recreate this actor.')", null) %>
                 <%
                     }
                 %>

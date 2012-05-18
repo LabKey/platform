@@ -28,7 +28,7 @@
 %>
 <labkey:errors/>
 <span>
-<form action="showGroupMembers.post" method="POST">
+<form action="<%=h(buildURL(ShowGroupMembersAction.class))%>" method="POST">
     <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>">
 <%
     if (bean.getMembers() == null || bean.getMembers().length <= 0)

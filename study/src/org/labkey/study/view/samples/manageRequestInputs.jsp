@@ -170,7 +170,7 @@
         return true;
     }
 </script>
-<form action="handleUpdateRequestInputs.post" method="POST" onSubmit="return verifyForm()">
+<form action="<%=h(buildURL(SpecimenController.HandleUpdateRequestInputsAction.class))%>" method="POST" onSubmit="return verifyForm()">
     <table id="inputTable">
         <tr>
             <th valign="bottom">&nbsp;</th>

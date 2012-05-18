@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.study.model.StudyImpl"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.study.model.SampleRequestActor"%>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -79,7 +80,7 @@ function orderModule(down)
 }
 </script>
 
-<form action="manageActorOrder.post" name="reorder" method="POST">
+<form action="<%=h(buildURL(SpecimenController.ManageActorOrderAction.class))%>" name="reorder" method="POST">
 <table>
         <tr>
             <td>
