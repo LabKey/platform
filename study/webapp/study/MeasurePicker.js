@@ -324,10 +324,8 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
                     }
 
                     // filter the list based on the search box value
-                    if (this.searchBox.getValue() != "")
-                    {
-                        this.filterMeasures(this.searchBox.getValue());
-                    }
+                    this._lastFilterText = '';
+                    this.filterMeasures(this.searchBox.getValue());
 
                     if (this.rendered)
                         this.getEl().unmask();
@@ -409,13 +407,11 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
             width: 200,
             enableKeyEvents: true,
             emptyText : 'Search',
-            name : 'filterSearch',
-            listeners : {
-                // filter the listview using both the label and category names
-                keyup : function(cmp, e){ this.filterMeasures(cmp.getValue()); },
-                scope : this
-            }
+            name : 'filterSearch'
         });
+        var taskFilterMeasures = new Ext.util.DelayedTask(function(){this.filterMeasures(this.searchBox.getValue());}, this);
+//        this.searchBox.on('keyup', function(cmp,e){console.log('keyup');taskFilterMeasures.delay(333);});
+        this.searchBox.on('change', function(cmp,e){console.log('change');taskFilterMeasures.delay(333);});
         tbarItems.push(this.searchBox);
 
         this.errorField = Ext4.create('Ext.form.DisplayField', {
@@ -493,7 +489,15 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
         });
     },
 
-    filterMeasures : function (txt) {
+    _lastFilterText : '',
+
+    filterMeasures : function (txt)
+    {
+        txt = (txt || '').trim();
+        if (txt == this._lastFilterText)
+            return;
+        this._lastFilterText = txt;
+
         if (txt) {
            //Issue 14190: this attempts to balance the need for flexible searching (ie. partial words, random ordering of terms)
             // and the need to get a reasonably small set of results.  the code should:
@@ -545,6 +549,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
         } else {
             this.errorField.hide();
         }
+        this.searchBox.focus();
     },
 
     onListViewSelectionChanged : function(cmp, selections) {
