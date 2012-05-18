@@ -354,7 +354,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
         if (this.multiSelect)
         {
             this.view = Ext4.create('Ext.grid.GridPanel', {
-                cls: 'measuresGridPanel', // for selenium test usage                
+                cls: 'measuresGridPanel iScroll', // for selenium test usage
                 store: this.measuresStore,
                 flex: 1,
                 ui: this.ui,
@@ -714,6 +714,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                     scope: this
                 }
             }),
+            cls : 'iScroll',
             flex: 1,
             ui: this.ui,
             hideHeaders: true,
@@ -732,14 +733,14 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 type: 'vbox',
                 align: 'stretch'
             },
+            cls : 'sourcepanel',
             padding: 5,
             border: false,
             items: [
                 {
                     xtype: 'displayfield',
-                    html: '<span style="font-weight:bold;font-size:large">Source</span>',
-                    padding: 10,
-                    height: 40
+                    html: '<span>Source</span>',
+                    padding: 10
                 },
                 this.sourcesGrid
             ]
@@ -789,6 +790,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                     scope: this
                 }
             }),
+            cls : 'iScroll',
             flex: 1,
             ui: this.ui,
             hidden: true, // starts hidden until a source query is chosen
@@ -819,15 +821,15 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 type: 'vbox',
                 align: 'stretch'
             },
+            cls : 'sourcepanel',
             padding: 5,
             border: false,
             disabled: true, // starts disabled until a source query is chosen
             items: [
                 {
                     xtype: 'displayfield',
-                    html: '<span style="font-weight:bold;font-size:large">Measure</span>',
-                    padding: 10,
-                    height: 40
+                    html: '<span>Measure</span>',
+                    padding: 10
                 },
                 // TODO: add a Select All checkbox
                 this.measuresGrid
