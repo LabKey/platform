@@ -568,6 +568,7 @@ identPrimary
 	: identifier { handleDotIdent(); }
         ( options { greedy=true; } : (DOT^ identifier) )*
         ( options { greedy=true; } : op=OPEN^ {$op.tree.getToken().setType(METHOD_CALL);} exprList CLOSE! )?
+    | escapeFn
 	| aggregate
 	| cast
 // UNDONE: figure out the weakKeywords thing
@@ -575,6 +576,9 @@ identPrimary
 	| r=RIGHT {$r.tree.getToken().setType(IDENT);} op=OPEN^ {$op.tree.getToken().setType(METHOD_CALL);} exprList CLOSE!
 	;
 
+escapeFn
+    : '{fn'! identifier op=OPEN^ {$op.tree.getToken().setType(METHOD_CALL);} exprList CLOSE! '}'!
+    ;
 
 aggregate
     @after {$aggregate.tree.getToken().setType(AGGREGATE);}
