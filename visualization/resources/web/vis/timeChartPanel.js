@@ -1100,10 +1100,10 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 {
                     this.addWarningText("Only showing the first " + this.maxCharts + " charts.");
                 }
-                
+
                 //Display individual lines
                 var groupData = generateGroupSeries(this.individualData, this.chartInfo.subject.groups, this.viewInfo.subjectColumn);
-                
+
                 for (var i = 0; i < (this.chartInfo.subject.groups.length > this.maxCharts ? this.maxCharts : this.chartInfo.subject.groups.length); i++)
                 {
                     var group = this.chartInfo.subject.groups[i];
@@ -1376,10 +1376,12 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
         var plotConfig = {
             renderTo: newChartId,
-            mainTitle: mainTitle,
-            leftTitle: yLeftTitle,
-            rightTitle: yRightTitle,
-            xTitle: xTitle,
+            labels: {
+                main: {value: mainTitle},
+                x: {value: xTitle},
+                yLeft: {value: yLeftTitle},
+                yRight: {value: yRightTitle}
+            },
             layers: layers,
             aes: {
                 x: xAes,
@@ -1414,7 +1416,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             },
             width: newChartDiv.getWidth() - 20, // -20 prevents horizontal scrollbars in cases with multiple charts.
             height: newChartDiv.getHeight() - 20, // -20 prevents vertical scrollbars in cases with one chart.
-            data: individualData ? individualData : aggregateData // There is currently a bug where if there is no data at the plot level then the chart doesn't render properly.
+            data: individualData ? individualData : null // Issue 14845: Charting API: Chart doesnt render if no data is supplied at plot level
+
         };
 
         var plot = new LABKEY.vis.Plot(plotConfig);

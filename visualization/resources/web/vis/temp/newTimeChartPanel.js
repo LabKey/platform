@@ -1295,10 +1295,12 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         var plotConfig = {
             renderTo: newChartDiv.getId(),
-            mainTitle: mainTitle,
-            leftTitle: yLeftTitle,
-            rightTitle: yRightTitle,
-            xTitle: xTitle,
+            labels: {
+                main: {value: mainTitle},
+                x: {value: xTitle},
+                yLeft: {value: yLeftTitle},
+                yRight: {value: yRightTitle}
+            },
             layers: layers,
             aes: {
                 x: xAes,
