@@ -51,6 +51,9 @@ LABKEY.vis.Plot = function(config){
     this.labels = config.labels ? config.labels : {};
 	this.data = config.data ? config.data : null; // An array of rows, required. Each row could have several pieces of data. (e.g. {subjectId: '249534596', hemoglobin: '350', CD4:'1400', day:'120'})
 	this.layers = config.layers ? config.layers : []; // An array of layers, required. (e.g. a layer for a CD4 line chart over time, and a layer for a Hemoglobin line chart over time).
+    this.bgColor = config.bgColor ? config.bgColor : null;
+    this.gridColor = config.gridColor ? config.gridColor : null;
+    this.gridLineColor = config.gridLineColor ? config.gridLineColor : null;
 
     if(this.grid.width == null){
 		this.error("Unable to create plot, width not specified");
@@ -226,6 +229,13 @@ LABKEY.vis.Plot = function(config){
 
 	var initGrid = function(){
         var i, x1, y1, x2, y2, tick, tickText, text, gridLine;
+        if(this.bgColor){
+            this.paper.rect(0, 0, this.grid.width, this.grid.height).attr('fill', this.bgColor).attr('stroke', 'none');
+        }
+
+        if(this.gridColor){
+            this.paper.rect(this.grid.leftEdge, (this.grid.height - this.grid.topEdge),(this.grid.rightEdge - this.grid.leftEdge), (this.grid.topEdge - this.grid.bottomEdge)).attr('fill', this.gridColor).attr('fill', this.gridColor).attr('stroke', 'none');
+        }
 
         if(this.labels.main && this.labels.main.value){
             this.setMainLabel(this.labels.main.value);
@@ -258,6 +268,9 @@ LABKEY.vis.Plot = function(config){
             if(x1 - .5 == this.grid.leftEdge || x1 - .5 == this.grid.rightEdge) continue;
 
             gridLine = this.paper.path(LABKEY.vis.makeLine(x1, -this.grid.bottomEdge, x2, -this.grid.topEdge)).attr('stroke', '#DDD').transform("t0," + this.grid.height);
+            if(this.gridLineColor){
+                gridLine.attr('stroke', this.gridLineColor);
+            }
         }
 
 		if(this.scales.yLeft && this.scales.yLeft.scale){
@@ -284,6 +297,9 @@ LABKEY.vis.Plot = function(config){
 				tick = this.paper.path(LABKEY.vis.makeLine(x1, y1, x2, y2)).transform("t0," + this.grid.height);
                 tickText = this.scales.yLeft.tickFormat ? this.scales.yLeft.tickFormat(leftTicks[i]) : leftTicks[i];
 				gridLine = this.paper.path(LABKEY.vis.makeLine(x2 + 1, y1, this.grid.rightEdge, y2)).attr('stroke', '#DDD').transform("t0," + this.grid.height);
+                if(this.gridLineColor){
+                    gridLine.attr('stroke', this.gridLineColor);
+                }
 				text = this.paper.text(x1 - 15, y1, tickText).transform("t0," + this.grid.height);
 			}
 		}
@@ -312,6 +328,9 @@ LABKEY.vis.Plot = function(config){
 				tick = this.paper.path(LABKEY.vis.makeLine(x1, y1, x2, y2)).transform("t0," + this.grid.height);
                 tickText = this.scales.yRight.tickFormat ? this.scales.yRight.tickFormat(leftTicks[i]) : rightTicks[i];
 				gridLine = this.paper.path(LABKEY.vis.makeLine(this.grid.leftEdge + 1, y1, x1, y2)).attr('stroke', '#DDD').transform("t0," + this.grid.height);
+                if(this.gridLineColor){
+                    gridLine.attr('stroke', this.gridLineColor);
+                }
 				text = this.paper.text(x2 + 15, y1, tickText).transform("t0," + this.grid.height);
 			}
 		}
@@ -485,7 +504,7 @@ LABKEY.vis.Plot = function(config){
 
     this.setMainLabel = function(value){
         if(this.paper){
-            setLabel.call(this, 'main', this.grid.width / 2, 30, value, true).attr({font: "18px Arial, sans-serif"});
+            setLabel.call(this, 'main', this.grid.width / 2, 30, value, true).attr({font: "18px Georgia, sans-serif"});
         } else {
             setLabel.call(this, 'main', this.grid.width / 2, 30, value, false);
         }
@@ -493,7 +512,7 @@ LABKEY.vis.Plot = function(config){
 
     this.setXLabel = function(value){
         if(this.paper){
-            setLabel.call(this, 'x', this.grid.leftEdge + (this.grid.rightEdge - this.grid.leftEdge)/2, this.grid.height - 10, value, true).attr({font: "14px Arial, sans-serif"}).attr({'text-anchor': 'middle'});
+            setLabel.call(this, 'x', this.grid.leftEdge + (this.grid.rightEdge - this.grid.leftEdge)/2, this.grid.height - 10, value, true).attr({font: "14px Georgia, sans-serif"}).attr({'text-anchor': 'middle'});
         } else {
             setLabel.call(this, 'x', this.grid.leftEdge + (this.grid.rightEdge - this.grid.leftEdge)/2, this.grid.height - 10, value, false);
         }
@@ -501,7 +520,7 @@ LABKEY.vis.Plot = function(config){
 
     this.setYRightLabel = function(value){
         if(this.paper){
-            setLabel.call(this, 'yRight', this.grid.rightEdge + 55, this.grid.height / 2, value, true).attr({font: "14px Arial, sans-serif"}).transform("t0," + this.h+"r90");
+            setLabel.call(this, 'yRight', this.grid.rightEdge + 55, this.grid.height / 2, value, true).attr({font: "14px Georgia, sans-serif"}).transform("t0," + this.h+"r90");
         } else {
             setLabel.call(this, 'yRight', this.grid.rightEdge + 55, this.grid.height / 2, value, false);
         }
@@ -509,7 +528,7 @@ LABKEY.vis.Plot = function(config){
     
     this.setYLeftLabel = function(value){
         if(this.paper){
-            setLabel.call(this, 'yLeft', this.grid.leftEdge - 55, this.grid.height / 2, value, true).attr({font: "14px Arial, sans-serif"}).transform("t0," + this.h+"r270");
+            setLabel.call(this, 'yLeft', this.grid.leftEdge - 55, this.grid.height / 2, value, true).attr({font: "14px Georgia, sans-serif"}).transform("t0," + this.h+"r270");
         } else {
             setLabel.call(this, 'yLeft', this.grid.leftEdge - 55, this.grid.height / 2, value, false);
         }
