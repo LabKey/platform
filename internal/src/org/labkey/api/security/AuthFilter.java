@@ -186,6 +186,8 @@ public class AuthFilter implements Filter
         while (attributeNames.hasMoreElements())
         {
             String name = (String)attributeNames.nextElement();
+            if (name.startsWith("org.apache.tomcat."))
+                continue;
             request.removeAttribute(name);
         }
 
