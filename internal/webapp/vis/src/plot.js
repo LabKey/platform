@@ -39,6 +39,7 @@ LABKEY.vis.Plot = function(config){
     };
 
     var labelElements = {}; // These are all of the Raphael elements for the labels.
+    var gridSet = null;
 	this.renderTo = config.renderTo ? config.renderTo : null; // The id of the DOM element to render the plot to, required.
 	this.grid = {
 		width: config.width ? config.width : null, // height of the grid where shapes/lines/etc gets plotted.
@@ -464,7 +465,7 @@ LABKEY.vis.Plot = function(config){
             this.layers[i].render(this.paper, this.grid, this.scales, this.data, this.aes);
         }
 
-        var gridSet = this.paper.setFinish();
+        gridSet = this.paper.setFinish();
         if(this.clipRect){
             gridSet.attr('clip-rect', (this.grid.leftEdge - 10) + ", " + (this.grid.height - this.grid.topEdge) + ", " + (this.grid.rightEdge - this.grid.leftEdge  + 20) + ", " + (this.grid.topEdge - this.grid.bottomEdge + 12));
         }
@@ -602,6 +603,10 @@ LABKEY.vis.Plot = function(config){
 		layer.parent = this; // Set the parent of each layer to the plot so we can grab things like data from it later.
 		this.layers.push(layer);
 	};
+
+    this.clearGrid = function(){
+        gridSet.remove();
+    };
 
 	return this;
 };
