@@ -537,4 +537,15 @@ abstract public class JspBase extends JspContext implements HasViewContext
             return full.substring(full.lastIndexOf('/')+1);
         return full;
     }
+
+    /** simple link to different action w/no parameters */
+    protected String buildURL(Class<? extends Controller> actionClass, String query)
+    {
+        ActionURL v = getViewContext().getActionURL();
+        ActionURL u = new ActionURL(actionClass, getViewContext().getContainer());
+        String full = u.getLocalURIString();
+        if (v.isCanonical() && v.getController().equals(u.getController()))
+            return full.substring(full.lastIndexOf('/')+1) + query;
+        return full + query;
+    }
 }
