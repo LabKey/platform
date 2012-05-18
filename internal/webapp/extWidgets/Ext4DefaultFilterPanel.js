@@ -409,6 +409,8 @@ Ext4.define('LABKEY.ext4.DefaultFilterPanel', {
     validateEqOneOf: function(input, mappedType)
     {
         // Used when "Equals One Of.." is selected. Calls validateInputField on each value entered.
+        if (!input)
+            return true;
         var values = input.split(';');
         var isValid = "";
         for(var i = 0; i < values.length; i++){
