@@ -728,6 +728,42 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
         return fields.get(fieldName);
     },
 
+    exportData : function(format) {
+        format = format || "excel";
+        if (this.sql)
+        {
+            LABKEY.Query.exportSql({
+                schemaName: this.schemaName,
+                sql: this.sql,
+                format: format,
+                containerPath: this.containerPath,
+                containerFilter: this.containerFilter
+            });
+        }
+        else
+        {
+            var params = {
+                schemaName: this.schemaName,
+                "query.queryName": this.queryName,
+                "query.containerFilterName": this.containerFilter
+            };
+
+            if (this.columns)
+                params['query.columns'] = this.columns;
+
+            // These are filters that are custom created (aka not from a defined view).
+            LABKEY.Filter.appendFilterParams(params, this.filterArray);
+
+            if (this.sortInfo)
+                params['query.sort'] = "DESC" == this.sortInfo.direction
+                        ? "-" + this.sortInfo.field
+                        : this.sortInfo.field;
+
+            var action = ("tsv" == format) ? "exportRowsTsv" : "exportRowsExcel";
+            window.location = LABKEY.ActionURL.buildURL("query", action, this.containerPath, params);
+        }
+    },
+
     //Ext3 compatability??
     commitChanges: function(){
         this.sync();
@@ -740,7 +776,8 @@ Ext4.define('LABKEY.ext4.ExtendedJsonReader', {
     extend: 'Ext.data.reader.Json',
     alias: 'reader.ExtendedJsonReader',
     config: {
-        userFilters: null
+        userFilters: null,
+        useSimpleAccessors: true
     },
     mixins: {
         observable: 'Ext.util.Observable'
@@ -793,7 +830,8 @@ Ext4.define('LABKEY.ext4.ExtendedJsonReader', {
             newModel = Ext4.define("Ext.data.reader.Json-Model" + Ext4.id(), {
                 extend: 'Ext.data.Model',
                 idProperty: this.model.prototype.idProperty,
-                fields: fields
+                fields: fields,
+                defaultProxyType:'LabkeyProxy'
             });
             this.setModel(newModel, true);
         } else {

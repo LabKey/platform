@@ -42,6 +42,7 @@ Ext4.define('LABKEY.ext4.GridPanel', {
                 xtype: 'pagingtoolbar',
                 store: this.store,   // same store GridPanel is using
                 dock: 'bottom',
+                ui: this.ui,
                 displayInfo: true
             });
         }
