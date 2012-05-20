@@ -17,6 +17,7 @@
 package org.labkey.api.query;
 
 import org.labkey.api.data.*;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -32,7 +33,7 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
     private boolean _prefixColumnCaption = false;
     String _titleColumn;
 
-    private Map<FieldKey, String> _additionalJoins = new HashMap<FieldKey, String>();
+    private Map<FieldKey, Pair<String, Boolean>> _additionalJoins = new HashMap<FieldKey, Pair<String, Boolean>>();
 
     public LookupForeignKey(ActionURL baseURL, String paramName, String tableName, String pkColumnName, String titleColumn)
     {
@@ -77,11 +78,11 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
 
     /** Adds an extra pair of columns to the join. This doesn't affect how the lookup is presented through query,
      * but does change the SQL that we generate for the join criteria */
-    public void addJoin(FieldKey fkColumn, String lookupColumnName)
+    public void addJoin(FieldKey fkColumn, String lookupColumnName, boolean equalOrIsNull)
     {
         assert fkColumn.getParent() == null : "ForeignKey must belong to this table";
         addSuggested(fkColumn);
-        _additionalJoins.put(fkColumn, lookupColumnName);
+        _additionalJoins.put(fkColumn, Pair.of(lookupColumnName, equalOrIsNull));
     }
 
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
@@ -106,14 +107,15 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
         LookupColumn result = LookupColumn.create(parent, getPkColumn(table), table.getColumn(displayField), _prefixColumnCaption);
         if (result != null)
         {
-            for (Map.Entry<FieldKey, String> entry : _additionalJoins.entrySet())
+            for (Map.Entry<FieldKey, Pair<String, Boolean>> entry : _additionalJoins.entrySet())
             {
-                ColumnInfo lookupColumn = table.getColumn(entry.getValue());
+                Pair<String, Boolean> pair = entry.getValue();
+                ColumnInfo lookupColumn = table.getColumn(pair.first);
                 assert lookupColumn != null : "Couldn't find additional lookup column of name '" + entry.getValue() + "' in " + table;
 
                 // Get the possibly remapped foreign key column
                 FieldKey foreignKey = getRemappedField(entry.getKey());
-                result.addJoin(foreignKey, lookupColumn);
+                result.addJoin(foreignKey, lookupColumn, pair.second);
             }
         }
 

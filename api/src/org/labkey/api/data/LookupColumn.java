@@ -20,6 +20,7 @@ import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RowIdForeignKey;
+import org.labkey.api.util.Pair;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -67,7 +68,7 @@ public class LookupColumn extends ColumnInfo
     /** The display column to show */
     protected ColumnInfo _lookupColumn;
     /** Additional column pairs if this is a multi-column join. Maintain original order using LinkedHashMap to ensure that generated SQL is identical */
-    protected Map<ColumnInfo, ColumnInfo> _additionalJoins = new LinkedHashMap<ColumnInfo, ColumnInfo>();
+    protected Map<ColumnInfo, Pair<ColumnInfo, Boolean>> _additionalJoins = new LinkedHashMap<ColumnInfo, Pair<ColumnInfo, Boolean>>();
 
     public LookupColumn(ColumnInfo foreignKey, ColumnInfo lookupKey, ColumnInfo lookupColumn)
     {
@@ -87,34 +88,38 @@ public class LookupColumn extends ColumnInfo
         return _lookupColumn.getValueSql(getTableAlias(tableAliasName));
     }
 
-    public void addJoin(FieldKey foreignKeyFieldKey, ColumnInfo lookupKey)
+    public void addJoin(FieldKey foreignKeyFieldKey, ColumnInfo lookupKey, boolean equalOrIsNull)
     {
         FieldKey fieldKey = new FieldKey(_foreignKey.getFieldKey().getParent(), foreignKeyFieldKey.getName());
         Map<FieldKey, ColumnInfo> map = QueryService.get().getColumns(_foreignKey.getParentTable(), Collections.singleton(fieldKey));
         ColumnInfo translatedFK = map.get(fieldKey);
         assert translatedFK != null : "ForeignKey '" + foreignKeyFieldKey + "' not found on table '" + _foreignKey.getParentTable() + "' for lookup to '" + lookupKey.getFieldKey() + "'";
 
-        _additionalJoins.put(translatedFK, lookupKey);
+        _additionalJoins.put(translatedFK, Pair.of(lookupKey, equalOrIsNull));
     }
 
     public SQLFragment getJoinCondition(String tableAliasName)
     {
         SQLFragment result = new SQLFragment("(");
-        result.append(getJoinCondition(tableAliasName, _foreignKey, _lookupKey));
-        for (Map.Entry<ColumnInfo, ColumnInfo> entry : _additionalJoins.entrySet())
+        result.append(getJoinCondition(tableAliasName, _foreignKey, _lookupKey, false));
+        for (Map.Entry<ColumnInfo, Pair<ColumnInfo, Boolean>> entry : _additionalJoins.entrySet())
         {
             ColumnInfo fk = entry.getKey();
-            ColumnInfo pk = entry.getValue();
-            result.append(" AND ");
-            result.append(getJoinCondition(tableAliasName, fk, pk));
+            ColumnInfo pk = entry.getValue().first;
+            boolean equalOrIsNull = entry.getValue().second;
+            result.append("\n\t AND ");
+            result.append(getJoinCondition(tableAliasName, fk, pk, equalOrIsNull));
         }
         result.append(")");
         return result;
     }
 
-    private SQLFragment getJoinCondition(String tableAliasName, ColumnInfo fk, ColumnInfo pk)
+    private SQLFragment getJoinCondition(String tableAliasName, ColumnInfo fk, ColumnInfo pk, boolean equalOrIsNull)
     {
         SQLFragment condition = new SQLFragment();
+        if (equalOrIsNull)
+            condition.append("(");
+
         boolean addCast = fk.getSqlTypeInt() != pk.getSqlTypeInt() && getSqlDialect().isPostgreSQL();
         SQLFragment fkSql = fk.getValueSql(tableAliasName);
         if (addCast)
@@ -128,6 +133,12 @@ public class LookupColumn extends ColumnInfo
             condition.append("CAST((").append(pkSql).append(") AS VARCHAR)");
         else
             condition.append(pkSql);
+
+        if (equalOrIsNull)
+        {
+            condition.append(" OR (").append(fkSql).append(" IS NULL");
+            condition.append(" AND ").append(pkSql).append(" IS NULL))");
+        }
 
         return condition;
     }

@@ -64,4 +64,28 @@ public class Lookup
     {
         _queryName = name;
     }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Lookup lookup = (Lookup) o;
+
+        if (_container != null ? !_container.equals(lookup._container) : lookup._container != null) return false;
+        if (_queryName != null ? !_queryName.equalsIgnoreCase(lookup._queryName) : lookup._queryName != null) return false;
+        if (_schemaName != null ? !_schemaName.equalsIgnoreCase(lookup._schemaName) : lookup._schemaName != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = _container != null ? _container.hashCode() : 0;
+        result = 31 * result + (_schemaName != null ? _schemaName.hashCode() : 0);
+        result = 31 * result + (_queryName != null ? _queryName.hashCode() : 0);
+        return result;
+    }
 }

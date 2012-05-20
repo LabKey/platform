@@ -1143,7 +1143,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                 ColumnInfo lookupContainer = lookupTable.getColumn("Container");
                 assert lookupContainer != null : "Couldn't find Container column in " + lookupTable;
 
-                result.addJoin(fkContainer.getFieldKey(), lookupContainer);
+                result.addJoin(fkContainer.getFieldKey(), lookupContainer, false);
             }
             return result;
         }
