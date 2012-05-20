@@ -118,7 +118,12 @@ public class DataSetAutoJoinTable extends VirtualTable
             if (datasetColumn != null)
             {
                 addColumn(datasetColumn);
-                defaultVisible.add(FieldKey.fromParts(name));
+
+                // Make the self-join hidden
+                if (source.equals(dataset))
+                    datasetColumn.setHidden(true);
+                else
+                    defaultVisible.add(FieldKey.fromParts(name));
             }
         }
 
@@ -196,7 +201,7 @@ public class DataSetAutoJoinTable extends VirtualTable
         DataSetForeignKey fk = new DataSetForeignKey(dsd);
         if (_sequenceNumFieldKey != null)
         {
-            fk.addJoin(_sequenceNumFieldKey, "SequenceNum");
+            fk.addJoin(_sequenceNumFieldKey, "SequenceNum", false);
         }
 
         fk.setJoinDescription(StudyService.get().getSubjectNounSingular(dsd.getContainer()) +
@@ -215,8 +220,8 @@ public class DataSetAutoJoinTable extends VirtualTable
         DataSetForeignKey fk = new DataSetForeignKey(dsd);
         if (_sequenceNumFieldKey != null && _keyFieldKey != null)
         {
-            fk.addJoin(_sequenceNumFieldKey, "SequenceNum");
-            fk.addJoin(_keyFieldKey, "_key");
+            fk.addJoin(_sequenceNumFieldKey, "SequenceNum", false);
+            fk.addJoin(_keyFieldKey, "_key", true);
         }
 
         fk.setJoinDescription(StudyService.get().getSubjectNounSingular(dsd.getContainer()) +

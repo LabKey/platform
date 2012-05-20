@@ -123,7 +123,7 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
                 return StudySchema.getInstance().getTableInfoDataSet();
             }
         };
-        fk.addJoin(FieldKey.fromParts("ContainerId"), "container");
+        fk.addJoin(FieldKey.fromParts("ContainerId"), "container", false);
         datasetColumn.setFk(fk);
         datasetColumn.setDisplayColumnFactory(new DisplayColumnFactory()
         {

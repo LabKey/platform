@@ -51,6 +51,7 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.ModuleUpgrader;
 import org.labkey.api.query.AliasedColumn;
@@ -698,28 +699,41 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
     @Override
-    public boolean hasMatchingExtraKey(DataSet pkDataSet)
+    public boolean hasMatchingExtraKey(DataSet other)
     {
-        if (pkDataSet == null)
+        if (other == null)
             return false;
 
-        if (getKeyPropertyName() == null || pkDataSet.getKeyPropertyName() == null)
+        if (getKeyPropertyName() == null || other.getKeyPropertyName() == null)
             return false;
 
-        // Key property name must match
-        if (!getKeyPropertyName().equalsIgnoreCase(pkDataSet.getKeyPropertyName()))
-            return false;
-
-        DomainProperty fkDomainProperty = getDomain().getPropertyByName(getKeyPropertyName());
-        DomainProperty pkDomainProperty = pkDataSet.getDomain().getPropertyByName(getKeyPropertyName());
-        if (fkDomainProperty == null || pkDomainProperty == null)
+        DomainProperty thisKeyDP = getDomain().getPropertyByName(getKeyPropertyName());
+        DomainProperty otherKeyDP = other.getDomain().getPropertyByName(other.getKeyPropertyName());
+        if (thisKeyDP == null || otherKeyDP == null)
             return false;
 
         // Key property types must match
-        PropertyType fkPropertyType = fkDomainProperty.getPropertyDescriptor().getPropertyType();
-        PropertyType pkPropertyType = pkDomainProperty.getPropertyDescriptor().getPropertyType();
-        if (!LOOKUP_KEY_TYPES.contains(fkPropertyType) || fkPropertyType != pkPropertyType)
+        PropertyType thisKeyType = thisKeyDP.getPropertyDescriptor().getPropertyType();
+        PropertyType otherKeyType = otherKeyDP.getPropertyDescriptor().getPropertyType();
+        if (!LOOKUP_KEY_TYPES.contains(thisKeyType) || thisKeyType != otherKeyType)
             return false;
+
+        // Either the lookups must match or the Key property name must match.
+        Lookup thisKeyLookup = thisKeyDP.getLookup();
+        Lookup otherKeyLookup = otherKeyDP.getLookup();
+        if (thisKeyLookup != null && otherKeyLookup != null)
+        {
+            if (!thisKeyLookup.equals(otherKeyLookup))
+                return false;
+        }
+        else
+        {
+            if (thisKeyLookup != null || otherKeyLookup != null)
+                return false;
+
+            if (!getKeyPropertyName().equalsIgnoreCase(other.getKeyPropertyName()))
+                return false;
+        }
 
         // NOTE: Also consider comparing ConceptURI of the properties
 

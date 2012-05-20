@@ -83,7 +83,7 @@
 <p>
     <span class='labkey-error'>WARNING</span>:
     These experimental features may change, break, or disappear at any time.
-    We make absolutely no guarantees about what may happen if you turn one of these experimental
+    We make absolutely no guarantees about what may happen if you turn on these experimental
     features -- it may eat your database or send emails to your aunt.  Enabling or disabling
     some features will require a restart of the server.
 </p>
