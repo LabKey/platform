@@ -10,21 +10,9 @@ Ext4.tip.QuickTipManager.init();
 
 Ext4.define('LABKEY.vis.StatisticsOptionsPanel', {
 
-    extend : 'Ext.form.Panel',
+    extend : 'LABKEY.vis.GenericOptionsPanel',
 
     constructor : function(config){
-        Ext4.apply(config, {
-            header: false,
-            autoHeight: true,
-            autoWidth: true,
-            border: false,
-            bodyStyle: 'padding: 5px',
-            labelAlign: 'top',
-            items: [],
-            buttonAlign: 'right',
-            buttons: []
-        });
-
         Ext4.applyIf(config, {
             displayIndividual: true,
             displayAggregate: false,
@@ -148,20 +136,13 @@ Ext4.define('LABKEY.vis.StatisticsOptionsPanel', {
         this.callParent();
     },
 
-    getDisplayIndividual : function() {
-        return this.displayIndividualCheckbox.getValue();
-    },
-
-    getDisplayAggregate : function() {
-        return this.displayAggregateCheckbox.getValue();
-    },
-
-    getAggregateType : function() {
-        return this.displayAggregateComboBox.getValue();
-    },
-
-    getErrorBars : function() {
-        return this.displayErrorComboBox.getValue();
+    getPanelOptionValues : function() {
+        return {
+            displayIndividual : this.displayIndividualCheckbox.getValue(),
+            displayAggregate : this.displayAggregateCheckbox.getValue(),
+            aggregateType : this.displayAggregateComboBox.getValue(),
+            errorBars : this.displayErrorComboBox.getValue()
+        };
     },
 
     checkForChangesAndFireEvents : function() {

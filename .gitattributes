@@ -3573,10 +3573,11 @@ visualization/resources/web/vis/groupSelector.js -text
 visualization/resources/web/vis/measuresPanel.js -text
 visualization/resources/web/vis/subjectSeriesSelector.js -text
 visualization/resources/web/vis/temp/chartsOptionsPanel.js -text
+visualization/resources/web/vis/temp/genericOptionsPanel.js -text
 visualization/resources/web/vis/temp/groupSelector.js -text
+visualization/resources/web/vis/temp/initialMeasurePanel.js -text
 visualization/resources/web/vis/temp/measureOptionsPanel.js -text
 visualization/resources/web/vis/temp/newTimeChartPanel.js -text
-visualization/resources/web/vis/temp/overviewOptionsPanel.js -text
 visualization/resources/web/vis/temp/participantSelector.js -text
 visualization/resources/web/vis/temp/saveOptionsPanel.js -text
 visualization/resources/web/vis/temp/statisticsOptionsPanel.js -text

@@ -9,7 +9,7 @@ Ext4.namespace("LABKEY.vis");
 Ext4.tip.QuickTipManager.init();
 $h = Ext4.util.Format.htmlEncode;
 
-Ext4.define('LABKEY.vis.OverviewOptionsPanel', {
+Ext4.define('LABKEY.vis.InitialMeasurePanel', {
 
     extend : 'Ext.panel.Panel',
 

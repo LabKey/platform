@@ -10,20 +10,12 @@ Ext4.tip.QuickTipManager.init();
 
 Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
 
-    extend : 'Ext.form.Panel',
+    extend : 'LABKEY.vis.GenericOptionsPanel',
 
     constructor : function(config){
         Ext4.applyIf(config, {
             measures: [],
-            header: false,
-            autoHeight: true,
-            autoWidth: true,
-            bodyStyle: 'padding:5px',
-            border: false,
-            labelWidth: 0,
-            items: [],
-            buttonAlign: 'right',
-            buttons: []
+            labelWidth: 0
         });
 
         // shared from the parent component
@@ -125,7 +117,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                 'afterrender': function(listView){
                     // select the last measure in the list
                     if (listView.getStore().getCount() > 0)
-                        listView.getSelectionModel().select(listView.getStore().getCount()-1, false, true);
+                        listView.getSelectionModel().select(listView.getStore().getCount()-1, false, false);
                 },
                 'selectionchange': function(listView, selections){
                     // set the UI components for the measures series information
@@ -483,16 +475,6 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
         this.requireDataRefresh = true;
     },
 
-    getDataFilterUrl: function()
-    {
-        return this.dataFilterUrl;
-    },
-
-    getDataFilterQuery: function()
-    {
-        return this.dataFilterQuery;
-    },
-
     setYAxisSide: function(measureIndex){
         this.yAxisSide.setValue(this.measures[measureIndex].measure.yAxis);
     },
@@ -839,10 +821,6 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
         });
     },
 
-    getMeasuresAndDimensions: function(){
-        return this.measures;
-    },
-
     getSelectedMeasureIndex: function(){
         var index = -1;
         if (this.measuresListsView.getSelectionModel().getCount() == 1)
@@ -975,6 +953,14 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
         return title;
     },
 
+    getPanelOptionValues : function() {
+        return {
+            dataFilterUrl: this.dataFilterUrl,
+            dataFilterQuery: this.dataFilterQuery,
+            measuresAndDimensions: this.measures
+        };
+    },
+
     checkForChangesAndFireEvents : function() {
         if (this.hasChanges)
             this.fireEvent('chartDefinitionChanged', this.requireDataRefresh);
@@ -982,9 +968,5 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
         // reset the changes flags
         this.requireDataRefresh = false;
         this.hasChanges = false;
-    },
-
-    moveToFront: function() {
-        this.yAxisSide.toFront();
     }
 });

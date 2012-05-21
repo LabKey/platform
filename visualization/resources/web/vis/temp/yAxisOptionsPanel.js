@@ -10,21 +10,9 @@ Ext4.tip.QuickTipManager.init();
 
 Ext4.define('LABKEY.vis.YAxisOptionsPanel', {
 
-    extend : 'Ext.form.Panel',
+    extend : 'LABKEY.vis.GenericOptionsPanel',
 
     constructor : function(config){
-        Ext4.apply(config, {
-            header: false,
-            autoHeight: true,
-            autoWidth: true,
-            bodyStyle: 'padding: 5px',
-            border: false,
-            labelAlign: 'top',
-            items: [],
-            buttonAlign: 'right',
-            buttons: []
-        });
-
         // set axis defaults, if not a saved chart
         Ext4.applyIf(config.axis, {
             name: "y-axis",
@@ -69,7 +57,6 @@ Ext4.define('LABKEY.vis.YAxisOptionsPanel', {
             listeners: {
                 scope: this,
                 'select': function(cmp) {
-                    this.axis.scale = cmp.getValue();
                     this.hasChanges = true;
                 }
             }
@@ -85,14 +72,12 @@ Ext4.define('LABKEY.vis.YAxisOptionsPanel', {
                 scope: this,
                 'change': function(cmp, newVal, oldVal) {
                     this.userEditedLabel = true;
-                    this.axis.label = newVal;
                     this.hasChanges = true;
                 }
             }
         });
         this.labelTextField.addListener('keyUp', function(){
                 this.userEditedLabel = true;
-                this.axis.label = this.labelTextField.getValue();
                 this.hasChanges = true;
             }, this, {buffer: 500});
         columnOneItems.push(this.labelTextField);
@@ -108,8 +93,7 @@ Ext4.define('LABKEY.vis.YAxisOptionsPanel', {
                 'change': function(field, checked){
                     // if checked, remove any manual axis min value
                     if(checked) {
-                        this.axis.range.type = 'automatic';
-                        this.setRangeFormOptions(this.axis.range.type);
+                        this.setRangeMinMaxDisplay('automatic');
                         this.hasChanges = true;
                     }
                 }
@@ -128,8 +112,7 @@ Ext4.define('LABKEY.vis.YAxisOptionsPanel', {
                 'change': function(field, checked){
                     // if checked, enable the min and max textfields and give min focus
                     if(checked) {
-                        this.axis.range.type = 'manual';
-                        this.setRangeFormOptions(this.axis.range.type);
+                        this.setRangeMinMaxDisplay('manual');
                         this.hasChanges = true;
                     }
                 }
@@ -148,20 +131,6 @@ Ext4.define('LABKEY.vis.YAxisOptionsPanel', {
             mouseWheelEnabled: false
         });
 
-        this.rangeMinNumberField.addListener('keyup', function(cmp){
-            var newVal = cmp.getValue();
-            // check to make sure that, if set, the min value is <= to max
-            if(typeof this.axis.range.max == "number" && typeof newVal == "number" && newVal > this.axis.range.max){
-                Ext4.Msg.alert("ERROR", "Range 'min' value must be less than or equal to 'max' value.", function(){
-                    this.rangeMinNumberField.focus();
-                }, this);
-                return;
-            }
-
-            this.axis.range.min = newVal;
-            this.hasChanges = true;
-        }, this, {buffer:500});
-
         this.rangeMaxNumberField = Ext4.create('Ext.form.field.Number', {
             emptyText: 'Max',
             selectOnFocus: true,
@@ -173,21 +142,6 @@ Ext4.define('LABKEY.vis.YAxisOptionsPanel', {
             hideTrigger: true,
             mouseWheelEnabled: false
         });
-
-        this.rangeMaxNumberField.addListener('keyup', function(cmp){
-            var newVal = cmp.getValue();
-            // check to make sure that, if set, the max value is >= to min
-            this.axis.range.max = newVal;
-            var min = typeof this.axis.range.min == "number" ? this.axis.range.min : 0;
-            if(typeof this.axis.range.min == "number" && typeof newVal == "number" && newVal < this.axis.range.min){
-                Ext4.Msg.alert("ERROR", "Range 'max' value must be greater than or equal to 'min' value.", function(){
-                    this.rangeMaxNumberField.focus();
-                }, this);
-                return;
-            }
-
-            this.hasChanges = true;
-        }, this, {buffer: 500});
 
         columnTwoItems.push({
             xtype: 'fieldcontainer',
@@ -220,6 +174,17 @@ Ext4.define('LABKEY.vis.YAxisOptionsPanel', {
         this.buttons = [{
             text: 'Apply',
             handler: function(){
+                // check to make sure that, if set, the max value is >= to min
+                var maxVal = this.rangeMaxNumberField.getValue();
+                var minVal = this.rangeMinNumberField.getValue();
+                if (this.rangeManualRadio.checked && typeof minVal == "number" && typeof maxVal == "number" && maxVal < minVal)
+                {
+                    Ext4.Msg.alert("ERROR", "Range 'max' value must be greater than or equal to 'min' value.", function(){
+                        this.rangeMaxNumberField.focus();
+                    }, this);
+                    return;
+                }
+                
                 this.fireEvent('closeOptionsWindow');
                 this.checkForChangesAndFireEvents();
             },
@@ -229,67 +194,48 @@ Ext4.define('LABKEY.vis.YAxisOptionsPanel', {
         this.callParent();
     },
 
-    getAxis: function(){
-        return this.axis;
-    },
-
     setLabel: function(newLabel){
         if (!this.userEditedLabel)
         {
-            this.axis.label = newLabel;
-            this.labelTextField.setValue(this.axis.label);
+            this.labelTextField.setValue(newLabel);
         }
     },
 
-    setScale: function(newScale){
-        this.axis.scale = newScale;
-        this.scaleCombo.setValue(newScale);
-    },
-
-    setRange: function(rangeType){
-        // select the given radio option without firing events
-        if(rangeType == 'manual'){
-            this.rangeManualRadio.suspendEvents(false);
-            this.rangeManualRadio.setValue(true);
-            this.rangeAutomaticRadio.setValue(false);
-            this.rangeManualRadio.resumeEvents();
-        }
-        else if(rangeType == 'automatic'){
-            this.rangeAutomaticRadio.suspendEvents(false);
-            this.rangeAutomaticRadio.setValue(true);
-            this.rangeManualRadio.setValue(false);
-            this.rangeAutomaticRadio.resumeEvents();
-        }
-
-        this.setRangeFormOptions(rangeType);
-    },
-
-    setRangeFormOptions: function(rangeType){
-        if(rangeType == 'manual'){
-            this.axis.range.type = 'manual';
-
+    setRangeMinMaxDisplay: function(type){
+        if (type == 'manual')
+        {
             this.rangeMinNumberField.enable();
             this.rangeMaxNumberField.enable();
-
-            // if this is a saved chart with manual min and max set
-            if(typeof this.axis.range.min == "number"){
-                this.rangeMinNumberField.setValue(this.axis.range.min);
-            }
-            if(typeof this.axis.range.max == "number"){
-                this.rangeMaxNumberField.setValue(this.axis.range.max);
-            }
+            this.rangeMinNumberField.focus();
         }
-        else if(rangeType == 'automatic'){
-            this.axis.range.type = 'automatic';
-
+        else if (type == 'automatic')
+        {
             this.rangeMinNumberField.disable();
             this.rangeMinNumberField.setValue("");
-            delete this.axis.range.min;
 
             this.rangeMaxNumberField.disable();
             this.rangeMaxNumberField.setValue("");
-            delete this.axis.range.max;
         }
+    },
+
+    getPanelOptionValues : function() {
+        var values = {
+            side : this.axis.side,
+            name : "y-axis",
+            scale : this.scaleCombo.getValue(),
+            range : {
+                type : this.rangeAutomaticRadio.checked ? this.rangeAutomaticRadio.inputValue : this.rangeManualRadio.inputValue
+            },
+            label : this.labelTextField.getValue()
+        };
+
+        if (this.rangeManualRadio.checked)
+        {
+            values.range.min = this.rangeMinNumberField.getValue();
+            values.range.max = this.rangeMaxNumberField.getValue();
+        }
+
+        return values;
     },
 
     checkForChangesAndFireEvents : function(){

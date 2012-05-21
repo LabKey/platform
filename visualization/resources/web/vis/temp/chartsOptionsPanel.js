@@ -10,21 +10,11 @@ Ext4.tip.QuickTipManager.init();
 
 Ext4.define('LABKEY.vis.ChartsOptionsPanel', {
 
-    extend : 'Ext.form.Panel',
+    extend : 'LABKEY.vis.GenericOptionsPanel',
 
     constructor : function(config){
         Ext4.applyIf(config, {
             chartSubjectSelection: 'subjects'
-        });
-        Ext4.apply(config, {
-            header: false,
-            autoHeight: true,
-            autoWidth: true,
-            bodyStyle: 'padding: 5px',
-            border: false,
-            items: [],
-            buttonAlign: 'right',
-            buttons: []
         });
 
         // track if the axis label is something other than the default
@@ -183,16 +173,14 @@ Ext4.define('LABKEY.vis.ChartsOptionsPanel', {
                 scope: this,
                 'change': function(cmp, newVal, oldVal) {
                     this.userEditedTitle = true;
-                    this.mainTitle = newVal;
                     this.hasChanges = true;
                 }
             }
         });
         this.chartTitleTextField.addListener('keyUp', function(){
-                this.userEditedTitle = true;
-                this.mainTitle = this.chartTitleTextField.getValue();
-                this.hasChanges = true;
-            }, this, {buffer: 500});
+            this.userEditedTitle = true;
+            this.hasChanges = true;
+        }, this, {buffer: 500});
         colThreeItems.push(this.chartTitleTextField);
 
         // slider field to set the line width for the chart(s)
@@ -203,12 +191,14 @@ Ext4.define('LABKEY.vis.ChartsOptionsPanel', {
             value: this.lineWidth || 3, // default to 3 if not specified
             increment: 1,
             minValue: 1,
-            maxValue: 10
+            maxValue: 10,
+            listeners: {
+                scope: this,
+                'changecomplete': function(cmp, newVal, thumb) {
+                    this.hasChanges = true;
+                }
+            }
         });
-        this.lineWidthSlider.on('changecomplete', function(cmp, newVal, thumb) {
-            this.lineWidth = newVal;
-            this.hasChanges = true;
-        }, this);
         colThreeItems.push(this.lineWidthSlider);
 
         // checkbox to hide/show data points
@@ -220,7 +210,6 @@ Ext4.define('LABKEY.vis.ChartsOptionsPanel', {
             listeners: {
                 scope: this,
                 'change': function(cmp, checked){
-                    this.hideDataPoints = checked;
                     this.hasChanges = true;
                 }
             }
@@ -269,12 +258,17 @@ Ext4.define('LABKEY.vis.ChartsOptionsPanel', {
         this.callParent();
     },
 
-    getMainTitle: function(){
-        return this.mainTitle;
+    setMainTitle: function(newMainTitle){
+        if (!this.userEditedTitle)
+        {
+            this.chartTitleTextField.setValue(newMainTitle);
+        }
     },
 
-    getChartLayout: function(){
-        return this.chartLayout;
+    chartPerRadioChecked: function(field, checked){
+        this.chartLayout = field.inputValue;
+        this.hasChanges = true;
+        this.requireDataRefresh = true;
     },
 
     getChartSubjectSelection: function(){
@@ -285,26 +279,14 @@ Ext4.define('LABKEY.vis.ChartsOptionsPanel', {
         }
     },
 
-    getLineWidth: function(){
-        return this.lineWidth;
-    },
-
-    getHideDataPoints: function(){
-        return this.hideDataPoints;
-    },
-
-    setMainTitle: function(newMainTitle){
-        if (!this.userEditedTitle)
-        {
-            this.mainTitle = newMainTitle;
-            this.chartTitleTextField.setValue(this.mainTitle);
-        }
-    },
-
-    chartPerRadioChecked: function(field, checked){
-        this.chartLayout = field.inputValue;
-        this.hasChanges = true;
-        this.requireDataRefresh = true;
+    getPanelOptionValues : function() {
+        return {
+            title: this.chartTitleTextField.getValue(),
+            chartLayout: this.chartLayout,
+            chartSubjectSelection: this.getChartSubjectSelection(),
+            lineWidth: this.lineWidthSlider.getValue(),
+            hideDataPoints: this.hideDataPointCheckbox.getValue()
+        };
     },
 
     checkForChangesAndFireEvents : function() {

@@ -10,20 +10,9 @@ Ext4.tip.QuickTipManager.init();
 
 Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
 
-    extend : 'Ext.form.Panel',
+    extend : 'LABKEY.vis.GenericOptionsPanel',
 
     constructor : function(config){
-        Ext4.apply(config, {
-            header: false,
-            autoHeight: true,
-            autoWidth: true,
-            bodyStyle: 'padding:5px',
-            border: false,
-            items: [],
-            buttonAlign: 'right',
-            buttons: []
-        });
-
         //Set time to 'date' if not already set.
         Ext4.applyIf(config, {
             time: 'date'
@@ -83,7 +72,6 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
                 scope: this,
                 'change': function(field, checked){
                     if(checked) {
-                        this.time = "date"; //This will have to be changed to take into account the new data configuration.
                         this.zeroDateCombo.enable();
                         this.intervalCombo.enable();
                         this.rangeAutomaticRadio.enable();
@@ -104,8 +92,6 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
                             }
 
                             this.labelTextField.setValue(newLabel);
-
-                            this.axis.label = newLabel;
                         }
 
                         this.hasChanges = true;
@@ -126,21 +112,17 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
                 scope: this,
                 'change': function(field, checked){
                     if(checked) {
-                        this.time = "visit";
                         this.zeroDateCombo.disable();
                         this.intervalCombo.disable();
                         this.rangeAutomaticRadio.disable();
                         this.rangeManualRadio.disable();
                         this.rangeMaxNumberField.disable();
                         this.rangeMaxNumberField.setValue('');
-                        this.axis.range.max = undefined;
                         this.rangeMinNumberField.disable();
                         this.rangeMinNumberField.setValue('');
-                        this.axis.range.min = undefined;
 
                         var beginning = this.intervalCombo.getValue() + " Since ";
                         if(this.labelTextField.getValue() && this.labelTextField.getValue().indexOf(beginning) == 0) {
-                            this.axis.label = "Visit";
                             this.labelTextField.setValue("Visit");
                         }
 
@@ -186,7 +168,6 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
                             var zeroDateLabel = this.zeroDateCombo.getStore().getAt(this.zeroDateCombo.getStore().find('longlabel', this.zeroDateCombo.getValue())).data.label;
                             var newLabel = "Days Since " + zeroDateLabel;
                             this.labelTextField.setValue(newLabel);
-                            this.axis.label = newLabel;
                         }
                     }
                 }
@@ -217,11 +198,8 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
                     if(this.labelTextField.getValue().indexOf(ending) > -1 && records.length > 0) {
                         var newLabel = records[0].data.value + " Since " + zeroDateLabel;
                         this.labelTextField.setValue(newLabel);
-
-                        this.axis.label = newLabel;
                     }
 
-                    this.interval = cmp.getValue();
                     this.hasChanges = true;
                     this.requireDataRefresh = true;
                 }
@@ -255,8 +233,6 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
                         {
                            var newLabel = this.intervalCombo.getValue() + " Since " + records[0].data.label;
                            this.labelTextField.setValue(newLabel);
-
-                           this.axis.label = newLabel;
                         }
 
                         Ext4.apply(this.zeroDateCol, records[0].data);
@@ -279,13 +255,11 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
             listeners: {
                 scope: this,
                 'change': function(cmp, newVal, oldVal) {
-                    this.axis.label = newVal;
                     this.hasChanges = true;
                 }
             }
         });
         this.labelTextField.addListener('keyUp', function(){
-                this.axis.label = this.labelTextField.getValue();
                 this.hasChanges = true;
             }, this, {buffer: 500});
         columnTwoItems.push(this.labelTextField);
@@ -301,10 +275,9 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
             listeners: {
                 scope: this,
                 'change': function(field, checked){
-                    // if checked, remove any manual axis min value
+                    // if checked, remove any manual axis min/max values
                     if(checked) {
-                        this.axis.range.type = 'automatic';
-                        this.setRangeFormOptions(this.axis.range.type);
+                        this.setRangeMinMaxDisplay('automatic');
                         this.hasChanges = true;
                     }
                 }
@@ -325,8 +298,7 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
                 'change': function(field, checked){
                     // if checked, enable the min and max fields and give min focus
                     if(checked) {
-                        this.axis.range.type = 'manual';
-                        this.setRangeFormOptions(this.axis.range.type);
+                        this.setRangeMinMaxDisplay('manual');
                         this.hasChanges = true;
                     }
                 }
@@ -345,19 +317,6 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
             mouseWheelEnabled: false
         });
 
-        this.rangeMinNumberField.addListener('keyup', function(cmp){
-            var newVal = cmp.getValue();
-            // check to make sure that, if set, the min value is <= to max
-            this.axis.range.min = newVal;
-            if(typeof this.axis.range.max == "number" && typeof newVal == "number" && newVal > this.axis.range.max){
-                Ext4.Msg.alert("ERROR", "Range 'min' value must be less than or equal to 'max' value.", function(){
-                    this.rangeMinNumberField.focus();
-                }, this);
-                return;
-            }
-            this.hasChanges = true;
-        }, this, {buffer: 500});
-
         this.rangeMaxNumberField = Ext4.create('Ext.form.field.Number', {
             emptyText: 'Max',
             selectOnFocus: true,
@@ -369,26 +328,6 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
             hideTrigger: true,
             mouseWheelEnabled: false
         });
-
-        this.rangeMaxNumberField.addListener('keyup', function(cmp){
-            var newVal = cmp.getValue();
-            // check to make sure that, if set, the max value is >= to min
-            this.axis.range.max = newVal;
-            var min = typeof this.axis.range.min == "number" ? this.axis.range.min : 0;
-            if(typeof newVal == "number" && newVal <= min){
-                this.rangeMaxNumberField.suspendEvents(false);
-                Ext4.Msg.alert("ERROR", "Range 'max' value must be greater than or equal to 'min' value.", function(){
-                    this.rangeMaxNumberField.focus();
-                    var task = new Ext4.util.DelayedTask(function(){
-                        this.rangeMaxNumberField.resumeEvents();
-                    }, this);
-                    task.delay(100);
-                }, this);
-                return;
-            }
-
-            this.hasChanges = true;
-        }, this, {buffer: 500});
 
         this.rangeCompositeField = Ext4.create('Ext.form.FieldContainer', {
             layout: 'hbox',
@@ -423,6 +362,17 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
             {
                 text: 'Apply',
                 handler: function(){
+                    // check to make sure that, if set, the max value is >= to min
+                    var maxVal = this.rangeMaxNumberField.getValue();
+                    var minVal = this.rangeMinNumberField.getValue();
+                    if (this.rangeManualRadio.checked && typeof minVal == "number" && typeof maxVal == "number" && maxVal < minVal)
+                    {
+                        Ext4.Msg.alert("ERROR", "Range 'max' value must be greater than or equal to 'min' value.", function(){
+                            this.rangeMaxNumberField.focus();
+                        }, this);
+                        return;
+                    }
+                    
                     this.fireEvent('closeOptionsWindow');
                     this.checkForChangesAndFireEvents();
                 },
@@ -468,7 +418,6 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
                         this.doNotRefreshChart = true; // Set doNotRefreshChart to prevent chart from firing ChartDefinitionChanged event.
                         this.visitChartRadio.setValue(true);
                         this.labelTextField.setValue("Visit");
-                        this.axis.label = "Visit";
                     }
 
                     // if this is a saved report, we will have a zero date to select
@@ -501,8 +450,6 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
                         var zeroDateLabel = store.getAt(store.find('longlabel', this.zeroDateCombo.getValue())).data.label;
                         var newLabel = this.intervalCombo.getValue() + " Since " + zeroDateLabel;
                         this.labelTextField.setValue(newLabel);
-
-                        this.axis.label = newLabel;
                     }
 
                     // this is one of the requests being tracked, see if the rest are done
@@ -512,72 +459,54 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
         })
     },
 
-    getAxis: function(){
-        return this.axis;
-    },
-
-    getTime: function(){
-        return this.time;
-    },
-
-    getZeroDateCol: function(){
-        return this.zeroDateCol;
-    },
-
-    getInterval: function(){
-        return this.interval;
-    },
-
     setZeroDateStore: function(){
         this.fireEvent('measureMetadataRequestPending');
         var newZStore = this.newZeroDateStore();
         this.zeroDateCombo.bindStore(newZStore);
     },
 
-    setRange: function(rangeType){
-        // select the given radio option without firing events
-        if(rangeType == 'manual'){
-            this.rangeManualRadio.suspendEvents(false);
-            this.rangeManualRadio.setValue(true);
-            this.rangeAutomaticRadio.setValue(false);
-            this.rangeManualRadio.resumeEvents();
-        }
-        else if(rangeType == 'automatic'){
-            this.rangeAutomaticRadio.suspendEvents(false);
-            this.rangeAutomaticRadio.setValue(true);
-            this.rangeManualRadio.setValue(false);
-            this.rangeAutomaticRadio.resumeEvents();
-        }
-
-        this.setRangeFormOptions(rangeType);
-    },
-
-    setRangeFormOptions: function(rangeType){
-        if(rangeType == 'manual'){
-            this.axis.range.type = 'manual';
-
+    setRangeMinMaxDisplay: function(type){
+        if (type == 'manual')
+        {
             this.rangeMinNumberField.enable();
             this.rangeMaxNumberField.enable();
-
-            // if this is a saved chart with manual min and max set
-            if(typeof this.axis.range.min == "number"){
-                this.rangeMinNumberField.setValue(this.axis.range.min);
-            }
-            if(typeof this.axis.range.max == "number"){
-                this.rangeMaxNumberField.setValue(this.axis.range.max);
-            }
+            this.rangeMinNumberField.focus();
         }
-        else if(rangeType == 'automatic'){
-            this.axis.range.type = 'automatic';
-
+        else if (type == 'automatic')
+        {
             this.rangeMinNumberField.disable();
             this.rangeMinNumberField.setValue("");
-            delete this.axis.range.min;
 
             this.rangeMaxNumberField.disable();
             this.rangeMaxNumberField.setValue("");
-            delete this.axis.range.max;
         }
+    },
+
+    getTime : function() {
+        return this.dateChartRadio.checked ? this.dateChartRadio.inputValue : this.visitChartRadio.inputValue;
+    },
+
+    getPanelOptionValues : function() {
+        var axisValues = {
+            name : "x-axis",
+            range : {
+                type : this.rangeAutomaticRadio.checked ? this.rangeAutomaticRadio.inputValue : this.rangeManualRadio.inputValue
+            },
+            label : this.labelTextField.getValue()
+        };
+
+        if (this.rangeManualRadio.checked)
+        {
+            axisValues.range.min = this.rangeMinNumberField.getValue();
+            axisValues.range.max = this.rangeMaxNumberField.getValue();
+        }
+
+        return {
+            time: this.dateChartRadio.checked ? this.dateChartRadio.inputValue : this.visitChartRadio.inputValue,
+            zeroDateCol: this.zeroDateCol,
+            interval: this.intervalCombo.getValue(),
+            axis: axisValues
+        };
     },
 
     checkForChangesAndFireEvents : function(){

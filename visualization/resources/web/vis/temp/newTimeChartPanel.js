@@ -16,7 +16,8 @@ LABKEY.requiresScript('vis/src/plot.js');
 LABKEY.requiresScript('vis/lib/d3-2.0.4.js');
 LABKEY.requiresScript('vis/lib/raphael-min.js');
 
-LABKEY.requiresScript("vis/temp/overviewOptionsPanel.js");
+LABKEY.requiresScript("vis/temp/genericOptionsPanel.js");
+LABKEY.requiresScript("vis/temp/initialMeasurePanel.js");
 LABKEY.requiresScript("vis/temp/saveOptionsPanel.js");
 LABKEY.requiresScript("vis/temp/measureOptionsPanel.js");
 LABKEY.requiresScript("vis/temp/yAxisOptionsPanel.js");
@@ -139,7 +140,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 }
                 else
                 {
-                    this.chart.add(Ext4.create('LABKEY.vis.OverviewOptionsPanel', {
+                    this.chart.add(Ext4.create('LABKEY.vis.InitialMeasurePanel', {
                         listeners: {
                             scope: this,
                             'initialMeasuresStoreLoaded': function(data) {
@@ -481,7 +482,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             width: width || 850,
             autoHeight: true,
             modal: true,
-            closeAction: 'close',
+            closeAction: 'hide',
             items: [panel],
             listeners: {
                 'closeOptionsWindow': function() {     // TODO: fix the z-index issue with reshowing combobox in window
@@ -616,11 +617,14 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.individualData = undefined;
         this.aggregateData = undefined;
 
+        // get the updated chart information from the various options panels
+        this.chartInfo = this.getChartInfoFromOptionPanels();
+
         this.loaderCount = 0; //Used to prevent the loader from running until we have recieved all necessary callbacks.
-        if (this.statisticsButton.disabled || (!this.statisticsButton.disabled && this.editorStatisticsPanel.getDisplayIndividual()))
+        if (this.chartInfo.displayIndividual)
             this.loaderCount++;
 
-        if (!this.statisticsButton.disabled && this.editorStatisticsPanel.getDisplayAggregate())
+        if (this.chartInfo.displayAggregate)
             this.loaderCount++;
 
         if (this.loaderCount == 0)
@@ -629,16 +633,13 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             return;
         }
 
-        // get the updated chart information from the various options panels
-        this.chartInfo = this.getChartInfoFromOptionPanels();
-
         if (this.chartInfo.measures.length == 0)
         {
            this.clearChartPanel("No measure selected. Please click the \"Measures\" button to add a measure.");
            return;
         }
 
-        if (this.statisticsButton.disabled || (!this.statisticsButton.disabled && this.editorStatisticsPanel.getDisplayIndividual()))
+        if (this.chartInfo.displayIndividual)
         {
             //Get data for individual lines.
             LABKEY.Visualization.getData({
@@ -685,7 +686,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             });
         }
 
-        if (!this.statisticsButton.disabled && this.editorStatisticsPanel.getDisplayAggregate())
+        if (this.chartInfo.displayAggregate)
         {
             //Get data for Aggregates.
             var groups = [];
@@ -787,14 +788,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         }
 
         // enable/disable the left and right axis panels
-        (this.getAxisIndex(this.chartInfo.axis, "y-axis", "left") > -1 ? enableAndSetRangeOptions(this.leftAxisButton, this.editorYAxisLeftPanel) : this.leftAxisButton.disable());
-        (this.getAxisIndex(this.chartInfo.axis, "y-axis", "right") > -1 ? enableAndSetRangeOptions(this.rightAxisButton, this.editorYAxisRightPanel) : this.rightAxisButton.disable());
-
-        function enableAndSetRangeOptions(yAxisButton, yAxisPanel){
-            //We have to call setRangeFormOptions AFTER we enable the panel, otherwise all fields get enabled.
-            yAxisButton.enable();
-            yAxisPanel.setRangeFormOptions(yAxisPanel.axis.range.type);
-        }
+        (this.getAxisIndex(this.chartInfo.axis, "y-axis", "left") > -1 ? this.leftAxisButton.enable() : this.leftAxisButton.disable());
+        (this.getAxisIndex(this.chartInfo.axis, "y-axis", "right") > -1 ? this.rightAxisButton.enable() : this.rightAxisButton.disable());
 
         if (!this.editorYAxisLeftPanel.userEditedLabel)
             this.editorYAxisLeftPanel.setLabel(this.editorMeasurePanel.getDefaultLabel("left"));
@@ -1484,18 +1479,21 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
     },
 
     getChartInfoFromOptionPanels: function(){
-        var config = {
-            title: this.editorChartsPanel.getMainTitle(),
-            chartLayout: this.editorChartsPanel.getChartLayout(),
-            chartSubjectSelection: this.editorChartsPanel.getChartSubjectSelection(),
-            lineWidth: this.editorChartsPanel.getLineWidth() || 3, //Default line width of 3.
-            hideDataPoints: this.editorChartsPanel.getHideDataPoints(),
-            measures: [],
-            axis: [this.editorXAxisPanel.getAxis()],
-            filterUrl: this.editorMeasurePanel.getDataFilterUrl(),
-            filterQuery: this.editorMeasurePanel.getDataFilterQuery(),
-            saveThumbnail: this.editorSavePanel.getSaveThumbnail()
-        };
+        var config = {};
+
+        // get the chart layout information
+        Ext4.apply(config, this.editorChartsPanel.getPanelOptionValues());
+
+        // get the measure panel information
+        var measurePanelValues = this.editorMeasurePanel.getPanelOptionValues();
+
+        config.measures = [];
+        config.axis = [];
+        config.filterUrl = measurePanelValues.dataFilterUrl;
+        config.filterQuery = measurePanelValues.dataFilterQuery;
+
+        // get chart related options from save panel
+        Ext4.apply(config, this.editorSavePanel.getPanelOptionValues());
 
         // get the subject info based on the selected chart layout
         if (config.chartSubjectSelection == 'groups')
@@ -1503,37 +1501,40 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         else
             config.subject = this.subjectSelector.getSubject();
 
+        // get the x-axis information (including zero date column info)
+        var xAxisValues = this.editorXAxisPanel.getPanelOptionValues();
+        config.axis.push(xAxisValues.axis);
+
         // get the measure and dimension information for the y-axis (can be > 1 measure)
         var hasLeftAxis = false;
         var hasRightAxis = false;
-        var yAxisMeauresDimensions = this.editorMeasurePanel.getMeasuresAndDimensions();
-        for(var i = 0; i < yAxisMeauresDimensions.length; i++){
+        for(var i = 0; i < measurePanelValues.measuresAndDimensions.length; i++){
             var tempMD = {
-                measure: yAxisMeauresDimensions[i].measure,
-                dimension: yAxisMeauresDimensions[i].dimension,
-                time: this.editorXAxisPanel.getTime()
+                measure: measurePanelValues.measuresAndDimensions[i].measure,
+                dimension: measurePanelValues.measuresAndDimensions[i].dimension,
+                time: xAxisValues.time
             };
 
             if (tempMD.time == "date")
             {
                 tempMD.dateOptions = {
-                    dateCol: yAxisMeauresDimensions[i].dateCol,
-                    zeroDateCol: this.editorXAxisPanel.getZeroDateCol(),
-                    interval: this.editorXAxisPanel.getInterval()
+                    dateCol: measurePanelValues.measuresAndDimensions[i].dateCol,
+                    zeroDateCol: xAxisValues.zeroDateCol,
+                    interval: xAxisValues.interval
                 };
             }
 
             config.measures.push(tempMD);
 
             // add the left/right axis information to the config accordingly
-            if (yAxisMeauresDimensions[i].measure.yAxis == 'right' && !hasRightAxis)
+            if (measurePanelValues.measuresAndDimensions[i].measure.yAxis == 'right' && !hasRightAxis)
             {
-                config.axis.push(this.editorYAxisRightPanel.getAxis());
+                config.axis.push(this.editorYAxisRightPanel.getPanelOptionValues());
                 hasRightAxis = true;
             }
-            else if (yAxisMeauresDimensions[i].measure.yAxis == 'left' && !hasLeftAxis)
+            else if (measurePanelValues.measuresAndDimensions[i].measure.yAxis == 'left' && !hasLeftAxis)
             {
-                config.axis.push(this.editorYAxisLeftPanel.getAxis());
+                config.axis.push(this.editorYAxisLeftPanel.getPanelOptionValues());
                 hasLeftAxis = true;
             }
         }
@@ -1549,9 +1550,10 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         }
 
         // get the statistics/aggregate information (dependent on the enabled state of the statistics button
-        config.displayIndividual = this.statisticsButton.disabled || (!this.statisticsButton.disabled && this.editorStatisticsPanel.getDisplayIndividual());
-        config.displayAggregate = !this.statisticsButton.disabled && this.editorStatisticsPanel.getDisplayAggregate();
-        config.errorBars = this.statisticsButton.disabled ? "None" : this.editorStatisticsPanel.getErrorBars();
+        var values = this.editorStatisticsPanel.getPanelOptionValues();
+        config.displayIndividual = this.statisticsButton.disabled || (!this.statisticsButton.disabled && values.displayIndividual);
+        config.displayAggregate = !this.statisticsButton.disabled && values.displayAggregate;
+        config.errorBars = this.statisticsButton.disabled ? "None" : values.errorBars;
 
         return config;
     },
@@ -1584,7 +1586,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             replace: saveChartInfo.replace,
             reportName: saveChartInfo.reportName,
             reportDescription: saveChartInfo.reportDescription,
-            reportShared: saveChartInfo.reportShared,
+            reportShared: saveChartInfo.shared,
             reportSaveThumbnail: saveChartInfo.saveThumbnail,
             reportSvg: saveChartInfo.saveThumbnail ? reportSvg : null,
             createdBy: saveChartInfo.createdBy,
@@ -1641,7 +1643,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
     },
 
     executeSaveChart: function(config){
-
         // get the chart info to be saved
         this.chartInfo = this.getChartInfoFromOptionPanels();
 

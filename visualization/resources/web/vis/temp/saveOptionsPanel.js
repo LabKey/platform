@@ -11,19 +11,11 @@ $h = Ext4.util.Format.htmlEncode;
 
 Ext4.define('LABKEY.vis.SaveOptionsPanel', {
 
-    extend : 'Ext.form.Panel',
+    extend : 'LABKEY.vis.GenericOptionsPanel',
 
     constructor : function(config){
         Ext4.applyIf(config, {
-            header: false,
-            border: false,
-            autoHeight: true,
-            autoWidth: true,
-            padding: 5,
-            monitorValid: true,
-            items: [],
-            buttonAlign: 'right',
-            buttons: []
+            monitorValid: true
         });
 
         this.callParent([config]);
@@ -105,9 +97,9 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
 
         this.buttons = [
             {
+                itemId: 'reportSaveButton',
                 text: "Save",
                 hidden: !this.canSaveChanges(),
-                disabled: !this.canSaveChanges(),
                 handler: function() {
                     var formVals = this.getForm().getValues();
 
@@ -166,34 +158,46 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
     {
         this.isSaveAs = isSaveAs;
 
-        // reset the report name and description fields
-        if (this.isSaveAs || !this.isSavedReport())
+        // set the report name and description fields basd on the save type
+        if (this.isSaveAs)
         {
             this.down('#reportName').show();
             this.down('#reportName').setValue("");
             this.down('#reportNameDisplay').hide();
+
+            this.down('#reportDescription').show();
             this.down('#reportDescription').setValue("");
-            this.down('#reportShared').setValue('true');
+            this.down('#reportDescriptionDisplay').hide();
+
+            if (!this.canSaveSharedCharts())
+                this.down('#onlyMe').setValue(true);
             this.down('#reportSaveThumbnail').setValue(true);
+
+            this.down('#reportSaveButton').show();
         }
         else
         {
-            this.down('#reportName').hide();
-            this.down('#reportNameDisplay').show();
-            if (this.isSavedReport())
-            {
-                this.down('#reportNameDisplay').setValue($h(this.reportInfo.name));
-                this.down('#reportName').setValue(this.reportInfo.name);
-                this.down('#reportDescription').setValue(this.reportInfo.description);
-                if (this.currentlyShared)
-                    this.down('#allReaders').setValue(true);
-                this.down('#reportSaveThumbnail').setValue(this.saveThumbnail);
+            this.down('#reportName').setVisible(!this.isSavedReport());
+            this.down('#reportName').setValue(this.isSavedReport() ? this.reportInfo.name : null);
+            this.down('#reportNameDisplay').setVisible(this.isSavedReport());
+            this.down('#reportNameDisplay').setValue($h(this.isSavedReport() ? this.reportInfo.name : null));
 
-            }
+            this.down('#reportDescription').setVisible(this.canSaveChanges());
+            this.down('#reportDescription').setValue(this.isSavedReport() ? this.reportInfo.description : null);
+            this.down('#reportDescriptionDisplay').setVisible(!this.canSaveChanges());
+            this.down('#reportDescriptionDisplay').setValue($h(this.isSavedReport() ? this.reportInfo.description : null));
+
+            if (this.currentlyShared)
+                this.down('#allReaders').setValue(true);
+            this.down('#reportSaveThumbnail').setValue(this.saveThumbnail);
+
+            this.down('#reportSaveButton').setVisible(this.canEdit);
         }
     },
 
-    getSaveThumbnail: function() {
-        return this.down('#reportSaveThumbnail').checked;
+    getPanelOptionValues: function() {
+        return {
+            saveThumbnail: this.down('#reportSaveThumbnail').checked
+        };
     }
 });
