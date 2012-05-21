@@ -158,7 +158,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
             List<Map<String, Object>> dataRows = loader.load();
 
             // loader did not parse any rows
-            if (dataRows.isEmpty() && !settings.isAllowEmptyData())
+            if (dataRows.isEmpty() && !settings.isAllowEmptyData() && columns.length > 0)
                 throw new ExperimentException("Unable to load any rows from the input data. Please check the format of the input data to make sure it matches the assay data columns.");
             if (!dataRows.isEmpty())
                 adjustFirstRowOrder(dataRows, loader);
