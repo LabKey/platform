@@ -28,6 +28,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.MemTracker;
 import org.labkey.data.xml.ColumnType;
 
@@ -160,6 +161,12 @@ public abstract class QueryRelation
     public abstract void setContainerFilter(ContainerFilter containerFilter);
 
     public abstract Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected);
+
+
+    public ContainerContext getDefaultContainerContext()
+    {
+        return null==_schema ? null : _schema.getContainer();
+    }
 
 
     /**

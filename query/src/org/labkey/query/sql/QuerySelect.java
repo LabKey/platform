@@ -31,6 +31,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
@@ -1690,7 +1691,12 @@ groupByLoop:
             // copy URL if possible
             FieldKey fk = null != _resolved ? _resolved.getFieldKey() : null;
             if (null != fk)
+            {
                 to.copyURLFromStrict(_colinfo, Collections.singletonMap(fk,to.getFieldKey()));
+            }
+
+            if (to.getURL() instanceof DetailsURL)
+                ((DetailsURL)to.getURL()).setContainerContext(getDefaultContainerContext(), false);
 
             if (_parsedTables.size() != 1)
                 to.setKeyField(false);

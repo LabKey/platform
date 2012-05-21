@@ -24,6 +24,7 @@ import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.util.ContainerContext;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -42,10 +43,6 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
         setName(name);
     }
 
-    public QueryRelation getQueryRelation()
-    {
-        return _relation;
-    }
 
     @NotNull
     public SQLFragment getFromSQL()
@@ -121,6 +118,21 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
         }
         super.afterConstruct();
     }
+
+
+    @Override
+    public boolean hasContainerContext()
+    {
+        return true;
+    }
+
+
+    @Override
+    public ContainerContext getContainerContext()
+    {
+        return _relation.getDefaultContainerContext();
+    }
+
 
     // map output column to its related columns (grouped by source querytable)
     Map<FieldKey, Map<FieldKey,FieldKey>> mapFieldKeyToSiblings = new TreeMap<FieldKey, Map<FieldKey,FieldKey>>();
