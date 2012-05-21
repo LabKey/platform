@@ -85,7 +85,15 @@ public interface Study extends StudyEntity
 
     /**
      * Attempts to resolve an existing visit.
-     * visitID is used for visit-based studies. Date and participant are used for date-based.
+     * @param visitID is used for visit-based studies.
+     * @param date used for date-based.
+     * @param participantID used for date-based.
+     * @param returnPotentialTimepoints return timepoints that have not been created yet, but would be automatically
+     * created if such a dataset or specimen row existed
      */
-    Visit getVisit(String participantID, Double visitID, Date date);
+    Visit getVisit(String participantID, Double visitID, Date date, boolean returnPotentialTimepoints);
+
+    /** For date-based studies, the default duration for timepoints, in days */
+    int getDefaultTimepointDuration();
+
 }

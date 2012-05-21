@@ -844,7 +844,7 @@ public class PublishResultsQueryView extends ResultsQueryView
             Date dateDate = dateObject == null ? null : (Date) ConvertUtils.convert(dateObject.toString(), Date.class);
             String participantID = participantObject == null ? null : participantObject.toString();
             
-            Visit visit = study == null ? null : study.getVisit(participantID, visitDouble, dateDate);
+            Visit visit = study == null ? null : study.getVisit(participantID, visitDouble, dateDate, true);
             out.write(visit == null ? "" : visit.getDisplayString());
         }
     }
