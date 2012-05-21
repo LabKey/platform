@@ -413,19 +413,6 @@ public class StudyDesignManager
         return study;
     }
 
-    public void generateVisits(User user, Study study, GWTStudyDefinition def) throws SQLException
-    {
-        List<GWTTimepoint> timepoints = def.getAssaySchedule().getTimepoints();
-        double visitId = 1.0;
-        Map<GWTTimepoint, Double> timepointVisits = new HashMap();
-        for (GWTTimepoint tp : timepoints)
-        {
-            StudyManager.getInstance().createVisit(study, user, visitId, Visit.Type.REQUIRED_BY_NEXT_VISIT, tp.toString());
-            timepointVisits.put(tp, visitId);
-            visitId += 1.0;
-        }
-    }
-
     public List<Map<String, Object>> generateParticipantDataset(User user, GWTStudyDefinition def)
             throws SQLException
     {

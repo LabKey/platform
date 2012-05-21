@@ -100,6 +100,9 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
                 if (studyXml.isSetStartDate())
                     studyForm.setStartDate(studyXml.getStartDate().getTime());
 
+                if (studyXml.isSetDefaultTimepointDuration())
+                    studyForm.setDefaultTimepointDuration(studyXml.getDefaultTimepointDuration());
+
                 if (studyXml.isSetSecurityType())
                     studyForm.setSecurityType(SecurityType.valueOf(studyXml.getSecurityType().toString()));
 

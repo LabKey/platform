@@ -15,18 +15,15 @@
  */
 package org.labkey.study.writer;
 
-import org.labkey.api.data.MvUtil;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.study.xml.MissingValueIndicatorsType;
 import org.labkey.study.xml.SecurityType;
 import org.labkey.study.xml.StudyDocument;
 import org.labkey.study.xml.TimepointType;
 
 import java.util.Calendar;
-import java.util.Map;
 
 /**
  * User: adam
@@ -66,6 +63,7 @@ class StudyXmlWriter implements InternalStudyWriter
         studyXml.setDescriptionRendererType(study.getDescriptionRendererType());
         studyXml.setInvestigator(study.getInvestigator());
         studyXml.setGrant(study.getGrant());
+        studyXml.setDefaultTimepointDuration(study.getDefaultTimepointDuration());
 
         if (null != study.getStartDate())
         {

@@ -35,6 +35,9 @@
       <ns:column columnName="StartDate">
         <ns:description>The start date of each study.  Note that subjects can also have start dates.</ns:description>
       </ns:column>
+      <ns:column columnName="DefaultTimepointDuration">
+        <ns:description>The number of days an automatically created timepoint should span.</ns:description>
+      </ns:column>
       <ns:column columnName="SecurityType">
         <ns:description>Security type for each study, indicating how dataset read/write access is determined.</ns:description>
       </ns:column>

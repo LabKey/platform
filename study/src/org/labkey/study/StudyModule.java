@@ -54,7 +54,6 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.study.PlateService;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
@@ -157,7 +156,6 @@ import org.labkey.study.view.SubjectDetailsWebPartFactory;
 import org.labkey.study.view.SubjectsWebPart;
 import org.labkey.study.writer.MissingValueWriterFactory;
 import org.labkey.study.writer.StudySerializationRegistryImpl;
-import org.labkey.study.writer.StudyWriter;
 import org.labkey.study.writer.StudyWriterFactory;
 
 import java.lang.reflect.InvocationTargetException;
@@ -210,7 +208,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     public double getVersion()
     {
-        return 12.13;
+        return 12.14;
     }
 
     protected void init()
@@ -684,6 +682,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         set.add(ParticipantGroupManager.ParticipantGroupTestCase.class);
         set.add(StudyImpl.ProtocolDocumentTestCase.class);
         set.add(DataSetDefinition.TestCleanupOrphanedDatasetDomains.class);
+        set.add(StudyManager.VisitCreationTestCase.class);
 
         return set;
     }

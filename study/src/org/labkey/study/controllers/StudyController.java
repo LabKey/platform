@@ -1296,6 +1296,10 @@ public class StudyController extends BaseStudyController
             {
                 form.setStartDate(new Date());
             }
+            if (form.getDefaultTimepointDuration() == 0)
+            {
+                form.setDefaultTimepointDuration(1);
+            }
             return new StudyJspView<StudyPropertiesForm>(null, "createStudy.jsp", form, errors);
         }
 
@@ -1382,6 +1386,7 @@ public class StudyController extends BaseStudyController
             study.setSubjectNounPlural(form.getSubjectNounPlural());
             study.setSubjectColumnName(form.getSubjectColumnName());
             study.setDescription(form.getDescription());
+            study.setDefaultTimepointDuration(form.getDefaultTimepointDuration() < 1 ? 1 : form.getDefaultTimepointDuration());
             if(form.getDescriptionRendererType() != null)
                 study.setDescriptionRendererType(form.getDescriptionRendererType());
             study.setGrant(form.getGrant());
@@ -1645,6 +1650,8 @@ public class StudyController extends BaseStudyController
         {
             if (target.getTimepointType() == TimepointType.DATE && null == target.getStartDate())
                 errors.reject(ERROR_MSG, "Start date must be supplied for a date-based study.");
+            if (target.getDefaultTimepointDuration() < 1)
+                errors.reject(ERROR_MSG, "Default timepoint duration must be a positive number.");
         }
 
         public ModelAndView getView(StudyPropertiesForm form, boolean reshow, BindException errors) throws Exception
@@ -1665,6 +1672,7 @@ public class StudyController extends BaseStudyController
         {
             StudyImpl study = getStudy().createMutable();
             study.setStartDate(form.getStartDate());
+            study.setDefaultTimepointDuration(form.getDefaultTimepointDuration());
             StudyManager.getInstance().updateStudy(getUser(), study);
 
             return true;
@@ -5795,6 +5803,7 @@ public class StudyController extends BaseStudyController
         private String _descriptionRendererType;
         private String _grant;
         private String _investigator;
+        private int _defaultTimepointDuration = 0;
 
         public String getLabel()
         {
@@ -5934,6 +5943,16 @@ public class StudyController extends BaseStudyController
         public void setGrant(String grant)
         {
             _grant = grant;
+        }
+
+        public int getDefaultTimepointDuration()
+        {
+            return _defaultTimepointDuration;
+        }
+
+        public void setDefaultTimepointDuration(int defaultTimepointDuration)
+        {
+            _defaultTimepointDuration = defaultTimepointDuration;
         }
     }
 

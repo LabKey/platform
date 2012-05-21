@@ -277,7 +277,7 @@ public class SequenceVisitManager extends VisitManager
 
             for (double d : sequenceNums)
             {
-                StudyManager.getInstance().ensureVisit(getStudy(), user, d, null, null);
+                StudyManager.getInstance().ensureVisit(getStudy(), user, d, null, true);
             }
             if (sequenceNums.size() > 0)
                 _updateVisitRowId();

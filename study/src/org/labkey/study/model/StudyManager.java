@@ -598,7 +598,7 @@ public class StudyManager
         }
     }
 
-    public int createVisit(Study study, User user, VisitImpl visit) throws SQLException
+    public VisitImpl createVisit(Study study, User user, VisitImpl visit)
     {
         if (visit.getContainer() != null && !visit.getContainer().getId().equals(study.getContainer().getId()))
             throw new VisitCreationException("Visit container does not match study");
@@ -637,33 +637,117 @@ public class StudyManager
         if (visit.getChronologicalOrder() == 0 && prevChronologicalOrder > 0)
             visit.setChronologicalOrder(prevChronologicalOrder);
 
-        visit = _visitHelper.create(user, visit);
-
+        try
+        {
+            visit = _visitHelper.create(user, visit);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+        
         if (visit.getRowId() == 0)
             throw new VisitCreationException("Visit rowId has not been set properly");
 
-        return visit.getRowId();
+        return visit;
     }
 
-    public void ensureVisit(Study study, User user, double visitId, Visit.Type type, String label) throws SQLException
+    public VisitImpl ensureVisit(Study study, User user, double visitId, Visit.Type type, boolean saveIfNew)
     {
         VisitImpl[] visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
-        for (VisitImpl visit : visits)
+        VisitImpl result = ensureVisitWithoutSaving(study, visitId, type, visits);
+        if (saveIfNew && result.getRowId() == 0)
         {
-            // check to see if our new visitId is within the range of an existing visit:
-            if (visit.getSequenceNumMin() <= visitId && visit.getSequenceNumMax() >= visitId)
-                return;
+            // Insert it into the database if it's new
+            return createVisit(study, user, result);
         }
-        createVisit(study, user, visitId,  type, label);
+        return result;
     }
 
-
-    public void createVisit(Study study, User user, double visitId, Visit.Type type, String label) throws SQLException
+    private VisitImpl ensureVisitWithoutSaving(Study study, double visitId, Visit.Type type, VisitImpl[] existingVisits)
     {
-        VisitImpl visit = new VisitImpl(study.getContainer(), visitId, label, type);
-        createVisit(study, user, visit);
-    }
+        // Remember the SequenceNums closest to the requested id in case we need to create one
+        double nextVisit = Double.POSITIVE_INFINITY;
+        double previousVisit = Double.NEGATIVE_INFINITY;
+        for (VisitImpl visit : existingVisits)
+        {
+            if (visit.getSequenceNumMin() <= visitId && visit.getSequenceNumMax() >= visitId)
+                return visit;
+            // check to see if our new visitId is within the range of an existing visit:
+            // Check if it's the closest to the requested id, either before or after
+            if (visit.getSequenceNumMin() < nextVisit && visit.getSequenceNumMin() > visitId)
+            {
+                nextVisit = visit.getSequenceNumMin();
+            }
+            if (visit.getSequenceNumMax() > previousVisit && visit.getSequenceNumMax() < visitId)
+            {
+                previousVisit = visit.getSequenceNumMax();
+            }
+        }
+        double visitIdMin = visitId;
+        double visitIdMax = visitId;
+        String label = null;
+        if (!study.getTimepointType().isVisitBased())
+        {
+            // Do special handling for data-based studies
+            if (study.getDefaultTimepointDuration() == 1 || visitId != Math.floor(visitId) || visitId < 0)
+            {
+                // See if there's a fractional part to the number
+                if (visitId != Math.floor(visitId))
+                {
+                    label = "Day " + visitId;
+                }
+                else
+                {
+                    // If not, drop the decimal from the default name
+                    label = "Day " + (int)visitId;
+                }
+            }
+            else
+            {
+                // Try to create a timepoint that spans the default number of days
+                // For example, if duration is 7 days, do timepoints for days 0-6, 7-13, 14-20, etc
+                int intervalNumber = (int)visitId / study.getDefaultTimepointDuration();
+                visitIdMin = intervalNumber * study.getDefaultTimepointDuration();
+                visitIdMax = (intervalNumber + 1) * study.getDefaultTimepointDuration() - 1;
 
+                // Scale the timepoint to be smaller if there are existing timepoints that overlap
+                // on its desired day range
+                if (previousVisit != Double.NEGATIVE_INFINITY)
+                {
+                    visitIdMin = Math.max(visitIdMin, previousVisit + 1);
+                }
+                if (nextVisit != Double.POSITIVE_INFINITY)
+                {
+                    visitIdMax = Math.min(visitIdMax, nextVisit - 1);
+                }
+
+                // Default label is "Day X"
+                label = "Day " + (int)visitIdMin + " - " + (int)visitIdMax;
+                if ((int)visitIdMin == (int)visitIdMax)
+                {
+                    // Single day timepoint, so don't use the range
+                    label = "Day " + (int)visitIdMin;
+                }
+                else if (visitIdMin == intervalNumber * study.getDefaultTimepointDuration() &&
+                        visitIdMax == (intervalNumber + 1) * study.getDefaultTimepointDuration() - 1)
+                {
+                    // The timepoint is the full span for the default duration, so see if we
+                    // should call it "Week" or "Month"
+                    if (study.getDefaultTimepointDuration() == 7)
+                    {
+                        label = "Week " + (intervalNumber + 1);
+                    }
+                    else if (study.getDefaultTimepointDuration() == 30 || study.getDefaultTimepointDuration() == 31)
+                    {
+                        label = "Month " + (intervalNumber + 1);
+                    }
+                }
+            }
+
+        }
+        return new VisitImpl(study.getContainer(), visitIdMin, visitIdMax, label, type);
+    }
 
     public void importVisitAliases(Study study, User user, List<VisitAlias> aliases) throws IOException, ValidationException, SQLException
     {
@@ -4192,6 +4276,158 @@ public class StudyManager
             {
                 ContainerManager.delete(_studyDateBased.getContainer(), _context.getUser());
             }
+        }
+    }
+
+    public static class VisitCreationTestCase extends Assert
+    {
+        @Test
+        public void testExistingVisitBased()
+        {
+            StudyImpl study = new StudyImpl();
+            study.setTimepointType(TimepointType.VISIT);
+
+            VisitImpl[] existingVisits = new VisitImpl[3];
+            existingVisits[0] = new VisitImpl(null, 1, 1, null, Visit.Type.BASELINE);
+            existingVisits[1] = new VisitImpl(null, 2, 2, null, Visit.Type.BASELINE);
+            existingVisits[2] = new VisitImpl(null, 2.5, 3.0, null, Visit.Type.BASELINE);
+
+            assertEquals("Should return existing visit", existingVisits[0], getInstance().ensureVisitWithoutSaving(study, 1, Visit.Type.BASELINE, existingVisits));
+            assertEquals("Should return existing visit", existingVisits[1], getInstance().ensureVisitWithoutSaving(study, 2, Visit.Type.BASELINE, existingVisits));
+            assertEquals("Should return existing visit", existingVisits[2], getInstance().ensureVisitWithoutSaving(study, 2.5, Visit.Type.BASELINE, existingVisits));
+            assertEquals("Should return existing visit", existingVisits[2], getInstance().ensureVisitWithoutSaving(study, 3.0, Visit.Type.BASELINE, existingVisits));
+
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 1.1, Visit.Type.BASELINE, existingVisits), existingVisits, 1.1, 1.1);
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 3.001, Visit.Type.BASELINE, existingVisits), existingVisits, 3.001, 3.001);
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 4, Visit.Type.BASELINE, existingVisits), existingVisits, 4, 4);
+        }
+
+        @Test
+        public void testEmptyVisitBased()
+        {
+            StudyImpl study = new StudyImpl();
+            study.setTimepointType(TimepointType.VISIT);
+
+            VisitImpl[] existingVisits = new VisitImpl[0];
+
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 1.1, Visit.Type.BASELINE, existingVisits), existingVisits, 1.1, 1.1);
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 3.001, Visit.Type.BASELINE, existingVisits), existingVisits, 3.001, 3.001);
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 4, Visit.Type.BASELINE, existingVisits), existingVisits, 4, 4);
+        }
+
+        @Test
+        public void testEmptyDateBased()
+        {
+            StudyImpl study = new StudyImpl();
+            study.setTimepointType(TimepointType.DATE);
+
+            VisitImpl[] existingVisits = new VisitImpl[0];
+
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 1, Visit.Type.BASELINE, existingVisits), existingVisits, 1, 1);
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, -10, Visit.Type.BASELINE, existingVisits), existingVisits, -10, -10);
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 1.5, Visit.Type.BASELINE, existingVisits), existingVisits, 1.5, 1.5);
+
+            study.setDefaultTimepointDuration(7);
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 0, Visit.Type.BASELINE, existingVisits), existingVisits, 0, 6);
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 1, Visit.Type.BASELINE, existingVisits), existingVisits, 0, 6);
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 6, Visit.Type.BASELINE, existingVisits), existingVisits, 0, 6);
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 7, Visit.Type.BASELINE, existingVisits), existingVisits, 7, 13);
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 10, Visit.Type.BASELINE, existingVisits), existingVisits, 7, 13);
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 15, Visit.Type.BASELINE, existingVisits), existingVisits, 14, 20);
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, -10, Visit.Type.BASELINE, existingVisits), existingVisits, -10, -10);
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 1.5, Visit.Type.BASELINE, existingVisits), existingVisits, 1.5, 1.5);
+        }
+
+        @Test
+        public void testExistingDateBased()
+        {
+            StudyImpl study = new StudyImpl();
+            study.setTimepointType(TimepointType.DATE);
+
+            VisitImpl[] existingVisits = new VisitImpl[3];
+            existingVisits[0] = new VisitImpl(null, 1, 1, null, Visit.Type.BASELINE);
+            existingVisits[1] = new VisitImpl(null, 2, 2, null, Visit.Type.BASELINE);
+            existingVisits[2] = new VisitImpl(null, 7, 13, null, Visit.Type.BASELINE);
+
+            assertSame("Should be existing visit", existingVisits[0], getInstance().ensureVisitWithoutSaving(study, 1, Visit.Type.BASELINE, existingVisits));
+            assertSame("Should be existing visit", existingVisits[1], getInstance().ensureVisitWithoutSaving(study, 2, Visit.Type.BASELINE, existingVisits));
+            assertSame("Should be existing visit", existingVisits[2], getInstance().ensureVisitWithoutSaving(study, 7, Visit.Type.BASELINE, existingVisits));
+            assertSame("Should be existing visit", existingVisits[2], getInstance().ensureVisitWithoutSaving(study, 10, Visit.Type.BASELINE, existingVisits));
+            assertSame("Should be existing visit", existingVisits[2], getInstance().ensureVisitWithoutSaving(study, 13, Visit.Type.BASELINE, existingVisits));
+
+            study.setDefaultTimepointDuration(7);
+            assertSame("Should be existing visit", existingVisits[0], getInstance().ensureVisitWithoutSaving(study, 1, Visit.Type.BASELINE, existingVisits));
+            assertSame("Should be existing visit", existingVisits[1], getInstance().ensureVisitWithoutSaving(study, 2, Visit.Type.BASELINE, existingVisits));
+            assertSame("Should be existing visit", existingVisits[2], getInstance().ensureVisitWithoutSaving(study, 7, Visit.Type.BASELINE, existingVisits));
+            assertSame("Should be existing visit", existingVisits[2], getInstance().ensureVisitWithoutSaving(study, 10, Visit.Type.BASELINE, existingVisits));
+            assertSame("Should be existing visit", existingVisits[2], getInstance().ensureVisitWithoutSaving(study, 13, Visit.Type.BASELINE, existingVisits));
+        }
+
+        @Test
+        public void testCreationDateBased()
+        {
+            StudyImpl study = new StudyImpl();
+            study.setTimepointType(TimepointType.DATE);
+
+            VisitImpl[] existingVisits = new VisitImpl[4];
+            existingVisits[0] = new VisitImpl(null, 1, 1, null, Visit.Type.BASELINE);
+            existingVisits[1] = new VisitImpl(null, 2, 2, null, Visit.Type.BASELINE);
+            existingVisits[2] = new VisitImpl(null, 7, 13, null, Visit.Type.BASELINE);
+            existingVisits[3] = new VisitImpl(null, 62, 64, null, Visit.Type.BASELINE);
+
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 3, Visit.Type.BASELINE, existingVisits), existingVisits, 3, 3);
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 14, Visit.Type.BASELINE, existingVisits), existingVisits, 14, 14);
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, -14, Visit.Type.BASELINE, existingVisits), existingVisits, -14, -14);
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 0, Visit.Type.BASELINE, existingVisits), existingVisits, 0, 0);
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 0.5, Visit.Type.BASELINE, existingVisits), existingVisits, 0.5, 0.5);
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 1.5, Visit.Type.BASELINE, existingVisits), existingVisits, 1.5, 1.5);
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, -5, Visit.Type.BASELINE, existingVisits), existingVisits, -5, -5);
+
+            study.setDefaultTimepointDuration(7);
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 3, Visit.Type.BASELINE, existingVisits), existingVisits, 3, 6, "Day 3 - 6");
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 4, Visit.Type.BASELINE, existingVisits), existingVisits, 3, 6, "Day 3 - 6");
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 5, Visit.Type.BASELINE, existingVisits), existingVisits, 3, 6, "Day 3 - 6");
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 6, Visit.Type.BASELINE, existingVisits), existingVisits, 3, 6, "Day 3 - 6");
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 14, Visit.Type.BASELINE, existingVisits), existingVisits, 14, 20, "Week 3");
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 21, Visit.Type.BASELINE, existingVisits), existingVisits, 21, 27, "Week 4");
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 0, Visit.Type.BASELINE, existingVisits), existingVisits, 0, 0, "Day 0");
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 0.5, Visit.Type.BASELINE, existingVisits), existingVisits, 0.5, 0.5, "Day 0.5");
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 1.5, Visit.Type.BASELINE, existingVisits), existingVisits, 1.5, 1.5, "Day 1.5");
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, -5, Visit.Type.BASELINE, existingVisits), existingVisits, -5, -5, "Day -5");
+
+            study.setDefaultTimepointDuration(30);
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 3, Visit.Type.BASELINE, existingVisits), existingVisits, 3, 6, "Day 3 - 6");
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 4, Visit.Type.BASELINE, existingVisits), existingVisits, 3, 6, "Day 3 - 6");
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 5, Visit.Type.BASELINE, existingVisits), existingVisits, 3, 6, "Day 3 - 6");
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 6, Visit.Type.BASELINE, existingVisits), existingVisits, 3, 6, "Day 3 - 6");
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 14, Visit.Type.BASELINE, existingVisits), existingVisits, 14, 29, "Day 14 - 29");
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 21, Visit.Type.BASELINE, existingVisits), existingVisits, 14, 29, "Day 14 - 29");
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 29, Visit.Type.BASELINE, existingVisits), existingVisits, 14, 29, "Day 14 - 29");
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 30, Visit.Type.BASELINE, existingVisits), existingVisits, 30, 59, "Month 2");
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 60, Visit.Type.BASELINE, existingVisits), existingVisits, 60, 61, "Day 60 - 61");
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 61, Visit.Type.BASELINE, existingVisits), existingVisits, 60, 61, "Day 60 - 61");
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 65, Visit.Type.BASELINE, existingVisits), existingVisits, 65, 89, "Day 65 - 89");
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 100, Visit.Type.BASELINE, existingVisits), existingVisits, 90, 119, "Month 4");
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 0, Visit.Type.BASELINE, existingVisits), existingVisits, 0, 0, "Day 0");
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 0.5, Visit.Type.BASELINE, existingVisits), existingVisits, 0.5, 0.5, "Day 0.5");
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, 1.5, Visit.Type.BASELINE, existingVisits), existingVisits, 1.5, 1.5, "Day 1.5");
+            validateNewVisit(getInstance().ensureVisitWithoutSaving(study, -5, Visit.Type.BASELINE, existingVisits), existingVisits, -5, -5, "Day -5");
+        }
+
+        private void validateNewVisit(VisitImpl newVisit, VisitImpl[] existingVisits, double seqNumMin, double seqNumMax, String label)
+        {
+            validateNewVisit(newVisit, existingVisits, seqNumMin, seqNumMax);
+            assertEquals("Labels don't match", label, newVisit.getLabel());
+        }
+        private void validateNewVisit(VisitImpl newVisit, VisitImpl[] existingVisits, double seqNumMin, double seqNumMax)
+        {
+            for (VisitImpl existingVisit : existingVisits)
+            {
+                assertNotSame("Should be a new visit", newVisit, existingVisit);
+            }
+            assertEquals("Shouldn't have a rowId yet", 0, newVisit.getRowId());
+            assertEquals("Wrong sequenceNumMin", seqNumMin, newVisit.getSequenceNumMin());
+            assertEquals("Wrong sequenceNumMax", seqNumMax, newVisit.getSequenceNumMax());
         }
     }
 }

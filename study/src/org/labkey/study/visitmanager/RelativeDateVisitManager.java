@@ -252,7 +252,7 @@ public class RelativeDateVisitManager extends VisitManager
 
             for (int day : days)
             {
-                StudyManager.getInstance().ensureVisit(getStudy(), user, day, null, "Day " + day);
+                StudyManager.getInstance().ensureVisit(getStudy(), user, day, null, true);
             }
 
             if (days.size() > 0)

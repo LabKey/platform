@@ -120,6 +120,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private String _sourceStudyContainerId;
     private String _investigator;
     private String _grant;
+    private int _defaultTimepointDuration = 1;
 
     public StudyImpl()
     {
@@ -817,8 +818,18 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         }
     }
 
+    public int getDefaultTimepointDuration()
+    {
+        return _defaultTimepointDuration;
+    }
+
+    public void setDefaultTimepointDuration(int defaultTimepointDuration)
+    {
+        _defaultTimepointDuration = defaultTimepointDuration;
+    }
+
     @Override
-    public Visit getVisit(String participantID, Double visitID, Date date)
+    public Visit getVisit(String participantID, Double visitID, Date date, boolean returnPotentialTimepoints)
     {
         Double sequenceNum = null;
         if (visitID != null && getTimepointType().isVisitBased())
@@ -829,20 +840,29 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         {
             // Translate the date into a sequencenum based on the particpant's start date
             Participant participant = StudyManager.getInstance().getParticipant(this, participantID);
+            Calendar startCal = new GregorianCalendar();
             if (participant != null && participant.getStartDate() != null)
             {
-                Calendar startCal = new GregorianCalendar();
                 startCal.setTime(participant.getStartDate());
-                Calendar timepointCal = new GregorianCalendar();
-                timepointCal.setTime(date);
-                sequenceNum = (double)daysBetween(startCal, timepointCal);
             }
+            else
+            {
+                startCal.setTime(getStartDate());
+            }
+            Calendar timepointCal = new GregorianCalendar();
+            timepointCal.setTime(date);
+            sequenceNum = (double)daysBetween(startCal, timepointCal);
         }
 
         if (sequenceNum != null)
         {
             // Look up the visit if we have a sequencenum
-            return StudyManager.getInstance().getVisitForSequence(this, sequenceNum);
+            VisitImpl result = StudyManager.getInstance().getVisitForSequence(this, sequenceNum);
+            if (result == null && returnPotentialTimepoints)
+            {
+                result = StudyManager.getInstance().ensureVisit(this, null, sequenceNum, null, false);
+            }
+            return result;
         }
 
         return null;

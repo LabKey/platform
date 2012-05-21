@@ -310,6 +310,7 @@ public class AdminController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             root.addChild("Admin Console");
+            getPageConfig().setHelpTopic(new HelpTopic("siteManagement"));
             return root;
         }
     }

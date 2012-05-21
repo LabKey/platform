@@ -34,6 +34,10 @@
     {
         form.setStartDate(getStudy().getStartDate());
     }
+    if (form.getDefaultTimepointDuration() == 0)
+    {
+        form.setDefaultTimepointDuration(getStudy().getDefaultTimepointDuration());
+    }
 %>
 
 <table>
@@ -51,18 +55,30 @@
     </tr>
 </table>
 
-<%WebPartView.startTitleFrame(out, "Start Date", null, "600", null);%>
+<%WebPartView.startTitleFrame(out, "Timepoint Configuration", null, "600", null);%>
 <form action="<%=h(buildURL(StudyController.ManageVisitsAction.class))%>" method="POST">
+   Data in this study is grouped using date-based timepoints rather than visit ids.
+    <ul>
+       <li>A timepoint is assigned to each dataset row by computing the number of days between a subject's start date and the date supplied in the row.</li>
+       <li>Each subject can have an individual start date specified by providing a StartDate field in a demographic dataset.</li>
+       <li>If no start date is available for a subject, the study start date is used.</li>
+       <li>
+           If dataset, specimen, or other data is imported that is not associated with an existing timepoint,
+           a new timepoint will automatically be created.
+       </li>
+       <li>
+           The default timepoint duration will determine the number of days included in automatically created timepoints.
+       </li>
+    </ul>
     <table>
-           <tr><td colspan="2">Data in this study is grouped using date-based timepoints rather than visit ids.
-               <ul>
-               <li>A timepoint is assigned to each dataset row by computing the number of days between a subject's start date and the date supplied in the row.</li>
-               <li>Each subject can have an individual start date specified by providing a StartDate field in a demographic dataset.</li>
-               <li>If no start date is available for a subject, the study start date is used.</li></ul>
-           </td></tr>
         <tr>
-            <th>Start Date<%=helpPopup("Start Date", "A start date is required for studies that are date based.")%></th>
-            <td><input type="text" name="startDate" value="<%=h(DateUtil.formatDate(form.getStartDate()))%>">
+            <td class="labkey-form-label"><label for="startDateInput">Start Date</label><%=helpPopup("Start Date", "A start date is required for studies that are date based.")%></td>
+            <td><input type="text" id="startDateInput" name="startDate" value="<%=h(DateUtil.formatDate(form.getStartDate()))%>">
+            </td>
+        </tr>
+        <tr>
+            <td class="labkey-form-label"><label for="defaultTimepointDurationInput">Default Timepoint Duration</label><%=helpPopup("Default Timepoint Duration", "A start date is required for studies that are date based.")%></td>
+            <td><input type="number" id="defaultTimepointDurationInput" name="defaultTimepointDuration" value="<%=h(form.getDefaultTimepointDuration())%>">
             </td>
         </tr>
         <tr>
@@ -73,7 +89,7 @@
 </form>
 <%WebPartView.endTitleFrame(out);%>
 <%WebPartView.startTitleFrame(out, "Timepoints", null, "600", null);%>
-NOTE: If you edit the day range of timepoints, use the <%= textLink("Recompute Timepoints", UpdateParticipantVisitsAction.class)%> action to
+NOTE: If you edit the day range of timepoints, use <%= textLink("Recompute Timepoints", UpdateParticipantVisitsAction.class)%> to
 assign dataset data to the correct timepoints.
 <table>
     <tr>
@@ -98,4 +114,3 @@ assign dataset data to the correct timepoints.
 %>
 </table>
 <%WebPartView.endTitleFrame(out);%>
-
