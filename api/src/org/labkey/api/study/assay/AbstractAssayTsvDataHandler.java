@@ -137,9 +137,11 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             Container container = data.getContainer();
             ParticipantVisitResolver resolver = createResolver(user, run, protocol, provider, container);
 
+            Domain dataDomain = provider.getResultsDomain(protocol);
+
             if (rawData.size() == 0)
             {
-                if (allowEmptyData())
+                if (allowEmptyData() || dataDomain.getProperties().length == 0)
                 {
                     ExperimentService.get().commitTransaction();
                     return;
@@ -149,8 +151,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     throw new ExperimentException("Data file contained zero data rows");
                 }
             }
-
-            Domain dataDomain = provider.getResultsDomain(protocol);
 
             Set<ExpMaterial> inputMaterials = checkData(dataDomain, rawData, resolver);
 
