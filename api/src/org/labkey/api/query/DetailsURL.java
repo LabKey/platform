@@ -252,8 +252,7 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
     public DetailsURL copy(ContainerContext cc, boolean overwrite)
     {
         DetailsURL ret = (DetailsURL)copy();
-        if (null == ret._containerContext || (null != cc && overwrite))
-            ret.setContainerContext(cc);
+        ret.setContainerContext(cc, overwrite);
         return ret;
     }
 
@@ -298,9 +297,14 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
 
     public void setContainerContext(ContainerContext cc)
     {
-        _containerContext = cc;
+        setContainerContext(cc, true);
     }
 
+    public void setContainerContext(ContainerContext cc, boolean overwrite)
+    {
+        if (null == _containerContext || overwrite)
+            _containerContext = cc;
+    }
 
     public ActionURL getActionURL()
     {

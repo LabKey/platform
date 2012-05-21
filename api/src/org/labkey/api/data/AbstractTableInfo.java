@@ -130,8 +130,9 @@ abstract public class AbstractTableInfo implements TableInfo
         {
             for (ColumnInfo c : getColumns())
             {
-                if (c.getURL() instanceof DetailsURL)
-                    ((DetailsURL)c.getURL()).setContainerContext(cc);
+                StringExpression url = c.getURL();
+                if (url instanceof DetailsURL)
+                    ((DetailsURL)url).setContainerContext(cc, false);
             }
             for (DetailsURL detailsURL : _detailsURLs)
             {
@@ -908,8 +909,7 @@ abstract public class AbstractTableInfo implements TableInfo
     }
 
     /**
-     * return true if all rows from this table come from a single container.
-     * if true, getContainer(Map) must return non-null value
+     * return true if this table provides an implementation of getContainerContext()
      */
     public boolean hasContainerContext()
     {
