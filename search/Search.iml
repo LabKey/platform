@@ -13,35 +13,26 @@
     <orderEntry type="module" module-name="API" />
     <orderEntry type="module" module-name="Internal" />
     <orderEntry type="module-library">
-      <library name="lucene 3.5.0">
+      <library name="lucene 3.6.0">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/lucene-core-3.5.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-core-3.6.0.jar!/" />
         </CLASSES>
         <JAVADOC>
-          <root url="jar://$MODULE_DIR$/lib/lucene-core-3.5.0-javadoc.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-core-3.6.0-javadoc.jar!/" />
         </JAVADOC>
         <SOURCES>
-          <root url="jar://$MODULE_DIR$/lib/lucene-3.5.0-src.zip!/src/java" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-3.6.0-src.zip!/core/src/java" />
         </SOURCES>
       </library>
     </orderEntry>
     <orderEntry type="module-library">
-      <library name="analyzers 3.5.0">
+      <library name="analyzers 3.6.0">
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/lucene-analyzers-3.5.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-analyzers-3.6.0.jar!/" />
         </CLASSES>
         <JAVADOC>
-          <root url="jar://$MODULE_DIR$/lib/lucene-core-3.5.0-javadoc.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/lucene-analyzers-3.6.0-javadoc.jar!/" />
         </JAVADOC>
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library name="tika 1.0">
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/lib/tika-app-1.0.jar!/" />
-        </CLASSES>
-        <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>

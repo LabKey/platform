@@ -18,13 +18,14 @@ package org.labkey.search.model;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.SearcherFactory;
 import org.apache.lucene.search.SearcherManager;
-import org.apache.lucene.search.SearcherWarmer;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.NIOFSDirectory;
 import org.apache.lucene.store.SimpleFSDirectory;
@@ -51,11 +52,13 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
 
     static WritableIndexManager get(File indexPath, Analyzer analyzer) throws IOException
     {
-        SearcherWarmer warmer = new SearcherWarmer() {
+        SearcherFactory factory = new SearcherFactory()
+        {
             @Override
-            public void warm(IndexSearcher s) throws IOException
+            public IndexSearcher newSearcher(IndexReader reader) throws IOException
             {
-                // TODO: Do some basic searches here to warm the new searcher
+                // TODO: Warm the new searcher before returning
+                return super.newSearcher(reader);
             }
         };
 
@@ -73,7 +76,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
                 directory.close();
         }
 
-        return new WritableIndexManagerImpl(iw, warmer, directory);
+        return new WritableIndexManagerImpl(iw, factory, directory);
     }
 
 
@@ -89,9 +92,9 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
     }
 
 
-    private WritableIndexManagerImpl(IndexWriter iw, SearcherWarmer warmer, Directory directory) throws IOException
+    private WritableIndexManagerImpl(IndexWriter iw, SearcherFactory factory, Directory directory) throws IOException
     {
-        super(new SearcherManager(iw, true, warmer, null), directory);
+        super(new SearcherManager(iw, true, factory), directory);
         _iw = iw;
     }
 

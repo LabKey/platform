@@ -1,6 +1,5 @@
 {table}
 Filename|Component|Version|Source|License|LabKey Dev|Purpose
-lucene-core-3.5.0.jar|Lucene|3.5.0|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Full-text search
-lucene-analyzers-3.5.0.jar|Lucene Analyzers|3.5.0|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Stemming support for full-text search
-tika-app-1.0.jar|Tika|1.0|{link:Apache|http://lucene.apache.org/tika/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Document parsers for full-text search
+lucene-core-3.6.0.jar|Lucene|3.6.0|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Full-text search
+lucene-analyzers-3.6.0.jar|Lucene Analyzers|3.6.0|{link:Apache|http://lucene.apache.org/java/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Stemming support for full-text search
 {table}

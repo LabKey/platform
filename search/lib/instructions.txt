@@ -1,0 +1,9 @@
+download lucene-x.x.x.tgz
+- in /lucene-x.x.x, copy lucene-core-x.x.x.jar and lucene-core-x.x.x-javadoc.jar to /lib
+- in /lucene-x.x.x/contrib/analyzers/common, copy lucene-analyzers-x.x.x.jar and lucene-analyzers-x.x.x-javadoc.jar to /lib
+
+download lucene-x.x.x-src.tgz
+- right click "core" directory and "Copy To..." c:\temp
+- cd to c:\temp, right click on "core" and "Send To..." Compressed (zipped) folder (core.zip)
+- copy core.zip to /labkey/server/modules/search/lib/lucene-x.x.x-src.zip
+- open lucene-x.x.x-src.zip and delete the "test" directory

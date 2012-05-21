@@ -2,7 +2,7 @@
 Filename|Component|Version|Source|License|LabKey Dev|Purpose
 annotations.jar|Compiler annotations|1.0|{link:JetBrains|http://www.jetbrains.com/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Annotations to enable compile-time checking for null
 axis.jar|Apache Axis|1.2RC2|{link:Apache|http://ws.apache.org/axis/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Web service implementation (biotrue & pipeline)
-cglib-2.2.jar|Code Generation Library|2.2|{link:SourceForge|http://sourceforge.net/projects/cglib/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|matthewb|Used by Spring Framework
+cglib-2.2.jar|Code Generation Library|2.2|{link:SourceForge|http://sourceforge.net/projects/cglib/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Used by Spring Framework
 collections-generic-4.01.jar|Commons Collections with Generics|4.01|{link:SourceForge|http://sourceforge.net/projects/collections}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Helpful collections
 commons-beanutils-1.7.jar|Commons Beanutils|1.7|{link:Apache|http://jakarta.apache.org/commons/beanutils/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Reading/writing beans
 commons-codec-1.5.jar|Commons Codec|1.5|{link:Apache|http://jakarta.apache.org/commons/codec/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Provides implementations of common encoders and decoders such as Base64, Hex, Phonetic and URLs
@@ -15,7 +15,7 @@ commons-lang3-3.1.jar|Commons Lang|3.1|{link:Apache|http://jakarta.apache.org/co
 commons-logging-1.1.1.jar|Commons Logging|1.1.1|{link:Apache|http://jakarta.apache.org/commons/logging/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Bridge API to different logging implementations
 commons-net-3.1.jar|Commons Net|3.1|{link:Apache|http://jakarta.apache.org/commons/net/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|FTPClient used to retrieve resources from other servers (e.g., GO annotations)
 commons-validator.jar|Commons Validator|1.0.4|{link:Apache|http://jakarta.apache.org/commons/validator/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Data validation and error messages
-ehcache-core-2.5.0.jar|Ehcache|2.5.0|{link:Terracotta|http://ehcache.org/documentation/overview.html}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Caching library
+ehcache-core-2.5.2.jar|Ehcache|2.5.2|{link:Terracotta|http://ehcache.org/documentation/overview.html}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Caching library
 guava-r07.jar|Guava: Google Core Libraries for Java 1.5+|r07|{link:guava-libraries|http://code.google.com/p/guava-libraries/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|kevink|Collections Library
 gwt-dnd-3.1.2.jar|Drag-and-Drop Library for Google Web-Toolkit|3.1.2|{link:gwt-dnd|http://code.google.com/p/gwt-dnd/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Library to make it easier to add drag-and-drop to GWT
 gwt-servlet.jar|Server Support for Google Web Toolkit|2.4.0|{link:Google|http://code.google.com/webtoolkit/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|marki|Support for rich web apps
@@ -32,9 +32,6 @@ jxl.jar|Java Excel|2.6.8|{link:Java Excel API|http://jexcelapi.sourceforge.net//
 kaptcha-2.3.jar|Captcha generator|2.3|{link:kaptcha|http://code.google.com/p/kaptcha/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|nicka|User signup forms
 log4j-1.2.16.jar|Log4j|1.2.16|{link:Apache|http://logging.apache.org/log4j/docs/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Logging
 patricia-trie-0.6.jar|PATRICIA Trie|0.6|{link:PATRICIA Trie|http://code.google.com/p/patricia-trie/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|PATRICIA Trie data structure implementation
-poi-3.8-beta4-20110826.jar|POI|3.8b4|{link:Apache|http://poi.apache.org}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|klum|Java API for Microsoft Documents
-poi-ooxml-3.8-beta4-20110826.jar|POI|3.8b4|{link:Apache|http://poi.apache.org}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|klum|Java API for Microsoft Documents
-poi-ooxml-schemas-3.8-beta4-20110826.jar|POI|3.8b4|{link:Apache|http://poi.apache.org}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|klum|Java API for Microsoft Documents
 opencsv-2.3.jar|OpenCSV|2.3|{link:OpenCSV|http://opencsv.sourceforge.net/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|bbimber|Parsing CSV Files
 picard-1.66.jar|Picard-JDK|1.66|{link:PicardTools|http://picard.sourceforge.net/index.shtml}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|bbimber|Manipulating Sequence Data
 sam-1.66.jar|Sam-JDK|1.66|{link:PicardTools|http://picard.sourceforge.net/index.shtml}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|bbimber|Manipulating Sequence Data
@@ -42,6 +39,7 @@ spring-2.5.5.jar|Spring Framework|2.5.5|{link:Spring|http://www.springframework.
 spring-mock-2.5.5.jar|Spring Framework|2.5.5|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Object instantiation framework
 spring-webmvc-2.5.5.jar|Spring Web MVC Framework|2.5.5|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Basis of web framework
 tar.jar|Java Tar|2.5|{link:Ice Engineering|http://www.trustice.com/java/tar/}|{link:Public Domain|http://creativecommons.org/licenses/publicdomain/}|adam|Reading SEQUEST/Comet tar.gz files
+tika-app-1.1.jar|Tika|1.1|{link:Apache|http://lucene.apache.org/tika/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Document parsers for full-text search and POI for Excel import/export
 jtidy-r918.jar|Java Tidy|r918|{link:SourceForge|http://jtidy.sourceforge.net/}|{link:Custom|http://www.labkey.org/download/jtidy-LICENSE.txt}|mbellew|Validating HTML content
 validation-api-1.0.0.GA.jar|Bean Validation API (JSR 303)|1.0|{link:JCP|http://jcp.org/en/jsr/detail?id=303}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Validation of objects, requirement of GWT
 xbean.jar|XMLBeans|2.5.0|{link:Apache|http://xmlbeans.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|peter|Reading/writing XML

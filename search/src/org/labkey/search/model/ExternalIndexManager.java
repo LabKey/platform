@@ -72,7 +72,7 @@ public class ExternalIndexManager extends IndexManager implements SecurableResou
 
     public ExternalIndexManager(Directory directory, File indexRoot, Analyzer analyzer) throws IOException
     {
-        super(new SearcherManager(directory, null, null), directory);
+        super(new SearcherManager(directory, null), directory);
         _indexRoot = indexRoot;
         _analyzer = analyzer;
     }
