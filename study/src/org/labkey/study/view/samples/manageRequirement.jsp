@@ -32,7 +32,7 @@
     Site site = requirement.getSite();
     String siteLabel = site != null ? site.getDisplayName() : "N/A";
 
-    String deleteURL = buildURL(SpecimenController.DeleteRequestAction.class, "id=" + requirement.getRequestId() +
+    String deleteURL = buildURL(SpecimenController.DeleteRequirementAction.class, "id=" + requirement.getRequestId() +
             "&requirementId=" + requirement.getRowId());
 %>
 <table class="labkey-manage-display">
@@ -49,7 +49,7 @@
     <tr>
         <td class="labkey-form-label">
             This request is in a final state; no changes are allowed.<br>
-            To make changes, you must <a href="<%=buildURL(SpecimenController.ManageRequestAction.class) + "id=" + requirement.getRequestId() %>">
+            To make changes, you must <a href="<%=buildURL(SpecimenController.ManageRequestStatusAction.class) + "id=" + requirement.getRequestId() %>">
             change the request's status</a> to a non-final state.
         </td>
     </tr>
