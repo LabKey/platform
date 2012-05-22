@@ -26,7 +26,9 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.xssf.streaming.SXSSFRow;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.reader.ExcelFactory;
@@ -50,6 +52,12 @@ import java.util.regex.Pattern;
 
 public class ExcelWriter
 {
+    static
+    {
+        // Disable SXSSF assertion; see #14960. TODO: Remove this once assert is removed from SXSSFRow.getCell(int, MissingCellPolicy).
+        SXSSFRow.class.getClassLoader().setClassAssertionStatus(SXSSFRow.class.getName(), false);
+    }
+
     public enum CaptionType
     {
         Name {
@@ -95,7 +103,9 @@ public class ExcelWriter
             @Override
             public Workbook createWorkbook()
             {
-                return new XSSFWorkbook();
+                // Always use a streaming workbook, set to flush to disk every 1,000 rows, #14960.
+                // Note: if we ever need a non-streaming workbook, create a new enum that constructs an XSSFWorkbook.
+                return new SXSSFWorkbook(1000);
             }
 
             @Override
@@ -156,7 +166,7 @@ public class ExcelWriter
         this(docType, null);
     }
 
-    protected ExcelWriter(ExcelDocumentType docType, Workbook workbook)
+    protected ExcelWriter(ExcelDocumentType docType, @Nullable Workbook workbook)
     {
         _docType = docType;
         _workbook = workbook == null ? docType.createWorkbook() : workbook;
@@ -206,13 +216,13 @@ public class ExcelWriter
 
     public void setCaptionType(CaptionType type)
     {
-        this._captionType = type;
+        _captionType = type;
     }
 
 
     public void setShowInsertableColumnsOnly(boolean b)
     {
-        this._insertableColumnsOnly = b;
+        _insertableColumnsOnly = b;
         if (_insertableColumnsOnly)
         {
             // Remove any insert only columns that have already made their way into the list
@@ -711,8 +721,6 @@ public class ExcelWriter
 
                 incrementRow();
             }
-
-
         }
     }
 
