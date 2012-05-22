@@ -120,6 +120,7 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
                         // but we need to pass arguments to ParticipantTable constructor to hide datasets.
                         TableInfo table = new ParticipantTable(_schema, true);
                         table.overlayMetadata(StudyService.get().getSubjectTableName(_schema.getContainer()), schema, new ArrayList<QueryException>());
+                        ((ParticipantTable)table).afterConstruct();
                         return table;
                     }
 
