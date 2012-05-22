@@ -16,6 +16,7 @@
 package org.labkey.query.sql;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
@@ -45,8 +46,9 @@ public class QueryLookupWrapper extends QueryRelation
     final AliasManager _aliasManager;
     QueryRelation _source;
     boolean _hasLookups = false;
-    
-    Map<String, ColumnType.Fk> _fkMap = new HashMap<String, ColumnType.Fk>();
+
+    Map<String, ColumnType> _columnMetaDataMap = new CaseInsensitiveHashMap<ColumnType>();
+    Map<String, ColumnType.Fk> _fkMap = new CaseInsensitiveHashMap<ColumnType.Fk>();
     Map<FieldKey, RelationColumn> _selectedColumns = new HashMap<FieldKey, RelationColumn>();
 
 
@@ -57,12 +59,12 @@ public class QueryLookupWrapper extends QueryRelation
         _alias = relation.getAlias();
         _source = relation;
 
-
         org.labkey.data.xml.TableType.Columns cols = null==md ? null : md.getColumns();
         if (null != cols)
         {
             for (ColumnType col : cols.getColumnArray())
             {
+                _columnMetaDataMap.put(col.getColumnName(), col);
                 ColumnType.Fk colFK = col.getFk();
                 if (null == colFK || null == colFK.getFkTable() || null == colFK.getFkColumnName())
                     continue;
@@ -352,6 +354,12 @@ public class QueryLookupWrapper extends QueryRelation
         void copyColumnAttributesTo(ColumnInfo to)
         {
             _wrapped.copyColumnAttributesTo(to);
+            if (to.getFieldKey().getParent() == null)
+            {
+                ColumnType columnMetaData = _columnMetaDataMap.get(to.getName());
+                if (null != columnMetaData)
+                    to.loadFromXml(columnMetaData, true);
+            }
         }
 
         public SQLFragment getValueSql(String tableAlias)
