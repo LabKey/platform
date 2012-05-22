@@ -872,24 +872,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.exportPdfMenu.removeAll();
 
         var charts = [];
-        var generateParticipantSeries = function(data, subjectColumn){
-            // subjectColumn is this.viewInfo.subjectColumn
-            subjectColumn = data.measureToColumn[subjectColumn];
-            var rows = data.rows;
-            var dataByParticipant = {};
-
-            for(var i = 0; i < rows.length; i++){
-                var rowSubject = rows[i][subjectColumn].value;
-                // Split the data into groups.
-                if(!dataByParticipant[rowSubject]){
-                    dataByParticipant[rowSubject] = [];
-                }
-
-                dataByParticipant[rowSubject].push(rows[i]);
-
-            }
-            return dataByParticipant;
-        };
 
         var generateGroupSeries = function(data, groups, subjectColumn){
             // subjectColumn is this.viewInfo.subjectColumn
@@ -934,8 +916,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 {
                     this.addWarningText("Only showing the first " + this.maxCharts + " charts.");
                 }
-
-                var dataPerParticipant = generateParticipantSeries(this.individualData, this.viewInfo.subjectColumn);
+                var accessor = this.individualData.measureToColumn[this.viewInfo.subjectColumn];
+                var dataPerParticipant = LABKEY.vis.groupData(this.individualData.rows, function(row){return row[accessor].value});
                 for(var participant in dataPerParticipant){
                     var newChart = this.generatePlot(
                             this.chart,
@@ -987,7 +969,16 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 }
 
                 //Display individual lines
-                var groupData = generateGroupSeries(this.individualData, this.chartInfo.subject.groups, this.viewInfo.subjectColumn);
+                var groupedIndividualData;
+                if(this.individualData){
+                    groupedIndividualData = generateGroupSeries(this.individualData, this.chartInfo.subject.groups, this.viewInfo.subjectColumn);
+                }
+                // Display aggregate lines
+                var groupedAggregateData;
+                if(this.aggregateData){
+                    var groupDataAggregate = LABKEY.vis.groupData(this.aggregateData.rows, function(row){return row.CategoryId.displayValue});
+                    console.log(groupDataAggregate);
+                }
 
                 for (var i = 0; i < (this.chartInfo.subject.groups.length > this.maxCharts ? this.maxCharts : this.chartInfo.subject.groups.length); i++)
                 {
@@ -999,12 +990,12 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                             this.chartInfo,
                             this.chartInfo.title + ': ' + group.label,
                             seriesList,
-                            groupData[group.label],
-                            this.individualData.measureToColumn,
-                            this.individualData.visitMap,
-                            null,
-                            null,
-                            null,
+                            groupedIndividualData && groupedIndividualData[group.label] ? groupedIndividualData[group.label] : null,
+                            this.individualData ? this.individualData.measureToColumn : null,
+                            this.individualData ? this.individualData.visitMap : null,
+                            groupDataAggregate && groupDataAggregate[group.label] ? groupDataAggregate[group.label] : null,
+                            this.aggregateData ? this.aggregateData.measureToColumn : null,
+                            this.aggregateData ? this.aggregateData.visitMap : null,
                             this.chartInfo.subject.groups.length > 1 ? 380 : 600 // chart height
                         );
                     charts.push(newChart);
@@ -1330,7 +1321,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             },
             width: newChartDiv.getWidth() - 20, // -20 prevents horizontal scrollbars in cases with multiple charts.
             height: newChartDiv.getHeight() - 20, // -20 prevents vertical scrollbars in cases with one chart.
-            data: individualData ? individualData : aggregateData // There is currently a bug where if there is no data at the plot level then the chart doesn't render properly.
+            data: individualData ? individualData : aggregateData
         };
 
         var plot = new LABKEY.vis.Plot(plotConfig);

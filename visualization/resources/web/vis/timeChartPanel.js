@@ -1102,12 +1102,35 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 }
 
                 //Display individual lines
-                var groupData = generateGroupSeries(this.individualData, this.chartInfo.subject.groups, this.viewInfo.subjectColumn);
+                var groupedIndividualData;
+                if(this.individualData){
+                    groupedIndividualData = generateGroupSeries(this.individualData, this.chartInfo.subject.groups, this.viewInfo.subjectColumn);
+                }
+                // Display aggregate lines
+                var groupedAggregateData;
+                if(this.aggregateData){
+                    var groupDataAggregate = LABKEY.vis.groupData(this.aggregateData.rows, function(row){return row.CategoryId.displayValue});
+                    console.log(groupDataAggregate);
+                }
 
                 for (var i = 0; i < (this.chartInfo.subject.groups.length > this.maxCharts ? this.maxCharts : this.chartInfo.subject.groups.length); i++)
                 {
                     var group = this.chartInfo.subject.groups[i];
-                    var newChart = this.generatePlot(this.chart, this.editorXAxisPanel.getTime(), this.viewInfo, this.chartInfo, this.chartInfo.title + ': ' + group.label, seriesList, groupData[group.label], this.individualData.measureToColumn, this.individualData.visitMap);
+                    var newChart = this.generatePlot(
+                            this.chart,
+                            this.editorXAxisPanel.getTime(),
+                            this.viewInfo,
+                            this.chartInfo,
+                            this.chartInfo.title + ': ' + group.label,
+                            seriesList,
+                            groupedIndividualData && groupedIndividualData[group.label] ? groupedIndividualData[group.label] : null,
+                            this.individualData ? this.individualData.measureToColumn : null,
+                            this.individualData ? this.individualData.visitMap : null,
+                            groupDataAggregate && groupDataAggregate[group.label] ? groupDataAggregate[group.label] : null,
+                            this.aggregateData ? this.aggregateData.measureToColumn : null,
+                            this.aggregateData ? this.aggregateData.visitMap : null,
+                            this.chartInfo.subject.groups.length > 1 ? 380 : 600 // chart height
+                    );
                     charts.push(newChart);
 
                     if(!this.firstChartComponent){
@@ -1416,7 +1439,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             },
             width: newChartDiv.getWidth() - 20, // -20 prevents horizontal scrollbars in cases with multiple charts.
             height: newChartDiv.getHeight() - 20, // -20 prevents vertical scrollbars in cases with one chart.
-            data: individualData ? individualData : null // Issue 14845: Charting API: Chart doesnt render if no data is supplied at plot level
+            data: individualData ? individualData : aggregateData
 
         };
 
