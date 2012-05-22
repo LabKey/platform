@@ -1692,4 +1692,16 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         return _locked;
     }
+
+    /**
+     * Unfortunately we cannot differentiate cases shownInInsertView is not set (it defaults to true) from cases where it is explicitly set to true
+     * This is an attempt to centralize code to ignore columns that we assume should not actually be shownInInsertView
+     * At some future point we should consider better handling true/false/null (ie. has not explicitly been set) for properties like
+     * shownInInsertView, shownInUpdateView, etc.
+     *
+     */
+    public boolean inferIsShownInInsertView()
+    {
+        return !isNullable() && isUserEditable() && !isAutoIncrement() && isShownInInsertView();
+    }
 }

@@ -1750,7 +1750,7 @@ public class QueryView extends WebPartView<Object>
             Set<FieldKey> requiredCols = new HashSet<FieldKey>();
             for (ColumnInfo c : t.getColumns())
             {
-                if(!c.isNullable() && c.isUserEditable())
+                if(c.inferIsShownInInsertView())
                     requiredCols.add(c.getFieldKey());
             }
 
