@@ -20,6 +20,7 @@ import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 
@@ -34,12 +35,15 @@ public class TitleForeignKey extends AbstractForeignKey
     ColumnInfo _lookupKey;
     ColumnInfo _displayColumn;
     String _paramName;
-    public TitleForeignKey(ActionURL baseURL, ColumnInfo lookupKey, ColumnInfo displayColumn, String paramName)
+    ContainerContext _cc;
+
+    public TitleForeignKey(ActionURL baseURL, ColumnInfo lookupKey, ColumnInfo displayColumn, String paramName, ContainerContext cc)
     {
         _baseURL = baseURL;
         _lookupKey = lookupKey;
         _displayColumn = displayColumn;
         _paramName = paramName;
+        _cc = cc;
     }
 
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
@@ -58,6 +62,8 @@ public class TitleForeignKey extends AbstractForeignKey
     {
         if (_baseURL == null)
             return null;
-        return new DetailsURL(_baseURL, _paramName, parent.getFieldKey());
+        DetailsURL d = new DetailsURL(_baseURL, _paramName, parent.getFieldKey());
+        d.setContainerContext(_cc);
+        return d;
     }
 }
