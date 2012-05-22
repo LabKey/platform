@@ -24,6 +24,8 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.attachments.*;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
@@ -49,6 +51,7 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -307,6 +310,23 @@ public class AuthenticationManager
     }
 
 
+    /** avoid spamming the audit log **/
+    static Cache<String,String> authMessages = CacheManager.getCache(100, TimeUnit.MINUTES.toMillis(10), "authMessages");
+
+    private static void addAuditEvent(@NotNull User user, HttpServletRequest request, String msg)
+    {
+        String key = user.getUserId() + "/" + ((null==request||null==request.getLocalAddr())?"":request.getLocalAddr());
+        String prevMessage = authMessages.get(key);
+        if (StringUtils.equals(prevMessage, msg))
+            return;
+        authMessages.put(key, msg);
+        if (user.isGuest())
+            AuditLogService.get().addEvent(user, ContainerManager.getRoot(), UserManager.USER_AUDIT_EVENT, (String)null, msg);
+        else
+            AuditLogService.get().addEvent(user, ContainerManager.getRoot(), UserManager.USER_AUDIT_EVENT, user.getUserId(), msg);
+    }
+
+
     public static @NotNull
     AuthenticationResult authenticate(HttpServletRequest request, HttpServletResponse response, String id, String password, URLHelper returnURL, boolean logFailures) throws ValidEmail.InvalidEmailException
     {
@@ -346,14 +366,12 @@ public class AuthenticationManager
 
                     if (!user.isActive())
                     {
-                        AuditLogService.get().addEvent(user, ContainerManager.getRoot(), UserManager.USER_AUDIT_EVENT, user.getUserId(),
-                                "Inactive user " + user.getEmail() + " attempted to login");
+                        addAuditEvent(user, request, "Inactive user " + user.getEmail() + " attempted to login");
                         return new AuthenticationResult(AuthenticationStatus.InactiveUser);
                     }
 
                     _userProviders.put(user.getUserId(), authProvider);
-                    AuditLogService.get().addEvent(user, ContainerManager.getRoot(), UserManager.USER_AUDIT_EVENT, user.getUserId(),
-                            email + " logged in successfully via " + authProvider.getName() + " authentication.");
+                    addAuditEvent(user, request, email + " logged in successfully via " + authProvider.getName() + " authentication.");
                     return new AuthenticationResult(user);
                 }
                 else
@@ -415,19 +433,19 @@ public class AuthenticationManager
 
             if (null != user)
             {
-                AuditLogService.get().addEvent(user, ContainerManager.getRoot(), UserManager.USER_AUDIT_EVENT, user.getUserId(), user.getEmail() + message);
+                addAuditEvent(user, request, user.getEmail() + message);
                 _log.warn(user.getEmail() + message);
             }
             else if (null != emailAddress)
             {
                 // Funny audit case -- user doesn't exist, so there's no user to associate with the event.  Use guest.
-                AuditLogService.get().addEvent(User.guest, ContainerManager.getRoot(), UserManager.USER_AUDIT_EVENT, null, emailAddress + message);
+                addAuditEvent(User.guest, request, emailAddress + message);
                 _log.warn(emailAddress + message);
             }
             else
             {
                 // Funny audit case -- user doesn't exist, so there's no user to associate with the event.  Use guest.
-                AuditLogService.get().addEvent(User.guest, ContainerManager.getRoot(), UserManager.USER_AUDIT_EVENT, null, message);
+                addAuditEvent(User.guest, request, message);
                 _log.warn("Unknown user " + message);
             }
         }
@@ -441,23 +459,23 @@ public class AuthenticationManager
     // rely on cookies, browser redirects, etc.  Current usages include basic auth and test cases.
 
     // Returns null if credentials are incorrect, user doesn't exist, or user is inactive
-    public static User authenticate(String id, String password) throws ValidEmail.InvalidEmailException
+    public static User authenticate(HttpServletRequest request, String id, String password) throws ValidEmail.InvalidEmailException
     {
-        AuthenticationResult result = authenticate(null, null, id, password, null, true);
+        AuthenticationResult result = authenticate(request, null, id, password, null, true);
 
         return result.getUser();
     }
 
 
-    public static void logout(User user, HttpServletRequest request)
+    public static void logout(@NotNull User user, HttpServletRequest request)
     {
         AuthenticationProvider provider = _userProviders.get(user.getUserId());
 
         if (null != provider)
             provider.logout(request);
 
-        AuditLogService.get().addEvent(user, ContainerManager.getRoot(), UserManager.USER_AUDIT_EVENT, user.getUserId(),
-            user.getEmail() + " logged out.");
+        if (!user.isGuest())
+            addAuditEvent(user, request, user.getEmail() + " logged out.");
     }
 
 

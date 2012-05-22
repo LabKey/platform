@@ -346,7 +346,7 @@ public class SecurityManager
 
 
     // Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
-    public static User authenticateBasic(String basic)
+    public static User authenticateBasic(HttpServletRequest request, String basic)
     {
         try
         {
@@ -361,7 +361,7 @@ public class SecurityManager
                 return User.guest;
             new ValidEmail(rawEmail);  // validate email address
 
-            return AuthenticationManager.authenticate(rawEmail, password);
+            return AuthenticationManager.authenticate(request, rawEmail, password);
         }
         catch (ValidEmail.InvalidEmailException e)
         {
@@ -439,7 +439,7 @@ public class SecurityManager
             String authorization = request.getHeader("Authorization");
             if (null != authorization && authorization.startsWith("Basic"))
             {
-                u = authenticateBasic(authorization.substring("Basic".length()).trim());
+                u = authenticateBasic(request, authorization.substring("Basic".length()).trim());
                 if (null != u)
                 {
                     request.setAttribute(AUTHENTICATION_METHOD, "Basic");
@@ -2466,7 +2466,7 @@ public class SecurityManager
                 String password = createTempPassword();
                 SecurityManager.setPassword(email, password);
 
-                User user2 = AuthenticationManager.authenticate(rawEmail, password);
+                User user2 = AuthenticationManager.authenticate(null, rawEmail, password);
                 assertNotNull("login", user2);
                 assertEquals("login", user, user2);
             }
