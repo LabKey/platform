@@ -213,8 +213,14 @@
                                     boxLabel: ft.label,
                                     labelWidth: 500,
                                     checked: (ft.name == '<%=folderTypeName%>' ? true : false),
-                                    autoEl: {
-                                        'data-qtip': ft.description
+                                    listeners: {
+                                        scope: this,
+                                        single: true,
+                                        afterrender: function(radio){
+                                            radio.boxLabelEl.set({
+                                                'data-qtip': ft.description
+                                            })
+                                        }
                                     }
                                 });
                             }
