@@ -840,11 +840,18 @@ public class PublishResultsQueryView extends ResultsQueryView
             }
             // We may not have either a row-level or a default target study 
             Study study = targetStudyContainer == null ? null : StudyService.get().getStudy(targetStudyContainer);
-            Double visitDouble = visitObject == null ? null : (Double) ConvertUtils.convert(visitObject.toString(), Double.class);
-            Date dateDate = dateObject == null ? null : (Date) ConvertUtils.convert(dateObject.toString(), Date.class);
+            Visit visit = null;
+
             String participantID = participantObject == null ? null : participantObject.toString();
+            try
+            {
+                Double visitDouble = visitObject == null ? null : (Double) ConvertUtils.convert(visitObject.toString(), Double.class);
+                Date dateDate = dateObject == null ? null : (Date) ConvertUtils.convert(dateObject.toString(), Date.class);
+
+                visit = study == null ? null : study.getVisit(participantID, visitDouble, dateDate, true);
+            }
+            catch (ConversionException ignored) {} // That's OK for now, we just won't resolve a visit
             
-            Visit visit = study == null ? null : study.getVisit(participantID, visitDouble, dateDate, true);
             out.write(visit == null ? "" : visit.getDisplayString());
         }
     }
