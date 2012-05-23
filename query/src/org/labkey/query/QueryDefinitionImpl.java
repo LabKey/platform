@@ -373,6 +373,9 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             }
         }
 
+        if (errors.isEmpty())
+            ((QueryTableInfo)ret).afterConstruct();
+
         return ret;
     }
 

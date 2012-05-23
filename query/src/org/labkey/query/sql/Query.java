@@ -459,9 +459,6 @@ public class Query
             if (tinfo instanceof ContainerFilterable && tinfo.supportsContainerFilter() && getContainerFilter() != null)
                 ((ContainerFilterable) tinfo).setContainerFilter(getContainerFilter());
 
-            if (tinfo instanceof QueryTableInfo)
-                ((QueryTableInfo)tinfo).afterConstruct();
-
             return tinfo;
         }
         catch (RuntimeException x)
