@@ -54,7 +54,8 @@ public class ExcelWriter
 {
     static
     {
-        // Disable SXSSF assertion; see #14960. TODO: Remove this once assert is removed from SXSSFRow.getCell(int, MissingCellPolicy).
+        // Disable SXSSF assertion; see #14960.
+        // TODO: Remove this once assert is removed from SXSSFRow.getCell(int, MissingCellPolicy), https://issues.apache.org/bugzilla/show_bug.cgi?id=53271
         SXSSFRow.class.getClassLoader().setClassAssertionStatus(SXSSFRow.class.getName(), false);
     }
 
