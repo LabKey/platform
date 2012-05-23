@@ -17,6 +17,7 @@ package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -79,6 +80,7 @@ public class StudyPropertiesTable extends BaseStudyTable
         addRootColumn("startDate");
 
         ColumnInfo containerColumn = addRootColumn("container", false, false);
+        containerColumn.setFk(new ContainerForeignKey(schema));
         containerColumn.setKeyField(true);
 
         ColumnInfo timepointTypeColumn = addRootColumn("timepointType", false, false);

@@ -526,7 +526,15 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                         animateTarget: this.topSaveButton
                     });
                     new Ext4.util.DelayedTask(function(){
-                        Ext4.MessageBox.hide();
+                        var returnUrl = LABKEY.ActionURL.getParameter("returnUrl");
+                        if (returnUrl)
+                        {
+                            window.location.href = returnUrl;
+                        }
+                        else
+                        {
+                            Ext4.MessageBox.hide();
+                        }
                     }).delay(1500);
                 }
             }
@@ -556,6 +564,10 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
     },
     
     saveChanges : function(){
+        if (!this.needsSaving() && LABKEY.ActionURL.getParameter("returnUrl"))
+        {
+            window.location.href = LABKEY.ActionURL.getParameter("returnUrl");
+        }
         this.gridPanel.getStore().sync();
     },
 
@@ -710,8 +722,13 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
         this.initGrid(this.initColumns(this.pagedColumns), this.scheduleStore);
     },
 
+    needsSaving : function(){
+        return this.scheduleStore.getUpdatedRecords().length > 0 || this.scheduleStore.getNewRecords().length > 0 || this.scheduleStore.getRemovedRecords.length > 0;
+    },
+
     beforeUnload : function(){
-        if(this.scheduleStore.getUpdatedRecords().length > 0 || this.scheduleStore.getNewRecords().length > 0 || this.scheduleStore.getRemovedRecords.length > 0){
+        if (this.needsSaving())
+        {
             return "Please save your changes."
         }
     },

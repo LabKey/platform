@@ -189,7 +189,7 @@ public class DatasetViewProvider implements DataViewProvider
                         if (props.containsKey(Property.category.name()))
                         {
                             String categoryName = String.valueOf(props.get(Property.category.name()));
-                            if (categoryName != null)
+                            if (categoryName != null && !categoryName.trim().isEmpty())
                                 category = ViewCategoryManager.getInstance().ensureViewCategory(container, user, categoryName);
                         }
 
