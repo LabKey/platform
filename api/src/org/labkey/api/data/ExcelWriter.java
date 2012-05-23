@@ -96,6 +96,7 @@ public class ExcelWriter
             @Override
             public int getMaxRows()
             {
+                // Return one less than the Excel max since we'll generally be including at least one header row
                 return 65535;
             }
         },
@@ -118,7 +119,8 @@ public class ExcelWriter
             @Override
             public int getMaxRows()
             {
-                return 1048576;
+                // Return one less than the Excel max since we'll generally be including at least one header row
+                return 1048575;
             }
         };
 
