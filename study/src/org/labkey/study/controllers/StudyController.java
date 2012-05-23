@@ -412,8 +412,6 @@ public class StudyController extends BaseStudyController
 
             if (_def != null)
             {
-                String domainURI = _def.getTypeURI();
-                DomainDescriptor newDomainDescriptor = OntologyManager.ensureDomainDescriptor(domainURI, form.getTypeName(), getContainer());
                 ((DataSetDefinition)_def).provisionTable();
                 return true;
             }
@@ -5296,10 +5294,7 @@ public class StudyController extends BaseStudyController
 
                     // def may not be provisioned yet, create before we start adding properties
                     def.provisionTable();
-
-                    String domainURI = def.getTypeURI();
-                    OntologyManager.ensureDomainDescriptor(domainURI, form.getSnapshotName(), form.getViewContext().getContainer());
-                    Domain d = PropertyService.get().getDomain(form.getViewContext().getContainer(), domainURI);
+                    Domain d = def.getDomain();
 
                     for (DisplayColumn dc : displayColumns)
                     {
@@ -7466,8 +7461,6 @@ public class StudyController extends BaseStudyController
 
                         if (def != null)
                         {
-                            String domainURI = def.getTypeURI();
-                            OntologyManager.ensureDomainDescriptor(domainURI, form.getName(), getContainer());
                             def.provisionTable();
                         }
 
@@ -7484,8 +7477,6 @@ public class StudyController extends BaseStudyController
                                 null, null, false, DataSet.TYPE_PLACEHOLDER, categoryId, null);
                         if (def != null)
                         {
-                            String domainURI = def.getTypeURI();
-                            OntologyManager.ensureDomainDescriptor(domainURI, form.getName(), getContainer());
                             def.provisionTable();
                         }
                         response.put("datasetId", def.getDataSetId());

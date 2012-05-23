@@ -43,7 +43,7 @@ import java.util.Set;
  */
 public abstract class DatasetDomainKind extends AbstractDomainKind
 {
-    public final static String LSID_PREFIX = "StudyDatasets";
+    public final static String LSID_PREFIX = "StudyDataset";
 
     final static String DATE = "date";
     final static String PARTICIPANTID = "participantid";

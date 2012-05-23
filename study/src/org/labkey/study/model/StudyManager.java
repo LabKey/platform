@@ -477,7 +477,7 @@ public class StudyManager
     public void createDataSetDefinition(User user, Container container, int dataSetId) throws SQLException
     {
         String name = Integer.toString(dataSetId);
-        createDataSetDefinition(user, new DataSetDefinition(getStudy(container), dataSetId, name, name, null, null));
+        createDataSetDefinition(user, new DataSetDefinition(getStudy(container), dataSetId));
     }
 
     public void createDataSetDefinition(User user, DataSetDefinition dataSetDefinition) throws SQLException
@@ -515,7 +515,7 @@ public class StudyManager
         }
     }
 
-    public void updateDataSetDefinition(User user, DataSetDefinition dataSetDefinition) throws SQLException
+    public void updateDataSetDefinition(User user, DataSetDefinition dataSetDefinition)
     {
         DbScope scope = getSchema().getScope();
 
@@ -568,6 +568,10 @@ public class StudyManager
                         old.getLabel(), dataSetDefinition.getLabel());
             }
             scope.commitTransaction();
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
         }
         finally
         {
@@ -3141,6 +3145,10 @@ public class StudyManager
 
     private static void indexDataset(SearchService.IndexTask task, DataSetDefinition dsd)
     {
+        if (dsd.getType().equals(DataSet.TYPE_PLACEHOLDER))
+            return;
+        if (null == dsd.getTypeURI() || null == dsd.getDomain())
+            return;
         if (null == task)
             task = ServiceRegistry.get(SearchService.class).defaultTask();
         String docid = "dataset:" + new Path(dsd.getContainer().getId(), String.valueOf(dsd.getDataSetId())).toString();
@@ -3684,13 +3692,11 @@ public class StudyManager
             dd.setLabel(name);
             dd.setCategory("Category");
 
-
-
-           type.configureDataset(dd);
+            type.configureDataset(dd);
 
             String domainURI = StudyManager.getInstance().getDomainURI(study.getContainer(), null, dd);
             dd.setTypeURI(domainURI);
-            OntologyManager.ensureDomainDescriptor(domainURI, dd.getName(), study.getContainer());
+            dd.ensureDomain();
             StudyManager.getInstance().updateDataSetDefinition(null, dd);
 
             // validator

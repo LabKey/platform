@@ -217,6 +217,18 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
+    public DataSetDefinition(StudyImpl study, int dataSetId)
+    {
+        _study = study;
+        setContainer(_study.getContainer());
+        _dataSetId = dataSetId;
+        _name = String.valueOf(dataSetId);
+        _label =  String.valueOf(dataSetId);
+        _typeURI = null;
+        _showByDefault = true;
+    }
+
+
     public DataSetDefinition(StudyImpl study, int dataSetId, String name, String label, String category, @Nullable String typeURI)
     {
         _study = study;
@@ -358,6 +370,10 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     public void setTypeURI(String typeURI)
     {
         verifyMutability();
+        if (StringUtils.equals(typeURI, _typeURI))
+            return;
+        if (null != _typeURI)
+            throw new IllegalStateException("TypeURI is already set");
         _typeURI = typeURI;
     }
 
@@ -508,6 +524,13 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     public synchronized void provisionTable()
     {
         _domain = null;
+        if (null == getTypeURI())
+        {
+            DataSetDefinition d = this.createMutable();
+            d.setTypeURI(DatasetDomainKind.generateDomainURI(getName(),getContainer()));
+            d.save(null);
+        }
+        ensureDomain();
         loadStorageTableInfo();
         StudyManager.getInstance().uncache(this);
     }
@@ -798,7 +821,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
     @Override
-    public void save(User user) throws SQLException
+    public void save(User user)
     {
         StudyManager.getInstance().updateDataSetDefinition(user, this);
     }

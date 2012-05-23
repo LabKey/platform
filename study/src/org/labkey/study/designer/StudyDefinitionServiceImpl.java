@@ -202,8 +202,6 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
                             null, null, false, DataSet.TYPE_PLACEHOLDER, categoryId, null);
                     if (datasetDefinition != null)
                     {
-                        String domainURI = datasetDefinition.getTypeURI();
-                        OntologyManager.ensureDomainDescriptor(domainURI, assayDefinition.getName(), getContainer());
                         datasetDefinition.provisionTable();
                     }
                 }
