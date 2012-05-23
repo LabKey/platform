@@ -272,7 +272,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
             }
 
             if (aliasInsteadOfName)
-                sql.append(column.getAlias());
+                sql.append(column.getSQLAlias());
             else
                 sql.append(column.getSelectName());
 
@@ -280,7 +280,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
                 sql.append(")");
 
             if (appendAlias)
-                sql.append(" AS ").append(column.getAlias());
+                sql.append(" AS ").append(column.getSQLAlias());
             leadingSep = ", ";
         }
     }

@@ -29,7 +29,7 @@ public class VisualizationIntervalColumn
             @Override
             public String getSQL(VisualizationSourceColumn startDate, VisualizationSourceColumn endDate)
             {
-                return "TIMESTAMPDIFF(SQL_TSI_DAY, " + startDate.getAlias() + ", " + endDate.getOtherAlias() + ")";
+                return "TIMESTAMPDIFF(SQL_TSI_DAY, " + startDate.getSQLAlias() + ", " + endDate.getSQLOther() + ")";
             }},
         WEEK("Weeks") {
             @Override
@@ -41,13 +41,13 @@ public class VisualizationIntervalColumn
             @Override
             public String getSQL(VisualizationSourceColumn startDate, VisualizationSourceColumn endDate)
             {
-                return "AGE(" + startDate.getAlias() + ", " + endDate.getOtherAlias() + ", SQL_TSI_MONTH)";
+                return "AGE(" + startDate.getSQLAlias() + ", " + endDate.getSQLOther() + ", SQL_TSI_MONTH)";
             }},
         YEAR("Years") {
             @Override
             public String getSQL(VisualizationSourceColumn startDate, VisualizationSourceColumn endDate)
             {
-                return "AGE(" + startDate.getAlias() + ", " + endDate.getOtherAlias() + ", SQL_TSI_YEAR)";
+                return "AGE(" + startDate.getSQLAlias() + ", " + endDate.getSQLOther() + ", SQL_TSI_YEAR)";
             }};
 
         private String _label;

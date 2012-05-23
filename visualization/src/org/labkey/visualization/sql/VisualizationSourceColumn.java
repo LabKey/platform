@@ -240,6 +240,17 @@ public class VisualizationSourceColumn
         _otherAlias = otherAlias;
     }
 
+
+    public String getSQLAlias()
+    {
+        return "\"" + getAlias() + "\"";
+    }
+
+    public String getSQLOther()
+    {
+        return "\"" + getOtherAlias() + "\"";
+    }
+
     public String getOtherAlias()
     {
         if (_otherAlias == null)

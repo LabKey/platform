@@ -541,8 +541,8 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
                     sql.append(andSep);
                     andSep = " AND ";
-                    sql.append(leftQuery.getAlias()).append(".").append(leftColumn.getAlias()).append(" = ");
-                    sql.append(rightQuery.getAlias()).append(".").append(rightColumn.getAlias()).append("\n");
+                    sql.append(leftQuery.getAlias()).append(".").append(leftColumn.getSQLAlias()).append(" = ");
+                    sql.append(rightQuery.getAlias()).append(".").append(rightColumn.getSQLAlias()).append("\n");
                 }
             }
         }
@@ -565,7 +565,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         StringBuilder sql = new StringBuilder("ORDER BY ");
         for (Map.Entry<VisualizationSourceColumn, IVisualizationSourceQuery> orderBy : orderBys.entrySet())
         {
-            sql.append(sep).append(orderBy.getValue().getAlias()).append(".").append(orderBy.getKey().getAlias());
+            sql.append(sep).append(orderBy.getValue().getAlias()).append(".").append(orderBy.getKey().getSQLAlias());
             sep = ", ";
         }
         if (findSchema(orderBys.keySet()).getDbSchema().getSqlDialect().isSqlServer())
