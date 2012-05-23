@@ -81,7 +81,6 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.EditorRole;
-import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
@@ -2400,6 +2399,9 @@ public class AnnouncementsController extends SpringActionController
                 throw new UnauthorizedException();
             }
 
+            if (null == ann)
+                throw createThreadNotFoundException(c);
+
             if (ann instanceof AnnouncementManager.BareAnnouncementModel)
                 throw new IllegalArgumentException("can't use getBareAnnoucements() with this view");
 
@@ -2415,7 +2417,7 @@ public class AnnouncementsController extends SpringActionController
             bean.printURL = null == currentURL ? null : currentURL.clone().replaceParameter("_print", "1");
             bean.print = print;
             bean.includeGroups = perm.includeGroups();
-            bean.embedded = (ann != null && null != ann.getDiscussionSrcURL() && !getViewContext().getActionURL().getController().equalsIgnoreCase("announcements"));  // TODO: Should have explicit flag for discussion case
+            bean.embedded = (null != ann.getDiscussionSrcURL() && !getViewContext().getActionURL().getController().equalsIgnoreCase("announcements"));  // TODO: Should have explicit flag for discussion case
 
             if (!bean.print && !bean.embedded)
             {
@@ -2485,7 +2487,7 @@ public class AnnouncementsController extends SpringActionController
     }
 
 
-    private static AnnouncementModel findThread(Container c, String rowIdVal, String entityId)
+    private static @Nullable AnnouncementModel findThread(Container c, String rowIdVal, String entityId)
     {
         int rowId = 0;
         if (rowIdVal != null)

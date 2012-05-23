@@ -1268,6 +1268,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
+    // Due to https://issues.apache.org/jira/browse/LUCENE-3841, we construct a new Analyzer every time. This has been
+    // fixed in Lucene 3.6, which we now use, so we could switch to a static instance of the Analyzer now.
     protected Analyzer getAnalyzer()
     {
         return ExternalAnalyzer.SnowballAnalyzer.getAnalyzer();
