@@ -708,7 +708,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
     createSourcePanel : function() {
 
         // Using a new MeasureStore, but we will only load data for the list of queryNames (i.e. Sources)
-        this.sourcesStore = Ext4.create('LABKEY.ext4.MeasuresStore', {})
+        this.sourcesStore = Ext4.create('LABKEY.ext4.MeasuresStore', {});
 
         this.sourcesGrid = Ext4.create('Ext.grid.GridPanel', {
             store: this.sourcesStore,
