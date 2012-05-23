@@ -21,6 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.Lsid;
@@ -168,19 +169,26 @@ public class ReportPropsManager implements ContainerManager.ContainerListener
         return "urn:uuid:" + entityId;
     }
 
-    public Object getPropertyValue(String entityId, Container container, String propName) throws Exception
+    public Object getPropertyValue(String entityId, Container container, String propName)
     {
         Map<String, DomainProperty> propMap = getPropertyMap(container);
 
-        if (propMap.containsKey(propName))
+        try
         {
-            String rowLsid = makeLsid(entityId);
-            DomainProperty prop = propMap.get(propName);
-            Map<String, ObjectProperty> props = OntologyManager.getPropertyObjects(container, rowLsid);
-            if (props.containsKey(prop.getPropertyURI()))
+            if (propMap.containsKey(propName))
             {
-                return props.get(prop.getPropertyURI()).getObjectValue();
+                String rowLsid = makeLsid(entityId);
+                DomainProperty prop = propMap.get(propName);
+                Map<String, ObjectProperty> props = OntologyManager.getPropertyObjects(container, rowLsid);
+                if (props.containsKey(prop.getPropertyURI()))
+                {
+                    return props.get(prop.getPropertyURI()).getObjectValue();
+                }
             }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
         }
         return null;
     }

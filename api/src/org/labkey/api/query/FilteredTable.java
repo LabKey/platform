@@ -426,6 +426,10 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
             throw new IllegalArgumentException("container filter is not supported by " + this.getClass().getSimpleName());
         _containerFilter = filter;
         applyContainerFilter(_containerFilter);
+        if (getRealTable().supportsContainerFilter() && getRealTable() instanceof ContainerFilterable)
+        {
+            ((ContainerFilterable)getRealTable()).setContainerFilter(filter);
+        }
     }
 
     protected String getContainerFilterColumn()
