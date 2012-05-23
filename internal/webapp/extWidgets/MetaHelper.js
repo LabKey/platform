@@ -626,8 +626,9 @@ LABKEY.ext.MetaHelper = {
             }
         }
 
-        //cache the calculated value, so we dont need to recalculate each time.  this should get cleared by the store on update like any server-generated value
+        //experimental.  cache the calculated value, so we dont need to recalculate each time.  this should get cleared by the store on update like any server-generated value
         if(shouldCache !== false){
+            record.raw = record.raw || {};
             if(!record.raw[meta.name])
                 record.raw[meta.name] = {};
             record.raw[meta.name].displayValue = displayValue;

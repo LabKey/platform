@@ -85,10 +85,12 @@ public class QueryForeignKey implements ForeignKey
             }
             if (displayField == null)
                 return null;
-            if (displayField.equals(_lookupKey))
-            {
-                return foreignKey;
-            }
+            //NOTE: previously this code returned the original displayColumn if displayField equaled the _lookupKey
+            //this was removed to keep greater consistency with other lookups. CR: josh
+//            if (displayField.equals(_lookupKey))
+//            {
+//                return foreignKey;
+//            }
         }
         return LookupColumn.create(foreignKey, lookupTable.getColumn(_lookupKey), lookupTable.getColumn(displayField), false);
     }
