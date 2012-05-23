@@ -3696,7 +3696,7 @@ public class StudyManager
 
             String domainURI = StudyManager.getInstance().getDomainURI(study.getContainer(), null, dd);
             dd.setTypeURI(domainURI);
-            dd.ensureDomain();
+            OntologyManager.ensureDomainDescriptor(domainURI, dd.getName(), study.getContainer());
             StudyManager.getInstance().updateDataSetDefinition(null, dd);
 
             // validator
