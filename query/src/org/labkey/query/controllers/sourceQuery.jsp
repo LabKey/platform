@@ -127,7 +127,7 @@
         var query = {
             schema    : LABKEY.ActionURL.getParameter('schemaName'),
             query     : LABKEY.ActionURL.getParameter('query.queryName'),
-            executeUrl: <%= PageFlowUtil.qh(exeUrl.toString()) %>,
+            executeUrl: <%= PageFlowUtil.jsString(exeUrl.toString()) %>,
             canEdit   : <%= form.canEdit() %>,
             canEditSql   : <%= form.canEditSql() %>,
             canEditMetaData   : <%= form.canEditMetaData() %>,
