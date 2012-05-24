@@ -233,14 +233,22 @@ public class ExcelColumn extends RenderColumn
     protected void writeCell(Sheet sheet, int column, int row, RenderContext ctx) throws SQLException
     {
         Object o = _dc.getDisplayValue(ctx);
-
-        // For null values, leave the cell blank
-        if (null == o)
-            return;
-
         ColumnInfo columnInfo = _dc.getColumnInfo();
-
         Row rowObject = getRow(sheet, row);
+
+        if (null == o)
+        {
+            // For null values, don't create the cell unless there's a conditional format that applies
+            CellStyle cellFormat = getExcelFormat(o, columnInfo);
+            if (cellFormat != null)
+            {
+                // Set the format but there's no value to set
+                Cell cell = rowObject.getCell(column, Row.CREATE_NULL_AS_BLANK);
+                cell.setCellStyle(cellFormat);
+            }
+            return;
+        }
+
         Cell cell = rowObject.getCell(column, Row.CREATE_NULL_AS_BLANK); 
 
         try
@@ -329,6 +337,15 @@ public class ExcelColumn extends RenderColumn
                         font.setColor(findBestColour(textColor));
                     }
                     excelFormat = _workbook.createCellStyle();
+                    if (_simpleType == TYPE_INT || _simpleType == TYPE_DOUBLE || _simpleType == TYPE_DATE)
+                    {
+                        short formatIndex = _workbook.createDataFormat().getFormat(getFormatString());
+                        excelFormat.setDataFormat(formatIndex);
+                    }
+                    if (_simpleType == TYPE_MULTILINE_STRING)
+                    {
+                        excelFormat.setWrapText(true);
+                    }
                     excelFormat.setFont(font);
                     java.awt.Color backgroundColor = format.getParsedBackgroundColor();
                     if (backgroundColor != null)
