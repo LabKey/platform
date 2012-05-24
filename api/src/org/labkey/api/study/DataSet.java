@@ -37,6 +37,12 @@ public interface DataSet<T extends DataSet> extends StudyEntity, StudyCachable<T
 {
     Set<String> getDefaultFieldNames();
 
+    /**
+     * Get the Domain for the DataSet.  The Domain may be null if the DataSet
+     * hasn't yet been provisioned.
+     * @return The Domain or null.
+     */
+    @Nullable
     Domain getDomain();
 
     String getName();
@@ -51,6 +57,7 @@ public interface DataSet<T extends DataSet> extends StudyEntity, StudyCachable<T
 
     int getDataSetId();
 
+    @Nullable
     String getTypeURI();
 
     String getPropertyURI(String column);
