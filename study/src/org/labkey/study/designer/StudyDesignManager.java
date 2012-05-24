@@ -16,6 +16,7 @@
 
 package org.labkey.study.designer;
 
+import gwt.client.org.labkey.study.designer.client.StudyDefinitionService;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.data.*;
@@ -556,6 +557,7 @@ public class StudyDesignManager
         if (null == info && createIfNull)
         {
             GWTStudyDefinition def = DesignerController.getTemplate(user, study.getContainer());
+            def.setStudyName(study.getLabel());
             StudyDesignVersion version = new StudyDesignVersion();
             version.setContainer(study.getContainer());
             version.setDescription(study.getDescription());

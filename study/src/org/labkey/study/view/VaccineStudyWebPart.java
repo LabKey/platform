@@ -16,10 +16,12 @@
 package org.labkey.study.view;
 
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.study.Study;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.study.designer.StudyDesignInfo;
 import org.labkey.study.designer.StudyDesignManager;
+import org.labkey.study.model.StudyManager;
 
 import java.awt.*;
 import java.sql.SQLException;
@@ -53,23 +55,7 @@ public class VaccineStudyWebPart extends JspView<VaccineStudyWebPart.Model>
     public VaccineStudyWebPart(Model model)
     {
         super(VaccineStudyWebPart.class, "vaccineStudy.jsp", model);
-        if (null == model.getStudyId() || 0 == model.getStudyId())
-        {
-            try
-            {
-                //This is just test code. ViscStudies needs to create & manage design properly for study
-                StudyDesignInfo[] designInfos = StudyDesignManager.get().getStudyDesigns(HttpView.getContextContainer());
-                if (null != designInfos && designInfos.length > 0)
-                    model.setStudyId(designInfos[0].getStudyId());
-                else
-                    model.setEditMode(true);
-
-            }
-            catch(SQLException x)
-            {
-                throw new RuntimeSQLException(x);
-            }
-        }
+        assert (null != model.getStudyId() && 0 != model.getStudyId());
         String title = null;
         if (null != model.getPanel())
         {

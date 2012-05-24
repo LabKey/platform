@@ -219,7 +219,8 @@ public class DesignerController extends SpringActionController
 
         public ModelAndView getView(StudyDesignForm form, BindException errors) throws Exception
         {
-            if (null == form.getPanel()) {
+            if (null == form.getPanel()) //Old code to handle deprecated case of designs not affiliated with studies
+            {
                 Map<String, String> params = new HashMap<String,String>();
                 params.put("studyId", Integer.toString(form.getStudyId()));
                 StudyDesignInfo info = StudyDesignManager.get().getStudyDesign(getContainer(), form.getStudyId());
@@ -271,7 +272,11 @@ public class DesignerController extends SpringActionController
             {
 
                 VaccineStudyWebPart.Model model = new VaccineStudyWebPart.Model();
-                model.setStudyId(form.getStudyId());
+                Study study = StudyManager.getInstance().getStudy(getContainer());
+                assert null != study;
+                StudyDesignInfo info = StudyDesignManager.get().getDesignForStudy(study);
+                assert null != info;
+                model.setStudyId(info.getStudyId());
                 model.setEditMode(form.isEdit());
                 model.setPanel(form.getPanel());
                 model.setFinishURL(form.getFinishURL());
