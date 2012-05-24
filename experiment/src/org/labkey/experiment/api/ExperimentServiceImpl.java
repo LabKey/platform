@@ -722,7 +722,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             return "SampleSet";
         if (clazz == ExpProtocolApplication.class)
             return "ProtocolApplication";
-        throw new IllegalArgumentException("Inv`alid class " + clazz.getName());
+        throw new IllegalArgumentException("Invalid class " + clazz.getName());
     }
 
     private String generateGuidLSID(Container container, String lsidPrefix)

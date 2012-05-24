@@ -334,10 +334,14 @@ public class AssaySchemaImpl extends AssaySchema
 
         visibleColumns.add(FieldKey.fromParts(batchColumn.getName()));
         FieldKey batchPropsKey = FieldKey.fromParts(batchColumn.getName());
-        for (DomainProperty col : provider.getBatchDomain(protocol).getProperties())
+        Domain batchDomain = provider.getBatchDomain(protocol);
+        if (batchDomain != null)
         {
-            if (!col.isHidden() && !AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equalsIgnoreCase(col.getName()))
-                visibleColumns.add(new FieldKey(batchPropsKey, col.getName()));
+            for (DomainProperty col : batchDomain.getProperties())
+            {
+                if (!col.isHidden() && !AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equalsIgnoreCase(col.getName()))
+                    visibleColumns.add(new FieldKey(batchPropsKey, col.getName()));
+            }
         }
         runTable.setDefaultVisibleColumns(visibleColumns);
 

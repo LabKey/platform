@@ -823,10 +823,12 @@ public class AssayPublishManager implements AssayPublishService.Service
     public boolean hasMismatchedInfo(AssayProvider provider, ExpProtocol protocol, List<Integer> allObjects, AssaySchema schema)
     {
         TableInfo tableInfo = provider.createDataTable(schema, protocol, true);
+        if (tableInfo == null)
+            return false;
 
         AssayTableMetadata tableMetadata = provider.getTableMetadata();
 
-        FieldKey matchFieldKey = new FieldKey(tableMetadata.getSpecimenIDFieldKey(), "AssayMatch");
+        FieldKey matchFieldKey = new FieldKey(tableMetadata.getSpecimenIDFieldKey(), AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME);
 
         Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, Collections.singleton(matchFieldKey));
         ColumnInfo matchColumn = columns.get(matchFieldKey);

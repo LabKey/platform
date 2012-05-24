@@ -103,7 +103,6 @@ public class DataSetQueryView extends QueryView
     private boolean _showSourceLinks;
     public static final String DATAREGION = "Dataset";
     private QCStateSet _qcStateSet;
-    private boolean _showEditLinks = true;
     private ExpProtocol _protocol;
     private AssayProvider _provider;
     private Study _study;
@@ -124,8 +123,10 @@ public class DataSetQueryView extends QueryView
         if (settings.isUseQCSet() && StudyManager.getInstance().showQCStates(getContainer()))
             _qcStateSet = QCStateSet.getSelectedStates(getContainer(), form.getQCState());
 
-        _showEditLinks = settings.isShowEditLinks();
         _showSourceLinks = settings.isShowSourceLinks();
+
+        // Only show link to edit if permission allows it
+        setShowUpdateColumn(settings.isShowEditLinks() && !isExportView() && _dataset.canWrite(getUser()));
 
         getSettings().setAllowChooseQuery(false);
         getSettings().setAllowChooseView(false);
@@ -217,10 +218,6 @@ public class DataSetQueryView extends QueryView
                 throw new RuntimeException(e);
             }
         }
-        Container c = getContainer();
-        User user = getUser();
-        // Only show link to edit if permission allows it
-        setShowUpdateColumn(_showEditLinks && !isExportView() && _dataset.canWrite(user));
 
         // allow posts from dataset data regions to determine which dataset was being displayed:
         view.getDataRegion().addHiddenFormField(DataSetDefinition.DATASETKEY, "" + _dataset.getDataSetId());
