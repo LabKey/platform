@@ -127,17 +127,17 @@
         var query = {
             schema    : LABKEY.ActionURL.getParameter('schemaName'),
             query     : LABKEY.ActionURL.getParameter('query.queryName'),
-            executeUrl: <%= PageFlowUtil.jsString(exeUrl.toString()) %>,
+            executeUrl: <%= PageFlowUtil.qh(exeUrl.toString()) %>,
             canEdit   : <%= form.canEdit() %>,
             canEditSql   : <%= form.canEditSql() %>,
             canEditMetaData   : <%= form.canEditMetaData() %>,
             builtIn   : <%= builtIn %>,
             metadataEdit : <%= form.canEditMetaData() %>,
             propEdit     : <%= form.canEditMetaData() && !builtIn %>,
-            queryText    : <%=PageFlowUtil.jsString(form.ff_queryText)%>,
-            metadataText : <%=PageFlowUtil.jsString(form.ff_metadataText)%>,
-            help         : <%=PageFlowUtil.jsString(new HelpTopic(sqlHelpTopic).toString())%>,
-            metadataHelp : <%=PageFlowUtil.jsString(new HelpTopic(metadataHelpTopic).toString())%>
+            queryText    : <%=PageFlowUtil.qh(form.ff_queryText)%>,
+            metadataText : <%=PageFlowUtil.qh(form.ff_metadataText)%>,
+            help         : <%=PageFlowUtil.qh(new HelpTopic(sqlHelpTopic).toString())%>,
+            metadataHelp : <%=PageFlowUtil.qh(new HelpTopic(metadataHelpTopic).toString())%>
         };
 
         var activeTab = 0;
