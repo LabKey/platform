@@ -30,6 +30,7 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.Iterator" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<PublishStartAction.PublishBean> me = (JspView<PublishStartAction.PublishBean>) HttpView.currentView();
@@ -82,7 +83,7 @@
 <%
     }
 %>
-<input type="hidden" name="<%= DataRegionSelection.DATA_REGION_SELECTION_KEY %>" value="<%= bean.getDataRegionSelectionKey() %>">
+<input type="hidden" name="<%= DataRegionSelection.DATA_REGION_SELECTION_KEY %>" value=<%=PageFlowUtil.jsString(bean.getDataRegionSelectionKey())%>">
 <table>
     <%
         if (unambiguous)
