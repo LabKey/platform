@@ -211,7 +211,6 @@ public class Query
 		try
 		{
             SqlParser parser = new SqlParser(getSchema().getDbSchema().getSqlDialect());
-System.out.println(queryText);
             parser.parseQuery(queryText, _parseErrors);
             _parameters = parser.getParameters();
 
