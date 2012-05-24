@@ -11,6 +11,23 @@ LABKEY.vis.makeLine = function(x1, y1, x2, y2){
     return "M " + x1 + " " + y1 + " L " + x2 + " " + y2;
 };
 
+LABKEY.vis.makePath = function(data, xAccessor, yAccessor){
+    var pathString = '';
+    for(var i = 0; i < data.length; i++){
+        var x = xAccessor(data[i]);
+        var y = yAccessor(data[i]);
+        if(x == null || x == undefined ||(typeof x == "number" && isNaN(x)) || y == null || y == undefined || (typeof y == "number" && isNaN(y))){
+            continue;
+        }
+        
+        if(pathString == ''){
+            pathString = pathString + 'M' + x + ' ' + y;
+        } else {
+            pathString = pathString + ' L' + x + ' ' + y;
+        }
+    }
+    return pathString;
+};
 
 LABKEY.vis.createGetter = function(aes){
     if(typeof aes.value === 'function'){
@@ -27,10 +44,10 @@ LABKEY.vis.createGetter = function(aes){
 LABKEY.vis.convertAes = function(aes){
     var newAes= {};
     for(var aesthetic in aes){
-        newAes[aesthetic] = {};
-        newAes[aesthetic].value = aes[aesthetic];
+        var newAesName = (aesthetic == 'y') ? 'yLeft' : aesthetic;
+        newAes[newAesName] = {};
+        newAes[newAesName].value = aes[aesthetic];
     }
-
     return newAes;
 };
 

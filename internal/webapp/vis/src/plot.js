@@ -29,11 +29,12 @@ LABKEY.vis.Plot = function(config){
         // This copies the user's scales, but not the max/min because we don't want to over-write that, so we store the original
         // scales separately (this.originalScales).
         var scales = {};
-        for(scale in origScales){
-            scales[scale] = {};
-            scales[scale].scaleType = origScales[scale].scaleType ? origScales[scale].scaleType : null;
-            scales[scale].trans = origScales[scale].trans ? origScales[scale].trans : null;
-            scales[scale].tickFormat = origScales[scale].tickFormat ? origScales[scale].tickFormat : null;
+        for(var scale in origScales){
+            var newScaleName = (scale == 'y') ? 'yLeft' : scale;
+            scales[newScaleName] = {};
+            scales[newScaleName].scaleType = origScales[scale].scaleType ? origScales[scale].scaleType : null;
+            scales[newScaleName].trans = origScales[scale].trans ? origScales[scale].trans : null;
+            scales[newScaleName].tickFormat = origScales[scale].tickFormat ? origScales[scale].tickFormat : null;
         }
         return scales;
     };
@@ -56,6 +57,10 @@ LABKEY.vis.Plot = function(config){
     this.gridColor = config.gridColor ? config.gridColor : null;
     this.gridLineColor = config.gridLineColor ? config.gridLineColor : null;
     this.clipRect = config.clipRect ? config.clipRect : false;
+
+    if(this.labels.y){
+        this.labels.yLeft = this.labels.y;
+    }
 
     if(this.grid.width == null){
 		this.error("Unable to create plot, width not specified");
@@ -172,7 +177,11 @@ LABKEY.vis.Plot = function(config){
         var topMargin = 75;
 
         if(this.scales.color || this.scales.shape){
-            rightMargin = rightMargin + 175;
+            rightMargin = rightMargin + 150;
+        }
+
+        if(this.scales.yRight){
+            rightMargin = rightMargin + 25;
         }
         
 		this.grid.leftEdge = leftMargin;
@@ -339,6 +348,7 @@ LABKEY.vis.Plot = function(config){
 	};
 
     var renderLegend = function(){
+        var xPadding = this.scales.yRight ? 25 : 0;
         var series = null;
         var colorRows = null;
         var shapeRows = null;
@@ -386,8 +396,8 @@ LABKEY.vis.Plot = function(config){
             color = "#000000";
             for(var s in series){
                 // We'll have 1 row per series.
-                textX = this.grid.rightEdge + 100;
-                geomX = this.grid.rightEdge + 75;
+                textX = this.grid.rightEdge + 75 + xPadding;
+                geomX = this.grid.rightEdge + 50;
                 y = -(this.grid.topEdge - legendY) +.5;
                 for(var i = 0; i < series[s].layers.length; i++){
                     this.paper.text(textX, y, s).attr('text-anchor', 'start');
@@ -406,8 +416,8 @@ LABKEY.vis.Plot = function(config){
             var legendRows = colorRows ? colorRows : shapeRows;
 
             for(var i = 0 ; i < legendRows.length; i++){
-                textX = this.grid.rightEdge + 100;
-                geomX = this.grid.rightEdge + 75;
+                textX = this.grid.rightEdge + 75 + xPadding;
+                geomX = this.grid.rightEdge + 50 + xPadding;
                 y = -(this.grid.topEdge - legendY) +.5;
                 for(var s in series){
                     if(legendRows[i].indexOf(s) != -1){
@@ -530,7 +540,7 @@ LABKEY.vis.Plot = function(config){
         }
     };
     
-    this.setYLeftLabel = function(value){
+    this.setYLeftLabel = this.setYLabel = function(value){
         if(this.paper){
             setLabel.call(this, 'yLeft', this.grid.leftEdge - 55, this.grid.height / 2, value, true).attr({font: "14px Georgia, sans-serif"}).transform("t0," + this.h+"r270");
         } else {
@@ -538,35 +548,39 @@ LABKEY.vis.Plot = function(config){
         }
     };
 
-    this.addLabelListener = function(title, listener, fn){
+    this.addLabelListener = function(label, listener, fn){
         var availableListeners = {
             click: 'click', dblclick:'dblclick', drag: 'drag', hover: 'hover', mousedown: 'mousedown',
             mousemove: 'mousemove', mouseout: 'mouseout', mouseover: 'mouseover', mouseup: 'mouseup',
             touchcancel: 'touchcancel', touchend: 'touchend', touchmove: 'touchmove', touchstart: 'touchstart'
         };
 
+        if(label == 'y'){
+            label = 'yLeft';
+        }
+
         if(availableListeners[listener]){
-            if(labelElements[title]){
+            if(labelElements[label]){
                 // Store the listener in the labels object.
-                if(!this.labels[title].listeners){
-                    this.labels[title].listeners = {};
+                if(!this.labels[label].listeners){
+                    this.labels[label].listeners = {};
                 }
 
-                if(this.labels[title].listeners[listener]){
+                if(this.labels[label].listeners[listener]){
                     // There is already a listener of the requested type, so we should purge it.
                     var unEvent = 'un' + listener;
-                    labelElements[title][unEvent].call(labelElements[title], this.labels[title].listeners[listener]);
+                    labelElements[label][unEvent].call(labelElements[label], this.labels[label].listeners[listener]);
                 }
 
-                this.labels[title].listeners[listener] = fn;
+                this.labels[label].listeners[listener] = fn;
 
                 // Need to call the listener function and keep it within the scope of the Raphael object that we're accessing,
                 // so we pass itself into the call function as the scope object. It's essentially doing something like:
                 // labelElements.x.click.call(labelElements.x, fn);
-                labelElements[title][listener].call(labelElements[title], fn);
+                labelElements[label][listener].call(labelElements[label], fn);
                 return true;
             } else {
-                console.error('The ' + title + ' title is not available.');
+                console.error('The ' + label + ' label is not available.');
                 return false;
             }
         } else {

@@ -97,7 +97,7 @@ LABKEY.vis.Geom.Point.prototype.render = function(paper, grid, scales, data, lay
              x = (xVal != null && xVal != undefined) ? scales.x.scale(xVal) : grid.leftEdge - 5;
              y = (yVal != null && yVal != undefined) ? yScale(yVal) : grid.bottomEdge - 5;
         } else {
-            if(xVal == undefined || xVal == null || yVal == undefined || yVal == null){
+            if(xVal == undefined || xVal == null || (typeof xVal == "number" && isNaN(xVal)) || yVal == undefined || yVal == null || (typeof yVal == "number" && isNaN(yVal))){
                 continue;
             } else {
                 x = scales.x.scale(xVal);
@@ -140,11 +140,8 @@ LABKEY.vis.Geom.Path.prototype.render = function(paper, grid, scales, data, laye
     this.group = layerAes.group ? layerAes.group : parentAes.group;
     var size = this.size;
     var pathScope = this;
-    var line = d3.svg.line().x(function(d){
-        return scales.x.scale(pathScope.xMap.getValue(d));
-    }).y(function(d){
-        return -yScale(pathScope.yMap.getValue(d));
-    });
+    var xAccessor = function(row){return scales.x.scale(pathScope.xMap.getValue(row));};
+    var yAccessor = function(row){return -yScale(pathScope.yMap.getValue(row));};
 
     if(this.group){
         //Split data into groupedData so we can render 1 path per group.
@@ -163,14 +160,14 @@ LABKEY.vis.Geom.Path.prototype.render = function(paper, grid, scales, data, laye
                 size = this.sizeMap.getValue(groupData);
             }
 
-            paper.path(line(groupData)).attr('stroke', color).attr('stroke-width', size).attr('opacity', this.opacity);
+            paper.path(LABKEY.vis.makePath(groupData, xAccessor, yAccessor)).attr('stroke', color).attr('stroke-width', size).attr('opacity', this.opacity);
         }
     } else {
         // No groups, connect all the points.
         if(this.sizeMap){
             size = this.sizeMap.getValue(data); // This would allow a user to look at all of the rows in a group and calculate size (i.e. a user could average the CD4 in every group and make a line based on that average.)
         }
-        paper.path(line(data)).attr('stroke-width', size).attr('opacity', this.opacity);
+        paper.path(LABKEY.vis.makePath(data, xAccessor, yAccessor)).attr('stroke-width', size).attr('opacity', this.opacity).attr('stroke', this.color);
     }
 
     return true;
