@@ -317,9 +317,14 @@ public class StudyUpgradeCode implements UpgradeCode
 
     private void renameDataSetParticipantSequenceKey(Container c, DataSet dataSet) throws SQLException
     {
-        ModuleUpgrader.getLogger().info("Renaming ParticipantSequenceKey to ParticipantSequenceNum on DatSet '" + dataSet.getName() + "', in container '" + c.getPath() + "'");
-
         Domain domain = dataSet.getDomain();
+        if (domain == null)
+        {
+            ModuleUpgrader.getLogger().info("No domain for DatSet '" + dataSet.getName() + "', in container '" + c.getPath() + "'.  Skipping.");
+            return;
+        }
+
+        ModuleUpgrader.getLogger().info("Renaming ParticipantSequenceKey to ParticipantSequenceNum on DatSet '" + dataSet.getName() + "', in container '" + c.getPath() + "'");
         DomainKind kind = domain.getDomainKind();
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
