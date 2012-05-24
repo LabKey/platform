@@ -230,7 +230,10 @@ public class PropertyController extends SpringActionController
             }
             String suffix = filename.substring(dotIndex + 1).toLowerCase();
             String prefix = filename.substring(0, dotIndex);
-
+            if (prefix.length() < 3)
+            {
+                prefix = "prefix-" + prefix;  
+            }
             File tempFile = File.createTempFile(prefix, suffix);
             tempFile.deleteOnExit();
             return tempFile;
