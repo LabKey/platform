@@ -32,6 +32,12 @@ Ext4.define('LABKEY.ext4.DefaultFilterPanel', {
     afterRender : function () {
         this.callParent();
         this.applyFilterArray();
+        var input = this.getInputField(0);
+        input.focus(true, 250);
+    },
+
+    isValid : function () {
+        return this.getForm().isValid();
     },
 
     applyFilterArray : function () {
@@ -63,15 +69,7 @@ Ext4.define('LABKEY.ext4.DefaultFilterPanel', {
      * @param filterArray
      */
     clearFilters : function (filterArray) {
-        if (null == filterArray)
-            return null;
-
-        var otherFilters = [];
-        Ext4.each(filterArray, function(filter) {
-            if (filter.getColumnName() != this._fieldName)
-                otherFilters.push(filter);
-        }, this);
-        return otherFilters;
+        return LABKEY.Filter.merge(filterArray, this._fieldName, null);
     },
 
     getFilterInputPairConfig: function(quantity)

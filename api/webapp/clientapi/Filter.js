@@ -279,6 +279,27 @@ LABKEY.Filter = new function()
         },
 
         /**
+         * Given an array of filter objects, return a new filterArray with old filters from a column removed and new filters for the column added
+         * If new filters are null, simply remove all old filters from baseFilters that refer to this column
+         * @param {Array} baseFilters  Array of existing filters created by {@link LABKEY.Filter.create}
+         * @param {String} columnName  Column name of filters to replace
+         * @param {Array} columnFilters Array of new filters created by {@link LABKEY.Filter.create}. Will replace any filters referring to columnName
+         */
+        merge : function(baseFilters, columnName, columnFilters)
+        {
+            var newFilters = [];
+            if (null != baseFilters)
+                for (var i = 0; i < baseFilters.length; i++)
+                {
+                    var filt = baseFilters[i];
+                    if (filt.getColumnName() != columnName)
+                        newFilters.push(filt);
+                }
+
+            return null == columnFilters ? newFilters : newFilters.concat(columnFilters);
+        },
+
+        /**
         * Convert from URL syntax filters to a human readable description, like "Is Greater Than 10 AND Is Less Than 100"
         * @param {String} url URL containing the filter parameters
         * @param {String} dataRegionName String name of the data region the column is a part of
