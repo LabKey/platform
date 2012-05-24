@@ -75,14 +75,18 @@ public class ResultsQueryView extends AssayBaseQueryView
         if (returnURL == null)
             returnURL = getViewContext().getActionURL().toString();
         view.getDataRegion().addHiddenFormField(ActionURL.Param.returnUrl.returnUrl, returnURL);
+        return view;
+    }
+
+    @Override
+    protected void populateButtonBar(DataView view, ButtonBar bar)
+    {
         if (showControls())
         {
+            super.populateButtonBar(view, bar);
+
             if (!AssayPublishService.get().getValidPublishTargets(getUser(), InsertPermission.class).isEmpty())
             {
-                ButtonBar bbar = new ButtonBar(view.getDataRegion().getButtonBar(DataRegion.MODE_GRID));
-
-                AssayProvider provider = AssayService.get().getProvider(_protocol);
-
                 ActionURL publishURL = PageFlowUtil.urlProvider(AssayUrls.class).getCopyToStudyURL(getContainer(), _protocol);
                 for (Pair<String, String> param : publishURL.getParameters())
                 {
@@ -98,18 +102,12 @@ public class ResultsQueryView extends AssayBaseQueryView
                         "Copy to Study", DataRegion.MODE_GRID, ActionButton.Action.POST);
                 publishButton.setDisplayPermission(InsertPermission.class);
                 publishButton.setRequiresSelection(true);
-                publishButton.setActionType(ActionButton.Action.POST);
 
-                bbar.add(publishButton);
+                bar.add(publishButton);
 
-                bbar.addAll(AssayService.get().getImportButtons(_protocol, getViewContext().getUser(), getViewContext().getContainer(), false));
-
-                view.getDataRegion().setButtonBar(bbar);
+                bar.addAll(AssayService.get().getImportButtons(_protocol, getViewContext().getUser(), getViewContext().getContainer(), false));
             }
         }
-        else
-            view.getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
-        return view;
     }
 
     protected TSVGridWriter.ColumnHeaderType getColumnHeaderType()
