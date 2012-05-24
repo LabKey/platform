@@ -211,12 +211,12 @@ public class Query
 		try
 		{
             SqlParser parser = new SqlParser(getSchema().getDbSchema().getSqlDialect());
-
+System.out.println(queryText);
             parser.parseQuery(queryText, _parseErrors);
             _parameters = parser.getParameters();
 
 			QNode root = parser.getRoot();
-            QueryRelation relation = createQueryRelation(this, root);
+            QueryRelation relation = createQueryRelation(this, root, false);
 
             if (relation == null)
                 return;
@@ -241,7 +241,7 @@ public class Query
 
 
 
-    public static QueryRelation createQueryRelation(Query query, QNode root)
+    public static QueryRelation createQueryRelation(Query query, QNode root, boolean inFromClause)
     {
         if (root instanceof QUnion)
             return new QueryUnion(query, (QUnion)root);
@@ -249,7 +249,7 @@ public class Query
         if (!(root instanceof QQuery))
             return null;
 
-        QuerySelect select = new QuerySelect(query, (QQuery)root);
+        QuerySelect select = new QuerySelect(query, (QQuery)root, inFromClause);
 
         if (null == root.getChildOfType(QPivot.class))
             return select;

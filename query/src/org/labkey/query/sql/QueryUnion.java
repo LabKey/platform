@@ -88,7 +88,7 @@ public class QueryUnion extends QueryRelation
 			}
             else if (n instanceof QQuery)
             {
-                QuerySelect select = new QuerySelect(_query, (QQuery)n);
+                QuerySelect select = new QuerySelect(_query, (QQuery)n, false);
                 _termList.add(select);
             }
             else if (n instanceof QUnion && (_qunion.getTokenType() == SqlBaseParser.UNION || n.getTokenType() == SqlBaseParser.UNION_ALL))

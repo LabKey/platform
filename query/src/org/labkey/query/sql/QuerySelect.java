@@ -90,6 +90,7 @@ public class QuerySelect extends QueryRelation
     private QuerySelect(@NotNull Query query, @NotNull QuerySchema schema, String alias)
     {
         super(query, schema, alias == null ? "_select" + query.incrementAliasCounter() : alias);
+        _inFromClause = false;
 
         // subqueryTable is only for expr.createColumnInfo()
         // should refactor so tableinfo is not necessary, maybe expr.setColumnAttributes(target)
@@ -105,10 +106,11 @@ public class QuerySelect extends QueryRelation
     }
 
 
-	QuerySelect(@NotNull Query query, QQuery root)
+	QuerySelect(@NotNull Query query, QQuery root, boolean inFromClause)
 	{
 		this(query, query.getSchema(), null);
         this._query = query;
+        this._inFromClause = inFromClause;
 		initializeFromQQuery(root);
 		initializeSelect();
         assert MemTracker.put(this);
@@ -140,9 +142,8 @@ public class QuerySelect extends QueryRelation
 
     QueryRelation createSubquery(QQuery qquery, boolean inFromClause, String alias)
     {
-        QueryRelation sub = Query.createQueryRelation(this._query, qquery);
+        QueryRelation sub = Query.createQueryRelation(this._query, qquery, inFromClause);
         sub._parent = this;
-        sub._inFromClause = inFromClause;
         if (null != alias)
             sub.setAlias(alias);
         return sub;
@@ -1234,7 +1235,7 @@ groupByLoop:
 
         SqlBuilder ret = sql;
 
-        if (AppProps.getInstance().isDevMode())
+        if (AppProps.getInstance().isDevMode() && !_inFromClause)
         {
             ret = new SqlBuilder(sql.getDialect());
             String comment = "<QuerySelect";
@@ -1459,7 +1460,8 @@ groupByLoop:
 
     @Override
     public Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
-    { resolveFields();
+    {
+        resolveFields();
 
         if (!getParseErrors().isEmpty())
             return Collections.emptySet();

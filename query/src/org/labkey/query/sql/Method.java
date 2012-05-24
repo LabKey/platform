@@ -119,7 +119,7 @@ public abstract class Method
         labkeyMethod.put("minute", new JdbcMethod("minute", JdbcType.INTEGER, 1, 1));
         labkeyMethod.put("month", new JdbcMethod("month", JdbcType.INTEGER, 1, 1));
         labkeyMethod.put("monthname", new JdbcMethod("monthname", JdbcType.VARCHAR, 1, 1));
-        labkeyMethod.put("now", new JdbcMethod("now", JdbcType.TIMESTAMP, 0, 0));
+        labkeyMethod.put("now", new JdbcMethod("curdate", JdbcType.TIMESTAMP, 0, 0));
         labkeyMethod.put("quarter", new JdbcMethod("quarter", JdbcType.INTEGER, 1, 1));
         labkeyMethod.put("second", new JdbcMethod("second", JdbcType.INTEGER, 1, 1));
         labkeyMethod.put("week", new JdbcMethod("week", JdbcType.INTEGER, 1, 1));

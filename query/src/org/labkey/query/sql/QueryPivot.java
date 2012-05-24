@@ -192,9 +192,8 @@ public class QueryPivot extends QueryRelation
 
     QueryRelation createSubquery(QQuery qquery, String alias)
     {
-        QueryRelation sub = Query.createQueryRelation(this._query, qquery);
+        QueryRelation sub = Query.createQueryRelation(this._query, qquery, true);
         sub._parent = this;
-        sub._inFromClause = true;
         if (null != alias)
             sub.setAlias(alias);
         return sub;
