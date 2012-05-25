@@ -22,6 +22,7 @@ import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.query.*;
@@ -29,6 +30,7 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.api.flag.FlagColumnRenderer;
 import org.labkey.experiment.api.flag.FlagForeignKey;
@@ -76,6 +78,25 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
             }
         }
         return result;
+    }
+
+    @Override
+    public boolean hasContainerContext()
+    {
+        return true;
+    }
+
+    @Override
+    public ContainerContext getContainerContext()
+    {
+        //return getContainer();
+        return new ContainerContext.FieldKeyContext(getContainerFieldKey());
+    }
+
+    @Override
+    public FieldKey getContainerFieldKey()
+    {
+        return new FieldKey(null, ExpMaterialTable.Column.Folder.toString());
     }
 
     protected ColumnInfo addContainerColumn(C containerCol, ActionURL url)
@@ -242,4 +263,5 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
     {
         return _schema.getSchemaName();
     }
+
 }
