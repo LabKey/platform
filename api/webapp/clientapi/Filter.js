@@ -18,7 +18,8 @@
  */
 
  /**
- * @namespace  Filter static class to describe and create filters.
+  * @class LABKEY.Filter
+  * @namespace  Filter static class to describe and create filters.
   *            <p>Additional Documentation:
   *              <ul>
   *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=filteringData">Filter via the LabKey UI</a></li>
@@ -349,12 +350,49 @@ LABKEY.Filter = new function()
             return result;
         },
 
-        /** @private Returns a filter type for the urlSuffix. */
+        // Create an array of LABKEY.Filter objects from the filter parameters on the URL
+        getFiltersFromUrl : function(url, dataRegionName)
+        {
+            dataRegionName = dataRegionName || 'query';
+            var params = LABKEY.ActionURL.getParameters(url);
+            var filterArray = [];
+
+            for (var paramName in params)
+            {
+                // Look for parameters that have the right prefix
+                if (paramName.indexOf(dataRegionName + ".") == 0)
+                {
+                    var tilde = paramName.indexOf("~");
+
+                    if (tilde != -1)
+                    {
+                        var columnName = paramName.substring(dataRegionName.length + 1, tilde);
+                        var filterName = paramName.substring(tilde + 1);
+                        var filterType = LABKEY.Filter.getFilterTypeForURLSuffix(filterName);
+                        var values = params[paramName];
+                        if (!Ext.isArray(values))
+                        {
+                            values = [values];
+                        }
+                        filterArray.push(LABKEY.Filter.create(columnName, values, filterType));
+                    }
+                }
+            }
+            return filterArray;
+        },
+
+        getSortFromUrl : function(url, dataRegionName)
+        {
+            dataRegionName = dataRegionName || 'query';
+
+            var params = LABKEY.ActionURL.getParameters(url);
+            return params[dataRegionName + "." + "sort"];
+        },
+
         getFilterTypeForURLSuffix : function (urlSuffix)
         {
             return urlMap[urlSuffix];
         }
-
     };
 
     var ft = ret.Types;

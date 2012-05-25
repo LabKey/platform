@@ -30,7 +30,9 @@ Ext.ns('LABKEY.ext');
 /**
  * The DataRegion constructor is private - to get a LABKEY.DataRegion object,
  * use <code>Ext.ComponentMgr.get(<em>&lt;dataregionname&gt;</em>)</code> or <code>Ext.ComponentMgr.onAvailable(<em>&lt;dataregionname&gt;</em>, callback)</code>.
- * @class The DataRegion class allows you to interact with LabKey grids, including querying and modifying selection state, filters, and more.
+ * @class LABKEY.DataRegion
+ * @extends Ext.Component
+ * The DataRegion class allows you to interact with LabKey grids, including querying and modifying selection state, filters, and more.
  * @constructor
  */
 LABKEY.DataRegion = Ext.extend(Ext.Component,
@@ -707,8 +709,26 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
      *   <li><b>value</b>: {String} Optional value to filter by.
      * </ul>
      * @returns {Object} Object representing the user filter.
+     * @deprecated 12.2 Use getUserFilterArray instead
      */
     getUserFilter : function ()
+    {
+        var userFilter = [];
+        var filters = this.getUserFilterArray();
+
+        for (var i=0; i < filters.length; i++)
+        {
+            var filter = filters[i];
+            userFilter.push({
+                fieldKey : filter.getColumnName(),
+                op       : filter.getFilterType().getURLSuffix(),
+                value    : filter.getValue()
+            });
+        }
+        return userFilter;
+    },
+
+    getUserFilterArray : function()
     {
         var userFilter = [];
         var paramValPairs = this.getParamValPairs(this.requestURL, null);
@@ -720,9 +740,11 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                 var tilde = pair[0].indexOf('~');
                 var fieldKey = pair[0].substring(this.name.length + 1, tilde);
                 var op = pair[0].substring(tilde + 1);
+                var filterType = LABKEY.Filter.getFilterTypeForURLSuffix(op);
+
                 var value = pair[1];
 
-                userFilter.push({fieldKey: fieldKey, op: op, value: value});
+                userFilter.push(LABKEY.Filter.create(fieldKey, value, filterType));
             }
         }
 

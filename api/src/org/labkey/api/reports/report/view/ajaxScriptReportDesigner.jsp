@@ -319,8 +319,8 @@ var f_scope<%=uid%> = new (function() {
             dataDivExtElement = Ext.get('dataDiv<%=uid%>');
             var url = <%=q(initialViewURL.toString())%>;
             var dataRegionName = <%=q(bean.getDataRegionName())%>;
-            var removeableFilters = getFilterArray(url, dataRegionName);
-            var sort = getSort(url, dataRegionName);
+            var removeableFilters = LABKEY.Filter.getFiltersFromUrl(url, dataRegionName);
+            var sort = LABKEY.Filter.getSortFromUrl(url, dataRegionName);
 
             new LABKEY.QueryWebPart({
                 schemaName: <%=q(bean.getSchemaName())%>,
@@ -345,46 +345,6 @@ var f_scope<%=uid%> = new (function() {
                 failure: dataFailure
             });
         }
-    }
-
-    // Create an array of LABKEY.Filter objects from the filter parameters on the URL
-    // TODO: Move this to Filter.js?
-    function getFilterArray(url, dataRegionName)
-    {
-        var params = LABKEY.ActionURL.getParameters(url);
-        var filterArray = [];
-
-        for (var paramName in params)
-        {
-            // Look for parameters that have the right prefix
-            if (paramName.indexOf(dataRegionName + ".") == 0)
-            {
-                var tilde = paramName.indexOf("~");
-
-                if (tilde != -1)
-                {
-                    var columnName = paramName.substring(dataRegionName.length + 1, tilde);
-                    var filterName = paramName.substring(tilde + 1);
-                    var filterType = LABKEY.Filter.getFilterTypeForURLSuffix(filterName);
-                    var values = params[paramName];
-                    if (!Ext.isArray(values))
-                    {
-                        values = [values];
-                    }
-
-                    filterArray.push(LABKEY.Filter.create(columnName, values, filterType));
-                }
-            }
-        }
-
-        return filterArray;
-    }
-
-    // Pull the sort parameter off the URL
-    function getSort(url, dataRegionName)
-    {
-        var params = LABKEY.ActionURL.getParameters(url);
-        return params[dataRegionName + "." + "sort"];
     }
 
     function dataSuccess(dr)
