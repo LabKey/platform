@@ -1101,17 +1101,7 @@ abstract public class PipelineJob extends Job implements Serializable
             int result = proc.waitFor();
             if (result != 0)
             {
-                try
-                {
-                    FileOutputStream fOut = new FileOutputStream(new File(dirWork, "SampleRaw.ms1"));
-                    fOut.write(50);
-                    fOut.close();
-                    fOut = new FileOutputStream(new File(dirWork, "SampleRaw.ms2"));
-                    fOut.write(50);
-                    fOut.close();
-                }
-                catch (IOException e) {}
-//                throw new ToolExecutionException("Failed running " + pb.command().get(0) + ", exit code " + result, result);
+                throw new ToolExecutionException("Failed running " + pb.command().get(0) + ", exit code " + result, result);
             }
         }
         catch (InterruptedException ei)
