@@ -9,6 +9,7 @@
 if(!LABKEY.vis.Geom){
 	LABKEY.vis.Geom = {};
 }
+
 LABKEY.vis.Geom.XY = function(){
     this.type = "XY";
     return this;
@@ -230,6 +231,7 @@ LABKEY.vis.Geom.Boxplot.prototype.render = function(paper, grid, scales, data, l
 
     var yScale = this.yMap.side == "left" ? scales.yLeft.scale : scales.yRight.scale;
     var hoverText = layerAes.hoverText ? layerAes.hoverText : parentAes.hoverText;
+    var outlierHoverText = layerAes.outlierHoverText ? layerAes.outlierHoverText : parentAes.outlierHoverText;
     var groupedData = null;
     var binWidth = null;
 
@@ -255,16 +257,6 @@ LABKEY.vis.Geom.Boxplot.prototype.render = function(paper, grid, scales, data, l
 
         );
         boxSet.attr('stroke', this.color).attr('stroke-width', this.lineWidth);
-    };
-    
-    var plotOutlier = function(x, y, outlierHoverText){
-        var outlier = paper.circle(x, -yScale(y), this.outlierSize)
-                .attr('fill', this.outlierFill)
-                .attr('stroke', 'none')
-                .attr('fill-opacity', this.outlierOpacity);
-        if(outlierHoverText){
-            outlier.attr('title', outlierHoverText.value(group, stats));
-        }
     };
 
     if(scales.x.scaleType == 'continuous'){
@@ -297,34 +289,38 @@ LABKEY.vis.Geom.Boxplot.prototype.render = function(paper, grid, scales, data, l
         var whiskerRight = middleX + (width / 4);
         var smallestNotOutlier = stats.Q1 - (1.5 * stats.IQR);
         var biggestNotOutlier = stats.Q3 + (1.5 * stats.IQR);
-        
+
         var i = 0;
         while(stats.sortedValues[i] < smallestNotOutlier){
             i++;
-            if(this.showOutliers){
-                if(this.position == 'jitter'){
-                    plotOutlier.call(this, x+(Math.random()*(width)), stats.sortedValues[i]);
-                } else {
-                    plotOutlier.call(this, middleX, stats.sortedValues[i]);
-                }
-            }
         }
         var bottomWhisker = Math.floor(-yScale(stats.sortedValues[i])) + .5;
 
         i = stats.sortedValues.length - 1;
         while(stats.sortedValues[i] > biggestNotOutlier){
             i--;
-            if(this.showOutliers){
-                if(this.position == 'jitter'){
-                    plotOutlier.call(this, x+(Math.random()*(width)), stats.sortedValues[i]);
-                } else {
-                    plotOutlier.call(this, middleX, stats.sortedValues[i]);
+        }
+        var topWhisker = Math.floor(-yScale(stats.sortedValues[i])) + .5;
+
+        plotBox.call(this, x, width, top, bottom, middleY, topWhisker, bottomWhisker, hoverText);
+
+        if(this.showOutliers){
+            for(i = 0; i < groupedData[group].length; i++){
+                var val = this.yMap.getValue(groupedData[group][i])
+                if(val > biggestNotOutlier || val < smallestNotOutlier){
+                    var outlier;
+                    var x = this.position == 'jitter' ? x+(Math.random()*(width)) : middleX;
+
+                    outlier = paper.circle(x, -yScale(val), this.outlierSize)
+                            .attr('fill', this.outlierFill)
+                            .attr('stroke', 'none')
+                            .attr('fill-opacity', this.outlierOpacity);
+                    if(outlierHoverText){
+                        outlier.attr('title', outlierHoverText.getValue(groupedData[group][i]));
+                    }
                 }
             }
         }
-        var topWhisker = Math.floor(-yScale(stats.sortedValues[i])) + .5;
-        
-        plotBox.call(this, x, width, top, bottom, middleY, topWhisker, bottomWhisker, hoverText);
     }
 
     return true;

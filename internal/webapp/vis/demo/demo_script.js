@@ -287,7 +287,7 @@ var boxLayer = new LABKEY.vis.Layer({
 //        color: 'teal',
 //        fill: '#FFFF00',
 //        outlierOpacity: '1',
-//        outlierFill: '#FF00FF',
+        outlierFill: 'red'
 //        opacity: '.5'
 //        lineWidth: 3
     }),
@@ -295,7 +295,8 @@ var boxLayer = new LABKEY.vis.Layer({
         hoverText: function(x, stats){
             return x + ':\nMin: ' + stats.min + '\nMax: ' + stats.max + '\nQ1: ' + stats.Q1 + '\nQ2: ' + stats.Q2 +
                     '\nQ3: ' + stats.Q3;
-        }
+        },
+        outlierHoverText: function(row){return "Group: " + row.group + ", Age: " + row.age;}
     }
 });
 
