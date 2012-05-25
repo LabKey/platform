@@ -5,16 +5,6 @@
  */
 Ext.namespace("LABKEY.vis");
 
-LABKEY.requiresScript('vis/src/geom.js');
-LABKEY.requiresScript('vis/src/stat.js');
-LABKEY.requiresScript('vis/src/position.js');
-LABKEY.requiresScript('vis/src/scale.js');
-LABKEY.requiresScript('vis/src/utils.js');
-LABKEY.requiresScript('vis/src/layer.js');
-LABKEY.requiresScript('vis/src/plot.js');
-LABKEY.requiresScript('vis/lib/d3-2.0.4.js');
-LABKEY.requiresScript('vis/lib/raphael-min.js');
-
 LABKEY.requiresScript("vis/chartEditorOverviewPanel.js");
 LABKEY.requiresScript("vis/chartEditorMeasurePanel.js");
 LABKEY.requiresScript("vis/chartEditorYAxisPanel.js");
@@ -1066,7 +1056,17 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
                 var dataPerParticipant = generateParticipantSeries(this.individualData, this.viewInfo.subjectColumn);
                 for(var participant in dataPerParticipant){
-                    var newChart = this.generatePlot(this.chart, this.editorXAxisPanel.getTime(), this.viewInfo, this.chartInfo, this.chartInfo.title + ': ' + participant, seriesList, dataPerParticipant[participant], this.individualData.measureToColumn, this.individualData.visitMap)
+                    var newChart = this.generatePlot(
+                            this.chart,
+                            this.editorXAxisPanel.getTime(),
+                            this.viewInfo,
+                            this.chartInfo,
+                            this.chartInfo.title + ': ' + participant,
+                            seriesList,
+                            dataPerParticipant[participant],
+                            this.individualData.measureToColumn,
+                            this.individualData.visitMap
+                    );
                     charts.push(newChart);
 
                     if(!this.firstChartComponent){

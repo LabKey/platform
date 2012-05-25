@@ -6,16 +6,6 @@
 
 Ext4.namespace("LABKEY.vis");
 
-LABKEY.requiresScript('vis/src/geom.js');
-LABKEY.requiresScript('vis/src/stat.js');
-LABKEY.requiresScript('vis/src/position.js');
-LABKEY.requiresScript('vis/src/scale.js');
-LABKEY.requiresScript('vis/src/utils.js');
-LABKEY.requiresScript('vis/src/layer.js');
-LABKEY.requiresScript('vis/src/plot.js');
-LABKEY.requiresScript('vis/lib/d3-2.0.4.js');
-LABKEY.requiresScript('vis/lib/raphael-min.js');
-
 LABKEY.requiresScript("vis/temp/genericOptionsPanel.js");
 LABKEY.requiresScript("vis/temp/initialMeasurePanel.js");
 LABKEY.requiresScript("vis/temp/saveOptionsPanel.js");
@@ -644,6 +634,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             //Get data for individual lines.
             LABKEY.Visualization.getData({
                 success: function(data){
+                    console.log("Data returned from server");
                     // store the data in an object by subject for use later when it comes time to render the line chart
                     this.individualData = data;
                     this.markDirty(!this.editorSavePanel.isSavedReport()); // only mark when editing unsaved report
