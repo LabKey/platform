@@ -474,7 +474,7 @@ LABKEY.requiresVisualization = function ()
     LABKEY.requiresScript('vis/src/scale.js');
     LABKEY.requiresScript('vis/src/layer.js');
     LABKEY.requiresScript('vis/src/plot.js');
-    LABKEY.requiresScript("vis/ChartComponent.js");
+    LABKEY.requiresScript("vis/SVGConverter.js");
 };
 
 // If we're in demo mode, replace each ID with an equal length string of "*".  This code should match DemoMode.id().
