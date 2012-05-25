@@ -46,6 +46,7 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
@@ -162,6 +163,7 @@ public class VisualizationController extends SpringActionController
             if (view != null)
                 view.applyFilterAndSortToURL(filterURL, FILTER_DATAREGION);
 
+            url.addParameter(QueryParam.dataRegionName, settings.getDataRegionName());
             url.addParameter(VISUALIZATION_FILTER_URL, filterURL.getLocalURIString());
         }
 
@@ -1034,6 +1036,7 @@ public class VisualizationController extends SpringActionController
         private String _name;
         private String _renderType;
         private ReportIdentifier _reportId;
+        private String _dataRegionName;
 
         public String getName()
         {
@@ -1083,6 +1086,16 @@ public class VisualizationController extends SpringActionController
         public void setRenderType(String renderType)
         {
             _renderType = renderType;
+        }
+
+        public String getDataRegionName()
+        {
+            return _dataRegionName;
+        }
+
+        public void setDataRegionName(String dataRegionName)
+        {
+            _dataRegionName = dataRegionName;
         }
     }
 

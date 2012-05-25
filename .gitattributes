@@ -3570,6 +3570,7 @@ visualization/resources/web/vis/chartEditorOverviewPanel.js -text
 visualization/resources/web/vis/chartEditorXAxisPanel.js -text
 visualization/resources/web/vis/chartEditorYAxisPanel.js -text
 visualization/resources/web/vis/chartPanel.js -text
+visualization/resources/web/vis/genericChartPanel.js -text
 visualization/resources/web/vis/groupSelector.js -text
 visualization/resources/web/vis/measuresPanel.js -text
 visualization/resources/web/vis/subjectSeriesSelector.js -text
@@ -3605,7 +3606,8 @@ visualization/src/org/labkey/visualization/sql/VisualizationSourceColumn.java -t
 visualization/src/org/labkey/visualization/sql/VisualizationSourceQuery.java -text
 visualization/src/org/labkey/visualization/views/genericChartWizard.jsp -text
 visualization/src/org/labkey/visualization/views/timeChartWizard.jsp -text
-visualization/webapp/visualization/report/box_plot.png -text
+visualization/webapp/visualization/report/box_plot.gif -text
+visualization/webapp/visualization/report/scatter_plot.gif -text
 visualization/webapp/visualization/report/timechart.gif -text
 wiki/lib/radeox-api.jar -text
 wiki/lib/radeox.jar -text

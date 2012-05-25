@@ -344,11 +344,7 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
         var ptidCategoryPanel = this;
 
         // convert user filters from data region to expected filterArray
-        var filters = [];
-        Ext.each(Ext.ComponentMgr.get(this.dataRegionName).getUserFilter(), function(usrFilter){
-            var filterType = this.getFilterTypeByURLSuffix(usrFilter.op);
-            filters.push(LABKEY.Filter.create(usrFilter.fieldKey,  usrFilter.value, filterType));
-        }, this);
+        var filters = Ext.ComponentMgr.get(this.dataRegionName).getUserFilterArray();
 
         // get the selected rows from the QWP data region
         LABKEY.Query.selectRows({
@@ -390,7 +386,8 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
                 });
             }
         });
-    },
+    }
+/*
 
     getFilterTypeByURLSuffix: function(op)
     {
@@ -404,4 +401,5 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
         }
         return null;
     }
+*/
 });

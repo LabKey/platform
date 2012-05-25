@@ -91,7 +91,7 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
         if (TimeChartReport.TYPE.equals(reportType))
             return context.getContextPath() + "/visualization/report/timechart.gif";
         if (GenericChartReport.TYPE.equals(reportType))
-            return context.getContextPath() + "/visualization/report/box_plot.png";
+            return context.getContextPath() + "/visualization/report/box_plot.gif";
 
         return super.getReportIcon(context, reportType);
     }
