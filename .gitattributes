@@ -3563,6 +3563,7 @@ visualization/resources/views/measurePickerTest.html -text
 visualization/resources/web/protovis/protovis-d3.2.js -text
 visualization/resources/web/protovis/protovis-r3.2.js -text
 visualization/resources/web/vis/ChartComponent.js -text
+visualization/resources/web/vis/SVGConverter.js -text
 visualization/resources/web/vis/chartEditorChartsPanel.js -text
 visualization/resources/web/vis/chartEditorMeasurePanel.js -text
 visualization/resources/web/vis/chartEditorOverviewPanel.js -text
