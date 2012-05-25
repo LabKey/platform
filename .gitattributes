@@ -1507,7 +1507,6 @@ pipeline/lib/globus_wsrf_rft_stubs.jar -text
 pipeline/lib/gram-client.jar -text
 pipeline/lib/gram-stubs.jar -text
 pipeline/lib/gram-utils.jar -text
-pipeline/lib/jce-jdk13-131.jar -text
 pipeline/lib/jug-2.0.0-asl.jar -text
 pipeline/lib/mule-1.4.4-embedded.jar -text
 pipeline/lib/mule-configuration.dtd -text
