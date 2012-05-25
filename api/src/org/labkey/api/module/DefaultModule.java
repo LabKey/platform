@@ -1004,12 +1004,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                 f = new File(new File(source), "src");
                 if (f.isDirectory())
                     dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(f));
-
-
-                if (new File(source).isDirectory())
-                {
-                    dirs.add(FileUtil.getAbsoluteCaseSensitiveFile(new File(source)));
-                }
             }
             if (null != build)
             {

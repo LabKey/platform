@@ -17,6 +17,7 @@
 package org.labkey.api.query;
 
 import org.labkey.api.data.*;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.StringExpression;
@@ -140,7 +141,12 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
     protected StringExpression getURL(ColumnInfo parent, boolean useDetailsURL)
     {
         if (null != _baseURL)
-            return new DetailsURL(_baseURL, _param.toString(), parent.getFieldKey());
+        {
+            // CONSIDER: set ContainerContext in AbstractForeignKey.getURL() so all subclasses can benefit
+            DetailsURL url = new DetailsURL(_baseURL, _param.toString(), parent.getFieldKey());
+            setURLContainerContext(url, getLookupTableInfo());
+            return url;
+        }
 
         if (!useDetailsURL)
             return null;
@@ -168,8 +174,22 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
                 rewrite = f.remapFieldKeys(null, Collections.singletonMap(columnKey, parent.getFieldKey()));
             else
                 rewrite = f.remapFieldKeys(parent.getFieldKey(), null);
+
+            // CONSIDER: set ContainerContext in AbstractForeignKey.getURL() so all subclasses can benefit
+            if (rewrite instanceof DetailsURL)
+                setURLContainerContext((DetailsURL)rewrite, lookupTable);
+
             return rewrite;
         }
         return null;
     }
+
+    protected static DetailsURL setURLContainerContext(DetailsURL url, TableInfo lookupTable)
+    {
+        ContainerContext cc;
+        if (lookupTable instanceof AbstractTableInfo && null != (cc = ((AbstractTableInfo) lookupTable).getContainerContext()))
+            url.setContainerContext(cc);
+        return url;
+    }
+
 }
