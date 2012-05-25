@@ -270,8 +270,8 @@ public abstract class AbstractDataRegion extends DisplayElement
         {
             headerMessage.append("<span class='labkey-strong'>Filter:</span>&nbsp;");
             headerMessage.append(PageFlowUtil.filter(filterDescription)).append("&nbsp;&nbsp;");
-            headerMessage.append(PageFlowUtil.generateButtonHtml("Clear All", "#", "LABKEY.DataRegions['" +
-                    PageFlowUtil.filter(getName()) + "'].clearAllFilters(); return false;", null));
+            headerMessage.append(PageFlowUtil.generateButtonHtml("Clear All", "#", "LABKEY.DataRegions[" +
+                    PageFlowUtil.jsString(getName()) + "].clearAllFilters(); return false;", null));
         }
     }
 

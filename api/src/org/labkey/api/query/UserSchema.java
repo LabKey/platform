@@ -250,6 +250,10 @@ abstract public class UserSchema extends AbstractSchema
                 if (!tables.containsKey(lookupTableName) && (t != null && tables.containsKey(t.getName())))
                     lookupTableName = t.getName();
 
+                //skip self-referencing FKs
+                if (schemaName.equalsIgnoreCase(fk.getLookupSchemaName()) && lookupTableName.equals(table.getName()))
+                    continue;
+
                 // Remove the lookup table from the set of tables with no incoming FK
                 startTables.remove(lookupTableName);
             }
@@ -308,6 +312,10 @@ abstract public class UserSchema extends AbstractSchema
             String lookupTableName = fk.getLookupTableName();
             if (!tables.containsKey(lookupTableName) && (t != null && tables.containsKey(t.getName())))
                 lookupTableName = t.getName();
+
+            //skip self-referencing FKs
+            if (schemaName.equalsIgnoreCase(fk.getLookupSchemaName()) && lookupTableName.equals(table.getName()))
+                continue;
 
             // Continue depthFirstWalk if the lookup table is found in the schema (e.g. it exists in this schema and isn't a query)
             TableInfo lookupTable = tables.get(lookupTableName);
