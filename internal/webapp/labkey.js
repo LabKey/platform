@@ -455,10 +455,25 @@ LABKEY.showNavTrail = function()
 LABKEY.requiresVisualization = function ()
 {
     if (LABKEY.devMode)
-        LABKEY.requiresScript("protovis/protovis-d3.2.js");
+    {
+        LABKEY.requiresScript('vis/lib/raphael-2.1.0.js');
+        LABKEY.requiresScript('vis/lib/d3-2.0.4.js');
+    }
     else
-        LABKEY.requiresScript("protovis/protovis-r3.2.js");
+    {
+        LABKEY.requiresScript('vis/lib/raphael-min-2.1.0.js');
+        LABKEY.requiresScript('vis/lib/d3-2.0.4.min.js');
 
+    }
+
+    // TODO: Concat and minify the below files for a non-devMode version.
+    LABKEY.requiresScript('vis/src/utils.js');
+    LABKEY.requiresScript('vis/src/geom.js');
+    LABKEY.requiresScript('vis/src/stat.js');
+    LABKEY.requiresScript('vis/src/position.js');
+    LABKEY.requiresScript('vis/src/scale.js');
+    LABKEY.requiresScript('vis/src/layer.js');
+    LABKEY.requiresScript('vis/src/plot.js');
     LABKEY.requiresScript("vis/ChartComponent.js");
 };
 

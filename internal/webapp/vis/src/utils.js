@@ -6,6 +6,14 @@
 
 // Contains helpers that aren't specific to plot, layer, geom, etc. and are used throughout the API.
 
+if(!LABKEY){
+	var LABKEY = {};
+}
+
+if(!LABKEY.vis){
+	LABKEY.vis = {};
+}
+
 LABKEY.vis.makeLine = function(x1, y1, x2, y2){
     //Generates a path between two coordinates.
     return "M " + x1 + " " + y1 + " L " + x2 + " " + y2;
