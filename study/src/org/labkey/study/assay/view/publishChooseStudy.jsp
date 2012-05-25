@@ -83,7 +83,7 @@
 <%
     }
 %>
-<input type="hidden" name="<%= DataRegionSelection.DATA_REGION_SELECTION_KEY %>" value=<%=PageFlowUtil.jsString(bean.getDataRegionSelectionKey())%>">
+<input type="hidden" name="<%= DataRegionSelection.DATA_REGION_SELECTION_KEY %>" value="<%=h(bean.getDataRegionSelectionKey())%>">
 <table>
     <%
         if (unambiguous)

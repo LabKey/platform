@@ -392,7 +392,7 @@ function renderFormPanel(data, editable)
     if (editableFormPanel)
         items.push(renderTypeCombo);
     handledFields[renderTypeCombo.hiddenName] = true;
-    items.push({fieldLabel:'Protocol Documents', width:500, xtype:'panel', contentEl:'attachmentsDiv'});
+    items.push({fieldLabel:'Protocol Documents', width:500, border: false, xtype:'panel', contentEl:'attachmentsDiv'});
     // the original form didn't include these, but we can decide later
     items.push(timepointTypeRadioGroup);
     handledFields['TimepointType'] = true;
@@ -486,6 +486,6 @@ Ext.onReady(createPage);
 <div id="filePickers">
 </div>
 <div>
-<a onclick="addExtFilePickerHandler(); return false;" href="#addFile"><img src="<%=request.getContextPath()%>/_images/paperclip.gif">&nbsp;Attach a file</a>
+&nbsp;<a onclick="addExtFilePickerHandler(); return false;" href="#addFile"><img src="<%=request.getContextPath()%>/_images/paperclip.gif">&nbsp;&nbsp;Attach a file</a>
 </div>
 </div>
