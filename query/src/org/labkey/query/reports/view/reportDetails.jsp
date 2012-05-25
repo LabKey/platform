@@ -1,34 +1,33 @@
 <%
-    /*
-    * Copyright (c) 2011-2012 LabKey Corporation
-    *
-    * Licensed under the Apache License, Version 2.0 (the "License");
-    * you may not use this file except in compliance with the License.
-    * You may obtain a copy of the License at
-    *
-    *     http://www.apache.org/licenses/LICENSE-2.0
-    *
-    * Unless required by applicable law or agreed to in writing, software
-    * distributed under the License is distributed on an "AS IS" BASIS,
-    * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    * See the License for the specific language governing permissions and
-    * limitations under the License.
-    */
+/*
+ * Copyright (c) 2011-2012 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 %>
+<%@ page import="org.labkey.api.reports.model.ReportPropsManager" %>
+<%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
+<%@ page import="org.labkey.api.reports.report.ReportUrls" %>
+<%@ page import="org.labkey.api.reports.report.view.ReportDesignBean" %>
+<%@ page import="org.labkey.api.security.UserManager" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%@ page import="org.labkey.api.reports.report.view.ReportDesignBean" %>
-<%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
-<%@ page import="java.util.Date" %>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.security.UserManager" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.reports.report.ReportUrls" %>
-<%@ page import="org.labkey.api.reports.model.ReportPropsManager" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
+<%@ page import="java.util.Date" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ReportDesignBean> me = (JspView<ReportDesignBean>) HttpView.currentView();
     ReportDesignBean bean = me.getModelBean();
@@ -48,7 +47,8 @@
     String type = bean.getReport().getTypeDescription();
     String category = "";
     String status = "";
-    try {
+    try
+    {
         category = reportDescriptor.getCategory().getLabel();
         status =  ReportPropsManager.get().getPropertyValue(reportDescriptor.getEntityId(), bean.getContainer(), "status").toString();
         authorId = ((Double) ReportPropsManager.get().getPropertyValue(reportDescriptor.getEntityId(), bean.getContainer(), "author")).intValue();
@@ -147,7 +147,7 @@
             Date Created:
         </td>
         <td>
-             <%=h(DateUtil.formatDateTime(createdDate, DateUtil.getStandardDateFormatString()))%>
+             <%=h(DateUtil.formatDateTime(createdDate))%>
         </td>
     </tr>
 
@@ -156,7 +156,7 @@
             Last Modified:
         </td>
         <td>
-            <%=h(DateUtil.formatDateTime(modifiedDate, DateUtil.getStandardDateFormatString()))%>
+            <%=h(DateUtil.formatDateTime(modifiedDate))%>
         </td>
     </tr>
 
@@ -165,7 +165,7 @@
             Data Cut Date:
         </td>
         <td>
-            <%=h(DateUtil.formatDateTime(refreshDate, DateUtil.getStandardDateFormatString()))%>
+            <%=h(DateUtil.formatDateTime(refreshDate))%>
         </td>
     </tr>
 
@@ -174,7 +174,7 @@
             Report Thumbnail:
         </td>
         <td>
-            <img src="<%=thumbnailUrl.getURIString()%>">
+            <img src="<%=h(thumbnailUrl)%>">
         </td>
     </tr>
 
@@ -183,7 +183,7 @@
             Report URL:
         </td>
         <td>
-            <a href="<%=reportURL.getURIString()%>">View Report</a>
+            <a href="<%=h(reportURL)%>">View Report</a>
         </td>
     </tr>
 </table>
