@@ -123,7 +123,7 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
                         reportName: formVals.reportName,
                         reportDescription: formVals.reportDescription,
                         shared: shared,
-                        saveThumbnail: this.getSaveThumbnail(),
+                        saveThumbnail: this.saveThumbnail,
                         canSaveSharedCharts: this.canSaveSharedCharts(),
                         createdBy: this.createdBy
                     });

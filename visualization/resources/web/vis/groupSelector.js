@@ -135,6 +135,12 @@ LABKEY.vis.GroupSelector = Ext.extend(Ext.Panel, {
                                 }
                                 else
                                 {
+                                    // Issue 14909: Time chart - no chart displayed when one chart per group is chosen
+                                    // Set the id of the group to the one in the store because if you import a study or
+                                    // folder it imports participants and the ids will likely not be the same.
+                                    this.subject.groups[i].id = store.getAt(index).get("rowId");
+
+                                    // Grab the participantIds for the group from the store.
                                     this.subject.groups[i].participantIds = store.getAt(index).get("participantIds").slice(0);
                                 }
                             }
