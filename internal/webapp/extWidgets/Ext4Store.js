@@ -749,7 +749,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
             };
 
             if (this.columns)
-                params['query.columns'] = this.columns;
+                params['query.columns'] = Ext4.isArray(this.columns) ? this.columns.join(",") : this.columns;
 
             // These are filters that are custom created (aka not from a defined view).
             LABKEY.Filter.appendFilterParams(params, this.filterArray);
