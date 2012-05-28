@@ -101,6 +101,9 @@ Ext4.define('LABKEY.ext.NavPanel', {
             for (var j=0;j<sectionCfg.items.length;j++)
             {
                 var item = {};
+                if(sectionCfg.items[j].hasPermission === false)
+                    continue;
+
                 var renderer = null;
                 if(sectionCfg.items[j].renderer)
                     renderer = sectionCfg.items[j].renderer;
@@ -256,7 +259,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
                     linkCls: 'labkey-text-link-noarrow',
                     tooltip: 'Click to view these records',
                     href: item.queryName ? LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: item.schemaName, queryName: item.queryName}): null,
-                    text: item.total
+                    text: Ext4.isDefined(item.total) ? item.total.toString() : item.total
                 }]
             }
         }

@@ -171,8 +171,28 @@ LABKEY.Utils = new function()
                 return;
 
             }
+
+            var error = LABKEY.Utils.getMsgFromError(responseObj, exceptionObj, {
+                msgPrefix: msgPrefix,
+                showExceptionClass: showExceptionClass
+            });
+            Ext.Msg.alert("Error", error);
+        },
+
+        /**
+         * Generates a display string from the response to an error from an AJAX request
+         * @private
+         * @ignore
+         * @param {XMLHttpRequest} responseObj The XMLHttpRequest object containing the response data.
+         * @param {Error} [exceptionObj] A JavaScript Error object caught by the calling code.
+         * @param {Object} [config] An object with additional configuration properties.  It supports the following:
+         * <li>msgPrefix: A string that will be used as a prefix in the error message.  Default to: 'An error occurred trying to load'</li>
+         * <li>showExceptionClass: A boolean flag to display the java class of the exception.</li>
+         */
+        getMsgFromError: function(responseObj, exceptionObj, config){
+            config = config || {};
             var error;
-            var prefix = msgPrefix || 'An error occurred trying to load:\n';
+            var prefix = config.msgPrefix || 'An error occurred trying to load:\n';
 
             if (responseObj &&
                 responseObj.responseText &&
@@ -183,7 +203,7 @@ LABKEY.Utils = new function()
                 if (jsonResponse && jsonResponse.exception)
                 {
                     error = prefix + jsonResponse.exception;
-                    if (showExceptionClass)
+                    if (config.showExceptionClass)
                         error += "\n(" + (jsonResponse.exceptionClass ? jsonResponse.exceptionClass : "Exception class unknown") + ")";
                 }
             }
@@ -191,9 +211,10 @@ LABKEY.Utils = new function()
                 error = prefix + "Status: " + responseObj.statusText + " (" + responseObj.status + ")";
             if (exceptionObj && exceptionObj.message)
                 error += "\n" + exceptionObj.name + ": " + exceptionObj.message;
-            Ext.Msg.alert("Error", error);
+
+            return error;
         },
-        
+
         /**
         * Creates an Ext.data.Store that queries the LabKey Server database and can be used as the data source
         * for various components, including GridViews, ComboBoxes, and so forth.

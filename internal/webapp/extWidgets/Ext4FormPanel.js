@@ -479,7 +479,9 @@ Ext4.define('LABKEY.ext4.DatabindPlugin', {
             if (records.length == 0){
                 if(this.panel.bindConfig.createRecordOnLoad){
                     var values = this.getForm.getFieldValues();
-                    var record = this.store.model.create(values);
+                    var record = this.panel.store.model.create();
+                    record.set(values); //otherwise record will not be dirty
+                    record.phantom = true;
                     this.store.add(record);
                     this.bindRecord(record);
                 }
@@ -506,7 +508,7 @@ Ext4.define('LABKEY.ext4.DatabindPlugin', {
         var form = this.panel.getForm();
         if(form.getRecord() && record == form.getRecord()){
             form.suspendEvents();
-            form.loadRecord(record);
+            this.setValues(record.data);
             form.resumeEvents();
         }
     },
@@ -536,12 +538,16 @@ Ext4.define('LABKEY.ext4.DatabindPlugin', {
 
     updateRecord: function(){
         var form = this.panel.getForm();
+        //TODO: combos and other multi-valued fields represent data differently in the store vs the field.
+        // need to reconcile here.  perhaps override getFieldValues()?
         if(form.getRecord()){
             form.updateRecord(form.getRecord());
         }
         else if (this.panel.bindConfig.autoCreateRecordOnChange){
             var values = form.getFieldValues();
-            var record = this.panel.store.model.create(values);
+            var record = this.panel.store.model.create();
+            record.set(values); //otherwise record will not be dirty
+            record.phantom = true;
             this.panel.store.add(record);
             this.bindRecord(record);
         }
@@ -564,6 +570,7 @@ Ext4.define('LABKEY.ext4.DatabindPlugin', {
         if(form.getRecord() && this.panel.bindConfig.disableUnlessBound && !this.panel.bindConfig.autoCreateRecordOnChange)
             f.setDisabled(true);
 
+        //TODO: in Ext4.1, we might be able to user override() and callOveridden()
         f.oldGetErrors = f.getErrors;
         f.getErrors = function(value){
             var errors = this.oldGetErrors(value);
@@ -581,12 +588,8 @@ Ext4.define('LABKEY.ext4.DatabindPlugin', {
                 }
             }
 
-
-
             errors = Ext4.Array.unique(errors);
 
-//            if(errors.length)
-//                console.log(errors);
             return errors;
         };
         f.hasDatabindListener = true;
@@ -595,6 +598,34 @@ Ext4.define('LABKEY.ext4.DatabindPlugin', {
     //this is separated so that multiple fields in a single form are filtered into one event per panel
     onFieldChange: function(field){
         this.panel.fireEvent('fieldvaluechange', field);
-    }
+    },
+
+    //this is used instead of BasicForm's setValues in order to minimize event firing.  updating a field during editing has the
+    //unfortunately consequence of moving the cursor to the end of the text, so we want to avoid this
+    setValues: function(values) {
+        var form = this.panel.getForm();
+
+        function setVal(fieldId, val) {
+            var field = form.findField(fieldId);
+            if (field && field.getValue() !== val) {
+                //TODO: combos and other multi-valued fields represent data differently in the store vs the field.  need to reconcile here
+                field.setValue(val);
+                if (form.trackResetOnLoad) {
+                    field.resetOriginalValue();
+                }
+            }
+        }
+
+        if (Ext4.isArray(values)) {
+            // array of objects
+            Ext4.each(values, function(val) {
+                setVal(val.id, val.value);
+            });
+        } else {
+            // object hash
+            Ext4.iterate(values, setVal);
+        }
+        return this;
+    },
 
 });
