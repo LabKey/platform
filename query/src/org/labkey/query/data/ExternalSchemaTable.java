@@ -16,8 +16,10 @@
 
 package org.labkey.query.data;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.data.*;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SimpleQueryUpdateService;
 import org.labkey.api.query.SimpleUserSchema;
@@ -28,14 +30,15 @@ import org.labkey.api.util.ContainerContext;
 import org.labkey.data.xml.TableType;
 import org.labkey.query.ExternalSchema;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 
 public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable implements UpdateableTableInfo
 {
     private Container _container;
-    
+    private static final Logger _logger = Logger.getLogger(ExternalSchemaTable.class);
 
     public ExternalSchemaTable(ExternalSchema schema, SchemaTableInfo table, TableType metadata)
     {
@@ -43,7 +46,17 @@ public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable implements
 
         if (metadata != null)
         {
-            loadFromXML(schema, metadata, null);
+            try
+            {
+                //create list to avoid NPE if an error occurs
+                Collection<QueryException> errors = new ArrayList<QueryException>();
+                loadFromXML(schema, metadata, errors);
+            }
+            catch (IllegalArgumentException e)
+            {
+                _logger.error("Malformed XML for external table: " + getSchema() + "." + getName(), e);
+                //otherwise ignore malformed XML
+            }
         }
     }
 
