@@ -1064,11 +1064,6 @@ public class ContainerManager
         }
     }
 
-    public static void setPublishBit(Container c, Boolean bit) throws SQLException
-    {
-        Table.execute(CORE.getSchema(), "UPDATE " + CORE.getTableInfoContainers() + " SET CaBIGPublished = ? WHERE EntityId = ?", bit, c.getId());
-    }
-
     public static void setChildOrderToAlphabetical(Container parent)
     {
         setChildOrder(parent.getChildren(), true);
@@ -1996,7 +1991,7 @@ public class ContainerManager
             int rowId = rs.getInt("RowId");
             int sortOrder = rs.getInt("SortOrder");
             Date created = rs.getTimestamp("Created");
-            // _ts, createdby, cabigpublished
+            // _ts, createdby
             String description = rs.getString("Description");
             boolean workbook = rs.getBoolean("Workbook");
             String title = rs.getString("Title");

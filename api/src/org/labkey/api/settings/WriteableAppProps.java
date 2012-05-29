@@ -161,11 +161,6 @@ public class WriteableAppProps extends AppProps
         storeStringValue(NETWORK_DRIVE_PASSWORD, password);
     }
 
-    public void setCaBIGEnabled(boolean enabled)
-    {
-        storeBooleanValue(CABIG_ENABLED, enabled);
-    }
-
     public void setMailRecorderEnabled(boolean enabled)
     {
         storeBooleanValue(MAIL_RECORDER_ENABLED, enabled);        

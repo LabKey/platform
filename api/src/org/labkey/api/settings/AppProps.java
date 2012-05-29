@@ -81,7 +81,6 @@ public class AppProps extends AbstractWriteableSettingsGroup
     protected static final String NETWORK_DRIVE_PATH = "networkDrivePath";
     protected static final String NETWORK_DRIVE_USER = "networkDriveUser";
     protected static final String NETWORK_DRIVE_PASSWORD = "networkDrivePassword";
-    protected static final String CABIG_ENABLED = "caBIGEnabled";
     protected static final String MAIL_RECORDER_ENABLED = "mailRecorderEnabled";
     protected static final String EXPERIMENTAL_FEATURE_PREFIX = "experimentalFeature.";
     protected static final String WEB_ROOT = "webRoot";
@@ -497,11 +496,6 @@ public class AppProps extends AbstractWriteableSettingsGroup
     public static WriteableAppProps getWriteableInstance() throws SQLException
     {
         return new WriteableAppProps(ContainerManager.getRoot());
-    }
-
-    public boolean isCaBIGEnabled()
-    {
-        return lookupBooleanValue(CABIG_ENABLED, false);
     }
 
     // Get the name of the webapp configuration file, e.g., labkey.xml, cpas.xml, or root.xml.  Used in some error messages
