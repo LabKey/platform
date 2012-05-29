@@ -16,8 +16,10 @@
 package org.labkey.visualization.report;
 
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.view.DefaultReportUIProvider;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
@@ -46,21 +48,19 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
         if ("study".equalsIgnoreCase(settings.getSchemaName()))
         {
             ActionURL designerURL = urlProvider.getTimeChartDesignerURL(context.getContainer(), context.getUser(), settings);
-            info.add(new DesignerInfoImpl(TimeChartReport.TYPE, "Time Chart", designerURL));
+            info.add(new DesignerInfoImpl(TimeChartReport.TYPE, "Time Chart", designerURL,
+                    context.getContextPath() + "/visualization/report/timechart.gif"));
         }
 
         GenericChartReport.RenderType boxType = GenericChartReport.RenderType.BOX_PLOT;
 
         ActionURL boxPlotURL = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), settings, boxType);
-        info.add(new DesignerInfoImpl(GenericChartReport.TYPE, boxType.getName(), boxPlotURL));
+        info.add(new DesignerInfoImpl(GenericChartReport.TYPE, boxType.getName(), boxPlotURL, boxType.getIconPath()));
         
-/*
         GenericChartReport.RenderType scatterType = GenericChartReport.RenderType.SCATTER_PLOT;
 
         ActionURL scatterPlotURL = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), settings, scatterType);
-        info.add(new DesignerInfoImpl(GenericChartReport.TYPE, scatterType.getName(), scatterPlotURL));
-*/
-
+        info.add(new DesignerInfoImpl(GenericChartReport.TYPE, scatterType.getName(), scatterPlotURL, scatterType.getIconPath()));
         return info;
     }
 
@@ -78,21 +78,29 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
             VisualizationUrls urlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
             ActionURL designerURL = urlProvider.getTimeChartDesignerURL(context.getContainer());
 
-            DesignerInfoImpl info = new DesignerInfoImpl(TimeChartReport.TYPE, "Time Chart", designerURL);
+            DesignerInfoImpl info = new DesignerInfoImpl(TimeChartReport.TYPE, "Time Chart", designerURL,
+                    context.getContextPath() + "/visualization/report/timechart.gif");
             info.setId("create_timeChart");
             designers.add(info);
         }
         return designers;
     }
 
-    @Override
-    public String getReportIcon(ViewContext context, String reportType)
+    public String getIconPath(Report report)
     {
-        if (TimeChartReport.TYPE.equals(reportType))
-            return context.getContextPath() + "/visualization/report/timechart.gif";
-        if (GenericChartReport.TYPE.equals(reportType))
-            return context.getContextPath() + "/visualization/report/box_plot.gif";
+        String contextPath = AppProps.getInstance().getContextPath();
+        String type = report.getType();
 
-        return super.getReportIcon(context, reportType);
+        if (TimeChartReport.TYPE.equals(type))
+            return contextPath + "/visualization/report/timechart.gif";
+        if (GenericChartReport.TYPE.equals(type))
+        {
+            String id = report.getDescriptor().getProperty(GenericChartReportDescriptor.Prop.renderType);
+            GenericChartReport.RenderType renderType = GenericChartReport.getRenderType(id);
+
+            if (renderType != null)
+                return renderType.getIconPath();
+        }
+        return super.getIconPath(report);
     }
 }

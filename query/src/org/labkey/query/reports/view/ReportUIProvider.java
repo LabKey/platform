@@ -20,6 +20,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.ExternalScriptEngineReport;
@@ -34,6 +35,7 @@ import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewContext;
 import org.labkey.query.reports.AttachmentReport;
@@ -42,7 +44,9 @@ import org.labkey.query.reports.ReportsController;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /*
  * User: Karl Lum
@@ -51,6 +55,15 @@ import java.util.List;
  */
 public class ReportUIProvider extends DefaultReportUIProvider
 {
+    private static Map<String, String> _typeToIconMap = new HashMap<String, String>();
+    static {
+
+        _typeToIconMap.put(RReport.TYPE, "/reports/r.gif");
+        _typeToIconMap.put(ChartQueryReport.TYPE, "/reports/chart.gif");
+        _typeToIconMap.put(JavaScriptReport.TYPE, "/reports/js.png");
+        _typeToIconMap.put(AttachmentReport.TYPE, "/reports/attachment.png");
+    }
+
     /**
      * Add report creation to UI's that aren't associated with a query (manage views, data views)
      */
@@ -65,14 +78,17 @@ public class ReportUIProvider extends DefaultReportUIProvider
             bean.setReportType(RReport.TYPE);
             bean.setRedirectUrl(context.getActionURL().getLocalURIString());
 
-            DesignerInfoImpl di = new DesignerInfoImpl(RReport.TYPE, "R View", ReportUtil.getScriptReportDesignerURL(context, bean));
+            DesignerInfoImpl di = new DesignerInfoImpl(RReport.TYPE, "R View", ReportUtil.getScriptReportDesignerURL(context, bean),
+                    _getIconPath(RReport.TYPE));
             di.setId("create_rView");
             di.setDisabled(!ReportUtil.canCreateScript(context));
 
             designers.add(di);
         }
 
-        DesignerInfoImpl di = new DesignerInfoImpl(AttachmentReport.TYPE, "Attachment Report", ReportsController.getAttachmentReportURL(context.getContainer(), context.getActionURL()));
+        DesignerInfoImpl di = new DesignerInfoImpl(AttachmentReport.TYPE, "Attachment Report",
+                ReportsController.getAttachmentReportURL(context.getContainer(), context.getActionURL()),
+                _getIconPath(AttachmentReport.TYPE));
         di.setId("create_attachment_report");
         di.setDisabled(!context.hasPermission(InsertPermission.class));
         designers.add(di);
@@ -92,7 +108,8 @@ public class ReportUIProvider extends DefaultReportUIProvider
         if (returnUrl == null)
             returnUrl = context.getActionURL();
         chartBean.setRedirectUrl(returnUrl.getLocalURIString());
-        designers.add(new DesignerInfoImpl(ChartQueryReport.TYPE, "Chart View", "XY and Time Charts", ReportUtil.getChartDesignerURL(context, chartBean)));
+        designers.add(new DesignerInfoImpl(ChartQueryReport.TYPE, "Chart View", "XY and Time Charts",
+                ReportUtil.getChartDesignerURL(context, chartBean), _getIconPath(ChartQueryReport.TYPE)));
 
         boolean canCreateScript = ReportUtil.canCreateScript(context);
 
@@ -101,7 +118,8 @@ public class ReportUIProvider extends DefaultReportUIProvider
             RReportBean rBean = new RReportBean(settings);
             rBean.setReportType(RReport.TYPE);
             rBean.setRedirectUrl(returnUrl.getLocalURIString());
-            designers.add(new DesignerInfoImpl(RReport.TYPE, "R View", ReportUtil.getRReportDesignerURL(context, rBean)));
+            designers.add(new DesignerInfoImpl(RReport.TYPE, "R View", ReportUtil.getRReportDesignerURL(context, rBean),
+                    _getIconPath(RReport.TYPE)));
         }
 
         ScriptEngineManager manager = ServiceRegistry.get().getService(ScriptEngineManager.class);
@@ -118,12 +136,14 @@ public class ReportUIProvider extends DefaultReportUIProvider
                 if (factory instanceof ExternalScriptEngineFactory)
                 {
                     bean.setReportType(ExternalScriptEngineReport.TYPE);
-                    designers.add(new DesignerInfoImpl(ExternalScriptEngineReport.TYPE, factory.getLanguageName() + " View", ReportUtil.getScriptReportDesignerURL(context, bean)));
+                    designers.add(new DesignerInfoImpl(ExternalScriptEngineReport.TYPE, factory.getLanguageName() + " View",
+                            ReportUtil.getScriptReportDesignerURL(context, bean), _getIconPath(ExternalScriptEngineReport.TYPE)));
                 }
                 else
                 {
                     bean.setReportType(InternalScriptEngineReport.TYPE);
-                    designers.add(new DesignerInfoImpl(InternalScriptEngineReport.TYPE, factory.getLanguageName() + " View", ReportUtil.getScriptReportDesignerURL(context, bean)));
+                    designers.add(new DesignerInfoImpl(InternalScriptEngineReport.TYPE, factory.getLanguageName() + " View",
+                            ReportUtil.getScriptReportDesignerURL(context, bean), _getIconPath(InternalScriptEngineReport.TYPE)));
                 }
             }
         }
@@ -133,7 +153,8 @@ public class ReportUIProvider extends DefaultReportUIProvider
         {
             QuerySnapshotService.I provider = QuerySnapshotService.get(settings.getSchemaName());
             if (provider != null && !QueryService.get().isQuerySnapshot(context.getContainer(), settings.getSchemaName(), settings.getQueryName()))
-                designers.add(new DesignerInfoImpl(QuerySnapshotService.TYPE, "Query Snapshot", provider.getCreateWizardURL(settings, context)));
+                designers.add(new DesignerInfoImpl(QuerySnapshotService.TYPE, "Query Snapshot",
+                        provider.getCreateWizardURL(settings, context), _getIconPath(QuerySnapshotService.TYPE)));
         }
 
         if (canCreateScript)
@@ -142,23 +163,29 @@ public class ReportUIProvider extends DefaultReportUIProvider
             bean.setRedirectUrl(returnUrl.getLocalURIString());
             bean.setScriptExtension(".js");
             bean.setReportType(JavaScriptReport.TYPE);
-            designers.add(new DesignerInfoImpl(JavaScriptReport.TYPE, "JavaScript View", "JavaScript View", ReportUtil.getScriptReportDesignerURL(context, bean)));
+            designers.add(new DesignerInfoImpl(JavaScriptReport.TYPE, "JavaScript View", "JavaScript View",
+                    ReportUtil.getScriptReportDesignerURL(context, bean), _getIconPath(JavaScriptReport.TYPE)));
         }
 
         return designers;
     }
 
-    public String getReportIcon(ViewContext context, String reportType)
+    private String _getIconPath(String type)
     {
-        if (RReport.TYPE.equals(reportType))
-            return context.getContextPath() + "/reports/r.gif";
-        if (ChartQueryReport.TYPE.equals(reportType))
-            return context.getContextPath() + "/reports/chart.gif";
-        if (JavaScriptReport.TYPE.equals(reportType))
-            return context.getContextPath() + "/reports/js.png";
-        if (AttachmentReport.TYPE.equals(reportType))
-            return context.getContextPath() + "/reports/attachment.png";
+        if (_typeToIconMap.containsKey(type))
+            return AppProps.getInstance().getContextPath() + _typeToIconMap.get(type);
+        return null;
+    }
 
-        return super.getReportIcon(context, reportType);
+    public String getIconPath(Report report)
+    {
+        if (report != null)
+        {
+            if (_typeToIconMap.containsKey(report.getType()))
+            {
+                _getIconPath(report.getType());
+            }
+        }
+        return super.getIconPath(report);
     }
 }

@@ -55,11 +55,9 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.XmlValidationException;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 
 import java.beans.PropertyChangeEvent;
-import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -83,7 +81,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     private static final Logger _log = Logger.getLogger(ReportService.class);
     private static List<ReportService.ViewFactory> _viewFactories = new ArrayList<ReportService.ViewFactory>();
     private static List<ReportService.UIProvider> _uiProviders = new ArrayList<ReportService.UIProvider>();
-    private static Map<String, String> _reportIcons = new HashMap<String, String>();
+    private static Map<String, ReportService.UIProvider> _typeToProviderMap = new HashMap<String, ReportService.UIProvider>();
 
     /** maps descriptor types to providers */
     private final ConcurrentMap<String, Class> _descriptors = new ConcurrentHashMap<String, Class>();
@@ -505,22 +503,26 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         return Collections.unmodifiableList(_uiProviders);
     }
 
-    public String getReportIcon(ViewContext context, String reportType)
+    public String getIconPath(Report report)
     {
-        if (_reportIcons.containsKey(reportType))
-            return _reportIcons.get(reportType);
-
-        for (ReportService.UIProvider provider : _uiProviders)
+        if (report != null)
         {
-            String iconPath = provider.getReportIcon(context, reportType);
+            String reportType = report.getType();
 
-            if (iconPath != null)
+            if (_typeToProviderMap.containsKey(reportType))
+                return _typeToProviderMap.get(reportType).getIconPath(report);
+
+            for (ReportService.UIProvider provider : _uiProviders)
             {
-                _reportIcons.put(reportType, iconPath);
-                return iconPath;
+                String iconPath = provider.getIconPath(report);
+
+                if (iconPath != null)
+                {
+                    _typeToProviderMap.put(reportType, provider);
+                    return iconPath;
+                }
             }
         }
-
         return null;
     }
 

@@ -19,6 +19,7 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
+import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.JavaScriptReport;
 import org.labkey.api.reports.report.RReport;
@@ -28,6 +29,7 @@ import org.labkey.api.reports.report.view.DefaultReportUIProvider;
 import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.util.URLHelper;
@@ -40,7 +42,9 @@ import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /*
  * User: Karl Lum
@@ -49,6 +53,19 @@ import java.util.List;
  */
 public class StudyReportUIProvider extends DefaultReportUIProvider
 {
+    private static Map<String, String> _typeToIconMap = new HashMap<String, String>();
+    static {
+        _typeToIconMap.put(StudyRReport.TYPE, "/reports/r.gif");
+        _typeToIconMap.put(ChartReportView.TYPE, "/reports/chart.gif");
+        _typeToIconMap.put(StudyQueryReport.TYPE, "/reports/grid.gif");
+        _typeToIconMap.put(StudyChartQueryReport.TYPE, "/reports/chart.gif");
+        _typeToIconMap.put(ExportExcelReport.TYPE, "/reports/xls.gif");
+        _typeToIconMap.put(ParticipantReport.TYPE, "/reports/participantReport.png");
+        _typeToIconMap.put(StudyCrosstabReport.TYPE, "/reports/crosstab.png");
+        _typeToIconMap.put(CrosstabReport.TYPE, "/reports/crosstab.png");
+        _typeToIconMap.put(EnrollmentReport.TYPE, "/reports/enrollment.png");
+    }
+
     private static final ReportService.ItemFilter _filter = new ReportService.ItemFilter(){
             public boolean accept(String reportType, String label)
             {
@@ -81,29 +98,37 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         {
             try
             {
-                DesignerInfoImpl gridInfo = new DesignerInfoImpl(StudyQueryReport.TYPE, "Grid View", new ActionURL(ReportsController.CreateQueryReportAction.class, context.getContainer()));
+                DesignerInfoImpl gridInfo = new DesignerInfoImpl(StudyQueryReport.TYPE, "Grid View",
+                        new ActionURL(ReportsController.CreateQueryReportAction.class, context.getContainer()),
+                        _getIconPath(StudyQueryReport.TYPE));
                 gridInfo.setId("create_gridView");
                 gridInfo.setDisabled(!context.hasPermission(AdminPermission.class));
                 designers.add(gridInfo);
 
-                DesignerInfoImpl crosstabInfo = new DesignerInfoImpl(StudyCrosstabReport.TYPE, "Crosstab View", new ActionURL(ReportsController.CreateCrosstabReportAction.class, context.getContainer()));
+                DesignerInfoImpl crosstabInfo = new DesignerInfoImpl(StudyCrosstabReport.TYPE, "Crosstab View",
+                        new ActionURL(ReportsController.CreateCrosstabReportAction.class, context.getContainer()),
+                        _getIconPath(StudyCrosstabReport.TYPE));
                 crosstabInfo.setId("create_crosstabView");
                 crosstabInfo.setDisabled(!context.hasPermission(AdminPermission.class));
                 designers.add(crosstabInfo);
 
-                DesignerInfoImpl xlsInfo = new DesignerInfoImpl(ExportExcelReport.TYPE, "Workbook (.xls)", new ActionURL(ReportsController.ExportExcelConfigureAction.class, context.getContainer()));
+                DesignerInfoImpl xlsInfo = new DesignerInfoImpl(ExportExcelReport.TYPE, "Workbook (.xls)",
+                        new ActionURL(ReportsController.ExportExcelConfigureAction.class, context.getContainer()),
+                        _getIconPath(ExportExcelReport.TYPE));
                 xlsInfo.setId("create_exportXlsView");
                 designers.add(xlsInfo);
 
-                DesignerInfoImpl enrollmentInfo = new DesignerInfoImpl(EnrollmentReport.TYPE, "Enrollment View", new ActionURL(ReportsController.EnrollmentReportAction.class, context.getContainer()));
+                DesignerInfoImpl enrollmentInfo = new DesignerInfoImpl(EnrollmentReport.TYPE, "Enrollment View",
+                        new ActionURL(ReportsController.EnrollmentReportAction.class, context.getContainer()),
+                        _getIconPath(EnrollmentReport.TYPE));
                 enrollmentInfo.setId("create_enrollmentView");
                 enrollmentInfo.setDisabled(!context.hasPermission(AdminPermission.class));
                 if (EnrollmentReport.getEnrollmentReport(context.getUser(), study, false) != null)
                     enrollmentInfo.setLabel("Configure Enrollment View");
 
-                DesignerInfoImpl prInfo = new DesignerInfoImpl(ParticipantReport.TYPE,
-                        study.getSubjectNounSingular() + " Report",
-                        new ActionURL(ReportsController.ParticipantReportAction.class, context.getContainer()));
+                DesignerInfoImpl prInfo = new DesignerInfoImpl(ParticipantReport.TYPE, study.getSubjectNounSingular() + " Report",
+                        new ActionURL(ReportsController.ParticipantReportAction.class, context.getContainer()),
+                        _getIconPath(ParticipantReport.TYPE));
                 prInfo.setId("create_participantReport");
                 designers.add(prInfo);
 
@@ -139,7 +164,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         {
             // crosstab report
             crossTabURL.addParameter(ReportDescriptor.Prop.reportType, StudyCrosstabReport.TYPE);
-            designers.add(new DesignerInfoImpl(StudyCrosstabReport.TYPE, "Crosstab View", crossTabURL));
+            designers.add(new DesignerInfoImpl(StudyCrosstabReport.TYPE, "Crosstab View", crossTabURL, _getIconPath(StudyCrosstabReport.TYPE)));
 
             // chart designer
             ChartDesignerBean chartBean = new ChartDesignerBean(settings);
@@ -149,7 +174,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
             url.addParameter(DataSetDefinition.DATASETKEY, NumberUtils.toInt(context.getActionURL().getParameter(DataSetDefinition.DATASETKEY), 0));
             url.setAction(ReportsController.DesignChartAction.class);
 
-            designers.add(new DesignerInfoImpl(StudyChartQueryReport.TYPE, "Chart View", url));
+            designers.add(new DesignerInfoImpl(StudyChartQueryReport.TYPE, "Chart View", url, _getIconPath(StudyChartQueryReport.TYPE)));
 
             // r report
             if (ReportUtil.canCreateScript(context) && RReport.isEnabled())
@@ -158,7 +183,8 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
                 rBean.setReportType(StudyRReport.TYPE);
                 rBean.setRedirectUrl(returnUrl.getLocalURIString());
 
-                designers.add(new DesignerInfoImpl(StudyRReport.TYPE, "R View", ReportUtil.getRReportDesignerURL(context, rBean)));
+                designers.add(new DesignerInfoImpl(StudyRReport.TYPE, "R View", ReportUtil.getRReportDesignerURL(context, rBean),
+                        _getIconPath(StudyRReport.TYPE)));
             }
 
             // external report
@@ -166,38 +192,33 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
             {
                 ActionURL buttonURL = context.getActionURL().clone();
                 buttonURL.setAction(ReportsController.ExternalReportAction.class);
-                designers.add(new DesignerInfoImpl(ExternalReport.TYPE, "Advanced View", "An External Command Report", buttonURL));
+                designers.add(new DesignerInfoImpl(ExternalReport.TYPE, "Advanced View", "An External Command Report",
+                        buttonURL, _getIconPath(ExternalReport.TYPE)));
             }
         }
         else
         {
             crossTabURL.addParameter(ReportDescriptor.Prop.reportType, CrosstabReport.TYPE);
-            designers.add(new DesignerInfoImpl(CrosstabReport.TYPE, "Crosstab View", crossTabURL));
+            designers.add(new DesignerInfoImpl(CrosstabReport.TYPE, "Crosstab View", crossTabURL, _getIconPath(CrosstabReport.TYPE)));
         }
 
         return designers;
     }
 
-    public String getReportIcon(ViewContext context, String reportType)
+    private String _getIconPath(String type)
     {
-        if (StudyRReport.TYPE.equals(reportType))
-            return context.getContextPath() + "/reports/r.gif";
-        if (ChartReportView.TYPE.equals(reportType))
-            return context.getContextPath() + "/reports/chart.gif";
-        if (StudyQueryReport.TYPE.equals(reportType))
-            return context.getContextPath() + "/reports/grid.gif";
-        if (StudyChartQueryReport.TYPE.equals(reportType))
-            return context.getContextPath() + "/reports/chart.gif";
-        if (ExportExcelReport.TYPE.equals(reportType))
-            return context.getContextPath() + "/reports/xls.gif";
-        if (ParticipantReport.TYPE.equals(reportType))
-            return context.getContextPath() + "/reports/participantReport.png";
-        if (StudyCrosstabReport.TYPE.equals(reportType) || CrosstabReport.TYPE.equals(reportType))
-            return context.getContextPath() + "/reports/crosstab.png";
-        if (EnrollmentReport.TYPE.equals(reportType))
-            return context.getContextPath() + "/reports/enrollment.png";
+        if (_typeToIconMap.containsKey(type))
+            return AppProps.getInstance().getContextPath() + _typeToIconMap.get(type);
+        return null;
+    }
 
-        return super.getReportIcon(context, reportType);
+    public String getIconPath(Report report)
+    {
+        if (report != null)
+        {
+            return _getIconPath(report.getType());
+        }
+        return super.getIconPath(report);
     }
 
     public static ReportService.ItemFilter getItemFilter()
