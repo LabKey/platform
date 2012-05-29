@@ -132,7 +132,6 @@ import java.util.zip.InflaterInputStream;
 
 public class PageFlowUtil
 {
-
     public enum TransformFormat
     {
         html,
