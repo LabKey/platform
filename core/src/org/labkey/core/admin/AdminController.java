@@ -1136,7 +1136,6 @@ public class AdminController extends SpringActionController
             props.setNetworkDrivePath(form.getNetworkDrivePath() == null ? null : form.getNetworkDrivePath().trim());
             props.setNetworkDriveUser(form.getNetworkDriveUser() == null ? null : form.getNetworkDriveUser().trim());
             props.setNetworkDrivePassword(form.getNetworkDrivePassword() == null ? null : form.getNetworkDrivePassword().trim());
-            props.setCaBIGEnabled(form.isCaBIGEnabled());
 
             if (null != form.getBaseServerUrl())
             {
@@ -1182,7 +1181,6 @@ public class AdminController extends SpringActionController
     public static class SiteSettingsBean
     {
         public String helpLink = new HelpTopic("configAdmin").getSimpleLinkHtml("more info...");
-        public String caBigHelpLink = new HelpTopic("cabig").getSimpleLinkHtml("more info...");
         public boolean upgradeInProgress;
         public boolean testInPage;
 
@@ -1459,7 +1457,6 @@ public class AdminController extends SpringActionController
         private String _networkDrivePath;
         private String _networkDriveUser;
         private String _networkDrivePassword;
-        private boolean _caBIGEnabled;
         private String _baseServerUrl;
         private String _callbackPassword;
 
@@ -1681,16 +1678,6 @@ public class AdminController extends SpringActionController
         public void setNetworkDriveUser(String networkDriveUser)
         {
             _networkDriveUser = networkDriveUser;
-        }
-
-        public boolean isCaBIGEnabled()
-        {
-            return _caBIGEnabled;
-        }
-
-        public void setCaBIGEnabled(boolean caBIGEnabled)
-        {
-            _caBIGEnabled = caBIGEnabled;
         }
 
         public String getBaseServerUrl()

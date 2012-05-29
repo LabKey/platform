@@ -310,17 +310,6 @@ Click the Save button at any time to accept the current settings and continue.</
     <td>&nbsp;</td>
 </tr>
 <tr>
-    <td colspan=2>Configure caBIG&trade; (<%=bean.caBigHelpLink%>)</td>
-</tr>
-<tr><td colspan=3 class=labkey-title-area-line></td></tr>
-<tr>
-    <td class="labkey-form-label">Allow publishing folders to caBIG&trade;</td>
-    <td><input type="checkbox" name="caBIGEnabled" <%=appProps.isCaBIGEnabled() ? "checked" : ""%>></td>
-</tr>
-<tr>
-    <td>&nbsp;</td>
-</tr>
-<tr>
     <td colspan=2>Put web site in administrative mode (<%=bean.helpLink%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
