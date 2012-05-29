@@ -2162,8 +2162,10 @@ public class ReportsController extends BaseStudyController
                     descriptor.setProperty(ReportDescriptor.Prop.queryName, form.getQueryName());
                 if (form.getMeasures() != null)
                     descriptor.setProperty(ParticipantReport.MEASURES_PROP, form.getMeasures());
-                if (form.getGroups() != null)
-                    descriptor.setProperty(ParticipantReport.GROUPS_PROP, form.getGroups());
+
+                //Issue 15078: always set the groups.  null in groups indicates all participants should be displayed
+                descriptor.setProperty(ParticipantReport.GROUPS_PROP, form.getGroups());
+
                 if (!form.isPublic())
                     descriptor.setOwner(getUser().getUserId());
                 else
