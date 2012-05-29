@@ -300,8 +300,13 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             }
         });
         //Set radio/textfield names to aid with TimeChartTest.
+        this.editorYAxisLeftPanel.rangeManualRadio.id = "leftaxis_range_manual";
         this.editorYAxisLeftPanel.rangeManualRadio.name = "leftaxis_range";
+        this.editorYAxisLeftPanel.rangeAutomaticRadio.id = "leftaxis_range_automatic";
         this.editorYAxisLeftPanel.rangeAutomaticRadio.name = "leftaxis_range";
+        this.editorYAxisLeftPanel.scaleCombo.id = "leftaxis_scale";
+        this.editorYAxisLeftPanel.rangeMinNumberField.name = "leftaxis_rangemin";
+        this.editorYAxisLeftPanel.rangeMaxNumberField.name = "leftaxis_rangemax";
         this.editorYAxisLeftPanel.labelTextField.name = "left-axis-label-textfield";
 
         this.editorYAxisRightPanel = Ext4.create('LABKEY.vis.YAxisOptionsPanel', {
@@ -320,8 +325,13 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             }
         });
         //Set radio/textfield names to aid with TimeChartTest.
+        this.editorYAxisRightPanel.rangeManualRadio.id = "rightaxis_range_manual";
         this.editorYAxisRightPanel.rangeManualRadio.name = "rightaxis_range";
+        this.editorYAxisRightPanel.rangeAutomaticRadio.id = "rightaxis_range_automatic";
         this.editorYAxisRightPanel.rangeAutomaticRadio.name = "rightaxis_range";
+        this.editorYAxisRightPanel.scaleCombo.id = "rightaxis_scale";
+        this.editorYAxisRightPanel.rangeMinNumberField.name = "rightaxis_rangemin";
+        this.editorYAxisRightPanel.rangeMaxNumberField.name = "rightaxis_rangemax";        
         this.editorYAxisRightPanel.labelTextField.name = "right-axis-label-textfield";
 
         this.editorGroupingPanel = Ext4.create('LABKEY.vis.GroupingOptionsPanel', {
@@ -747,11 +757,11 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     var gridSortCols = [];
 
                     // make sure each measure/dimension has at least some data
-                    var seriesList = this.getSeriesList();
-                    this.individualHasData = {};
-                    Ext4.each(seriesList, function(s) {
-                        this.individualHasData[s.name] = false;
-                    }, this);
+                    //var seriesList = this.getSeriesList();
+                    //this.individualHasData = {};
+                    //Ext4.each(seriesList, function(s) {
+                    //    this.individualHasData[s.name] = false;
+                    //}, this);
 
                     // store the temp schema name, query name, etc. for the data grid
                     this.tempGridInfo = {schema: this.individualData.schemaName, query: data.queryName,
@@ -795,11 +805,11 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 success: function(data){
                     this.aggregateData = data;
                     // make sure each measure/dimension has at least some data
-                    var seriesList = this.getSeriesList();
-                    this.aggregateHasData = {};
-                    Ext4.each(seriesList, function(s) {
-                        this.aggregateHasData[s.name] = false;
-                    }, this);
+                    //var seriesList = this.getSeriesList();
+                    //this.aggregateHasData = {};
+                    //Ext4.each(seriesList, function(s) {
+                    //    this.aggregateHasData[s.name] = false;
+                    //}, this);
 
                     // now that we have the temp grid info, enable the View Data button
                     // and make sure that the view charts button is hidden

@@ -97,8 +97,6 @@ Ext4.define('LABKEY.vis.YAxisOptionsPanel', {
         });
 
         this.rangeManualRadio = Ext4.create('Ext.form.field.Radio', {
-            fieldLabel: 'Range',
-            hideLabel: true,
             inputValue: 'manual',
             boxLabel: 'Manual',
             width: 85,
@@ -117,7 +115,6 @@ Ext4.define('LABKEY.vis.YAxisOptionsPanel', {
         });
 
         this.rangeMinNumberField = Ext4.create('Ext.form.field.Number', {
-            name: 'yaxis_rangemin', // for selenium test usage
             emptyText: 'Min',
             selectOnFocus: true,
             enableKeyEvents: true,
@@ -136,7 +133,6 @@ Ext4.define('LABKEY.vis.YAxisOptionsPanel', {
         });
 
         this.rangeMaxNumberField = Ext4.create('Ext.form.field.Number', {
-            name: 'yaxis_rangemax', // for selenium test usage
             emptyText: 'Max',
             selectOnFocus: true,
             enableKeyEvents: true,

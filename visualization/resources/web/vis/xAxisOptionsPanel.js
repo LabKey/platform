@@ -265,6 +265,7 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
         columnTwoItems.push(this.labelTextField);
 
         this.rangeAutomaticRadio = Ext4.create('Ext.form.field.Radio', {
+            id: 'xaxis_range_automatic', // for selenium testing
             name: 'xaxis_range',
             fieldLabel: 'Range',
             labelAlign: 'top',
@@ -286,6 +287,7 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
         columnTwoItems.push(this.rangeAutomaticRadio);
 
         this.rangeManualRadio = Ext4.create('Ext.form.field.Radio', {
+            id: 'xaxis_range_manual', // for selenium testing
             name: 'xaxis_range',
             inputValue: 'manual',
             disabled: this.time == "visit",
