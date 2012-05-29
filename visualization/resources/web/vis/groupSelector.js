@@ -1,244 +1,153 @@
 /*
- * Copyright (c) 2011-2012 LabKey Corporation
+ * Copyright (c) 2012 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-Ext.namespace("LABKEY.vis");
 
-Ext.QuickTips.init();
+Ext4.namespace("LABKEY.vis");
 
-LABKEY.vis.GroupSelector = Ext.extend(Ext.Panel, {
+Ext4.tip.QuickTipManager.init();
+
+Ext4.define('LABKEY.vis.GroupSelector', {
+
+    extend : 'Ext.panel.Panel',
 
     constructor : function(config){
-        Ext.apply(config, {
+        Ext4.apply(config, {
             title: 'Groups',
+            border: false,
+            cls: 'report-filter-panel',
             autoScroll: true
         });
 
+        Ext4.define('ParticipantCategory', {
+            extend: 'Ext.data.Model',
+            fields : [
+                {name : 'id'},
+                {name : 'label'},
+                {name : 'description'},
+                {name : 'participantIds'},
+                {name : 'type'}
+            ]
+        });
+
+        this.callParent([config]);
+
         this.addEvents(
-            'chartDefinitionChanged'
+            'chartDefinitionChanged',
+            'measureMetadataRequestPending',
+            'measureMetadataRequestComplete'
         );
-
-        this.on('activate', function(){
-           this.doLayout();
-        }, this);
-
-        LABKEY.vis.GroupSelector.superclass.constructor.call(this, config);
     },
 
     initComponent : function(){
-        // add a hiden display field to show what is selected by default
-        this.defaultDisplayField = new Ext.form.DisplayField({
+
+        // add a text link to the manage participant groups page
+        this.manageGroupsLink = Ext4.create('Ext.form.field.Display', {
             hideLabel: true,
-            hidden: true,
-            value: 'Selecting 5 values by default',
-            style: 'font-size:75%;color:red;'
+            width: 175,
+            html: LABKEY.Utils.textLink({href: LABKEY.ActionURL.buildURL("study", "manageParticipantCategories"), text: 'Manage Groups'})
         });
 
-        // selection model for group selector gridPanel
-        var sm = new  Ext.grid.CheckboxSelectionModel({checkOnly:true});
-        sm.on('selectionchange', function(selModel){
-            // add the selected groups/subjects to the subject object
-            this.subject.groups = [];
-            var selectedRecords = selModel.getSelections();
-            for (var i = 0; i < selectedRecords.length; i++)
-            {
-                this.subject.groups.push({
-                    label: selectedRecords[i].get("label"),
-                    id: selectedRecords[i].get('rowId'),
-                    participantIds: selectedRecords[i].get("participantIds"),
-                    created: selectedRecords[i].get("created") 
-                });
-            }
-            this.subject.values = this.getUniqueGroupSubjectValues(this.subject.groups);
+        // add a hidden display field for warning the user if a saved chart has a group that is no longer available
+        this.groupsRemovedDisplayField = Ext4.create('Ext.form.field.Display', {
+            hideLabel: true,
+            hidden: true,
+            padding: 3,
+            width: 210,
+            html: '<span style="font-size:90%;font-style:italic;">One or more of the participant groups originally saved with this chart are not currently visible. ' +
+                    'The group(s) may have been deleted or you may not have permission to view them.</span><br> <br>'
+        });
 
-            // sort the selected group array
-            function compareCreated(a, b) {
-                if (a.created < b.created) {return -1}
-                if (a.created > b.created) {return 1}
-                return 0;
-            }
-            this.subject.groups.sort(compareCreated);
+        this.selection = [];
+        if (this.subject && this.subject.groups)
+        {
+            Ext4.each(this.subject.groups, function(group){
+                this.selection.push({type:'participantGroup', label:group.label});      // TODO: check for issue 14909 
+            }, this);
+        }
 
-            this.fireEvent('chartDefinitionChanged', true);
-        }, this, {buffer: 1000}); // buffer allows single event to fire if bulk changes are made within the given time (in ms)
+        this.fireChangeTask = new Ext4.util.DelayedTask(function(){
+            this.fireEvent('chartDefinitionChanged', true);            
+        }, this);
 
-        var ttRenderer = function(value, p, record) {
-            var msg = Ext.util.Format.htmlEncode(value);
-            p.attr = 'ext:qtip="' + msg + '"';
-            return msg;
-        };
-
-        this.groupGridPanel = new Ext.grid.GridPanel({
-            autoHeight: true,
-            viewConfig: {forceFit: true},
-            border: false,
-            frame: false,
-            selModel: sm,
-            header: false,
-            enableHdMenu: false,
-            store: new Ext.data.JsonStore({
-                proxy: new Ext.data.HttpProxy({
-                    url : LABKEY.ActionURL.buildURL("participant-group", "getParticipantCategories"),
-                    method : 'POST'
-                }),
-                root: 'categories',
-                idProperty: 'rowId',
-                fields: [
-                    {name: 'rowId', type: 'integer'},
-                    {name: 'label', type: 'string'},
-                    {name: 'created', type: 'date'},
-                    {name: 'participantIds'}
-                ],
-                sortInfo: {
-                    field: 'created',
-                    direction: 'ASC'
-                },
-                autoLoad: true,
-                listeners: {
-                    scope: this,
-                    'load': function(store, records, options){
-                        // if this is not a saved chart with pre-selected groups, initially select to the first 5
-                        this.selectDefault = false;
-                        if (!this.subject.groups)
-                        {
-                            this.selectDefault = true;
-
-                            // select the first 5 groups, or all if the length is less than 5
-                            this.subject.groups = [];
-                            for (var i = 0; i < (store.getCount() < 5 ? store.getCount() : 5); i++)
-                            {
-                                var record = store.getAt(i);
-                                this.subject.groups.push({
-                                    label: record.get("label"),
-                                    id: record.get('rowId'),
-                                    participantIds: record.get("participantIds"),
-                                    created: record.get("created")
-                                });
-
-                            }
-                            this.subject.values = this.getUniqueGroupSubjectValues(this.subject.groups);
-                        }
-                        // for saved charts w/ pre-selected groups, update the group memberships or remove the groups that don't exist
-                        // (because they were deleted or because the given user does not have access to them)
-                        else
-                        {
-                            for (var i = 0; i < this.subject.groups.length; i++)
-                            {
-                                var index = store.find('label', this.subject.groups[i].label);
-                                if (index == -1)
-                                {
-                                    if(!this.groupsRemovedDisplayField.isVisible())
-                                        this.groupsRemovedDisplayField.setVisible(true);
-                                    this.subject.groups.splice(i, 1);
-                                    i--;
-                                }
-                                else
-                                {
-                                    // Issue 14909: Time chart - no chart displayed when one chart per group is chosen
-                                    // Set the id of the group to the one in the store because if you import a study or
-                                    // folder it imports participants and the ids will likely not be the same.
-                                    this.subject.groups[i].id = store.getAt(index).get("rowId");
-
-                                    // Grab the participantIds for the group from the store.
-                                    this.subject.groups[i].participantIds = store.getAt(index).get("participantIds").slice(0);
-                                }
-                            }
-                            this.subject.values = this.getUniqueGroupSubjectValues(this.subject.groups);
-                        }
-
-                        // if there are no groups in the given study, hide the gridPanel and add some text
-                        if (store.getCount() == 0)
-                        {
-                            this.groupGridPanel.hide();
-                            this.noGroupsDisplayField.show();
-                        }
-                        // else if the grid is already rendered, call the 'viewready' event for it
-                        else if (this.groupGridPanel.isVisible())
-                        {
-                            this.groupGridPanel.fireEvent('viewready', this.groupGridPanel);
-                        }
+        this.groupFilterList = Ext4.create('LABKEY.ext4.filter.SelectList', {
+            itemId   : 'filterPanel',
+            flex     : 1,
+            allowAll : true,
+            store : Ext4.create('Ext.data.Store', {
+                model    : 'ParticipantCategory',
+                autoLoad : true,
+                proxy    : {
+                    type   : 'ajax',
+                    url    : LABKEY.ActionURL.buildURL('participant-group', 'browseParticipantGroups.api'),
+                    extraParams : { type : 'participantGroup', includeParticipantIds: true },
+                    reader : {
+                        type : 'json',
+                        root : 'groups'
                     }
                 }
             }),
-            columns: [
-                sm,
-                {header: 'Groups', dataIndex:'label', renderer: ttRenderer}
-            ],
-            listeners: {
-                scope: this,
-                'viewready': function(grid){
-                    // show the selecting default text if necessary
-                    if (grid.getStore().getCount() > 5 && this.selectDefault)
-                    {
-                        // show the display for 5 seconds before hiding it again
-                        var refThis = this;
-                        refThis.defaultDisplayField.show();
-                        refThis.doLayout();
-                        setTimeout(function(){
-                            refThis.defaultDisplayField.hide();
-                            refThis.doLayout();
-                        },5000);
-                        this.selectDefault = false;
-                    }
-
-                    // check selected groups in grid panel (but suspend events during selection)
-                    sm.suspendEvents(false);
-                    if(this.subject.groups){
-                        for (var i = 0; i < this.subject.groups.length; i++)
-                        {
-                            var index = grid.getStore().find('label', this.subject.groups[i].label);
-                            sm.selectRow(index, true);
-                        }
-                    }
-                    sm.resumeEvents();
-                }
+            selection   : this.selection,
+            //description : '<b class="filter-description">Groups</b>',
+            listeners : {
+                selectionchange : function(){
+                    this.fireChangeTask.delay(1000);
+                },
+                beforerender : function(){
+                    this.fireEvent('measureMetadataRequestPending');
+                },
+                initSelectionComplete : function(numSelected){
+                    // if there were saved groups that are no longer availabe, display a message
+                    if (this.selection.length > 0 && this.selection.length != numSelected)
+                        this.groupsRemovedDisplayField.setVisible(true);
+                    this.fireEvent('measureMetadataRequestComplete');
+                },
+                scope : this
             }
-        });
-
-        // add a text link to the manage participant groups page
-        this.manageGroupsLink = new Ext.form.DisplayField({
-            hideLabel: true,
-            html: LABKEY.Utils.textLink({href: LABKEY.ActionURL.buildURL("study", "manageParticipantCategories"), text: 'Manage Groups'}) 
-        });
-
-        // add a hidden display field that will be shown if there are no groups in the gridPanel
-        this.noGroupsDisplayField = new Ext.form.DisplayField({
-            hideLabel: true,
-            hidden: true,
-            html: 'No participant groups have been configured or shared in this study.<BR/><BR/>Click the \'Manage Groups\' link below to begin configuring groups.',
-            style: 'font-size:90%;font-style:italic;'
-        });
-
-        this.groupsRemovedDisplayField = new Ext.form.DisplayField({
-            hideLabel: true,
-            hidden: true,
-            html: 'One or more of the participant groups originally saved with this chart are not currently visible. ' +
-                    'The group(s) may have been deleted or you may not have permission to view them. <br> <br>',
-            style: 'font-size:90%;font-style:italic;'
         });
 
         this.items = [
             this.groupsRemovedDisplayField,
-            this.noGroupsDisplayField,
             this.manageGroupsLink,
-            this.defaultDisplayField,
-            this.groupGridPanel
+            this.groupFilterList
         ];
 
-        LABKEY.vis.GroupSelector.superclass.initComponent.call(this);
+        this.callParent();
     },
 
     getUniqueGroupSubjectValues: function(groups){
         var values = [];
         for (var i = 0; i < groups.length; i++)
         {
-            values = Ext.unique(values.concat(groups[i].participantIds));
+            values = Ext4.Array.unique(values.concat(groups[i].participantIds));
         }
         return values.sort();
     },
 
     getSubject: function(){
-        return this.subject;
+        var groups = [];
+        var selected = this.groupFilterList.getSelection(false);
+        for (var i = 0; i < selected.length; i++)
+        {
+            if (selected[i].get('type') == 'participantGroup')
+            {
+                groups.push({
+                    id: selected[i].get("id") == -1 ? Infinity : selected[i].get("id"), // convert -1 to infinity for sorting
+                    label: selected[i].get("label"),
+                    participantIds: selected[i].get("participantIds") 
+                });
+            }
+        }
+
+        // sort the selected groups array to match the selection list order
+        function compareGroups(a, b) {
+            if (a.id < b.id) {return -1}
+            if (a.id > b.id) {return 1}
+            return 0;
+        }
+        groups.sort(compareGroups);
+
+        return {groups: groups, values: this.getUniqueGroupSubjectValues(groups)};
     }
 });

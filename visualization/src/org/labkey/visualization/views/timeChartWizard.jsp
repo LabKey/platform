@@ -51,7 +51,7 @@
 <script type="text/javascript">
     LABKEY.requiresExt4ClientAPI(true);
     LABKEY.requiresVisualization();
-    LABKEY.requiresScript("vis/temp/newTimeChartPanel.js");
+    LABKEY.requiresScript("vis/timeChartPanel.js");
 </script>
 
 <script type="text/javascript">

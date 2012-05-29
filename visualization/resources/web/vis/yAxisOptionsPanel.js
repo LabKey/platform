@@ -69,7 +69,6 @@ Ext4.define('LABKEY.vis.YAxisOptionsPanel', {
             listeners: {
                 scope: this,
                 'change': function(cmp, newVal, oldVal) {
-//                    this.userEditedLabel = true;
                     this.hasChanges = true;
                 }
             }

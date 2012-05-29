@@ -1,28 +1,40 @@
 /*
- * Copyright (c) 2011-2012 LabKey Corporation
+ * Copyright (c) 2012 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-Ext.namespace("LABKEY.vis");
 
-LABKEY.requiresScript("vis/chartEditorOverviewPanel.js");
-LABKEY.requiresScript("vis/chartEditorMeasurePanel.js");
-LABKEY.requiresScript("vis/chartEditorYAxisPanel.js");
-LABKEY.requiresScript("vis/chartEditorXAxisPanel.js");
-LABKEY.requiresScript("vis/chartEditorChartsPanel.js");
-LABKEY.requiresScript("vis/subjectSeriesSelector.js");
+Ext4.namespace("LABKEY.vis");
+
+LABKEY.requiresScript("vis/genericOptionsPanel.js");
+LABKEY.requiresScript("vis/initialMeasurePanel.js");
+LABKEY.requiresScript("vis/saveOptionsPanel.js");
+LABKEY.requiresScript("vis/measureOptionsPanel.js");
+LABKEY.requiresScript("vis/yAxisOptionsPanel.js");
+LABKEY.requiresScript("vis/xAxisOptionsPanel.js");
+LABKEY.requiresScript("vis/groupingOptionsPanel.js");
+LABKEY.requiresScript("vis/aestheticOptionsPanel.js");
+LABKEY.requiresScript("vis/mainTitleOptionsPanel.js");
+LABKEY.requiresScript("vis/participantSelector.js");
 LABKEY.requiresScript("vis/groupSelector.js");
+
+LABKEY.requiresScript("study/ParticipantFilterPanel.js");
+LABKEY.requiresScript("study/MeasurePicker.js");
+
 LABKEY.requiresCss("_images/icons.css");
 
-Ext.QuickTips.init();
-$h = Ext.util.Format.htmlEncode;
+Ext4.tip.QuickTipManager.init();
+$h = Ext4.util.Format.htmlEncode;
 
-LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
+Ext4.define('LABKEY.vis.TimeChartPanel', {
+
+    extend : 'Ext.panel.Panel',
 
     constructor : function(config){
         // properties for this panel
-        Ext.apply(config, {
+        Ext4.apply(config, {
             layout: 'border',
+            bodyStyle: 'background-color: white;',
             monitorResize: true,
             maxCharts: 30
         });
@@ -30,25 +42,30 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         // support backwards compatibility for charts saved prior to chartInfo reconfig (2011-08-31)
         if (config.chartInfo)
         {
-            Ext.applyIf(config.chartInfo, {
+            Ext4.applyIf(config.chartInfo, {
                 axis: [],
                 //This is for charts saved prior to 2011-10-07
-                chartSubjectSelection: config.chartInfo.chartLayout == 'per_group' ? 'groups' : 'subjects'
+                chartSubjectSelection: config.chartInfo.chartLayout == 'per_group' ? 'groups' : 'subjects',
+                displayIndividual: true,
+                displayAggregate: false,
+                saveThumbnail: true
             });
             for (var i = 0; i < config.chartInfo.measures.length; i++)
             {
                 var md = config.chartInfo.measures[i];
+
+                Ext4.applyIf(md.measure, {yAxis: "left"});
 
                 // if the axis info is in md, move it to the axis array
                 if (md.axis)
                 {
                     // default the y-axis to the left side if not specified
                     if (md.axis.name == "y-axis")
-                            Ext.applyIf(md.axis, {side: "left"});
+                            Ext4.applyIf(md.axis, {side: "left"});
 
                     // move the axis info to the axis array
                     if (this.getAxisIndex(config.chartInfo.axis, md.axis.name, md.axis.side) == -1)
-                        config.chartInfo.axis.push(Ext.apply({}, md.axis));
+                        config.chartInfo.axis.push(Ext4.apply({}, md.axis));
 
                     // if the chartInfo has an x-axis measure, move the date info it to the related y-axis measures
                     if (md.axis.name == "x-axis")
@@ -62,8 +79,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                                     && config.chartInfo.measures[j].measure.queryName == query)
                             {
                                 config.chartInfo.measures[j].dateOptions = {
-                                    dateCol: Ext.apply({}, md.measure),
-                                    zeroDateCol: Ext.apply({}, md.dateOptions.zeroDateCol),
+                                    dateCol: Ext4.apply({}, md.measure),
+                                    zeroDateCol: Ext4.apply({}, md.dateOptions.zeroDateCol),
                                     interval: md.dateOptions.interval
                                 };
                             }
@@ -82,12 +99,14 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             } // end of : for
         } // end of : if (config.chartInfo)
 
-        Ext.apply(this, config);
-
-        LABKEY.vis.TimeChartPanel.superclass.constructor.call(this);
+        this.callParent([config]);
     },
 
     initComponent : function() {
+
+        if(this.viewInfo.type != "line")
+            return;
+
         // chartInfo will be all of the information needed to render the line chart (axis info and data)
         if(typeof this.chartInfo != "object") {
             this.chartInfo = this.getInitializedChartInfo();
@@ -95,7 +114,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         } else {
             // If we have a saved chart we want to save a copy of config.chartInfo so we know if any chart settings
             // get changed. This way we can set the dirty bit. Ext.encode gives us a copy not a reference.
-            this.savedChartInfo = Ext.encode(this.chartInfo);
+            this.savedChartInfo = Ext4.encode(this.chartInfo);
         }
 
         // hold on to the x and y axis measure index
@@ -103,13 +122,31 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         var leftAxisIndex = this.getAxisIndex(this.chartInfo.axis, "y-axis", "left");
         var rightAxisIndex = this.getAxisIndex(this.chartInfo.axis, "y-axis", "right");
 
-        // add a listener to call measureSelected on render if this is a saved chart
+        // add a listener to call measureSelectionChange on render if this is a saved chart
+        // otherwise add the overview panel to the chart area to select the initial measure
         this.listeners = {
             scope: this,
             'render': function(){
-                if(typeof this.saveReportInfo == "object") {
-                    this.measureSelected(this.chartInfo.measures[0].measure, false);
+                if(typeof this.saveReportInfo == "object")
+                {
+                    this.measureSelectionChange(false);
                     this.editorMeasurePanel.initializeDimensionStores();
+                }
+                else
+                {
+                    this.chart.add(Ext4.create('LABKEY.vis.InitialMeasurePanel', {
+                        listeners: {
+                            scope: this,
+                            'initialMeasuresStoreLoaded': function(data) {
+                                // pass the measure store JSON data object to the measures panel
+                                this.editorMeasurePanel.setMeasuresStoreData(data);
+                            },
+                            'initialMeasureSelected': function(initMeasure) {
+                                this.editorMeasurePanel.addMeasure(initMeasure, true);
+                                this.measureSelectionChange(false);
+                            }
+                        }
+                    }));
                 }
             }
         };
@@ -119,492 +156,340 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
         var items = [];
 
-        if(this.viewInfo.type == "line") {
-            this.editorOverviewPanel = new LABKEY.vis.ChartEditorOverviewPanel({
-                reportInfo: this.saveReportInfo,
-                saveThumbnail: this.chartInfo.saveThumbnail == undefined ? true : this.chartInfo.saveThumbnail,
-                canEdit: this.canEdit,
-                canShare: this.canShare,
-                listeners: {
-                    scope: this,
-                    'initialMeasuresStoreLoaded': function(data) {
-                        // pass the measure store JSON data object to the measures panel
-                        this.editorMeasurePanel.setMeasuresStoreData(data);
-                    },
-                    'initialMeasureSelected': function(initMeasure) {
-                        Ext.getCmp(this.chartEditorTabId).activate(this.editorMeasurePanel.getId());
-                        this.measureSelected(initMeasure, true);
-                    },
-                    'saveThumbnailChecked': function(checked) {
-                        this.chartInfo.saveThumbnail = checked;
-                    },
-                    'saveChart': this.saveChart
-                }
-            });
-
-            // somewhat ugly, have to pass this id to the chartEditorMeasurePanel
-            this.seriesSelectorTabPanelId = Ext.id();
-            this.editorMeasurePanel = new LABKEY.vis.ChartEditorMeasurePanel({
-                disabled: true,
-                origMeasures: this.chartInfo.measures, 
-                filterUrl: this.chartInfo.filterUrl ? this.chartInfo.filterUrl : LABKEY.Visualization.getDataFilterFromURL(),
-                filterQuery: this.chartInfo.filterQuery ? this.chartInfo.filterQuery : this.getFilterQuery(),
-                viewInfo: this.viewInfo,
-                seriesSelectorTabPanelId: this.seriesSelectorTabPanelId,
-                listeners: {
-                    scope: this,
-                    'measureSelected': this.measureSelected,
-                    'chartDefinitionChanged': function(requiresDataRefresh){
-                        if(requiresDataRefresh){
-                            this.refreshChart.delay(1000);
-                        }
-                        else{
-                            this.loader();
-                        }
-                    },
-                    'measureRemoved': function(){
-                        this.editorYAxisLeftPanel.setLabel(this.editorMeasurePanel.getDefaultLabel("left"));
-                        this.editorYAxisRightPanel.setLabel(this.editorMeasurePanel.getDefaultLabel("right"));
-                        this.editorChartsPanel.setMainTitle(this.editorMeasurePanel.getDefaultTitle());
-                        this.refreshChart.delay(1000);
-
-                        // if all of the measures have been removed, disable any non-relevant elements
-                        if (this.editorMeasurePanel.getNumMeasures() == 0)
-                        {
-                            this.disableNonMeasureTabPanels();
-                            this.exportPdfMenuBtn.disable();
-                            this.exportPdfSingleBtn.disable();
-                            this.viewGridBtn.disable();
-                            this.viewChartBtn.disable();
-                        }
-                    },
-                    'filterCleared': function () {
-                        // remove the filter and refresh the data
-                        this.chartInfo.filterUrl = null;
-                        this.chartInfo.filterQuery = null;
-                        this.getChartData();
-                    },
-                    'measureMetadataRequestPending': this.measureMetadataRequestPending,
-                    'measureMetadataRequestComplete': this.measureMetadataRequestComplete
-                }
-            });
-
-            this.editorXAxisPanel = new LABKEY.vis.ChartEditorXAxisPanel({
-                disabled: true,
-                axis: this.chartInfo.axis[xAxisIndex] ? this.chartInfo.axis[xAxisIndex] : {},
-                zeroDateCol: this.chartInfo.measures.length > 0 && this.chartInfo.measures[0].dateOptions ? this.chartInfo.measures[0].dateOptions.zeroDateCol : {},
-                interval: this.chartInfo.measures.length > 0 && this.chartInfo.measures[0].dateOptions ? this.chartInfo.measures[0].dateOptions.interval : "Days",
-                time: this.chartInfo.measures.length > 0 && this.chartInfo.measures[0].time ? this.chartInfo.measures[0].time : 'date',
-                timepointType: this.viewInfo.TimepointType,
-                subjectNounSingular: this.viewInfo.subjectNounSingular,
-                listeners: {
-                    scope: this,
-                    'chartDefinitionChanged': function(requiresDataRefresh){
-                        if(requiresDataRefresh){
-                            this.refreshChart.delay(1000);
-                        }
-                        else{
-                            this.loader();
-                        }
-                    },
-                    'measureMetadataRequestPending': this.measureMetadataRequestPending,
-                    'measureMetadataRequestComplete': this.measureMetadataRequestComplete,
-                    'noDemographicData': this.disableTabPanels
-                }
-            });
-
-            this.editorYAxisLeftPanel = new LABKEY.vis.ChartEditorYAxisPanel({
-                disabled: !this.chartInfo.axis[leftAxisIndex],
-                title: "Left-Axis",
-                axis: this.chartInfo.axis[leftAxisIndex] ? this.chartInfo.axis[leftAxisIndex] : {side: "left"},
-                defaultLabel: this.editorMeasurePanel.getDefaultLabel("left"),
-                listeners: {
-                    scope: this,
-                    'chartDefinitionChanged': function(requiresDataRefresh){
-                        if(requiresDataRefresh){
-                            this.refreshChart.delay(1000);
-                        }
-                        else{
-                            this.loader();
-                        }
+        this.participantSelector = Ext4.create('LABKEY.vis.ParticipantSelector', {
+            subject: (this.chartInfo.chartSubjectSelection != "groups" ? this.chartInfo.subject : {}),
+            subjectNounPlural: this.viewInfo.subjectNounPlural,
+            subjectNounSingular: this.viewInfo.subjectNounSingular,
+            subjectColumn: this.viewInfo.subjectColumn,
+            collapsed: this.chartInfo.chartSubjectSelection != "subjects",
+            listeners: {
+                scope: this,
+                'chartDefinitionChanged': function(requiresDataRefresh){
+                    if(requiresDataRefresh){
+                        this.refreshChart.delay(100);
                     }
-                }
-            });
-            //Set radio/textfield names to aid with TimeChartTest.
-            this.editorYAxisLeftPanel.rangeManualRadio.name = "leftaxis_range";
-            this.editorYAxisLeftPanel.rangeAutomaticRadio.name = "leftaxis_range";
-            this.editorYAxisLeftPanel.labelTextField.name = "left-axis-label-textfield";
-
-            this.editorYAxisRightPanel = new LABKEY.vis.ChartEditorYAxisPanel({
-                disabled: !this.chartInfo.axis[rightAxisIndex],
-                title: "Right-Axis",
-                axis: this.chartInfo.axis[rightAxisIndex] ? this.chartInfo.axis[rightAxisIndex] : {side: "right"},
-                listeners: {
-                    scope: this,
-                    'chartDefinitionChanged': function(requiresDataRefresh){
-                        if(requiresDataRefresh){
-                            this.refreshChart.delay(1000);
-                        }
-                        else{
-                            this.loader();
-                        }
+                    else{
+                        this.loaderFn();
                     }
-                }
-            });
-            //Set radio/textfield names to aid with TimeChartTest.
-            this.editorYAxisRightPanel.rangeManualRadio.name = "rightaxis_range";
-            this.editorYAxisRightPanel.rangeAutomaticRadio.name = "rightaxis_range";
-            this.editorYAxisRightPanel.labelTextField.name = "right-axis-label-textfield";
+                },
+                'measureMetadataRequestPending': this.measureMetadataRequestPending,
+                'measureMetadataRequestComplete': this.measureMetadataRequestComplete
+            }
+        });
 
-            this.editorChartsPanel = new LABKEY.vis.ChartEditorChartsPanel({
-                disabled: true,
-                chartLayout: this.chartInfo.chartLayout,
-                chartSubjectSelection: this.chartInfo.chartSubjectSelection,
-                mainTitle: this.chartInfo.title,
-                lineWidth: this.chartInfo.lineWidth,
-                hideDataPoints: this.chartInfo.hideDataPoints,
-                subjectNounSingular: this.viewInfo.subjectNounSingular,
-                subjectNounPlural: this.viewInfo.subjectNounPlural,
-                listeners: {
-                    scope: this,
-                    'chartDefinitionChanged': function(requiresDataRefresh){
-                        if(this.editorChartsPanel.groupLayoutChanged == true){
-                            this.editorChartsPanel.groupLayoutChanged = false;
-                        }
-                        if(requiresDataRefresh){
-                            this.refreshChart.delay(1000);
-                        }
-                        else{
-                            this.loader();
-                        }
-                    },
-                    'groupLayoutSelectionChanged': function(groupLayoutSelected){
-                        if (groupLayoutSelected)
-                        {
-                            this.seriesSelectorTabPanel.activate(this.groupsSelector.getId());
-                            this.seriesSelectorTabPanel.unhideTabStripItem(this.groupsSelector);
-                            this.seriesSelectorTabPanel.hideTabStripItem(this.subjectSelector);
-                            this.disableAggregateSelection(false);
-                        }
-                        else
-                        {
-                            this.seriesSelectorTabPanel.activate(this.subjectSelector.getId());
-                            this.seriesSelectorTabPanel.unhideTabStripItem(this.subjectSelector);
-                            this.seriesSelectorTabPanel.hideTabStripItem(this.groupsSelector);
-                            this.disableAggregateSelection(true);
-                        }
+        this.groupsSelector = Ext4.create('LABKEY.vis.GroupSelector', {
+            subject: (this.chartInfo.chartSubjectSelection == "groups" ? this.chartInfo.subject : {}),
+            subjectNounPlural: this.viewInfo.subjectNounPlural,
+            subjectNounSingular: this.viewInfo.subjectNounSingular,
+            subjectColumn: this.viewInfo.subjectColumn,
+            collapsed: this.chartInfo.chartSubjectSelection != "groups",
+            listeners: {
+                scope: this,
+                'chartDefinitionChanged': function(requiresDataRefresh){
+                    if(requiresDataRefresh){
+                        this.refreshChart.delay(100);
                     }
-                }
-            });
-
-            this.chartEditorTabId = Ext.id();
-            this.chartEditor = new Ext.Panel({
-                layout: 'fit',
-                header: false,
-                region: 'north',
-                height: 230,
-                border: false,
-                split: true,
-                collapsible: true,
-                collapseMode: 'mini',
-                hideCollapseTool: true,
-                items: [
-                    new Ext.TabPanel({
-                        id: this.chartEditorTabId,
-                        autoScroll: true,
-                        activeTab: 0,
-                        items: [
-                            this.editorOverviewPanel,
-                            this.editorMeasurePanel,
-                            this.editorXAxisPanel,
-                            this.editorYAxisLeftPanel,
-                            this.editorYAxisRightPanel,
-                            this.editorChartsPanel
-                        ]
-                    })
-                ],
-                tbar: {
-                    height: 25,
-                    style:{backgroundColor :'#ffffff'},
-                    items:[
-                        '->',
-                        {
-                            iconCls:'iconClose',
-                            tooltip:'Close the chart editor tab panel.',
-                            handler: function(){
-                                this.chartEditor.collapse();
-                            },
-                            scope: this
-                        }
-                    ]
-                }
-            });
-            items.push(this.chartEditor);
-
-            this.subjectSelector = new LABKEY.vis.SubjectSeriesSelector({
-                subject: (this.chartInfo.chartSubjectSelection != "groups" ? this.chartInfo.subject : {}),
-                subjectNounPlural: this.viewInfo.subjectNounPlural,
-                subjectNounSingular: this.viewInfo.subjectNounSingular,
-                subjectColumn: this.viewInfo.subjectColumn,
-                listeners: {
-                    scope: this,
-                    'chartDefinitionChanged': function(requiresDataRefresh){
-                        if(requiresDataRefresh){
-                            this.refreshChart.delay(500); //Delay is only 500ms here because there is already a buffer when selecting participants/groups
-                        }
-                        else{
-                            this.loader();
-                        }
-                    },
-                    'measureMetadataRequestPending': this.measureMetadataRequestPending,
-                    'measureMetadataRequestComplete': this.measureMetadataRequestComplete
-                }
-            });
-
-            this.groupsSelector = new LABKEY.vis.GroupSelector({
-                subject: (this.chartInfo.chartSubjectSelection == "groups" ? this.chartInfo.subject : {}),
-                listeners: {
-                    scope: this,
-                    'chartDefinitionChanged': function(requiresDataRefresh){
-                        if(requiresDataRefresh){
-                            this.refreshChart.delay(500); //Delay is only 500ms here because there is already a buffer when selecting participants/groups
-                        }
-                        else{
-                            this.loader();
-                        }
+                    else{
+                        this.loaderFn();
                     }
-                }
-            });
+                },
+                'measureMetadataRequestPending': this.measureMetadataRequestPending,
+                'measureMetadataRequestComplete': this.measureMetadataRequestComplete
+            }
+        });
 
-            this.seriesSelectorTabPanel = new Ext.TabPanel({
-                id: this.seriesSelectorTabPanelId,
-                cls: 'series-selector-tabpanel-test',
-                activeTab: (this.chartInfo.chartSubjectSelection != "subjects" ? 0 : 1),
-                padding: 5,
-                enableTabScroll: true,
-                items: [
-                    this.subjectSelector,
-                    this.groupsSelector
-                ],
-                listeners: {
-                    scope: this,
-                    'afterRender': function(){
-                        if(this.chartInfo.chartSubjectSelection == "groups"){
-                            this.seriesSelectorTabPanel.unhideTabStripItem(this.groupsSelector);
-                            this.seriesSelectorTabPanel.hideTabStripItem(this.subjectSelector);
-                            this.seriesSelectorTabPanel.activate(this.groupsSelector.getId());
-                            this.disableAggregateSelection(false);
-                        } else {
-                            this.seriesSelectorTabPanel.unhideTabStripItem(this.subjectSelector);
-                            this.seriesSelectorTabPanel.hideTabStripItem(this.groupsSelector);
-                            this.seriesSelectorTabPanel.activate(this.subjectSelector.getId());
-                            this.disableAggregateSelection(true);
-                        }
-                    }
-                }
-            })
-            
-            this.seriesSelector = new Ext.Panel({
-                region: 'east',
-                layout: 'fit',
-                width: 220,
-                border: false,
-                split: true,
-                collapsible: true,
-                collapseMode: 'mini',
-                hideCollapseTool: true,
-                header: false,
-                items: [
-                    this.seriesSelectorTabPanel
-                ],
-                tbar: {
-                    height: 25,
-                    style:{backgroundColor :'#ffffff'},
-                    items:[
-                        '->',
-                        {
-                            iconCls:'iconClose',
-                            tooltip:'Close the series selector tab panel.',
-                            handler: function(){
-                                this.seriesSelector.collapse();
-                            },
-                            scope: this
-                        }
-                    ]
-                }
-            });
-            items.push(this.seriesSelector);
-
-            this.loader = this.renderLineChart;  // default is to show the chart
-            this.loaderName = 'renderLineChart';
-            this.viewGridBtn = new Ext.Button({text: "View Data", handler: this.viewDataGrid, scope: this, disabled: true});
-            this.viewChartBtn = new Ext.Button({text: "View Chart(s)", handler: this.renderLineChart, scope: this, hidden: true});
-            this.refreshChart = new Ext.util.DelayedTask(function(){
-                this.getChartData();
-            }, this);
-
-            // setup exportPDF button and menu (items to be added later)
-            // the single button will be used for "single" chart layout
-            // and the menu button will be used for multi-chart layouts
-            this.exportPdfMenu = new Ext.menu.Menu({cls: 'extContainer'});
-            this.exportPdfMenuBtn = new Ext.Button({
-                text: 'Export PDF',
-                menu: this.exportPdfMenu,
-                hidden: true,
-                scope: this
-            });
-            this.exportPdfSingleBtn = new Ext.Button({
-                text: 'Export PDF',
-                disabled: true,
-                scope: this
-            });
-
-            // checkboxes for displaying individual and/or aggregate lines
-            this.displayIndividualCheckbox = new Ext.form.Checkbox({
-                boxLabel  : 'Show Individual Lines',
-                name      : 'Show Individual Lines',
-                disabled  : true,
-                checked   : this.chartInfo.displayIndividual != undefined ? this.chartInfo.displayIndividual : true,
-                value     : this.chartInfo.displayIndividual != undefined ? this.chartInfo.displayIndividual : true,
-                listeners : {
-                    check : function(cmp, checked){
-                        this.displayIndividual = checked;
-                        this.refreshChart.delay(1000);
-                    },
-                    beforerender: function(){
-                        this.displayIndividual = this.chartInfo.displayIndividual;
-                    },
-                    scope : this
-                }
-            });
-
-            this.displayAggregateCheckbox = new Ext.form.Checkbox({
-                boxLabel  : 'Show Mean',
-                name      : 'Show Mean',
-                disabled  : true,
-                checked   : this.chartInfo.displayAggregate != undefined ? this.chartInfo.displayAggregate : false,
-                value     : this.chartInfo.displayAggregate != undefined ? this.chartInfo.displayAggregate : false,
-                listeners : {
-                    check : function(cmp, checked){
-                        this.displayAggregate = checked;
-
-                        // enable/disable the aggregate combo box accordingly
-                        this.displayAggregateComboBox.setDisabled(!checked);
-                        this.displayErrorComboBox.setDisabled(!checked);
-                        this.refreshChart.delay(1000);
-                    },
-                    beforerender: function(){
-                        this.displayAggregate = this.chartInfo.displayAggregate;
-                    },
-                    scope : this
-                }
-            });
-
-            this.displayErrorComboBox = new Ext.form.ComboBox({
-                triggerAction : 'all',
-                mode          : 'local',
-                store         : new Ext.data.ArrayStore({
-                       fields : ['value'],
-                       data   : [['None'], ['SD'], ['SEM']]
-                }),
-                disabled      : this.displayAggregate || true,
-                forceSelection: 'true',
-                editable: false,
-                valueField    : 'value',
-                displayField  : 'value',
-                value         : this.chartInfo.errorBars != undefined ? this.chartInfo.errorBars : "None",
-                width         : 75,
-                listeners     : {
-                    select    : function(cb){
-                        this.refreshChart.delay(1000);
-                    },
-                    scope     : this
-                }
-            });
-
-            // combobox for selecting which aggregate to display when checkbox is selected
-            this.displayAggregateComboBox = new Ext.form.ComboBox({
-                triggerAction : 'all',
-                mode          : 'local',
-                store         : new Ext.data.ArrayStore({
-                       fields : ['value'],
-                       data   : [['Mean'], ['Count']]
-                }),
-                disabled      : this.displayAggregate || true,
-                hideLabel     : true,
-                forceSelection: 'true',
-                valueField    : 'value',
-                displayField  : 'value',
-                value         : 'Mean',
-                width         : 75,
-                listeners     : {
-                    select    : function(cb){
-                        this.displayAggregateValue = cb.getValue();
-                        //this.fireEvent('chartDefinitionChanged', true);
-                    },
-                    scope     : this
-                }
-            });
-
-            this.disableAggregateSelection = function(disable){
-                this.displayAggregateCheckbox.setDisabled(disable);
-                this.displayErrorComboBox.setDisabled(disable);
-                this.displayIndividualCheckbox.setDisabled(disable);
-                if(disable){
-                    this.displayAggregateComboBox.setDisabled(true);
-                    this.displayErrorComboBox.setDisabled(true);
-                } else {
-                    this.displayAggregateComboBox.setDisabled(!this.displayAggregateCheckbox.getValue());
-                    this.displayErrorComboBox.setDisabled(!this.displayAggregateCheckbox.getValue());
+        this.filtersPanel = Ext4.create('Ext.panel.Panel', {
+            region: 'west',
+            layout: 'accordion',
+            fill: false,
+            width: 220,
+            border: true,
+            split: true,
+            collapsible: true,
+            floatable: false,
+            title: 'Filters',
+            titleCollapse: true,
+            items: [
+                this.participantSelector,
+                this.groupsSelector
+            ],
+            listeners: {
+                scope: this,
+                'afterRender': function(){
+                    this.setOptionsForGroupLayout(this.chartInfo.chartSubjectSelection == "groups");
                 }
             }
+        });
+        items.push(this.filtersPanel);
 
-            this.chart = new Ext.Panel({
-                region: 'center',
-                frame: false,
-                autoScroll: true,
-                tbar: [
-                        this.viewGridBtn,
-                        this.viewChartBtn,
-                        '-',
-                        this.exportPdfSingleBtn,
-                        this.exportPdfMenuBtn,
-                        '->',
-                        this.displayIndividualCheckbox,
-                        {xtype: 'tbspacer', width: 10},
-                        this.displayAggregateCheckbox,
-                        {xtype: 'tbspacer', width: 10},
-                        this.displayErrorComboBox,
-                        {xtype: 'tbspacer', width: 10}
-                ],
-                items: [],
-                listeners: {
-                    scope: this,
-                    'resize': function(cmp){
-                        // only call loader if the data object is available and the loader equals renderLineChart
-                        if((this.individualData || this.aggregateData) && this.loaderName == 'renderLineChart') {
-                            this.loader();
-                        }
+        this.editorSavePanel = Ext4.create('LABKEY.vis.SaveOptionsPanel', {
+            reportInfo: this.saveReportInfo,
+            saveThumbnail: this.chartInfo.saveThumbnail == undefined ? true : this.chartInfo.saveThumbnail,
+            canEdit: this.canEdit,
+            canShare: this.canShare,
+            bubbleEvents: ['closeOptionsWindow'],
+            listeners: {
+                scope: this,
+                'saveChart': this.saveChart
+            }
+        });
+
+        this.editorMeasurePanel = Ext4.create('LABKEY.vis.MeasureOptionsPanel', {
+            origMeasures: this.chartInfo.measures,
+            filterUrl: this.chartInfo.filterUrl ? this.chartInfo.filterUrl : LABKEY.Visualization.getDataFilterFromURL(),
+            filterQuery: this.chartInfo.filterQuery ? this.chartInfo.filterQuery : this.getFilterQuery(),
+            viewInfo: this.viewInfo,
+            filtersParentPanel: this.filtersPanel,
+            bubbleEvents: ['closeOptionsWindow'],
+            listeners: {
+                scope: this,
+                'chartDefinitionChanged': function(requiresDataRefresh) {
+                    if(requiresDataRefresh)
+                    {
+                        this.measureSelectionChange(true);
+                        this.refreshChart.delay(100);
+                    }
+                    else
+                    {
+                        this.loaderFn();
+                    }
+                },
+                'measureMetadataRequestPending': this.measureMetadataRequestPending,
+                'measureMetadataRequestComplete': this.measureMetadataRequestComplete
+            }
+        });
+
+        this.editorXAxisPanel = Ext4.create('LABKEY.vis.XAxisOptionsPanel', {
+            axis: this.chartInfo.axis[xAxisIndex] ? this.chartInfo.axis[xAxisIndex] : {},
+            zeroDateCol: this.chartInfo.measures.length > 0 && this.chartInfo.measures[0].dateOptions ? this.chartInfo.measures[0].dateOptions.zeroDateCol : {},
+            interval: this.chartInfo.measures.length > 0 && this.chartInfo.measures[0].dateOptions ? this.chartInfo.measures[0].dateOptions.interval : "Days",
+            time: this.chartInfo.measures.length > 0 && this.chartInfo.measures[0].time ? this.chartInfo.measures[0].time : 'date',
+            timepointType: this.viewInfo.TimepointType,
+            subjectNounSingular: this.viewInfo.subjectNounSingular,
+            bubbleEvents: ['closeOptionsWindow'],
+            listeners: {
+                scope: this,
+                'chartDefinitionChanged': function(requiresDataRefresh){
+                    if(requiresDataRefresh){
+                        this.refreshChart.delay(100);
+                    }
+                    else{
+                        this.loaderFn();
+                    }
+                },
+                'measureMetadataRequestPending': this.measureMetadataRequestPending,
+                'measureMetadataRequestComplete': this.measureMetadataRequestComplete,
+                'noDemographicData': this.disableOptionElements
+            }
+        });
+
+        this.editorYAxisLeftPanel = Ext4.create('LABKEY.vis.YAxisOptionsPanel', {
+            axis: this.chartInfo.axis[leftAxisIndex] ? this.chartInfo.axis[leftAxisIndex] : {side: "left"},
+            defaultLabel: this.editorMeasurePanel.getDefaultLabel("left"),
+            bubbleEvents: ['closeOptionsWindow'],
+            listeners: {
+                scope: this,
+                'chartDefinitionChanged': function(requiresDataRefresh){
+                    if(requiresDataRefresh){
+                        this.refreshChart.delay(100);
+                    }
+                    else{
+                        this.loaderFn();
                     }
                 }
-            });
-            items.push(this.chart);
-        }
-        else
-        {
-            // other chart types
-        }
+            }
+        });
+        //Set radio/textfield names to aid with TimeChartTest.
+        this.editorYAxisLeftPanel.rangeManualRadio.name = "leftaxis_range";
+        this.editorYAxisLeftPanel.rangeAutomaticRadio.name = "leftaxis_range";
+        this.editorYAxisLeftPanel.labelTextField.name = "left-axis-label-textfield";
 
-        Ext.applyIf(this, {
+        this.editorYAxisRightPanel = Ext4.create('LABKEY.vis.YAxisOptionsPanel', {
+            axis: this.chartInfo.axis[rightAxisIndex] ? this.chartInfo.axis[rightAxisIndex] : {side: "right"},
+            bubbleEvents: ['closeOptionsWindow'],
+            listeners: {
+                scope: this,
+                'chartDefinitionChanged': function(requiresDataRefresh){
+                    if(requiresDataRefresh){
+                        this.refreshChart.delay(100);
+                    }
+                    else{
+                        this.loaderFn();
+                    }
+                }
+            }
+        });
+        //Set radio/textfield names to aid with TimeChartTest.
+        this.editorYAxisRightPanel.rangeManualRadio.name = "rightaxis_range";
+        this.editorYAxisRightPanel.rangeAutomaticRadio.name = "rightaxis_range";
+        this.editorYAxisRightPanel.labelTextField.name = "right-axis-label-textfield";
+
+        this.editorGroupingPanel = Ext4.create('LABKEY.vis.GroupingOptionsPanel', {
+            chartLayout: this.chartInfo.chartLayout,
+            chartSubjectSelection: this.chartInfo.chartSubjectSelection,
+            subjectNounSingular: this.viewInfo.subjectNounSingular,
+            subjectNounPlural: this.viewInfo.subjectNounPlural,
+            displayIndividual: this.chartInfo.displayIndividual != undefined ? this.chartInfo.displayIndividual : true,
+            displayAggregate: this.chartInfo.displayAggregate != undefined ? this.chartInfo.displayAggregate : false,
+            errorBars: this.chartInfo.errorBars != undefined ? this.chartInfo.errorBars : "None",
+            bubbleEvents: ['closeOptionsWindow'],
+            listeners: {
+                scope: this,
+                'chartDefinitionChanged': function(requiresDataRefresh){
+                    if(this.editorGroupingPanel.groupLayoutChanged == true){
+                        this.editorGroupingPanel.groupLayoutChanged = false;
+                    }
+                    if(requiresDataRefresh){
+                        this.refreshChart.delay(100);
+                    }
+                    else{
+                        this.loaderFn();
+                    }
+                },
+                'groupLayoutSelectionChanged': this.setOptionsForGroupLayout
+            }
+        });
+
+        this.editorAestheticsPanel = Ext4.create('LABKEY.vis.AestheticOptionsPanel', {
+            lineWidth: this.chartInfo.lineWidth,
+            hideDataPoints: this.chartInfo.hideDataPoints,
+            bubbleEvents: ['closeOptionsWindow'],
+            listeners: {
+                scope: this,
+                'chartDefinitionChanged': function(requiresDataRefresh){
+                    if(requiresDataRefresh){
+                        this.refreshChart.delay(100);
+                    }
+                    else{
+                        this.loaderFn();
+                    }
+                }
+            }
+        });
+
+        this.editorMainTitlePanel = Ext4.create('LABKEY.vis.MainTitleOptionsPanel', {
+            mainTitle: this.chartInfo.title,
+            bubbleEvents: ['closeOptionsWindow'],
+            listeners: {
+                scope: this,
+                'chartDefinitionChanged': function(requiresDataRefresh){
+                    if(requiresDataRefresh){
+                        this.refreshChart.delay(100);
+                    }
+                    else{
+                        this.loaderFn();
+                    }
+                }
+            }
+        });
+
+        // put the options panels in an array for easier access
+        this.optionPanelsArray = [
+                this.editorMeasurePanel,
+                this.editorGroupingPanel,
+                this.editorAestheticsPanel,
+                this.editorMainTitlePanel,
+                this.editorXAxisPanel,
+                this.editorYAxisLeftPanel,
+                this.editorYAxisRightPanel,
+                this.editorSavePanel
+        ];
+
+        this.loaderFn = this.renderLineChart;  // default is to show the chart
+        this.loaderName = 'renderLineChart';
+        this.viewGridBtn = Ext4.create('Ext.button.Button', {text: "View Data", handler: this.viewDataGrid, scope: this, disabled: true});
+        this.viewChartBtn = Ext4.create('Ext.button.Button', {text: "View Chart(s)", handler: this.renderLineChart, scope: this, hidden: true});
+        this.refreshChart = new Ext4.util.DelayedTask(function(){
+            this.getChartData();
+        }, this);
+
+        // setup exportPDF button and menu (items to be added later)
+        // the single button will be used for "single" chart layout
+        // and the menu button will be used for multi-chart layouts
+        this.exportPdfMenu = Ext4.create('Ext.menu.Menu', {cls: 'extContainer'});
+        this.exportPdfMenuBtn = Ext4.create('Ext.button.Button', {
+            text: 'Export PDF',
+            menu: this.exportPdfMenu,
+            hidden: true,
+            scope: this
+        });
+        this.exportPdfSingleBtn = Ext4.create('Ext.button.Button', {
+            text: 'Export PDF',
+            disabled: true,
+            scope: this
+        });
+
+        // setup buttons for the charting options panels (items to be added to the toolbar)
+        this.measuresButton = Ext4.create('Ext.button.Button', {text: 'Measures', disabled: true,
+                                handler: function(btn){this.optionsButtonClicked(btn, this.editorMeasurePanel, 860, 250, 'center');}, scope: this});
+
+        this.groupingButton = Ext4.create('Ext.button.Button', {text: 'Grouping', disabled: true,
+                                handler: function(btn){this.optionsButtonClicked(btn, this.editorGroupingPanel, 600, 210, 'center');}, scope: this});
+
+        this.aestheticsButton = Ext4.create('Ext.button.Button', {text: 'Options', disabled: true,
+                                handler: function(btn){this.optionsButtonClicked(btn, this.editorAestheticsPanel, 300, 135, 'center');}, scope: this});
+
+        this.xAxisButton = Ext4.create('Ext.button.Button', {text: 'X-Axis', disabled: true,
+                                handler: function(btn){this.optionsButtonClicked(btn, this.editorXAxisPanel, 860, 250, 'center');}, scope: this});
+
+        this.leftAxisButton = Ext4.create('Ext.button.Button', {text: 'Left-Axis', disabled: true,
+                                handler: function(btn){this.optionsButtonClicked(btn, this.editorYAxisLeftPanel, 320, 220, 'center');}, scope: this});
+
+        this.rightAxisButton = Ext4.create('Ext.button.Button', {text: 'Right-Axis', disabled: true,
+                                handler: function(btn){this.optionsButtonClicked(btn, this.editorYAxisRightPanel, 320, 220, 'center');}, scope: this});
+
+        this.mainTitleButton = Ext4.create('Ext.button.Button', {text: 'Main Title', disabled: true,
+                                handler: function(btn){this.optionsButtonClicked(btn, this.editorMainTitlePanel, 300, 130, 'center');}, scope: this});        
+
+        this.saveButton = Ext4.create('Ext.button.Button', {text: 'Save', disabled: true, hidden: !this.canEdit, handler: function(btn){
+                                this.editorSavePanel.setSaveAs(false);
+                                this.optionsButtonClicked(btn, this.editorSavePanel, 850, 200, 'right');
+                        }, scope: this});
+
+        this.saveAsButton = Ext4.create('Ext.button.Button', {text: 'Save AS', disabled: true, hidden: !this.editorSavePanel.isSavedReport(), handler: function(btn){
+                                this.editorSavePanel.setSaveAs(true);
+                                this.optionsButtonClicked(btn, this.editorSavePanel, 850, 200, 'right');
+                        }, scope: this});
+
+        this.chart = Ext4.create('Ext.panel.Panel', {
+            region: 'center',
+            border: true,
+            autoScroll: true,
+            frame: false,
+            tbar: [
+                    this.viewGridBtn,
+                    this.viewChartBtn,
+                    this.exportPdfSingleBtn,
+                    this.exportPdfMenuBtn,
+                    this.measuresButton,
+                    this.groupingButton,
+                    this.aestheticsButton,
+                    '-',
+                    this.xAxisButton,
+                    this.leftAxisButton,
+                    this.rightAxisButton,
+                    this.mainTitleButton,
+                    '->',
+                    this.saveButton,
+                    this.saveAsButton
+            ],
+            items: [],
+            listeners: {
+                scope: this,
+                'resize': this.resizeCharts
+            }
+        });
+        items.push(this.chart);
+
+        Ext4.applyIf(this, {
             autoResize: true
         });
 
         if (this.autoResize)
         {
-            Ext.EventManager.onWindowResize(function(w,h){
+            Ext4.EventManager.onWindowResize(function(w,h){
                 this.resizeToViewport(w,h);
             }, this);
-            this.on("render", function(){Ext.EventManager.fireWindowResize();}, this);
         }
 
         this.items = items;
@@ -612,17 +497,118 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         this.markDirty(false);
         window.onbeforeunload = LABKEY.beforeunload(this.isDirty, this);
 
-        LABKEY.vis.TimeChartPanel.superclass.initComponent.apply(this, arguments);
+        this.callParent();
+    },
+
+    resizeCharts : function(){
+        // only call loader if the data object is available and the loader equals renderLineChart
+        if((this.individualData || this.aggregateData) && this.loaderName == 'renderLineChart') {
+            this.loaderFn();
+        }
+    },
+
+    optionsButtonClicked : function(button, panel, width, height, align) {
+        var pos = button.getPosition();
+        var pLeft = pos[0];
+        var pTop = pos[1];
+
+        if (align == 'center')
+            pLeft = pLeft - width/2 + button.getWidth()/2;
+        else if (align == 'right')
+            pLeft = pLeft - width + button.getWidth();
+
+        this.showOptionsWindow(button, panel, width, height, pLeft, pTop);
+    },
+
+    chartElementClicked : function(panel, clickXY, width, height, align) {
+        var pLeft = clickXY[0];
+        var pTop = clickXY[1];
+
+        if (align == 'above')
+        {
+            pLeft = pLeft - width/2;
+            pTop = pTop - height - 10;
+        }
+        else if (align == 'below')
+        {
+            pLeft = pLeft - width/2;
+            pTop = pTop + 5;
+        }
+        else if (align == 'right')
+        {
+            pLeft = pLeft - width - 10;
+            pTop = pTop - height/2;
+        }
+        else if (align == 'left')
+        {
+            pLeft = pLeft + 10;
+            pTop = pTop - height/2;
+        }
+
+        this.showOptionsWindow(this.chart, panel, width, height, pLeft, pTop);
+    },
+
+    showOptionsWindow : function(animateTarget, panel, width, height, positionLeft, positionTop) {
+        if (!this.optionWindow)
+        {
+            this.optionWindow = Ext4.create('Ext.window.Window', {
+                floating: true,
+                cls: 'extContainer',
+                bodyStyle: 'background-color: white;',
+                padding: 10,
+                header: false,
+                frame: true,
+                closable: false,
+                shadow: false,
+                width: 860,
+                height: 250,
+                modal: true,
+                closeAction: 'hide',
+                layout: 'card',
+                items: this.optionPanelsArray,
+                listeners: {
+                    'closeOptionsWindow': function() {     
+                        this.optionWindow.close();
+                    },
+                    scope: this
+                }
+            });
+        }
+
+        this.optionWindow.setSize(width, height);
+        this.optionWindow.setPosition(positionLeft, positionTop, false);
+
+        this.optionWindow.show(animateTarget);
+        this.optionWindow.getLayout().setActiveItem(panel);
+    },
+
+    setOptionsForGroupLayout : function(groupLayoutSelected){
+        // if the filters panel is collapsed, first open it up so the user sees that the filter options have changed
+        if (this.filtersPanel.collapsed)
+            this.filtersPanel.expand();
+
+        if (groupLayoutSelected)
+        {
+            this.participantSelector.hide();
+            this.groupsSelector.show();
+        }
+        else
+        {
+            this.groupsSelector.hide();
+            this.participantSelector.show();
+        }
+
+        // TODO: issue with switching layout type with filters panel collapsed
     },
 
     resizeToViewport : function(w,h) {
         if (!this.rendered)
             return;
 
-        var padding = [55,0];
+        var padding = [20,0];
         var xy = this.el.getXY();
         var size = {
-            width : Math.max(100,w-xy[0]-padding[0])//,
+            width : Math.max(800,w-xy[0]-padding[0])
         };
         this.setWidth(size);
     },
@@ -637,58 +623,61 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             return undefined;
     },
 
-    measureSelected: function(measure, userSelectedMeasure) {
-        // add any user selected measures to the measure panel object
-        if(userSelectedMeasure){
-            var measureIndex = this.editorMeasurePanel.addMeasure(measure);
-            this.editorMeasurePanel.setDimensionStore(measureIndex);
-            this.editorMeasurePanel.setMeasureDateStore(measure, measureIndex);
-            this.editorMeasurePanel.setYAxisSide(measureIndex);
-        }
-
+    measureSelectionChange: function(fromMeasurePanel) {
         // these method calls should only be made for chart initialization
         // (i.e. showing saved chart or first measure selected for new chart)
-        var numMeasures = this.editorMeasurePanel.getNumMeasures();
-        if(!userSelectedMeasure || numMeasures == 1){
-            this.subjectSelector.getSubjectValues();
-            this.editorXAxisPanel.setZeroDateStore(measure.schemaName);
-
-            if(userSelectedMeasure){
-                this.editorOverviewPanel.updateOverview(this.saveReportInfo, this.chartInfo.saveThumbnail);
-            }
+        if(!fromMeasurePanel){
+            this.participantSelector.getSubjectValues();
+            this.editorXAxisPanel.setZeroDateStore();
         }
 
         // these method calls should be made for all measure selections
         this.editorYAxisLeftPanel.setLabel(this.editorMeasurePanel.getDefaultLabel("left"));
         this.editorYAxisRightPanel.setLabel(this.editorMeasurePanel.getDefaultLabel("right"));
-        this.editorChartsPanel.setMainTitle(this.editorMeasurePanel.getDefaultTitle());
+        this.editorMainTitlePanel.setMainTitle(this.editorMeasurePanel.getDefaultTitle());
 
-        this.enableTabPanels();
+        // if all of the measures have been removed, disable any non-relevant elements
+        if (this.editorMeasurePanel.getNumMeasures() == 0)
+            this.disableNonMeasureOptionButtons();
+        else
+            this.enableOptionButtons();
     },
 
-    enableTabPanels: function(){
-        this.editorOverviewPanel.enable();
-        this.editorMeasurePanel.enable();
-        this.editorXAxisPanel.enable();
-        this.editorChartsPanel.enable();
+    enableOptionButtons: function(){
+        this.measuresButton.enable();
+        this.groupingButton.enable();
+        this.aestheticsButton.enable();
+        this.xAxisButton.enable();
+        this.mainTitleButton.enable();
+        this.saveButton.enable();
+        this.saveAsButton.enable();
     },
 
-    disableNonMeasureTabPanels: function(){
-        this.editorOverviewPanel.disable();
-        this.editorXAxisPanel.disable();
-        this.editorYAxisRightPanel.disable();
-        this.editorYAxisLeftPanel.disable();
-        this.editorChartsPanel.disable();
+    disableNonMeasureOptionButtons: function(){
+        this.groupingButton.disable();
+        this.aestheticsButton.disable();
+        this.xAxisButton.disable();
+        this.leftAxisButton.disable();
+        this.rightAxisButton.disable();
+        this.mainTitleButton.disable();
+
+        this.exportPdfMenuBtn.disable();
+        this.exportPdfSingleBtn.disable();
+        this.viewGridBtn.disable();
+        this.viewChartBtn.disable();
     },
 
-    disableTabPanels: function(){
-        this.editorOverviewPanel.disable();
-        this.editorMeasurePanel.disable();
-        this.editorXAxisPanel.disable();
-        this.editorYAxisRightPanel.disable();
-        this.editorYAxisLeftPanel.disable();
-        this.editorChartsPanel.disable();
-        this.seriesSelectorTabPanel.disable();
+    disableOptionElements: function(){
+        this.measuresButton.disable();
+        this.groupingButton.disable();
+        this.aestheticsButton.disable();
+        this.xAxisButton.disable();
+        this.leftAxisButton.disable();
+        this.rightAxisButton.disable();
+        this.mainTitleButton.disable();
+        this.saveButton.disable();
+        this.saveAsButton.disable();
+        this.filtersPanel.disable();
         this.chart.ownerCt.getEl().mask("There are no demographic date options available in this study. "
                             + "Please contact an administrator to have them configure the study to work with the Time Chart wizard.");
     },
@@ -702,9 +691,6 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
     },
 
     measureMetadataRequestPending:  function() {
-        //remove the chart(s)
-        this.clearChartPanel();
-
         // increase the request counter
         this.measureMetadataRequestCounter++;
     },
@@ -714,9 +700,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         this.measureMetadataRequestCounter--;
 
         // if all requests are complete, call getChartData
-        if(this.measureMetadataRequestCounter == 0) {
+        if(this.measureMetadataRequestCounter == 0)
             this.getChartData();
-        }
     },
 
     getChartData: function() {
@@ -728,13 +713,15 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         this.individualData = undefined;
         this.aggregateData = undefined;
 
+        // get the updated chart information from the various options panels
+        this.chartInfo = this.getChartInfoFromOptionPanels();
+
         this.loaderCount = 0; //Used to prevent the loader from running until we have recieved all necessary callbacks.
-        if((this.displayIndividualCheckbox.disabled === false && this.displayIndividualCheckbox.getValue() === true) || (this.displayIndividualCheckbox.disabled === true)){
+        if (this.chartInfo.displayIndividual)
             this.loaderCount++;
-        }
-        if(this.displayAggregateCheckbox.disabled === false && this.displayAggregate){
+
+        if (this.chartInfo.displayAggregate)
             this.loaderCount++;
-        }
 
         if (this.loaderCount == 0)
         {
@@ -742,35 +729,27 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             return;
         }
 
-        // get the updated chart information from the various tabs of the chartEditor
-        this.chartInfo = this.getChartInfoFromEditorTabs();
-
-        if(this.chartInfo.measures.length == 0){
-           this.clearChartPanel("No measure selected. Please click the \"Add Measure\" button to select a measure.");
+        if (this.chartInfo.measures.length == 0)
+        {
+           this.clearChartPanel("No measure selected. Please click the \"Measures\" button to add a measure.");
            return;
         }
 
-        // the subject column is used in the sort, so it needs to be applied to one of the measures
-        Ext.apply(this.chartInfo.subject, {
-            name: this.viewInfo.subjectColumn,
-            schemaName: this.chartInfo.measures[0].measure.schemaName,
-            queryName: this.chartInfo.measures[0].measure.queryName
-        });
-
-
-        if((this.displayIndividualCheckbox.disabled === false && this.displayIndividualCheckbox.getValue() === true) || (this.displayIndividualCheckbox.disabled === true)){
+        if (this.chartInfo.displayIndividual)
+        {
             //Get data for individual lines.
             LABKEY.Visualization.getData({
                 success: function(data){
+                    console.log("Data returned from server");
                     // store the data in an object by subject for use later when it comes time to render the line chart
                     this.individualData = data;
-                    this.markDirty(!this.editorOverviewPanel.isSavedReport()); // only mark when editing unsaved report
+                    this.markDirty(!this.editorSavePanel.isSavedReport()); // only mark when editing unsaved report
                     var gridSortCols = [];
 
                     // make sure each measure/dimension has at least some data
                     var seriesList = this.getSeriesList();
                     this.individualHasData = {};
-                    Ext.each(seriesList, function(s) {
+                    Ext4.each(seriesList, function(s) {
                         this.individualHasData[s.name] = false;
                     }, this);
 
@@ -788,7 +767,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     // ready to render the chart or grid
                     this.loaderCount--;
                     if(this.loaderCount == 0){
-                        this.loader();
+                        this.loaderFn();
                     }
                 },
                 failure : function(info, response, options) {
@@ -804,7 +783,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             });
         }
 
-        if(this.displayAggregateCheckbox.disabled === false && this.displayAggregate){
+        if (this.chartInfo.displayAggregate)
+        {
             //Get data for Aggregates.
             var groups = [];
             for(var i = 0; i < this.chartInfo.subject.groups.length; i++){
@@ -817,7 +797,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     // make sure each measure/dimension has at least some data
                     var seriesList = this.getSeriesList();
                     this.aggregateHasData = {};
-                    Ext.each(seriesList, function(s) {
+                    Ext4.each(seriesList, function(s) {
                         this.aggregateHasData[s.name] = false;
                     }, this);
 
@@ -829,7 +809,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                     // ready to render the chart or grid
                     this.loaderCount--;
                     if(this.loaderCount == 0){
-                        this.loader();
+                        this.loaderFn();
                     }
                 },
                 failure : function(info, response, options) {
@@ -857,16 +837,26 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         simplified.chartSubjectSelection = config.chartSubjectSelection;
         simplified.displayAggregate = config.displayAggregate;
         simplified.displayIndividual = config.displayIndividual;
-        simplified.filterQuery = config.filterQuery;
         simplified.filterUrl = config.filterUrl;
         simplified.hideDataPoints = config.hideDataPoints;
         simplified.lineWidth = config.lineWidth;
         simplified.saveThumbnail = config.saveThumbnail;
-        simplified.subject = config.subject;
         simplified.title = config.title;
 
+        // compare subject groups by labels and participantIds (not id and created date)
+        simplified.subject = config.subject;
+        if (simplified.subject.groups)
+        {
+            for(var i = 0; i < simplified.subject.groups.length; i++)
+            {
+                delete simplified.subject.groups[i].id;
+                delete simplified.subject.groups[i].created;
+            }
+        }
+
         simplified.measures = [];
-        for(var i = 0; i < config.measures.length; i++){
+        for (var i = 0; i < config.measures.length; i++)
+        {
             var measure = {};
             measure = config.measures[i]
             //Delete id's, they're just for the Ext components ordering.
@@ -877,7 +867,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             simplified.measures.push(measure);
         }
 
-        return Ext.encode(simplified);
+        return Ext4.encode(simplified);
     },
 
     renderLineChart: function(force)
@@ -886,28 +876,28 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         this.chart.getEl().mask("loading...");
         this.clearChartPanel("loading...");
 
-        // get the updated chart information from the varios tabs of the chartEditor
-        this.chartInfo = this.getChartInfoFromEditorTabs();
+        // get the updated chart information from the various options panels
+        this.chartInfo = this.getChartInfoFromOptionPanels();
 
-        if(this.savedChartInfo){
-                if(this.getSimplifiedConfig(Ext.decode(this.savedChartInfo)) == this.getSimplifiedConfig(this.chartInfo)){
-                    this.markDirty(false);
-                } else {
-                    //Don't mark dirty if the user can't edit the report, that's just mean.
-                    if(this.canEdit)
-                        this.markDirty(true);
+        if (this.savedChartInfo)
+        {
+            if (this.getSimplifiedConfig(Ext4.decode(this.savedChartInfo)) == this.getSimplifiedConfig(this.chartInfo))
+            {
+                this.markDirty(false);
+            }
+            else
+            {
+                //Don't mark dirty if the user can't edit the report, that's just mean.
+                if (this.canEdit)
+                {
+                    this.markDirty(true);
                 }
+            }
         }
 
-        // enable/disable the left and right axis tabs
-        (this.getAxisIndex(this.chartInfo.axis, "y-axis", "left") > -1 ? enableAndSetRangeOptions(this.editorYAxisLeftPanel) : this.editorYAxisLeftPanel.disable());
-        (this.getAxisIndex(this.chartInfo.axis, "y-axis", "right") > -1 ? enableAndSetRangeOptions(this.editorYAxisRightPanel) : this.editorYAxisRightPanel.disable());
-
-        function enableAndSetRangeOptions(yAxisPanel){
-            //We have to call setRangeFormOptions AFTER we enable the panel, otherwise all fields get enabled.
-            yAxisPanel.enable();
-            yAxisPanel.setRangeFormOptions(yAxisPanel.axis.range.type);
-        }
+        // enable/disable the left and right axis panels
+        (this.getAxisIndex(this.chartInfo.axis, "y-axis", "left") > -1 ? this.leftAxisButton.enable() : this.leftAxisButton.disable());
+        (this.getAxisIndex(this.chartInfo.axis, "y-axis", "right") > -1 ? this.rightAxisButton.enable() : this.rightAxisButton.disable());
 
         if (!this.editorYAxisLeftPanel.userEditedLabel)
             this.editorYAxisLeftPanel.setLabel(this.editorMeasurePanel.getDefaultLabel("left"));
@@ -918,7 +908,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             this.editorMeasurePanel.setFilterWarningText(this.individualData.filterDescription);
 
         if(this.chartInfo.measures.length == 0){
-           this.clearChartPanel("No measure selected. Please click the \"Add Measure\" button to select a measure.");
+           this.clearChartPanel("No measure selected. Please click the \"Measures\" button to add a measure.");
            return;
         }
 
@@ -926,14 +916,14 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         var leftAxisIndex = this.getAxisIndex(this.chartInfo.axis, "y-axis", "left");
         var rightAxisIndex = this.getAxisIndex(this.chartInfo.axis, "y-axis", "right");
         if(xAxisIndex == -1){
-           Ext.Msg.alert("Error", "Could not find x-axis in chart measure information.");
+           Ext4.Msg.alert("Error", "Could not find x-axis in chart measure information.");
            return;
         }
 
         // show the viewGrid button and hide the viewCharts button
         this.viewChartBtn.hide();
         this.viewGridBtn.show();
-        this.loader = this.renderLineChart;
+        this.loaderFn = this.renderLineChart;
         this.loaderName = 'renderLineChart';
 
         // TODO: report if a series doesn't have any data.
@@ -952,8 +942,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 //            var allLeft = [];
 //            var allRight = [];
 
-//            Ext.each(series, function (ser) {
-//                Ext.each(ser.data, function(row) {
+//            Ext4.each(series, function (ser) {
+//                Ext4.each(ser.data, function(row) {
 //                    var xValue = row.interval;
 //                    var yValue = row.dataValue;
 //                    if (xValue != null && typeof xValue == "object")
@@ -986,28 +976,10 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         // remove any existing charts, purge listeners from exportPdfSingleBtn, and remove items from the exportPdfMenu button
         this.chart.removeAll();
         this.firstChartComponent = null;
-        this.exportPdfSingleBtn.purgeListeners();
+        this.exportPdfSingleBtn.removeListener('click');
         this.exportPdfMenu.removeAll();
 
         var charts = [];
-        var generateParticipantSeries = function(data, subjectColumn){
-            // subjectColumn is this.viewInfo.subjectColumn
-            subjectColumn = data.measureToColumn[subjectColumn];
-            var rows = data.rows;
-            var dataByParticipant = {};
-
-            for(var i = 0; i < rows.length; i++){
-                var rowSubject = rows[i][subjectColumn].value;
-                // Split the data into groups.
-                if(!dataByParticipant[rowSubject]){
-                    dataByParticipant[rowSubject] = [];
-                }
-
-                dataByParticipant[rowSubject].push(rows[i]);
-
-            }
-            return dataByParticipant;
-        };
 
         var generateGroupSeries = function(data, groups, subjectColumn){
             // subjectColumn is this.viewInfo.subjectColumn
@@ -1033,7 +1005,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
         var createExportMenuHandler = function(id){
             return function(){
-                LABKEY.vis.SVGConverter.convert(Ext.get(id).child('svg').dom, 'pdf');
+                LABKEY.vis.SVGConverter.convert(Ext4.get(id).child('svg').dom, 'pdf');
             }
         };
 
@@ -1043,8 +1015,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             // warn if user doesn't have an subjects selected
             if (this.chartInfo.subject.values.length == 0)
             {
-                this.addWarningText("Please select at least one subject.");
-                this.chart.doLayout();
+                this.clearChartPanel("Please select at least one " + this.viewInfo.subjectNounSingular.toLowerCase() + ".");
             }
             else
             {
@@ -1053,8 +1024,8 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 {
                     this.addWarningText("Only showing the first " + this.maxCharts + " charts.");
                 }
-
-                var dataPerParticipant = generateParticipantSeries(this.individualData, this.viewInfo.subjectColumn);
+                var accessor = this.individualData.measureToColumn[this.viewInfo.subjectColumn];
+                var dataPerParticipant = LABKEY.vis.groupData(this.individualData.rows, function(row){return row[accessor].value});
                 for(var participant in dataPerParticipant){
                     var newChart = this.generatePlot(
                             this.chart,
@@ -1065,8 +1036,12 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                             seriesList,
                             dataPerParticipant[participant],
                             this.individualData.measureToColumn,
-                            this.individualData.visitMap
-                    );
+                            this.individualData.visitMap,
+                            null,
+                            null,
+                            null,
+                            this.chartInfo.subject.values.length > 1 ? 380 : 600  // chart height
+                        );
                     charts.push(newChart);
 
                     if(!this.firstChartComponent){
@@ -1091,7 +1066,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             // warn if use doesn't have any groups selected
             if (this.chartInfo.subject.groups.length == 0)
             {
-                this.addWarningText("Please select at least one group.");
+                this.clearChartPanel("Please select at least one group.");
             }
             else
             {
@@ -1130,7 +1105,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                             this.aggregateData ? this.aggregateData.measureToColumn : null,
                             this.aggregateData ? this.aggregateData.visitMap : null,
                             this.chartInfo.subject.groups.length > 1 ? 380 : 600 // chart height
-                    );
+                        );
                     charts.push(newChart);
 
                     if(!this.firstChartComponent){
@@ -1154,14 +1129,14 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         {
             if (this.chartInfo.chartSubjectSelection == "subjects" && this.chartInfo.subject.values.length == 0)
             {
-                this.addWarningText("Please select at least one " + this.viewInfo.subjectNounSingular.toLowerCase() + '.');
+                this.clearChartPanel("Please select at least one " + this.viewInfo.subjectNounSingular.toLowerCase() + '.');
             } else if(this.chartInfo.chartSubjectSelection == "groups" && this.chartInfo.subject.groups.length < 1){
-                this.addWarningText("Please select at least one group.");
+                this.clearChartPanel("Please select at least one group.");
             } else {
                 // warn if user doesn't have an dimension values selected or if the max number has been exceeded
                 if (seriesList.length == 0)
                 {
-                    this.addWarningText("Please select at least one dimension value.");
+                    this.clearChartPanel("Please select at least one dimension value.");
                 }
                 else if (seriesList.length > this.maxCharts)
                 {
@@ -1169,7 +1144,21 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
                 }
                 for (var i = 0; i < (seriesList.length > this.maxCharts ? this.maxCharts : seriesList.length); i++)
                 {
-                    var newChart = this.generatePlot(this.chart, this.editorXAxisPanel.getTime(), this.viewInfo, this.chartInfo, this.chartInfo.title + ': ' + seriesList[i].name, [seriesList[i]], this.individualData.rows, this.individualData.measureToColumn, this.individualData.visitMap);
+                    var newChart = this.generatePlot(
+                            this.chart,
+                            this.editorXAxisPanel.getTime(),
+                            this.viewInfo,
+                            this.chartInfo,
+                            this.chartInfo.title + ': ' + seriesList[i].name,
+                            [seriesList[i]],
+                            this.individualData.rows,
+                            this.individualData.measureToColumn,
+                            this.individualData.visitMap,
+                            null,
+                            null,
+                            null,
+                            seriesList.length > 1 ? 380 : 600  // chart height
+                        );
                     charts.push(newChart);
 
                     if(!this.firstChartComponent){
@@ -1192,25 +1181,32 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         else if (this.chartInfo.chartLayout == "single")
         {
             if (this.chartInfo.chartSubjectSelection == "subjects" && this.chartInfo.subject.values.length == 0){
-                this.addWarningText("Please select at least one " + this.viewInfo.subjectNounSingular.toLowerCase() + '.');
+                this.clearChartPanel("Please select at least one " + this.viewInfo.subjectNounSingular.toLowerCase() + '.');
             } else if(this.chartInfo.chartSubjectSelection == "groups" && this.chartInfo.subject.groups.length < 1){
-                this.addWarningText("Please select at least one group.");
+                this.clearChartPanel("Please select at least one group.");
             } else {
                 //Single Line Chart, with all participants or groups.
-                var newChart = this.generatePlot(this.chart, this.editorXAxisPanel.getTime(), this.viewInfo, this.chartInfo, this.chartInfo.title, seriesList,
+                var newChart = this.generatePlot(
+                        this.chart,
+                        this.editorXAxisPanel.getTime(),
+                        this.viewInfo,
+                        this.chartInfo,
+                        this.chartInfo.title,
+                        seriesList,
                         this.individualData ? this.individualData.rows : null,
                         this.individualData ? this.individualData.measureToColumn : null,
                         this.individualData ? this.individualData.visitMap : null,
                         this.aggregateData ? this.aggregateData.rows : null,
                         this.aggregateData ? this.aggregateData.measureToColumn : null,
-                        this.aggregateData ? this.aggregateData.visitMap : null
+                        this.aggregateData ? this.aggregateData.visitMap : null,
+                        600    // chart height
                 );
                 charts.push(newChart);
 
                 this.firstChartComponent = newChart.renderTo;
 
                 this.exportPdfSingleBtn.addListener('click', function(){
-                    LABKEY.vis.SVGConverter.convert(Ext.get(newChart.renderTo).child('svg').dom, 'pdf');
+                    LABKEY.vis.SVGConverter.convert(Ext4.get(newChart.renderTo).child('svg').dom, 'pdf');
                 }, this);
 
                 this.toggleExportPdfBtns(true);
@@ -1219,14 +1215,13 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
 
         // if the user has selected more charts than the max allowed, or nothing at all, show warning
         if(this.warningText.length > 0){
-            this.chart.add(new Ext.form.DisplayField({
+            this.chart.add(Ext4.create('Ext.form.field.Display', {
                 autoHeight: 25,
                 autoWidth: true,
                 value: this.warningText,
                 style: "font-style:italic;width:100%;padding:5px;text-align:center;"
             }));
         }
-        this.chart.doLayout();
 
         // unmask the panel if needed
         if (this.chart.getEl().isMasked()){
@@ -1234,7 +1229,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         }
     },
 
-    generatePlot: function(chart, studyType, viewInfo, chartInfo, mainTitle, seriesList, individualData, individualMeasureToColumn, individualVisitMap, aggregateData, aggregateMeasureToColumn, aggregateVisitMap){
+    generatePlot: function(chart, studyType, viewInfo, chartInfo, mainTitle, seriesList, individualData, individualMeasureToColumn, individualVisitMap, aggregateData, aggregateMeasureToColumn, aggregateVisitMap, chartHeight){
         // This function generates a plot config and renders a plot for given data.
         // Should be used in per_subject, single, per_measure, and per_group
         var generateLayerAes = function(name, yAxisSide, columnName, intervalKey, subjectColumn, hoverText){
@@ -1276,17 +1271,12 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         var intervalKey = null;
         var individualSubjectColumn = individualMeasureToColumn ? individualMeasureToColumn[viewInfo.subjectColumn] : null;
         var aggregateSubjectColumn = "CategoryId";
-        var newChartId = Ext.id();
-        var newChartDiv = new Ext.BoxComponent({
-            height: 380,
+        var newChartDiv = Ext4.create('Ext.container.Container', {
+            height: chartHeight,
             border: 1,
-            autoEl: {
-                tag: 'div',
-                id: newChartId
-            }
+            autoEl: {tag: 'div'}
         });
         chart.add(newChartDiv);
-        chart.doLayout();
 
         for(var i = 0; i < chartInfo.axis.length; i++){
             var axis = chartInfo.axis[i];
@@ -1397,13 +1387,55 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             }
         }
 
+        // functions to call on click of axis labels to open the options panel (need to be closures to correctly handle scoping of this)
+        var xAxisLabelClickFn = function(scopedThis){
+            return function(event){
+                scopedThis.chartElementClicked(scopedThis.editorXAxisPanel, [event.clientX, event.clientY], 860, 250, 'above');
+            }
+        };
+        var yAxisLeftLabelClickFn = function(scopedThis){
+            return function(event){
+                scopedThis.chartElementClicked(scopedThis.editorYAxisLeftPanel, [event.clientX, event.clientY], 320, 220, 'left');
+            }
+        };
+        var yAxisRightLabelClickFn = function(scopedThis){
+            return function(event){
+                scopedThis.chartElementClicked(scopedThis.editorYAxisRightPanel, [event.clientX, event.clientY], 320, 220, 'right');
+            }
+        };
+        var mainTitleClickFn = function(scopedThis){
+            return function(event){
+                scopedThis.chartElementClicked(scopedThis.editorMainTitlePanel, [event.clientX, event.clientY], 300, 130, 'below');
+            }
+        };
+
         var plotConfig = {
-            renderTo: newChartId,
+            renderTo: newChartDiv.getId(),
             labels: {
-                main: {value: mainTitle},
-                x: {value: xTitle},
-                yLeft: {value: yLeftTitle},
-                yRight: {value: yRightTitle}
+                main: {
+                    value: mainTitle,
+                    listeners: {
+                        click: mainTitleClickFn(this)
+                    }
+                },
+                x: {
+                    value: xTitle,
+                    listeners: {
+                        click: xAxisLabelClickFn(this)
+                    }
+                },
+                yLeft: {
+                    value: yLeftTitle,
+                    listeners: {
+                        click: yAxisLeftLabelClickFn(this)
+                    }
+                },
+                yRight: {
+                    value: yRightTitle,
+                    listeners: {
+                        click: yAxisRightLabelClickFn(this)
+                    }
+                }
             },
             layers: layers,
             aes: {
@@ -1440,7 +1472,6 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             width: newChartDiv.getWidth() - 20, // -20 prevents horizontal scrollbars in cases with multiple charts.
             height: newChartDiv.getHeight() - 20, // -20 prevents vertical scrollbars in cases with one chart.
             data: individualData ? individualData : aggregateData
-
         };
 
         var plot = new LABKEY.vis.Plot(plotConfig);
@@ -1451,7 +1482,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
     getDataSortArray: function(){
         var arr = [this.chartInfo.subject]
         var md = this.chartInfo.measures[0];
-        
+
         var sort1 = {
             schemaName: md.dateOptions? md.dateOptions.dateCol.schemaName : md.measure.schemaName,
             queryName: md.dateOptions ? md.dateOptions.dateCol.queryName : md.measure.queryName,
@@ -1476,7 +1507,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             md = this.chartInfo.measures[i];
 
             if(md.dimension && md.dimension.values) {
-                Ext.each(md.dimension.values, function(val) {
+                Ext4.each(md.dimension.values, function(val) {
                     arr.push({
                         name: val,
                         measureIndex: i,
@@ -1516,7 +1547,7 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             // mask panel and remove the chart(s)
             this.chart.getEl().mask("loading...");
             this.clearChartPanel();
-            this.loader = this.viewDataGrid;
+            this.loaderFn = this.viewDataGrid;
             this.loaderName = 'viewDataGrid';
 
             // hide the viewGrid button and show the viewCharts button
@@ -1525,24 +1556,28 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             this.viewGridBtn.hide();
 
             // add a panel to put the queryWebpart in
-            var gridPanelId = Ext.id();
-            var dataGridPanel = new Ext.Panel({
+            var qwpPanelDiv = Ext4.create('Ext.container.Container', {
+                autoHeight: true,
+                anchor: '100%',
+                autoEl: {tag: 'div'}
+            });
+            var dataGridPanel = Ext4.create('Ext.panel.Panel', {
                 autoScroll: true,
+                border: false,
                 padding: 10,
-                items: [{
-                    xtype: 'displayfield',
-                    value: 'Note: filters applied to the data grid will not be reflected in the chart view.',
-                    style: 'font-style:italic;padding:10px'
-                },
-                {
-                    xtype: 'panel',
-                    id: gridPanelId
-                }]
+                items: [
+                    {
+                        xtype: 'displayfield',
+                        value: 'Note: filters applied to the data grid will not be reflected in the chart view.',
+                        style: 'font-style:italic;padding:10px'
+                    },
+                    qwpPanelDiv
+                ]
             });
 
             // create the queryWebpart using the temp grid schema and query name
             var chartQueryWebPart = new LABKEY.QueryWebPart({
-                renderTo: gridPanelId,
+                renderTo: qwpPanelDiv.getId(),
                 schemaName: this.tempGridInfo.schema,
                 queryName: this.tempGridInfo.query,
                 sort: this.tempGridInfo.subjectCol + ', ' + this.tempGridInfo.sortCols.join(", "),
@@ -1555,16 +1590,17 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             // re-enable the View Charts button once the QWP has rendered
             chartQueryWebPart.on('render', function(){
                 this.viewChartBtn.enable();
-                
+
+                // redo the layout of the qwp panel to set reset the auto height
+                qwpPanelDiv.doLayout();
+
                 // unmask the panel if needed
                 if (this.chart.getEl().isMasked())
                     this.chart.getEl().unmask();
             }, this);
 
             this.chart.removeAll();
-            this.chart.doLayout();
             this.chart.add(dataGridPanel);
-            this.chart.doLayout();
         }
     },
 
@@ -1583,62 +1619,81 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         }
     },
 
-    getChartInfoFromEditorTabs: function(){
-        var config = {
-            title: this.editorChartsPanel.getMainTitle(),
-            chartLayout: this.editorChartsPanel.getChartLayout(),
-            chartSubjectSelection: this.editorChartsPanel.getChartSubjectSelection(),
-            lineWidth: this.editorChartsPanel.getLineWidth() || 3, //Default line width of 3.
-            hideDataPoints: this.editorChartsPanel.getHideDataPoints(),
-            displayIndividual: this.displayIndividualCheckbox.getValue(),
-            displayAggregate: this.displayAggregateCheckbox.getValue(),
-            errorBars: this.displayErrorComboBox.getValue(),
-            measures: [],
-            axis: [this.editorXAxisPanel.getAxis()],
-            filterUrl: this.editorMeasurePanel.getDataFilterUrl(),
-            filterQuery: this.editorMeasurePanel.getDataFilterQuery(),
-            saveThumbnail: this.editorOverviewPanel.getSaveThumbnail()
-        };
+    getChartInfoFromOptionPanels: function(){
+        var config = {};
+
+        // get the chart grouping information
+        Ext4.apply(config, this.editorGroupingPanel.getPanelOptionValues());
+
+        // get the chart aesthetic options information
+        Ext4.apply(config, this.editorAestheticsPanel.getPanelOptionValues());
+
+        // get the main title from the option panel
+        Ext4.apply(config, this.editorMainTitlePanel.getPanelOptionValues());
+
+        // get the measure panel information
+        var measurePanelValues = this.editorMeasurePanel.getPanelOptionValues();
+
+        config.measures = [];
+        config.axis = [];
+        config.filterUrl = measurePanelValues.dataFilterUrl;
+        config.filterQuery = measurePanelValues.dataFilterQuery;
+
+        // get chart related options from save panel
+        Ext4.apply(config, this.editorSavePanel.getPanelOptionValues());
 
         // get the subject info based on the selected chart layout
         if (config.chartSubjectSelection == 'groups')
             config.subject = this.groupsSelector.getSubject();
         else
-            config.subject = this.subjectSelector.getSubject();
+            config.subject = this.participantSelector.getSubject();
+
+        // get the x-axis information (including zero date column info)
+        var xAxisValues = this.editorXAxisPanel.getPanelOptionValues();
+        config.axis.push(xAxisValues.axis);
 
         // get the measure and dimension information for the y-axis (can be > 1 measure)
         var hasLeftAxis = false;
         var hasRightAxis = false;
-        var yAxisMeauresDimensions = this.editorMeasurePanel.getMeasuresAndDimensions();
-        for(var i = 0; i < yAxisMeauresDimensions.length; i++){
+        for(var i = 0; i < measurePanelValues.measuresAndDimensions.length; i++){
             var tempMD = {
-                measure: yAxisMeauresDimensions[i].measure,
-                dimension: yAxisMeauresDimensions[i].dimension,
-                time: this.editorXAxisPanel.getTime()
+                measure: measurePanelValues.measuresAndDimensions[i].measure,
+                dimension: measurePanelValues.measuresAndDimensions[i].dimension,
+                time: xAxisValues.time
             };
 
             if (tempMD.time == "date")
             {
                 tempMD.dateOptions = {
-                    dateCol: yAxisMeauresDimensions[i].dateCol,
-                    zeroDateCol: this.editorXAxisPanel.getZeroDateCol(),
-                    interval: this.editorXAxisPanel.getInterval()
+                    dateCol: measurePanelValues.measuresAndDimensions[i].dateCol,
+                    zeroDateCol: xAxisValues.zeroDateCol,
+                    interval: xAxisValues.interval
                 };
             }
 
             config.measures.push(tempMD);
 
             // add the left/right axis information to the config accordingly
-            if (yAxisMeauresDimensions[i].measure.yAxis == 'right' && !hasRightAxis)
+            if (measurePanelValues.measuresAndDimensions[i].measure.yAxis == 'right' && !hasRightAxis)
             {
-                config.axis.push(this.editorYAxisRightPanel.getAxis());
+                config.axis.push(this.editorYAxisRightPanel.getPanelOptionValues());
                 hasRightAxis = true;
             }
-            else if (yAxisMeauresDimensions[i].measure.yAxis == 'left' && !hasLeftAxis)
+            else if (measurePanelValues.measuresAndDimensions[i].measure.yAxis == 'left' && !hasLeftAxis)
             {
-                config.axis.push(this.editorYAxisLeftPanel.getAxis());
+                config.axis.push(this.editorYAxisLeftPanel.getPanelOptionValues());
                 hasLeftAxis = true;
             }
+        }
+
+        // the subject column is used in the sort, so it needs to be applied to one of the measures
+        if (config.measures.length > 0)
+        {
+            Ext4.apply(config.subject, {
+                name: this.viewInfo.subjectColumn,
+                schemaName: config.measures[0].measure.schemaName,
+                queryName: config.measures[0].measure.queryName
+            });
         }
 
         return config;
@@ -1661,125 +1716,32 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         return index;
     },
 
-    saveChart: function(saveBtnName, replace, reportName, reportDescription, reportShared, canSaveSharedCharts, createdBy) {
+    saveChart: function(saveChartInfo) {
         // if queryName and schemaName are set on the URL then save them with the chart info
         var schema = this.saveReportInfo ? this.saveReportInfo.schemaName : (LABKEY.ActionURL.getParameter("schemaName") || null);
         var query = this.saveReportInfo ? this.saveReportInfo.queryName : (LABKEY.ActionURL.getParameter("queryName") || null);
 
-        var reportSvg = (this.firstChartComponent && Raphael.svg ? LABKEY.vis.SVGConverter.svgToStr(Ext.get(this.firstChartComponent).child('svg').dom) : null);
+        var reportSvg = (this.firstChartComponent && Raphael.svg ? LABKEY.vis.SVGConverter.svgToStr(Ext4.get(this.firstChartComponent).child('svg').dom) : null);
 
-        // if the Save button was clicked, save the report using the name and description provided
-        if(saveBtnName == 'Save'){
-            var config = {
-                replace: replace,
-                reportName: reportName,
-                reportDescription: reportDescription,
-                reportShared: reportShared,
-                reportSaveThumbnail: this.chartInfo.saveThumbnail,
-                reportSvg: this.chartInfo.saveThumbnail ? reportSvg : null,
-                createdBy: createdBy,
-                query: query,
-                schema: schema
-            };
+        var config = {
+            replace: saveChartInfo.replace,
+            reportName: saveChartInfo.reportName,
+            reportDescription: saveChartInfo.reportDescription,
+            reportShared: saveChartInfo.shared,
+            reportSaveThumbnail: saveChartInfo.saveThumbnail,
+            reportSvg: saveChartInfo.saveThumbnail ? reportSvg : null,
+            createdBy: saveChartInfo.createdBy,
+            query: query,
+            schema: schema
+        };
 
-            // if user clicked save button to replace an existing report, execute the save chart call
-            // otherwise, the user clicked save for a new report so check if the report name already exists
-            if(replace){
-                this.executeSaveChart(config);
-            }
-            else{
-                this.checkSaveChart(config);
-            }
+        // if user clicked save button to replace an existing report, execute the save chart call
+        // otherwise, the user clicked save for a new report (or save as) so check if the report name already exists
+        if(!saveChartInfo.isSaveAs && saveChartInfo.replace){
+            this.executeSaveChart(config);
         }
-        // if the Save As button was clicked, open a window for user to enter new report name and description
-        else if(saveBtnName == 'Save As'){
-            // basic form to get the name and description from the user
-            var vizSaveForm = new Ext.FormPanel({
-                monitorValid: true,
-                border: false,
-                frame: false,
-                labelWidth: 125,
-                items: [{
-                    xtype: 'textfield',
-                    fieldLabel: 'Report Name',
-                    name: 'reportName',
-                    cls: 'report-name-saveas-test',
-                    value: reportName || null,
-                    width: 300,
-                    allowBlank: false,
-                    maxLength: 200
-                },
-                {
-                    xtype: 'textarea',
-                    fieldLabel: 'Report Description',
-                    name: 'reportDescription',
-                    cls: 'report-description-saveas-test',
-                    value: reportDescription || null,
-                    width: 300,
-                    height: 70,
-                    allowBlank: true
-                },
-                new Ext.form.RadioGroup({
-                    name: 'reportShared',
-                    fieldLabel: 'Viewable by',
-                    anchor: '100%',
-                    items : [
-                            { name: 'reportShared', cls: 'report-shared-all-test', boxLabel: 'All readers', inputValue: 'true', checked: reportShared, disabled: !canSaveSharedCharts },
-                            { name: 'reportShared', cls: 'report-shared-me-test', boxLabel: 'Only me', inputValue: 'false', checked: !reportShared, disabled: !canSaveSharedCharts }
-                        ]
-                }),
-                new Ext.form.Checkbox({
-                    name: 'reportSaveThumbnail',
-                    fieldLabel: 'Save Thumbnail',
-                    anchor: '100%',
-                    checked: this.chartInfo.saveThumbnail,
-                    value: this.chartInfo.saveThumbnail,
-                    hidden: (Ext.isIE6 || Ext.isIE7 || Ext.isIE8)
-                })],
-                buttons: [{
-                    text: 'Save',
-                    formBind: true,
-                    handler: function(btn, evnt){
-                        var formValues = vizSaveForm.getForm().getValues();
-                        var shared = typeof formValues.reportShared == "string" ? 'true' == formValues.reportShared : new Boolean(formValues.reportShared).valueOf();
-                        this.chartInfo.saveThumbnail = formValues.reportSaveThumbnail == "on";
-
-                        // call fnctn to check if a report of that name already exists
-                        this.checkSaveChart({
-                            replace: replace,
-                            reportName: formValues.reportName,
-                            reportDescription: formValues.reportDescription,
-                            reportShared: shared,
-                            reportSaveThumbnail: this.chartInfo.saveThumbnail, 
-                            reportSvg: this.chartInfo.saveThumbnail ? reportSvg : null,
-                            query: query,
-                            schema: schema
-                        });
-
-                        win.close();
-                    },
-                    scope: this
-                },
-                {
-                    text: 'Cancel',
-                    handler: function(){
-                        win.close();
-                    }
-                }]
-            });
-
-            // pop-up window for user to enter viz name and description for saving
-            var win = new Ext.Window({
-                layout:'fit',
-                width:475,
-                height:255,
-                closeAction:'close',
-                modal: true,
-                padding: 15,
-                title: saveBtnName,
-                items: vizSaveForm
-            });
-            win.show(this);
+        else{
+            this.checkSaveChart(config);
         }
     },
 
@@ -1789,27 +1751,27 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             name: config.reportName,
             success: function(result, request, options){
                 // a report by that name already exists within the container, if the user can update, ask if they would like to replace
-                if(this.canEdit){
-                    Ext.Msg.show({
+                if(this.canEdit && config.replace){
+                    Ext4.Msg.show({
                         title:'Warning',
                         msg: 'A report by the name \'' + $h(config.reportName) + '\' already exists. Would you like to replace it?',
-                        buttons: Ext.Msg.YESNO,
+                        buttons: Ext4.Msg.YESNO,
                         fn: function(btnId, text, opt){
                             if(btnId == 'yes'){
                                 config.replace = true;
                                 this.executeSaveChart(config);
                             }
                         },
-                        icon: Ext.MessageBox.WARNING,
+                        icon: Ext4.MessageBox.WARNING,
                         scope: this
                     });
                 }
                 else{
-                    Ext.Msg.show({
+                    Ext4.Msg.show({
                         title:'Error',
                         msg: 'A report by the name \'' + $h(config.reportName) + '\' already exists.  Please choose a different name.',
-                        buttons: Ext.Msg.OK,
-                        icon: Ext.MessageBox.ERROR
+                        buttons: Ext4.Msg.OK,
+                        icon: Ext4.MessageBox.ERROR
                     });
                 }
             },
@@ -1822,6 +1784,9 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
     },
 
     executeSaveChart: function(config){
+        // get the chart info to be saved
+        this.chartInfo = this.getChartInfoFromOptionPanels();
+
         LABKEY.Visualization.save({
             name: config.reportName,
             description: config.reportDescription,
@@ -1831,39 +1796,39 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
             svg: config.reportSvg,
             replace: config.replace,
             type: LABKEY.Visualization.Type.TimeChart,
-            success: this.saveChartSuccess(config.replace,
-                                           config.reportName,
-                                           config.reportDescription,
-                                           config.reportShared,
-                                           config.reportShared ? undefined : LABKEY.Security.currentUser.id,
-                                           config.createdBy),
+            success: this.saveChartSuccess(config.replace, config.reportName),
             schemaName: config.schema,
             queryName: config.query,
             scope: this
         });
     },
 
-    saveChartSuccess: function (replace, reportName, reportDescription, reportShared, ownerId, createdBy){
+    saveChartSuccess: function (replace, reportName){
         return function(result, request, options) {
             this.markDirty(false);
-            Ext.Msg.alert("Success", "The chart has been successfully saved.");
 
-            // if a new chart was created (no replacing), we need to refresh the page with the correct report name on the URL
-            if (!replace)
+            var msgBox = Ext4.create('Ext.window.Window', {
+                title    : 'Success',
+                html     : '<div style="margin-left: auto; margin-right: auto;"><span class="labkey-message">The chart has been successfully saved.</span></div>',
+                modal    : false,
+                closable : false,
+                width    : 300,
+                height   : 100
+            });
+            msgBox.show();
+            msgBox.getEl().fadeOut({duration : 2250, callback : function(){
+                msgBox.hide();
+            }});
+
+            // if a new chart was created, we need to refresh the page with the correct report name on the URL
+            if (!this.editorSavePanel.isSavedReport() || !replace)
             {
                 window.location = LABKEY.ActionURL.buildURL("visualization", "timeChartWizard",
                                     LABKEY.ActionURL.getContainer(),
-                                    Ext.apply(LABKEY.ActionURL.getParameters(), {edit: true, name: reportName})); 
-            }
-            else
-            {
-                this.editorOverviewPanel.updateOverview({
-                    name: reportName,
-                    description: reportDescription,
-                    shared: reportShared,
-                    ownerId: ownerId,
-                    createdBy: createdBy
-                }, this.chartInfo.saveThumbnail);
+                                    Ext4.apply(LABKEY.ActionURL.getParameters(), {
+                                        reportId: result.visualizationId,
+                                        name: reportName
+                                    }));
             }
         }
     },
@@ -1875,14 +1840,14 @@ LABKEY.vis.TimeChartPanel = Ext.extend(Ext.Panel, {
         this.clearWarningText();
         if (message)
         {
-            this.chart.add(new Ext.Panel({
+            this.chart.add(Ext4.create('Ext.panel.Panel', {
+                border: false,
                 padding: 10,
                 html : "<table width='100%'><tr><td align='center' style='font-style:italic'>" + message + "</td></tr></table>"
             }));
             if (this.chart.getEl().isMasked)
                 this.chart.getEl().unmask();
         }
-        this.chart.doLayout();
     },
 
     clearWarningText: function(){
