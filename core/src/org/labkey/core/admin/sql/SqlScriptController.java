@@ -39,9 +39,7 @@ import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -49,7 +47,6 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.RedirectException;
-import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -816,111 +813,6 @@ public class SqlScriptController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(AdminPermission.class)
-    public class ExtractViewsAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            getPageConfig().setTemplate(PageConfig.Template.None);
-
-            String type = getViewContext().getActionURL().getParameter("type");
-
-            if ("drop".equals(type))
-                return new ExtractDropView();
-            else if ("create".equals(type))
-                return new ExtractCreateView();
-            else if ("clear".equals(type))
-                return new ClearView();
-
-            return new HtmlView("Error: must specify type parameter (\"drop\", \"create\", or \"clear\")");
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-
-        private abstract class ExtractView extends HttpView
-        {
-            abstract List<Module> getModules();
-            abstract ViewHandler getHandler(FileSqlScriptProvider provider, String schemaName);
-
-            @Override
-            protected void renderInternal(Object model, PrintWriter out) throws Exception
-            {
-                int totalScriptLines = 0;
-
-                out.println("<pre>");
-
-                for (Module module : getModules())
-                {
-                    if (module instanceof DefaultModule)
-                    {
-                        DefaultModule defModule = (DefaultModule)module;
-
-                        if (defModule.hasScripts())
-                        {
-                            FileSqlScriptProvider provider = new FileSqlScriptProvider(defModule);
-                            Set<String> schemaNames = provider.getSchemaNames();
-
-                            for (String schemaName : schemaNames)
-                            {
-                                ViewHandler handler = getHandler(provider, schemaName);
-                                handler.handle(out);
-                                totalScriptLines += handler.getScriptLines();
-                            }
-                        }
-                    }
-                }
-
-                out.println("Total lines processed: " + totalScriptLines);
-                out.println("</pre>");
-            }
-        }
-
-        private class ExtractDropView extends ExtractView
-        {
-            List<Module> getModules()
-            {
-                List<Module> modules = new ArrayList<Module>(ModuleLoader.getInstance().getModules());
-                Collections.reverse(modules);
-                return modules;
-            }
-
-            ViewHandler getHandler(FileSqlScriptProvider provider, String schemaName)
-            {
-                return new ViewHandler.ViewExtractor(provider, schemaName, true, false);
-            }
-        }
-
-        private class ExtractCreateView extends ExtractView
-        {
-            List<Module> getModules()
-            {
-                return ModuleLoader.getInstance().getModules();
-            }
-
-            ViewHandler getHandler(FileSqlScriptProvider provider, String schemaName)
-            {
-                return new ViewHandler.ViewExtractor(provider, schemaName, false, true);
-            }
-        }
-
-        private class ClearView extends ExtractView
-        {
-            List<Module> getModules()
-            {
-                return ModuleLoader.getInstance().getModules();
-            }
-
-            ViewHandler getHandler(FileSqlScriptProvider provider, String schemaName)
-            {
-                return new ViewHandler.ViewClearer(provider, schemaName);
-            }
-        }
-    }
-
-
     @RequiresSiteAdmin
     public class UnreachableScriptsAction extends SimpleViewAction<ConsolidateForm>
     {
@@ -940,7 +832,7 @@ public class SqlScriptController extends SpringActionController
                 }
             });
 
-            double[] fromVersions = new double[]{0.00, 9.30, 10.1, 10.2, 10.3, 11.1, 11.2, 11.3};
+            double[] fromVersions = new double[]{0.00, 9.30, 10.1, 10.2, 10.3, 11.1, 11.2, 11.3, 12.1};
             double toVersion = form.getToVersion();
 
             for (Module module : modules)

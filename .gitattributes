@@ -653,7 +653,6 @@ core/src/org/labkey/core/admin/setFolderPermissions.jsp -text
 core/src/org/labkey/core/admin/setInitialFolderSettings.jsp -text
 core/src/org/labkey/core/admin/sql/ScriptReorderer.java -text
 core/src/org/labkey/core/admin/sql/SqlScriptController.java -text
-core/src/org/labkey/core/admin/sql/ViewHandler.java -text
 core/src/org/labkey/core/admin/testNetworkDrive.jsp -text
 core/src/org/labkey/core/admin/threads.jsp -text
 core/src/org/labkey/core/admin/view/filesNotifySettings.jsp -text
