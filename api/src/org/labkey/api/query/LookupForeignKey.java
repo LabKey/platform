@@ -25,7 +25,9 @@ import org.labkey.api.util.StringExpressionFactory;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 abstract public class LookupForeignKey extends AbstractForeignKey implements Cloneable
 {
@@ -161,23 +163,36 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
 
     public static StringExpression getDetailsURL(ColumnInfo parent, TableInfo lookupTable, String columnName)
     {
+        ContainerContext cc = null;
+        if (lookupTable instanceof AbstractTableInfo)
+        {
+            AbstractTableInfo ati = (AbstractTableInfo)lookupTable;
+            if (ati.hasContainerContext())
+                cc = ati.getContainerContext();
+        }
+
         FieldKey columnKey = new FieldKey(null,columnName);
 
-        StringExpression expr = lookupTable.getDetailsURL(Collections.singleton(columnKey), null);
+        Set<FieldKey> keys = new HashSet<FieldKey>(2);
+        keys.add(columnKey);
+        if (cc instanceof ContainerContext.FieldKeyContext)
+            keys.add(((ContainerContext.FieldKeyContext)cc).getFieldKey());
+
+        StringExpression expr = lookupTable.getDetailsURL(keys, null);
         if (expr instanceof StringExpressionFactory.FieldKeyStringExpression)
         {
             StringExpressionFactory.FieldKeyStringExpression f = (StringExpressionFactory.FieldKeyStringExpression)expr;
             StringExpressionFactory.FieldKeyStringExpression rewrite;
 
             // if the URL only substitutes the PK we can rewrite as FK (does the DisplayColumn handle when the join fails?)
-            if (f.validateFieldKeys(Collections.singleton(columnKey)))
+            if (f.validateFieldKeys(keys))
                 rewrite = f.remapFieldKeys(null, Collections.singletonMap(columnKey, parent.getFieldKey()));
             else
                 rewrite = f.remapFieldKeys(parent.getFieldKey(), null);
 
             // CONSIDER: set ContainerContext in AbstractForeignKey.getURL() so all subclasses can benefit
-            if (rewrite instanceof DetailsURL)
-                setURLContainerContext((DetailsURL)rewrite, lookupTable);
+            if (rewrite instanceof DetailsURL && cc != null)
+                ((DetailsURL)rewrite).setContainerContext(cc);
 
             return rewrite;
         }
