@@ -8,17 +8,17 @@ Ext4.namespace("LABKEY.vis");
 
 Ext4.tip.QuickTipManager.init();
 
-Ext4.define('LABKEY.vis.ChartsOptionsPanel', {
+Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
 
     extend : 'LABKEY.vis.GenericOptionsPanel',
 
     constructor : function(config){
         Ext4.applyIf(config, {
-            chartSubjectSelection: 'subjects'
+            chartSubjectSelection: 'subjects',
+            displayIndividual: true,
+            displayAggregate: false,
+            errorBars: "None"
         });
-
-        // track if the axis label is something other than the default
-        config.userEditedTitle = (config.mainTitle ? true : false);
 
         this.callParent([config]);
 
@@ -36,7 +36,6 @@ Ext4.define('LABKEY.vis.ChartsOptionsPanel', {
 
         var colOneItems = [];
         var colTwoItems = [];
-        var colThreeItems = [];
 
         this.subjectRadio = Ext4.create('Ext.form.field.Radio', {
             name: 'subject_selection',
@@ -51,12 +50,22 @@ Ext4.define('LABKEY.vis.ChartsOptionsPanel', {
                     if(checked){
                         this.oneChartPerGroupRadio.setVisible(false);
                         this.oneChartPerSubjectRadio.setVisible(true);
-                        if(this.oneChartPerGroupRadio.getValue()){
+
+                        if (this.oneChartPerGroupRadio.getValue())
+                        {
                             this.oneChartPerSubjectRadio.setValue(true);
-                        } else {
+                        }
+                        else
+                        {
                             this.hasChanges = true;
                             this.requireDataRefresh = true;
                         }
+
+                        this.displayIndividualCheckbox.disable();
+                        this.displayIndividualCheckbox.setValue(true);
+                        this.displayAggregateCheckbox.disable();
+                        this.displayAggregateCheckbox.setValue(false);
+                        this.displayErrorComboBox.setValue("None");
                     }
                 }
             }
@@ -70,15 +79,23 @@ Ext4.define('LABKEY.vis.ChartsOptionsPanel', {
             listeners: {
                 scope: this,
                 'change': function(cmp, checked){
-                    if(checked){
+                    if (checked)
+                    {
                         this.oneChartPerGroupRadio.setVisible(true);
                         this.oneChartPerSubjectRadio.setVisible(false);
-                        if(this.oneChartPerSubjectRadio.getValue()){
+
+                        if (this.oneChartPerSubjectRadio.getValue())
+                        {
                             this.oneChartPerGroupRadio.setValue(true);
-                        } else {
+                        }
+                        else
+                        {
                             this.hasChanges = true;
                             this.requireDataRefresh = true;
                         }
+
+                        this.displayIndividualCheckbox.enable();
+                        this.displayAggregateCheckbox.enable();
                     }
                 }
             }
@@ -92,6 +109,102 @@ Ext4.define('LABKEY.vis.ChartsOptionsPanel', {
             ]
         });
         colOneItems.push(this.subjectSelectionRadioGroup);
+
+        this.displayIndividualCheckbox = Ext4.create('Ext.form.field.Checkbox', {
+            boxLabel  : 'Show Individual Lines',
+            name      : 'Show Individual Lines',
+            checked   : this.displayIndividual,
+            value     : this.displayIndividual,
+            style     : {paddingLeft: '20px'}, // show indented
+            disabled  : this.chartSubjectSelection != 'groups',
+            listeners : {
+                change : function(cmp, checked){
+                    this.hasChanges = true;
+                    this.requireDataRefresh = true;
+                },
+                scope : this
+            }
+        });
+
+        this.displayAggregateCheckbox = Ext4.create('Ext.form.field.Checkbox', {
+            boxLabel  : 'Show Mean',
+            name      : 'Show Mean',
+            checked   : this.displayAggregate,
+            value     : this.displayAggregate,
+            width     : 125,
+            style     : {paddingLeft: '20px'}, // show indented
+            disabled  : this.chartSubjectSelection != 'groups',
+            listeners : {
+                change : function(cmp, checked){
+                    // enable/disable the aggregate combo box accordingly
+                    this.displayAggregateComboBox.setDisabled(!checked);
+                    this.displayErrorComboBox.setDisabled(!checked);
+                    if (!checked)
+                        this.displayErrorComboBox.setValue("None");
+
+                    this.hasChanges = true;
+                    this.requireDataRefresh = true;
+                },
+                scope : this
+            }
+        });
+
+        this.displayErrorComboBox = Ext4.create('Ext.form.field.ComboBox', {
+            triggerAction : 'all',
+            mode          : 'local',
+            store         : Ext4.create('Ext.data.ArrayStore', {
+                   fields : ['value'],
+                   data   : [['None'], ['SD'], ['SEM']]
+            }),
+            disabled      : !this.displayAggregate,
+            forceSelection: 'true',
+            editable: false,
+            valueField    : 'value',
+            displayField  : 'value',
+            value         : this.errorBars,
+            width         : 75,
+            listeners     : {
+                select    : function(){
+                    this.hasChanges = true;
+                    this.requireDataRefresh = true;
+                },
+                scope     : this
+            }
+        });
+
+        // combobox for selecting which aggregate to display when checkbox is selected
+        this.displayAggregateComboBox = Ext4.create('Ext.form.field.ComboBox', {
+            triggerAction : 'all',
+            mode          : 'local',
+            store         : Ext4.create('Ext.data.ArrayStore', {
+                   fields : ['value'],
+                   data   : [['Mean'], ['Count']]
+            }),
+            disabled      : !this.displayAggregate,
+            hideLabel     : true,
+            forceSelection: 'true',
+            valueField    : 'value',
+            displayField  : 'value',
+            value         : 'Mean',
+            width         : 75,
+            listeners     : {
+                select    : function(){
+                    this.hasChanges = true;
+                    this.requireDataRefresh = true;
+                },
+                scope     : this
+            }
+        });
+
+        colOneItems.push(this.displayIndividualCheckbox);
+        colOneItems.push({
+            xtype: 'fieldcontainer',
+            layout: 'hbox',
+            items: [
+                this.displayAggregateCheckbox,
+                this.displayErrorComboBox
+            ]
+        });       
 
         this.oneChartRadio = Ext4.create('Ext.form.field.Radio', {
             name: 'number_of_charts',
@@ -162,84 +275,23 @@ Ext4.define('LABKEY.vis.ChartsOptionsPanel', {
         });
         colTwoItems.push(this.oneChartPerDimensionRadio);
 
-        this.chartTitleTextField = Ext4.create('Ext.form.field.Text', {
-            name: 'chart-title-textfield',
-            labelAlign: 'top',
-            fieldLabel: 'Chart Title',
-            value: this.mainTitle,
-            anchor: '100%',
-            enableKeyEvents: true,
-            listeners: {
-                scope: this,
-                'change': function(cmp, newVal, oldVal) {
-                    this.userEditedTitle = true;
-                    this.hasChanges = true;
-                }
-            }
-        });
-        this.chartTitleTextField.addListener('keyUp', function(){
-            this.userEditedTitle = true;
-            this.hasChanges = true;
-        }, this, {buffer: 500});
-        colThreeItems.push(this.chartTitleTextField);
-
-        // slider field to set the line width for the chart(s)
-        this.lineWidthSlider = Ext4.create('Ext.slider.Single', {
-            anchor: '95%',
-            labelAlign: 'top',
-            fieldLabel: 'Line Width',
-            value: this.lineWidth || 3, // default to 3 if not specified
-            increment: 1,
-            minValue: 1,
-            maxValue: 10,
-            listeners: {
-                scope: this,
-                'changecomplete': function(cmp, newVal, thumb) {
-                    this.hasChanges = true;
-                }
-            }
-        });
-        colThreeItems.push(this.lineWidthSlider);
-
-        // checkbox to hide/show data points
-        this.hideDataPointCheckbox = Ext4.create('Ext.form.field.Checkbox', {
-            boxLabel: 'Hide Data Points',
-            hideLabel: true,
-            checked: this.hideDataPoints || false, // default to show data points
-            value: this.hideDataPoints || false, // default to show data points
-            listeners: {
-                scope: this,
-                'change': function(cmp, checked){
-                    this.hasChanges = true;
-                }
-            }
-        });
-        colThreeItems.push(this.hideDataPointCheckbox);
-
         this.items = [{
             border: false,
             layout: 'column',
             items:[
                 {
                     xtype: 'form',
-                    columnWidth: (1/3),
+                    columnWidth: 0.5,
                     border: false,
                     padding: 5,
                     items: [colOneItems]
                 },
                 {
                     xtype: 'form',
-                    columnWidth: (1/3),
+                    columnWidth: 0.5,
                     border: false,
                     padding: 5,
                     items: [colTwoItems]
-                },
-                {
-                    xtype: 'form',
-                    columnWidth: (1/3),
-                    padding: 5,
-                    border: false,
-                    items: [colThreeItems]
                 }
             ]
         }];
@@ -258,13 +310,6 @@ Ext4.define('LABKEY.vis.ChartsOptionsPanel', {
         this.callParent();
     },
 
-    setMainTitle: function(newMainTitle){
-        if (!this.userEditedTitle)
-        {
-            this.chartTitleTextField.setValue(newMainTitle);
-        }
-    },
-
     chartPerRadioChecked: function(field, checked){
         this.chartLayout = field.inputValue;
         this.hasChanges = true;
@@ -281,11 +326,12 @@ Ext4.define('LABKEY.vis.ChartsOptionsPanel', {
 
     getPanelOptionValues : function() {
         return {
-            title: this.chartTitleTextField.getValue(),
             chartLayout: this.chartLayout,
             chartSubjectSelection: this.getChartSubjectSelection(),
-            lineWidth: this.lineWidthSlider.getValue(),
-            hideDataPoints: this.hideDataPointCheckbox.getValue()
+            displayIndividual : this.displayIndividualCheckbox.getValue(),
+            displayAggregate : this.displayAggregateCheckbox.getValue(),   // TODO: make sure values are set properly when disabled
+            aggregateType : this.displayAggregateComboBox.getValue(),
+            errorBars : this.displayErrorComboBox.getValue()
         };
     },
 

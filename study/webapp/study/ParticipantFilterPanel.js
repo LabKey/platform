@@ -4,7 +4,7 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 LABKEY.requiresScript("study/ReportFilterPanel.js");
-LABKEY.requiresScript("extWidgets/FilterPanel.js");
+//LABKEY.requiresScript("extWidgets/FilterPanel.js");
 
 /**
  * @cfg displayMode Determines what type of filtering is supported, either 'PARTICIPANT', 'GROUP' or 'BOTH'.  If BOTH is used, a radiogroup will allow toggling between
@@ -34,6 +34,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                 {name : 'id'},
                 {name : 'label'},
                 {name : 'description'},
+                {name : 'participantIds'},
                 {name : 'type'}
             ]
         });

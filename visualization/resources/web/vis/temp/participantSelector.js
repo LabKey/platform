@@ -19,11 +19,6 @@ Ext4.define('LABKEY.vis.ParticipantSelector', {
             autoScroll: true
         });
 
-        Ext4.define('SimpleValue', {
-            extend: 'Ext.data.Model',
-            fields: [{name: 'value', type: 'string'}]
-        });
-
         this.callParent([config]);
 
         this.addEvents(
@@ -31,144 +26,69 @@ Ext4.define('LABKEY.vis.ParticipantSelector', {
             'measureMetadataRequestPending',
             'measureMetadataRequestComplete'
         );
+
+        // TODO: fix the issue with the ptid list hidden for saved chart with a measure dimension panel
     },
 
     getSubjectValues: function() {
-        // if the subjects gridpanel is already available, then return
-        if(this.subjectGridPanel){
+        if (this.ptidFilterPanel)
             return;
-        }
 
-        // store the subject info for use in the getDimensionValues call
-        var subjectInfo = {
-            name: this.subjectColumn,
-            schemaName: 'study',
-            queryName: this.subjectNounSingular
-        };
+        // TODO: do we want this deafult anymore? test with a large study
+//        this.defaultDisplayField = Ext4.create('Ext.form.field.Display', {
+//            hideLabel: true,
+//            hidden: true,
+//            width: 210,
+//            html: '<span style="font-size:75%;color:red;">Selecting 5 values by default</span>'
+//        });
+//        this.add(this.defaultDisplayField);
 
-        // this is the query/column we need to get the subject IDs for the selected measure
-        this.fireEvent('measureMetadataRequestPending');
-        Ext4.Ajax.request({
-            url : LABKEY.ActionURL.buildURL("visualization", "getDimensionValues", null, subjectInfo),
-            method:'GET',
-            disableCaching:false,
-            success : function(response, e){
-                this.renderSubjects(response, e);
-            },
-            failure: function(info, response, options) {LABKEY.Utils.displayAjaxErrorResponse(response, options);},
-            scope: this
-        });
-    },
-
-    renderSubjects: function(response, e) {
-        // decode the JSON responseText
-        var subjectValues = Ext4.decode(response.responseText);
-
-        // if this is not a saved chart with pre-selected values, initially select the first 5 values (after sorting)
-        this.selectDefault = false;
-        if(!this.subject.values){
-            this.selectDefault = true;
-
-            // sort the subject values
-            function compareValue(a, b) {
-                if (a.value < b.value) {return -1}
-                if (a.value > b.value) {return 1}
-                return 0;
-            }
-            subjectValues.values.sort(compareValue);
-
-            // select the first 5 values, or all if the length is less than 5
-            this.subject.values = [];
-            for (var i = 0; i < (subjectValues.values.length < 5 ? subjectValues.values.length : 5); i++)
-            {
-                this.subject.values.push(subjectValues.values[i].value);
-            }
-        }
-
-        this.defaultDisplayField = Ext4.create('Ext.form.field.Display', {
-            hideLabel: true,
-            hidden: true,
-            width: 210,
-            html: '<span style="font-size:75%;color:red;">Selecting 5 values by default</span>'
-        });
-        this.add(this.defaultDisplayField);
-
-        // selection model for subject series selector
-        var sm = Ext4.create('Ext.selection.CheckboxModel', {checkOnly: true});
-        sm.on('selectionchange', function(selModel){
-            // add the selected subjects to the subject object
-            this.subject.values = [];
-            var selectedRecords = selModel.getSelection();
-            for(var i = 0; i < selectedRecords.length; i++) {
-                this.subject.values.push(selectedRecords[i].get('value'));
-            }
-
-            // sort the selected subject array
-            this.subject.values.sort();
-
+        this.fireChangeTask = new Ext4.util.DelayedTask(function(){
             this.fireEvent('chartDefinitionChanged', true);
-        }, this, {buffer: 1000}); // buffer allows single event to fire if bulk changes are made within the given time (in ms)
+        }, this);
 
-        var ttRenderer = function(value, p, record) {
-            var msg = Ext4.util.Format.htmlEncode(value);
-            p.tdAttr = 'data-qtip="' + msg + '"';
-            return msg;
-        };
+        this.selection = [];
+        if (this.subject && this.subject.values)
+        {
+            Ext4.each(this.subject.values, function(val){
+                this.selection.push({type:'participant', id:val});
+            }, this);
+        }
 
-        // initialize the subject gridPanel with the subjectValues from the getDimensionValues call
-        this.subjectGridPanel = Ext4.create('Ext.grid.Panel', {
-            autoHeight: true,
-            viewConfig: {forceFit: true},
-            border: false,
-            frame: false,
-            selModel: sm,
-            header: false,
-            enableHdMenu: false,
-            store: Ext4.create('Ext.data.Store', {
-                model: 'SimpleValue',
-                proxy: {
-                    type: 'memory',
-                    reader: {
-                        type: 'json',
-                        root:'values',
-                        idProperty:'value'
-                    }
+        this.ptidFilterPanel = Ext4.create('LABKEY.study.ParticipantFilterPanel', {
+            displayMode: 'PARTICIPANT',
+            filterType: 'participant',
+            subjectNoun: {
+                singular : this.subjectNounSingular,
+                plural : this.subjectNounPlural,
+                columnName: this.subjectColumn
+            },
+            selection: this.selection,
+            listeners : {
+                selectionchange : function(){
+                    this.fireChangeTask.delay(1000); 
                 },
-                data: subjectValues,
-                sorters: {property: 'value', direction: 'ASC'}
-            }),
-            columns: [{header: this.subjectNounPlural, dataIndex:'value', renderer: ttRenderer, flex: 1}],
-            listeners: {
-                scope: this,
-                'viewready': function(grid){
-                    // show the selecting default text if necessary
-                    if(grid.getStore().getCount() > 5 && this.selectDefault){
-                        // show the display for 5 seconds before hiding it again
-                        var refThis = this;
-                        refThis.defaultDisplayField.show();
-                        setTimeout(function(){
-                            refThis.defaultDisplayField.hide();
-                        },5000);
-                        this.selectDefault = false;
-                    }
-
-                    // check selected subject values in grid panel (but suspend events during selection)
-                    sm.suspendEvents(false);
-                    for(var i = 0; i < this.subject.values.length; i++){
-                        var index = grid.getStore().find('value', this.subject.values[i]);
-                        sm.select(index, true);
-                    }
-                    sm.resumeEvents();
-                }
+                beforerender : function(){
+                    this.fireEvent('measureMetadataRequestPending');
+                },
+                initSelectionComplete : function(numSelected){
+                    this.fireEvent('measureMetadataRequestComplete');
+                },
+                scope : this
             }
-         });
-         this.add(this.subjectGridPanel);
-
-        // this is one of the requests being tracked, see if the rest are done
-        this.fireEvent('measureMetadataRequestComplete');
+        });
+        this.add(this.ptidFilterPanel);
     },
 
     getSubject: function(){
-        return this.subject;
+        var participants = [];
+        var selected = this.ptidFilterPanel.getSelection(true, false);
+        for (var i = 0; i < selected.length; i++)
+        {
+            if (selected[i].get('type') == 'participant')
+                participants.push(selected[i].get('id'));
+        }
+
+        return {values: participants};
     }
 });

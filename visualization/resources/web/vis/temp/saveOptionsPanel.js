@@ -123,7 +123,7 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
                         reportName: formVals.reportName,
                         reportDescription: formVals.reportDescription,
                         shared: shared,
-                        saveThumbnail: this.saveThumbnail,
+                        saveThumbnail: this.getSaveThumbnail(),
                         canSaveSharedCharts: this.canSaveSharedCharts(),
                         createdBy: this.createdBy
                     });
@@ -195,9 +195,13 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
         }
     },
 
+    getSaveThumbnail: function() {
+        return this.down('#reportSaveThumbnail').checked;
+    },
+
     getPanelOptionValues: function() {
         return {
-            saveThumbnail: this.down('#reportSaveThumbnail').checked
+            saveThumbnail: this.getSaveThumbnail()
         };
     }
 });

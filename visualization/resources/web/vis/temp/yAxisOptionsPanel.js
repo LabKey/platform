@@ -34,10 +34,6 @@ Ext4.define('LABKEY.vis.YAxisOptionsPanel', {
     },
 
     initComponent : function() {
-        // the y-axis editor panel will be laid out with 2 columns
-        var columnOneItems = [];
-        var columnTwoItems = [];
-
         // track if the panel has changed in a way that would require a chart refresh
         this.hasChanges = false;
 
@@ -51,6 +47,8 @@ Ext4.define('LABKEY.vis.YAxisOptionsPanel', {
             valueField: 'value',
             displayField: 'display',
             fieldLabel: 'Scale',
+            labelWidth: 75,
+            width: 165,
             value: this.axis.scale,
             forceSelection: true,
             editable: false,
@@ -61,17 +59,17 @@ Ext4.define('LABKEY.vis.YAxisOptionsPanel', {
                 }
             }
         });
-        columnOneItems.push(this.scaleCombo);
 
         this.labelTextField = Ext4.create('Ext.form.field.Text', {
             fieldLabel: 'Axis label',
+            labelWidth: 75,
+            anchor: '100%',
             value: this.axis.label,
-            width: 300,
             enableKeyEvents: true,
             listeners: {
                 scope: this,
                 'change': function(cmp, newVal, oldVal) {
-                    this.userEditedLabel = true;
+//                    this.userEditedLabel = true;
                     this.hasChanges = true;
                 }
             }
@@ -80,7 +78,6 @@ Ext4.define('LABKEY.vis.YAxisOptionsPanel', {
                 this.userEditedLabel = true;
                 this.hasChanges = true;
             }, this, {buffer: 500});
-        columnOneItems.push(this.labelTextField);
 
         this.rangeAutomaticRadio = Ext4.create('Ext.form.field.Radio', {
             fieldLabel: 'Range',
@@ -99,9 +96,10 @@ Ext4.define('LABKEY.vis.YAxisOptionsPanel', {
                 }
             }
         });
-        columnTwoItems.push(this.rangeAutomaticRadio);
 
         this.rangeManualRadio = Ext4.create('Ext.form.field.Radio', {
+            fieldLabel: 'Range',
+            hideLabel: true,
             inputValue: 'manual',
             boxLabel: 'Manual',
             width: 85,
@@ -120,6 +118,7 @@ Ext4.define('LABKEY.vis.YAxisOptionsPanel', {
         });
 
         this.rangeMinNumberField = Ext4.create('Ext.form.field.Number', {
+            name: 'yaxis_rangemin', // for selenium test usage
             emptyText: 'Min',
             selectOnFocus: true,
             enableKeyEvents: true,
@@ -128,10 +127,17 @@ Ext4.define('LABKEY.vis.YAxisOptionsPanel', {
             disabled: this.axis.range.type == "automatic",
             value: this.axis.range.min,
             hideTrigger: true,
-            mouseWheelEnabled: false
+            mouseWheelEnabled: false,
+            listeners: {
+                scope: this,
+                'change': function(){
+                    this.hasChanges = true;
+                }
+            }
         });
 
         this.rangeMaxNumberField = Ext4.create('Ext.form.field.Number', {
+            name: 'yaxis_rangemax', // for selenium test usage
             emptyText: 'Max',
             selectOnFocus: true,
             enableKeyEvents: true,
@@ -140,36 +146,29 @@ Ext4.define('LABKEY.vis.YAxisOptionsPanel', {
             disabled: this.axis.range.type == "automatic",
             value: this.axis.range.max,
             hideTrigger: true,
-            mouseWheelEnabled: false
+            mouseWheelEnabled: false,
+            listeners: {
+                scope: this,
+                'change': function(){
+                    this.hasChanges = true;
+                }
+            }
         });
 
-        columnTwoItems.push({
-            xtype: 'fieldcontainer',
-            layout: 'hbox',
-            items: [
-                this.rangeManualRadio,
-                this.rangeMinNumberField,
-                this.rangeMaxNumberField
-            ]
-        });
-
-        this.items = [{
-            border: false,
-            layout: 'column',
-            items: [{
-                columnWidth: .5,
-                xtype: 'form',
-                border: false,
-                padding: 5,
-                items: columnOneItems
-            },{
-                columnWidth: .5,
-                xtype: 'form',
-                border: false,
-                padding: 5,
-                items: columnTwoItems
-            }]
-        }];
+        this.items = [
+            this.labelTextField,
+            this.scaleCombo,
+            this.rangeAutomaticRadio,
+            {
+                xtype: 'fieldcontainer',
+                layout: 'hbox',
+                items: [
+                    this.rangeManualRadio,
+                    this.rangeMinNumberField,
+                    this.rangeMaxNumberField
+                ]
+            }
+        ];
 
         this.buttons = [{
             text: 'Apply',

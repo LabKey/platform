@@ -76,6 +76,8 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
 
         this.addEvents(
             'chartDefinitionChanged',
+            'measureMetadataRequestPending',
+            'measureMetadataRequestComplete',
             'filterCleared'
         );
     },
@@ -479,13 +481,16 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
         this.yAxisSide.setValue(this.measures[measureIndex].measure.yAxis);
     },
 
-    setMeasureDateStore: function(measure, measureIndex){
+    setMeasureDateStore: function(measure, measureIndex, toFireEvent){
+        if (toFireEvent)
+            this.fireEvent('measureMetadataRequestPending');        
+
         // add a store for measureDateCombo to a measure.
-        this.measures[measureIndex].dateColStore = this.newMeasureDateStore(measure, measureIndex);
+        this.measures[measureIndex].dateColStore = this.newMeasureDateStore(measure, measureIndex, toFireEvent);
         this.measureDateCombo.bindStore(this.measures[measureIndex].dateColStore);
     },
 
-    newMeasureDateStore: function(measure, measureIndex) {
+    newMeasureDateStore: function(measure, measureIndex, toFireEvent) {
         return Ext4.create('Ext.data.Store', {
             model: 'DimensionValue',
             proxy: {
@@ -540,6 +545,10 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                         this.measureDateCombo.setValue(store.getAt(index).get('name'));
                         this.measures[measureIndex].dateCol = Ext4.apply({}, store.getAt(index).data);
                     }
+
+                    // this is one of the requests being tracked, see if the rest are done
+                    if (toFireEvent)
+                        this.fireEvent('measureMetadataRequestComplete');
                 }
             }
         });
@@ -560,7 +569,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                     this.measuresStoreData = data;
                 },
                 'measuresSelected': function (records, userSelected){
-                    this.addMeasure(records[0].data);
+                    this.addMeasure(records[0].data, false);
                     this.hasChanges = true;
                     this.requireDataRefresh = true;
                     win.hide();
@@ -573,7 +582,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
         win.show(this);
     },
 
-    addMeasure: function(newMeasure){
+    addMeasure: function(newMeasure, initialMeasure){
         // add the measure to this
         newMeasure.yAxis = newMeasure.yAxis || "left";
         this.measures.push({
@@ -587,8 +596,8 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
         });
 
         var measureIndex = this.measures.length - 1;
-        this.setDimensionStore(measureIndex);
-        this.setMeasureDateStore(newMeasure, measureIndex);
+        this.setDimensionStore(measureIndex, initialMeasure);
+        this.setMeasureDateStore(newMeasure, measureIndex, initialMeasure);
         this.setYAxisSide(measureIndex);
 
         // reload the measure listview store and select the new measure (last index)
@@ -626,7 +635,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
         }
     },
 
-    newDimensionStore: function(measure, dimension) {
+    newDimensionStore: function(measure, dimension, toFireEvent) {
         return Ext4.create('Ext.data.Store', {
             model: 'DimensionValue',
             proxy: {
@@ -653,6 +662,10 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                     }
 
                     this.toggleDimensionOptions(dimension.name, measure.aggregate);
+
+                    // this is one of the requests being tracked, see if the rest are done
+                    if (toFireEvent)
+                        this.fireEvent('measureMetadataRequestComplete');
                 }
             }
         })
@@ -704,6 +717,14 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                 // decode the JSON responseText
                 var dimensionValues = Ext4.decode(response.responseText);
 
+                // sort the dimension values in ascending order
+                function compareValues(a, b) {
+                    if (a.value < b.value) {return -1}
+                    if (a.value > b.value) {return 1}
+                    return 0;
+                }
+                dimensionValues.values.sort(compareValues);
+
                 this.defaultDisplayField = Ext4.create('Ext.form.field.Display', {
                     hideLabel: true,
                     hidden: true,
@@ -736,6 +757,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                 this.measures[index].dimensionSelectorPanel = Ext4.create('Ext.panel.Panel', {
                     title: dimension.label,
                     border: false,
+                    cls: 'report-filter-panel',
                     autoScroll: true,
                     items: [
                         this.defaultDisplayField,
@@ -752,15 +774,20 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                                         idProperty:'value'
                                     }
                                 },
-                                data: dimensionValues,
-                                sorters: {property: 'value', direction: 'ASC'}
+                                data: dimensionValues
                             }),
                             viewConfig: {forceFit: true},
+                            sortableColumns: false,
                             border: false,
                             frame: false,
-                            columns: [
-                                {header: dimension.label, dataIndex:'value', renderer: ttRenderer, flex: 1}
-                            ],
+                            columns: [{    // TODO: fix styling for the ALL column header background and hover colors
+                                text: 'All',
+                                dataIndex:'value',
+                                menuDisabled: true,
+                                resizable: false,
+                                renderer: ttRenderer,
+                                flex: 1
+                            }],
                             selModel: sm,
                             header: false,
                             listeners: {
@@ -807,10 +834,6 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                     ]
                 });
 
-                // if there is an active filter panel item, collapse it
-                if (this.filtersParentPanel.layout.activeItem)
-                    this.filtersParentPanel.layout.activeItem.collapse();
-
                 this.filtersParentPanel.add(this.measures[index].dimensionSelectorPanel);
                 this.measures[index].dimensionSelectorPanel.expand();
             },
@@ -842,14 +865,14 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
     initializeDimensionStores: function(){
         for(var i = 0; i < this.measures.length; i++){
             if (!this.measures[i].dimensionStore)
-                this.setDimensionStore(i);
+                this.setDimensionStore(i, false);
 
             if(!this.measures[i].dateColStore)
-                this.setMeasureDateStore(this.measures[i].measure, i);
+                this.setMeasureDateStore(this.measures[i].measure, i, false);
         }
     },
 
-    setDimensionStore: function(index){
+    setDimensionStore: function(index, toFireEvent){
         if (this.measures[index])
         {
             var measure = this.measures[index].measure;
@@ -862,7 +885,9 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                 this.setPerDimensionRadioWithoutEvents();
 
             // initialize the dimension store and bind it to the combobox
-            this.measures[index].dimensionStore = this.newDimensionStore(measure, dimension);
+            if (toFireEvent)
+                this.fireEvent('measureMetadataRequestPending');
+            this.measures[index].dimensionStore = this.newDimensionStore(measure, dimension, toFireEvent);
             this.measureDimensionComboBox.bindStore(this.measures[index].dimensionStore);
 
             // if this is a saved chart with a dimension selected, show dimension selector tab

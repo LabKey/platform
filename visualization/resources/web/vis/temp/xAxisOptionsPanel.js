@@ -306,6 +306,7 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
         });
 
         this.rangeMinNumberField = Ext4.create('Ext.form.field.Number', {
+            name: 'xaxis_rangemin', // for selenium test usage
             emptyText: 'Min',
             selectOnFocus: true,
             enableKeyEvents: true,
@@ -314,10 +315,17 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
             disabled: this.axis.range.type == "automatic" || this.time == "visit",
             value: this.axis.range.min,
             hideTrigger: true,
-            mouseWheelEnabled: false
+            mouseWheelEnabled: false,
+            listeners: {
+                scope: this,
+                'change': function(){
+                    this.hasChanges = true;
+                }
+            }
         });
 
         this.rangeMaxNumberField = Ext4.create('Ext.form.field.Number', {
+            name: 'xaxis_rangemax', // for selenium test usage
             emptyText: 'Max',
             selectOnFocus: true,
             enableKeyEvents: true,
@@ -326,7 +334,13 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
             disabled: this.axis.range.type == "automatic" || this.time == "visit",
             value: this.axis.range.max,
             hideTrigger: true,
-            mouseWheelEnabled: false
+            mouseWheelEnabled: false,
+            listeners: {
+                scope: this,
+                'change': function(){
+                    this.hasChanges = true;
+                }
+            }
         });
 
         this.rangeCompositeField = Ext4.create('Ext.form.FieldContainer', {

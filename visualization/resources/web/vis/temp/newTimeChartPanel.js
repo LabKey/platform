@@ -6,17 +6,6 @@
 
 Ext4.namespace("LABKEY.vis");
 
-LABKEY.requiresScript("vis/temp/genericOptionsPanel.js");
-LABKEY.requiresScript("vis/temp/initialMeasurePanel.js");
-LABKEY.requiresScript("vis/temp/saveOptionsPanel.js");
-LABKEY.requiresScript("vis/temp/measureOptionsPanel.js");
-LABKEY.requiresScript("vis/temp/yAxisOptionsPanel.js");
-LABKEY.requiresScript("vis/temp/xAxisOptionsPanel.js");
-LABKEY.requiresScript("vis/temp/chartsOptionsPanel.js");
-LABKEY.requiresScript("vis/temp/statisticsOptionsPanel.js");
-LABKEY.requiresScript("vis/temp/participantSelector.js");
-LABKEY.requiresScript("vis/temp/groupSelector.js");
-
 LABKEY.requiresCss("_images/icons.css");
 
 Ext4.tip.QuickTipManager.init();
@@ -138,7 +127,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                                 this.editorMeasurePanel.setMeasuresStoreData(data);
                             },
                             'initialMeasureSelected': function(initMeasure) {
-                                this.editorMeasurePanel.addMeasure(initMeasure);
+                                this.editorMeasurePanel.addMeasure(initMeasure, true);
                                 this.measureSelectionChange(false);
                             }
                         }
@@ -152,7 +141,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         var items = [];
 
-        this.subjectSelector = Ext4.create('LABKEY.vis.ParticipantSelector', {
+        this.participantSelector = Ext4.create('LABKEY.vis.ParticipantSelector', {
             subject: (this.chartInfo.chartSubjectSelection != "groups" ? this.chartInfo.subject : {}),
             subjectNounPlural: this.viewInfo.subjectNounPlural,
             subjectNounSingular: this.viewInfo.subjectNounSingular,
@@ -175,6 +164,9 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         this.groupsSelector = Ext4.create('LABKEY.vis.GroupSelector', {
             subject: (this.chartInfo.chartSubjectSelection == "groups" ? this.chartInfo.subject : {}),
+            subjectNounPlural: this.viewInfo.subjectNounPlural,
+            subjectNounSingular: this.viewInfo.subjectNounSingular,
+            subjectColumn: this.viewInfo.subjectColumn,
             collapsed: this.chartInfo.chartSubjectSelection != "groups",
             listeners: {
                 scope: this,
@@ -185,7 +177,9 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     else{
                         this.loaderFn();
                     }
-                }
+                },
+                'measureMetadataRequestPending': this.measureMetadataRequestPending,
+                'measureMetadataRequestComplete': this.measureMetadataRequestComplete
             }
         });
 
@@ -201,7 +195,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             title: 'Filters',
             titleCollapse: true,
             items: [
-                this.subjectSelector,
+                this.participantSelector,
                 this.groupsSelector
             ],
             listeners: {
@@ -244,7 +238,9 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     {
                         this.loaderFn();
                     }
-                }
+                },
+                'measureMetadataRequestPending': this.measureMetadataRequestPending,
+                'measureMetadataRequestComplete': this.measureMetadataRequestComplete
             }
         });
 
@@ -313,20 +309,20 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.editorYAxisRightPanel.rangeAutomaticRadio.name = "rightaxis_range";
         this.editorYAxisRightPanel.labelTextField.name = "right-axis-label-textfield";
 
-        this.editorChartsPanel = Ext4.create('LABKEY.vis.ChartsOptionsPanel', {
+        this.editorGroupingPanel = Ext4.create('LABKEY.vis.GroupingOptionsPanel', {
             chartLayout: this.chartInfo.chartLayout,
             chartSubjectSelection: this.chartInfo.chartSubjectSelection,
-            mainTitle: this.chartInfo.title,
-            lineWidth: this.chartInfo.lineWidth,
-            hideDataPoints: this.chartInfo.hideDataPoints,
             subjectNounSingular: this.viewInfo.subjectNounSingular,
             subjectNounPlural: this.viewInfo.subjectNounPlural,
+            displayIndividual: this.chartInfo.displayIndividual != undefined ? this.chartInfo.displayIndividual : true,
+            displayAggregate: this.chartInfo.displayAggregate != undefined ? this.chartInfo.displayAggregate : false,
+            errorBars: this.chartInfo.errorBars != undefined ? this.chartInfo.errorBars : "None",
             bubbleEvents: ['closeOptionsWindow'],
             listeners: {
                 scope: this,
                 'chartDefinitionChanged': function(requiresDataRefresh){
-                    if(this.editorChartsPanel.groupLayoutChanged == true){
-                        this.editorChartsPanel.groupLayoutChanged = false;
+                    if(this.editorGroupingPanel.groupLayoutChanged == true){
+                        this.editorGroupingPanel.groupLayoutChanged = false;
                     }
                     if(requiresDataRefresh){
                         this.refreshChart.delay(100);
@@ -339,10 +335,9 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             }
         });
 
-        this.editorStatisticsPanel = Ext4.create('LABKEY.vis.StatisticsOptionsPanel', {
-            displayIndividual: this.chartInfo.displayIndividual != undefined ? this.chartInfo.displayIndividual : true,
-            displayAggregate: this.chartInfo.displayAggregate != undefined ? this.chartInfo.displayAggregate : false,
-            errorBars: this.chartInfo.errorBars != undefined ? this.chartInfo.errorBars : "None",
+        this.editorAestheticsPanel = Ext4.create('LABKEY.vis.AestheticOptionsPanel', {
+            lineWidth: this.chartInfo.lineWidth,
+            hideDataPoints: this.chartInfo.hideDataPoints,
             bubbleEvents: ['closeOptionsWindow'],
             listeners: {
                 scope: this,
@@ -356,6 +351,34 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 }
             }
         });
+
+        this.editorMainTitlePanel = Ext4.create('LABKEY.vis.MainTitleOptionsPanel', {
+            mainTitle: this.chartInfo.title,
+            bubbleEvents: ['closeOptionsWindow'],
+            listeners: {
+                scope: this,
+                'chartDefinitionChanged': function(requiresDataRefresh){
+                    if(requiresDataRefresh){
+                        this.refreshChart.delay(100);
+                    }
+                    else{
+                        this.loaderFn();
+                    }
+                }
+            }
+        });
+
+        // put the options panels in an array for easier access
+        this.optionPanelsArray = [
+                this.editorMeasurePanel,
+                this.editorGroupingPanel,
+                this.editorAestheticsPanel,
+                this.editorMainTitlePanel,
+                this.editorXAxisPanel,
+                this.editorYAxisLeftPanel,
+                this.editorYAxisRightPanel,
+                this.editorSavePanel
+        ];
 
         this.loaderFn = this.renderLineChart;  // default is to show the chart
         this.loaderName = 'renderLineChart';
@@ -375,7 +398,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             hidden: true,
             scope: this
         });
-        this.exportPdfSingleBtn = new Ext4.create('Ext.button.Button', {
+        this.exportPdfSingleBtn = Ext4.create('Ext.button.Button', {
             text: 'Export PDF',
             disabled: true,
             scope: this
@@ -383,25 +406,34 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         // setup buttons for the charting options panels (items to be added to the toolbar)
         this.measuresButton = Ext4.create('Ext.button.Button', {text: 'Measures', disabled: true,
-                                handler: function(){this.showOptionsWindow(this.editorMeasurePanel);}, scope: this});
-        this.chartsButton = Ext4.create('Ext.button.Button', {text: 'Chart(s)', disabled: true,
-                                handler: function(){this.showOptionsWindow(this.editorChartsPanel);}, scope: this});
-        this.xAxisButton = Ext4.create('Ext.button.Button', {text: 'X-Axis', disabled: true,
-                                handler: function(){this.showOptionsWindow(this.editorXAxisPanel);}, scope: this});
-        this.leftAxisButton = Ext4.create('Ext.button.Button', {text: 'Left-Axis', disabled: true,
-                                handler: function(){this.showOptionsWindow(this.editorYAxisLeftPanel, 700);}, scope: this});
-        this.rightAxisButton = Ext4.create('Ext.button.Button', {text: 'Right-Axis', disabled: true,
-                                handler: function(){this.showOptionsWindow(this.editorYAxisRightPanel, 700);}, scope: this});
-        this.statisticsButton = Ext4.create('Ext.button.Button', {text: 'Statistics', disabled: true,
-                                handler: function(){this.showOptionsWindow(this.editorStatisticsPanel, 220);}, scope: this});
+                                handler: function(btn){this.optionsButtonClicked(btn, this.editorMeasurePanel, 860, 250, 'center');}, scope: this});
 
-        this.saveButton = Ext4.create('Ext.button.Button', {text: 'Save', disabled: true, hidden: !this.canEdit, handler: function(){
+        this.groupingButton = Ext4.create('Ext.button.Button', {text: 'Grouping', disabled: true,
+                                handler: function(btn){this.optionsButtonClicked(btn, this.editorGroupingPanel, 600, 210, 'center');}, scope: this});
+
+        this.aestheticsButton = Ext4.create('Ext.button.Button', {text: 'Options', disabled: true,
+                                handler: function(btn){this.optionsButtonClicked(btn, this.editorAestheticsPanel, 300, 135, 'center');}, scope: this});
+
+        this.xAxisButton = Ext4.create('Ext.button.Button', {text: 'X-Axis', disabled: true,
+                                handler: function(btn){this.optionsButtonClicked(btn, this.editorXAxisPanel, 860, 250, 'center');}, scope: this});
+
+        this.leftAxisButton = Ext4.create('Ext.button.Button', {text: 'Left-Axis', disabled: true,
+                                handler: function(btn){this.optionsButtonClicked(btn, this.editorYAxisLeftPanel, 320, 220, 'center');}, scope: this});
+
+        this.rightAxisButton = Ext4.create('Ext.button.Button', {text: 'Right-Axis', disabled: true,
+                                handler: function(btn){this.optionsButtonClicked(btn, this.editorYAxisRightPanel, 320, 220, 'center');}, scope: this});
+
+        this.mainTitleButton = Ext4.create('Ext.button.Button', {text: 'Main Title', disabled: true,
+                                handler: function(btn){this.optionsButtonClicked(btn, this.editorMainTitlePanel, 300, 130, 'center');}, scope: this});        
+
+        this.saveButton = Ext4.create('Ext.button.Button', {text: 'Save', disabled: true, hidden: !this.canEdit, handler: function(btn){
                                 this.editorSavePanel.setSaveAs(false);
-                                this.showOptionsWindow(this.editorSavePanel);
+                                this.optionsButtonClicked(btn, this.editorSavePanel, 850, 200, 'right');
                         }, scope: this});
-        this.saveAsButton = Ext4.create('Ext.button.Button', {text: 'Save AS', disabled: true, hidden: !this.editorSavePanel.isSavedReport(), handler: function(){
+
+        this.saveAsButton = Ext4.create('Ext.button.Button', {text: 'Save AS', disabled: true, hidden: !this.editorSavePanel.isSavedReport(), handler: function(btn){
                                 this.editorSavePanel.setSaveAs(true);
-                                this.showOptionsWindow(this.editorSavePanel);
+                                this.optionsButtonClicked(btn, this.editorSavePanel, 850, 200, 'right');
                         }, scope: this});
 
         this.chart = Ext4.create('Ext.panel.Panel', {
@@ -415,11 +447,13 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     this.exportPdfSingleBtn,
                     this.exportPdfMenuBtn,
                     this.measuresButton,
-                    this.chartsButton,
+                    this.groupingButton,
+                    this.aestheticsButton,
+                    '-',
                     this.xAxisButton,
                     this.leftAxisButton,
                     this.rightAxisButton,
-                    this.statisticsButton,
+                    this.mainTitleButton,
                     '->',
                     this.saveButton,
                     this.saveAsButton
@@ -458,45 +492,98 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         }
     },
 
-    showOptionsWindow : function(panel, width) {
-        var optionWindow = Ext4.create('Ext.window.Window', {
-            floating: true,
-            cls: 'extContainer',
-            bodyStyle: 'background-color: white;',
-            padding: 10,
-            header: false,
-            frame: true,
-            closable: false,
-            shadow: false,
-            layout: 'fit',
-            width: width || 850,
-            autoHeight: true,
-            modal: true,
-            closeAction: 'hide',
-            items: [panel],
-            listeners: {
-                'closeOptionsWindow': function() {     // TODO: fix the z-index issue with reshowing combobox in window
-                    optionWindow.close();
-                },
-                scope: this
-            }
-        });
-        optionWindow.show(this);
+    optionsButtonClicked : function(button, panel, width, height, align) {
+        var pos = button.getPosition();
+        var pLeft = pos[0];
+        var pTop = pos[1];
+
+        if (align == 'center')
+            pLeft = pLeft - width/2 + button.getWidth()/2;
+        else if (align == 'right')
+            pLeft = pLeft - width + button.getWidth();
+
+        this.showOptionsWindow(button, panel, width, height, pLeft, pTop);
+    },
+
+    chartElementClicked : function(panel, clickXY, width, height, align) {
+        var pLeft = clickXY[0];
+        var pTop = clickXY[1];
+
+        if (align == 'above')
+        {
+            pLeft = pLeft - width/2;
+            pTop = pTop - height - 10;
+        }
+        else if (align == 'below')
+        {
+            pLeft = pLeft - width/2;
+            pTop = pTop + 5;
+        }
+        else if (align == 'right')
+        {
+            pLeft = pLeft - width - 10;
+            pTop = pTop - height/2;
+        }
+        else if (align == 'left')
+        {
+            pLeft = pLeft + 10;
+            pTop = pTop - height/2;
+        }
+
+        this.showOptionsWindow(this.chart, panel, width, height, pLeft, pTop);
+    },
+
+    showOptionsWindow : function(animateTarget, panel, width, height, positionLeft, positionTop) {
+        if (!this.optionWindow)
+        {
+            this.optionWindow = Ext4.create('Ext.window.Window', {
+                floating: true,
+                cls: 'extContainer',
+                bodyStyle: 'background-color: white;',
+                padding: 10,
+                header: false,
+                frame: true,
+                closable: false,
+                shadow: false,
+                width: 860,
+                height: 250,
+                modal: true,
+                closeAction: 'hide',
+                layout: 'card',
+                items: this.optionPanelsArray,
+                listeners: {
+                    'closeOptionsWindow': function() {     
+                        this.optionWindow.close();
+                    },
+                    scope: this
+                }
+            });
+        }
+
+        this.optionWindow.setSize(width, height);
+        this.optionWindow.setPosition(positionLeft, positionTop, false);
+
+        this.optionWindow.show(animateTarget);
+        this.optionWindow.getLayout().setActiveItem(panel);
     },
 
     setOptionsForGroupLayout : function(groupLayoutSelected){
+        // if the filters panel is collapsed, first open it up so the user sees that the filter options have changed
+        if (this.filtersPanel.collapsed)
+            this.filtersPanel.expand();
+
         if (groupLayoutSelected)
         {
-            this.subjectSelector.hide();
+            this.participantSelector.hide();
             this.groupsSelector.show();
-            this.statisticsButton.enable();
         }
         else
         {
             this.groupsSelector.hide();
-            this.subjectSelector.show();
-            this.statisticsButton.disable();
+            this.participantSelector.show();
         }
+
+        // TODO: issue with switching layout type with filters panel collapsed
     },
 
     resizeToViewport : function(w,h) {
@@ -525,14 +612,14 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         // these method calls should only be made for chart initialization
         // (i.e. showing saved chart or first measure selected for new chart)
         if(!fromMeasurePanel){
-            this.subjectSelector.getSubjectValues();
+            this.participantSelector.getSubjectValues();
             this.editorXAxisPanel.setZeroDateStore();
         }
 
         // these method calls should be made for all measure selections
         this.editorYAxisLeftPanel.setLabel(this.editorMeasurePanel.getDefaultLabel("left"));
         this.editorYAxisRightPanel.setLabel(this.editorMeasurePanel.getDefaultLabel("right"));
-        this.editorChartsPanel.setMainTitle(this.editorMeasurePanel.getDefaultTitle());
+        this.editorMainTitlePanel.setMainTitle(this.editorMeasurePanel.getDefaultTitle());
 
         // if all of the measures have been removed, disable any non-relevant elements
         if (this.editorMeasurePanel.getNumMeasures() == 0)
@@ -543,18 +630,21 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
     enableOptionButtons: function(){
         this.measuresButton.enable();
-        this.chartsButton.enable();
+        this.groupingButton.enable();
+        this.aestheticsButton.enable();
         this.xAxisButton.enable();
+        this.mainTitleButton.enable();
         this.saveButton.enable();
         this.saveAsButton.enable();
     },
 
     disableNonMeasureOptionButtons: function(){
-        this.chartsButton.disable();
+        this.groupingButton.disable();
+        this.aestheticsButton.disable();
         this.xAxisButton.disable();
         this.leftAxisButton.disable();
         this.rightAxisButton.disable();
-        this.statisticsButton.disable();
+        this.mainTitleButton.disable();
 
         this.exportPdfMenuBtn.disable();
         this.exportPdfSingleBtn.disable();
@@ -564,11 +654,12 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
     disableOptionElements: function(){
         this.measuresButton.disable();
-        this.chartsButton.disable();
+        this.groupingButton.disable();
+        this.aestheticsButton.disable();
         this.xAxisButton.disable();
         this.leftAxisButton.disable();
         this.rightAxisButton.disable();
-        this.statisticsButton.disable();
+        this.mainTitleButton.disable();
         this.saveButton.disable();
         this.saveAsButton.disable();
         this.filtersPanel.disable();
@@ -735,11 +826,22 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         simplified.hideDataPoints = config.hideDataPoints;
         simplified.lineWidth = config.lineWidth;
         simplified.saveThumbnail = config.saveThumbnail;
-        simplified.subject = config.subject;
         simplified.title = config.title;
 
+        // compare subject groups by labels and participantIds (not id and created date)
+        simplified.subject = config.subject;
+        if (simplified.subject.groups)
+        {
+            for(var i = 0; i < simplified.subject.groups.length; i++)
+            {
+                delete simplified.subject.groups[i].id;
+                delete simplified.subject.groups[i].created;
+            }
+        }
+
         simplified.measures = [];
-        for(var i = 0; i < config.measures.length; i++){
+        for (var i = 0; i < config.measures.length; i++)
+        {
             var measure = {};
             measure = config.measures[i]
             //Delete id's, they're just for the Ext components ordering.
@@ -1270,13 +1372,55 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             }
         }
 
+        // functions to call on click of axis labels to open the options panel (need to be closures to correctly handle scoping of this)
+        var xAxisLabelClickFn = function(scopedThis){
+            return function(event){
+                scopedThis.chartElementClicked(scopedThis.editorXAxisPanel, [event.clientX, event.clientY], 860, 250, 'above');
+            }
+        };
+        var yAxisLeftLabelClickFn = function(scopedThis){
+            return function(event){
+                scopedThis.chartElementClicked(scopedThis.editorYAxisLeftPanel, [event.clientX, event.clientY], 320, 220, 'left');
+            }
+        };
+        var yAxisRightLabelClickFn = function(scopedThis){
+            return function(event){
+                scopedThis.chartElementClicked(scopedThis.editorYAxisRightPanel, [event.clientX, event.clientY], 320, 220, 'right');
+            }
+        };
+        var mainTitleClickFn = function(scopedThis){
+            return function(event){
+                scopedThis.chartElementClicked(scopedThis.editorMainTitlePanel, [event.clientX, event.clientY], 300, 130, 'below');
+            }
+        };
+
         var plotConfig = {
             renderTo: newChartDiv.getId(),
             labels: {
-                main: {value: mainTitle},
-                x: {value: xTitle},
-                yLeft: {value: yLeftTitle},
-                yRight: {value: yRightTitle}
+                main: {
+                    value: mainTitle,
+                    listeners: {
+                        click: mainTitleClickFn(this)
+                    }
+                },
+                x: {
+                    value: xTitle,
+                    listeners: {
+                        click: xAxisLabelClickFn(this)
+                    }
+                },
+                yLeft: {
+                    value: yLeftTitle,
+                    listeners: {
+                        click: yAxisLeftLabelClickFn(this)
+                    }
+                },
+                yRight: {
+                    value: yRightTitle,
+                    listeners: {
+                        click: yAxisRightLabelClickFn(this)
+                    }
+                }
             },
             layers: layers,
             aes: {
@@ -1463,8 +1607,14 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
     getChartInfoFromOptionPanels: function(){
         var config = {};
 
-        // get the chart layout information
-        Ext4.apply(config, this.editorChartsPanel.getPanelOptionValues());
+        // get the chart grouping information
+        Ext4.apply(config, this.editorGroupingPanel.getPanelOptionValues());
+
+        // get the chart aesthetic options information
+        Ext4.apply(config, this.editorAestheticsPanel.getPanelOptionValues());
+
+        // get the main title from the option panel
+        Ext4.apply(config, this.editorMainTitlePanel.getPanelOptionValues());
 
         // get the measure panel information
         var measurePanelValues = this.editorMeasurePanel.getPanelOptionValues();
@@ -1481,7 +1631,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         if (config.chartSubjectSelection == 'groups')
             config.subject = this.groupsSelector.getSubject();
         else
-            config.subject = this.subjectSelector.getSubject();
+            config.subject = this.participantSelector.getSubject();
 
         // get the x-axis information (including zero date column info)
         var xAxisValues = this.editorXAxisPanel.getPanelOptionValues();
@@ -1530,12 +1680,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 queryName: config.measures[0].measure.queryName
             });
         }
-
-        // get the statistics/aggregate information (dependent on the enabled state of the statistics button
-        var values = this.editorStatisticsPanel.getPanelOptionValues();
-        config.displayIndividual = this.statisticsButton.disabled || (!this.statisticsButton.disabled && values.displayIndividual);
-        config.displayAggregate = !this.statisticsButton.disabled && values.displayAggregate;
-        config.errorBars = this.statisticsButton.disabled ? "None" : values.errorBars;
 
         return config;
     },

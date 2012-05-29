@@ -25,7 +25,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
     layout : 'fit',
     border : false,
     frame  : false,
-    bubbleEvents : ['select', 'selectionchange', 'itemmouseenter', 'itemmouseleave'],
+    bubbleEvents : ['select', 'selectionchange', 'itemmouseenter', 'itemmouseleave', 'initSelectionComplete'],
 
     initComponent : function() {
         Ext4.applyIf(this, {
@@ -33,6 +33,8 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
             idField: 'id',
             bodyStyle: 'padding-bottom: 10px;'
         });
+
+        this.addEvents('initSelectionComplete');
 
         this.items = [];
 
@@ -194,6 +196,11 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
             target.getSelectionModel().deselectAll();
             for (var s=0; s < this.selection.length; s++) {
                 var rec = target.getStore().findRecord('id', this.selection[s].id);
+
+                // if no matching record by id, try to find a matching record by label (just for initial selection)
+                if (!rec && this.selection[s].label)
+                    rec = target.getStore().findRecord('label', this.selection[s].label);
+
                 if (rec)
                 {
                     // Compare ID && Label if dealing with virtual groups (e.g. not in cohorts, etc)
@@ -205,6 +212,9 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
         }
 
         target.resumeEvents();
+
+        // fire event to tell the panel the initial selection is compelete, return the number of selected records
+        this.fireEvent('initSelectionComplete', target.getSelectionModel().getCount());
     },
 
     getGrid: function(){
@@ -323,7 +333,7 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
     extend : 'Ext.panel.Panel',
     alias: 'widget.labkey-filterselectpanel',
 
-    bubbleEvents : ['select', 'selectionchange', 'itemmouseenter', 'itemmouseleave'],
+    bubbleEvents : ['select', 'selectionchange', 'itemmouseenter', 'itemmouseleave', 'initSelectionComplete'],
 
     constructor : function(config) {
         Ext4.applyIf(config, {

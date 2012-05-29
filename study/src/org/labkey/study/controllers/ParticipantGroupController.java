@@ -399,6 +399,17 @@ public class ParticipantGroupController extends BaseStudyController
     @RequiresPermissionClass(ReadPermission.class)
     public class BrowseParticipantGroups extends ApiAction<BrowseGroupsForm>
     {
+        private StudyImpl _study;
+
+        @Override
+        public void validateForm(BrowseGroupsForm browseGroupsForm, Errors errors)
+        {
+            _study = StudyManager.getInstance().getStudy(getContainer());
+
+            if (_study == null)
+                errors.reject(ERROR_MSG, "A study does not exist in this folder");
+        }
+
         @Override
         public ApiResponse execute(BrowseGroupsForm form, BindException errors) throws Exception
         {
@@ -414,9 +425,19 @@ public class ParticipantGroupController extends BaseStudyController
                         for (ParticipantCategory category : ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser()))
                         {
                             for (ParticipantGroup group : category.getGroups())
-                                groups.add(createGroup(group.getRowId(), category.getLabel(), groupType, category.getRowId(), group.getFilters(), group.getDescription()));
+                            {
+                                if (form.includeParticipantIds())
+                                    groups.add(createGroup(group.getRowId(), category.getLabel(), groupType, category.getRowId(), group.getFilters(), group.getDescription(), group.getParticipantSet()));
+                                else
+                                    groups.add(createGroup(group.getRowId(), category.getLabel(), groupType, category.getRowId(), group.getFilters(), group.getDescription()));
+                            }
                         }
-                        groups.add(createGroup(-1, "Not in any group", groupType));
+
+                        if (form.includeParticipantIds())
+                            groups.add(createGroup(-1, "Not in any group", groupType, StudyManager.getInstance().getParticipantIdsNotInGroups(_study, getUser())));
+                        else
+                            groups.add(createGroup(-1, "Not in any group", groupType));
+
                         break;
                     case cohort:
                         for (CohortImpl cohort : StudyManager.getInstance().getCohorts(getContainer(), getUser()))
@@ -435,10 +456,20 @@ public class ParticipantGroupController extends BaseStudyController
 
         private Map<String, Object> createGroup(int id, String label, GroupType type)
         {
-            return createGroup(id, label, type, 0, "", "");
+            return createGroup(id, label, type, 0, "", "", Collections.<String>emptySet());
+        }
+
+        private Map<String, Object> createGroup(int id, String label, GroupType type, String[] participantIds)
+        {
+            return createGroup(id, label, type, 0, "", "", new HashSet<String>(Arrays.asList(participantIds)));
         }
 
         private Map<String, Object> createGroup(int id, String label, GroupType type, int categoryId, String filters, String description)
+        {
+            return createGroup(id, label, type, categoryId, filters, description, Collections.<String>emptySet());
+        }
+
+        private Map<String, Object> createGroup(int id, String label, GroupType type, int categoryId, String filters, String description, Set<String> participantIds)
         {
             Map<String, Object> group = new HashMap<String, Object>();
 
@@ -448,6 +479,7 @@ public class ParticipantGroupController extends BaseStudyController
             group.put("categoryId", categoryId);
             group.put("filters", filters);
             group.put("description", description);
+            group.put("participantIds", participantIds);
 
             return group;
         }
@@ -456,6 +488,7 @@ public class ParticipantGroupController extends BaseStudyController
     public static class BrowseGroupsForm
     {
         private String[] _type;
+        private boolean _includeParticipantIds = false;
 
         public String[] getType()
         {
@@ -465,6 +498,16 @@ public class ParticipantGroupController extends BaseStudyController
         public void setType(String[] type)
         {
             _type = type;
+        }
+
+        public boolean includeParticipantIds()
+        {
+            return _includeParticipantIds;
+        }
+
+        public void setIncludeParticipantIds(boolean includeParticipantIds)
+        {
+            _includeParticipantIds = includeParticipantIds;
         }
     }
 

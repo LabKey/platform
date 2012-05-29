@@ -29,14 +29,16 @@
     JspView<VisualizationController.GetVisualizationForm> me = (JspView<VisualizationController.GetVisualizationForm>) HttpView.currentView();
     ViewContext ctx = me.getViewContext();
     VisualizationController.GetVisualizationForm form = me.getModelBean();
-    boolean canEdit;
+    boolean canEdit = false;
     boolean canShare = ctx.hasPermission(ShareReportPermission.class);
     ReportIdentifier id = form.getReportId();
+    Report report = null;
 
     if (id != null)
     {
-        Report report = id.getReport();
-        canEdit = report.canEdit(ctx.getUser(), ctx.getContainer());
+        report = id.getReport();
+        if (report != null)
+            canEdit = report.canEdit(ctx.getUser(), ctx.getContainer());
     }
     else
     {
@@ -47,24 +49,26 @@
 %>
 
 <script type="text/javascript">
-    LABKEY.requiresExt4Sandbox(true);
-    LABKEY.requiresClientAPI(true);
-    LABKEY.requiresVisualization();    
-    LABKEY.requiresScript("vis/measuresPanel.js");  // to test the new Time Chart UI, comment out these two lines and uncomment the lines with "enable for new Time Chart UI"
-    LABKEY.requiresScript("vis/timeChartPanel.js");
-//    LABKEY.requiresScript("study/MeasurePicker.js");     // TODO: enable for new Time Chart UI
-//    LABKEY.requiresScript("vis/temp/newTimeChartPanel.js");    // TODO: enable for new Time Chart UI
+    LABKEY.requiresExt4ClientAPI(true);
+    LABKEY.requiresVisualization();
+    LABKEY.requiresScript("vis/temp/newTimeChartPanel.js");
 </script>
 
 <script type="text/javascript">
-    Ext4.QuickTips.init();
-
     Ext4.onReady(function(){
-        showTimeChartWizard({
-            reportId: '<%=id != null ? id.toString() : ""%>',
-            elementId: '<%=elementId%>',
-            success: viewSavedChart
-        })
+        // if the URL is requesting a report by Id, but it does not exist, display an error message
+        if (<%= id != null && report == null %>)
+        {
+            Ext4.get('<%=elementId%>').update("<span class='labkey-error'>No report for id <%=id%>.</span>");
+        }
+        else
+        {
+            showTimeChartWizard({
+                reportId: '<%=id != null ? id.toString() : ""%>',
+                elementId: '<%=elementId%>',
+                success: viewSavedChart
+            });
+        }
     });
 
     function showTimeChartWizard(config)
@@ -117,8 +121,7 @@
 
     function initializeTimeChartPanel(config, chartInfo, saveReportInfo) {
         // create a new chart panel and insert into the wizard
-//        var panel = Ext4.create('Ext.panel.Panel', {       // TODO: enable for new Time Chart UI
-        var panel = new Ext.Panel({
+        var panel = Ext4.create('Ext.panel.Panel', {
             renderTo: config.elementId,
             height: 650,
             resizable: false,
