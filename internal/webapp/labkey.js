@@ -475,6 +475,21 @@ LABKEY.requiresVisualization = function ()
     LABKEY.requiresScript('vis/src/layer.js');
     LABKEY.requiresScript('vis/src/plot.js');
     LABKEY.requiresScript("vis/SVGConverter.js");
+
+    LABKEY.requiresScript("vis/temp/genericOptionsPanel.js");
+    LABKEY.requiresScript("vis/temp/initialMeasurePanel.js");
+    LABKEY.requiresScript("vis/temp/saveOptionsPanel.js");
+    LABKEY.requiresScript("vis/temp/measureOptionsPanel.js");
+    LABKEY.requiresScript("vis/temp/yAxisOptionsPanel.js");
+    LABKEY.requiresScript("vis/temp/xAxisOptionsPanel.js");
+    LABKEY.requiresScript("vis/temp/groupingOptionsPanel.js");
+    LABKEY.requiresScript("vis/temp/aestheticOptionsPanel.js");
+    LABKEY.requiresScript("vis/temp/mainTitleOptionsPanel.js");
+    LABKEY.requiresScript("vis/temp/participantSelector.js");
+    LABKEY.requiresScript("vis/temp/groupSelector.js");
+
+    LABKEY.requiresScript("study/ParticipantFilterPanel.js");
+    LABKEY.requiresScript("study/MeasurePicker.js");
 };
 
 // If we're in demo mode, replace each ID with an equal length string of "*".  This code should match DemoMode.id().
