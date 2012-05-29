@@ -566,7 +566,7 @@ public class ReportUtil
                         info.setPermissions(security);
 
                         // This icon is the small icon -- not the same as thumbnail
-                        String iconPath = ReportService.get().getReportIcon(context, r.getType());
+                        String iconPath = ReportService.get().getIconPath(r);
 
                         // No way for a report to offer a specific icon based on its content, so do this hack for attachment reports  TODO: fix
                         if ("Study.attachmentReport".equals(r.getType()))
@@ -731,7 +731,7 @@ public class ReportUtil
             o.put("text", info.getLabel());
             o.put("id", info.getId());
             o.put("disabled", info.isDisabled());
-            o.put("icon", ReportService.get().getReportIcon(context, info.getReportType()));
+            o.put("icon", info.getIconPath());
             o.put("redirectUrl", info.getDesignerURL().getLocalURIString());
 
             json.put(o);

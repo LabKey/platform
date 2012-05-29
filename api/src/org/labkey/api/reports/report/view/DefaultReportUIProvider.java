@@ -41,7 +41,7 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
         return Collections.emptyList();
     }
 
-    public String getReportIcon(ViewContext context, String reportType)
+    public String getIconPath(Report report)
     {
         return null;
     }
@@ -68,7 +68,10 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
 
         Report report = ReportService.get().createReportInstance(type);
         if (report != null)
-            designers.add(new DesignerInfoImpl(type, report.getTypeDescription(), designerURL));
+        {
+            designers.add(new DesignerInfoImpl(type, report.getTypeDescription(), designerURL,
+                    ReportService.get().getIconPath(report)));
+        }
     }
 
     public static class DesignerInfoImpl implements ReportService.DesignerInfo
@@ -79,13 +82,14 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
         private String _description;
         private boolean _disabled;
         private String _id;
+        private String _iconPath;
 
-        public DesignerInfoImpl(String reportType, String label, ActionURL designerURL)
+        public DesignerInfoImpl(String reportType, String label, ActionURL designerURL, String iconPath)
         {
-            this(reportType, label, null, designerURL);
+            this(reportType, label, null, designerURL, iconPath);
         }
 
-        public DesignerInfoImpl(String reportType, String label, String description, ActionURL designerURL)
+        public DesignerInfoImpl(String reportType, String label, String description, ActionURL designerURL, String iconPath)
         {
             if (reportType == null)
                 throw new IllegalArgumentException("The reportType param is required");
@@ -94,6 +98,7 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
             _label = label;
             _description = description;
             _designerURL = designerURL;
+            _iconPath = iconPath;
         }
 
         public void setLabel(String label)
@@ -149,6 +154,11 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
         public String getId()
         {
             return _id;
+        }
+
+        public String getIconPath()
+        {
+            return _iconPath;
         }
     }
 }

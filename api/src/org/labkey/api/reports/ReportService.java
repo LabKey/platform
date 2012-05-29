@@ -29,7 +29,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 
-import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
@@ -102,7 +101,7 @@ public class ReportService
 
         public Report createFromQueryString(String queryString) throws Exception;
 
-        public String getReportIcon(ViewContext context, String reportType);
+        public String getIconPath(Report report);
 
         /**
          * Imports a serialized report into the database using the specified user and container
@@ -138,6 +137,8 @@ public class ReportService
 
         /** returns an id for automated testing purposes */
         public String getId();
+
+        public String getIconPath();
     }
 
     public interface UIProvider
@@ -154,9 +155,9 @@ public class ReportService
         public List<DesignerInfo> getDesignerInfo(ViewContext context, QuerySettings settings);
 
         /**
-         * Returns the icon path to display for the specified report type
+         * Returns the icon path to display for the specified report
          */
-        public String getReportIcon(ViewContext context, String reportType);
+        public String getIconPath(Report report);
     }
 
     public interface ItemFilter

@@ -17,6 +17,7 @@ package org.labkey.api.visualization;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.reports.report.AbstractReport;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
@@ -53,6 +54,11 @@ public class GenericChartReport extends AbstractReport
             {
                 return "Box and Whisker Plot";
             }
+            @Override
+            public String getIconPath()
+            {
+                return AppProps.getInstance().getContextPath() + "/visualization/report/box_plot.gif";
+            }
         },
         SCATTER_PLOT()
         {
@@ -71,10 +77,16 @@ public class GenericChartReport extends AbstractReport
             {
                 return "XY Scatter Plot";
             }
+            @Override
+            public String getIconPath()
+            {
+                return AppProps.getInstance().getContextPath() + "/visualization/report/scatter_plot.gif";
+            }
         };
         public abstract String getId();
         public abstract String getName();
         public abstract String getDescription();
+        public abstract String getIconPath();
     }
 
     public static RenderType getRenderType(String typeId)

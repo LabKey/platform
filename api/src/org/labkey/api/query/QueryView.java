@@ -986,6 +986,15 @@ public class QueryView extends WebPartView<Object>
                 reportDesigners.addAll(provider.getDesignerInfo(getViewContext(), getSettings()));
             }
 
+            Collections.sort(reportDesigners, new Comparator<ReportService.DesignerInfo>()
+            {
+                @Override
+                public int compare(ReportService.DesignerInfo o1, ReportService.DesignerInfo o2)
+                {
+                    return o1.getLabel().compareTo(o2.getLabel());
+                }
+            });
+
             NavTree submenu = null;
             String sep = "";
             ReportService.ItemFilter viewItemFilter = getItemFilter();
@@ -1002,7 +1011,7 @@ public class QueryView extends WebPartView<Object>
 
                     NavTree item = new NavTree(designer.getLabel(), designer.getDesignerURL().getLocalURIString());
                     item.setId(getBaseMenuId() + ":Views:Create:" + designer.getLabel());
-                    item.setImageSrc(ReportService.get().getReportIcon(getViewContext(), designer.getReportType()));
+                    item.setImageSrc(designer.getIconPath());
 
                     submenu.addChild(item);
                 }
@@ -1268,7 +1277,7 @@ public class QueryView extends WebPartView<Object>
                 item.setId(getBaseMenuId() + ":Views:" + PageFlowUtil.filter(report.getDescriptor().getReportName()));
                 if (report.getDescriptor().getReportId().equals(getSettings().getReportId()))
                     item.setStrong(true);
-                item.setImageSrc(ReportService.get().getReportIcon(getViewContext(), report.getType()));
+                item.setImageSrc(ReportService.get().getIconPath(report));
                 item.setScript(getChangeReportScript(reportId));
                 menu.addMenuItem(item);
             }
