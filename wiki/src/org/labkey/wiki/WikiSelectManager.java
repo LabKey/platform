@@ -89,9 +89,9 @@ public class WikiSelectManager
 
 
     // Get a wiki version
-    public static WikiVersion getVersion(Container c, int versionId)
+    public static WikiVersion getVersion(Container c, int rowId)
     {
-        return WikiVersionCache.getVersion(c, versionId);
+        return WikiVersionCache.getVersion(c, rowId);
     }
 
 

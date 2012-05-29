@@ -1088,6 +1088,15 @@ public class WikiController extends SpringActionController
     }
 
 
+    private ActionURL getSourceURL(HString pageName, int version)
+    {
+        ActionURL url = new ActionURL(SourceAction.class, getContainer());
+        url.addParameter("name", pageName);
+        url.addParameter("version", version);
+        return url;
+    }
+
+
     @RequiresPermissionClass(ReadPermission.class)
     public class SourceAction extends PageAction
     {
@@ -1102,7 +1111,7 @@ public class WikiController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class PageAction extends SimpleViewAction<WikiNameForm>
     {
-        boolean _source=false;
+        boolean _source = false;
         Wiki _wiki = null;
         WikiVersion _wikiversion = null;
 
@@ -1144,10 +1153,15 @@ public class WikiController extends SpringActionController
             }
             else
             {
-                _wikiversion = _wiki.getLatestVersion();
+                int version = form.getVersion();
+
+                if (0 == version)
+                    _wikiversion = _wiki.getLatestVersion();
+                else
+                    _wikiversion = WikiSelectManager.getVersion(_wiki, version);
 
                 if (_wikiversion == null)
-                    throw new NotFoundException();
+                    throw new NotFoundException("Wiki version not found");
             }
 
             if (isSource())
@@ -1312,6 +1326,7 @@ public class WikiController extends SpringActionController
         public final WikiVersion wikiVersion;
         public final ActionURL pageURL;
         public final ActionURL versionsURL;
+        public final ActionURL sourceURL;
         public final ActionURL makeCurrentURL;
         public final boolean hasReadPermission;
         public final boolean hasAdminPermission;
@@ -1329,6 +1344,7 @@ public class WikiController extends SpringActionController
             title = wikiVersion.getTitle();
             pageURL = wiki.getPageURL();
             versionsURL = wiki.getVersionsURL();
+            sourceURL = getSourceURL(wiki.getName(), wikiVersion.getVersion());
             makeCurrentURL = getMakeCurrentURL(wiki.getName(), wikiVersion.getVersion());
             hasReadPermission = perms.allowRead(wiki);
             hasAdminPermission = perms.allowAdmin();

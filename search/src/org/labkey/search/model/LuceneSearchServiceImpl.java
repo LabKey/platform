@@ -105,8 +105,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     static final Version LUCENE_VERSION = Version.LUCENE_35;
 
     // Changes to _index are rare (only when admin changes the index path), but we want any changes to be visible to
-    // other threads immediately.
-    private volatile WritableIndexManager _indexManager;
+    // other threads immediately. Initialize to Noop class to prevent rare NPE (e.g., system maintenance runs before index
+    // is initialized).
+    private volatile WritableIndexManager _indexManager = new NoopWritableIndex(_log);
 
     private static ExternalIndexManager _externalIndexManager;
 
