@@ -826,7 +826,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 type: 'vbox',
                 align: 'stretch'
             },
-            cls : 'sourcepanel',
+            cls : 'measurepanel',
             padding: 5,
             border: false,
             disabled: true, // starts disabled until a source query is chosen
