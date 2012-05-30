@@ -293,9 +293,7 @@ groupByLoop:
                 // look for table.*
                 if (node instanceof QFieldKey || (node instanceof QAs && node.childList().size()==1 && node.getFirstChild() instanceof QFieldKey))
                 {
-                    if (node instanceof QAs)
-                        node = node.getFirstChild();
-                    FieldKey key = ((QFieldKey)node).getFieldKey();
+                    FieldKey key = ((QFieldKey)(node instanceof QAs ? node.getFirstChild() : node)).getFieldKey();
 
                     if (null != key && key.getName().equals("*"))
                     {
@@ -1717,9 +1715,11 @@ groupByLoop:
 
         private String chooseLabel()
         {
+            if (null != _annotations && _annotations.containsKey("preservetitle"))
+                return null;
             Object lbl = null==_annotations?null:_annotations.get("title");
-            if (lbl instanceof String)
-                return StringUtils.trimToNull((String)lbl);
+            if (lbl instanceof String && null != (lbl = StringUtils.trimToNull((String)lbl)))
+                return (String)lbl;
             if (_aliasId != null)
                 return ColumnInfo.labelFromName(getName());
             return null;
