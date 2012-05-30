@@ -709,7 +709,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         sb.append(StudyService.get().getSubjectNounSingular(getContainer()));
         if (!isDemographicData())
         {
-            sb.append(getStudy().getTimepointType() != TimepointType.VISIT ? "/Visit" : "/Date");
+            sb.append(getStudy().getTimepointType().isVisitBased() ? "/Visit" : "/Date");
 
             if (getKeyPropertyName() != null)
                 sb.append("/").append(getKeyPropertyName());
@@ -773,7 +773,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     /** most external users should use this */
     public String getVisitDateColumnName()
     {
-        if (null == _visitDatePropertyName && getStudy().getTimepointType() != TimepointType.VISIT)
+        if (null == _visitDatePropertyName && !getStudy().getTimepointType().isVisitBased())
             _visitDatePropertyName = "Date"; //Todo: Allow alternate names
         return _visitDatePropertyName;
     }
@@ -801,7 +801,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         keyNames.add(StudyService.get().getSubjectColumnName(getContainer()));
         if (!isDemographicData())
         {
-            keyNames.add(getStudy().getTimepointType() == TimepointType.VISIT ? "SequenceNum" : "Date");
+            keyNames.add(getStudy().getTimepointType().isVisitBased() ? "SequenceNum" : "Date");
         }
         if (getKeyPropertyName() != null)
             keyNames.add(getKeyPropertyName());
@@ -976,7 +976,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 sequenceNumCol.setUserEditable(false);
             }
 
-            if (study.getTimepointType() != TimepointType.VISIT)
+            if (!study.getTimepointType().isVisitBased())
             {
                 sequenceNumCol.setNullable(true);
                 sequenceNumCol.setHidden(true);
@@ -987,7 +987,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             // Date
 
-            if (study.getTimepointType() != TimepointType.VISIT)
+            if (!study.getTimepointType().isVisitBased())
             {
                 ColumnInfo column = getStorageColumn("Date");
                 if (column == null)
@@ -1203,7 +1203,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             }
 
             // shouldn't getStorageTableInfo().getColumn("date").getPropertyURI() == getVisitDateURI()?
-            if (getStudy().getTimepointType() != TimepointType.VISIT)
+            if (!getStudy().getTimepointType().isVisitBased())
             {
                 m.put(getStorageTableInfo().getColumn("date").getPropertyURI(), getVisitDateURI());
             }
@@ -1502,7 +1502,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             if (!isDemographicData())
             {
-                error.append(_study.getTimepointType() != TimepointType.VISIT ? "/Visit" : "/Date");
+                error.append(_study.getTimepointType().isVisitBased() ? "/Visit" : "/Date");
 
                 if (getKeyPropertyName() != null)
                     error.append("/").append(getKeyPropertyName()).append(" combination");
@@ -1524,7 +1524,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 String err = "Duplicate: " + StudyService.get().getSubjectNounSingular(getContainer()) + " = " + keys[0];
                 if (!isDemographicData())
                 {
-                    if (_study.getTimepointType() != TimepointType.VISIT)
+                    if (!_study.getTimepointType().isVisitBased())
                         err = err + ", Date = " + keys[1];
                     else
                         err = err + ", VisitSequenceNum = " + keys[1];
@@ -1696,7 +1696,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             // date
             //
 
-            if (timetype != TimepointType.VISIT && null == indexVisitDate && isDemographicData())
+            if (!timetype.isVisitBased() && null == indexVisitDate && isDemographicData())
             {
                 final Date start = _study.getStartDate();
                 indexVisitDate = it.addColumn(new ColumnInfo("Date", JdbcType.TIMESTAMP), new Callable(){
@@ -1717,7 +1717,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             if (null == indexSequenceNum)
             {
-                if (timetype != TimepointType.VISIT && null != indexVisitDate)
+                if (!timetype.isVisitBased() && null != indexVisitDate)
                 {
                     it.indexSequenceNumOutput = it.addSequenceNumFromDateColumn();
                 }
@@ -1835,10 +1835,10 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             if (null == indexPTID)
                 setupError("All dataset rows must include a value for " + _study.getSubjectColumnName());
 
-            if (timetype != TimepointType.VISIT && null == indexVisitDate)
+            if (!timetype.isVisitBased() && null == indexVisitDate)
                 setupError("All dataset rows must include a value for Date");
 
-            if (timetype == TimepointType.VISIT && null == it.indexSequenceNumOutput)
+            if (timetype.isVisitBased() && null == it.indexSequenceNumOutput)
                 setupError("All dataset rows must include a value for SequenceNum");
 
             it.setInput(ErrorIterator.wrap(input, errors, false, setupError));
@@ -1851,7 +1851,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             boolean hasError = null != setupError && setupError.hasErrors();
             if (checkDuplicates && !hasError)
             {
-                Integer indexVisit = timetype == TimepointType.VISIT ? it.indexSequenceNumOutput : indexVisitDate;
+                Integer indexVisit = timetype.isVisitBased() ? it.indexSequenceNumOutput : indexVisitDate;
                 // no point if required columns are missing
                 if (null != indexPTID && null != indexVisit)
                 {
@@ -2254,7 +2254,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             if (!isDemographicData())
             {
                 sb.append("/");
-                if (getStudy().getTimepointType() == TimepointType.VISIT)
+                if (getStudy().getTimepointType().isVisitBased())
                 {
                     sb.append("SequenceNum");
                 }
@@ -2336,7 +2336,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         if (!isDemographicData())
         {
             parts.add(new SQLFragment("'.'"));
-            if (_study.getTimepointType() != TimepointType.VISIT)
+            if (!_study.getTimepointType().isVisitBased())
                 parts.add(StudyManager.sequenceNumFromDateSQL("date"));
             else
                 parts.add(new SQLFragment("CAST(CAST(sequencenum AS NUMERIC(15,4)) AS VARCHAR)"));
@@ -2810,7 +2810,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 addColumn(wrapped);
             }
 
-            if (def.getStudy().getTimepointType() != TimepointType.VISIT)
+            if (!def.getStudy().getTimepointType().isVisitBased())
             {
                 ColumnInfo wrapped = new AliasedColumn(this, "Date", studyData.getColumn("_VisitDate"));
                 addColumn(wrapped);
