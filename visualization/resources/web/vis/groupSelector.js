@@ -135,7 +135,8 @@ Ext4.define('LABKEY.vis.GroupSelector', {
             {
                 groups.push({
                     id : selected[i].get("id"),
-                    categoryId : selected[i].get("categoryId") == -1 ? Infinity : selected[i].get("categoryId"), // convert -1 to infinity for sorting
+                    categoryId : selected[i].get("categoryId"),
+                    order: selected[i].get("categoryId") < 1 ? Infinity : selected[i].get("categoryId"), // convert -1 to infinity for sorting
                     label: selected[i].get("label"),
                     participantIds: selected[i].get("participantIds") 
                 });
@@ -144,8 +145,8 @@ Ext4.define('LABKEY.vis.GroupSelector', {
 
         // sort the selected groups array to match the selection list order
         function compareGroups(a, b) {
-            if (a.id < b.id) {return -1}
-            if (a.id > b.id) {return 1}
+            if (a.order < b.order) {return -1}
+            if (a.order > b.order) {return 1}
             return 0;
         }
         groups.sort(compareGroups);

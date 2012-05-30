@@ -607,8 +607,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             this.groupsSelector.hide();
             this.participantSelector.show();
         }
-
-        // TODO: issue with switching layout type with filters panel collapsed
     },
 
     resizeToViewport : function(w,h) {
@@ -856,13 +854,15 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         simplified.title = config.title;
 
         // compare subject groups by labels and participantIds (not id and created date)
-        simplified.subject = config.subject;
+        simplified.subject = Ext4.clone(config.subject);
         if (simplified.subject.groups)
         {
             for(var i = 0; i < simplified.subject.groups.length; i++)
             {
                 delete simplified.subject.groups[i].id;
+                delete simplified.subject.groups[i].categoryId;
                 delete simplified.subject.groups[i].created;
+                delete simplified.subject.groups[i].order;
             }
         }
 

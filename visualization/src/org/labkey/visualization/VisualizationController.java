@@ -1176,6 +1176,12 @@ public class VisualizationController extends SpringActionController
                 return;
             }
 
+            if (report.getDescriptor().getOwner() != null && report.getDescriptor().getOwner() != getUser().getUserId())
+            {
+                errors.reject(ERROR_MSG, "You do not have permissions to view this private report.");
+                return;
+            }
+
             descriptor = report.getDescriptor();
             if (!(descriptor instanceof VisualizationReportDescriptor))
             {
@@ -1330,10 +1336,14 @@ public class VisualizationController extends SpringActionController
 
             if (report != null)
             {
-                String title = "Discuss report - " + report.getDescriptor().getReportName();
-                DiscussionService.Service service = DiscussionService.get();
-                HttpView discussion = service.getDisussionArea(getViewContext(), report.getEntityId(), getViewContext().getActionURL(), title, true, false);
-                boxView.addView(discussion);
+                // check if the report is shared and if not, whether the user has access to the report
+                if (report.getDescriptor().getOwner() == null || (report.getDescriptor().getOwner() != null && report.getDescriptor().getOwner() == getUser().getUserId()))
+                {
+                    String title = "Discuss report - " + report.getDescriptor().getReportName();
+                    DiscussionService.Service service = DiscussionService.get();
+                    HttpView discussion = service.getDisussionArea(getViewContext(), report.getEntityId(), getViewContext().getActionURL(), title, true, false);
+                    boxView.addView(discussion);
+                }
             }
 
             return boxView;
