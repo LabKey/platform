@@ -163,14 +163,8 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
 
     public static StringExpression getDetailsURL(ColumnInfo parent, TableInfo lookupTable, String columnName)
     {
-        ContainerContext cc = lookupTable.getContainerContext();
-
         FieldKey columnKey = new FieldKey(null,columnName);
-
-        Set<FieldKey> keys = new HashSet<FieldKey>(2);
-        keys.add(columnKey);
-        if (cc instanceof ContainerContext.FieldKeyContext)
-            keys.add(((ContainerContext.FieldKeyContext)cc).getFieldKey());
+        Set<FieldKey> keys = Collections.singleton(columnKey);
 
         StringExpression expr = lookupTable.getDetailsURL(keys, null);
         if (expr instanceof StringExpressionFactory.FieldKeyStringExpression)
@@ -185,8 +179,8 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
                 rewrite = f.remapFieldKeys(parent.getFieldKey(), null);
 
             // CONSIDER: set ContainerContext in AbstractForeignKey.getURL() so all subclasses can benefit
-            if (rewrite instanceof DetailsURL && cc != null)
-                ((DetailsURL)rewrite).setContainerContext(cc);
+            if (rewrite instanceof DetailsURL)
+                setURLContainerContext((DetailsURL)rewrite, lookupTable);
 
             return rewrite;
         }

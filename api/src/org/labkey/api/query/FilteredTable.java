@@ -202,16 +202,30 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
     @Override
     public ContainerContext getContainerContext()
     {
-        return getRealTable().getContainerContext();
+        ContainerContext cc = super.getContainerContext();
+        if (cc != null)
+            return cc;
+
+        cc = getRealTable().getContainerContext();
+        if (cc != null)
+            return cc;
+
+        // NOTE: This is a last resort -- your query table should override .getContainerContext() or .getContainerFieldKey() instead.
+        return getContainer();
     }
 
 
     @Override
     public FieldKey getContainerFieldKey()
     {
+        FieldKey fk = super.getContainerFieldKey();
+        if (fk != null)
+            return fk;
+
         TableInfo t = getRealTable();
         if (t instanceof AbstractTableInfo)
             return ((AbstractTableInfo)t).getContainerFieldKey();
+
         return null;
     }
 

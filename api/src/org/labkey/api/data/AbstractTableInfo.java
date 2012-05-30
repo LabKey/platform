@@ -500,6 +500,15 @@ abstract public class AbstractTableInfo implements TableInfo
         if (containerContext == null)
             containerContext = container;
 
+        // Include the ContainerContext FieldKey if it hasn't already been included.
+        if (containerContext instanceof ContainerContext.FieldKeyContext)
+        {
+            ContainerContext.FieldKeyContext fieldKeyContext = (ContainerContext.FieldKeyContext) containerContext;
+            Set<FieldKey> s = new HashSet<FieldKey>(columns);
+            s.add(fieldKeyContext.getFieldKey());
+            columns = s;
+        }
+
         for (DetailsURL dUrl : _detailsURLs)
         {
             if (dUrl.validateFieldKeys(columns))
