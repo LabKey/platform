@@ -28,11 +28,14 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DetailsColumn;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.Filter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.ExperimentException;
@@ -74,6 +77,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.DataSet;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.actions.AssayDetailRedirectAction;
@@ -203,6 +207,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
             Container sourceContainer = null;
             ResultSet rs = null;
 
+            Map<Container, Set<Integer>> rowIdsByTargetContainer = new HashMap<Container, Set<Integer>>();
+
             try
             {
                 rs = Table.executeQuery(dataTable.getSchema(), sql);
@@ -230,7 +236,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
                     dataMap.put(AssayPublishService.PARTICIPANTID_PROPERTY_NAME, publishKey.getParticipantId());
 
-                    if (TimepointType.DATE == studyType)
+                    if (!studyType.isVisitBased())
                     {
                         dataMap.put(AssayPublishService.DATE_PROPERTY_NAME, publishKey.getDate());
                     }
@@ -245,9 +251,25 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     dataMap.put(getTableMetadata().getDatasetRowIdPropertyName(), publishKey.getDataId());
                     dataMap.put(AssayPublishService.TARGET_STUDY_PROPERTY_NAME, targetStudyContainer);
 
+                    // Remember which rows we're planning to copy, partitioned by the target study
+                    Set<Integer> rowIds = rowIdsByTargetContainer.get(targetStudyContainer);
+                    if (rowIds == null)
+                    {
+                        rowIds = new HashSet<Integer>();
+                        rowIdsByTargetContainer.put(targetStudyContainer, rowIds);
+                    }
+                    rowIds.add(publishKey.getDataId());
+
                     dataMaps.add(dataMap);
                 }
 
+                checkForAlreadyCopiedRows(user, protocol, study, errors, rowIdsByTargetContainer);
+
+                if (!errors.isEmpty())
+                {
+                    return null;
+                }
+                
                 return AssayPublishService.get().publishAssayData(user, sourceContainer, study, protocol.getName(), protocol,
                         dataMaps, getTableMetadata().getDatasetRowIdPropertyName(), errors);
             }
@@ -259,6 +281,34 @@ public abstract class AbstractAssayProvider implements AssayProvider
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
+        }
+    }
+
+    private void checkForAlreadyCopiedRows(User user, ExpProtocol protocol, Container study, List<String> errors, Map<Container, Set<Integer>> rowIdsByTargetContainer)
+    {
+        for (Map.Entry<Container, Set<Integer>> entry : rowIdsByTargetContainer.entrySet())
+        {
+            Study targetStudy = StudyService.get().getStudy(entry.getKey());
+
+            // Look for an existing dataset backed by this assay definition
+            for (DataSet dataSet : targetStudy.getDataSets())
+            {
+                if (protocol.equals(dataSet.getAssayProtocol()) && dataSet.getKeyPropertyName() != null)
+                {
+                    // Check to see if it already has the data rows that are being copied
+                    TableInfo tableInfo = dataSet.getTableInfo(user, false);
+                    Filter datasetFilter = new SimpleFilter(new SimpleFilter.InClause(dataSet.getKeyPropertyName(), entry.getValue()));
+                    long existingRowCount = new TableSelector(tableInfo, Table.ALL_COLUMNS, datasetFilter, null).getRowCount();
+                    if (existingRowCount > 0)
+                    {
+                        // If so, don't let the user copy them again, even if they have different participant/visit/date info
+                        String errorMessage = existingRowCount == 1 ? "One of the selected rows has" : (existingRowCount + " of the selected rows have");
+                        errorMessage += " already been copied to the study \"" + study.getName() + "\" in " + entry.getKey().getPath();
+                        errorMessage += " (RowIds: " + entry.getValue() + ")";
+                        errors.add(errorMessage);
+                    }
+                }
+            }
         }
     }
 
