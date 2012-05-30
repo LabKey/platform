@@ -910,4 +910,15 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
     {
         return "EXEC sp_updatestats;";
     }
+
+
+    @Override
+    public SQLFragment getISOFormat(SQLFragment date)
+    {
+        // see http://msdn.microsoft.com/en-us/library/ms187928.aspx
+        SQLFragment iso = new SQLFragment("CONVERT(VARCHAR, CAST((");
+        iso.append(date);
+        iso.append(") AS TIMESTAMP), 121)");
+        return iso;
+    }
 }

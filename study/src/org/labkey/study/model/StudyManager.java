@@ -37,24 +37,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ConditionalFormat;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.MvUtil;
-import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableInfoGetter;
-import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.BeanDataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
@@ -534,11 +517,13 @@ public class StudyManager
             boolean isKeyChanged = old.isDemographicData() != dataSetDefinition.isDemographicData() || !StringUtils.equals(old.getKeyPropertyName(), dataSetDefinition.getKeyPropertyName());
             if (isProvisioned && isKeyChanged)
             {
+                TableInfo storageTableInfo = dataSetDefinition.getStorageTableInfo();
+
                 // If so, we need to update the _key column and the LSID
 
                 // Set the _key column to be the value of the selected column
                 // Change how we build up tableName
-                String tableName = dataSetDefinition.getStorageTableInfo().toString();
+                String tableName = storageTableInfo.toString();
                 SQLFragment updateKeySQL = new SQLFragment("UPDATE " + tableName + " SET _key = ");
                 if (dataSetDefinition.getKeyPropertyName() == null)
                 {
@@ -547,7 +532,11 @@ public class StudyManager
                 }
                 else
                 {
-                    updateKeySQL.append("\"" + dataSetDefinition.getKeyPropertyName().toLowerCase() + "\"");
+                    ColumnInfo col = storageTableInfo.getColumn(dataSetDefinition.getKeyPropertyName());
+                    SQLFragment colFrag = col.getValueSql(tableName);
+                    if (col.getJdbcType() == JdbcType.TIMESTAMP)
+                        colFrag = storageTableInfo.getSqlDialect().getISOFormat(colFrag);
+                    updateKeySQL.append(colFrag);
                 }
                 Table.execute(getSchema(), updateKeySQL);
 
@@ -585,7 +574,7 @@ public class StudyManager
 
     public boolean isDataUniquePerParticipant(DataSetDefinition dataSet) throws SQLException
     {
-        // don't use dataSet.getTableInfo() since this method is called during updateDatasetDefinition() and may be in an inconsistent state
+        // don't use dataSet.getTableInfo() since this method is called during updateDatasetDefinition`() and may be in an inconsistent state
         TableInfo t = dataSet.getStorageTableInfo();
         SQLFragment sql = new SQLFragment();
         sql.append("SELECT max(n) FROM (select count(*) AS n from ").append(t.getFromSQL("DS")).append(" group by participantid) x");
@@ -3589,6 +3578,8 @@ public class StudyManager
         }
     }
 
+
+
     public static class DatasetImportTestCase extends Assert
     {
         TestContext _context = null;
@@ -3678,8 +3669,8 @@ public class StudyManager
                 return createDataset(study, name, DatasetType.DEMOGRAPHIC);
             else
                 return createDataset(study, name, DatasetType.NORMAL);
-
         }
+
 
         DataSet createDataset(Study study, String name, DatasetType type) throws Exception
         {
@@ -3741,6 +3732,22 @@ public class StudyManager
 
             return study.getDataSet(id);
         }
+
+
+        @Test
+        public void testDateConversion()
+        {
+            Date d = new Date();
+            String iso = DateUtil.toISO(d.getTime(), true);
+            DbSchema core = DbSchema.get("core");
+            SQLFragment select = new SQLFragment("SELECT ");
+            select.append(core.getSqlDialect().getISOFormat(new SQLFragment("?",d)));
+            String db = new SqlSelector(core, select).getObject(String.class);
+            assertEquals(iso, db);
+            String jdbc = (String)JdbcType.VARCHAR.convert(d);
+            assertEquals(jdbc, iso);
+        }
+
 
         @Test
         public void test() throws Throwable

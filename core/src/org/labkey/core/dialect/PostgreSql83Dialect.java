@@ -1262,4 +1262,16 @@ class PostgreSql83Dialect extends SqlDialect
 //            testParameterSubstitution(new SQLFragment("'this\\??\\\\''\\'\\\\????\\?''\\'??\\\\?\\\\?''?''?\\'\\'\\?'"), "'this\\??\\\\''\\'\\\\????\\?''\\'??\\\\?\\\\?''?''?\\'\\'\\?'");
         }
     }
+
+
+
+    @Override
+    public SQLFragment getISOFormat(SQLFragment date)
+    {
+        // http://www.postgresql.org/docs/9.1/static/functions-formatting.html
+        SQLFragment iso = new SQLFragment("to_char(CAST((");
+        iso.append(date);
+        iso.append(") AS TIMESTAMP), 'YYYY-MM-DD HH24:MI:SS.MS')");
+        return iso;
+    }
 }
