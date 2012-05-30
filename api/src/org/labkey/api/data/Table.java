@@ -377,7 +377,7 @@ public class Table
                 // Only fiddle with the Connection settings if we're not inside of a transaction so we won't mess
                 // up any state the caller is relying on. Also, only do this when we're fairly certain that it's
                 // a read-only statement (starting with SELECT)
-                schema.getSqlDialect().configureToDisableResultSetCaching(conn);
+                schema.getSqlDialect().configureToDisableJdbcCaching(conn);
             }
 
             rs = _executeQuery(conn, sql, parameters, scrollable, asyncRequest, statementRowCount);

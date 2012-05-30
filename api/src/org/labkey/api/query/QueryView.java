@@ -64,7 +64,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -1840,34 +1839,23 @@ public class QueryView extends WebPartView<Object>
         exportToTsv(response, false);
     }
 
-    public void exportToTsv(HttpServletResponse response, boolean isExportAsWebPage) throws Exception
+    public void exportToTsv(final HttpServletResponse response, final boolean isExportAsWebPage) throws Exception
     {
         _exportView = true;
         TableInfo table = getTable();
+
         if (table != null)
         {
             DbScope scope = getSchema().getDbSchema().getScope();
 
-            try
+            scope.getSqlDialect().excuteWithoutJdbcCaching(scope, new Closure()
             {
-                // On PostgreSQL only, wrap the TSV export in a transaction and change some obscure settings to coerce
-                // the Postgres JDBC driver to stream what could be very large results. We need to start a transaction
-                // so that we end up using the same Connection when we execute the query.
-                // TODO: PostgreSQL checks below address #14785. In 12.2, move connection handling into dialect as well.
-                if (scope.getSqlDialect().isPostgreSQL())
+                @Override
+                public void execute() throws Exception
                 {
-                    Connection connection = scope.ensureTransaction();
-                    scope.getSqlDialect().configureToDisableResultSetCaching(connection);
+                    doExport(response, isExportAsWebPage);
                 }
-                doExport(response, isExportAsWebPage);
-            }
-            finally
-            {
-                if (scope.getSqlDialect().isPostgreSQL())
-                {
-                    scope.closeConnection();
-                }
-            }
+            });
         }
     }
 
