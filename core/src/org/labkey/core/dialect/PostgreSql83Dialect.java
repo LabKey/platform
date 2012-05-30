@@ -45,6 +45,7 @@ import org.labkey.api.data.dialect.StandardJdbcHelper;
 import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.Closure;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -1216,10 +1217,27 @@ class PostgreSql83Dialect extends SqlDialect
     }
 
     @Override
-    public void configureToDisableResultSetCaching(Connection connection) throws SQLException
+    public void configureToDisableJdbcCaching(Connection connection) throws SQLException
     {
         connection.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
         connection.setAutoCommit(false);
+    }
+
+    // On PostgreSQL, wrap in a transaction and change some obscure settings to coerce the PostgreSQL JDBC driver to
+    // not cache. We need to start a transaction so that we end up using the same Connection inside the Closure code.
+    @Override
+    public void excuteWithoutJdbcCaching(DbScope scope, Closure closure) throws Exception
+    {
+        try
+        {
+            Connection connection = scope.ensureTransaction();
+            scope.getSqlDialect().configureToDisableJdbcCaching(connection);
+            closure.execute();
+        }
+        finally
+        {
+            scope.closeConnection();
+        }
     }
 
     // TODO: Move to special test case for PostgreSQL
