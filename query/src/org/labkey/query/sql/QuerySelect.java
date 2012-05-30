@@ -15,6 +15,7 @@
  */
 package org.labkey.query.sql;
 
+import org.antlr.runtime.tree.CommonTree;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -1545,6 +1546,7 @@ groupByLoop:
         QExpr _field;
         QExpr _resolved;
         ColumnInfo _colinfo = null;
+        Map<String,Object> _annotations = null;
 
         QIdentifier _aliasId;
         String _alias;
@@ -1570,8 +1572,11 @@ groupByLoop:
 
         public SelectColumn(QNode node)
         {
+            if (node instanceof SupportsAnnotations)
+                _annotations = ((SupportsAnnotations)node).getAnnotations();
+
             _node = node;
-            if (node instanceof QAs)
+            if (node instanceof QAs && node.childList().size() > 1)
             {
                 _field = ((QAs) node).getExpression();
                 FieldKey key = _field.getFieldKey();
@@ -1581,6 +1586,8 @@ groupByLoop:
             }
             else
             {
+                if (node instanceof QAs)
+                    node = node.getFirstChild();
                 _field = (QExpr) node;
                 FieldKey fk = _field.getFieldKey();
                 if (null != fk && !fk.getName().startsWith("@@"))
@@ -1687,8 +1694,10 @@ groupByLoop:
                 }
                 to.copyAttributesFrom(_colinfo);
             }
-            if (_aliasId != null)
-                to.setLabel(ColumnInfo.labelFromName(getName()));
+
+            String label=chooseLabel();
+            if (label != null)
+                to.setLabel(label);
 
             // copy URL if possible
             FieldKey fk = null != _resolved ? _resolved.getFieldKey() : null;
@@ -1702,6 +1711,16 @@ groupByLoop:
 
             if (_parsedTables.size() != 1)
                 to.setKeyField(false);
+        }
+
+        private String chooseLabel()
+        {
+            Object lbl = null==_annotations?null:_annotations.get("title");
+            if (lbl instanceof String)
+                return StringUtils.trimToNull((String)lbl);
+            if (_aliasId != null)
+                return ColumnInfo.labelFromName(getName());
+            return null;
         }
 
         public void appendSource(SourceBuilder builder)

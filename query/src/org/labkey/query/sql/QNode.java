@@ -26,9 +26,20 @@ import javax.servlet.ServletException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.IdentityHashMap;
+import java.util.Map;
+
+import static org.labkey.query.sql.antlr.SqlBaseParser.FALSE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.NUM_DOUBLE;
+import static org.labkey.query.sql.antlr.SqlBaseParser.NUM_FLOAT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.NUM_INT;
+import static org.labkey.query.sql.antlr.SqlBaseParser.NUM_LONG;
+import static org.labkey.query.sql.antlr.SqlBaseParser.QUOTED_STRING;
+import static org.labkey.query.sql.antlr.SqlBaseParser.TRUE;
 
 
 abstract public class QNode implements Cloneable
@@ -55,6 +66,11 @@ abstract public class QNode implements Cloneable
 		setTokenType(n.getType());
 		setTokenText(n.getText());
 		setLineAndColumn(n);
+        if (n instanceof SupportsAnnotations && this instanceof SupportsAnnotations)
+        {
+            Map<String,Object> a = ((SupportsAnnotations)n).getAnnotations();
+            ((SupportsAnnotations)this).setAnnotations(convertAnnotations(a));
+        }
 	}
 	
 	protected QNode(Class validChildrenClass)
@@ -161,6 +177,47 @@ abstract public class QNode implements Cloneable
     public int getTokenType()
     {
         return _tokenType;
+    }
+
+    static Map<String,Object> convertAnnotations(Map<String,Object> a)
+    {
+        if (null == a)
+            return null;
+        HashMap<String,Object> annotations = new HashMap<String,Object>();
+        for (Map.Entry<String,Object> e : a.entrySet())
+            annotations.put(e.getKey(), constant(e.getValue()));
+        return annotations;
+    }
+
+    static Object constant(Object o)
+    {
+        if (o instanceof CommonTree)
+        {
+            CommonTree n = (CommonTree)o;
+            switch (n.getType())
+            {
+                case QUOTED_STRING:
+                    o = new QString();
+                    ((QString)o).from(n);
+                    break;
+                case TRUE:
+                case FALSE:
+                    o = new QBoolean();
+                    ((QString)o).from(n);
+                    break;
+                case NUM_DOUBLE:
+                case NUM_FLOAT:
+                case NUM_INT:
+                case NUM_LONG:
+                    o =new QNumber(n);
+                    break;
+                default:
+                    break;
+            }
+        }
+        if (o instanceof IConstant)
+            return ((IConstant)o).getValue();
+        return null;
     }
 
 

@@ -28,6 +28,7 @@ import org.antlr.runtime.TokenStream;
 import org.antlr.runtime.tree.CommonTree;
 import org.antlr.runtime.tree.CommonTreeAdaptor;
 import org.antlr.runtime.tree.Tree;
+import org.antlr.runtime.tree.TreeAdaptor;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
@@ -44,8 +45,11 @@ import org.labkey.query.sql.antlr.SqlBaseParser;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.labkey.query.sql.antlr.SqlBaseParser.*;
@@ -646,8 +650,8 @@ public class SqlParser
             case AS:
             {
                 // CONSIDER: check type
-                if (children.size() == 1)
-                    return first(children);
+//                if (children.size() == 1)
+//                    return first(children);
                 node.getToken().setType(AS);
                 break;
             }
@@ -842,16 +846,6 @@ public class SqlParser
     }
 
 
-    private static class AdaptorWrapper extends CommonTreeAdaptor
-    {
-        @Override
-        public Object errorNode(TokenStream input, Token start, Token stop, RecognitionException e)
-        {
-            return super.errorNode(input, start, stop, e);
-        }
-    }
-    
-
     private static class _SqlParser extends SqlBaseParser
 	{
         final ArrayList<Exception> _errors;
@@ -859,7 +853,7 @@ public class SqlParser
 		public _SqlParser(String str, ArrayList<Exception> errors)
 		{
 			super(new CommonTokenStream(new SqlBaseLexer(new CaseInsensitiveStringStream(str))));
-            setTreeAdaptor(new AdaptorWrapper());
+            setTreeAdaptor(new LabKeyTreeAdaptor());
             _errors = errors;
             assert MemTracker.put(this);
         }
@@ -1385,6 +1379,51 @@ public class SqlParser
                     fail(sql);
                 }
             }
+        }
+    }
+
+
+    static class LabKeyTreeAdaptor extends CommonTreeAdaptor
+    {
+        public Object create(Token payload)
+        {
+            return new LabKeyTreeType(payload);
+        }
+    }
+
+    static class LabKeyTreeType extends CommonTree implements SupportsAnnotations
+    {
+        LabKeyTreeType(Token payload)
+        {
+            super(payload);
+        }
+
+        LabKeyTreeType(CommonTree tree)
+        {
+            super(tree);
+            if (tree instanceof SupportsAnnotations)
+                _annotations = ((SupportsAnnotations)tree).getAnnotations();
+        }
+
+        @Override
+        public Tree dupNode()
+        {
+            return new LabKeyTreeType(this);
+        }
+
+        Map<String,Object> _annotations;
+
+        @Override
+        public void setAnnotations(Map<String, Object> a)
+        {
+            assert null == a || null != (a = Collections.unmodifiableMap(a));
+            _annotations = a;
+        }
+
+        @Override
+        public Map<String, Object> getAnnotations()
+        {
+            return _annotations;
         }
     }
 }

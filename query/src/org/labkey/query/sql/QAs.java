@@ -16,7 +16,9 @@
 
 package org.labkey.query.sql;
 
-public class QAs extends QNode
+import java.util.Map;
+
+public class QAs extends QNode implements SupportsAnnotations
 {
 	public QAs()
 	{
@@ -38,5 +40,20 @@ public class QAs extends QNode
         getFirstChild().appendSource(builder);
         builder.append(" AS ");
         getLastChild().appendSource(builder);
+    }
+
+
+    Map<String,Object> _annotations = null;
+
+    @Override
+    public void setAnnotations(Map<String, Object> a)
+    {
+        _annotations = a;
+    }
+
+    @Override
+    public Map<String, Object> getAnnotations()
+    {
+        return _annotations;
     }
 }

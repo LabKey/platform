@@ -45,6 +45,7 @@ tokens
 @header
 {
 	package org.labkey.query.sql.antlr;
+    import org.labkey.query.sql.SupportsAnnotations;
 }
 
 
@@ -80,6 +81,24 @@ tokens
     public void traceOut(String ruleName, int ruleIndex, Object inputSymbol)
     {
         super.traceOut(ruleName, ruleIndex, inputSymbol);
+    }
+
+    HashMap<String,Object> _annotations;
+
+    public void addAnnotation(String label, Object value)
+    {
+        if (null == _annotations)
+            _annotations = new HashMap<String,Object>();
+        if (label.startsWith("@"))
+            label = label.substring(1);
+        _annotations.put(label.toLowerCase(), value);
+    }
+
+    public Map<String,Object> getAnnotations()
+    {
+        HashMap<String,Object> ret = _annotations;
+        _annotations = null;
+        return ret;
     }
 }
 
@@ -356,14 +375,19 @@ whereClause
 
 selectedPropertiesList
     // weird trailing comma for backward compatibility
-	: aliasedSelectExpression (COMMA! aliasedSelectExpression)* (COMMA!)?
+	: selectedProperty (COMMA! selectedProperty)* (COMMA!)?
+	;
+
+
+selectedProperty
+	: e=aliasedSelectExpression^ (annotations!)? { ((SupportsAnnotations)e.tree).setAnnotations(getAnnotations()); }
+	| starAtom
 	;
 
 
 aliasedSelectExpression
-	: (expression (AS? identifier)?) -> ^(ALIAS expression identifier?)
-	| starAtom
-	;
+    : (expression (AS? identifier)?) -> ^(ALIAS expression identifier?)
+    ;
 
 
 identifierList
@@ -378,6 +402,21 @@ constantAliasList
 
 constantAlias
     : constant (AS? identifier)? -> ^(ALIAS constant identifier?)
+    ;
+
+
+annotations
+    : (annotation!)*
+    ;
+
+
+annotation
+    :   (label=ANNOTATION_LABEL ('=' value=constant)? {addAnnotation(label.getText(),null==value?null:value.tree);})!
+    ;
+
+
+annotation_label
+    :   ANNOTATION_LABEL
     ;
 
 
@@ -672,6 +711,12 @@ PARAM: '?';
 BIT_OR: '|';
 BIT_XOR: '^';
 BIT_AND: '&';
+
+
+ANNOTATION_LABEL
+    : '@' ID_START_LETTER ( ID_LETTER )*
+    ;
+
 
 IDENT
 	: ID_START_LETTER ( ID_LETTER )*
