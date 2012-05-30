@@ -787,6 +787,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 measures: this.chartInfo.measures,
                 viewInfo: this.viewInfo,
                 sorts: this.getDataSortArray(),
+                limit : 10000,
                 filterUrl: this.chartInfo.filterUrl,
                 filterQuery: this.chartInfo.filterQuery,
                 scope: this
@@ -798,7 +799,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             //Get data for Aggregates.
             var groups = [];
             for(var i = 0; i < this.chartInfo.subject.groups.length; i++){
-                groups.push(this.chartInfo.subject.groups[i].id);
+                groups.push(this.chartInfo.subject.groups[i].categoryId);
             }
 
             LABKEY.Visualization.getData({
@@ -830,6 +831,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 viewInfo: this.viewInfo,
                 groupBys: [{schemaName: 'study', queryName: this.viewInfo.subjectNounSingular + 'GroupMap', name: 'GroupId/CategoryId', values: groups}],
                 sorts: this.getDataSortArray(),
+                limit : 10000,
                 filterUrl: this.chartInfo.filterUrl,
                 filterQuery: this.chartInfo.filterQuery,
                 scope: this

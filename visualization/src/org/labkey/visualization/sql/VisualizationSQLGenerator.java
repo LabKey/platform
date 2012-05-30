@@ -16,6 +16,7 @@
 package org.labkey.visualization.sql;
 
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.labkey.api.action.CustomApiForm;
@@ -58,6 +59,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
     private ViewContext _viewContext;
     private VisualizationSourceColumn.Factory _columnFactory = new VisualizationSourceColumn.Factory();
     private boolean _metaDataOnly;
+    private Integer _limit;
 
     @Override
     public void setViewContext(ViewContext context)
@@ -248,6 +250,13 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         ensureJoinColumns();
         
         _metaDataOnly = BooleanUtils.toBooleanDefaultIfNull((Boolean)properties.get("metaDataOnly"), false);
+
+        Object limit = properties.get("limit");
+        if (limit != null)
+        {
+            if (NumberUtils.isDigits(limit.toString()))
+                _limit = Integer.parseInt(limit.toString());
+        }
     }
 
     private void ensureJoinColumns()
@@ -346,9 +355,16 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         if (!_groupBys.isEmpty())
         {
             IVisualizationSourceQuery joinQuery = innerJoinQueries.isEmpty() ? outerJoinQueries.iterator().next() : innerJoinQueries.iterator().next();
-            return wrapInGroupBy(joinQuery, queries, sql);
+            sql = wrapInGroupBy(joinQuery, queries, sql);
         }
 
+        if (_limit != null)
+        {
+            StringBuilder sb = new StringBuilder(sql);
+
+            sb.append(" LIMIT ").append(_limit);
+            sql = sb.toString();
+        }
         return sql;
     }
 

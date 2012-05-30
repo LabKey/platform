@@ -24,6 +24,7 @@ Ext4.define('LABKEY.vis.GroupSelector', {
             extend: 'Ext.data.Model',
             fields : [
                 {name : 'id'},
+                {name : 'categoryId'},
                 {name : 'label'},
                 {name : 'description'},
                 {name : 'participantIds'},
@@ -133,7 +134,8 @@ Ext4.define('LABKEY.vis.GroupSelector', {
             if (selected[i].get('type') == 'participantGroup')
             {
                 groups.push({
-                    id: selected[i].get("id") == -1 ? Infinity : selected[i].get("id"), // convert -1 to infinity for sorting
+                    id : selected[i].get("id"),
+                    categoryId : selected[i].get("categoryId") == -1 ? Infinity : selected[i].get("categoryId"), // convert -1 to infinity for sorting
                     label: selected[i].get("label"),
                     participantIds: selected[i].get("participantIds") 
                 });

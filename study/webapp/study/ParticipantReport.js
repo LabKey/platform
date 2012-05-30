@@ -276,7 +276,8 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     method  : 'POST',
                     jsonData: {
                         measures : measures,
-                        sorts    : sorts
+                        sorts    : sorts,
+                        limit    : 10000
                     },
                     success : function(response){
                         this.unmask();
