@@ -50,7 +50,10 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.SimpleNamedObject;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.ImportTemplateType;
 import org.labkey.data.xml.TableType;
 
@@ -95,7 +98,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     protected AggregateRowConfig _aggregateRowConfig;
     private boolean _hidden;
     protected String _importMsg;
-    protected List<Pair<String, DetailsURL>> _importTemplates;
+    protected List<Pair<String, StringExpression>> _importTemplates;
 
     // Column-related
     private TableType _xmlTable = null;
@@ -883,30 +886,37 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     }
 
     @Override
-    public List<Pair<String, ActionURL>> getImportTemplates(Container c)
+    public List<Pair<String, String>> getImportTemplates(ViewContext ctx)
     {
-        List<Pair<String, ActionURL>> templates = new ArrayList<Pair<String, ActionURL>>();
+        List<Pair<String, String>> templates = new ArrayList<Pair<String, String>>();
+        //NOTE: should this create a RenderContext from viewContext instead?
+        //RenderContext rc = new RenderContext(ctx);
+        Map<String, Container> renderCtx = Collections.singletonMap("container", ctx.getContainer());
+
         if(_importTemplates != null)
         {
-            for (Pair<String, DetailsURL> pair : _importTemplates)
+            for (Pair<String, StringExpression> pair : _importTemplates)
             {
-                templates.add(Pair.of(pair.first, pair.second.copy(c).getActionURL()));
+                if(pair.second instanceof DetailsURL)
+                    templates.add(Pair.of(pair.first, ((DetailsURL)pair.second).copy(ctx.getContainer()).getActionURL().toString()));
+                else if (pair.second instanceof StringExpressionFactory.URLStringExpression)
+                    templates.add(Pair.of(pair.first, ((StringExpressionFactory.URLStringExpression)pair.second).eval(renderCtx)));
             }
         }
 
         if (templates.size() == 0)
         {
-            ActionURL url = PageFlowUtil.urlProvider(QueryUrls.class).urlCreateExcelTemplate(c, getPublicSchemaName(), getName());
+            URLHelper url = PageFlowUtil.urlProvider(QueryUrls.class).urlCreateExcelTemplate(ctx.getContainer(), getPublicSchemaName(), getName());
             url.addParameter("captionType", ExcelWriter.CaptionType.Name.name());
             if(url != null)
-                templates.add(Pair.of("Download Template", url));
+                templates.add(Pair.of("Download Template", url.toString()));
         }
 
         return templates;
     }
 
     @Override
-    public List<Pair<String, DetailsURL>> getRawImportTemplates()
+    public List<Pair<String, StringExpression>> getRawImportTemplates()
     {
         return _importTemplates;
     }
@@ -914,10 +924,11 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     public void setImportTemplates(ImportTemplateType[] templates)
     {
         checkLocked();
-        List<Pair<String, DetailsURL>> list = new ArrayList<Pair<String, DetailsURL>>();
+        List<Pair<String, StringExpression>> list = new ArrayList<Pair<String, StringExpression>>();
         for (ImportTemplateType t : templates)
         {
-            list.add(Pair.of(t.getLabel(), DetailsURL.fromString(t.getUrl()).fromString(t.getUrl())));
+            StringExpression url = StringExpressionFactory.createURL(t.getUrl());
+            list.add(Pair.of(t.getLabel(), url));
         }
 
 

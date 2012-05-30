@@ -40,6 +40,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.TableType;
 
 import java.util.Collection;
@@ -210,14 +211,14 @@ public interface TableInfo extends HasPermission
      * Each URL should either point to a static template file or an action to generate the template.
      * If no custom templates have been provided, it will return the default URL
      */
-    public List<Pair<String, ActionURL>> getImportTemplates(Container c);
+    public List<Pair<String, String>> getImportTemplates(ViewContext ctx);
 
     /**
      * Returns a list of the raw import templates (without substituting the container).  This is intended to be
      * used by FilteredTable or other instances that need to copy the raw values from a parent table.  In general,
      * getImportTemplates() should be used instead
      */
-    public List<Pair<String, DetailsURL>> getRawImportTemplates();
+    public List<Pair<String, StringExpression>> getRawImportTemplates();
 
     public boolean isPublic();
 

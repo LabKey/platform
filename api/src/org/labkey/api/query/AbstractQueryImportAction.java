@@ -121,12 +121,12 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         bean.importMessage = _target.getImportMessage();
         bean.urlExcelTemplates = new ArrayList<Pair<String, String>>();
 
-        List<Pair<String, ActionURL>> it = _target.getImportTemplates(getViewContext().getContainer());
+        List<Pair<String, String>> it = _target.getImportTemplates(getViewContext());
         if(it != null)
         {
-            for (Pair<String, ActionURL> pair : it)
+            for (Pair<String, String> pair : it)
             {
-                bean.urlExcelTemplates.add(Pair.of(pair.first, pair.second.toString()));
+                bean.urlExcelTemplates.add(Pair.of(pair.first, pair.second));
             }
         }
 

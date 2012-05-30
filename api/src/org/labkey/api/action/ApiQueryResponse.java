@@ -239,10 +239,10 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         metaData.put("importMessage", _tinfo.getImportMessage());
 
         JSONArray templates = new JSONArray();
-        List<Pair<String, ActionURL>> it = _tinfo.getImportTemplates(_ctx.getContainer());
+        List<Pair<String, String>> it = _tinfo.getImportTemplates(_ctx.getViewContext());
         if(it != null && it.size() > 0)
         {
-            for (Pair<String, ActionURL> pair : it)
+            for (Pair<String, String> pair : it)
             {
                 JSONObject o = new JSONObject();
                 o.put("label", pair.getKey());
