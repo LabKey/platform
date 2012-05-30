@@ -150,10 +150,10 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
                     resp.put("importMessage", tinfo.getImportMessage());
 
             JSONArray templates = new JSONArray();
-            List<Pair<String, ActionURL>> it = tinfo.getImportTemplates(getViewContext().getContainer());
+            List<Pair<String, String>> it = tinfo.getImportTemplates(getViewContext());
             if(null != it && it.size() > 0)
             {
-                for (Pair<String, ActionURL> pair : it)
+                for (Pair<String, String> pair : it)
                 {
                     JSONObject o = new JSONObject();
                     o.put("label", pair.getKey());
