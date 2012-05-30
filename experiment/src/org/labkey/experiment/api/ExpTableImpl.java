@@ -30,7 +30,6 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.util.ContainerContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.api.flag.FlagColumnRenderer;
 import org.labkey.experiment.api.flag.FlagForeignKey;
@@ -78,19 +77,6 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
             }
         }
         return result;
-    }
-
-    @Override
-    public boolean hasContainerContext()
-    {
-        return true;
-    }
-
-    @Override
-    public ContainerContext getContainerContext()
-    {
-        //return getContainer();
-        return new ContainerContext.FieldKeyContext(getContainerFieldKey());
     }
 
     @Override

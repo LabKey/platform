@@ -18,7 +18,6 @@ package org.labkey.study.query;
 
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -181,12 +180,6 @@ public class ParticipantTable extends FilteredTable
 
             map.put(tableAlias, sql);
         }
-    }
-
-    @Override
-    public boolean hasContainerContext()
-    {
-        return true;
     }
 
     @Override

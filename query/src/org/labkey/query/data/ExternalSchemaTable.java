@@ -87,13 +87,6 @@ public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable implements
         }
     }
 
-    @Override
-    public boolean hasContainerContext()
-    {
-        ColumnInfo colContainer = getRealTable().getColumn("container");
-        return null == colContainer || null != _container;
-    }
-    
 
     @Override
     public ContainerContext getContainerContext()

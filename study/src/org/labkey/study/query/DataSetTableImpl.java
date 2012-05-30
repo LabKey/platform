@@ -526,15 +526,9 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
     }
 
     @Override
-    public boolean hasContainerContext()
-    {
-        return null != _dsd && null != _dsd.getContainer();
-    }
-
-    @Override
     public ContainerContext getContainerContext()
     {
-        return _dsd.getContainer();
+        return _dsd != null ? _dsd.getContainer() : null;
     }
 
     @Override

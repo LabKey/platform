@@ -152,12 +152,6 @@ public class IssuesTable extends FilteredTable
     }
 
     @Override
-    public boolean hasContainerContext()
-    {
-        return true;
-    }
-
-    @Override
     public ContainerContext getContainerContext()
     {
         // super doesn't work because FilteredTable tries to do a passthrough to the schema table

@@ -121,13 +121,6 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
 
 
     @Override
-    public boolean hasContainerContext()
-    {
-        return true;
-    }
-
-
-    @Override
     public ContainerContext getContainerContext()
     {
         return _relation.getDefaultContainerContext();

@@ -19,7 +19,6 @@ package org.labkey.list.model;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -51,7 +50,6 @@ import org.labkey.list.view.ListController;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
 
 public class ListTable extends FilteredTable implements UpdateableTableInfo
@@ -176,15 +174,9 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
     }
 
     @Override
-    public boolean hasContainerContext()
-    {
-        return null != _list && null != _list.getContainer();
-    }
-
-    @Override
     public ContainerContext getContainerContext()
     {
-        return _list.getContainer();
+        return _list != null ? _list.getContainer() : null;
     }
 
     private String findTitleColumn(ListDefinition listDef, ColumnInfo colKey)

@@ -49,7 +49,6 @@ import org.labkey.study.model.StudyImpl;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * User: jgarms
@@ -67,15 +66,6 @@ public class StudyPropertiesTable extends BaseStudyTable
 
         ColumnInfo labelColumn = addRootColumn("label", true, true);
         DetailsURL detailsURL = new DetailsURL(PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(schema.getContainer()));
-        detailsURL.setContainerContext(new ContainerContext()
-        {
-            @Override
-            public Container getContainer(Map context)
-            {
-                //Container is the key so should always be selected.
-                return ContainerManager.getForId((String) context.get("container"));
-            }
-        });
         labelColumn.setURL(detailsURL);
         addRootColumn("startDate");
 
@@ -171,5 +161,11 @@ public class StudyPropertiesTable extends BaseStudyTable
         if (!getContainer().hasPermission(user, AdminPermission.class))
             return null;
         return new StudyPropertiesUpdateService(this);
+    }
+
+    @Override
+    public FieldKey getContainerFieldKey()
+    {
+        return FieldKey.fromParts("Container");
     }
 }
