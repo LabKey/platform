@@ -18,6 +18,7 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView me = (JspView) HttpView.currentView();
@@ -31,7 +32,7 @@
 <script type="text/javascript">
     var _wb_titleId = Ext.id();
     LABKEY.NavTrail.setTrail("<span class='wb-name'><%=container.getRowId()%>:&nbsp;</span><span class='labkey-edit-in-place' id='" + _wb_titleId + "'><%=h(container.getTitle())%></span>",
-            undefined, "<%=container.getTitle()%>");
+            undefined, <%=PageFlowUtil.jsString(container.getTitle())%>);
     //LABKEY.NavTrail.setTrail("<%=h(container.getTitle())%>");
 </script>
 
