@@ -291,8 +291,10 @@ groupByLoop:
                 }
 
                 // look for table.*
-                if (node instanceof QFieldKey)
+                if (node instanceof QFieldKey || (node instanceof QAs && node.childList().size()==1 && node.getFirstChild() instanceof QFieldKey))
                 {
+                    if (node instanceof QAs)
+                        node = node.getFirstChild();
                     FieldKey key = ((QFieldKey)node).getFieldKey();
 
                     if (null != key && key.getName().equals("*"))
