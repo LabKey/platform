@@ -68,6 +68,7 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -809,9 +810,12 @@ public class QueryServiceImpl extends QueryService
             {
                 List<ColumnInfo> pkColumns = table.getPkColumns();
                 Set<FieldKey> pkColumnMap = new HashSet<FieldKey>();
-                FieldKey ck = table.getContainerFieldKey();
-                if (null != ck)
-                    pkColumnMap.add(ck);
+                ContainerContext cc = table.getContainerContext();
+                if (cc instanceof ContainerContext.FieldKeyContext)
+                {
+                    ContainerContext.FieldKeyContext fko = (ContainerContext.FieldKeyContext) cc;
+                    pkColumnMap.add(fko.getFieldKey());
+                }
 
                 for (ColumnInfo column : pkColumns)
                     pkColumnMap.add(column.getFieldKey());
