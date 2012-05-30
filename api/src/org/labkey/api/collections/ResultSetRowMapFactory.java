@@ -38,6 +38,8 @@ public class ResultSetRowMapFactory extends RowMapFactory<Object> implements Ser
 {
     private static final Logger _log = Logger.getLogger(ResultSetRowMapFactory.class);
 
+    private boolean _convertBigDecimalToDouble = true;
+
 
     public static ResultSetRowMapFactory create(ResultSet rs) throws SQLException
     {
@@ -75,6 +77,12 @@ public class ResultSetRowMapFactory extends RowMapFactory<Object> implements Ser
 
             findMap.put(propName, i);
         }
+    }
+
+
+    public void setConvertBigDecimalToDouble(boolean b)
+    {
+        _convertBigDecimalToDouble = b;
     }
 
 
@@ -125,7 +133,7 @@ public class ResultSetRowMapFactory extends RowMapFactory<Object> implements Ser
 
             // BigDecimal objects are rare, and almost always are converted immediately
             // to doubles for ease of use in Java code; we can take care of this centrally here.
-            if (o instanceof BigDecimal)
+            if (o instanceof BigDecimal && _convertBigDecimalToDouble)
             {
                 BigDecimal dec = (BigDecimal) o;
                 o = dec.doubleValue();

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.action;
 
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.collections.ResultSetRowMapFactory;
@@ -183,6 +184,14 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         return null;
     }
 
+    /* UNDONE: this is terrible! Shouldn't read off the URL */
+    private String getSort()
+    {
+        if (null != _viewContext && null != _viewContext.getRequest())
+            return StringUtils.trimToNull(_viewContext.getRequest().getParameter("query.sort"));
+        return null;
+    }
+
 
     // see Ext.data.JsonReader (response.metaData)
     protected Map<String, Object> getMetaData() throws Exception
@@ -195,22 +204,28 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         metaData.put("root", "rows");
         metaData.put("totalProperty", "rowCount");
 
-        if (null != _viewContext && null != _viewContext.getRequest())
+        String sortString = getSort();
+        if (null != sortString)
         {
-            String sort =_viewContext.getRequest().getParameter("query.sort");
-            if (sort != null && sort.length() > 1)
+            JSONArray array = new JSONArray();
+            String[] sortStrings = sortString.split(",");
+            for (String sort : sortStrings)
             {
+                if (sort.length() == 0)
+                    continue;
                 String dir = "ASC";
-                if (sort.charAt(0) == '-')
+                if (sort.charAt(0) == '-' || sort.charAt(1) == '+')
                 {
-                    dir = "DESC";
+                    dir = sort.charAt(0) == '-' ? "DESC" : "ASC";
                     sort = sort.substring(1);
                 }
                 Map<String, String> sortInfo = new HashMap<String, String>();
                 sortInfo.put("field", sort);
                 sortInfo.put("direction", dir);
-                metaData.put("sortInfo", sortInfo);
+                array.put(array.length(), sortInfo);
             }
+            if (array.length() > 0)
+                metaData.put("sortInfo", array);
         }
 
         //include an id property set to the pk column name if there is one (and only one)
@@ -355,6 +370,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
                 results = _dataRegion.getResultSet(_ctx);
                 _ctx.setResults(results);
                 ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(results);
+                factory.setConvertBigDecimalToDouble(false);
 
                 while(results.next())
                 {
