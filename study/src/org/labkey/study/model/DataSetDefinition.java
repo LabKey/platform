@@ -1631,7 +1631,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             _DatasetColumnsIterator it = new _DatasetColumnsIterator(input, errors, user);
 
             ValidationException matchError = new ValidationException();
-            ArrayList<ColumnInfo> inputMatches = DataIteratorUtil.matchColumns(input,table,useImportAliases, matchError);
+            ArrayList<ColumnInfo> inputMatches = DataIteratorUtil.matchColumns(input,table,useImportAliases,matchError);
             if (matchError.hasErrors())
                 setupError(matchError.getMessage());
 
@@ -1653,18 +1653,23 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
                 if (null != match)
                 {
-                    if (match == keyColumn && getKeyManagementType() == KeyManagementType.GUID)
+                    int out;
+                    if (match == keyColumn && getKeyManagementType() == KeyManagementType.None)
+                    {
+                        // usually we let ETL handle convert, but we need to convert for consistent _key/lsid generation
+                        out = it.addConvertColumn(match.getName(), in, match.getJdbcType(), null != match.getMvColumnName());
+                    }
+                    else if (match == keyColumn && getKeyManagementType() == KeyManagementType.GUID)
                     {
                         // make sure guid is not null (12884)
-                        int out = it.addCoaleseColumn(match.getName(), in, new SimpleTranslator.GuidColumn());
-                        it.getColumnInfo(out).setPropertyURI(match.getPropertyURI());
+                        out = it.addCoaleseColumn(match.getName(), in, new SimpleTranslator.GuidColumn());
                     }
                     else
                     {
                         // to simplify a little, use matched name/propertyuri here (even though StandardETL would rematch using the same logic)
-                        int out = it.addColumn(match.getName(),in);
-                        it.getColumnInfo(out).setPropertyURI(match.getPropertyURI());
+                        out = it.addColumn(match.getName(),in);
                     }
+                    it.getColumnInfo(out).setPropertyURI(match.getPropertyURI());
                 }
                 else
                 {
@@ -1790,8 +1795,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             if (null != indexKeyProperty)
             {
-                it.indexKeyPropertyOutput = indexKeyProperty;
-                it.addAliasColumn("_key", indexKeyProperty);
+                it.indexKeyPropertyOutput = it.addAliasColumn("_key", indexKeyProperty, JdbcType.VARCHAR);
             }
 
             //
@@ -2349,7 +2353,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     // It's possible for the key value to be null. In SQL, NULL concatenated with any other value is NULL,
                     // so use COALESCE to get rid of NULLs
                     parts.add(new SQLFragment("'.'"));
-                    parts.add(new SQLFragment("COALESCE(CAST(" + key.getSelectName() + " AS VARCHAR), '')"));
+//                    parts.add(new SQLFragment("COALESCE(CAST(" + key.getSelectName() + " AS VARCHAR), '')"));
+                    parts.add(new SQLFragment("_key"));
                 }
             }
         }
