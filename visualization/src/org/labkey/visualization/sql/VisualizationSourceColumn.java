@@ -16,6 +16,7 @@
 package org.labkey.visualization.sql;
 
 import org.json.JSONArray;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.TableInfo;
@@ -24,6 +25,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewContext;
 
@@ -39,17 +41,19 @@ public class VisualizationSourceColumn
     private UserSchema _schema;
     private boolean _allowNullResults;
     private String _name;
+    private String _alias;
     private String _otherAlias;
     private JdbcType _type = null;
     private Set<Object> _values = new LinkedHashSet<Object>();
 
     public static class Factory
     {
-        private Map<String, VisualizationSourceColumn> _currentCols = new HashMap<String, VisualizationSourceColumn>();
+        private Map<Path, VisualizationSourceColumn> _currentCols = new HashMap<Path, VisualizationSourceColumn>();
+        private Map<String,VisualizationSourceColumn> _aliasMap = new CaseInsensitiveHashMap<VisualizationSourceColumn>();
 
         private VisualizationSourceColumn findOrAdd(VisualizationSourceColumn col)
         {
-            String key = ColumnInfo.legalNameFromName(col.getSchemaName() + "_" + col.getQueryName() + "_" + col.getOriginalName());
+            Path key = new Path(col.getSchemaName(), col.getQueryName(), col.getOriginalName());
             VisualizationSourceColumn current = _currentCols.get(key);
             if (current != null)
             {
@@ -61,6 +65,7 @@ public class VisualizationSourceColumn
             else
             {
                 _currentCols.put(key, col);
+                _aliasMap.put(col.getAlias(), col);
                 return col;
             }
         }
@@ -77,9 +82,9 @@ public class VisualizationSourceColumn
             return findOrAdd(col);
         }
 
-        public VisualizationSourceColumn get(String columnKey)
+        public VisualizationSourceColumn getByAlias(String alias)
         {
-            return _currentCols.get(columnKey);
+            return _aliasMap.get(alias);
         }
     }
 
@@ -261,7 +266,11 @@ public class VisualizationSourceColumn
     
     public String getAlias()
     {
-        return ColumnInfo.legalNameFromName(getSchemaName() + "_" + _queryName + "_" + _name);
+        if (null == _alias)
+        {
+            _alias = (getSchemaName() + "_" + _queryName + "_" + _name).replaceAll("/","_");
+        }
+        return _alias;
     }
 
     @Override

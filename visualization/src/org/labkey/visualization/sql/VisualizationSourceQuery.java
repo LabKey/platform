@@ -33,6 +33,8 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
     private Container _container;
     private UserSchema _schema;
     private String _queryName;
+    private final int _uniq;
+    private String _alias = null;
     private TableInfo _tinfo;
     private VisualizationSourceColumn _pivot;
     private Set<VisualizationSourceColumn> _measures = new LinkedHashSet<VisualizationSourceColumn>();
@@ -44,12 +46,13 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
     private List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> _joinConditions;
     private SimpleFilter _filter;
 
-    VisualizationSourceQuery(Container container, UserSchema schema, String queryName, VisualizationSourceQuery joinTarget)
+    VisualizationSourceQuery(Container container, UserSchema schema, String queryName, VisualizationSourceQuery joinTarget, int uniq)
     {
         _container = container;
         _schema = schema;
         _queryName = queryName;
         _joinTarget = joinTarget;
+        _uniq = uniq;
     }
 
     private TableInfo getTableInfo()
@@ -249,10 +252,20 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         return getSchemaName() + "." + _queryName;
     }
 
+
+    @Override
+    public String getSQLAlias()
+    {
+        return "\"" + getAlias() + "\"";
+    }
+
+
     @Override
     public String getAlias()
     {
-        return ColumnInfo.legalNameFromName(getSchemaName() + "_" + _queryName);
+        if (null == _alias)
+            _alias = ColumnInfo.legalNameFromName(getSchemaName() + "_" + _queryName + "_" + _uniq);
+        return _alias;
     }
 
     public void appendColumnNames(StringBuilder sql, Set<? extends VisualizationSourceColumn> columns, boolean aggregate, boolean aliasInsteadOfName, boolean appendAlias)
@@ -280,7 +293,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
                 sql.append(")");
 
             if (appendAlias)
-                sql.append(" AS ").append(column.getSQLAlias());
+                sql.append(" AS ").append(column.getSQLAlias()).append(" @preservetitle");
             leadingSep = ", ";
         }
     }

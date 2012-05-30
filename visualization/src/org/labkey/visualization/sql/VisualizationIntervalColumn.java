@@ -103,6 +103,13 @@ public class VisualizationIntervalColumn
         return _interval.getSQL(_startDate, _endDate);
     }
 
+
+    public String getSQLAlias(int intervals)
+    {
+        return "\"" + ((intervals > 1) ? getFullAlias() : getSimpleAlias()) + "\"";
+    }
+
+
     public String getSimpleAlias()
     {
         return _interval.getLabel();

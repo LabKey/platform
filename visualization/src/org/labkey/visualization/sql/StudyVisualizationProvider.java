@@ -63,7 +63,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
             sql.append(", ");
             sql.append(queryAlias);
             sql.append(".");
-            sql.append(entry.getValue().getSimpleAlias());
+            sql.append(entry.getValue().getSQLAlias(intervals.size()));
         }
 
         Container container = joinQuery.getContainer();

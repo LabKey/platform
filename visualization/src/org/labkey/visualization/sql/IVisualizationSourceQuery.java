@@ -37,6 +37,8 @@ public interface IVisualizationSourceQuery
 
     IVisualizationSourceQuery getJoinTarget();
 
+    String getSQLAlias();
+
     String getAlias();
 
     List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> getJoinConditions();

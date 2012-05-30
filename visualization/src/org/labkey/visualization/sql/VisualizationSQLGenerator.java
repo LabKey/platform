@@ -308,7 +308,8 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         VisualizationSourceQuery query = _sourceQueries.get(queryName);
         if (query == null)
         {
-            query = new VisualizationSourceQuery(container, column.getSchema(), column.getQueryName(), joinQuery);
+            int counter = _sourceQueries.size() + 1;
+            query = new VisualizationSourceQuery(container, column.getSchema(), column.getQueryName(), joinQuery, counter);
             _sourceQueries.put(queryName, query);
         }
         return query;
@@ -427,7 +428,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             aggregatedSQL.append("\n");
             aggregatedSQL.append(groupByQuery.getWhereClause());
             aggregatedSQL.append(") AS ");
-            aggregatedSQL.append(groupByQuery.getAlias());
+            aggregatedSQL.append(groupByQuery.getSQLAlias());
             separator = "";
             aggregatedSQL.append(" ON ");
             VisualizationProvider provider = getVisualizationProvider(groupByQuery.getSchemaName());
@@ -439,7 +440,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                 aggregatedSQL.append("x.");
                 aggregatedSQL.append(columnAliases.get(pair.getKey().getOriginalName()).iterator().next());
                 aggregatedSQL.append(" = ");
-                aggregatedSQL.append(groupByQuery.getAlias());
+                aggregatedSQL.append(groupByQuery.getSQLAlias());
                 aggregatedSQL.append(".");
                 aggregatedSQL.append(pair.getValue().getOriginalName());
             }
@@ -509,10 +510,9 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             Set<String> intervalAliases = allAliases.get(interval.getEndDate().getOriginalName());
             if (intervalAliases.size() > 1)
             {
-                interval.getEndDate().setOtherAlias(factory.get(intervalAliases.iterator().next()).getAlias());
+                interval.getEndDate().setOtherAlias(factory.getByAlias(intervalAliases.iterator().next()).getAlias());
             }
-            String alias = (intervalsSize > 1) ? interval.getFullAlias() : interval.getSimpleAlias();
-            masterSelectList.append(sep).append(interval.getSQL()).append(" AS ").append(alias);
+            masterSelectList.append(sep).append(interval.getSQL()).append(" AS ").append(interval.getSQLAlias(intervalsSize));
         }
 
         Map<VisualizationSourceColumn, IVisualizationSourceQuery> orderBys = new LinkedHashMap<VisualizationSourceColumn, IVisualizationSourceQuery>();
@@ -526,7 +526,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                 VisualizationSourceColumn column;
                 if (orderByAliases.size() > 1)
                 {
-                    column = factory.get(orderByAliases.iterator().next());
+                    column = factory.getByAlias(orderByAliases.iterator().next());
                 }
                 else
                 {
@@ -542,7 +542,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             else
                 sql.append("\n").append(joinOperator).append("\n");
             String querySql = query.getSQL(factory);
-            sql.append("(").append(querySql).append(") AS ").append(query.getAlias()).append("\n");
+            sql.append("(").append(querySql).append(") AS ").append(query.getSQLAlias()).append("\n");
             if (query.getJoinTarget() != null)
             {
                 sql.append("ON ");
@@ -557,8 +557,8 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
                     sql.append(andSep);
                     andSep = " AND ";
-                    sql.append(leftQuery.getAlias()).append(".").append(leftColumn.getSQLAlias()).append(" = ");
-                    sql.append(rightQuery.getAlias()).append(".").append(rightColumn.getSQLAlias()).append("\n");
+                    sql.append(leftQuery.getSQLAlias()).append(".").append(leftColumn.getSQLAlias()).append(" = ");
+                    sql.append(rightQuery.getSQLAlias()).append(".").append(rightColumn.getSQLAlias()).append("\n");
                 }
             }
         }
@@ -581,7 +581,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         StringBuilder sql = new StringBuilder("ORDER BY ");
         for (Map.Entry<VisualizationSourceColumn, IVisualizationSourceQuery> orderBy : orderBys.entrySet())
         {
-            sql.append(sep).append(orderBy.getValue().getAlias()).append(".").append(orderBy.getKey().getSQLAlias());
+            sql.append(sep).append(orderBy.getValue().getSQLAlias()).append(".").append(orderBy.getKey().getSQLAlias());
             sep = ", ";
         }
         if (findSchema(orderBys.keySet()).getDbSchema().getSqlDialect().isSqlServer())

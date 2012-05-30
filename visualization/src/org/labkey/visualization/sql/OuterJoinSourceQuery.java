@@ -62,6 +62,12 @@ public class OuterJoinSourceQuery implements IVisualizationSourceQuery
     }
 
     @Override
+    public String getSQLAlias()
+    {
+        return "\"" + getAlias() + "\"";
+    }
+
+    @Override
     public String getAlias()
     {
         StringBuilder alias = new StringBuilder();
