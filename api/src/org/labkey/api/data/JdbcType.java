@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.util.DateUtil;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
@@ -175,7 +176,14 @@ public enum JdbcType
 
     VARBINARY(Types.VARBINARY, ByteBuffer.class),
 
-    VARCHAR(Types.VARCHAR, String.class),
+    VARCHAR(Types.VARCHAR, String.class)
+        {
+            @Override
+            protected Object _fromDate(Date d)
+            {
+                return DateUtil.toISO(d);   // don't shorten
+            }
+        },
 
     NULL(Types.NULL, Object.class),
 

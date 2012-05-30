@@ -908,6 +908,16 @@ public abstract class SqlDialect
         return partName;
     }
 
+
+    /**
+     *  ISO without the "T" "2012-02-03 11:01:03.000" like DateUtil.toISO()
+     */
+    public SQLFragment getISOFormat(SQLFragment date)
+    {
+        // ONLY primary dialects need to support this for now
+        throw new UnsupportedOperationException();
+    }
+
     public abstract List<String> getChangeStatements(TableChange change);
     public abstract void initializeConnection(Connection conn) throws SQLException;
     public abstract void purgeTempSchema(Map<String, TempTableTracker> createdTableNames);

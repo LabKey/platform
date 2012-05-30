@@ -167,17 +167,20 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     }
 
 
-    protected class AliasColumn implements Callable
+    protected class AliasColumn extends SimpleConvertColumn
     {
-        final int index;
-
-        AliasColumn(int index)
+        AliasColumn(String fieldName, int index)
         {
-            this.index = index;
+            super(fieldName, index, null);
+        }
+
+        AliasColumn(String fieldName, int index, JdbcType convert)
+        {
+            super(fieldName, index, convert);
         }
 
         @Override
-        public Object call() throws Exception
+        protected Object getSourceValue()
         {
             return SimpleTranslator.this.get(index);
         }
@@ -232,7 +235,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         @Override
         final public Object call() throws Exception
         {
-            Object value = _data.get(index);
+            Object value = getSourceValue();
             try
             {
                 return convert(value);
@@ -245,7 +248,12 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
         protected Object convert(Object o)
         {
-            return type.convert(o);
+            return null==type ? o : type.convert(o);
+        }
+
+        protected Object getSourceValue()
+        {
+            return _data.get(index);
         }
     }
 
@@ -514,7 +522,17 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         col.setName(name);
         // don't want duplicate property ids usually
         col.setPropertyURI(null);
-        return addColumn(col, new AliasColumn(aliasIndex));
+        return addColumn(col, new AliasColumn(name, aliasIndex));
+    }
+
+    public int addAliasColumn(String name, int aliasIndex, JdbcType toType)
+    {
+        ColumnInfo col = new ColumnInfo(_outputColumns.get(aliasIndex).getKey());
+        col.setName(name);
+        col.setJdbcType(toType);
+        // don't want duplicate property ids usually
+        col.setPropertyURI(null);
+        return addColumn(col, new AliasColumn(name, aliasIndex, toType));
     }
 
     public int addConvertColumn(String name, int fromIndex, JdbcType toType, boolean mv)
