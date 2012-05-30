@@ -306,6 +306,7 @@ core/resources/schemas/dbscripts/postgresql/core-11.20-11.30.sql -text
 core/resources/schemas/dbscripts/postgresql/core-11.30-12.10.sql -text
 core/resources/schemas/dbscripts/postgresql/core-11.31-11.32.sql -text
 core/resources/schemas/dbscripts/postgresql/core-11.32-11.33.sql -text
+core/resources/schemas/dbscripts/postgresql/core-12.10-12.11.sql -text
 core/resources/schemas/dbscripts/postgresql/core-create.sql -text
 core/resources/schemas/dbscripts/postgresql/core-drop.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/bootstrap.sql -text
@@ -428,6 +429,7 @@ core/resources/schemas/dbscripts/sqlserver/core-11.20-11.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-11.30-12.10.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-11.31-11.32.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-11.32-11.33.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-12.10-12.11.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-drop.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/bootstrap.sql -text

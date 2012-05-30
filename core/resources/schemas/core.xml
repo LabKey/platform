@@ -28,7 +28,6 @@
       <ns:column columnName="Parent"/>
       <ns:column columnName="Name"/>
       <ns:column columnName="SortOrder"/>
-      <ns:column columnName="CaBIGPublished"/>
       <ns:column columnName="Description"/>
       <ns:column columnName="Workbook"/>
       <ns:column columnName="Title"/>
