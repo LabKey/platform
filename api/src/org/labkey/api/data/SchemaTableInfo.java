@@ -925,6 +925,15 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     }
 
     @Override
+    public ContainerContext getContainerContext()
+    {
+        FieldKey fieldKey = getContainerFieldKey();
+        if (fieldKey != null)
+            return new ContainerContext.FieldKeyContext(fieldKey);
+
+        return null;
+    }
+
     public FieldKey getContainerFieldKey()
     {
         ColumnInfo col = getColumn("container");

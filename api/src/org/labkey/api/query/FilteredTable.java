@@ -200,20 +200,9 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
 
 
     @Override
-    public boolean hasContainerContext()
-    {
-        TableInfo t = getRealTable();
-        return t instanceof AbstractTableInfo && ((AbstractTableInfo)t).hasContainerContext();
-    }
-
-
-    @Override
     public ContainerContext getContainerContext()
     {
-        TableInfo t = getRealTable();
-        if (t instanceof AbstractTableInfo)
-            return ((AbstractTableInfo)t).getContainerContext();
-        return null;
+        return getRealTable().getContainerContext();
     }
 
 
@@ -221,7 +210,9 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
     public FieldKey getContainerFieldKey()
     {
         TableInfo t = getRealTable();
-        return t.getContainerFieldKey();
+        if (t instanceof AbstractTableInfo)
+            return ((AbstractTableInfo)t).getContainerFieldKey();
+        return null;
     }
 
 

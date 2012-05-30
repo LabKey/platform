@@ -35,6 +35,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.HasPermission;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpression;
@@ -398,5 +399,12 @@ public interface TableInfo extends HasPermission
 
     public boolean supportsContainerFilter();
 
-    public FieldKey getContainerFieldKey();
+    /**
+     * Returns a ContainerContext for this table or null if ContainerContext is not supported.
+     *
+     * @return The ContainerContext for this table or null.
+     */
+    @Nullable
+    public ContainerContext getContainerContext();
+
 }

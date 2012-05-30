@@ -125,8 +125,8 @@ abstract public class AbstractTableInfo implements TableInfo
 
     public void afterConstruct()
     {
-        ContainerContext cc;
-        if (hasContainerContext() && null != (cc = getContainerContext()))
+        ContainerContext cc = getContainerContext();
+        if (null != cc)
         {
             for (ColumnInfo c : getColumns())
             {
@@ -496,7 +496,9 @@ abstract public class AbstractTableInfo implements TableInfo
 
     public StringExpression getDetailsURL(Set<FieldKey> columns, Container container)
     {
-        ContainerContext containerContext = hasContainerContext() ? this.getContainerContext() : container;
+        ContainerContext containerContext = getContainerContext();
+        if (containerContext == null)
+            containerContext = container;
 
         for (DetailsURL dUrl : _detailsURLs)
         {
@@ -908,24 +910,27 @@ abstract public class AbstractTableInfo implements TableInfo
         return Collections.EMPTY_LIST;
     }
 
-    /**
-     * return true if this table provides an implementation of getContainerContext()
-     */
-    public boolean hasContainerContext()
-    {
-        return false;
-    }
-
+    @Override
     public ContainerContext getContainerContext()
     {
-//        FieldKey fk = getContainerFieldKey();
-//        return null==fk ? null : new ContainerContext.FieldKeyContext(fk);
+        FieldKey fieldKey = getContainerFieldKey();
+        if (fieldKey != null)
+            return new ContainerContext.FieldKeyContext(fieldKey);
+
         return null;
     }
 
-    @Override
+    /**
+     * Return the FieldKey of the Container column for this table.
+     * If the value is non-null then getContainerContext() will
+     * return a FieldKeyContext using the container FieldKey.
+     *
+     * @return FieldKey of the Container column.
+     */
+    @Nullable
     public FieldKey getContainerFieldKey()
     {
+        // UNDONE: Eventually this should default to 'if (getColumn("Container") != null) return getColumn("Container").getFieldKey();'
         return null;
     }
 

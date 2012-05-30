@@ -53,8 +53,6 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.util.ContainerContext;
-import org.labkey.api.util.StringExpression;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -416,12 +414,6 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
     public void afterConstruct()
     {
         super.afterConstruct();    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public boolean hasContainerContext()
-    {
-        return true;
     }
 
     @Override
