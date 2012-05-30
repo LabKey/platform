@@ -2212,6 +2212,7 @@ query/src/org/labkey/query/sql/SourceBuilder.java -text
 query/src/org/labkey/query/sql/SqlBase.g -text
 query/src/org/labkey/query/sql/SqlBuilder.java -text
 query/src/org/labkey/query/sql/SqlParser.java -text
+query/src/org/labkey/query/sql/SupportsAnnotations.java -text
 query/src/org/labkey/query/sql/UnionTableInfoImpl.java -text
 query/src/org/labkey/query/view/CustomViewSetKey.java -text
 query/src/org/labkey/query/view/EditQueryPage.java -text
