@@ -467,6 +467,7 @@ LABKEY.requiresVisualization = function ()
     }
 
     // TODO: Concat and minify the below files for a non-devMode version.
+    LABKEY.requiresScript('vis/lib/patches.js')
     LABKEY.requiresScript('vis/src/utils.js');
     LABKEY.requiresScript('vis/src/geom.js');
     LABKEY.requiresScript('vis/src/stat.js');
