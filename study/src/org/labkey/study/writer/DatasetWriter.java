@@ -15,7 +15,6 @@
  */
 package org.labkey.study.writer;
 
-import com.sun.corba.se.impl.encoding.CodeSetConversion;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
@@ -203,7 +202,7 @@ public class DatasetWriter implements InternalStudyWriter
                     {
                         // Assuming they're still around, filter out rows where the source assay run has been deleted,
                         // thus orphaning the dataset row and pulling out all of its real data
-                        filter.addCondition(provider.getTableMetadata().getRunFieldKeyFromResults().toString(), null, CompareType.NONBLANK);
+                        filter.addCondition(provider.getTableMetadata(protocol).getRunFieldKeyFromResults().toString(), null, CompareType.NONBLANK);
                     }
                 }
             }

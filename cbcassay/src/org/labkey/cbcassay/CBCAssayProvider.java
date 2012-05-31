@@ -115,18 +115,14 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
 
     public CBCAssayProvider()
     {
-        super("CBCAssayProtocol", "CBCAssayRun", CBCDataHandler.DATA_TYPE,
-            new CBCAssayTableMetadata(
-                null,
-                FieldKey.fromParts("Run"),
-                FieldKey.fromParts(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME)));
+        super("CBCAssayProtocol", "CBCAssayRun", CBCDataHandler.DATA_TYPE);
     }
 
     private final static class CBCAssayTableMetadata extends AssayTableMetadata
     {
-        public CBCAssayTableMetadata(FieldKey specimenDetailParentFieldKey, FieldKey runFieldKey, FieldKey resultRowIdFieldKey)
+        public CBCAssayTableMetadata(AssayProvider provider, ExpProtocol protocol, FieldKey specimenDetailParentFieldKey, FieldKey runFieldKey, FieldKey resultRowIdFieldKey)
         {
-            super(specimenDetailParentFieldKey, runFieldKey, resultRowIdFieldKey);
+            super(provider, protocol, specimenDetailParentFieldKey, runFieldKey, resultRowIdFieldKey);
         }
 
         @Override
@@ -144,6 +140,17 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
     public String getDescription()
     {
         return "Imports Complete Blood Count data files.";
+    }
+
+    @Override
+    public AssayTableMetadata getTableMetadata(ExpProtocol protocol)
+    {
+        return new CBCAssayTableMetadata(
+                this,
+                protocol,
+                null,
+                FieldKey.fromParts("Run"),
+                FieldKey.fromParts(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME));
     }
 
     public List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles, AssayRunUploadForm context)

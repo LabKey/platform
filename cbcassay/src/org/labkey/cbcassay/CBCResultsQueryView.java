@@ -95,7 +95,7 @@ public final class CBCResultsQueryView extends ResultsQueryView
     static void wrapDisplayColumns(ExpProtocol protocol, ViewContext context, List<DisplayColumn> columns, boolean editable)
     {
         CBCAssayProvider provider = CBCAssayManager.get().getProvider();
-        AssayTableMetadata assayTableMeta = provider.getTableMetadata();
+        AssayTableMetadata assayTableMeta = provider.getTableMetadata(protocol);
         FieldKey sampleIdKey = assayTableMeta.getParticipantIDFieldKey();
         FieldKey propertiesKey = FieldKey.fromString("Properties");
         Container container = context.getContainer();
@@ -117,7 +117,7 @@ public final class CBCResultsQueryView extends ResultsQueryView
                 FieldKey fieldKey = info.getFieldKey();
                 if (editable && (fieldKey.equals(sampleIdKey) || fieldKey.equals(oldSampleIdKey)))
                 {
-                    iter.set(new SampleIdInputColumn(provider, info));
+                    iter.set(new SampleIdInputColumn(provider, protocol, info));
                 }
                 else if (fieldKey.getParent() == null || propertiesKey.equals(fieldKey.getParent()))
                 {
@@ -139,12 +139,12 @@ public final class CBCResultsQueryView extends ResultsQueryView
         ColumnInfo _columnInfo;
         private String _resultRowIdFieldKey;
 
-        public SampleIdInputColumn(CBCAssayProvider provider, ColumnInfo columnInfo)
+        public SampleIdInputColumn(CBCAssayProvider provider, ExpProtocol protocol, ColumnInfo columnInfo)
         {
             super(columnInfo.getRenderer());
             _provider = provider;
             _columnInfo = columnInfo;
-            _resultRowIdFieldKey = _provider.getTableMetadata().getResultRowIdFieldKey().toString();
+            _resultRowIdFieldKey = _provider.getTableMetadata(protocol).getResultRowIdFieldKey().toString();
         }
 
         @Override

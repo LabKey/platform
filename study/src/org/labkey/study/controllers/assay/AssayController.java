@@ -63,7 +63,6 @@ import org.labkey.api.study.assay.AbstractAssayView;
 import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayRunsView;
-import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.assay.PipelineDataCollectorRedirectAction;
@@ -867,12 +866,12 @@ public class AssayController extends SpringActionController
                     sep = ";";
                 }
                 result.addFilter(AssayService.get().getResultsTableName(protocol),
-                        provider.getTableMetadata().getRunRowIdFieldKeyFromResults(), CompareType.IN, filterValue.toString());
+                        provider.getTableMetadata(protocol).getRunRowIdFieldKeyFromResults(), CompareType.IN, filterValue.toString());
             }
             else if (runIds.length == 1)
             {
                 result.addFilter(AssayService.get().getResultsTableName(protocol),
-                        provider.getTableMetadata().getRunRowIdFieldKeyFromResults(), CompareType.EQUAL, runIds[0]);
+                        provider.getTableMetadata(protocol).getRunRowIdFieldKeyFromResults(), CompareType.EQUAL, runIds[0]);
             }
             if (containerFilter != null && containerFilter != ContainerFilter.EVERYTHING)
                 result.addParameter(protocol.getName() + " Data." + QueryParam.containerFilterName, containerFilter.getType().name());

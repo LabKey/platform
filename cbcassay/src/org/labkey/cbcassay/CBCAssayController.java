@@ -67,7 +67,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 
 public class CBCAssayController extends SpringActionController
@@ -171,7 +170,7 @@ public class CBCAssayController extends SpringActionController
             ExpProtocol protocol = form.getProtocol();
             Domain resultDomain = provider.getResultsDomain(protocol);
 
-            FieldKey sampleIdKey = provider.getTableMetadata().getParticipantIDFieldKey();
+            FieldKey sampleIdKey = provider.getTableMetadata(protocol).getParticipantIDFieldKey();
             PropertyDescriptor sampleIdPd = null;
             for (DomainProperty prop : resultDomain.getProperties())
             {

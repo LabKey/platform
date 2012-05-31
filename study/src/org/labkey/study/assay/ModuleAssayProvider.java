@@ -101,40 +101,6 @@ public class ModuleAssayProvider extends TsvAssayProvider
     public ModuleAssayProvider(String name, Module module, Resource basePath, ProviderType providerConfig)
     {
         super(name + "Protocol", name + "Run");
-        _tableMetadata = new AssayTableMetadata(_tableMetadata.getSpecimenDetailParentFieldKey(), _tableMetadata.getRunFieldKeyFromResults(), _tableMetadata.getResultRowIdFieldKey(), _tableMetadata.getDatasetRowIdPropertyName())
-        {
-            @Override
-            public FieldKey getParticipantIDFieldKey()
-            {
-                if (participantIdKey != null)
-                    return participantIdKey;
-                return super.getParticipantIDFieldKey();
-            }
-
-            @Override
-            public FieldKey getVisitIDFieldKey(TimepointType timepointType)
-            {
-                if (timepointType == TimepointType.VISIT)
-                {
-                    if (visitIdKey != null)
-                        return visitIdKey;
-                }
-                else
-                {
-                    if (dateKey != null)
-                        return dateKey;
-                }
-                return super.getVisitIDFieldKey(timepointType);
-            }
-
-            @Override
-            public FieldKey getSpecimenIDFieldKey()
-            {
-                if (specimenIdKey != null)
-                    return specimenIdKey;
-                return super.getSpecimenIDFieldKey();
-            }
-        };
         this.name = name;
         this.module = module;
         this.basePath = basePath;
@@ -200,6 +166,46 @@ public class ModuleAssayProvider extends TsvAssayProvider
     public String getDescription()
     {
         return description;
+    }
+
+    @Override
+    public AssayTableMetadata getTableMetadata(ExpProtocol protocol)
+    {
+        AssayTableMetadata metadata = super.getTableMetadata(protocol);
+        return new AssayTableMetadata(this, protocol, metadata.getSpecimenDetailParentFieldKey(), metadata.getRunFieldKeyFromResults(), metadata.getResultRowIdFieldKey(), metadata.getDatasetRowIdPropertyName())
+        {
+            @Override
+            public FieldKey getParticipantIDFieldKey()
+            {
+                if (participantIdKey != null)
+                    return participantIdKey;
+                return super.getParticipantIDFieldKey();
+            }
+
+            @Override
+            public FieldKey getVisitIDFieldKey(TimepointType timepointType)
+            {
+                if (timepointType == TimepointType.VISIT)
+                {
+                    if (visitIdKey != null)
+                        return visitIdKey;
+                }
+                else
+                {
+                    if (dateKey != null)
+                        return dateKey;
+                }
+                return super.getVisitIDFieldKey(timepointType);
+            }
+
+            @Override
+            public FieldKey getSpecimenIDFieldKey()
+            {
+                if (specimenIdKey != null)
+                    return specimenIdKey;
+                return super.getSpecimenIDFieldKey();
+            }
+        };
     }
 
     protected DomainDescriptorType parseDomain(IAssayDomainType domainType) throws ModuleAssayException

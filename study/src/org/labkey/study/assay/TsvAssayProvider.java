@@ -68,10 +68,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
 
     protected TsvAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix)
     {
-        super(protocolLSIDPrefix, runLSIDPrefix, TsvDataHandler.DATA_TYPE, new AssayTableMetadata(
-            null,
-            FieldKey.fromParts("Run"),
-            FieldKey.fromParts(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME)));
+        super(protocolLSIDPrefix, runLSIDPrefix, TsvDataHandler.DATA_TYPE);
     }
 
     public List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles, AssayRunUploadForm context)
@@ -87,6 +84,17 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     public String getName()
     {
         return "General";
+    }
+
+    @Override
+    public AssayTableMetadata getTableMetadata(ExpProtocol protocol)
+    {
+        return new AssayTableMetadata(
+                this,
+                protocol,
+                null,
+                FieldKey.fromParts("Run"),
+                FieldKey.fromParts(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME));
     }
 
     public List<Pair<Domain, Map<DomainProperty, Object>>> createDefaultDomains(Container c, User user)

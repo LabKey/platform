@@ -365,8 +365,8 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
                 }
                 ExpProtocol protocol = _dsd.getAssayProtocol();
                 AssayProvider provider = AssayService.get().getProvider(protocol);
-                defaultVisibleCols.add(new FieldKey(provider.getTableMetadata().getRunFieldKeyFromResults(), ExpRunTable.Column.Name.toString()));
-                defaultVisibleCols.add(new FieldKey(provider.getTableMetadata().getRunFieldKeyFromResults(), ExpRunTable.Column.Comments.toString()));
+                defaultVisibleCols.add(new FieldKey(provider.getTableMetadata(protocol).getRunFieldKeyFromResults(), ExpRunTable.Column.Name.toString()));
+                defaultVisibleCols.add(new FieldKey(provider.getTableMetadata(protocol).getRunFieldKeyFromResults(), ExpRunTable.Column.Comments.toString()));
             }
         }
     }
@@ -399,7 +399,7 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
         if (protocol != null)
         {
             AssayProvider provider = AssayService.get().getProvider(protocol);
-            FieldKey runFieldKey = provider == null ? null : provider.getTableMetadata().getRunFieldKeyFromResults();
+            FieldKey runFieldKey = provider == null ? null : provider.getTableMetadata(protocol).getRunFieldKeyFromResults();
             if (name.toLowerCase().startsWith("run"))
             {
                 String runProperty = name.substring("run".length()).trim();

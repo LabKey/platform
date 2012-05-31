@@ -858,7 +858,7 @@ public class AssayPublishManager implements AssayPublishService.Service
         if (tableInfo == null)
             return false;
 
-        AssayTableMetadata tableMetadata = provider.getTableMetadata();
+        AssayTableMetadata tableMetadata = provider.getTableMetadata(protocol);
 
         FieldKey matchFieldKey = new FieldKey(tableMetadata.getSpecimenIDFieldKey(), AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME);
 
@@ -923,10 +923,10 @@ public class AssayPublishManager implements AssayPublishService.Service
                             return Collections.emptyList();
                         }
 
-                        FieldKey ptidFK = provider.getTableMetadata().getParticipantIDFieldKey();
-                        FieldKey visitFK = provider.getTableMetadata().getVisitIDFieldKey(study.getTimepointType());
-                        FieldKey objectIdFK = provider.getTableMetadata().getResultRowIdFieldKey();
-                        FieldKey runFK = provider.getTableMetadata().getRunRowIdFieldKeyFromResults();
+                        FieldKey ptidFK = provider.getTableMetadata(protocol).getParticipantIDFieldKey();
+                        FieldKey visitFK = provider.getTableMetadata(protocol).getVisitIDFieldKey(study.getTimepointType());
+                        FieldKey objectIdFK = provider.getTableMetadata(protocol).getResultRowIdFieldKey();
+                        FieldKey runFK = provider.getTableMetadata(protocol).getRunRowIdFieldKeyFromResults();
 
                         AssaySchema schema = AssayService.get().createSchema(user, container);
 
