@@ -748,7 +748,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             //Get data for individual lines.
             LABKEY.Visualization.getData({
                 success: function(data){
-                    console.log("Data returned from server");
                     // store the data in an object by subject for use later when it comes time to render the line chart
                     this.individualData = data;
                     this.markDirty(!this.editorSavePanel.isSavedReport()); // only mark when editing unsaved report
@@ -907,9 +906,17 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             }
         }
 
+        var xAxisIndex = this.getAxisIndex(this.chartInfo.axis, "x-axis");
+        var leftAxisIndex = this.getAxisIndex(this.chartInfo.axis, "y-axis", "left");
+        var rightAxisIndex = this.getAxisIndex(this.chartInfo.axis, "y-axis", "right");
+        if(xAxisIndex == -1){
+           Ext4.Msg.alert("Error", "Could not find x-axis in chart measure information.");
+           return;
+        }
+
         // enable/disable the left and right axis panels
-        (this.getAxisIndex(this.chartInfo.axis, "y-axis", "left") > -1 ? this.leftAxisButton.enable() : this.leftAxisButton.disable());
-        (this.getAxisIndex(this.chartInfo.axis, "y-axis", "right") > -1 ? this.rightAxisButton.enable() : this.rightAxisButton.disable());
+        (leftAxisIndex > -1 ? this.leftAxisButton.enable() : this.leftAxisButton.disable());
+        (rightAxisIndex > -1 ? this.rightAxisButton.enable() : this.rightAxisButton.disable());
 
         if (!this.editorYAxisLeftPanel.userEditedLabel)
             this.editorYAxisLeftPanel.setLabel(this.editorMeasurePanel.getDefaultLabel("left"));
@@ -921,14 +928,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         if(this.chartInfo.measures.length == 0){
            this.clearChartPanel("No measure selected. Please click the \"Measures\" button to add a measure.");
-           return;
-        }
-
-        var xAxisIndex = this.getAxisIndex(this.chartInfo.axis, "x-axis");
-        var leftAxisIndex = this.getAxisIndex(this.chartInfo.axis, "y-axis", "left");
-        var rightAxisIndex = this.getAxisIndex(this.chartInfo.axis, "y-axis", "right");
-        if(xAxisIndex == -1){
-           Ext4.Msg.alert("Error", "Could not find x-axis in chart measure information.");
            return;
         }
 
@@ -945,45 +944,82 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         // TODO: Use the same max/min for every chart if displaying more than one chart.
 
-//        if (this.chartInfo.chartLayout != "single")
-//        {
-//            //ISSUE In multi-chart case, we need to precompute the default axis ranges so that all charts share them.
-//            //Should have more of this capability in ChartComponent (essentially need to build a single chart with all data)
-//            //but didn't want to refactor that code substantially..
-//            var allX = [];
-//            var allLeft = [];
-//            var allRight = [];
+        if (this.chartInfo.chartLayout != "single")
+        {
+            //ISSUE In multi-chart case, we need to precompute the default axis ranges so that all charts share them.
+            var leftMeasures = [];
+            var rightMeasures = [];
+            var min, max, tempMin, tempMax;
+            var measureToColumn = this.individualData ? this.individualData.measureToColumn : this.aggregateData.measureToColumn;
 
-//            Ext4.each(series, function (ser) {
-//                Ext4.each(ser.data, function(row) {
-//                    var xValue = row.interval;
-//                    var yValue = row.dataValue;
-//                    if (xValue != null && typeof xValue == "object")
-//                        xValue = xValue.value;
-//                    if (yValue != null && typeof yValue == "object")
-//                        yValue = yValue.value;
-//                    if (xValue != null && yValue != null) {
-//                        allX.push(xValue);
-//                        if(ser.axis == "left"){
-//                            allLeft.push(yValue);
-//                        } else {
-//                            allRight.push(yValue);
-//                        }
-//                    }
-//                })
-//            });
-//            this.autoAxisRange = {
-//                x:LABKEY.vis.getAxisRange(allX, this.chartInfo.axis[xAxisIndex].scale)
-//            };
-//            if (leftAxisIndex > -1) {
-//                this.autoAxisRange.left = LABKEY.vis.getAxisRange(allLeft, this.chartInfo.axis[leftAxisIndex].scale);
-//            }
-//            if (rightAxisIndex > -1) {
-//                this.autoAxisRange.right = LABKEY.vis.getAxisRange(allRight, this.chartInfo.axis[rightAxisIndex].scale);
-//            }
-//        }
-//        else   //Use an undefined min & max so that chart computes it
-//            this.autoAxisRange = {x:{}, left:{}, right:{}}; //Let the chart compute this
+            for(var i = 0; i < seriesList.length; i++){
+                if(seriesList[i].yAxisSide == "left"){
+                    leftMeasures.push(measureToColumn[seriesList[i].name]);
+                } else if(seriesList[i].yAxisSide == "right"){
+                    rightMeasures.push(measureToColumn[seriesList[i].name]);
+                }
+            }
+
+            var xName;
+            if(this.viewInfo.TimepointType === "date"){
+                xName = this.chartInfo.measures[0].dateOptions.interval;
+            } else {
+                xName = measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit"];
+            }
+
+            var xFunc = function(row){
+                return row[xName].value;
+            };
+
+            if(!this.chartInfo.axis[xAxisIndex].range.min){
+                this.chartInfo.axis[xAxisIndex].range.min = d3.min(this.individualData.rows, xFunc);
+            }
+            if(!this.chartInfo.axis[xAxisIndex].range.max){
+                this.chartInfo.axis[xAxisIndex].range.max = d3.max(this.individualData.rows, xFunc);
+            }
+
+            if (leftAxisIndex > -1) {
+                // If we have a left axis then we need to find the min/max
+                min = null, max = null, tempMin = null, tempMax = null;
+                var leftAccessor = function(row){return row[leftMeasures[i]].value};
+
+                if(!this.chartInfo.axis[leftAxisIndex].range.min){
+                    for(var i = 0; i < leftMeasures.length; i++){
+                        tempMin = d3.min(this.individualData.rows, leftAccessor);
+                        min = min == null ? tempMin : tempMin < min ? tempMin : min;
+                    }
+                    this.chartInfo.axis[leftAxisIndex].range.min = min;
+                }
+                if(!this.chartInfo.axis[leftAxisIndex].range.max){
+                    for(var i = 0; i < leftMeasures.length; i++){
+                        tempMax = d3.max(this.individualData.rows, leftAccessor);
+                        max = max == null ? tempMax : tempMax > max ? tempMax : max;
+                    }
+                    this.chartInfo.axis[leftAxisIndex].range.max = max;
+                }
+            }
+
+            if (rightAxisIndex > -1) {
+                // If we have a right axis then we need to find the min/max
+                min = null, max = null, tempMin = null, tempMax = null;
+                var rightAccessor = function(row){return row[rightMeasures[i]].value};
+
+                if(!this.chartInfo.axis[rightAxisIndex].range.min){
+                    for(var i = 0; i < rightMeasures.length; i++){
+                        tempMin = d3.min(this.individualData.rows, rightAccessor);
+                        min = min == null ? tempMin : tempMin < min ? tempMin : min;
+                    }
+                    this.chartInfo.axis[rightAxisIndex].range.min = min;
+                }
+                if(!this.chartInfo.axis[rightAxisIndex].range.max){
+                    for(var i = 0; i < rightMeasures.length; i++){
+                        tempMax = d3.max(this.individualData.rows, rightAccessor);
+                        max = max == null ? tempMax : tempMax > max ? tempMax : max;
+                    }
+                    this.chartInfo.axis[rightAxisIndex].range.max = max;
+                }
+            }
+        }
 
         // remove any existing charts, purge listeners from exportPdfSingleBtn, and remove items from the exportPdfMenu button
         this.chart.removeAll();
@@ -1097,7 +1133,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 var groupedAggregateData;
                 if(this.aggregateData){
                     var groupDataAggregate = LABKEY.vis.groupData(this.aggregateData.rows, function(row){return row.CategoryId.displayValue});
-                    console.log(groupDataAggregate);
                 }
 
                 for (var i = 0; i < (this.chartInfo.subject.groups.length > this.maxCharts ? this.maxCharts : this.chartInfo.subject.groups.length); i++)
@@ -1391,7 +1426,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             xAes = function(row){return row[intervalKey].value}
         } else {
             xAes = function(row){
-                console.log(intervalKey, row)
                 return individualVisitMap[row[intervalKey].value].displayOrder;
             };
             xTickFormat = function(value){
