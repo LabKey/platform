@@ -231,6 +231,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
             this.participantSectionCfg = [{
                 store       : store,
                 selection   : this.getInitialSelection('participant'),
+                maxInitSelection : this.maxInitSelection,
                 description : '<b class="filter-description">' + this.subjectNoun.plural + '</b>'
             }]
         }

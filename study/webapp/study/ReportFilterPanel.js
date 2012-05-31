@@ -185,11 +185,21 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
             return;
         }
 
+        // if there is not a default number of selection to make initially, set it to select all
+        if (!this.maxInitSelection)
+            this.maxInitSelection = target.store.getCount();
+
         target.suspendEvents(); // queueing of events id depended on
         if (!this.selection || !this.selection.length) {
-            target.getSelectionModel().selectAll();
-            if(this.allowAll){
-                this.getSelectAllToogle().select(-1, true);
+            if (this.maxInitSelection >= target.store.getCount()) {
+                target.getSelectionModel().selectAll();
+                if(this.allowAll){
+                    this.getSelectAllToogle().select(-1, true);
+                }
+            }
+            else {
+                for (var i = 0; i < this.maxInitSelection; i++)
+                    target.getSelectionModel().select(i, true);
             }
         }
         else {

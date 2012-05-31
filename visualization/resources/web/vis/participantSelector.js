@@ -16,7 +16,8 @@ Ext4.define('LABKEY.vis.ParticipantSelector', {
         Ext4.applyIf(config, {
             title: config.subjectNounPlural,
             border: false,
-            autoScroll: true
+            autoScroll: true,
+            maxInitSelection: 5
         });
 
         this.callParent([config]);
@@ -34,14 +35,14 @@ Ext4.define('LABKEY.vis.ParticipantSelector', {
         if (this.ptidFilterPanel)
             return;
 
-        // TODO: do we want this deafult anymore? test with a large study
-//        this.defaultDisplayField = Ext4.create('Ext.form.field.Display', {
-//            hideLabel: true,
-//            hidden: true,
-//            width: 210,
-//            html: '<span style="font-size:75%;color:red;">Selecting 5 values by default</span>'
-//        });
-//        this.add(this.defaultDisplayField);
+        // add a hiden display field to show what is selected by default
+        this.defaultDisplayField = Ext4.create('Ext.form.field.Display', {
+            hideLabel: true,
+            hidden: true,
+            width: 210,
+            html: '<span style="font-size:75%;color:red;">Selecting 5 values by default</span>'
+        });
+        this.add(this.defaultDisplayField);
 
         this.fireChangeTask = new Ext4.util.DelayedTask(function(){
             this.fireEvent('chartDefinitionChanged', true);
@@ -63,6 +64,7 @@ Ext4.define('LABKEY.vis.ParticipantSelector', {
                 plural : this.subjectNounPlural,
                 columnName: this.subjectColumn
             },
+            maxInitSelection: this.maxInitSelection,
             selection: this.selection,
             listeners : {
                 selectionchange : function(){
@@ -72,6 +74,18 @@ Ext4.define('LABKEY.vis.ParticipantSelector', {
                     this.fireEvent('measureMetadataRequestPending');
                 },
                 initSelectionComplete : function(numSelected){
+                    // if this is a new time chart, show the text indicating that we are selecting the first 5 by default
+                    if (!this.subject.values && numSelected == this.maxInitSelection)
+                    {
+                        this.hideDefaultDisplayField = new Ext4.util.DelayedTask(function(){
+                            this.defaultDisplayField.hide();                            
+                        }, this);
+
+                        // show the display for 5 seconds before hiding it again
+                        this.defaultDisplayField.show();
+                        this.hideDefaultDisplayField.delay(5000);
+                    }
+
                     this.fireEvent('measureMetadataRequestComplete');
                 },
                 scope : this

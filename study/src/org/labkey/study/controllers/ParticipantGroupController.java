@@ -433,9 +433,7 @@ public class ParticipantGroupController extends BaseStudyController
                             }
                         }
 
-                        if (form.includeParticipantIds())
-                            groups.add(createGroup(-1, "Not in any group", groupType, StudyManager.getInstance().getParticipantIdsNotInGroups(_study, getUser())));
-                        else
+                        if (!form.includeParticipantIds())
                             groups.add(createGroup(-1, "Not in any group", groupType));
 
                         break;
@@ -457,11 +455,6 @@ public class ParticipantGroupController extends BaseStudyController
         private Map<String, Object> createGroup(int id, String label, GroupType type)
         {
             return createGroup(id, label, type, 0, "", "", Collections.<String>emptySet());
-        }
-
-        private Map<String, Object> createGroup(int id, String label, GroupType type, String[] participantIds)
-        {
-            return createGroup(id, label, type, 0, "", "", new HashSet<String>(Arrays.asList(participantIds)));
         }
 
         private Map<String, Object> createGroup(int id, String label, GroupType type, int categoryId, String filters, String description)

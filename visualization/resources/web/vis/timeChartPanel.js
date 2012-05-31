@@ -796,7 +796,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             //Get data for Aggregates.
             var groups = [];
             for(var i = 0; i < this.chartInfo.subject.groups.length; i++){
-                groups.push(this.chartInfo.subject.groups[i].categoryId);
+                groups.push(this.chartInfo.subject.groups[i].id);
             }
 
             LABKEY.Visualization.getData({
@@ -808,11 +808,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     //Ext4.each(seriesList, function(s) {
                     //    this.aggregateHasData[s.name] = false;
                     //}, this);
-
-                    // now that we have the temp grid info, enable the View Data button
-                    // and make sure that the view charts button is hidden
-                    this.viewGridBtn.setDisabled(false);
-                    this.viewChartBtn.hide();
 
                     // ready to render the chart or grid
                     this.loaderCount--;
@@ -826,7 +821,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 },
                 measures: this.chartInfo.measures,
                 viewInfo: this.viewInfo,
-                groupBys: [{schemaName: 'study', queryName: this.viewInfo.subjectNounSingular + 'GroupMap', name: 'GroupId/CategoryId', values: groups}],
+                groupBys: [{schemaName: 'study', queryName: this.viewInfo.subjectNounSingular + 'GroupMap', name: 'GroupId', values: groups}],
                 sorts: this.getDataSortArray(),
                 limit : 10000,
                 filterUrl: this.chartInfo.filterUrl,
@@ -861,7 +856,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 delete simplified.subject.groups[i].id;
                 delete simplified.subject.groups[i].categoryId;
                 delete simplified.subject.groups[i].created;
-                delete simplified.subject.groups[i].order;
             }
         }
 
@@ -1132,7 +1126,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 // Display aggregate lines
                 var groupedAggregateData;
                 if(this.aggregateData){
-                    var groupDataAggregate = LABKEY.vis.groupData(this.aggregateData.rows, function(row){return row.CategoryId.displayValue});
+                    var groupDataAggregate = LABKEY.vis.groupData(this.aggregateData.rows, function(row){return row.GroupId.displayValue});
                 }
 
                 for (var i = 0; i < (this.chartInfo.subject.groups.length > this.maxCharts ? this.maxCharts : this.chartInfo.subject.groups.length); i++)
@@ -1317,7 +1311,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         var xMin = null, xMax = null, xTrans = null;
         var intervalKey = null;
         var individualSubjectColumn = individualMeasureToColumn ? individualMeasureToColumn[viewInfo.subjectColumn] : null;
-        var aggregateSubjectColumn = "CategoryId";
+        var aggregateSubjectColumn = "GroupId";
         var newChartDiv = Ext4.create('Ext.container.Container', {
             height: chartHeight,
             border: 1,

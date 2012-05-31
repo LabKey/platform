@@ -17,7 +17,8 @@ Ext4.define('LABKEY.vis.GroupSelector', {
             title: 'Groups',
             border: false,
             cls: 'report-filter-panel',
-            autoScroll: true
+            autoScroll: true,
+            maxInitSelection: 5
         });
 
         Ext4.define('ParticipantCategory', {
@@ -50,6 +51,14 @@ Ext4.define('LABKEY.vis.GroupSelector', {
             html: LABKEY.Utils.textLink({href: LABKEY.ActionURL.buildURL("study", "manageParticipantCategories"), text: 'Manage Groups'})
         });
 
+        // add a hiden display field to show what is selected by default
+        this.defaultDisplayField = Ext4.create('Ext.form.field.Display', {
+            hideLabel: true,
+            hidden: true,
+            width: 210,
+            html: '<span style="font-size:75%;color:red;">Selecting 5 values by default</span>'
+        });
+
         // add a hidden display field for warning the user if a saved chart has a group that is no longer available
         this.groupsRemovedDisplayField = Ext4.create('Ext.form.field.Display', {
             hideLabel: true,
@@ -64,7 +73,7 @@ Ext4.define('LABKEY.vis.GroupSelector', {
         if (this.subject && this.subject.groups)
         {
             Ext4.each(this.subject.groups, function(group){
-                this.selection.push({type:'participantGroup', label:group.label});      // TODO: check for issue 14909 
+                this.selection.push({type:'participantGroup', label:group.label}); 
             }, this);
         }
 
@@ -89,7 +98,8 @@ Ext4.define('LABKEY.vis.GroupSelector', {
                     }
                 }
             }),
-            selection   : this.selection,
+            maxInitSelection: this.maxInitSelection,
+            selection : this.selection,
             //description : '<b class="filter-description">Groups</b>',
             listeners : {
                 selectionchange : function(){
@@ -102,6 +112,19 @@ Ext4.define('LABKEY.vis.GroupSelector', {
                     // if there were saved groups that are no longer availabe, display a message
                     if (this.selection.length > 0 && this.selection.length != numSelected)
                         this.groupsRemovedDisplayField.setVisible(true);
+
+                    // if this is a new time chart, show the text indicating that we are selecting the first 5 by default
+                    if (!this.subject.groups && numSelected == this.maxInitSelection)
+                    {
+                        this.hideDefaultDisplayField = new Ext4.util.DelayedTask(function(){
+                            this.defaultDisplayField.hide();
+                        }, this);
+
+                        // show the display for 5 seconds before hiding it again
+                        this.defaultDisplayField.show();
+                        this.hideDefaultDisplayField.delay(5000);
+                    }
+                    
                     this.fireEvent('measureMetadataRequestComplete');
                 },
                 scope : this
@@ -111,6 +134,7 @@ Ext4.define('LABKEY.vis.GroupSelector', {
         this.items = [
             this.groupsRemovedDisplayField,
             this.manageGroupsLink,
+            this.defaultDisplayField,
             this.groupFilterList
         ];
 
@@ -136,7 +160,6 @@ Ext4.define('LABKEY.vis.GroupSelector', {
                 groups.push({
                     id : selected[i].get("id"),
                     categoryId : selected[i].get("categoryId"),
-                    order: selected[i].get("categoryId") < 1 ? Infinity : selected[i].get("categoryId"), // convert -1 to infinity for sorting
                     label: selected[i].get("label"),
                     participantIds: selected[i].get("participantIds") 
                 });
@@ -145,8 +168,8 @@ Ext4.define('LABKEY.vis.GroupSelector', {
 
         // sort the selected groups array to match the selection list order
         function compareGroups(a, b) {
-            if (a.order < b.order) {return -1}
-            if (a.order > b.order) {return 1}
+            if (a.id < b.id) {return -1}
+            if (a.id > b.id) {return 1}
             return 0;
         }
         groups.sort(compareGroups);
