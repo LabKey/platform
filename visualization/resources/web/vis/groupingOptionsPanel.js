@@ -328,8 +328,8 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
         return {
             chartLayout: this.chartLayout,
             chartSubjectSelection: this.getChartSubjectSelection(),
-            displayIndividual : this.displayIndividualCheckbox.getValue(),
-            displayAggregate : this.displayAggregateCheckbox.getValue(),   
+            displayIndividual : this.displayIndividualCheckbox.disabled ? true : this.displayIndividualCheckbox.getValue(),
+            displayAggregate : this.displayAggregateCheckbox.disabled ? false : this.displayAggregateCheckbox.getValue(),
             aggregateType : this.displayAggregateComboBox.getValue(),
             errorBars : this.displayErrorComboBox.getValue()
         };
