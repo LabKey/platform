@@ -19,6 +19,7 @@ package org.labkey.visualization;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.visualization.GenericChartReportDescriptor;
 import org.labkey.api.visualization.GenericChartReport;
@@ -31,6 +32,7 @@ import java.util.*;
 public class VisualizationModule extends DefaultModule
 {
     public static final String NAME = "Visualization";
+    public static final String EXPERIMENTAL_BOXPLOT = "experimental-boxplot";
 
     public String getName()
     {
@@ -62,6 +64,8 @@ public class VisualizationModule extends DefaultModule
         ReportService.get().registerReport(new GenericChartReport());
 
         ReportService.get().addUIProvider(new VisualizationUIProvider());
+
+        AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_BOXPLOT, "Box/Scatter Plots", "New Generic Chart types built over the Raphael/D3 Charting APIs.", false);
     }
 
     public void startup(ModuleContext moduleContext)

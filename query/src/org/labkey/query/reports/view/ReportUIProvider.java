@@ -15,6 +15,11 @@
  */
 package org.labkey.query.reports.view;
 
+import org.labkey.api.admin.CoreUrls;
+import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
@@ -36,8 +41,10 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.query.reports.AttachmentReport;
 import org.labkey.query.reports.ReportsController;
 
@@ -181,10 +188,19 @@ public class ReportUIProvider extends DefaultReportUIProvider
     {
         if (report != null)
         {
-            if (_typeToIconMap.containsKey(report.getType()))
+            if (AttachmentReport.TYPE.equals(report.getType()))
             {
-                _getIconPath(report.getType());
+                String filename = report.getDescriptor().getProperty("filePath");
+
+                if (null == filename)
+                {
+                    List<Attachment> list = AttachmentService.get().getAttachments(report);
+                    filename = list.isEmpty() ? "" : list.get(0).getName();
+                }
+                Container c = ContainerManager.getForId(report.getContainerId());
+                return PageFlowUtil.urlProvider(CoreUrls.class).getAttachmentIconURL(c, filename).toString();
             }
+            return _getIconPath(report.getType());
         }
         return super.getIconPath(report);
     }

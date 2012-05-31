@@ -29,6 +29,7 @@ import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.api.visualization.GenericChartReportDescriptor;
 import org.labkey.api.visualization.TimeChartReport;
 import org.labkey.api.visualization.VisualizationUrls;
+import org.labkey.visualization.VisualizationModule;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,15 +53,18 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
                     context.getContextPath() + "/visualization/report/timechart.gif"));
         }
 
-        GenericChartReport.RenderType boxType = GenericChartReport.RenderType.BOX_PLOT;
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(VisualizationModule.EXPERIMENTAL_BOXPLOT))
+        {
+            GenericChartReport.RenderType boxType = GenericChartReport.RenderType.BOX_PLOT;
 
-        ActionURL boxPlotURL = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), settings, boxType);
-        info.add(new DesignerInfoImpl(GenericChartReport.TYPE, boxType.getName(), boxPlotURL, boxType.getIconPath()));
-        
-        GenericChartReport.RenderType scatterType = GenericChartReport.RenderType.SCATTER_PLOT;
+            ActionURL boxPlotURL = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), settings, boxType);
+            info.add(new DesignerInfoImpl(GenericChartReport.TYPE, boxType.getName(), boxPlotURL, boxType.getIconPath()));
 
-        ActionURL scatterPlotURL = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), settings, scatterType);
-        info.add(new DesignerInfoImpl(GenericChartReport.TYPE, scatterType.getName(), scatterPlotURL, scatterType.getIconPath()));
+            GenericChartReport.RenderType scatterType = GenericChartReport.RenderType.SCATTER_PLOT;
+
+            ActionURL scatterPlotURL = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), settings, scatterType);
+            info.add(new DesignerInfoImpl(GenericChartReport.TYPE, scatterType.getName(), scatterPlotURL, scatterType.getIconPath()));
+        }
         return info;
     }
 
@@ -84,16 +88,18 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
             designers.add(info);
         }
 
-        GenericChartReport.RenderType boxType = GenericChartReport.RenderType.BOX_PLOT;
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(VisualizationModule.EXPERIMENTAL_BOXPLOT))
+        {
+            GenericChartReport.RenderType boxType = GenericChartReport.RenderType.BOX_PLOT;
 
-        ActionURL boxPlotURL = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), null, boxType);
-        designers.add(new DesignerInfoImpl(GenericChartReport.TYPE, boxType.getName(), boxPlotURL, boxType.getIconPath()));
+            ActionURL boxPlotURL = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), null, boxType);
+            designers.add(new DesignerInfoImpl(GenericChartReport.TYPE, boxType.getName(), boxPlotURL, boxType.getIconPath()));
 
-        GenericChartReport.RenderType scatterType = GenericChartReport.RenderType.SCATTER_PLOT;
+            GenericChartReport.RenderType scatterType = GenericChartReport.RenderType.SCATTER_PLOT;
 
-        ActionURL scatterPlotURL = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), null, scatterType);
-        designers.add(new DesignerInfoImpl(GenericChartReport.TYPE, scatterType.getName(), scatterPlotURL, scatterType.getIconPath()));
-
+            ActionURL scatterPlotURL = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), null, scatterType);
+            designers.add(new DesignerInfoImpl(GenericChartReport.TYPE, scatterType.getName(), scatterPlotURL, scatterType.getIconPath()));
+        }
         return designers;
     }
 

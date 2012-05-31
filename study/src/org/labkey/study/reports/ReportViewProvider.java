@@ -194,20 +194,6 @@ public class ReportViewProvider implements DataViewProvider
                     // This icon is the small icon -- not the same as thumbnail
                     String iconPath = ReportService.get().getIconPath(r);
 
-                    // No way for a report to offer a specific icon based on its content, so do this hack for attachment reports  TODO: fix
-                    if ("Study.attachmentReport".equals(r.getType()))
-                    {
-                        String filename = r.getDescriptor().getProperty("filePath");
-
-                        if (null == filename)
-                        {
-                            List<Attachment> list = AttachmentService.get().getAttachments(r);
-                            filename = list.isEmpty() ? "" : list.get(0).getName();
-                        }
-
-                        iconPath = PageFlowUtil.urlProvider(CoreUrls.class).getAttachmentIconURL(c, filename).toString();
-                    }
-
                     if (!StringUtils.isEmpty(iconPath))
                         info.setIcon(iconPath);
 

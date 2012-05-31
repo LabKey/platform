@@ -332,7 +332,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         IVisualizationSourceQuery nestedOuterJoinQuery = null;
         if (outerJoinQueries.size() > 1)
         {
-            nestedOuterJoinQuery = new OuterJoinSourceQuery(outerJoinQueries);
+            nestedOuterJoinQuery = new OuterJoinSourceQuery(outerJoinQueries, _limit != null);
             queries.add(nestedOuterJoinQuery);
         }
         else
@@ -351,7 +351,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         // Add inner joins to the inner-join queries
         queries.addAll(innerJoinQueries);
 
-        String sql = getSQL(null, _columnFactory, queries, new ArrayList<VisualizationIntervalColumn>(_intervals.values()), "INNER JOIN", _groupBys.isEmpty());
+        String sql = getSQL(null, _columnFactory, queries, new ArrayList<VisualizationIntervalColumn>(_intervals.values()), "INNER JOIN", _groupBys.isEmpty(), _limit != null);
 
         if (!_groupBys.isEmpty())
         {
@@ -453,7 +453,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         // We should use the sort parameter instead, but it makes SQL generation much harder
         aggregatedSQL.append("\nORDER BY ");
         aggregatedSQL.append(groupByAndSelectSQL);
-        if (findSchema(_groupBys).getDbSchema().getSqlDialect().isSqlServer())
+        if (findSchema(_groupBys).getDbSchema().getSqlDialect().isSqlServer() && _limit == null)
             aggregatedSQL.append(" LIMIT 1000000");
 
         return aggregatedSQL.toString();
@@ -469,7 +469,9 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         return null;
     }
 
-    public static String getSQL(IVisualizationSourceQuery parentQuery, VisualizationSourceColumn.Factory factory, Collection<IVisualizationSourceQuery> queries, List<VisualizationIntervalColumn> intervals, String joinOperator, boolean includeOrderBys) throws VisualizationSQLGenerator.GenerationException
+    public static String getSQL(IVisualizationSourceQuery parentQuery, VisualizationSourceColumn.Factory factory,
+                                Collection<IVisualizationSourceQuery> queries, List<VisualizationIntervalColumn> intervals,
+                                String joinOperator, boolean includeOrderBys, boolean hasRowLimit) throws VisualizationSQLGenerator.GenerationException
     {
         // Reorder the queries in case one can join to the other, but not the reverse. For example,
         // we can join from a standard particiapnt visit/date dataset to a demographic dataset, but not the reverse.
@@ -565,13 +567,13 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
         if (includeOrderBys && !orderBys.isEmpty())
         {
-            sql.append(getOrderByClause(orderBys));
+            sql.append(getOrderByClause(orderBys, hasRowLimit));
         }
 
         return sql.toString();
     }
 
-    private static String getOrderByClause(Map<VisualizationSourceColumn, IVisualizationSourceQuery> orderBys)
+    private static String getOrderByClause(Map<VisualizationSourceColumn, IVisualizationSourceQuery> orderBys, boolean hasRowLimit)
     {
         if (orderBys.isEmpty())
         {
@@ -584,7 +586,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             sql.append(sep).append(orderBy.getValue().getSQLAlias()).append(".").append(orderBy.getKey().getSQLAlias());
             sep = ", ";
         }
-        if (findSchema(orderBys.keySet()).getDbSchema().getSqlDialect().isSqlServer())
+        if (findSchema(orderBys.keySet()).getDbSchema().getSqlDialect().isSqlServer() && !hasRowLimit)
             sql.append(" LIMIT 1000000");
         return sql.toString();
     }
