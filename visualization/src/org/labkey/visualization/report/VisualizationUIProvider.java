@@ -72,10 +72,10 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
     {
         List<ReportService.DesignerInfo> designers = new ArrayList<ReportService.DesignerInfo>();
         Study study = StudyService.get().getStudy(context.getContainer());
+        VisualizationUrls urlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
 
         if (study != null)
         {
-            VisualizationUrls urlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
             ActionURL designerURL = urlProvider.getTimeChartDesignerURL(context.getContainer());
 
             DesignerInfoImpl info = new DesignerInfoImpl(TimeChartReport.TYPE, "Time Chart", designerURL,
@@ -83,6 +83,17 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
             info.setId("create_timeChart");
             designers.add(info);
         }
+
+        GenericChartReport.RenderType boxType = GenericChartReport.RenderType.BOX_PLOT;
+
+        ActionURL boxPlotURL = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), null, boxType);
+        designers.add(new DesignerInfoImpl(GenericChartReport.TYPE, boxType.getName(), boxPlotURL, boxType.getIconPath()));
+
+        GenericChartReport.RenderType scatterType = GenericChartReport.RenderType.SCATTER_PLOT;
+
+        ActionURL scatterPlotURL = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), null, scatterType);
+        designers.add(new DesignerInfoImpl(GenericChartReport.TYPE, scatterType.getName(), scatterPlotURL, scatterType.getIconPath()));
+
         return designers;
     }
 

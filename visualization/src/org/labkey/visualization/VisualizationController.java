@@ -208,8 +208,11 @@ public class VisualizationController extends SpringActionController
         public ActionURL getGenericChartDesignerURL(Container container, User user, QuerySettings settings, GenericChartReport.RenderType type)
         {
             ActionURL url = new ActionURL(GenericChartWizardAction.class, container);
-            addQueryParams(url, container, user, settings);
 
+            if (settings != null)
+            {
+                addQueryParams(url, container, user, settings);
+            }
             url.addParameter(GenericChartReportDescriptor.Prop.renderType, type.getId());
 
             return url;

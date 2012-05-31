@@ -33,6 +33,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.callParent();
 
         this.on('tabchange', this.onTabChange, this);
+        this.on('render', this.ensureQuerySettings, this);
     },
 
     getViewPanel : function() {
@@ -55,35 +56,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         if (!this.dataPanel)
         {
-            var urlParams = LABKEY.ActionURL.getParameters(this.baseUrl);
-            var filterUrl = urlParams['filterUrl'];
-
-            var userFilters = LABKEY.Filter.getFiltersFromUrl(filterUrl, this.dataRegionName);
-            var userSort = LABKEY.Filter.getSortFromUrl(filterUrl, this.dataRegionName);
-
-            var wp = new LABKEY.QueryWebPart({
-                schemaName  : this.schemaName,
-                queryName   : this.queryName,
-                frame       : 'none',
-                showBorders : false,
-                removeableFilters       : userFilters,
-                removeableSort          : userSort,
-                buttonBarPosition       : 'none',
-                showSurroundingBorder   : false,
-                showDetailsColumn       : false,
-                showUpdateColumn        : false,
-                showRecordSelectors     : false
-            });
-
-            // save the dataregion
-            this.panelDataRegionName = wp.dataRegionName;
-
             var dataGrid = Ext4.create('Ext.Component', {
                 autoScroll  : true,
                 cls         : 'iScroll',
                 ui          : 'custom',
                 listeners   : {
-                    render : {fn : function(cmp){wp.render(cmp.getId());}, scope : this}
+                    render : {fn : function(cmp){this.renderDataGrid(cmp.getId());}, scope : this}
                 }
             });
 
@@ -100,6 +78,33 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             });
         }
         return this.dataPanel;
+    },
+
+    renderDataGrid : function(renderTo) {
+        var urlParams = LABKEY.ActionURL.getParameters(this.baseUrl);
+        var filterUrl = urlParams['filterUrl'];
+
+        var userFilters = LABKEY.Filter.getFiltersFromUrl(filterUrl, this.dataRegionName);
+        var userSort = LABKEY.Filter.getSortFromUrl(filterUrl, this.dataRegionName);
+
+        var wp = new LABKEY.QueryWebPart({
+            schemaName  : this.schemaName,
+            queryName   : this.queryName,
+            frame       : 'none',
+            showBorders : false,
+            removeableFilters       : userFilters,
+            removeableSort          : userSort,
+            buttonBarPosition       : 'none',
+            showSurroundingBorder   : false,
+            showDetailsColumn       : false,
+            showUpdateColumn        : false,
+            showRecordSelectors     : false
+        });
+
+        // save the dataregion
+        this.panelDataRegionName = wp.dataRegionName;
+
+        wp.render(renderTo);
     },
 
     onTabChange : function(cmp, newCard, oldCard) {
@@ -127,5 +132,165 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
 
         return config;
+    },
+
+    ensureQuerySettings : function() {
+
+        if (this.schemaName == 'null' || !this.queryName == 'null')
+        {
+            var formItems = [];
+            var queryStore = this.initializeQueryStore();
+            var queryId = Ext.id();
+
+            this.schemaName = 'study';
+
+            formItems.push({
+                xtype       : 'combo',
+                fieldLabel  : 'Schema',
+                name        : 'schema',
+                store       : this.initializeSchemaStore(),
+                editable    : false,
+                value       : this.schemaName,
+                queryMode      : 'local',
+                displayField   : 'name',
+                valueField     : 'name',
+                emptyText      : 'None',
+                listeners   : {
+                    change : {fn : function(cmp, newValue) {
+                        this.schemaName = newValue;
+                        this.queryName = null;
+                        var proxy = queryStore.getProxy();
+                        if (proxy)
+                            queryStore.load({params : {schemaName : newValue}});
+
+                        var queryCombo = Ext4.getCmp(queryId);
+                        if (queryCombo)
+                            queryCombo.clearValue();
+                    }, scope : this}
+                }
+            });
+
+            formItems.push({
+                xtype       : 'combo',
+                id          : queryId,
+                fieldLabel  : 'Query',
+                name        : 'query',
+                store       : queryStore,
+                editable    : false,
+                allowBlank  : false,
+                displayField   : 'name',
+                triggerAction  : 'all',
+                typeAhead      : true,
+                valueField     : 'name',
+                emptyText      : 'None',
+                listeners   : {
+                    change : {fn : function(cmp, newValue) {this.queryName = newValue;}, scope : this}
+                }
+            });
+
+            var formPanel = Ext4.create('Ext.form.Panel', {
+                border  : false,
+                frame   : false,
+                buttonAlign : 'left',
+                fieldDefaults  : {
+                    labelWidth : 100,
+                    width      : 375,
+                    style      : 'padding: 4px 0',
+                    labelSeparator : ''
+                },
+                items   : formItems,
+                buttons     : [{
+                    text : 'Save',
+                    formBind: true,
+                    handler : function(btn) {
+                        var form = btn.up('form').getForm();
+                        if (form.isValid())
+                        {
+                            dialog.hide();
+
+                            // fire an event or call some method to render data
+                        }
+                    },
+                    scope   : this
+                }]
+            });
+
+            var dialog = Ext4.create('Ext.window.Window', {
+                width  : 450,
+                height : 200,
+                layout : 'fit',
+                border : false,
+                frame  : false,
+                closable : false,
+                draggable : false,
+                modal  : true,
+                title  : 'Select Chart Query',
+                bodyPadding : 20,
+                items : formPanel,
+                scope : this
+            });
+
+            dialog.show();
+        }
+    },
+
+    /**
+     * Create the store for the schema
+     */
+    initializeSchemaStore : function() {
+
+        Ext4.define('LABKEY.data.Schema', {
+            extend : 'Ext.data.Model',
+            fields : [
+                {name : 'name'},
+                {name : 'description'}
+            ]
+        });
+
+        // manually define for now, we could query at some point
+        var schemaStore = Ext4.create('Ext.data.Store', {
+            model : 'LABKEY.data.Schema',
+            data  : [
+                {name : 'study'},
+                {name : 'assay'},
+                {name : 'lists'}
+            ]
+        });
+
+        return schemaStore;
+    },
+
+    /**
+     * Create the store for the schema
+     */
+    initializeQueryStore : function() {
+
+        Ext4.define('LABKEY.data.Queries', {
+            extend : 'Ext.data.Model',
+            fields : [
+                {name : 'name'},
+                {name : 'description'},
+                {name : 'isUserDefined', type : 'boolean'}
+            ]
+        });
+
+        var config = {
+            model   : 'LABKEY.data.Queries',
+            autoLoad: false,
+            pageSize: 10000,
+            proxy   : {
+                type   : 'ajax',
+                url : LABKEY.ActionURL.buildURL('query', 'getQueries'),
+                extraParams : {
+                    schemaName  : 'study'
+                },
+                reader : {
+                    type : 'json',
+                    root : 'queries'
+                }
+            }
+        };
+
+        return Ext4.create('Ext.data.Store', config);
     }
 });
