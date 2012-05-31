@@ -225,7 +225,10 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
                 array.put(array.length(), sortInfo);
             }
             if (array.length() > 0)
-                metaData.put("sortInfo", array);
+            {
+                metaData.put("sortInfo", array.get(0));
+                metaData.put("sortInfoArray", array);
+            }
         }
 
         //include an id property set to the pk column name if there is one (and only one)
