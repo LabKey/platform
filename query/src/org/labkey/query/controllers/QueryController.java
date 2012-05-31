@@ -28,6 +28,7 @@ import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
@@ -2920,7 +2921,15 @@ public class QueryController extends SpringActionController
 
             for (int idx = 0; idx < rows.length(); ++idx)
             {
-                JSONObject jsonObj = rows.getJSONObject(idx);
+                JSONObject jsonObj;
+                try
+                {
+                    jsonObj = rows.getJSONObject(idx);
+                }
+                catch (JSONException x)
+                {
+                    throw new IllegalArgumentException("rows[" + idx + "] is not an object.");
+                }
                 if (null != jsonObj)
                 {
                     Map<String,Object> rowMap = null == f ? new CaseInsensitiveHashMap<Object>() : f.getRowMap();
