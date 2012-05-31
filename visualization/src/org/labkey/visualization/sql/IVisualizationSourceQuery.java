@@ -49,9 +49,9 @@ public interface IVisualizationSourceQuery
 
     boolean contains(VisualizationSourceColumn column);
 
-    String getSelectListName(Set<String> selectAliases);
+    String getSelectListName(Set<VisualizationSourceColumn> selectAliases);
 
-    Map<String, Set<String>> getColumnNameToValueAliasMap(VisualizationSourceColumn.Factory factory, boolean measuresOnly);
+    Map<String, Set<VisualizationSourceColumn>> getColumnNameToValueAliasMap(VisualizationSourceColumn.Factory factory, boolean measuresOnly);
 
     UserSchema getSchema();
 

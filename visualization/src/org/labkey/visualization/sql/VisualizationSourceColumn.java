@@ -41,8 +41,9 @@ public class VisualizationSourceColumn
     private UserSchema _schema;
     private boolean _allowNullResults;
     private String _name;
-    private String _alias;
+    protected String _alias;
     private String _otherAlias;
+    protected String _label;
     private JdbcType _type = null;
     private Set<Object> _values = new LinkedHashSet<Object>();
 
@@ -73,6 +74,13 @@ public class VisualizationSourceColumn
         public VisualizationSourceColumn create(UserSchema schema, String queryName, String name, Boolean allowNullResults)
         {
             VisualizationSourceColumn col = new VisualizationSourceColumn(schema, queryName, name, allowNullResults);
+            return findOrAdd(col);
+        }
+
+        public VisualizationSourceColumn create(UserSchema schema, String queryName, String name, String alias, Boolean allowNullResults)
+        {
+            VisualizationSourceColumn col = new VisualizationSourceColumn(schema, queryName, name, allowNullResults);
+            col._alias = alias;
             return findOrAdd(col);
         }
 
@@ -184,9 +192,28 @@ public class VisualizationSourceColumn
         }
     }
 
+    public String getLabel()
+    {
+        try
+        {
+            _getTypeAndLabel();
+            return _label;
+        }
+        catch (VisualizationSQLGenerator.GenerationException x)
+        {
+            return null;
+        }
+    }
+
     public JdbcType getType() throws VisualizationSQLGenerator.GenerationException
     {
-        if (_type == null)
+        _getTypeAndLabel();
+        return _type;
+    }
+
+    private void _getTypeAndLabel() throws VisualizationSQLGenerator.GenerationException
+    {
+        if (null == _label && null == _type)
         {
             try
             {
@@ -198,6 +225,7 @@ public class VisualizationSourceColumn
                 }
 
                 _type = column.getJdbcType();
+                _label = column.getLabel();
             }
             catch (QueryParseException e)
             {
@@ -205,28 +233,33 @@ public class VisualizationSourceColumn
                         ".  The data may not exist, or you may not have permissions to read the data.", e);
             }
         }
-        return _type;
     }
+
+    ColumnInfo _columnInfo;
 
     private ColumnInfo findColumnInfo() throws VisualizationSQLGenerator.GenerationException
     {
-        TableInfo tinfo = _schema.getTable(_queryName);
-        if (tinfo == null)
+        if (null == _columnInfo)
         {
-            throw new VisualizationSQLGenerator.GenerationException("Unable to find table " + _schema.getName() + "." + _queryName +
-                    ".  The table may not exist, or you may not have permissions to read the data.");
-        }
+            TableInfo tinfo = _schema.getTable(_queryName);
+            if (tinfo == null)
+            {
+                throw new VisualizationSQLGenerator.GenerationException("Unable to find table " + _schema.getName() + "." + _queryName +
+                        ".  The table may not exist, or you may not have permissions to read the data.");
+            }
 
-        FieldKey fieldKey = FieldKey.fromString(_name);
-        Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(tinfo, Collections.singleton(fieldKey));
-        ColumnInfo column = cols.get(fieldKey);
-        if (column == null && _name.contains("."))
-        {
-            fieldKey = FieldKey.fromParts(_name.split("[\\./]"));
-            cols = QueryService.get().getColumns(tinfo, Collections.singleton(fieldKey));
-            column = cols.get(fieldKey);
+            FieldKey fieldKey = FieldKey.fromString(_name);
+            Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(tinfo, Collections.singleton(fieldKey));
+            ColumnInfo column = cols.get(fieldKey);
+            if (column == null && _name.contains("."))
+            {
+                fieldKey = FieldKey.fromParts(_name.split("[\\./]"));
+                cols = QueryService.get().getColumns(tinfo, Collections.singleton(fieldKey));
+                column = cols.get(fieldKey);
+            }
+            _columnInfo = column;
         }
-        return column;
+        return _columnInfo;
     }
 
     public Set<Object> getValues()

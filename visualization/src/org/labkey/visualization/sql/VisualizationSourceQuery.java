@@ -149,28 +149,40 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
     }
 
     @Override
-    public String getSelectListName(Set<String> selectAliases)
+    public String getSelectListName(Set<VisualizationSourceColumn> selectAliases)
     {
         // If there is more than one available alias for a given value, just choose the first: 
-        return selectAliases.iterator().next();
+        return selectAliases.iterator().next().getAlias();
     }
 
-    private static void addToColMap(Map<String, Set<String>> colMap, String name, String alias)
+    private static void addToColMap(Map<String, Set<VisualizationSourceColumn>> colMap, String name, VisualizationSourceColumn alias)
     {
-        Set<String> aliases = colMap.get(name);
+        Set<VisualizationSourceColumn> aliases = colMap.get(name);
         if (aliases == null)
         {
-            aliases = new LinkedHashSet<String>();
+            aliases = new LinkedHashSet<VisualizationSourceColumn>();
             colMap.put(name, aliases);
         }
         aliases.add(alias);
     }
 
 
-    @Override
-    public Map<String, Set<String>> getColumnNameToValueAliasMap(VisualizationSourceColumn.Factory factory, boolean measuresOnly)
+    private class PivotSourceColumn extends VisualizationSourceColumn
     {
-        Map<String, Set<String>> colMap = new LinkedHashMap<String, Set<String>>();
+        PivotSourceColumn(VisualizationAggregateColumn agg, Object pivotValue)
+        {
+            super(VisualizationSourceQuery.this.getSchema(), VisualizationSourceQuery.this.getQueryName(), pivotValue.toString(), true);
+            this._alias = pivotValue.toString() + "::" + agg.getAlias();
+            if (null != agg.getLabel())
+                this._label = pivotValue.toString(); // + " - " + agg.getLabel();
+        }
+    }
+
+
+    @Override
+    public Map<String, Set<VisualizationSourceColumn>> getColumnNameToValueAliasMap(VisualizationSourceColumn.Factory factory, boolean measuresOnly)
+    {
+        Map<String, Set<VisualizationSourceColumn>> colMap = new LinkedHashMap<String, Set<VisualizationSourceColumn>>();
         Set<VisualizationAggregateColumn> aggregates = getAggregates();
         if (!aggregates.isEmpty())
         {
@@ -181,13 +193,14 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
                     // Aggregate with pivot:
                     for (Object pivotValue : getPivot().getValues())
                     {
-                        addToColMap(colMap, pivotValue.toString(), pivotValue.toString() + "::" + aggregate.getAlias());
+                        VisualizationSourceColumn pivotCol = new PivotSourceColumn(aggregate, pivotValue);
+                        addToColMap(colMap, pivotCol.getOriginalName(), pivotCol);
                     }
                 }
                 else
                 {
                     // Aggregate without pivot (simple grouping)
-                    addToColMap(colMap, aggregate.getOriginalName(), aggregate.getAlias());
+                    addToColMap(colMap, aggregate.getOriginalName(), aggregate);
                 }
             }
         }
@@ -196,20 +209,20 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         {
             for (VisualizationSourceColumn select : _measures)
             {
-                addToColMap(colMap, select.getOriginalName(), select.getAlias());
+                addToColMap(colMap, select.getOriginalName(), select);
             }
         }
         else
         {
             for (VisualizationSourceColumn select : getSelects(factory, true))
-                addToColMap(colMap, select.getOriginalName(), select.getAlias());
+                addToColMap(colMap, select.getOriginalName(), select);
 
             if (getJoinConditions() != null)
             {
                 for (Pair<VisualizationSourceColumn, VisualizationSourceColumn> join : getJoinConditions())
                 {
-                    addToColMap(colMap, join.getKey().getOriginalName(), join.getKey().getAlias());
-                    addToColMap(colMap, join.getValue().getOriginalName(), join.getValue().getAlias());
+                    addToColMap(colMap, join.getKey().getOriginalName(), join.getKey());
+                    addToColMap(colMap, join.getValue().getOriginalName(), join.getValue());
                 }
             }
         }

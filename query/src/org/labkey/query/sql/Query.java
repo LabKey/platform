@@ -186,6 +186,7 @@ public class Query
         if (null == _querySource)
             throw new IllegalStateException("SQL has not been specified");
 
+        Logger.getLogger(Query.class).debug("Query.parse()\n" + _querySource);
         _parse(_querySource);
         
         for (QueryException e : _parseErrors)

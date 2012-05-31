@@ -16,6 +16,7 @@
 package org.labkey.visualization.sql;
 
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
@@ -372,7 +373,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
     private String wrapInGroupBy(IVisualizationSourceQuery joinQuery, List<IVisualizationSourceQuery> queries, String sql)
             throws GenerationException
     {
-        Map<String, Set<String>> columnAliases = getColumnMapping(_columnFactory, queries);
+        Map<String, Set<VisualizationSourceColumn>> columnAliases = getColumnMapping(_columnFactory, queries);
 
         StringBuilder aggregatedSQL = new StringBuilder("SELECT ");
         String separator = "";
@@ -406,12 +407,25 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         {
             // Get all of the columns selected for all of the measures, even if they've been pivoted out into separate
             // columns based on a dimension
-            for (Map.Entry<String, Set<String>> entry : query.getColumnNameToValueAliasMap(_columnFactory, true).entrySet())
+            for (Map.Entry<String, Set<VisualizationSourceColumn>> entry : query.getColumnNameToValueAliasMap(_columnFactory, true).entrySet())
             {
-                String alias = entry.getValue().iterator().next();
+                VisualizationSourceColumn col = entry.getValue().iterator().next();
+                String alias = col.getAlias();
+//                String label = col.getLabel();
+//                if (null != label)
+//                    label = StringUtils.replace(label,"'","''");
+
                 aggregatedSQL.append(", AVG(x.\"" + alias + "\") AS \"" + alias + "\"");
+//                if (null != label)
+//                    aggregatedSQL.append(" @title='mean(" + label + ")'");
+
                 aggregatedSQL.append(", STDDEV(x.\"" + alias + "\") AS \"" + alias + "_STDDEV\"");
+//                if (null != label)
+//                    aggregatedSQL.append(" @title='stddev(" + label + ")'");
+
                 aggregatedSQL.append(", STDERR(x.\"" + alias + "\") AS \"" + alias + "_STDERR\"");
+//                if (null != label)
+//                    aggregatedSQL.append(" @title='stderr(" + label + ")'");
             }
         }
 
@@ -436,12 +450,13 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             {
                 aggregatedSQL.append(separator);
                 separator = " AND ";
-                aggregatedSQL.append("x.\"");
-                aggregatedSQL.append(columnAliases.get(pair.getKey().getOriginalName()).iterator().next());
-                aggregatedSQL.append("\" = ");
+                aggregatedSQL.append("x.");
+                aggregatedSQL.append(columnAliases.get(pair.getKey().getOriginalName()).iterator().next().getSQLAlias());
+                aggregatedSQL.append(" = ");
                 aggregatedSQL.append(groupByQuery.getSQLAlias());
-                aggregatedSQL.append(".");
+                aggregatedSQL.append(".\"");
                 aggregatedSQL.append(pair.getValue().getOriginalName());
+                aggregatedSQL.append("\"");
             }
         }
 
@@ -490,17 +505,21 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         queries = reorderedQueries;
 
         // Now that we have the full list of columns we want to select, we can generate our select list
-        Map<String, Set<String>> allAliases = getColumnMapping(factory, queries);
+        Map<String, Set<VisualizationSourceColumn>> allAliases = getColumnMapping(factory, queries);
         StringBuilder masterSelectList = new StringBuilder();
         String sep = "";
-        for (Map.Entry<String,Set<String>> entry : allAliases.entrySet())
+        for (Map.Entry<String,Set<VisualizationSourceColumn>> entry : allAliases.entrySet())
         {
-            Set<String> selectAliases = entry.getValue();
+            Set<VisualizationSourceColumn> selectAliases = entry.getValue();
             String selectAlias;
             if (parentQuery != null)
                 selectAlias = parentQuery.getSelectListName(selectAliases);
             else
-                selectAlias = "\"" + selectAliases.iterator().next() + "\" @preservetitle";
+            {
+                VisualizationSourceColumn col = selectAliases.iterator().next();
+                String label = col.getLabel();
+                selectAlias = col.getSQLAlias() + (null==label ? " @preservetitle" : " @title='" + StringUtils.replace(label,"'","''") + "'");
+            }
             masterSelectList.append(sep).append(selectAlias);
             sep = ",\n\t";
         }
@@ -509,10 +528,10 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         {
             VisualizationIntervalColumn interval = intervals.get(i);
             // if the end date has multiple aliases, set it to be the first
-            Set<String> intervalAliases = allAliases.get(interval.getEndDate().getOriginalName());
+            Set<VisualizationSourceColumn> intervalAliases = allAliases.get(interval.getEndDate().getOriginalName());
             if (intervalAliases.size() > 1)
             {
-                interval.getEndDate().setOtherAlias(factory.getByAlias(intervalAliases.iterator().next()).getAlias());
+                interval.getEndDate().setOtherAlias(factory.getByAlias(intervalAliases.iterator().next().getAlias()).getAlias());
             }
             masterSelectList.append(sep).append(interval.getSQL()).append(" AS ").append(interval.getSQLAlias(intervalsSize)).append(" @preservetitle");
         }
@@ -523,12 +542,12 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         {
             for (VisualizationSourceColumn orderBy : query.getSorts())
             {
-                Set<String> orderByAliases = allAliases.get(orderBy.getOriginalName());
+                Set<VisualizationSourceColumn> orderByAliases = allAliases.get(orderBy.getOriginalName());
                 
                 VisualizationSourceColumn column;
                 if (orderByAliases.size() > 1)
                 {
-                    column = factory.getByAlias(orderByAliases.iterator().next());
+                    column = factory.getByAlias(orderByAliases.iterator().next().getAlias());
                 }
                 else
                 {
@@ -606,11 +625,11 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
     public Map<String, String> getColumnMapping()
     {
         Collection<IVisualizationSourceQuery> queries = new LinkedHashSet<IVisualizationSourceQuery>(_sourceQueries.values());
-        Map<String, Set<String>> allAliases = getColumnMapping(_columnFactory, queries);
+        Map<String, Set<VisualizationSourceColumn>> allAliases = getColumnMapping(_columnFactory, queries);
         Map<String, String> colMap = new LinkedHashMap<String, String>();
         // The default column mapping references the first available valid alias:
-        for (Map.Entry<String, Set<String>> entry : allAliases.entrySet())
-            colMap.put(entry.getKey(), entry.getValue().iterator().next());
+        for (Map.Entry<String, Set<VisualizationSourceColumn>> entry : allAliases.entrySet())
+            colMap.put(entry.getKey(), entry.getValue().iterator().next().getAlias());
 
         /*
         // Now that we have the full set of columns, we can take a pass through to eliminate the columns on the right
@@ -639,33 +658,33 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         return colMap;
     }
 
-    private static void addToColMap(Map<String, Set<String>> colMap, String name, Set<String> newAliases)
+    private static void addToColMap(Map<String, Set<VisualizationSourceColumn>> colMap, String name, Set<VisualizationSourceColumn> newAliases)
     {
-        Set<String> aliases = colMap.get(name);
+        Set<VisualizationSourceColumn> aliases = colMap.get(name);
         if (aliases == null)
         {
-            aliases = new LinkedHashSet<String>();
+            aliases = new LinkedHashSet<VisualizationSourceColumn>();
             colMap.put(name, aliases);
         }
         aliases.addAll(newAliases);
     }
 
-    private static Map<String, Set<String>> getColumnMapping(VisualizationSourceColumn.Factory factory, Collection<IVisualizationSourceQuery> queries)
+    private static Map<String, Set<VisualizationSourceColumn>> getColumnMapping(VisualizationSourceColumn.Factory factory, Collection<IVisualizationSourceQuery> queries)
     {
-        Map<String, Set<String>> colMap = new LinkedHashMap<String, Set<String>>();
+        Map<String, Set<VisualizationSourceColumn>> colMap = new LinkedHashMap<String, Set<VisualizationSourceColumn>>();
 
         // Add the sort columns first, since these are generally important to the user and should appear
         // on the left-hand side of any data grids.  (Subject ID is the most common sort column.)
         for (IVisualizationSourceQuery query : queries)
         {
             for (VisualizationSourceColumn sort : query.getSorts())
-                addToColMap(colMap, sort.getOriginalName(), Collections.singleton(sort.getAlias()));
+                addToColMap(colMap, sort.getOriginalName(), Collections.singleton(sort));
         }
 
         for (IVisualizationSourceQuery query : queries)
         {
-            Map<String, Set<String>> queryColMap = query.getColumnNameToValueAliasMap(factory, false);
-            for (Map.Entry<String, Set<String>> entry : queryColMap.entrySet())
+            Map<String, Set<VisualizationSourceColumn>> queryColMap = query.getColumnNameToValueAliasMap(factory, false);
+            for (Map.Entry<String, Set<VisualizationSourceColumn>> entry : queryColMap.entrySet())
                 addToColMap(colMap, entry.getKey(), entry.getValue());
         }
         return colMap;

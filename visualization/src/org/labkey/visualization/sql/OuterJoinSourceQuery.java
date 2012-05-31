@@ -121,9 +121,9 @@ public class OuterJoinSourceQuery implements IVisualizationSourceQuery
     }
 
     @Override
-    public String getSelectListName(Set<String> selectAliases)
+    public String getSelectListName(Set<VisualizationSourceColumn> selectAliases)
     {
-        String finalAlias = "\"" + selectAliases.iterator().next() + "\"";
+        String finalAlias = selectAliases.iterator().next().getSQLAlias();
         if (selectAliases.size() == 1)
             return finalAlias;
         // Rather than just choosing a single alias from one of our sub-queries, we need to coalesce the values
@@ -131,9 +131,9 @@ public class OuterJoinSourceQuery implements IVisualizationSourceQuery
         StringBuilder coalesce = new StringBuilder();
         coalesce.append("COALESCE(");
         String sep = "";
-        for (String alias : selectAliases)
+        for (VisualizationSourceColumn alias : selectAliases)
         {
-            coalesce.append(sep).append("\"").append(alias).append("\"");
+            coalesce.append(sep).append(alias.getSQLAlias());
             sep = ", ";
         }
         // Alias the coalesced value as the first alias:
@@ -142,20 +142,26 @@ public class OuterJoinSourceQuery implements IVisualizationSourceQuery
     }
 
     @Override
-    public Map<String, Set<String>> getColumnNameToValueAliasMap(VisualizationSourceColumn.Factory factory, boolean measuresOnly)
+    public Map<String, Set<VisualizationSourceColumn>> getColumnNameToValueAliasMap(VisualizationSourceColumn.Factory factory, boolean measuresOnly)
     {
-        Map<String, Set<String>> colMap = new LinkedHashMap<String, Set<String>>();
+        Map<String, Set<VisualizationSourceColumn>> colMap = new LinkedHashMap<String, Set<VisualizationSourceColumn>>()
+        {
+            @Override
+            public Set<VisualizationSourceColumn> get(Object o)
+            {
+                Set<VisualizationSourceColumn> set = super.get(o);
+                if (null == set)
+                    put((String)o, set = new LinkedHashSet<VisualizationSourceColumn>());
+                return set;
+            }
+        };
+
         for (IVisualizationSourceQuery query : _queries)
         {
-            Map<String, Set<String>> queryColMap = query.getColumnNameToValueAliasMap(factory, measuresOnly);
-            for (Map.Entry<String, Set<String>> entry : queryColMap.entrySet())
+            Map<String, Set<VisualizationSourceColumn>> queryColMap = query.getColumnNameToValueAliasMap(factory, measuresOnly);
+            for (Map.Entry<String, Set<VisualizationSourceColumn>> entry : queryColMap.entrySet())
             {
-                Set<String> valueAliases = colMap.get(entry.getKey());
-                if (valueAliases == null)
-                {
-                    valueAliases = new LinkedHashSet<String>();
-                    colMap.put(entry.getKey(), valueAliases);
-                }
+                Set<VisualizationSourceColumn> valueAliases = colMap.get(entry.getKey());
                 valueAliases.addAll(entry.getValue());
             }
         }

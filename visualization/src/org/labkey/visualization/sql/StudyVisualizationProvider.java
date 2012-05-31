@@ -56,7 +56,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
     }
 
     @Override
-    public void appendAggregates(StringBuilder sql, Map<String, Set<String>> columnAliases, Map<String, VisualizationIntervalColumn> intervals, String queryAlias, IVisualizationSourceQuery joinQuery)
+    public void appendAggregates(StringBuilder sql, Map<String, Set<VisualizationSourceColumn>> columnAliases, Map<String, VisualizationIntervalColumn> intervals, String queryAlias, IVisualizationSourceQuery joinQuery)
     {
         for (Map.Entry<String, VisualizationIntervalColumn> entry : intervals.entrySet())
         {
@@ -71,23 +71,16 @@ public class StudyVisualizationProvider extends VisualizationProvider
 
         if (getType() == VisualizationSQLGenerator.ChartType.TIME_VISITBASED)
         {
-            sql.append(", ");
-            sql.append(queryAlias);
-            sql.append(".\"");
-            sql.append(columnAliases.get(subjectColumnName + "Visit/Visit/DisplayOrder").iterator().next());
-            sql.append("\"");
-
-            sql.append(", ");
-            sql.append(queryAlias);
-            sql.append(".\"");
-            sql.append(columnAliases.get(subjectColumnName + "Visit/sequencenum").iterator().next());
-            sql.append("\"");
-
-            sql.append(", ");
-            sql.append(queryAlias);
-            sql.append(".\"");
-            sql.append(columnAliases.get(subjectColumnName + "Visit/Visit/Label").iterator().next());
-            sql.append("\"");
+            for (String s : Arrays.asList("Visit/Visit/DisplayOrder","Visit/sequencenum","Visit/Visit/Label"))
+            {
+                VisualizationSourceColumn col = columnAliases.get(subjectColumnName + s).iterator().next();
+                sql.append(", ");
+                sql.append(queryAlias);
+                sql.append(".");
+                sql.append(col.getSQLAlias());
+                if (null != col.getLabel())
+                    sql.append(" @title='" + StringUtils.replace(col.getLabel(),"'","''") + "'");
+            }
         }
     }
 

@@ -334,7 +334,7 @@ onClause
 
 
 groupByClause
-	: GROUP^ 'by'! expression ( COMMA! expression )*
+	: GROUP^ 'by'! expression annotations ( COMMA! expression annotations)*
 	;
 
 
@@ -344,7 +344,7 @@ pivotClause
     
 
 orderByClause
-	: ORDER^ 'by'! orderElement ( COMMA! orderElement )*
+	: ORDER^ 'by'! orderElement annotations ( COMMA! orderElement annotations)*
 	;
 
 
