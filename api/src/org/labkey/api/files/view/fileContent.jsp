@@ -58,143 +58,149 @@
 <!-- Set a fixed height for this div so that the whole page doesn't relayout when the file browser renders into it -->
 <div class="extContainer" style="height: <%= height %>px" id="<%=bean.getContentId()%>"></div>
 
+<%  if (bean.isEnabled() && bean.isRootValid()) { %>
+
 <script type="text/javascript">
 
+    (function() {
 
-<%  if (bean.isEnabled() && bean.isRootValid()) { %>
-        var scripts =['applet.js','FileUploadField.js', 'StatusBar.js','fileBrowser.js',
+        var loadFileContent = function() {
+
+            function renderBrowser(rootPath, renderTo, isFolderTreeCollapsed, isPipelineRoot)
+            {
+                var autoResize = <%=bean.isAutoResize()%>;
+
+                var buttonActions = [], prefix;
+
+                <%
+                for (FilesWebPart.FilesForm.actions action  : bean.getButtonConfig()) {
+                %>
+                    buttonActions.push('<%=action.name()%>');
+                <%
+                }
+                %>
+
+                var fileSystem = new LABKEY.FileSystem.WebdavFileSystem({
+                    extraPropNames: ['description', 'actions'],
+
+                    // extra props should model Ext.data.Field types
+                    extraDataFields: [
+                        {name: 'description', mapping: 'propstat/prop/description'},
+                        {name: 'actionHref', mapping: 'propstat/prop/actions', convert : function (v, rec)
+                        {
+                            var result = [];
+                            var actionsElements = Ext.DomQuery.compile('propstat/prop/actions').call(this, rec);
+                            if (actionsElements.length > 0)
+                            {
+                                var actionElements = actionsElements[0].getElementsByTagName('action');
+                                for (var i = 0; i < actionElements.length; i++)
+                                {
+                                    var action = new Object();
+                                    var childNodes = actionElements[i].childNodes;
+                                    for (var n = 0; n < childNodes.length; n++)
+                                    {
+                                        var childNode = childNodes[n];
+                                        if (childNode.nodeName == 'message')
+                                        {
+                                            action.message = childNode.textContent || childNode.text;
+                                        }
+                                        else if (childNode.nodeName == 'href')
+                                        {
+                                            action.href = childNode.textContent || childNode.text;
+                                        }
+                                    }
+                                    result[result.length] = action;
+                                }
+                            }
+                            return result;
+                        }}
+                    ],
+                    baseUrl:rootPath,
+                    rootName:'fileset'
+                });
+
+                <%  if (bean.getStatePrefix() != null) { %>
+                    prefix = '<%=bean.getStatePrefix()%>';
+                <%  } %>
+
+                var fileBrowser = new LABKEY.FilesWebPartPanel({
+                    fileSystem: fileSystem,
+                    helpEl:null,
+                    resizable: false,
+                    showAddressBar: <%=bean.isShowAddressBar()%>,
+                    showFolderTree: <%=bean.isShowFolderTree()%>,
+                    folderTreeCollapsed: isFolderTreeCollapsed,
+                    expandFileUpload: <%=bean.isExpandFileUpload()%>,
+                    disableGeneralAdminSettings: <%=bean.isDisableGeneralAdminSettings()%>,
+                    showProperties: false,
+                    showDetails: <%=bean.isShowDetails()%>,
+                    containerPath: <%=q(c.getPath())%>,
+                    allowChangeDirectory: true,
+                    tbarItems: buttonActions,
+                    isPipelineRoot: isPipelineRoot,
+                    adminUser : <%=getViewContext().getContainer().hasPermission(getViewContext().getUser(), AdminPermission.class)%>,
+                    statePrefix: prefix,
+                    rootOffset: <%=PageFlowUtil.jsString(bean.getRootOffset())%>
+                });
+
+                var panel = new Ext.Panel({
+                    layout: 'fit',
+                    renderTo: renderTo,
+                    border: false,
+                    items: [fileBrowser],
+                    height: <%= height %>,
+                    boxMinHeight:<%= height %>,
+                    boxMinWidth: 650
+                });
+
+                var _resize = function(w,h)
+                {
+                    LABKEY.Utils.resizeToViewport(panel, w, h);
+                };
+
+                if (autoResize)
+                {
+                    Ext.EventManager.onWindowResize(_resize);
+                    Ext.EventManager.fireWindowResize();
+                }
+
+                fileBrowser.start(<%=bean.getDirectory() != null ? q(bean.getDirectory().toString()) : ""%>);
+            }
+
+            /**
+             * activate the Ext state manager (for directory persistence), but by default, make all components
+             * not try to load state.
+             */
+            Ext.state.Manager.setProvider(new Ext.state.CookieProvider());
+            Ext.override(Ext.Component,{
+                stateful:false
+            });
+
+            Ext.BLANK_IMAGE_URL = LABKEY.contextPath + "/_.gif";
+            Ext.QuickTips.init();
+
+            renderBrowser(<%=q(bean.getRootPath())%>, <%=q(bean.getContentId())%>, <%=bean.isFolderTreeCollapsed()%>, <%=bean.isPipelineRoot()%>);
+        }
+
+        var scripts = [
+            'applet.js',
+            'FileUploadField.js',
+            'StatusBar.js',
+            'fileBrowser.js',
             'Reorderer.js',
             'ToolbarDroppable.js',
             'ToolbarReorderer.js',
             'ActionsAdmin.js',
             'PipelineAction.js',
             'FileProperties.js',
-            'FileContent.js'];
+            'FileContent.js'
+        ];
 
-        LABKEY.requiresScript(scripts,
-                true,
-                function(){
-                    Ext.onReady(function(){
+        LABKEY.requiresScript(scripts, true, function() {
+            Ext.onReady(loadFileContent);
+        }, this, true);
 
-                        function renderBrowser(rootPath, renderTo, isFolderTreeCollapsed, isPipelineRoot)
-                        {
-                            var autoResize = <%=bean.isAutoResize()%>;
+    })();
 
-                            var buttonActions = [];
-
-                            <%
-                            for (FilesWebPart.FilesForm.actions action  : bean.getButtonConfig()) {
-                            %>
-                                buttonActions.push('<%=action.name()%>');
-                            <%
-                            }
-                            %>
-
-                            var fileSystem = new LABKEY.FileSystem.WebdavFileSystem({
-                                extraPropNames: ['description', 'actions'],
-
-                                // extra props should model Ext.data.Field types
-                                extraDataFields: [
-                                    {name: 'description', mapping: 'propstat/prop/description'},
-                                    {name: 'actionHref', mapping: 'propstat/prop/actions', convert : function (v, rec)
-                                        {
-                                            var result = [];
-                                            var actionsElements = Ext.DomQuery.compile('propstat/prop/actions').call(this, rec);
-                                            if (actionsElements.length > 0)
-                                            {
-                                                var actionElements = actionsElements[0].getElementsByTagName('action');
-                                                for (var i = 0; i < actionElements.length; i++)
-                                                {
-                                                    var action = new Object();
-                                                    var childNodes = actionElements[i].childNodes;
-                                                    for (var n = 0; n < childNodes.length; n++)
-                                                    {
-                                                        var childNode = childNodes[n];
-                                                        if (childNode.nodeName == 'message')
-                                                        {
-                                                            action.message = childNode.textContent || childNode.text;
-                                                        }
-                                                        else if (childNode.nodeName == 'href')
-                                                        {
-                                                            action.href = childNode.textContent || childNode.text;
-                                                        }
-                                                    }
-                                                    result[result.length] = action;
-                                                }
-                                            }
-                                            return result;
-                                        }}
-                                ],
-                                baseUrl:rootPath,
-                                rootName:'fileset'
-                            });
-
-                            var prefix = undefined;
-
-                            <%  if (bean.getStatePrefix() != null) { %>
-                            prefix = '<%=bean.getStatePrefix()%>';
-                            <%  } %>
-
-                            var fileBrowser = new LABKEY.FilesWebPartPanel({
-                                fileSystem: fileSystem,
-                                helpEl:null,
-                                resizable: false,
-                                showAddressBar: <%=bean.isShowAddressBar()%>,
-                                showFolderTree: <%=bean.isShowFolderTree()%>,
-                                folderTreeCollapsed: isFolderTreeCollapsed,
-                                expandFileUpload: <%=bean.isExpandFileUpload()%>,
-                                disableGeneralAdminSettings: <%=bean.isDisableGeneralAdminSettings()%>,
-                                showProperties: false,
-                                showDetails: <%=bean.isShowDetails()%>,
-                                containerPath: <%=q(c.getPath())%>,
-                                allowChangeDirectory: true,
-                                tbarItems: buttonActions,
-                                isPipelineRoot: isPipelineRoot,
-                                adminUser : <%=getViewContext().getContainer().hasPermission(getViewContext().getUser(), AdminPermission.class)%>,
-                                statePrefix: prefix,
-                                rootOffset: <%=PageFlowUtil.jsString(bean.getRootOffset())%>
-                            });
-
-                            var panel = new Ext.Panel({
-                                layout: 'fit',
-                                renderTo: renderTo,
-                                border: false,
-                                items: [fileBrowser],
-                                height: <%= height %>,
-                                boxMinHeight:<%= height %>,
-                                boxMinWidth: 650
-                            });
-
-                            var _resize = function(w,h)
-                            {
-                                LABKEY.Utils.resizeToViewport(panel, w, h);
-                            };
-
-                            if (autoResize)
-                            {
-                                Ext.EventManager.onWindowResize(_resize);
-                                Ext.EventManager.fireWindowResize();
-                            }
-
-                            fileBrowser.start(<%=bean.getDirectory() != null ? q(bean.getDirectory().toString()) : ""%>);
-                        }
-
-                        /**
-                         * activate the Ext state manager (for directory persistence), but by default, make all components
-                         * not try to load state.
-                         */
-                        Ext.state.Manager.setProvider(new Ext.state.CookieProvider());
-                        Ext.override(Ext.Component,{
-                            stateful:false
-                        });
-
-                        Ext.BLANK_IMAGE_URL = LABKEY.contextPath + "/_.gif";
-                        Ext.QuickTips.init();
-
-                        renderBrowser(<%=q(bean.getRootPath())%>, <%=q(bean.getContentId())%>, <%=bean.isFolderTreeCollapsed()%>, <%=bean.isPipelineRoot()%>);
-                    });
-                },
-                this,
-                true);
-<%  } %>
 </script>
+<%  } %>
