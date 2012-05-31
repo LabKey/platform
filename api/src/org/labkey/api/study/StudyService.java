@@ -18,7 +18,6 @@ package org.labkey.api.study;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
@@ -45,8 +44,6 @@ public class StudyService
 
     /** LSID namespace prefix for study specimens in the experiment material table */
     public static final String SPECIMEN_NAMESPACE_PREFIX = "StudySpecimen";
-
-    public static final String STUDY_REDESIGN_FOLDER_TYPE_NAME_ITN = "Study Redesign (ITN)";
 
     public static final String SPECIMEN_SEARCH_WEBPART = "Specimen Search (Experimental)";
     public static final String SPECIMEN_BROWSE_WEBPART = "Specimen Browse (Experimental)";
