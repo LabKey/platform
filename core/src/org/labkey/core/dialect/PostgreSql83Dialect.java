@@ -1226,7 +1226,7 @@ class PostgreSql83Dialect extends SqlDialect
     // On PostgreSQL, wrap in a transaction and change some obscure settings to coerce the PostgreSQL JDBC driver to
     // not cache. We need to start a transaction so that we end up using the same Connection inside the Closure code.
     @Override
-    public void excuteWithoutJdbcCaching(DbScope scope, Closure closure) throws Exception
+    public void executeWithoutJdbcCaching(DbScope scope, Closure closure) throws Exception
     {
         try
         {

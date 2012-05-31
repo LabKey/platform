@@ -103,8 +103,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     // Resources go here for preprocessing (this can be multi-threaded)
     final PriorityBlockingQueue<Item> _itemQueue = new PriorityBlockingQueue<Item>(1000, itemCompare);
 
-    final Item NOOP_ITEM = new Item(null, null, null);
-
     // And a single threaded queue for actually writing to the index (can this be multi-threaded?)
     BlockingQueue<Item> _indexQueue = null;
 
