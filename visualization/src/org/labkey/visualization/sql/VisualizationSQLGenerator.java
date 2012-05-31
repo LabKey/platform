@@ -436,10 +436,9 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             {
                 aggregatedSQL.append(separator);
                 separator = " AND ";
-
-                aggregatedSQL.append("x.");
+                aggregatedSQL.append("x.\"");
                 aggregatedSQL.append(columnAliases.get(pair.getKey().getOriginalName()).iterator().next());
-                aggregatedSQL.append(" = ");
+                aggregatedSQL.append("\" = ");
                 aggregatedSQL.append(groupByQuery.getSQLAlias());
                 aggregatedSQL.append(".");
                 aggregatedSQL.append(pair.getValue().getOriginalName());
@@ -492,13 +491,14 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         Map<String, Set<String>> allAliases = getColumnMapping(factory, queries);
         StringBuilder masterSelectList = new StringBuilder();
         String sep = "";
-        for (Set<String> selectAliases : allAliases.values())
+        for (Map.Entry<String,Set<String>> entry : allAliases.entrySet())
         {
+            Set<String> selectAliases = entry.getValue();
             String selectAlias;
             if (parentQuery != null)
                 selectAlias = parentQuery.getSelectListName(selectAliases);
             else
-                selectAlias = "\"" + selectAliases.iterator().next() + "\"";
+                selectAlias = "\"" + selectAliases.iterator().next() + "\" @preservetitle";
             masterSelectList.append(sep).append(selectAlias);
             sep = ",\n\t";
         }
@@ -512,7 +512,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             {
                 interval.getEndDate().setOtherAlias(factory.getByAlias(intervalAliases.iterator().next()).getAlias());
             }
-            masterSelectList.append(sep).append(interval.getSQL()).append(" AS ").append(interval.getSQLAlias(intervalsSize));
+            masterSelectList.append(sep).append(interval.getSQL()).append(" AS ").append(interval.getSQLAlias(intervalsSize)).append(" @preservetitle");
         }
 
         Map<VisualizationSourceColumn, IVisualizationSourceQuery> orderBys = new LinkedHashMap<VisualizationSourceColumn, IVisualizationSourceQuery>();
