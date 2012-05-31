@@ -74,7 +74,7 @@ public class ResultsQueryView extends AssayBaseQueryView
         String returnURL = getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name());
         if (returnURL == null)
             returnURL = getViewContext().getActionURL().toString();
-        view.getDataRegion().addHiddenFormField(ActionURL.Param.returnUrl.returnUrl, returnURL);
+        view.getDataRegion().addHiddenFormField(ActionURL.Param.returnUrl, returnURL);
         return view;
     }
 
