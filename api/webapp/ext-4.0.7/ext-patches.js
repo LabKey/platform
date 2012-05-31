@@ -81,3 +81,11 @@ Ext4.override(Ext4.ZIndexManager, {
         this.mask.show();
     }
 });
+
+// fixes the problem with the combo box loadmask not hiding after the store is reloaded
+// http://www.sencha.com/forum/showthread.php?153490-Combo-Box-Store-Loading
+Ext4.override(Ext4.LoadMask, {
+    onHide: function() {
+        this.callParent();
+    }
+});
