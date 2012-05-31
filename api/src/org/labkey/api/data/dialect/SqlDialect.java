@@ -249,7 +249,7 @@ public abstract class SqlDialect
     }
 
     // By default, do nothing interesting -- most drivers don't cache results
-    public void excuteWithoutJdbcCaching(DbScope scope, Closure runnable) throws Exception
+    public void executeWithoutJdbcCaching(DbScope scope, Closure runnable) throws Exception
     {
         runnable.execute();
     }

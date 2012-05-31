@@ -1848,7 +1848,7 @@ public class QueryView extends WebPartView<Object>
         {
             DbScope scope = getSchema().getDbSchema().getScope();
 
-            scope.getSqlDialect().excuteWithoutJdbcCaching(scope, new Closure()
+            scope.getSqlDialect().executeWithoutJdbcCaching(scope, new Closure()
             {
                 @Override
                 public void execute() throws Exception
