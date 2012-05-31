@@ -33,6 +33,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
     constructor : function(config){
         // properties for this panel
         Ext4.apply(config, {
+            id: 'time-chart-outer-panel', // for selenium testing 
             layout: 'border',
             bodyStyle: 'background-color: white;',
             monitorResize: true,
@@ -439,18 +440,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.aestheticsButton = Ext4.create('Ext.button.Button', {text: 'Options', disabled: true,
                                 handler: function(btn){this.optionsButtonClicked(btn, this.editorAestheticsPanel, 300, 135, 'center');}, scope: this});
 
-        this.xAxisButton = Ext4.create('Ext.button.Button', {text: 'X-Axis', disabled: true,
-                                handler: function(btn){this.optionsButtonClicked(btn, this.editorXAxisPanel, 860, 250, 'center');}, scope: this});
-
-        this.leftAxisButton = Ext4.create('Ext.button.Button', {text: 'Left-Axis', disabled: true,
-                                handler: function(btn){this.optionsButtonClicked(btn, this.editorYAxisLeftPanel, 320, 220, 'center');}, scope: this});
-
-        this.rightAxisButton = Ext4.create('Ext.button.Button', {text: 'Right-Axis', disabled: true,
-                                handler: function(btn){this.optionsButtonClicked(btn, this.editorYAxisRightPanel, 320, 220, 'center');}, scope: this});
-
-        this.mainTitleButton = Ext4.create('Ext.button.Button', {text: 'Main Title', disabled: true,
-                                handler: function(btn){this.optionsButtonClicked(btn, this.editorMainTitlePanel, 300, 130, 'center');}, scope: this});        
-
         this.saveButton = Ext4.create('Ext.button.Button', {text: 'Save', disabled: true, hidden: !this.canEdit, handler: function(btn){
                                 this.editorSavePanel.setSaveAs(false);
                                 this.optionsButtonClicked(btn, this.editorSavePanel, 850, 200, 'right');
@@ -460,6 +449,46 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                                 this.editorSavePanel.setSaveAs(true);
                                 this.optionsButtonClicked(btn, this.editorSavePanel, 850, 200, 'right');
                         }, scope: this});
+
+        // for selenium testing, add a funtion that can be evaluated by selenium to open the axis/title panels similar to clicking on the axis label or title
+        // this function can be removed once we figure out how to click on text within the SVG chart
+        window.showTimeChartAxisPanel = function(type){
+            var scopedThis = Ext4.getCmp('time-chart-outer-panel');
+            var height = 100;
+            var width = 100;
+
+            // reference the panel based on the passed in type parameter
+            var panelRef = null;
+            if (type == 'X-Axis')
+            {
+                panelRef = scopedThis.editorXAxisPanel;
+                height = 250;
+                width = 860;
+            }
+            else if (type == 'Left-Axis')
+            {
+                panelRef = scopedThis.editorYAxisLeftPanel;
+                height = 220;
+                width = 320;
+            }
+            else if (type == 'Right-Axis')
+            {
+                panelRef = scopedThis.editorYAxisRightPanel;
+                height = 220;
+                width = 320;
+            }
+            else if (type == 'Title')
+            {
+                panelRef = scopedThis.editorMainTitlePanel;
+                height = 130;
+                width = 300;
+            }
+            else
+                return; // unknown type
+
+            // place the panel by the aesthetics options panel
+            scopedThis.optionsButtonClicked(scopedThis.aestheticsButton, panelRef, width, height, 'center');
+        };
 
         this.chart = Ext4.create('Ext.panel.Panel', {
             region: 'center',
@@ -474,11 +503,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     this.measuresButton,
                     this.groupingButton,
                     this.aestheticsButton,
-                    '-',
-                    this.xAxisButton,
-                    this.leftAxisButton,
-                    this.rightAxisButton,
-                    this.mainTitleButton,
                     '->',
                     this.saveButton,
                     this.saveAsButton
@@ -655,8 +679,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.measuresButton.enable();
         this.groupingButton.enable();
         this.aestheticsButton.enable();
-        this.xAxisButton.enable();
-        this.mainTitleButton.enable();
         this.saveButton.enable();
         this.saveAsButton.enable();
     },
@@ -664,10 +686,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
     disableNonMeasureOptionButtons: function(){
         this.groupingButton.disable();
         this.aestheticsButton.disable();
-        this.xAxisButton.disable();
-        this.leftAxisButton.disable();
-        this.rightAxisButton.disable();
-        this.mainTitleButton.disable();
 
         this.exportPdfMenuBtn.disable();
         this.exportPdfSingleBtn.disable();
@@ -679,10 +697,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.measuresButton.disable();
         this.groupingButton.disable();
         this.aestheticsButton.disable();
-        this.xAxisButton.disable();
-        this.leftAxisButton.disable();
-        this.rightAxisButton.disable();
-        this.mainTitleButton.disable();
         this.saveButton.disable();
         this.saveAsButton.disable();
         this.filtersPanel.disable();
@@ -907,10 +921,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
            Ext4.Msg.alert("Error", "Could not find x-axis in chart measure information.");
            return;
         }
-
-        // enable/disable the left and right axis panels
-        (leftAxisIndex > -1 ? this.leftAxisButton.enable() : this.leftAxisButton.disable());
-        (rightAxisIndex > -1 ? this.rightAxisButton.enable() : this.rightAxisButton.disable());
 
         if (!this.editorYAxisLeftPanel.userEditedLabel)
             this.editorYAxisLeftPanel.setLabel(this.editorMeasurePanel.getDefaultLabel("left"));
