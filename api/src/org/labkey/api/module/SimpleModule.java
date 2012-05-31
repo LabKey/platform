@@ -26,6 +26,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.*;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartFactory;
@@ -68,7 +69,7 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
 
     protected void init()
     {
-        getSchemaNames();
+        getSchemaNames(true);
     }
 
     protected Collection<WebPartFactory> createWebPartFactories()
@@ -108,6 +109,11 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
     @NotNull
     public Set<String> getSchemaNames()
     {
+        return getSchemaNames(false);
+    }
+
+    private Set<String> getSchemaNames(final boolean throwOnError)
+    {
         if (_schemaNames == null)
         {
             Resource schemasDir = getModuleResource("schemas");
@@ -129,11 +135,17 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
                             }
                             catch (XmlException e)
                             {
-                                _log.error("Skipping '" + name + "' schema file: " + e.getMessage());
+                                if(throwOnError)
+                                    throw new ConfigurationException("Error in '" + name + "' schema file: " + e.getMessage());
+                                else
+                                    _log.error("Skipping '" + name + "' schema file: " + e.getMessage());
                             }
                             catch (IOException e)
                             {
-                                _log.error("Skipping '" + name + "' schema file: " + e.getMessage());
+                                if(throwOnError)
+                                    throw new ConfigurationException("Error in '" + name + "' schema file: " + e.getMessage());
+                                else
+                                    _log.error("Skipping '" + name + "' schema file: " + e.getMessage());
                             }
                         }
                     }

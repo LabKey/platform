@@ -215,7 +215,14 @@ public class DbSchema
                 ti = new SchemaTableInfo(this, DatabaseTableType.NOT_IN_DB, xmlTable.getTableName());
             }
 
-            ti.loadTablePropertiesFromXml(xmlTable);
+            try
+            {
+                ti.loadTablePropertiesFromXml(xmlTable);
+            }
+            catch (IllegalArgumentException e)
+            {
+                _log.error("Malformed XML in " + ti.getSchema() + "." + xmlTable.getTableName(), e);
+            }
         }
 
         if (null != ti)
