@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.assay;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -76,7 +77,8 @@ public interface AssayProvider extends Handler<ExpProtocol>
     /** Get the root resource name.  Usually this is the same as the AssayProvider name. */
     String getResourceName();
 
-    AssayTableMetadata getTableMetadata();
+    @NotNull
+    AssayTableMetadata getTableMetadata(@NotNull ExpProtocol protocol);
 
     ExpProtocol createAssayDefinition(User user, Container container, String name, String description) throws ExperimentException;
 

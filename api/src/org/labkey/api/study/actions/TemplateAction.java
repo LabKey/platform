@@ -31,7 +31,6 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.template.AppBar;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -60,7 +59,7 @@ public class TemplateAction extends BaseAssayAction<ProtocolIdForm>
         for (DisplayColumn dc : dr.getDisplayColumns())
             dc.setCaption(colNameToPdname.get(dc.getName()));
 
-        dr.removeColumns(provider.getTableMetadata().getResultRowIdFieldKey().toString());
+        dr.removeColumns(provider.getTableMetadata(_protocol).getResultRowIdFieldKey().toString());
 
         RenderContext ctx = new RenderContext(getViewContext());
         ctx.setContainer(getContainer());

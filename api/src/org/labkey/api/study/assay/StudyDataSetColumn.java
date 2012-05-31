@@ -19,6 +19,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
@@ -68,10 +69,11 @@ public class StudyDataSetColumn extends ExprColumn
         String datasetAlias = getDatasetIdAlias();
         Container studyContainer = getStudyContainer();
         TableInfo dataSetTable = _assayDataSet.getTableInfo(_user);
+        ExpProtocol protocol = _assayDataSet.getAssayProtocol();
 
         joinSql.appendComment("<StudyDataSetColumn.join " + studyContainer.getPath() + ">", getSqlDialect());
         joinSql.append(" LEFT OUTER JOIN ").append(dataSetTable.getFromSQL(datasetAlias)).append(" ON ");
-        joinSql.append(datasetAlias).append("._key = CAST(" + parentAlias + "." + _provider.getTableMetadata().getResultRowIdFieldKey().getName() + " AS ");
+        joinSql.append(datasetAlias).append("._key = CAST(" + parentAlias + "." + _provider.getTableMetadata(protocol).getResultRowIdFieldKey().getName() + " AS ");
         joinSql.append(getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR)).append("(200))");
         joinSql.appendComment("</StudyDataSetColumn.join>", getSqlDialect());
         map.put(datasetAlias, joinSql);

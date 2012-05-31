@@ -167,7 +167,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
         AssayProvider provider = publishForm.getProvider();
 
         List<Integer> ids;
-        AssayTableMetadata tableMetadata = provider.getTableMetadata();
+        AssayTableMetadata tableMetadata = provider.getTableMetadata(_protocol);
         if (publishForm.isRunIds())
         {
             // Need to convert the run ids into data row ids

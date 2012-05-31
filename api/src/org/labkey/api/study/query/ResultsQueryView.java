@@ -53,7 +53,7 @@ public class ResultsQueryView extends AssayBaseQueryView
     @Override
     protected DataRegion createDataRegion()
     {
-        ResultsDataRegion rgn = new ResultsDataRegion(_provider);
+        ResultsDataRegion rgn = new ResultsDataRegion(_provider, _protocol);
         initializeDataRegion(rgn);
         return rgn;
     }
@@ -69,7 +69,7 @@ public class ResultsQueryView extends AssayBaseQueryView
     public DataView createDataView()
     {
         DataView view = super.createDataView();
-        view.getRenderContext().setBaseSort(new Sort(AssayService.get().getProvider(_protocol).getTableMetadata().getResultRowIdFieldKey().toString()));
+        view.getRenderContext().setBaseSort(new Sort(AssayService.get().getProvider(_protocol).getTableMetadata(_protocol).getResultRowIdFieldKey().toString()));
         view.getDataRegion().addHiddenFormField("rowId", "" + _protocol.getRowId());
         String returnURL = getViewContext().getRequest().getParameter(ActionURL.Param.returnUrl.name());
         if (returnURL == null)
@@ -119,10 +119,12 @@ public class ResultsQueryView extends AssayBaseQueryView
     {
         private ColumnInfo _matchColumn;
         private final AssayProvider _provider;
+        private final ExpProtocol _protocol;
 
-        public ResultsDataRegion(AssayProvider provider)
+        public ResultsDataRegion(AssayProvider provider, ExpProtocol protocol)
         {
             _provider = provider;
+            _protocol = protocol;
         }
 
         @Override
@@ -136,7 +138,7 @@ public class ResultsQueryView extends AssayBaseQueryView
         public void addQueryColumns(Set<ColumnInfo> columns)
         {
             super.addQueryColumns(columns);
-            FieldKey fk = new FieldKey(_provider.getTableMetadata().getSpecimenIDFieldKey(), AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME);
+            FieldKey fk = new FieldKey(_provider.getTableMetadata(_protocol).getSpecimenIDFieldKey(), AbstractAssayProvider.ASSAY_SPECIMEN_MATCH_COLUMN_NAME);
             Map<FieldKey, ColumnInfo> newColumns = QueryService.get().getColumns(getTable(), Collections.singleton(fk), columns);
             _matchColumn = newColumns.get(fk);
             if (_matchColumn != null)

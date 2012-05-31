@@ -54,9 +54,9 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractAssayProvi
     public static final String ASSAY_DOMAIN_SAMPLE_WELLGROUP = ExpProtocol.ASSAY_DOMAIN_PREFIX + "SampleWellGroup";
     public static final String SAMPLE_METADATA_INPUT_ROLE = "Sample Metadata";
 
-    public AbstractPlateBasedAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, AssayDataType dataType, AssayTableMetadata tableMetadata)
+    public AbstractPlateBasedAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, AssayDataType dataType)
     {
-        super(protocolLSIDPrefix, runLSIDPrefix, dataType, tableMetadata);
+        super(protocolLSIDPrefix, runLSIDPrefix, dataType);
     }
 
     public void setPlateTemplate(Container container, ExpProtocol protocol, PlateTemplate template)

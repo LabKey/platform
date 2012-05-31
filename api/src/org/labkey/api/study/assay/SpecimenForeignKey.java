@@ -48,7 +48,7 @@ public class SpecimenForeignKey extends LookupForeignKey
 
     public SpecimenForeignKey(AssaySchema schema, AssayProvider provider, ExpProtocol protocol)
     {
-        this(schema, provider, protocol, provider.getTableMetadata());
+        this(schema, provider, protocol, provider.getTableMetadata(protocol));
     }
 
     public SpecimenForeignKey(AssaySchema schema, AssayProvider provider, ExpProtocol protocol, AssayTableMetadata tableMetadata)
@@ -233,7 +233,7 @@ public class SpecimenForeignKey extends LookupForeignKey
         @Override
         public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
         {
-            FieldKey targetStudyFK = _tableMetadata.getTargetStudyFieldKey(_provider, _protocol);
+            FieldKey targetStudyFK = _tableMetadata.getTargetStudyFieldKey();
 
             FieldKey participantFK = _tableMetadata.getParticipantIDFieldKey();
             FieldKey specimenFK = _tableMetadata.getSpecimenIDFieldKey();

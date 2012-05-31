@@ -47,9 +47,9 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
     public static final String ROW_ID_COLUMN_NAME = "RowId";
     public static final String DATA_ID_COLUMN_NAME = "DataId";
 
-    public AbstractTsvAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, AssayDataType dataType, AssayTableMetadata tableMetadata)
+    public AbstractTsvAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, AssayDataType dataType)
     {
-        super(protocolLSIDPrefix, runLSIDPrefix, dataType, tableMetadata);
+        super(protocolLSIDPrefix, runLSIDPrefix, dataType);
     }
 
     public ExpData getDataForDataRow(Object dataRowId, ExpProtocol protocol)

@@ -158,17 +158,15 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     protected final String _protocolLSIDPrefix;
     protected final String _runLSIDPrefix;
-    protected AssayTableMetadata _tableMetadata;
     protected final AssayDataType _dataType;
 
     public int _maxFileInputs = 1;
 
-    public AbstractAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, AssayDataType dataType, AssayTableMetadata tableMetadata)
+    public AbstractAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, AssayDataType dataType)
     {
         _dataType = dataType;
         _protocolLSIDPrefix = protocolLSIDPrefix;
         _runLSIDPrefix = runLSIDPrefix;
-        _tableMetadata = tableMetadata;
         registerLsidHandler();
     }
 
@@ -188,14 +186,14 @@ public abstract class AbstractAssayProvider implements AssayProvider
         try
         {
             SimpleFilter filter = new SimpleFilter();
-            filter.addInClause(getTableMetadata().getResultRowIdFieldKey().toString(), dataKeys.keySet());
+            filter.addInClause(getTableMetadata(protocol).getResultRowIdFieldKey().toString(), dataKeys.keySet());
 
             AssaySchema schema = AssayService.get().createSchema(user, assayDataContainer);
             ContainerFilterable dataTable = createDataTable(schema, protocol, true);
             dataTable.setContainerFilter(new ContainerFilter.CurrentAndSubfolders(user));
 
-            FieldKey objectIdFK = getTableMetadata().getResultRowIdFieldKey();
-            FieldKey runLSIDFK = new FieldKey(getTableMetadata().getRunFieldKeyFromResults(), ExpRunTable.Column.LSID.toString());
+            FieldKey objectIdFK = getTableMetadata(protocol).getResultRowIdFieldKey();
+            FieldKey runLSIDFK = new FieldKey(getTableMetadata(protocol).getRunFieldKeyFromResults(), ExpRunTable.Column.LSID.toString());
 
             Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(dataTable, Arrays.asList(objectIdFK, runLSIDFK));
             ColumnInfo rowIdColumn = columns.get(objectIdFK);
@@ -248,7 +246,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     }
 
                     dataMap.put(AssayPublishService.SOURCE_LSID_PROPERTY_NAME, sourceLSID);
-                    dataMap.put(getTableMetadata().getDatasetRowIdPropertyName(), publishKey.getDataId());
+                    dataMap.put(getTableMetadata(protocol).getDatasetRowIdPropertyName(), publishKey.getDataId());
                     dataMap.put(AssayPublishService.TARGET_STUDY_PROPERTY_NAME, targetStudyContainer);
 
                     // Remember which rows we're planning to copy, partitioned by the target study
@@ -271,7 +269,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 }
                 
                 return AssayPublishService.get().publishAssayData(user, sourceContainer, study, protocol.getName(), protocol,
-                        dataMaps, getTableMetadata().getDatasetRowIdPropertyName(), errors);
+                        dataMaps, getTableMetadata(protocol).getDatasetRowIdPropertyName(), errors);
             }
             finally
             {
@@ -335,10 +333,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return null;
     }
 
-    public AssayTableMetadata getTableMetadata()
-    {
-        return _tableMetadata;
-    }
+    public abstract AssayTableMetadata getTableMetadata(ExpProtocol protocol);
 
     public static String getDomainURIForPrefix(ExpProtocol protocol, String domainPrefix)
     {

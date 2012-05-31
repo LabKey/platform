@@ -136,7 +136,7 @@ public class PublishResultsQueryView extends ResultsQueryView
             _timepointType = null;
         _filter = new SimpleFilter();
         AssayProvider provider = AssayService.get().getProvider(protocol);
-        _filter.addInClause(provider.getTableMetadata().getResultRowIdFieldKey().toString(), objectIds);
+        _filter.addInClause(provider.getTableMetadata(protocol).getResultRowIdFieldKey().toString(), objectIds);
         _reshowPtids = reshowPtids;
         _reshowVisits = reshowVisits;
         _reshowDates = reshowDates;
@@ -227,6 +227,47 @@ public class PublishResultsQueryView extends ResultsQueryView
         if (_targetStudyDomainProperty != null && _targetStudyDomainProperty.first != ExpProtocol.AssayDomainTypes.Result)
             hidden.add(AbstractAssayProvider.TARGET_STUDY_PROPERTY_CAPTION);
         return hidden;
+    }
+
+    private static Date convertObjectToDate(Object dateObject)
+    {
+        Date date = null;
+        if (dateObject instanceof Date)
+        {
+            date = (Date)dateObject;
+        }
+        else if (dateObject instanceof String)
+        {
+            try
+            {
+                date = new Date(DateUtil.parseDateTime((String)dateObject));
+            }
+            catch (ConversionException e) {}
+        }
+        return date;
+    }
+
+    public static String convertObjectToString(Object o)
+    {
+        return o == null ? null : o.toString();
+    }
+
+    private static Double convertObjectToDouble(Object visitIdObject)
+    {
+        Double visitId = null;
+        if (visitIdObject instanceof Number)
+        {
+            visitId = ((Number)visitIdObject).doubleValue();
+        }
+        else if (visitIdObject instanceof String)
+        {
+            try
+            {
+                visitId = Double.parseDouble((String)visitIdObject);
+            }
+            catch (NumberFormatException e) {}
+        }
+        return visitId;
     }
 
     public static class ResolverHelper
@@ -350,16 +391,13 @@ public class PublishResultsQueryView extends ResultsQueryView
             TimepointType timepointType = targetStudy == null ? null : targetStudy.getTimepointType();
             Container targetStudyContainer = targetStudy == null ? null : targetStudy.getContainer();
 
-            Object visitID = _visitIdCol != null && timepointType == TimepointType.VISIT ? _visitIdCol.getValue(ctx) : null;
-            Object date = _dateCol != null && timepointType == TimepointType.DATE ? _dateCol.getValue(ctx) : null;
+            Double visitId = _visitIdCol != null && timepointType == TimepointType.VISIT ? convertObjectToDouble(_visitIdCol.getValue(ctx)) : null;
+            Date date = _dateCol != null && timepointType == TimepointType.DATE ? convertObjectToDate(_dateCol.getValue(ctx)) : null;
 
-            String specimenID = _specimenIDCol == null ? null : (_specimenIDCol.getValue(ctx) == null ? null : _specimenIDCol.getValue(ctx).toString());
-            String participantID = _ptidCol == null ? null : (_ptidCol.getValue(ctx) == null ? null : _ptidCol.getValue(ctx).toString());
+            String specimenID = _specimenIDCol == null ? null : convertObjectToString(_specimenIDCol.getValue(ctx));
+            String participantID = _ptidCol == null ? null : convertObjectToString(_ptidCol.getValue(ctx));
 
-            Double visitDouble = visitID instanceof Number ? ((Number) visitID).doubleValue() : null;
-            Date dateDate = date instanceof Date ? (Date)date : null;
-
-            return resolver.resolve(specimenID, participantID, visitDouble, dateDate, targetStudyContainer);
+            return resolver.resolve(specimenID, participantID, visitId, date, targetStudyContainer);
         }
 
         public Object getUserVisitId(RenderContext ctx) throws IOException
@@ -369,7 +407,7 @@ public class PublishResultsQueryView extends ResultsQueryView
                 Object key = ctx.getRow().get(_objectIdCol.getName());
                 return _reshowVisits.get(key);
             }
-            Double result = _visitIdCol == null ? null : (_visitIdCol.getValue(ctx) instanceof Double ? (Double)_visitIdCol.getValue(ctx) : null);
+            Double result = _visitIdCol == null ? null : convertObjectToDouble(_visitIdCol.getValue(ctx));
             if (result == null)
             {
                 ParticipantVisit pv = resolve(ctx);
@@ -386,7 +424,7 @@ public class PublishResultsQueryView extends ResultsQueryView
                 return _reshowPtids.get(key);
             }
             
-            String result = _ptidCol == null ? null : (_ptidCol.getValue(ctx) == null ? null : _ptidCol.getValue(ctx).toString());
+            String result = _ptidCol == null ? null : convertObjectToString(_ptidCol.getValue(ctx));
             if (result == null)
             {
                 ParticipantVisit pv = resolve(ctx);
@@ -402,7 +440,7 @@ public class PublishResultsQueryView extends ResultsQueryView
                 Object key = ctx.getRow().get(_objectIdCol.getName());
                 return _reshowDates.get(key);
             }
-            Date result = _dateCol == null ? null : (_dateCol.getValue(ctx) instanceof Date ? (Date)_dateCol.getValue(ctx) : null);
+            Date result = _dateCol == null ? null : convertObjectToDate(_dateCol.getValue(ctx));
             if (result == null)
             {
                 ParticipantVisit pv = resolve(ctx);
@@ -420,7 +458,7 @@ public class PublishResultsQueryView extends ResultsQueryView
                 result = _reshowTargetStudies.get(key);
             }
             if (result == null)
-                result = _targetStudyCol == null ? null : (_targetStudyCol.getValue(ctx) == null ? null : _targetStudyCol.getValue(ctx).toString());
+                result = _targetStudyCol == null ? null : convertObjectToString(_targetStudyCol.getValue(ctx));
             if (result == null)
             {
                 ParticipantVisit pv = resolve(ctx);
@@ -621,47 +659,6 @@ public class PublishResultsQueryView extends ResultsQueryView
             }
         }
 
-        private Date convertObjectToDate(Object dateObject)
-        {
-            Date date = null;
-            if (dateObject instanceof Date)
-            {
-                date = (Date)dateObject;
-            }
-            else if (dateObject instanceof String)
-            {
-                try
-                {
-                    date = new Date(DateUtil.parseDateTime((String)dateObject));
-                }
-                catch (ConversionException e) {}
-            }
-            return date;
-        }
-
-        public String convertObjectToString(Object o)
-        {
-            return o == null ? null : o.toString();
-        }
-
-        private Double convertObjectToDouble(Object visitIdObject)
-        {
-            Double visitId = null;
-            if (visitIdObject instanceof Number)
-            {
-                visitId = ((Number)visitIdObject).doubleValue();
-            }
-            else if (visitIdObject instanceof String)
-            {
-                try
-                {
-                    visitId = Double.parseDouble((String)visitIdObject);
-                }
-                catch (NumberFormatException e) {}
-            }
-            return visitId;
-        }
-
         public void addQueryColumns(Set<ColumnInfo> set)
         {
             if (_runIdCol != null) { set.add(_runIdCol); }
@@ -842,16 +839,12 @@ public class PublishResultsQueryView extends ResultsQueryView
             Study study = targetStudyContainer == null ? null : StudyService.get().getStudy(targetStudyContainer);
             Visit visit = null;
 
-            String participantID = participantObject == null ? null : participantObject.toString();
-            try
-            {
-                Double visitDouble = visitObject == null ? null : (Double) ConvertUtils.convert(visitObject.toString(), Double.class);
-                Date dateDate = dateObject == null ? null : (Date) ConvertUtils.convert(dateObject.toString(), Date.class);
+            String participantID = convertObjectToString(participantObject);
+            Double visitDouble = convertObjectToDouble(visitObject);
+            Date dateDate = convertObjectToDate(dateObject);
 
-                visit = study == null ? null : study.getVisit(participantID, visitDouble, dateDate, true);
-            }
-            catch (ConversionException ignored) {} // That's OK for now, we just won't resolve a visit
-            
+            visit = study == null ? null : study.getVisit(participantID, visitDouble, dateDate, true);
+
             out.write(visit == null ? "" : visit.getDisplayString());
         }
     }
@@ -890,7 +883,7 @@ public class PublishResultsQueryView extends ResultsQueryView
 
         _targetStudyDomainProperty = provider.findTargetStudyProperty(_protocol);
 
-        AssayTableMetadata tableMetadata = provider.getTableMetadata();
+        AssayTableMetadata tableMetadata = provider.getTableMetadata(_protocol);
         FieldKey runIdFieldKey = tableMetadata.getRunRowIdFieldKeyFromResults();
         FieldKey objectIdFieldKey = tableMetadata.getResultRowIdFieldKey();
         FieldKey assayPTIDFieldKey = _defaultValueSource.getParticipantIDFieldKey(tableMetadata);
@@ -907,7 +900,7 @@ public class PublishResultsQueryView extends ResultsQueryView
         FieldKey targetStudyFieldKey = null;
         if (_targetStudyDomainProperty != null && _targetStudyDomainProperty.first == ExpProtocol.AssayDomainTypes.Result)
         {
-            targetStudyFieldKey = tableMetadata.getTargetStudyFieldKey(provider, _protocol);
+            targetStudyFieldKey = tableMetadata.getTargetStudyFieldKey();
             fieldKeys.add(targetStudyFieldKey);
         }
 

@@ -28,19 +28,24 @@ import org.labkey.api.util.Pair;
  */
 public class AssayTableMetadata
 {
+    private final AssayProvider _provider;
+    private final ExpProtocol _protocol;
+
     private final FieldKey _runFieldKey;
     private final FieldKey _resultRowIdFieldKey;
     private final FieldKey _specimenDetailParentFieldKey;
     /** The name of the property in the dataset that points back to the RowId-type column in the assay's data table */
     private final String _datasetRowIdPropertyName;
 
-    public AssayTableMetadata(FieldKey specimenDetailParentFieldKey, FieldKey runFieldKey, FieldKey resultRowIdFieldKey)
+    public AssayTableMetadata(AssayProvider provider, ExpProtocol protocol, FieldKey specimenDetailParentFieldKey, FieldKey runFieldKey, FieldKey resultRowIdFieldKey)
     {
-        this(specimenDetailParentFieldKey, runFieldKey, resultRowIdFieldKey, resultRowIdFieldKey.getName());
+        this(provider, protocol, specimenDetailParentFieldKey, runFieldKey, resultRowIdFieldKey, resultRowIdFieldKey.getName());
     }
 
-    public AssayTableMetadata(FieldKey specimenDetailParentFieldKey, FieldKey runFieldKey, FieldKey resultRowIdFieldKey, String datasetRowIdPropertyName)
+    public AssayTableMetadata(AssayProvider provider, ExpProtocol protocol, FieldKey specimenDetailParentFieldKey, FieldKey runFieldKey, FieldKey resultRowIdFieldKey, String datasetRowIdPropertyName)
     {
+        _provider = provider;
+        _protocol = protocol;
         _runFieldKey = runFieldKey;
         _resultRowIdFieldKey = resultRowIdFieldKey;
         _specimenDetailParentFieldKey = specimenDetailParentFieldKey;
@@ -105,13 +110,11 @@ public class AssayTableMetadata
      * Get the FieldKey to the TargetStudy column relative to the results table.  The assay instance
      * may define the TargetStudy column on the results table itself, the run table, or the batch table.
      *
-     * @param provider provider
-     * @param protocol protocol
      * @return relative to the assay's results table, the FieldKey that gets to the TargetStudy
      */
-    public FieldKey getTargetStudyFieldKey(AssayProvider provider, ExpProtocol protocol)
+    public FieldKey getTargetStudyFieldKey()
     {
-        Pair<ExpProtocol.AssayDomainTypes, DomainProperty> pair = provider.findTargetStudyProperty(protocol);
+        Pair<ExpProtocol.AssayDomainTypes, DomainProperty> pair = _provider.findTargetStudyProperty(_protocol);
         if (pair == null)
             return null;
 
