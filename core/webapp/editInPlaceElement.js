@@ -188,7 +188,7 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
     },
 
     completeEdit: function(){
-        var value = this.editor.getValue();
+        var value = Ext.util.Format.htmlEncode(this.editor.getValue());
         this.endEdit();
 
         if (value != this.oldText && false !== this.fireEvent("beforecomplete", value, this.oldText))
@@ -224,7 +224,7 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
 
             //set jsonData and handlers
             reqConfig.jsonData = {};
-            reqConfig.jsonData[this.updateConfig.jsonDataPropName || "newValue"] = value;
+            reqConfig.jsonData[this.updateConfig.jsonDataPropName || "newValue"] = Ext.util.Format.htmlDencode(value);
             reqConfig.success = function(){
                 this.onUpdateComplete(value);
             };
