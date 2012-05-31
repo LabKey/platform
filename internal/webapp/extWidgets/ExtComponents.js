@@ -216,11 +216,12 @@ Ext4.define('LABKEY.ext.LinkButton', {
     renderSelectors: {
         btnEl: 'a'
     },
-    baseCls: 'null',
+    baseCls: 'linkbutton',
     renderTpl:
         '<em id="{id}-btnWrap" class="{splitCls}">' +
             '{linkPrefix}' +
-            '<a id="{id}-btnEl" class="{linkCls}" role="link" ' +
+            '<a id="{id}-btnEl" role="link" ' +
+                '<tpl if="linkCls">class="{linkCls}"</tpl>' +
                 '<tpl if="href">href="{href}" </tpl>' +
                 '<tpl if="href">target="{linkTarget}" </tpl>' +
                 '<tpl if="tooltip">data-qtip="{tooltip}"</tpl>' +

@@ -87,7 +87,8 @@ Ext4.define('LABKEY.ext4.FormPanel', {
             ,bodyStyle: 'padding:5px'
             ,style: 'margin-bottom: 15px'
             ,buttons: [
-                LABKEY.ext4.FORMBUTTONS['SUBMIT']()
+                LABKEY.ext4.FORMBUTTONS['SUBMIT'](),
+                LABKEY.ext4.FORMBUTTONS['CANCEL']()
             ]
         });
 

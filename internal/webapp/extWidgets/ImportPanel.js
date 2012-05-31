@@ -56,8 +56,12 @@ Ext4.define('LABKEY.ext.ImportPanel', {
                 viewName: this.viewName,
                 columns: '*',
                 listeners: {
-                    uploadcomplete: function(){
-                        window.location = LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.buildURL('project', 'begin');
+                    uploadcomplete: function(response){
+                        Ext4.Msg.alert("Success", response.successMessage, function(btn){
+                            window.location = LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.buildURL('project', 'begin');
+                        }, this);
+
+                        return false;
                     }
                 }
             }]

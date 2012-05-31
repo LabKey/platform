@@ -301,7 +301,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
                         workbookFolderType: 'Expt Workbook',
                         title: btn.importTitle || 'Import Data'
                     }, config.importWizardConfig);
-                    Ext4.create('LABKEY.ext.ImportWizardWin', wizardCfg).show();
+                    Ext4.create('LABKEY.ext.ImportWizardWin', wizardCfg).show(btn);
 
                 }
             }

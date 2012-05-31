@@ -113,7 +113,6 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
 
     },
     onMetaLoad: function(){
-        console.log(this.assayDesign)
         this.handleImportMethods();
         this.defaultImportMethod = this.defaultImportMethod || 'defaultExcel';
 

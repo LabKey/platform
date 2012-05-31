@@ -112,7 +112,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
         else
             this.mon(this.store, 'load', this.onLoad, this, {single: true});
 
-        Ext4.Ajax.timeout = 0; //in milliseconds
+        Ext4.Ajax.timeout = 30000; //in milliseconds
     },
 
     onLoad: function(store, success){
@@ -304,3 +304,16 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
 
 
 
+
+var params = {
+    schemaName: 'lists',
+    'query.queryName': 'eligibility'
+};
+
+if(field.cancer)
+    params['query.cancer~eq'] = val;
+if(field.repos)
+    params['query.repository~eq'] = val;
+
+
+window.location = LABKEY.ActionURL.buildURL('query', 'executeQuery', null, params);

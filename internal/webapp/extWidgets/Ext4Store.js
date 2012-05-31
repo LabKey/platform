@@ -194,6 +194,9 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
 
         if(Ext4.isDefined(config.maxRows)){
             baseParams['query.maxRows'] = config.maxRows;
+            if(config.maxRows < this.pageSize)
+                this.pageSize = config.maxRows;
+
             if(config.maxRows === 0)
                 this.pageSize = 0;
         }
@@ -280,7 +283,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
     //private
     //NOTE: the intention of this method is to provide a standard, low-level way to translating Labkey metadata names into ext ones.
     translateMetadata: function(field){
-        field.fieldLabel = Ext.util.Format.htmlEncode(field.label || field.caption || field.header || field.name);
+        field.fieldLabel = Ext4.util.Format.htmlEncode(field.label || field.caption || field.header || field.name);
         field.dataIndex = field.dataIndex || field.name;
         field.editable = (field.userEditable!==false && !field.readOnly && !field.autoIncrement);
         field.allowBlank = field.nullable;
@@ -361,7 +364,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
      * @name hasLoaded
      * @function
      * @returns {boolean} Returns true if the store has loaded, false if not.
-     * @memberOf LABKEY.ext.Store#
+     * @memberOf LABKEY.ext4.Store#
      *
      */
     hasLoaded: function(){
@@ -520,7 +523,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
             //if the id changed, fixup the keys and map of the store's base collection
             //HACK: this is using private data members of the base Store class. Unfortunately
             //Ext Store does not have a public API for updating the key value of a record
-            //after it has been added to the store. This might break in future versions of Ext.
+            //after it has been added to the store. This might break in future versions of Ext
             if(record.internalId != row.values[idCol])
             {
                 record.internalId = row.values[idCol];
@@ -544,7 +547,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
     getJson : function(response) {
         return (response && undefined != response.getResponseHeader && undefined != response.getResponseHeader('Content-Type')
                 && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
-                ? Ext.util.JSON.decode(response.responseText)
+                ? Ext4.JSON.decode(response.responseText)
                 : null;
     },
 
@@ -656,7 +659,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
      * @param (string) fieldName The name of the field
      * @param (object) config Optional. This object will be recursively applied to the default config object
      * @returns {object} An Ext config object suitable to create a field component
-     * @memberOf LABKEY.ext.Store#
+     * @memberOf LABKEY.ext4.Store#
      *
      */
     getFormEditorConfig: function(fieldName, config){
@@ -676,7 +679,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
      * @param (string) fieldName The name of the field
      * @param (object) config Optional. This object will be recursively applied to the default config object
      * @returns {object} An Ext config object suitable to create a field component
-     * @memberOf LABKEY.ext.Store#
+     * @memberOf LABKEY.ext4.Storee#
      *
      */
     getGridEditorConfig: function(fieldName, config){
@@ -690,7 +693,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
      * @name getFields
      * @function
      * @returns {Ext.util.MixedCollection} The fields associated with this store
-     * @memberOf LABKEY.ext.Store#
+     * @memberOf LABKEY.ext4.Store#
      *
      */
     getFields: function(){
@@ -703,7 +706,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
      * @name getColumns
      * @function
      * @returns {array} The columns associated with this store
-     * @memberOf LABKEY.ext.Store#
+     * @memberOf LABKEY.ext4.Store#
      *
      */
     getColumns: function(){
@@ -717,7 +720,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
      * @function
      * @param (string) fieldName The name of the field
      * @returns {object} Metatdata for this field
-     * @memberOf LABKEY.ext.Store#
+     * @memberOf LABKEY.ext4.Store#
      *
      */
     findFieldMetadata : function(fieldName){
@@ -823,7 +826,7 @@ Ext4.define('LABKEY.ext4.ExtendedJsonReader', {
         var fields = meta.fields,
             newModel;
 
-        Ext.apply(this, meta);
+        Ext4.apply(this, meta);
 
         //NOTE: In Ext4.1 the store restores the metachange event, so we can probably simplify this
         if (fields) {
@@ -978,7 +981,7 @@ Ext4.define('LABKEY.ext4.AjaxProxy', {
             var request = Ext4.create('Ext.data.Request', {
                 action: 'saveRows',
                 url: LABKEY.ActionURL.buildURL("query", 'saveRows', this.extraParams.containerPath),
-                jsonData: Ext.apply(this.extraParams, {
+                jsonData: Ext4.apply(this.extraParams, {
                     commands: commands
                 })
             });

@@ -214,7 +214,7 @@ Ext4.define('LABKEY.ext.ImportWizardWin', {
     alias: 'widget.labkey-importwizardwin',
     initComponent: function(){
         Ext4.apply(this, {
-            closeAction:'hide',
+            closeAction:'destroy',
             title: this.title || 'Import Data',
             modal: true,
             items: [{
@@ -253,6 +253,7 @@ Ext4.define('LABKEY.ext.ImportWizardWin', {
                 ,handler: function(btn){
                     var form = this.down('#theForm');
                     form.formSubmit.call(form, btn);
+                    this.close();
                 }
                 ,scope: this
                 ,formBind: true
@@ -261,7 +262,7 @@ Ext4.define('LABKEY.ext.ImportWizardWin', {
                 ,width: 50
                 ,scope: this
                 ,handler: function(btn){
-                    this.hide();
+                    this.close();
                 }
             }]
         });

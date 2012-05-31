@@ -177,7 +177,7 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
         Ext4.applyIf(this, {
             title: 'Upload Data'
             ,buttons: [{
-                text: 'Submit'
+                text: 'Upload'
                 ,width: 50
                 ,handler: this.formSubmit
                 ,scope: this
@@ -314,7 +314,9 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
             }
 
             if(Ext4.isArray(response.errors)){
-                html += '<table border=0>';
+                var style = 'style="color:red;padding-right: 10px;"';
+                html += '<table border=0><tr><td colspan=2 '+style+'>There were errors in the upload:</td></tr>';
+
                 var rowErrors;
                 Ext4.each(response.errors, function(error){
                     var rowErrors = [];
@@ -324,7 +326,7 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
                         }, this);
 
                     var hasRow = Ext4.isDefined(error.rowNumber);
-                    html += '<tr>' + (hasRow ? '<td style="color:red;padding-right: 10px;">Row '+(error.rowNumber+1) + ':</td>' : '')+'<td style="color:red;" '+(hasRow ? '' : ' colspan="2"')+'>'+rowErrors.join('<br>'+'</td></tr>')
+                    html += '<tr>' + (hasRow ? '<td '+style+'>Row '+(error.rowNumber+1) + ':</td>' : '')+'<td style="color:red;" '+(hasRow ? '' : ' colspan="2"')+'>'+rowErrors.join('<br>'+'</td></tr>')
                 }, this);
 
                 html += '</table>';
@@ -342,11 +344,12 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
         }
         else {
             if(response.rowCount > 0)
-                alert('Success! '+response.rowCount+' rows inserted.');
+                response.successMessage = 'Success! '+response.rowCount+' rows inserted.';
             else
-                alert('No rows inserted.');
+                response.successMessage = 'No rows inserted.';
 
-            this.fireEvent('uploadcomplete', response);
+            if(this.fireEvent('uploadcomplete', response) !== false)
+                alert(response.successMessage);
         }
 
         this.doLayout();
