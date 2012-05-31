@@ -165,14 +165,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             collapsed: this.chartInfo.chartSubjectSelection != "subjects",
             listeners: {
                 scope: this,
-                'chartDefinitionChanged': function(requiresDataRefresh){
-                    if(requiresDataRefresh){
-                        this.refreshChart.delay(100);
-                    }
-                    else{
-                        this.loaderFn();
-                    }
-                },
+                'chartDefinitionChanged': this.chartDefinitionChanged,
                 'measureMetadataRequestPending': this.measureMetadataRequestPending,
                 'measureMetadataRequestComplete': this.measureMetadataRequestComplete
             }
@@ -186,14 +179,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             collapsed: this.chartInfo.chartSubjectSelection != "groups",
             listeners: {
                 scope: this,
-                'chartDefinitionChanged': function(requiresDataRefresh){
-                    if(requiresDataRefresh){
-                        this.refreshChart.delay(100);
-                    }
-                    else{
-                        this.loaderFn();
-                    }
-                },
+                'chartDefinitionChanged': this.chartDefinitionChanged,
                 'measureMetadataRequestPending': this.measureMetadataRequestPending,
                 'measureMetadataRequestComplete': this.measureMetadataRequestComplete
             }
@@ -245,15 +231,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             listeners: {
                 scope: this,
                 'chartDefinitionChanged': function(requiresDataRefresh) {
-                    if(requiresDataRefresh)
-                    {
-                        this.measureSelectionChange(true);
-                        this.refreshChart.delay(100);
-                    }
-                    else
-                    {
-                        this.loaderFn();
-                    }
+                    this.measureSelectionChange(true);
+                    this.chartDefinitionChanged(requiresDataRefresh);
                 },
                 'measureMetadataRequestPending': this.measureMetadataRequestPending,
                 'measureMetadataRequestComplete': this.measureMetadataRequestComplete
@@ -270,14 +249,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             bubbleEvents: ['closeOptionsWindow'],
             listeners: {
                 scope: this,
-                'chartDefinitionChanged': function(requiresDataRefresh){
-                    if(requiresDataRefresh){
-                        this.refreshChart.delay(100);
-                    }
-                    else{
-                        this.loaderFn();
-                    }
-                },
+                'chartDefinitionChanged': this.chartDefinitionChanged,
                 'measureMetadataRequestPending': this.measureMetadataRequestPending,
                 'measureMetadataRequestComplete': this.measureMetadataRequestComplete,
                 'noDemographicData': this.disableOptionElements
@@ -290,14 +262,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             bubbleEvents: ['closeOptionsWindow'],
             listeners: {
                 scope: this,
-                'chartDefinitionChanged': function(requiresDataRefresh){
-                    if(requiresDataRefresh){
-                        this.refreshChart.delay(100);
-                    }
-                    else{
-                        this.loaderFn();
-                    }
-                }
+                'chartDefinitionChanged': this.chartDefinitionChanged
             }
         });
         //Set radio/textfield names to aid with TimeChartTest.
@@ -315,14 +280,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             bubbleEvents: ['closeOptionsWindow'],
             listeners: {
                 scope: this,
-                'chartDefinitionChanged': function(requiresDataRefresh){
-                    if(requiresDataRefresh){
-                        this.refreshChart.delay(100);
-                    }
-                    else{
-                        this.loaderFn();
-                    }
-                }
+                'chartDefinitionChanged': this.chartDefinitionChanged
             }
         });
         //Set radio/textfield names to aid with TimeChartTest.
@@ -350,12 +308,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     if(this.editorGroupingPanel.groupLayoutChanged == true){
                         this.editorGroupingPanel.groupLayoutChanged = false;
                     }
-                    if(requiresDataRefresh){
-                        this.refreshChart.delay(100);
-                    }
-                    else{
-                        this.loaderFn();
-                    }
+                    this.chartDefinitionChanged(requiresDataRefresh);
                 },
                 'groupLayoutSelectionChanged': this.setOptionsForGroupLayout
             }
@@ -367,14 +320,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             bubbleEvents: ['closeOptionsWindow'],
             listeners: {
                 scope: this,
-                'chartDefinitionChanged': function(requiresDataRefresh){
-                    if(requiresDataRefresh){
-                        this.refreshChart.delay(100);
-                    }
-                    else{
-                        this.loaderFn();
-                    }
-                }
+                'chartDefinitionChanged': this.chartDefinitionChanged
             }
         });
 
@@ -383,14 +329,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             bubbleEvents: ['closeOptionsWindow'],
             listeners: {
                 scope: this,
-                'chartDefinitionChanged': function(requiresDataRefresh){
-                    if(requiresDataRefresh){
-                        this.refreshChart.delay(100);
-                    }
-                    else{
-                        this.loaderFn();
-                    }
-                }
+                'chartDefinitionChanged': this.chartDefinitionChanged
             }
         });
 
@@ -712,6 +651,13 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.dirty = value;
     },
 
+    chartDefinitionChanged: function(requiresDataRefresh) {
+        if (requiresDataRefresh)
+            this.refreshChart.delay(100);
+        else
+            this.loaderFn();
+    },
+
     measureMetadataRequestPending:  function() {
         // increase the request counter
         this.measureMetadataRequestCounter++;
@@ -870,6 +816,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 delete simplified.subject.groups[i].id;
                 delete simplified.subject.groups[i].categoryId;
                 delete simplified.subject.groups[i].created;
+                delete simplified.subject.groups[i].order;
             }
         }
 
@@ -882,6 +829,9 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             if(measure.dateOptions){
                 delete measure.dateOptions.zeroDateCol.id;
                 delete measure.dateOptions.dateCol.id;
+                delete measure.dateOptions.dateCol.longlabel;
+                delete measure.dateOptions.dateCol.description;
+                delete measure.dateOptions.dateCol.isUserDefined;
             }
             simplified.measures.push(measure);
         }
@@ -921,11 +871,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
            Ext4.Msg.alert("Error", "Could not find x-axis in chart measure information.");
            return;
         }
-
-        if (!this.editorYAxisLeftPanel.userEditedLabel)
-            this.editorYAxisLeftPanel.setLabel(this.editorMeasurePanel.getDefaultLabel("left"));
-        if (!this.editorYAxisRightPanel.userEditedLabel)
-            this.editorYAxisRightPanel.setLabel(this.editorMeasurePanel.getDefaultLabel("right"));
 
         if (this.individualData && this.individualData.filterDescription)
             this.editorMeasurePanel.setFilterWarningText(this.individualData.filterDescription);

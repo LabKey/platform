@@ -151,6 +151,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
         // add a button for the user to add a measure to the chart
         this.addMeasureButton = Ext4.create('Ext.button.Button', {
             text: 'Add Measure',
+            width: 105,
             handler: this.showMeasureSelectionWindow,
             scope: this
         });
@@ -158,6 +159,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
        // add a button for the user to remove the selected measure
         this.removeMeasureButton = Ext4.create('Ext.button.Button', {
             text: 'Remove Measure',
+            width: 130,
             disabled: this.measures.length == 0,
             handler: this.removeSelectedMeasure,
             scope: this
@@ -398,6 +400,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
         });
         this.dataFilterRemoveButton = Ext4.create('Ext.button.Button', {
             hidden: true,
+            width: 115,
             text: 'Remove Filter',
             listeners: {
                 scope: this,
@@ -520,10 +523,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                             queryName: measure.queryName,
                             name: visitDateStr,
                             label: "Visit Date",
-                            type: "TIMESTAMP",
-                            longlabel: "",
-                            description: "",
-                            isUserDefined: ""
+                            type: "TIMESTAMP"
                         };
                         store.add(newDateRecordData);
                     }
