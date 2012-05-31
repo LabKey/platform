@@ -18,6 +18,7 @@ package org.labkey.study.query;
 
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -80,6 +81,11 @@ public class ParticipantTable extends FilteredTable
         });
         addColumn(datasetColumn);
         datasetColumn.setHidden(hideDataSets);
+
+        ColumnInfo containerCol = new AliasedColumn(this, "Container", _rootTable.getColumn("Container"));
+        containerCol = ContainerForeignKey.initColumn(containerCol, _schema);
+        containerCol.setHidden(true);
+        addColumn(containerCol);
 
         if (StudyManager.getInstance().showCohorts(schema.getContainer(), schema.getUser()))
         {

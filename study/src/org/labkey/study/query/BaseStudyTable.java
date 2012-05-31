@@ -19,6 +19,7 @@ package org.labkey.study.query;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -112,9 +113,19 @@ public abstract class BaseStudyTable extends FilteredTable
 
     protected ColumnInfo addWrapParticipantColumn(String rootTableColumnName)
     {
-        String subjectColName = StudyService.get().getSubjectColumnName(getContainer());
+        final String subjectColName = StudyService.get().getSubjectColumnName(getContainer());
         ColumnInfo participantColumn = new AliasedColumn(this, subjectColName, _rootTable.getColumn(rootTableColumnName));
-        participantColumn.setFk(new QueryForeignKey(_schema, StudyService.get().getSubjectTableName(getContainer()), subjectColName, null));
+        LookupForeignKey lfk = new LookupForeignKey(StudyService.get().getSubjectTableName(getContainer()), subjectColName, null)
+        {
+            @Override
+            public TableInfo getLookupTableInfo()
+            {
+                return _schema.getTable(StudyService.get().getSubjectTableName(getContainer()));
+            }
+        };
+        lfk.addJoin(new FieldKey(null, "Container"), "Container", false);
+        participantColumn.setFk(lfk);
+
         participantColumn.setKeyField(true);
 
         if (DemoMode.isDemoMode(_schema.getContainer(), _schema.getUser()))
@@ -156,6 +167,14 @@ public abstract class BaseStudyTable extends FilteredTable
             }
         });
         return addColumn(locationColumn);
+    }
+
+    protected ColumnInfo addContainerColumn()
+    {
+        ColumnInfo containerCol = new AliasedColumn(this, "Container", _rootTable.getColumn("Container"));
+        containerCol = ContainerForeignKey.initColumn(containerCol, _schema);
+        containerCol.setHidden(true);
+        return addColumn(containerCol);
     }
 
     protected ColumnInfo addWrapTypeColumn(String wrappedName, final String rootTableColumnName)
