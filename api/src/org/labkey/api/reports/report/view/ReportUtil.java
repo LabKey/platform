@@ -16,10 +16,12 @@
 
 package org.labkey.api.reports.report.view;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.attachments.Attachment;
@@ -723,5 +725,119 @@ public class ReportUtil
             json.put(o);
         }
         return json;
+    }
+
+    /**
+     * Generic form that can be used for serializing report information via json
+     */
+    public static class JsonReportForm implements CustomApiForm
+    {
+        private String _name;
+        private String _description;
+        private String _queryName;
+        private String _schemaName;
+        private ReportIdentifier _reportId;
+        private String _componentId;
+        private boolean _public;
+
+        public String getComponentId()
+        {
+            return _componentId;
+        }
+
+        public void setComponentId(String componentId)
+        {
+            _componentId = componentId;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+
+        public void setDescription(String description)
+        {
+            _description = description;
+        }
+
+        public void setQueryName(String queryName)
+        {
+            _queryName = queryName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            _schemaName = schemaName;
+        }
+
+        public void setReportId(ReportIdentifier reportId)
+        {
+            _reportId = reportId;
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public String getQueryName()
+        {
+            return _queryName;
+        }
+
+        public String getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public ReportIdentifier getReportId()
+        {
+            return _reportId;
+        }
+
+        public boolean isPublic()
+        {
+            return _public;
+        }
+
+        public void setPublic(boolean isPublic)
+        {
+            _public = isPublic;
+        }
+
+        @Override
+        public void bindProperties(Map<String, Object> props)
+        {
+            _name = (String)props.get("name");
+            _description = (String)props.get("description");
+            _schemaName = (String)props.get("schemaName");
+            _queryName = (String)props.get("queryName");
+            _public = BooleanUtils.toBooleanDefaultIfNull((Boolean)props.get("public"), true);
+
+            Object reportId = props.get("reportId");
+            if (reportId != null)
+                _reportId = ReportService.get().getReportIdentifier((String)reportId);
+        }
+
+        public static JSONObject toJSON(User user, Container container, Report report)
+        {
+            JSONObject json = new JSONObject();
+            ReportDescriptor descriptor = report.getDescriptor();
+
+            json.put("name", descriptor.getReportName());
+            json.put("description", descriptor.getReportDescription());
+            json.put("schemaName", descriptor.getProperty(ReportDescriptor.Prop.schemaName));
+            json.put("queryName", descriptor.getProperty(ReportDescriptor.Prop.queryName));
+
+            json.put("editable", report.canEdit(user, container));
+            json.put("public", descriptor.getOwner() == null);
+
+            return json;
+        }
     }
 }

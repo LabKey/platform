@@ -15,11 +15,9 @@
  */
 package org.labkey.api.visualization;
 
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.reports.report.AbstractReport;
+import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ViewContext;
 
 /**
  * Created by IntelliJ IDEA.
@@ -31,7 +29,7 @@ import org.labkey.api.view.ViewContext;
  * Generic javascript report which uses the client side api's developed over d3/raphael to
  * create box, scatter, bar charts.
  */
-public class GenericChartReport extends AbstractReport
+public abstract class GenericChartReport extends AbstractReport
 {
     public static final String TYPE = "ReportService.GenericChartReport";
 
@@ -108,6 +106,15 @@ public class GenericChartReport extends AbstractReport
     @Override
     public String getTypeDescription()
     {
+        ReportDescriptor descriptor = getDescriptor();
+        if (descriptor != null)
+        {
+            String id = descriptor.getProperty(GenericChartReportDescriptor.Prop.renderType);
+            RenderType type = getRenderType(id);
+
+            if (type != null)
+                return type.getDescription();
+        }
         return "Generic Chart Report";
     }
 
@@ -115,11 +122,5 @@ public class GenericChartReport extends AbstractReport
     public String getDescriptorType()
     {
         return GenericChartReportDescriptor.TYPE;
-    }
-
-    @Override
-    public HttpView renderReport(ViewContext context) throws Exception
-    {
-        return null;
     }
 }
