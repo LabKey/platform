@@ -365,7 +365,7 @@ public class AssayManager implements AssayService.Interface
         {
             int suffix = 1;
             String originalName = batch.getName();
-            ExpExperiment[] batches = ExperimentService.get().getExperiments(batch.getContainer(), user, false, true);
+            ExpExperiment[] batches = ExperimentService.get().getMatchingBatches(batch.getName(), batch.getContainer(), protocol);
             while (batches.length > 1)
             {
                 batch.setName(originalName + " " + (++suffix));

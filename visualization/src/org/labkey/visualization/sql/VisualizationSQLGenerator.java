@@ -29,6 +29,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.visualization.VisualizationController;
 
@@ -692,6 +693,10 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
     public UserSchema getPrimarySchema()
     {
+        if (_sourceQueries.isEmpty())
+        {
+            throw new NotFoundException();
+        }
         VisualizationSourceQuery firstQuery = _sourceQueries.values().iterator().next();
         return firstQuery.getSchema();
     }

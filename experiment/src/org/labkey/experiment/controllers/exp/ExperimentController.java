@@ -1575,8 +1575,21 @@ public class ExperimentController extends SpringActionController
         {
             try
             {
-                JSONObject rootObject = new JSONObject(form.getJson());
-                JSONArray sheetsArray = rootObject.getJSONArray("sheets");
+                JSONObject rootObject;
+                JSONArray sheetsArray;
+                if (form.getJson() == null || form.getJson().trim().length() == 0)
+                {
+                    // Create JSON so that we return an empty file
+                    rootObject = new JSONObject();
+                    sheetsArray = new JSONArray();
+                    JSONObject sheetObject = new JSONObject();
+                    sheetsArray.put(sheetObject);
+                }
+                else
+                {
+                    rootObject = new JSONObject(form.getJson());
+                    sheetsArray = rootObject.getJSONArray("sheets");
+                }
                 String filename = rootObject.has("fileName") ? rootObject.getString("fileName") : "ExcelExport.xls";
                 ExcelWriter.ExcelDocumentType docType = filename.toLowerCase().endsWith(".xlsx") ? ExcelWriter.ExcelDocumentType.xlsx : ExcelWriter.ExcelDocumentType.xls;
 
