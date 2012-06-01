@@ -31,6 +31,29 @@ LABKEY.vis.Plot = function(config){
         return scales;
     };
 
+    var setDefaultMargins = function(margins){
+        var top = 75, right = 75, bottom = 50, left = 75; // Defaults.
+
+        if(!margins){
+            margins = {};
+        }
+
+        if(!margins.top || margins.top < 0){
+            margins.top = top;
+        }
+        if(!margins.right || margins.right < 0){
+            margins.right = right;
+        }
+        if(!margins.bottom || margins.bottom < 0){
+            margins.bottom = bottom;
+        }
+        if(!margins.left || margins.left < 0){
+            margins.left = left;
+        }
+
+        return margins;
+    };
+
     var labelElements = {}; // These are all of the Raphael elements for the labels.
     var gridSet = null;
 	this.renderTo = config.renderTo ? config.renderTo : null; // The id of the DOM element to render the plot to, required.
@@ -49,6 +72,7 @@ LABKEY.vis.Plot = function(config){
     this.gridColor = config.gridColor ? config.gridColor : null;
     this.gridLineColor = config.gridLineColor ? config.gridLineColor : null;
     this.clipRect = config.clipRect ? config.clipRect : false;
+    var margins = setDefaultMargins(config.margins);
 
     if(this.labels.y){
         this.labels.yLeft = this.labels.y;
@@ -163,24 +187,19 @@ LABKEY.vis.Plot = function(config){
             getDomain(this.originalScales, this.scales, this.layers[i].data ? this.layers[i].data : this.data, this.layers[i].aes);
         }
 
-        var leftMargin = 75;
-        var rightMargin = 75;
-        var bottomMargin = 50;
-        var topMargin = 75;
-
         if(this.scales.color || this.scales.shape){
-            rightMargin = rightMargin + 150;
+            margins.right = margins.right + 150;
         }
 
         if(this.scales.yRight){
-            rightMargin = rightMargin + 25;
+            margins.right = margins.right + 25;
         }
         
-		this.grid.leftEdge = leftMargin;
+		this.grid.leftEdge = margins.left;
 
-        this.grid.rightEdge = this.grid.width - rightMargin; // Add 10 units of space to top and right of scale as a little padding for the grid area.
-        this.grid.topEdge = this.grid.height - topMargin + 10;
-        this.grid.bottomEdge = bottomMargin;
+        this.grid.rightEdge = this.grid.width - margins.right; // Add 10 units of space to top and right of scale as a little padding for the grid area.
+        this.grid.topEdge = this.grid.height - margins.top + 10;
+        this.grid.bottomEdge = margins.bottom;
 
         for(var scaleName in this.scales){
             var domain = null;
@@ -189,7 +208,7 @@ LABKEY.vis.Plot = function(config){
             if(scaleName == 'x'){
                 if(scale.scaleType == 'continuous'){
                     domain = [scale.min, scale.max];
-                    range = [leftMargin, this.grid.width - rightMargin];
+                    range = [margins.left, this.grid.width - margins.right];
                     scale.scale = new LABKEY.vis.Scale.Continuous(scale.trans, null, null, domain, range);
                 } else if(scale.scaleType == 'ordinal' || scale.scaleType == 'discrete' || scale.scaleType == 'categorical'){
                     if(scale.domain){
@@ -197,7 +216,7 @@ LABKEY.vis.Plot = function(config){
                     }
                 }
             } else if(scaleName == 'yLeft' || scaleName == 'yRight'){
-                range = [bottomMargin, this.grid.height - topMargin];
+                range = [margins.bottom, this.grid.height - margins.top];
                 if(scale.scaleType == 'continuous' && (scale.min != null && scale.min != undefined) && (scale.max != null && scale.max != undefined)){
                     domain = [scale.min, scale.max];
                     scale.scale = new LABKEY.vis.Scale.Continuous(scale.trans, null, null, domain, range);
@@ -252,6 +271,7 @@ LABKEY.vis.Plot = function(config){
         }
 
         var xTicks;
+        var xTicksSet = this.paper.set();
         if(this.scales.x.scaleType == 'continuous'){
             xTicks = this.scales.x.scale.ticks(7);
         } else {
@@ -267,12 +287,22 @@ LABKEY.vis.Plot = function(config){
             tick = this.paper.path(LABKEY.vis.makeLine(x1, y1, x2, y2)).transform("t0," + this.grid.height);
             tickText = this.scales.x.tickFormat ? this.scales.x.tickFormat(xTicks[i]) : xTicks[i];
             text = this.paper.text(this.scales.x.scale(xTicks[i])+.5, -this.grid.bottomEdge + 15, tickText).transform("t0," + this.grid.height);
+            xTicksSet.push(text);
 
             if(x1 - .5 == this.grid.leftEdge || x1 - .5 == this.grid.rightEdge) continue;
 
             gridLine = this.paper.path(LABKEY.vis.makeLine(x1, -this.grid.bottomEdge, x2, -this.grid.topEdge)).attr('stroke', '#DDD').transform("t0," + this.grid.height);
             if(this.gridLineColor){
                 gridLine.attr('stroke', this.gridLineColor);
+            }
+        }
+
+        for(var i = 0; i < xTicksSet.length-1; i++){
+            var curBBox = xTicksSet[i].getBBox(),
+                nextBBox = xTicksSet[i+1].getBBox();
+            if(curBBox.x2 >= nextBBox.x){
+                xTicksSet.attr('text-anchor', 'start').transform('t-25,' + (this.grid.height + 12)+'r15');
+                break;
             }
         }
 
@@ -605,6 +635,11 @@ LABKEY.vis.Plot = function(config){
         }
     };
 
+    this.setSize = function(w, h, render){
+        this.setWidth(w, false);
+        this.setHeight(h, render);
+    };
+
     this.addLayer = function(layer){
 		layer.parent = this; // Set the parent of each layer to the plot so we can grab things like data from it later.
 		this.layers.push(layer);
@@ -612,6 +647,10 @@ LABKEY.vis.Plot = function(config){
 
     this.clearGrid = function(){
         gridSet.remove();
+    };
+
+    this.setMargins = function(newMargins){
+        margins = setDefaultMargins(newMargins);
     };
 
 	return this;

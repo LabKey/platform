@@ -76,6 +76,14 @@ LABKEY.vis.Geom.Point.prototype.render = function(paper, grid, scales, data, lay
     var hoverText = layerAes.hoverText ? layerAes.hoverText : parentAes.hoverText;
     var yScale = this.yMap.side == "left" ? scales.yLeft.scale : scales.yRight.scale
 
+    var isValid = function(value){
+        if(value == undefined || value == null || (typeof value == "number" && isNaN(value))){
+            return false;
+        } else {
+            return true;
+        }
+    };
+
     if(layerAes.shape){
         this.shapeMap = layerAes.shape;
     } else if(parentAes.shape){
@@ -87,10 +95,10 @@ LABKEY.vis.Geom.Point.prototype.render = function(paper, grid, scales, data, lay
         var yVal = this.yMap.getValue(data[i]);
         var x, y;
         if(this.plotNullPoints){
-             x = (xVal != null && xVal != undefined) ? scales.x.scale(xVal) : grid.leftEdge - 5;
-             y = (yVal != null && yVal != undefined) ? yScale(yVal) : grid.bottomEdge - 5;
+             x = isValid(xVal) ? scales.x.scale(xVal) : grid.leftEdge - 5;
+             y = isValid(yVal) ? yScale(yVal) : grid.bottomEdge - 5;
         } else {
-            if(xVal == undefined || xVal == null || (typeof xVal == "number" && isNaN(xVal)) || yVal == undefined || yVal == null || (typeof yVal == "number" && isNaN(yVal))){
+            if(!isValid(xVal) || !isValid(yVal)){
                 continue;
             } else {
                 x = scales.x.scale(xVal);
