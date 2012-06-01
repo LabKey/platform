@@ -420,7 +420,7 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
                 scope: this,
                 'load': function(store, records, options) {
                     // if there are no zero date option for this study, warn the user
-                    if (store.getTotalCount() == 0 && this.timepointType == "DATE")
+                    if (store.getTotalCount() == 0 && this.timepointType == "date")
                     {
                         Ext4.Msg.alert("Error", "There are no demographic date options available in this study. "
                             + "Please contact an administrator to have them configure the study to work with the Time Chart wizard.", function(){this.fireEvent('noDemographicData');}, this);
@@ -434,6 +434,8 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
                         this.doNotRefreshChart = true; // Set doNotRefreshChart to prevent chart from firing ChartDefinitionChanged event.
                         this.visitChartRadio.setValue(true);
                         this.labelTextField.setValue("Visit");
+                        this.dateChartRadio.disable();
+                        this.visitChartRadio.disable();
                     }
 
                     // if this is a saved report, we will have a zero date to select

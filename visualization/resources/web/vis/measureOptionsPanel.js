@@ -108,7 +108,14 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                         idProperty:'id'
                     }
                 },
-                data: this
+                data: this,
+                listeners: {
+                    scope: this,
+                    'load': function(store, records) {
+                        if (this.measuresListsView && this.measuresListsView.rendered && records.length > 0)
+                            this.measuresListsView.getSelectionModel().select(records.length - 1, false, true);
+                    }
+                }
             }),
             columns: [{
                 flex: 1,
@@ -549,6 +556,15 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                     // this is one of the requests being tracked, see if the rest are done
                     if (toFireEvent)
                         this.fireEvent('measureMetadataRequestComplete');
+
+                    // if this is the last loader for the given measure, reload teh measure list store data
+                    this.loaderCount--;
+                    if (this.loaderCount == 0)
+                    {
+                        // reload the measure listview store and select the new measure (last index)
+                        this.measuresListsView.getStore().loadRawData(this);
+                        this.removeMeasureButton.enable();
+                    }
                 }
             }
         });
@@ -573,9 +589,6 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                     this.hasChanges = true;
                     this.requireDataRefresh = true;
                     win.hide();
-
-                    // select the newly added measure
-                    this.measuresListsView.getSelectionModel().select(this.measuresListsView.getStore().getCount() - 1, false, true);
                 }
             }
         });
@@ -596,16 +609,10 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
         });
 
         var measureIndex = this.measures.length - 1;
+        this.loaderCount = 2; // keep track of the properties loading for the measure (dimension store and date store)
         this.setDimensionStore(measureIndex, initialMeasure);
         this.setMeasureDateStore(newMeasure, measureIndex, initialMeasure);
         this.setYAxisSide(measureIndex);
-
-        // reload the measure listview store and select the new measure (last index)
-        if (this.measures.length > 0)
-        {
-            this.measuresListsView.getStore().loadRawData(this);
-            this.removeMeasureButton.enable();
-        }
     },
 
     removeSelectedMeasure: function(){
@@ -666,6 +673,15 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                     // this is one of the requests being tracked, see if the rest are done
                     if (toFireEvent)
                         this.fireEvent('measureMetadataRequestComplete');
+
+                    // if this is the last loader for the given measure, reload teh measure list store data
+                    this.loaderCount--;
+                    if (this.loaderCount == 0)
+                    {
+                        // reload the measure listview store and select the new measure (last index)
+                        this.measuresListsView.getStore().loadRawData(this);
+                        this.removeMeasureButton.enable();
+                    }
                 }
             }
         })

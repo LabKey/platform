@@ -37,7 +37,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             layout: 'border',
             bodyStyle: 'background-color: white;',
             monitorResize: true,
-            maxCharts: 30
+            maxCharts: 30,
+            dataLimit: 10000
         });
 
         // support backwards compatibility for charts saved prior to chartInfo reconfig (2011-08-31)
@@ -639,7 +640,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.saveButton.disable();
         this.saveAsButton.disable();
         this.filtersPanel.disable();
-        this.chart.ownerCt.getEl().mask("There are no demographic date options available in this study. "
+        this.clearChartPanel("There are no demographic date options available in this study.<br/>"
                             + "Please contact an administrator to have them configure the study to work with the Time Chart wizard.");
     },
 
@@ -744,7 +745,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 measures: this.chartInfo.measures,
                 viewInfo: this.viewInfo,
                 sorts: this.getDataSortArray(),
-                limit : 10000,
+                limit : this.dataLimit,
                 filterUrl: this.chartInfo.filterUrl,
                 filterQuery: this.chartInfo.filterQuery,
                 scope: this
@@ -783,7 +784,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 viewInfo: this.viewInfo,
                 groupBys: [{schemaName: 'study', queryName: this.viewInfo.subjectNounSingular + 'GroupMap', name: 'GroupId', values: groups}],
                 sorts: this.getDataSortArray(),
-                limit : 10000,
+                limit : this.dataLimit,
                 filterUrl: this.chartInfo.filterUrl,
                 filterQuery: this.chartInfo.filterQuery,
                 scope: this
@@ -843,7 +844,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
     {
         // mask panel and remove the chart(s)
         this.chart.getEl().mask("loading...");
-        this.clearChartPanel("loading...");
+        this.clearChartPanel("");
 
         // get the updated chart information from the various options panels
         this.chartInfo = this.getChartInfoFromOptionPanels();
@@ -885,6 +886,12 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.viewGridBtn.show();
         this.loaderFn = this.renderLineChart;
         this.loaderName = 'renderLineChart';
+
+        // warn the user if the data limit has been reached
+        if ((this.individualData && this.individualData.rows.length == this.dataLimit) || (this.aggregateData && this.aggregateData.rows.length == this.dataLimit))
+        {
+            this.addWarningText("The data limit for plotting has been reached. Consider filtering your data.");
+        }
 
         // TODO: report if a series doesn't have any data.
 
@@ -1209,18 +1216,19 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             }
         }
 
-        // if the user has selected more charts than the max allowed, or nothing at all, show warning
-        if(this.warningText.length > 0){
-            this.chart.add(Ext4.create('Ext.form.field.Display', {
-                autoHeight: 25,
-                autoWidth: true,
-                value: this.warningText,
-                style: "font-style:italic;width:100%;padding:5px;text-align:center;"
+        // show warning message, if there is one
+        if (this.warningText.length > 0)
+        {
+            this.chart.insert(0, Ext4.create('Ext.panel.Panel', {
+                border: false,
+                padding: 10,
+                html : "<table width='100%'><tr><td align='center' style='font-style:italic'>" + this.warningText + "</td></tr></table>"
             }));
         }
 
         // unmask the panel if needed
-        if (this.chart.getEl().isMasked()){
+        if (this.chart.getEl().isMasked())
+        {
             this.chart.getEl().unmask();
         }
     },
