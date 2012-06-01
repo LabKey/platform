@@ -3794,6 +3794,20 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 scope: this,
                 delay: 50,
                 load: function(store){
+                    //Issue 15124: because the SQL will not necessarily match the display value,
+                    //we reformat on the client.  however, this has the potential to create duplicates (ie. datetime formatted to show date only)
+                    //so we need to remove duplicates
+                    //the total number of records is expected to be small
+                    var valMap = {};
+                    store.each(function(rec){
+                        rec.data.value = this.formatValue(rec.data.value);
+
+                        if(valMap[rec.data.value]){
+                            store.remove(rec);
+                        }
+
+                        valMap[rec.data.value] = true;
+                    }, this);
                     this.configureLookupPanel(store);
                 },
                 exception: function(){
@@ -3803,6 +3817,27 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             }
         }));
 
+    },
+
+    formatValue: function(val){
+        if(this.boundColumn){
+            if (this.boundColumn.extFormatFn){
+                try {
+                    this.boundColumn.extFormatFn = eval(this.boundColumn.extFormatFn);
+                }
+                catch (error){
+                    console.log('improper extFormatFn: ' + this.boundColumn.extFormatFn);
+                }
+
+                if(Ext.isFunction(this.boundColumn.extFormatFn)){
+                    val = this.boundColumn.extFormatFn(val);
+                }
+            }
+            else if (this.boundColumn.jsonType == 'int'){
+                val = parseInt(val);
+            }
+        }
+        return val
     },
 
     getLookupValueSql: function(dataRegion, column)
