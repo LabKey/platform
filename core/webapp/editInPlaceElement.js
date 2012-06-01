@@ -224,7 +224,7 @@ LABKEY.ext.EditInPlaceElement = Ext.extend(Ext.util.Observable, {
 
             //set jsonData and handlers
             reqConfig.jsonData = {};
-            reqConfig.jsonData[this.updateConfig.jsonDataPropName || "newValue"] = Ext.util.Format.htmlDencode(value);
+            reqConfig.jsonData[this.updateConfig.jsonDataPropName || "newValue"] = Ext.util.Format.htmlDecode(value);
             reqConfig.success = function(){
                 this.onUpdateComplete(value);
             };
