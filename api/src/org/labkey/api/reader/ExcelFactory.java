@@ -112,7 +112,11 @@ public class ExcelFactory
             CellStyle errorStyle = workbook.createCellStyle();
             errorStyle.setFillBackgroundColor(IndexedColors.RED.getIndex());
 
-            JSONArray rowsArray = sheetObject.getJSONArray("data");
+            JSONArray rowsArray = sheetObject.optJSONArray("data");
+            if (rowsArray == null)
+            {
+                rowsArray = new JSONArray();
+            }
             for (int rowIndex = 0; rowIndex < rowsArray.length(); rowIndex++)
             {
                 JSONArray rowArray = rowsArray.getJSONArray(rowIndex);

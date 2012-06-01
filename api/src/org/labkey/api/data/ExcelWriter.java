@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.openxml4j.exceptions.OpenXML4JRuntimeException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
@@ -126,6 +127,7 @@ public class ExcelWriter
 
         public abstract Workbook createWorkbook();
         public abstract String getMimeType();
+        /** @return the maximum number of rows to SELECT, which is one less than the document's maximum */
         public abstract int getMaxRows();
     }
 
@@ -499,6 +501,16 @@ public class ExcelWriter
         {
             ExceptionUtil.logExceptionToMothership(null, e);
         }
+        catch (OpenXML4JRuntimeException e)
+        {
+            // We can get this message if there's an IOException when writing out the document to the stream.
+            // It happens because the browser has disconnected before receiving the full file. We can safely ignore it.
+            // Otherwise, rethrow. See issue #14987
+            if (e.getMessage() == null || e.getMessage().contains("to be saved in the stream with marshaller"))
+            {
+                throw e;
+            }
+        }
     }
 
     // Create a ServletOutputStream to stream an Excel workbook to the browser.
@@ -803,8 +815,8 @@ public class ExcelWriter
             RenderContext ctx = new RenderContext(HttpView.currentContext());
             ctx.setResults(rs);
 
-            // Output all the rows
-            while (rs.next())
+            // Output all the rows, but don't exceed the document's maximum number of rows
+            while (rs.next() && _currentRow <= _docType.getMaxRows())
             {
                 ctx.setRow(factory.getRowMap(rs));
                 renderGridRow(sheet, ctx, visibleColumns);

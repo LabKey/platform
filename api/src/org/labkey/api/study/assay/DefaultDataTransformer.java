@@ -167,7 +167,7 @@ public class DefaultDataTransformer implements DataTransformer
                 else
                 {
                     // we may just want to log an error rather than fail the upload due to an engine config problem.
-                    throw new ValidationException("A script engine implementation was not found for the specified QC script. " +
+                    throw new ValidationException("A script engine implementation was not found for the specified QC script (" + scriptFile.getName() + "). " +
                             "Check configurations in the Admin Console.");
                 }
             }

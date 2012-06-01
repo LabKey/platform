@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.FormulaError;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -464,6 +465,8 @@ public class ExcelColumn extends RenderColumn
                     formatted = format.format(cell.getDateCellValue());
                 else if (Cell.CELL_TYPE_NUMERIC == cell.getCellType() && null != format)
                     formatted = format.format(cell.getNumericCellValue());
+                else if (Cell.CELL_TYPE_ERROR == cell.getCellType())
+                    formatted = FormulaError.forInt(cell.getErrorCellValue()).getString();
                 else
                     formatted = cell.getStringCellValue();
 
