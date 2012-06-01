@@ -21,11 +21,15 @@
 <%@ page import="org.labkey.api.visualization.GenericChartReport" %>
 <%@ page import="org.labkey.visualization.VisualizationController" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.reports.permissions.ShareReportPermission" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    JspView<VisualizationController.GetVisualizationForm> me = (JspView<VisualizationController.GetVisualizationForm>) HttpView.currentView();
+    JspView<VisualizationController.GenericReportForm> me = (JspView<VisualizationController.GenericReportForm>) HttpView.currentView();
     ViewContext ctx = me.getViewContext();
-    VisualizationController.GetVisualizationForm form = me.getModelBean();
+    Container c = ctx.getContainer();
+    VisualizationController.GenericReportForm form = me.getModelBean();
     GenericChartReport.RenderType renderType = GenericChartReport.getRenderType(form.getRenderType());
 
     String renderId = "generic-report-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
@@ -45,15 +49,30 @@
 
         var panel = Ext4.create('LABKEY.ext4.GenericChartPanel', {
             height          : 600,
-            schemaName      : '<%=form.getSchemaName()%>',
-            queryName       : '<%=form.getQueryName()%>',
+            reportId        : <%=form.getReportId() != null ? q(form.getReportId().toString()) : null %>,
+            schemaName      : <%=form.getSchemaName() != null ? q(form.getSchemaName()) : null %>,
+            queryName       : <%=form.getQueryName() != null ? q(form.getQueryName()) : null %>,
             dataRegionName  : '<%=form.getDataRegionName()%>',
+            renderType      : '<%=form.getRenderType()%>',
+            id              : '<%=form.getComponentId() %>',
             baseUrl         : '<%=ctx.getActionURL()%>',
-            renderTo        : '<%= renderId %>'
+            renderTo        : '<%= renderId %>',
+            allowShare      : <%=c.hasPermission(ctx.getUser(), ShareReportPermission.class)%>,
+            hideSave        : <%=ctx.getUser().isGuest()%>
         });
     });
 
+    function customizeGenericReport(elementId) {
+
+        function initPanel() {
+            var panel = Ext4.getCmp(elementId);
+
+            if (panel) { panel.customize(); }
+        }
+        Ext4.onReady(initPanel);
+    }
+
 </script>
 
-<div id="<%= renderId%>" class="labkey-folder-header" style="width:100%;"></div>
+<div id="<%= renderId%>" style="width:100%;"></div>
 

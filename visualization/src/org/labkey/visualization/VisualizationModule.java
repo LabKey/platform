@@ -24,6 +24,7 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.visualization.GenericChartReportDescriptor;
 import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.api.visualization.TimeChartReportDescriptor;
+import org.labkey.visualization.report.GenericChartReportImpl;
 import org.labkey.visualization.report.TimeChartReportImpl;
 import org.labkey.visualization.report.VisualizationUIProvider;
 
@@ -61,7 +62,7 @@ public class VisualizationModule extends DefaultModule
         ReportService.get().registerDescriptor(new GenericChartReportDescriptor());
 
         ReportService.get().registerReport(new TimeChartReportImpl());
-        ReportService.get().registerReport(new GenericChartReport());
+        ReportService.get().registerReport(new GenericChartReportImpl());
 
         ReportService.get().addUIProvider(new VisualizationUIProvider());
 

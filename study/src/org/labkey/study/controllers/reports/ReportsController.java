@@ -2199,16 +2199,9 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    public static class ParticipantReportForm implements CustomApiForm
+    public static class ParticipantReportForm extends ReportUtil.JsonReportForm
     {
-        private String _name;
-        private String _description;
         private String _measures;
-        private String _queryName;
-        private String _schemaName;
-        private ReportIdentifier _reportId;
-        private String _componentId;
-        private boolean _public;
         private boolean _expanded;
         private String _groups;
 
@@ -2222,66 +2215,6 @@ public class ReportsController extends BaseStudyController
             _expanded = expanded;
         }
 
-        public String getComponentId()
-        {
-            return _componentId;
-        }
-
-        public void setComponentId(String componentId)
-        {
-            _componentId = componentId;
-        }
-
-        public void setName(String name)
-        {
-            _name = name;
-        }
-
-        public void setDescription(String description)
-        {
-            _description = description;
-        }
-
-        public void setQueryName(String queryName)
-        {
-            _queryName = queryName;
-        }
-
-        public void setSchemaName(String schemaName)
-        {
-            _schemaName = schemaName;
-        }
-
-        public void setReportId(ReportIdentifier reportId)
-        {
-            _reportId = reportId;
-        }
-
-        public String getName()
-        {
-            return _name;
-        }
-
-        public String getDescription()
-        {
-            return _description;
-        }
-
-        public String getQueryName()
-        {
-            return _queryName;
-        }
-
-        public String getSchemaName()
-        {
-            return _schemaName;
-        }
-
-        public ReportIdentifier getReportId()
-        {
-            return _reportId;
-        }
-
         public String getMeasures()
         {
             return _measures;
@@ -2290,16 +2223,6 @@ public class ReportsController extends BaseStudyController
         public void setMeasures(String measures)
         {
             _measures = measures;
-        }
-
-        public boolean isPublic()
-        {
-            return _public;
-        }
-
-        public void setPublic(boolean isPublic)
-        {
-            _public = isPublic;
         }
 
         public String getGroups()
@@ -2315,15 +2238,7 @@ public class ReportsController extends BaseStudyController
         @Override
         public void bindProperties(Map<String, Object> props)
         {
-            _name = (String)props.get("name");
-            _description = (String)props.get("description");
-            _schemaName = (String)props.get("schemaName");
-            _queryName = (String)props.get("queryName");
-            _public = BooleanUtils.toBooleanDefaultIfNull((Boolean)props.get("public"), true);
-
-            Object reportId = props.get("reportId");
-            if (reportId != null)
-                _reportId = ReportService.get().getReportIdentifier((String)reportId);
+            super.bindProperties(props);
 
             Object measures = props.get(ParticipantReport.MEASURES_PROP);
             if (measures instanceof JSONArray)
@@ -2339,16 +2254,8 @@ public class ReportsController extends BaseStudyController
 
         public static JSONObject toJSON(User user, Container container, Report report)
         {
-            JSONObject json = new JSONObject();
+            JSONObject json = ReportUtil.JsonReportForm.toJSON(user, container, report);
             ReportDescriptor descriptor = report.getDescriptor();
-
-            json.put("name", descriptor.getReportName());
-            json.put("description", descriptor.getReportDescription());
-            json.put("schemaName", descriptor.getProperty(ReportDescriptor.Prop.schemaName));
-            json.put("queryName", descriptor.getProperty(ReportDescriptor.Prop.queryName));
-
-            json.put("editable", report.canEdit(user, container));
-            json.put("public", descriptor.getOwner() == null);
 
             String measuresConfig = descriptor.getProperty(ParticipantReport.MEASURES_PROP);
             if (measuresConfig != null)

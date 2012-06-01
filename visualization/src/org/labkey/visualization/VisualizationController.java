@@ -22,6 +22,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.fop.svg.PDFTranscoder;
 import org.apache.log4j.Logger;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.action.ApiResponse;
@@ -47,22 +48,21 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParam;
-import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.DbReportIdentifier;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
+import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
@@ -74,6 +74,7 @@ import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -103,7 +104,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -1039,7 +1039,6 @@ public class VisualizationController extends SpringActionController
         private String _name;
         private String _renderType;
         private ReportIdentifier _reportId;
-        private String _dataRegionName;
 
         public String getName()
         {
@@ -1089,16 +1088,6 @@ public class VisualizationController extends SpringActionController
         public void setRenderType(String renderType)
         {
             _renderType = renderType;
-        }
-
-        public String getDataRegionName()
-        {
-            return _dataRegionName;
-        }
-
-        public void setDataRegionName(String dataRegionName)
-        {
-            _dataRegionName = dataRegionName;
         }
     }
 
@@ -1360,28 +1349,38 @@ public class VisualizationController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class GenericChartWizardAction extends SimpleViewAction<GetVisualizationForm>
+    public class GenericChartWizardAction extends SimpleViewAction<GenericReportForm>
     {
         private GenericChartReport.RenderType _renderType;
 
         @Override
-        public ModelAndView getView(GetVisualizationForm form, BindException errors) throws Exception
+        public ModelAndView getView(GenericReportForm form, BindException errors) throws Exception
         {
-            JspView chartWizard = new JspView<GetVisualizationForm>("/org/labkey/visualization/views/genericChartWizard.jsp", form);
-
             _renderType = GenericChartReport.getRenderType(form.getRenderType());
-            VBox view = new VBox();
 
             if (_renderType != null)
             {
-                chartWizard.setTitle(TITLE);
-                chartWizard.setFrame(WebPartView.FrameType.NONE);
+                form.setComponentId("generic-report-panel-" + UniqueID.getRequestScopedUID(getViewContext().getRequest()));
+                JspView view = new JspView<GenericReportForm>("/org/labkey/visualization/views/genericChartWizard.jsp", form);
 
-                view.addView(chartWizard);
+                view.setTitle(_renderType.getName() + " Report");
+                view.setFrame(WebPartView.FrameType.PORTAL);
+
+                String script = String.format("javascript:customizeGenericReport('%s');", form.getComponentId());
+                NavTree edit = new NavTree("Edit", script, getViewContext().getContextPath() + "/_images/partedit.png");
+                view.addCustomMenu(edit);
+
+                if (getViewContext().hasPermission(InsertPermission.class))
+                {
+                    NavTree menu = new NavTree();
+                    menu.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
+                    view.setNavMenu(menu);
+                }
+                return view;
             }
             else
-                view.addView(new HtmlView("No renderer for specified type: " + form.getRenderType()));
-
+                return new HtmlView("No renderer for specified type: " + form.getRenderType());
+/*
             Report report = getReport(form);
 
             if (report != null)
@@ -1391,14 +1390,202 @@ public class VisualizationController extends SpringActionController
                 HttpView discussion = service.getDisussionArea(getViewContext(), report.getEntityId(), getViewContext().getActionURL(), title, true, false);
                 view.addView(discussion);
             }
-
-            return view;
+*/
         }
 
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild(_renderType.getName() + " Wizard");
+            return root.addChild(_renderType.getName() + " Report");
+        }
+    }
+
+    @RequiresLogin @RequiresPermissionClass(ReadPermission.class)
+    public class SaveGenericReportAction extends ApiAction<GenericReportForm>
+    {
+        @Override
+        public void validateForm(GenericReportForm form, Errors errors)
+        {
+            List<ValidationError> reportErrors = new ArrayList<ValidationError>();
+
+            if (form.getName() == null)
+                errors.reject(ERROR_MSG, "A report name is required");
+
+            if (form.getRenderType() == null)
+                errors.reject(ERROR_MSG, "A report render type is required");
+
+            try {
+                // check for duplicates on new reports
+                if (form.getReportId() == null)
+                {
+                    String key = ReportUtil.getReportKey(form.getSchemaName(), form.getQueryName());
+                    for (Report report : ReportService.get().getReports(getUser(), getContainer(), key))
+                    {
+                        if (form.getName().equalsIgnoreCase(report.getDescriptor().getReportName()))
+                            errors.reject(ERROR_MSG, "Another report with the same name already exists.");
+                    }
+
+                    if (form.isPublic())
+                    {
+                        Report report = getGenericReport(form);
+                        if (!report.canShare(getUser(), getContainer(), reportErrors))
+                            ReportUtil.addErrors(reportErrors, errors);
+                    }
+                }
+                else
+                {
+                    Report report = form.getReportId().getReport();
+
+                    if (report != null)
+                    {
+                        if (!report.canEdit(getUser(), getContainer(), reportErrors))
+                            ReportUtil.addErrors(reportErrors, errors);
+
+                        if (form.isPublic() && !report.canShare(getUser(), getContainer(), reportErrors))
+                            ReportUtil.addErrors(reportErrors, errors);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                errors.reject(ERROR_MSG, e.getMessage());
+            }
+        }
+
+        @Override
+        public ApiResponse execute(GenericReportForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            String key = ReportUtil.getReportKey(form.getSchemaName(), form.getQueryName());
+            Report report = getGenericReport(form);
+
+            int rowId = ReportService.get().saveReport(getViewContext(), key, report);
+            ReportIdentifier reportId = ReportService.get().getReportIdentifier(String.valueOf(rowId));
+
+            response.put("success", true);
+            response.put("reportId", reportId);
+
+            return response;
+        }
+
+        private Report getGenericReport(GenericReportForm form) throws Exception
+        {
+            Report report;
+
+            if (form.getReportId() != null)
+                report = form.getReportId().getReport();
+            else
+                report = ReportService.get().createReportInstance(GenericChartReport.TYPE);
+
+            if (report != null)
+            {
+                ReportDescriptor descriptor = report.getDescriptor();
+
+                if (form.getName() != null)
+                    descriptor.setReportName(form.getName());
+                if (form.getDescription() != null)
+                    descriptor.setReportDescription(form.getDescription());
+                if (form.getSchemaName() != null)
+                    descriptor.setProperty(ReportDescriptor.Prop.schemaName, form.getSchemaName());
+                if (form.getQueryName() != null)
+                    descriptor.setProperty(ReportDescriptor.Prop.queryName, form.getQueryName());
+                if (form.getRenderType() != null)
+                    descriptor.setProperty(GenericChartReportDescriptor.Prop.renderType, form.getRenderType());
+                if (form.getJsonData() != null)
+                    descriptor.setProperty(ReportDescriptor.Prop.json, form.getJsonData());
+
+                if (!form.isPublic())
+                    descriptor.setOwner(getUser().getUserId());
+                else
+                    descriptor.setOwner(null);
+            }
+            return report;
+        }
+
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetGenericReportAction extends ApiAction<GenericReportForm>
+    {
+        @Override
+        public ApiResponse execute(GenericReportForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            Report report = null;
+            if (form.getReportId() != null)
+                report = form.getReportId().getReport();
+
+            if (report != null)
+            {
+                response.put("reportConfig", GenericReportForm.toJSON(getUser(), getContainer(), report));
+                response.put("success", true);
+            }
+            else
+                throw new IllegalStateException("Unable to find specified report");
+
+            return response;
+        }
+    }
+
+    public static class GenericReportForm extends ReportUtil.JsonReportForm
+    {
+        private String _renderType;
+        private String _dataRegionName;
+        private String _jsonData;
+
+        public String getRenderType()
+        {
+            return _renderType;
+        }
+
+        public void setRenderType(String renderType)
+        {
+            _renderType = renderType;
+        }
+
+        public String getDataRegionName()
+        {
+            return _dataRegionName;
+        }
+
+        public void setDataRegionName(String dataRegionName)
+        {
+            _dataRegionName = dataRegionName;
+        }
+
+        public String getJsonData()
+        {
+            return _jsonData;
+        }
+
+        public void setJsonData(String jsonData)
+        {
+            _jsonData = jsonData;
+        }
+
+        @Override
+        public void bindProperties(Map<String, Object> props)
+        {
+            super.bindProperties(props);
+
+            _renderType = (String)props.get("renderType");
+            _dataRegionName = (String)props.get("dataRegionName");
+
+            Object json = props.get("jsonData");
+            if (json != null)
+                _jsonData = json.toString();
+        }
+
+        public static JSONObject toJSON(User user, Container container, Report report)
+        {
+            JSONObject json = ReportUtil.JsonReportForm.toJSON(user, container, report);
+            ReportDescriptor descriptor = report.getDescriptor();
+
+            json.put("renderType", descriptor.getProperty(GenericChartReportDescriptor.Prop.renderType));
+            json.put("dataRegionName", descriptor.getProperty(ReportDescriptor.Prop.dataRegionName));
+            json.put("jsonData", descriptor.getProperty(ReportDescriptor.Prop.json));
+
+            return json;
         }
     }
 }
