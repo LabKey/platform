@@ -510,6 +510,10 @@ public class StudyManager
             if (null == old)
                 throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
 
+            // make sure we reload domain and tableinfo
+            dataSetDefinition._domain = null;
+            dataSetDefinition._storageTable = null;
+
             Domain domain = dataSetDefinition.getDomain();
 
             // Check if the extra key field has changed
@@ -533,6 +537,8 @@ public class StudyManager
                 else
                 {
                     ColumnInfo col = storageTableInfo.getColumn(dataSetDefinition.getKeyPropertyName());
+                    if (null == col)
+                        throw new IllegalArgumentException("Cannot find 'key' column: " + dataSetDefinition.getKeyPropertyName());
                     SQLFragment colFrag = col.getValueSql(tableName);
                     if (col.getJdbcType() == JdbcType.TIMESTAMP)
                         colFrag = storageTableInfo.getSqlDialect().getISOFormat(colFrag);

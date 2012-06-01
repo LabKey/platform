@@ -536,7 +536,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
-    private TableInfo _storageTable = null;
+    TableInfo _storageTable = null;
     
 
     /** I think the caching semantics of the dataset are such that I can cache the StorageTableInfo in a member */
