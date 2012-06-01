@@ -2934,7 +2934,7 @@ LABKEY.FileSystem.PreviewResource = Ext.extend(LABKEY.ext.PersistentToolTip, {
     {
         this.title = false;
         LABKEY.FileSystem.PreviewResource.superclass.onRender.call(this, ct, position);
-        this.body.update($dom.markup(this.html));
+        this.body.update(Ext.DomHelper.markup(this.html));
     },
 
     loadResource : function()
@@ -2991,7 +2991,7 @@ LABKEY.FileSystem.PreviewResource = Ext.extend(LABKEY.ext.PersistentToolTip, {
                             var doc = Ext.isIE ? frame.contentWindow.document : frame.contentDocument || window.frames[id].document;
                             doc.open();
                             if (base)
-                                body = '<base href="' + $h(base) + '" />' + body;
+                                body = '<base href="' + Ext.util.Format.htmlEncode(base) + '" />' + body;
                             doc.write(body);
                             doc.close();
                         }
@@ -3018,7 +3018,7 @@ LABKEY.FileSystem.PreviewResource = Ext.extend(LABKEY.ext.PersistentToolTip, {
                     {
                         var text = response.responseText;
                         if (headers['Range']) text += "\n. . .";
-                        this.html = {tag:'div', style:{width:'600px', height:'400px', overflow:'auto'}, children:{tag:'pre', children:$h(text)}};
+                        this.html = {tag:'div', style:{width:'600px', height:'400px', overflow:'auto'}, children:{tag:'pre', children:Ext.util.Format.htmlEncode(text)}};
                         this.previewAt(this.showAt_xy);
                     }
                 }).createDelegate(this)
