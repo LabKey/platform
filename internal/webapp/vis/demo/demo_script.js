@@ -259,8 +259,8 @@ var coffeePlot = new LABKEY.vis.Plot({
 
 var boxPlotData = [];
 
-for(var i = 0; i < 5; i++){
-    var group = "Group "+(i+1);
+for(var i = 0; i < 6; i++){
+    var group = "Really Long Group Name "+(i+1);
     for(var j = 0; j < 25; j++){
         boxPlotData.push({
             group: group,
@@ -328,6 +328,9 @@ var boxPlot = new LABKEY.vis.Plot({
             ,min: 0,
             max: 100
         }
+    },
+    margins: {
+        bottom: 75
     }
 });
 
