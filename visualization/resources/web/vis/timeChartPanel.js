@@ -650,6 +650,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
     markDirty : function(value) {
         this.dirty = value;
+        this.dirty = false;
     },
 
     chartDefinitionChanged: function(requiresDataRefresh) {
