@@ -55,6 +55,35 @@ LABKEY.vis.Geom.XY.prototype.initAesthetics = function(scales, layerAes, parentA
     return true;
 };
 
+LABKEY.vis.Geom.XY.prototype.getVal = function(scale, map, row){
+    // Takes a row, returns the scaled y value.
+    var isValid = function(value){
+        return !(value == undefined || value == null || (typeof value == "number" && isNaN(value)));
+    };
+
+    var value= map.getValue(row);
+
+    if(!isValid(value)){
+        if(this.plotNullPoints){
+            return scale(scale.domain()[0]) - 5;
+        } else {
+            return null;
+        }
+    } else {
+        return scale(value);
+    }
+};
+
+LABKEY.vis.Geom.XY.prototype.getX = function(scale, row){
+    // Takes a row, returns the scaled x value.
+    return this.getVal(scale, this.xMap, row);
+};
+
+LABKEY.vis.Geom.XY.prototype.getY = function(scale, row){
+    // Takes a row, returns the scaled x value.
+    return this.getVal(scale, this.yMap, row);
+};
+
 LABKEY.vis.Geom.Point = function(config){
     this.type = "Point";
 
@@ -76,14 +105,6 @@ LABKEY.vis.Geom.Point.prototype.render = function(paper, grid, scales, data, lay
     var hoverText = layerAes.hoverText ? layerAes.hoverText : parentAes.hoverText;
     var yScale = this.yMap.side == "left" ? scales.yLeft.scale : scales.yRight.scale
 
-    var isValid = function(value){
-        if(value == undefined || value == null || (typeof value == "number" && isNaN(value))){
-            return false;
-        } else {
-            return true;
-        }
-    };
-
     if(layerAes.shape){
         this.shapeMap = layerAes.shape;
     } else if(parentAes.shape){
@@ -91,21 +112,11 @@ LABKEY.vis.Geom.Point.prototype.render = function(paper, grid, scales, data, lay
     }
 
     for(var i = 0; i < data.length; i++){
-        var xVal = this.xMap.getValue(data[i]);
-        var yVal = this.yMap.getValue(data[i]);
-        var x, y;
-        if(this.plotNullPoints){
-             x = isValid(xVal) ? scales.x.scale(xVal) : grid.leftEdge - 5;
-             y = isValid(yVal) ? yScale(yVal) : grid.bottomEdge - 5;
-        } else {
-            if(!isValid(xVal) || !isValid(yVal)){
-                continue;
-            } else {
-                x = scales.x.scale(xVal);
-                y = yScale(yVal);
-            }
+        var y = this.getY(yScale, data[i]);
+        var x = this.getX(scales.x.scale, data[i]);
+        if(!x || !y){
+            continue;
         }
-
         var color = this.colorMap ? scales.color.scale(this.colorMap.getValue(data[i]) + ' ' + name) : this.color;
         var size = this.sizeMap ? this.sizeMap.getValue(data[i]) : this.size;
         var shapeFunction = this.shapeMap ? scales.shape.scale(this.shapeMap.getValue(data[i]) + ' ' + name) : function(paper, x, y, r){return paper.circle(x, y, r)};
@@ -141,8 +152,8 @@ LABKEY.vis.Geom.Path.prototype.render = function(paper, grid, scales, data, laye
     this.group = layerAes.group ? layerAes.group : parentAes.group;
     var size = this.size;
     var pathScope = this;
-    var xAccessor = function(row){return scales.x.scale(pathScope.xMap.getValue(row));};
-    var yAccessor = function(row){return -yScale(pathScope.yMap.getValue(row));};
+    var xAccessor = function(row){return pathScope.getX(scales.x.scale, row);};
+    var yAccessor = function(row){return -pathScope.getY(yScale, row);};
 
     if(this.group){
         //Split data into groupedData so we can render 1 path per group.
@@ -160,15 +171,20 @@ LABKEY.vis.Geom.Path.prototype.render = function(paper, grid, scales, data, laye
             if(this.sizeMap){
                 size = this.sizeMap.getValue(groupData);
             }
-
-            paper.path(LABKEY.vis.makePath(groupData, xAccessor, yAccessor)).attr('stroke', color).attr('stroke-width', size).attr('opacity', this.opacity);
+            var path = LABKEY.vis.makePath(groupData, xAccessor, yAccessor);
+            if(path != ''){
+                paper.path(path).attr('stroke', color).attr('stroke-width', size).attr('opacity', this.opacity);
+            }
         }
     } else {
         // No groups, connect all the points.
         if(this.sizeMap){
             size = this.sizeMap.getValue(data); // This would allow a user to look at all of the rows in a group and calculate size (i.e. a user could average the CD4 in every group and make a line based on that average.)
         }
-        paper.path(LABKEY.vis.makePath(data, xAccessor, yAccessor)).attr('stroke-width', size).attr('opacity', this.opacity).attr('stroke', this.color);
+        var path = LABKEY.vis.makePath(groupData, xAccessor, yAccessor);
+        if(path != ''){
+            paper.path(path).attr('stroke-width', size).attr('opacity', this.opacity).attr('stroke', this.color);
+        }
     }
 
     return true;
@@ -317,7 +333,7 @@ LABKEY.vis.Geom.Boxplot.prototype.render = function(paper, grid, scales, data, l
                 var val = this.yMap.getValue(groupedData[group][i])
                 if(val > biggestNotOutlier || val < smallestNotOutlier){
                     var outlier;
-                    var x = this.position == 'jitter' ? x+(Math.random()*(width)) : middleX;
+                    var x = (this.position == 'jitter') ? x+(Math.random()*(width)) : middleX;
 
                     outlier = paper.circle(x, -yScale(val), this.outlierSize)
                             .attr('fill', this.outlierFill)

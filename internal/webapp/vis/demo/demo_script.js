@@ -338,7 +338,7 @@ var scatterData = [];
 for(var i = 0; i < 1000; i++){
     var point = {
         x: i % 9 == 0 ? null : parseInt((Math.random()*(150))),
-        y: i % 7 == 0 ? null : parseInt((Math.random()*(150)))
+        y: parseInt((Math.random()*(150)))
     };
     scatterData.push(point);
 }
@@ -374,7 +374,10 @@ var scatterPlot = new LABKEY.vis.Plot({
             color: '#FF33FF'
         }),
         aes: {x:'x', y: 'y'}
-    })]
+    })],
+    scales: {
+        y: {scaleType: 'continuous', trans: 'log', min: 1}
+    }
 });
 
 plot.render();

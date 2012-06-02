@@ -20,12 +20,17 @@ LABKEY.vis.Plot = function(config){
     var copyUserScales = function(origScales){
         // This copies the user's scales, but not the max/min because we don't want to over-write that, so we store the original
         // scales separately (this.originalScales).
-        var scales = {};
+        var scales = {}, newScaleName;
         for(var scale in origScales){
-            var newScaleName = (scale == 'y') ? 'yLeft' : scale;
+            if(scale == 'y'){
+                origScales.yLeft = origScales.y;
+                newScaleName = (scale == 'y') ? 'yLeft' : scale;
+            } else {
+                newScaleName = scale;
+            }
             scales[newScaleName] = {};
-            scales[newScaleName].scaleType = origScales[scale].scaleType ? origScales[scale].scaleType : null;
-            scales[newScaleName].trans = origScales[scale].trans ? origScales[scale].trans : null;
+            scales[newScaleName].scaleType = origScales[scale].scaleType ? origScales[scale].scaleType : 'continuous';
+            scales[newScaleName].trans = origScales[scale].trans ? origScales[scale].trans : 'linear';
             scales[newScaleName].tickFormat = origScales[scale].tickFormat ? origScales[scale].tickFormat : null;
         }
         return scales;
@@ -181,7 +186,7 @@ LABKEY.vis.Plot = function(config){
         for(var i = 0; i < this.layers.length; i++){
             setupDefaultScales(this.scales, this.layers[i].aes);
         }
-        //layerData ? layerData : parentData
+
         getDomain(this.originalScales, this.scales, this.data, this.aes);
         for(var i = 0; i < this.layers.length; i++){
             getDomain(this.originalScales, this.scales, this.layers[i].data ? this.layers[i].data : this.data, this.layers[i].aes);
@@ -241,7 +246,7 @@ LABKEY.vis.Plot = function(config){
             return false;
         }
 
-        if(!this.scales.yLeft.scale && !this.scales.yRight.scale){
+        if((!this.scales.yLeft || !this.scales.yLeft.scale) && (!this.scales.yRight ||!this.scales.yRight.scale)){
             this.error("Unable to create a y scale, rendering aborted.");
             return false;
         }
@@ -301,7 +306,7 @@ LABKEY.vis.Plot = function(config){
             var curBBox = xTicksSet[i].getBBox(),
                 nextBBox = xTicksSet[i+1].getBBox();
             if(curBBox.x2 >= nextBBox.x){
-                xTicksSet.attr('text-anchor', 'start').transform('t-25,' + (this.grid.height + 12)+'r15');
+                xTicksSet.attr('text-anchor', 'start').transform('t0,' + (this.grid.height + 12)+'r15');
                 break;
             }
         }

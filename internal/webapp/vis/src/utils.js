@@ -21,10 +21,14 @@ LABKEY.vis.makeLine = function(x1, y1, x2, y2){
 
 LABKEY.vis.makePath = function(data, xAccessor, yAccessor){
     var pathString = '';
+    var isValid = function(value){
+        return !(value == undefined || value == null || (typeof value == "number" && isNaN(value)));
+    };
+
     for(var i = 0; i < data.length; i++){
         var x = xAccessor(data[i]);
         var y = yAccessor(data[i]);
-        if(x == null || x == undefined ||(typeof x == "number" && isNaN(x)) || y == null || y == undefined || (typeof y == "number" && isNaN(y))){
+        if(!isValid(x) || !isValid(y)){
             continue;
         }
         
