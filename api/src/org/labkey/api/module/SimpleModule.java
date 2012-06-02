@@ -61,15 +61,23 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
     int _factorySetHash = 0;
     private Set<String> _schemaNames;
 
-    public SimpleModule(@NotNull String name)
+    public SimpleModule()
+    {
+    }
+
+    @Deprecated
+    public SimpleModule(String name)
     {
         setName(name);
-        addController(name.toLowerCase(), SimpleController.class);
     }
 
     protected void init()
     {
+        if (getName() == null || getName().length() == 0)
+            throw new ConfigurationException("Simple module must have a name");
+
         getSchemaNames(true);
+        addController(getName().toLowerCase(), SimpleController.class);
     }
 
     protected Collection<WebPartFactory> createWebPartFactories()

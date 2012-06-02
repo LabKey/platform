@@ -458,7 +458,11 @@ public class ModuleLoader implements Filter
                     if (props.containsKey("name"))
                         moduleName = props.getProperty("name");
 
-                    SimpleModule simpleModule = new SimpleModule(moduleName);
+                    if (moduleName == null || moduleName.length() == 0)
+                        throw new ConfigurationException("Simple module must specify a name in config/module.xml or config/module.properties: " + moduleDir.getParent());
+
+                    SimpleModule simpleModule = new SimpleModule();
+                    simpleModule.setName(moduleName);
                     simpleModule.setSourcePath(moduleDir.getAbsolutePath());
                     BeanUtils.populate(simpleModule, props);
                     if (simpleModule instanceof ApplicationContextAware)
