@@ -33,6 +33,7 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.study.Study;
+import org.labkey.study.StudySchema;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
@@ -122,7 +123,7 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
         columns.add(FieldKey.fromParts("ImpersonatedBy"));
         columns.add(FieldKey.fromParts("IntKey1"));
         columns.add(FieldKey.fromParts("Run"));
-        columns.add(FieldKey.fromParts("Key1"));
+        columns.add(FieldKey.fromParts("TargetStudy"));
         columns.add(FieldKey.fromParts("Comment"));
 
         return columns;
@@ -133,9 +134,19 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
         super.setupTable(table, schema);
         final ColumnInfo containerId = table.getColumn("ContainerId");
         ColumnInfo col = table.getColumn("Key1");
-
         if (col != null)
         {
+            ColumnInfo studyCol = new AliasedColumn(table, "TargetStudy", col);
+
+            LookupForeignKey fk = new LookupForeignKey("Container", "Label") {
+                public TableInfo getLookupTableInfo()
+                {
+                    return StudySchema.getInstance().getTableInfoStudy();
+                }
+            };
+            studyCol.setFk(fk);
+            table.addColumn(studyCol);
+
             ColumnInfo propCol = table.getColumn("Property");
             if (propCol != null)
             {
@@ -144,8 +155,7 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
                 keys.add(FieldKey.fromParts("Property", "datasetId"));
                 keys.add(FieldKey.fromParts("Property", "recordCount"));
 
-                col.setLabel("Target Study");
-                col.setDisplayColumnFactory(new DisplayColumnFactory()
+                studyCol.setDisplayColumnFactory(new DisplayColumnFactory()
                 {
                     public DisplayColumn createRenderer(ColumnInfo colInfo)
                     {
