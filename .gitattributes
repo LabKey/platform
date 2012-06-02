@@ -14,6 +14,7 @@ api/src/org/json/JSONWriter.java -text
 api/src/org/json/Test.java -text
 api/src/org/json/XML.java -text
 api/src/org/json/XMLTokener.java -text
+api/src/org/labkey/api/ProteinService.java -text
 api/src/org/labkey/api/ScrollableDataIterator.java -text
 api/src/org/labkey/api/action/AbstractFileUploadAction.java -text
 api/src/org/labkey/api/action/AjaxAction.java -text
@@ -165,6 +166,7 @@ api/src/org/labkey/api/collections/RowMap.java -text
 api/src/org/labkey/api/collections/RowMapFactory.java -text
 api/src/org/labkey/api/collections/SetFromMap.java -text
 api/src/org/labkey/api/collections/Sets.java -text
+api/src/org/labkey/api/data/AJAXDetailsDisplayColumn.java -text
 api/src/org/labkey/api/data/AbstractDataRegion.java -text
 api/src/org/labkey/api/data/AbstractFileDisplayColumn.java -text
 api/src/org/labkey/api/data/AbstractForeignKey.java -text
@@ -225,6 +227,7 @@ api/src/org/labkey/api/data/Filter.java -text
 api/src/org/labkey/api/data/FilterInfo.java -text
 api/src/org/labkey/api/data/ForeignKey.java -text
 api/src/org/labkey/api/data/GroupTableInfo.java -text
+api/src/org/labkey/api/data/GroupedResultSet.java -text
 api/src/org/labkey/api/data/HighlightingDisplayColumn.java -text
 api/src/org/labkey/api/data/HtmlWriter.java -text
 api/src/org/labkey/api/data/IconDisplayColumn.java -text
@@ -247,6 +250,9 @@ api/src/org/labkey/api/data/MultiValuedForeignKey.java -text
 api/src/org/labkey/api/data/MultiValuedLookupColumn.java -text
 api/src/org/labkey/api/data/MultiValuedRenderContext.java -text
 api/src/org/labkey/api/data/MvUtil.java -text
+api/src/org/labkey/api/data/NestableDataRegion.java -text
+api/src/org/labkey/api/data/NestableQueryView.java -text
+api/src/org/labkey/api/data/NestedRenderContext.java -text
 api/src/org/labkey/api/data/NullColumnInfo.java -text
 api/src/org/labkey/api/data/OORDisplayColumnFactory.java -text
 api/src/org/labkey/api/data/OutOfRangeDisplayColumn.java -text
@@ -326,6 +332,7 @@ api/src/org/labkey/api/data/dialect/StatementWrapper.java -text
 api/src/org/labkey/api/data/dialect/TestUpgradeCode.java -text
 api/src/org/labkey/api/data/dialect/sql2003Keywords.txt -text
 api/src/org/labkey/api/data/dialect/sqlKeywords.txt -text
+api/src/org/labkey/api/data/nestedGridScript.jsp -text
 api/src/org/labkey/api/data/parameterForm.jsp -text
 api/src/org/labkey/api/data/views/DataViewInfo.java -text
 api/src/org/labkey/api/data/views/DataViewProvider.java -text
@@ -645,6 +652,7 @@ api/src/org/labkey/api/qc/TsvDataSerializer.java -text
 api/src/org/labkey/api/qc/ValidationDataHandler.java -text
 api/src/org/labkey/api/query/AbstractBeanQueryUpdateService.java -text
 api/src/org/labkey/api/query/AbstractMethodInfo.java -text
+api/src/org/labkey/api/query/AbstractNestableDataRegion.java -text
 api/src/org/labkey/api/query/AbstractQueryImportAction.java -text
 api/src/org/labkey/api/query/AbstractQueryUpdateService.java -text
 api/src/org/labkey/api/query/AbstractSchema.java -text
@@ -686,6 +694,7 @@ api/src/org/labkey/api/query/QueryException.java -text
 api/src/org/labkey/api/query/QueryForeignKey.java -text
 api/src/org/labkey/api/query/QueryForm.java -text
 api/src/org/labkey/api/query/QueryMethod.java -text
+api/src/org/labkey/api/query/QueryNestingOption.java -text
 api/src/org/labkey/api/query/QueryParam.java -text
 api/src/org/labkey/api/query/QueryParseException.java -text
 api/src/org/labkey/api/query/QuerySchema.java -text
@@ -6451,7 +6460,6 @@ internal/src/org/labkey/api/attachments/ImageServlet.java -text
 internal/src/org/labkey/api/data/ButtonBarLineBreak.java -text
 internal/src/org/labkey/api/data/DataSourceSessionFactory.archive -text
 internal/src/org/labkey/api/data/DropDownList.java -text
-internal/src/org/labkey/api/data/GroupedResultSet.java -text
 internal/src/org/labkey/api/data/MultiResultSetMetaData.java -text
 internal/src/org/labkey/api/data/ResourceInputStream.java -text
 internal/src/org/labkey/api/data/ResultSetCollapser.java -text

@@ -54,7 +54,7 @@ public class SQLFragment implements Appendable, CharSequence
     {
         guard(sql);
         this.sql = sql.toString();
-        this.params = params;
+        this.params = new ArrayList<Object>(params);
     }
 
 

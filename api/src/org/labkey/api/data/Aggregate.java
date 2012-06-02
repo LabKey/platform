@@ -49,6 +49,13 @@ public class Aggregate
         SUM("Total"),
         AVG("Average"),
         COUNT("Count"),
+        COUNT_DISTINCT("Unique values")
+            {
+                @Override
+                public String getSQLColumnFragment(SqlDialect dialect, String columnName, String asName)
+                {
+                    return "COUNT (DISTINCT " + dialect.getColumnSelectName(columnName) + ") AS " + asName;
+                }},
         MIN("Minimum"),
         MAX("Maximum");
 

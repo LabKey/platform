@@ -39,7 +39,8 @@ public class MS2Service
         SearchClient createSearchClient(String server, String url, Logger instanceLogger, String userAccount, String userPassword);
 
         TableInfo createPeptidesTableInfo(User user, Container container);
-        TableInfo createPeptidesTableInfo(User user, Container container, boolean includeFeatureFk, 
+        TableInfo createSequencesTableInfo(User user, Container container);
+        TableInfo createPeptidesTableInfo(User user, Container container, boolean includeFeatureFk,
                                           ContainerFilter containerFilter, SimpleFilter filter, Iterable<FieldKey> defaultColumns);
     }
 

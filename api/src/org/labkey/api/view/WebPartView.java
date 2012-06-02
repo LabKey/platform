@@ -471,7 +471,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                         out.printf("<a href=\"%s\" onclick=\"return toggleLink(this, %s);\" id=\"%s\">",
                                 filter(expandCollapseUrl.getLocalURIString()), "true", expandCollapseGifId);
                         String image = collapsed.booleanValue() ? "plus.gif" : "minus.gif";
-                        out.printf("<img width=9 height=9 src=\"%s/_images/%s\"></a>", context.getContextPath(), image);
+                        out.printf("<img width=9 height=9 style=\"margin-bottom: 0\" src=\"%s/_images/%s\"></a>", context.getContextPath(), image);
 
                         out.printf(" <a href=\"%s\" onclick=\"return toggleLink(document.getElementById(%s), %s);\">",
                                 filter(expandCollapseUrl.getLocalURIString()), PageFlowUtil.jsString(expandCollapseGifId), "true");

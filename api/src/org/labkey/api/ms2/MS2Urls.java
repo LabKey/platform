@@ -31,4 +31,6 @@ public interface MS2Urls extends UrlProvider
     public ActionURL getShowPeptideUrl(Container container);
 
     public ActionURL getShowListUrl(Container container);
+
+    public ActionURL getProteinSearchUrl(Container container);
 }
