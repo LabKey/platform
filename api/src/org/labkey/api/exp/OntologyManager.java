@@ -2466,6 +2466,12 @@ public class OntologyManager
             PropertyService.get().saveConditionalFormats(user, getPropertyDescriptor(entry.getKey(), container), entry.getValue());
         }
 
+        for (DomainDescriptor dd : domainMap.values())
+        {
+            // flush caches again
+            updateDomainDescriptor(dd);
+        }
+
         return true;
     }
 

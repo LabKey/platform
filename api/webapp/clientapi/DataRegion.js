@@ -3800,7 +3800,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                     //the total number of records is expected to be small
                     var valMap = {};
                     store.each(function(rec){
-                        rec.data.value = this.formatValue(rec.data.value);
+                        rec.set('value', this.formatValue(rec.data.value));
 
                         if(valMap[rec.data.value]){
                             store.remove(rec);
