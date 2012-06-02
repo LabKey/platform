@@ -278,6 +278,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             case Links:
             {
                 ColumnInfo result = wrapColumn("Links", _rootTable.getColumn("RowId"));
+                result.setDescription("Link to the run's graph");
                 result.setShownInUpdateView(false);
                 result.setShownInInsertView(false);
                 result.setDisplayColumnFactory(new DisplayColumnFactory()
