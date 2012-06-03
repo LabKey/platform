@@ -29,7 +29,7 @@ Ext4.define('LABKEY.ext4.RemoteGroup', {
 
         //we need to test whether the store has been created
         if(!this.store && this.queryName)
-            this.store = LABKEY.ext.MetaHelper.simpleLookupStore(this);
+            this.store = LABKEY.ext.Ext4Helper.simpleLookupStore(this);
 
         if(!this.store){
             console.log('RemoteGroup requires a store');

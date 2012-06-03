@@ -9,7 +9,7 @@ Ext4.namespace('LABKEY.ext4');
 /**
  * Constructs a new LabKey GridPanel using the supplied configuration.
  *
- * @param (boolean) [config.noAlertOnError] If true, no dialog will appear on if the store fires a syncerror event
+ * @param (boolean) [config.supressErrorAlert] If true, no dialog will appear on if the store fires a syncerror event
  * @param {boolean} [config.hideNonEditableColumns] If true, columns that are non-editable will be hidden
  * @param {boolean} [config.showPagingToolbar] If true, an Ext PagingToolbar will be appended to the bottom of the grid
  */
@@ -57,9 +57,12 @@ Ext4.define('LABKEY.ext4.GridPanel', {
 
         this.configureHeaders();
 
+        //TODO: need a better solution to this problem.  maybe be smarter when processing load() in the store?
         //if we sort/filter remotely, we risk losing changes made on the client
-        this.store.remoteSort = !this.editable;
-        this.store.remoteFilter = !this.editable;
+        if(this.editable){
+            this.store.remoteSort = false;
+            this.store.remoteFilter = false;
+        }
 
         if(this.autoSave)
             this.store.autoSync = true;  //could we just obligate users to put this on the store directly?
@@ -73,9 +76,19 @@ Ext4.define('LABKEY.ext4.GridPanel', {
         }
 
         this.mon(this.store, 'exception', this.onCommitException, this);
-        this.addEvents('beforesubmit', 'fieldconfiguration', 'recordchange', 'fieldvaluechange', 'lookupstoreload');
+        /**
+         * @event columnmodelcustomize
+         */
+        /**
+         * Experimental.  Lookups sometimes create a separate store to find the display string for a field.  When this
+         * store loads, it can cause the grid to refresh, which is expensive.  This event is used internally
+         * to batch these events and minimze the grid refreshes.
+         * @private
+         * @event lookupstoreload
+         */
+        this.addEvents('columnmodelcustomize', 'lookupstoreload');
 
-        this.on('lookupstoreload', this.onLookupStoreEventFired, this, {buffer: 100});
+        this.on('lookupstoreload', this.onLookupStoreEventFired, this, {buffer: 200});
     }
 
     ,configureHeaders: function(){
@@ -95,7 +108,7 @@ Ext4.define('LABKEY.ext4.GridPanel', {
             sql: this.sql,
             viewName: this.viewName,
             columns: this.columns,
-            storeId: LABKEY.ext.MetaHelper.getLookupStoreId(this),
+            storeId: LABKEY.ext.Ext4Helper.getLookupStoreId(this),
             filterArray: this.filterArray || [],
             metadata: this.metadata,
             metadataDefaults: this.metadataDefaults,
@@ -113,6 +126,7 @@ Ext4.define('LABKEY.ext4.GridPanel', {
             //NOTE: this is overridden in order to prevent the grid from focusing to itself on mouseclick.  Ext has bugs on this and it may be fixed in versions above 4.0.7
             this.selModel = {
                 xtype: 'rowmodel',
+                //TODO: probably fixed in ext4.1 and can be removed then
                 //@Override
                 onRowMouseDown: function(view, record, item, index, e) {
                     //view.el.focus();
@@ -128,8 +142,7 @@ Ext4.define('LABKEY.ext4.GridPanel', {
     ,setupColumnModel : function() {
         var columns = this.getColumnsConfig();
 
-        //fire the "columnmodelcustomize" event to allow clients
-        //to modify our default configuration of the column model
+        //TODO: make a map of columnNames -> positions like Ext3?
         this.fireEvent("columnmodelcustomize", this, columns);
 
         this.columns = columns;
@@ -146,7 +159,7 @@ Ext4.define('LABKEY.ext4.GridPanel', {
             }
         };
 
-        var columns = LABKEY.ext.MetaHelper.getColumnsConfig(this.store, this, config);
+        var columns = LABKEY.ext.Ext4Helper.getColumnsConfig(this.store, this, config);
 
         Ext4.each(columns, function(col, idx){
             var meta = this.store.findFieldMetadata(col.dataIndex);
@@ -161,7 +174,7 @@ Ext4.define('LABKEY.ext4.GridPanel', {
 
             //listen for changes in underlying data in lookup store
             if(meta.lookup && meta.lookups !== false){
-                var lookupStore = LABKEY.ext.MetaHelper.getLookupStore(meta);
+                var lookupStore = LABKEY.ext.Ext4Helper.getLookupStore(meta);
 
                 //this causes the whole grid to rerender, which is very expensive.  better solution?
                 if(lookupStore){
@@ -209,7 +222,7 @@ Ext4.define('LABKEY.ext4.GridPanel', {
             if(!meta.fixedWidthCol){
                 values = [];
                 this.store.each(function(rec){
-                    value = LABKEY.ext.MetaHelper.getDisplayString(rec.get(meta.name), meta, rec, rec.store);
+                    value = LABKEY.ext.Ext4Helper.getDisplayString(rec.get(meta.name), meta, rec, rec.store);
                     if(!Ext4.isEmpty(value))
                         values.push(value.length);
                 }, this);
@@ -240,19 +253,27 @@ Ext4.define('LABKEY.ext4.GridPanel', {
         return this.getColumnModel().getColumnById(colName);
     }
 
-    ,onCommitException: function(response, operation){
-        var msg;
-        if(response.errors && response.errors.exception)
-            msg = response.errors.exception;
-        else
-            msg = 'There was an error with the submission';
+    ,onCommitException: function(store, message, response, operation){
+        var msg = message || 'There was an error with the submission';
 
-        if(!this.noAlertOnError)
+        if(!this.supressErrorAlert)
             Ext4.Msg.alert('Error', msg);
+
+        return false; //prevent store from alerting
     }
 });
 
 LABKEY.ext4.GRIDBUTTONS = {
+    /**
+     *
+     * @param name
+     * @param config
+     */
+    getButton: function(name, config){
+        return LABKEY.ext4.GRIDBUTTONS[name] ? LABKEY.ext4.GRIDBUTTONS[name](config) : null;
+    },
+
+    //TODO: make these private?
     ADDRECORD: function(config){
         return Ext4.Object.merge({
             text: 'Add Record',
@@ -281,7 +302,7 @@ LABKEY.ext4.GRIDBUTTONS = {
 
                 grid.store.remove(selections);
             }
-        });
+        }, config);
     },
     SUBMIT: function(config){
         return Ext4.Object.merge({

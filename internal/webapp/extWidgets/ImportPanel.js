@@ -34,7 +34,7 @@ Ext4.define('LABKEY.ext.ImportPanel', {
                 xtype: 'labkey-formpanel',
                 store: this.store,
                 listeners: {
-                    uploadcomplete: function(){
+                    uploadcomplete: function(panel, response){
                         window.location = LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.buildURL('project', 'begin');
                     }
                 }
@@ -51,17 +51,16 @@ Ext4.define('LABKEY.ext.ImportPanel', {
                 title: 'Import Spreadsheet',
                 xtype: 'labkey-exceluploadpanel',
                 store: this.store, //saves redundant loading
+                showAlertOnSuccess: false,
                 schemaName: this.schemaName,
                 queryName: this.queryName,
                 viewName: this.viewName,
                 columns: '*',
                 listeners: {
-                    uploadcomplete: function(response){
+                    uploadcomplete: function(panel, response){
                         Ext4.Msg.alert("Success", response.successMessage, function(btn){
                             window.location = LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.buildURL('project', 'begin');
                         }, this);
-
-                        return false;
                     }
                 }
             }]

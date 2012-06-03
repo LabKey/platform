@@ -340,11 +340,12 @@ LABKEY.requiresExt4ClientAPI = function(immediate)
     LABKEY.requiresExt4Sandbox(immediate);
 
     //load individual scripts so that they get loaded from source tree
-    LABKEY.requiresScript("extWidgets/MetaHelper.js", immediate);
+    LABKEY.requiresScript("extWidgets/Ext4Helper.js", immediate);
     LABKEY.requiresScript("extWidgets/Ext4Store.js", immediate);
     LABKEY.requiresScript("extWidgets/ExtComponents.js", immediate);
     LABKEY.requiresScript("extWidgets/Ext4FormPanel.js", immediate);
     LABKEY.requiresScript("extWidgets/Ext4GridPanel.js", immediate);
+    LABKEY.requiresScript("extWidgets/DetailsPanel.js", immediate);
 };
 
 

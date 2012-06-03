@@ -300,10 +300,10 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
 
             domainFields[i].domain = domainFields[i].domain || domain;
 
-            if (!Ext4.Array.contains(skippedFields, domainFields[i].name) && LABKEY.ext.MetaHelper.shouldShowInInsertView(domainFields[i])){
+            if (!Ext4.Array.contains(skippedFields, domainFields[i].name) && LABKEY.ext.Ext4Helper.shouldShowInInsertView(domainFields[i])){
                 var fieldObj = domainFields[i];
                 if(!fieldObj.jsonType)
-                    fieldObj.jsonType = LABKEY.ext.MetaHelper.findJsonType(fieldObj);
+                    fieldObj.jsonType = LABKEY.ext.Ext4Helper.findJsonType(fieldObj);
 
                 if(!fieldObj.id){
                     fieldObj.id = fieldObj.name
@@ -337,7 +337,7 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
                     Ext4.Object.merge(fieldObj, this.selectedMethod.metadata[fieldObj.domain][fieldObj.name]);
                 }
 
-                fieldObj.input = LABKEY.ext.MetaHelper.getFormEditor(fieldObj);
+                fieldObj.input = LABKEY.ext.Ext4Helper.getFormEditor(fieldObj);
                 this.down('#runFields').add(fieldObj.input);
             }
         }
@@ -393,8 +393,8 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
             bodyStyle:'',
             minHeight: 400,
             tbar: [
-                LABKEY.ext4.GRIDBUTTONS['ADDRECORD'](),
-                LABKEY.ext4.GRIDBUTTONS['DELETERECORD']()
+                LABKEY.ext4.GRIDBUTTONS.getButton('ADDRECORD'),
+                LABKEY.ext4.GRIDBUTTONS.getButton('DELETERECORD')
             ],
             forceFit: true,
             editable: true,
@@ -746,7 +746,7 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
             //text has headers as an array of objects, files have a simple array of scalars
             var rawName = row[i].value || row[i];
 
-            var name = LABKEY.ext.MetaHelper.resolveFieldNameFromLabel(rawName, this.domains.Results.columns);
+            var name = LABKEY.ext.Ext4Helper.resolveFieldNameFromLabel(rawName, this.domains.Results.columns);
 
             //NOTE: we let the process continue b/c it's possible we want to pass values to the validation script
             if (!name){

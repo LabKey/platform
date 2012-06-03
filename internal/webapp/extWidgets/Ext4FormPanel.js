@@ -30,31 +30,33 @@ Ext4.namespace('LABKEY.ext4');
  * @param {Object} [config.metadata] A metadata object that will be applied to the default metadata returned by the server.  See example below for usage.
  * @param {Object} [config.metadataDefaults] A metadata object that will be applied to every field of the default metadata returned by the server.  Will be superceeded by the metadata object in case of conflicts. See example below for usage.
  * @param {Object} [config.storeConfig] A config object that will be used to create the store.
- * @param (boolean) [config.noAlertOnError] If true, no dialog will appear on if the store fires a syncerror event
+ * @param (boolean) [config.supressErrorAlert] If true, no dialog will appear on if the store fires a syncerror event.  Defaults to false.
+ * @param {boolean} [config.supressSuccessAlert] If true, no alert will appear after a successful save event.  Defaults to false.
  * @example &lt;script type="text/javascript"&gt;
     var _grid, _store;
     Ext.onReady(function(){
 
-        //create a Store bound to the 'Users' list in the 'core' schema
         _store = new LABKEY.ext4.Store({
-            schemaName: 'core',
-            queryName: 'users'
+            schemaName: 'lists',
+            queryName: 'myList'
         });
 
         //create a grid using that store as the data source
-        _grid = new LABKEY.ext4.GridPanel({
+        _grid = new LABKEY.ext4.FormPanel({
             store: _store,
-            renderTo: 'grid',
-            width: 800,
+            renderTo: 'formPanel',
             autoHeight: true,
-            title: 'Example',
-            editable: true
+            title: 'Example FormPanel',
+            bindConfig: {
+                autoCreateRecordOnChange: true,
+                autoBindFirstRecord: true
+            }
         });
     });
 
 
 &lt;/script&gt;
-&lt;div id='grid'/&gt;
+&lt;div id='formPanel'/&gt;
  */
 
 
@@ -87,22 +89,24 @@ Ext4.define('LABKEY.ext4.FormPanel', {
             ,bodyStyle: 'padding:5px'
             ,style: 'margin-bottom: 15px'
             ,buttons: [
-                LABKEY.ext4.FORMBUTTONS['SUBMIT'](),
-                LABKEY.ext4.FORMBUTTONS['CANCEL']()
+                LABKEY.ext4.FORMBUTTONS.getButton('SUBMIT'),
+                LABKEY.ext4.FORMBUTTONS.getButton('CANCEL')
             ]
         });
 
         this.mon(this.store, 'exception', this.onCommitException, this);
 
-        if(!this.store.hasLoaded())
-            this.mon(this.store, 'load', this.loadQuery, this, {single: true});
-        else
-            this.loadQuery(this.store);
-
         if(Ext4.isString(this.errorEl))
             this.errorEl = Ext4.get(this.errorEl);
 
         this.callParent();
+
+        if(!this.store.hasLoaded())
+            this.mon(this.store, 'load', this.loadQuery, this, {single: true});
+        else {
+            //TODO: calling after callParent() may be forcing an unnecessary second layout
+            this.loadQuery(this.store);
+        }
 
         /**
          * @memberOf LABKEY.ext4.FormPanel#
@@ -117,7 +121,13 @@ Ext4.define('LABKEY.ext4.FormPanel', {
          * @event
          * @description Fired when the value of any field in the panel changes
          */
-        this.addEvents('fieldconfiguration', 'fieldvaluechange');
+        /**
+         * @memberOf LABKEY.ext4.FormPanel#
+         * @name recordchange
+         * @event
+         * @description Fired when the record bound to this panel changes
+         */
+        this.addEvents('fieldconfiguration', 'fieldvaluechange', 'recordchange');
 
         this.on('recordchange', this.markInvalid, this, {buffer: 100});
     },
@@ -130,7 +140,7 @@ Ext4.define('LABKEY.ext4.FormPanel', {
             sql: this.sql,
             viewName: this.viewName,
             columns: this.columns,
-            storeId: LABKEY.ext.MetaHelper.getLookupStoreId(this),
+            storeId: LABKEY.ext.Ext4Helper.getLookupStoreId(this),
             filterArray: this.filterArray || [],
             metadata: this.metadata,
             metadataDefaults: this.metadataDefaults,
@@ -154,10 +164,12 @@ Ext4.define('LABKEY.ext4.FormPanel', {
             msg = 'There was an error with the submission';
 
         //NOTE: in the case of trigger script errors, this will display the first error, even if many errors were generated
-        if(!this.noAlertOnError)
+        if(!this.supressErrorAlert)
             Ext4.Msg.alert('Error', msg);
 
-        this.getForm().isValid();
+        this.getForm().isValid(); //triggers revalidation
+
+        return false; //prevent store from alerting
     },
 
     loadQuery: function(store, records, success)
@@ -166,7 +178,6 @@ Ext4.define('LABKEY.ext4.FormPanel', {
 
         if(success===false){
             this.add({html: 'The store did not load properly', border: false});
-            this.doLayout();
             return;
         }
 
@@ -178,7 +189,7 @@ Ext4.define('LABKEY.ext4.FormPanel', {
 
         var toAdd = this.configureForm(store);
 
-        this.fireEvent('formconfiguration', toAdd);
+        this.fireEvent('formconfiguration', this, toAdd);
 
         //create a placeholder for error messages
         if(!this.errorEl){
@@ -192,10 +203,6 @@ Ext4.define('LABKEY.ext4.FormPanel', {
 
         this.fireEvent('fieldconfiguration', this, toAdd);
         this.add(toAdd);
-
-        if(this.rendered)
-            this.doLayout();
-
     },
     //NOTE: can be overridden for custom layouts
     configureForm: function(store){
@@ -207,7 +214,7 @@ Ext4.define('LABKEY.ext4.FormPanel', {
                 schemaName: store.schemaName
             };
 
-            if (LABKEY.ext.MetaHelper.shouldShowInUpdateView(c)){
+            if (LABKEY.ext.Ext4Helper.shouldShowInUpdateView(c)){
                 var theField = this.store.getFormEditorConfig(c.name, config);
 
                 if(!c.width)
@@ -294,8 +301,37 @@ Ext4.define('LABKEY.ext4.FormPanel', {
         }
 
         return toAdd;
-    }
+    },
 
+    doSubmit: function(btn){
+        btn.setDisabled(true);
+
+        if(!this.store.getNewRecords().length && !this.store.getUpdatedRecords().length && !this.store.getRemovedRecords().length){
+            Ext4.Msg.alert('No changes', 'There are no changes, nothing to do');
+            window.location = btn.successURL || LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: this.store.schemaName, 'query.queryName': this.store.queryName})
+            return;
+        }
+
+        function onSuccess(store){
+            this.mun(this.store, onError);
+            btn.setDisabled(false);
+
+            if(!this.supressSuccessAlert){
+                Ext4.Msg.alert("Success", "Your upload was successful!", function(){
+                    window.location = btn.successURL || LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: this.store.schemaName, 'query.queryName': this.store.queryName})
+                }, this);
+            }
+        }
+
+        function onError(store, msg, error){
+            this.mun(this.store, onSuccess);
+            btn.setDisabled(false);
+        }
+
+        this.mon(this.store, 'write', onSuccess, this, {single: true});
+        this.mon(this.store, 'exception', onError, this, {single: true});
+        this.store.sync();
+    }
 });
 
 
@@ -339,37 +375,35 @@ Ext4.define('LABKEY.ext4.FormPanelWin', {
 
         this.callParent();
 
-        this.on('validitychange', function(){
-            console.log('validity chne')
-        })
         this.addEvents('uploadexception', 'uploadcomplete');
     }
 });
 
 LABKEY.ext4.FORMBUTTONS = {
+    /**
+     *
+     * @param name
+     * @param config
+     */
+    getButton: function(name, config){
+        return LABKEY.ext4.FORMBUTTONS[name] ? LABKEY.ext4.FORMBUTTONS[name](config) : null;
+    },
+
+    //TODO: make these private?
+
+    /**
+     *
+     * @cfg supressSuccessAlert
+     * @cfg successURL
+     */
     SUBMIT: function(config){
         return Ext4.Object.merge({
             text: 'Submit',
             formBind: true,
             successURL: LABKEY.ActionURL.getParameter('srcURL'),
-            handler: function(btn, key){
+            handler: function(btn){
                 var panel = btn.up('form');
-
-                if(!panel.store.getNewRecords().length && !panel.store.getUpdatedRecords().length && !panel.store.getRemovedRecords().length){
-                    Ext4.Msg.alert('No changes', 'There are no changes, nothing to do');
-                    window.location = btn.successURL || LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: this.store.schemaName, 'query.queryName': this.store.queryName})
-                    return;
-                }
-
-                function onSuccess(store){
-                    Ext4.Msg.alert("Success", "Your upload was successful!", function(){
-                        window.location = btn.successURL || LABKEY.ActionURL.buildURL('query', 'executeQuery', null, {schemaName: this.store.schemaName, 'query.queryName': this.store.queryName})
-                    }, panel);
-                }
-
-                panel.store.on('write', onSuccess, this, {single: true});
-                panel.store.on('exception', function(error){panel.store.un(onSuccess)}, this, {single: true});
-                panel.store.sync();
+                panel.doSubmit(btn);
             }
         }, config);
     },
@@ -415,7 +449,14 @@ LABKEY.ext4.FORMBUTTONS = {
     }
 }
 
-
+/**
+ * Params and default values:
+ * disableUnlessBound: false
+ * autoCreateRecordOnChange: true
+ * autoBindFirstRecord: false
+ * createRecordOnLoad: false
+ * boundRecord
+ */
 Ext4.define('LABKEY.ext4.DatabindPlugin', {
     extend: 'Ext.AbstractPlugin',
     pluginId: 'labkey-databind',
@@ -465,6 +506,9 @@ Ext4.define('LABKEY.ext4.DatabindPlugin', {
             };
             findMatchingField.call(this, c);
         }, this);
+
+        if(panel.boundRecord)
+            panel.bindRecord(panel.boundRecord);
 
         this.callParent(arguments);
     },
@@ -627,6 +671,6 @@ Ext4.define('LABKEY.ext4.DatabindPlugin', {
             Ext4.iterate(values, setVal);
         }
         return this;
-    },
+    }
 
 });

@@ -196,7 +196,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
         }
 
         //create the field
-        var theField = LABKEY.ext.MetaHelper.getFormEditorConfig(meta);
+        var theField = LABKEY.ext.Ext4Helper.getFormEditorConfig(meta);
        theField.fieldLabel = null;
 
         theField.disabled = false;

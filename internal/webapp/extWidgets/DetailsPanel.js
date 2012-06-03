@@ -6,89 +6,65 @@
 LABKEY.requiresCss('/extWidgets/Ext4DetailsPanel.css');
 Ext4.namespace('LABKEY.ext');
 
-/*
-config:
-
-titleField
-sectionTitle
-multiToGrid
-queryConfig
-qwpConfig
-
+/**
+ * Creates a panel designed to present a details view of 1 record.  It can be created by either providing a store or a schema/query, in which
+ * case the store will be automatically created.  If the store has more than 1 record, the first record in the store will automatically be loaded,
+ * unless a record object or record index is provided using boundRecord.
+ * @class LABKEY.ext.DetailsPanel
+ * @cfg {object} store
+ * @cfg {LABKEY.ext4.Store} store Can be supplied instead of schemaName / queryName
+ * @cfg {string} titleField
+ * @cfg {string} titlePrefix Defaults to 'Details'
+ * @cfg {Ext4.data.Record / Integer} boundRecord Either a record object
+ * @cfg {boolean} showViewGridBtn
  */
-
 Ext4.define('LABKEY.ext.DetailsPanel', {
-    extend: 'Ext.panel.Panel',
+    extend: 'Ext.form.Panel',
     alias: 'widget.labkey-detailspanel',
     initComponent: function(){
-        var params = {schemaName: this.schemaName, 'query.queryName': this.queryName};
-        if(this.keyFieldName)
-            params['query.' + this.keyFieldName + '~eq'] = this.keyValue;
-        if(this.filterArray){
-            Ext4.each(this.filterArray, function(filter){
-                params[filter.getURLParameterName()] = filter.getURLParameterValue();
-            }, this);
-        }
-        var gridURL = LABKEY.ActionURL.buildURL('query', 'executeQuery', null, params);
-
         Ext4.apply(this, {
             items: [{html: 'Loading...'}],
-            bodyStyle: 'padding:5px',
-            autoHeight: true,
-            bodyBorder: false,
-            border: false,
+            bodyStyle: 'padding:5px;',
+
+            border: true,
             frame: false,
             defaults: {
                 border: false
             },
             buttonAlign: 'left',
-            buttons: [{
-                text: 'Show Grid',
-                href: gridURL
+            title: Ext4.isDefined(this.titlePrefix) ?  this.titlePrefix : 'Details',
+            fieldDefaults: {
+                labelWidth: 175
+            },
+            dockedItems: [{
+                xtype: 'toolbar',
+                ui: 'footer',
+                dock: 'bottom',
+                style: 'padding-top: 10px;'
             }]
         });
 
         this.callParent(arguments);
 
-        var required = ['schemaName', 'queryName'];
-        for (var i=0;i<required.length;i++){
-            if (!this[required[i]]){
-                alert('Required: '+required[i]);
-                return;
-            }
+        this.store = this.getStore();
+        this.mon(this.store, 'load', this.onStoreLoad, this);
+        if (!this.store.getCount() && !this.store.isLoading()){
+            this.store.load();
         }
-
-        this.queryConfig = this.queryConfig || {};
-
-        Ext4.applyIf(this.queryConfig, {
-            containerPath: this.containerPath,
-            containerFilter: this.containerFilter,
-            queryName: this.queryName,
-            schemaName: this.schemaName,
-            viewName: this.viewName,
-            columns: this.columns,
-            metadataDefaults: this.metadataDefaults,
-            metadata: this.metadata,
-            filterArray: this.filterArray,
-            listeners: {
-                load: this.loadQuery,
-                scope: this
-            },
-            failure: LABKEY.Utils.onError,
-            scope: this,
-            maxRows: 100,
-            autoLoad: true
-        });
-
-        this.store = Ext4.create('LABKEY.ext4.Store', this.queryConfig);
+        else
+            this.onStoreLoad();
     },
 
-    loadQuery: function(store){
-        if(!this.rendered){
-            this.on('render', this.loadQuery, this, {single: true});
-            return;
+    getStore: function(){
+        if(!this.store.events){
+            this.store.autoLoad = false;
+            this.store = Ext4.create('LABKEY.ext4.Store', this.store);
         }
 
+        return this.store;
+    },
+
+    onStoreLoad: function(store){
         this.removeAll();
 
         if (!this.store.getCount()){
@@ -96,9 +72,162 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
             return;
         }
 
+        if (this.boundRecord)
+            this.bindRecord(this.boundRecord);
+        else
+            this.bindRecord(store.getAt(0));
+    },
+
+    /**
+     *
+     * @param rec
+     */
+    bindRecord: function(rec){
+        var fields = this.store.getFields();
+        var toAdd = [];
+        fields.each(function(field){
+            if (LABKEY.ext.Ext4Helper.shouldShowInDetailsView(field)){
+                var value;
+
+                if(rec.raw && rec.raw[field.name]){
+                    value = rec.raw[field.name].displayValue || rec.get(field.name);
+                    if(value && field.jsonType == 'date'){
+                        var format = 'Y-m-d h:m A'; //NOTE: java date formats do not necessarily match Ext
+                        value = value.format(format);
+                    }
+
+                    if(rec.raw[field.name].url)
+                        value = '<a href="'+rec.raw[field.name].url+'" target="new">'+value+'</a>';
+                }
+                else
+                    value = rec.get(field.name);
+
+                toAdd.push({
+                    fieldLabel: field.label || field.caption || field.name,
+                    xtype: 'displayfield',
+                    fieldCls: 'labkey-display-field',  //enforce line wrapping
+                    width: 600,
+                    value: value
+                });
+
+                //NOTE: because this panel will render multiple rows as multiple forms, we provide a mechanism to append an identifier field
+                if (this.titleField == field.name){
+                    this.setTitle(this.title + ': '+value);
+                }
+            }
+        }, this);
+
+        this.boundRecord = rec;
+        this.removeAll();
+        this.add(toAdd);
+
+        //configure buttons
+        var bbar = this.down('toolbar[dock="bottom"]');
+        if(bbar)
+            bbar.removeAll();
+
+        if(this.showViewGridBtn){
+            var keyField = this.store.model.prototype.idProperty;
+            var params = {
+                schemaName: this.store.schemaName,
+                'query.queryName': this.store.queryName
+            };
+            params[('query.' + keyField + '~eq')] = rec.get(keyField);
+            var url = LABKEY.ActionURL.buildURL('query', 'executeQuery', null, params);
+            bbar.add({
+                xtype: 'button',
+                text: 'Show Grid',
+                url: url
+            });
+        }
+
+        //TODO: if TableInfo ever supports an auditURL, we should have option to show audit btn
+//        if(LABKEY.ActionURL.getParameter('schemaName').match(/^study$/i) && LABKEY.ActionURL.getParameter('keyField').match(/^lsid$/i)){
+//            panelCfg.items.push({
+//                xtype: 'button',
+//                handler: function(b){
+//                    window.location = LABKEY.ActionURL.buildURL("query", "executeQuery", null, {
+//                        schemaName: 'auditLog',
+//                        'query.queryName': 'DatasetAuditEvent',
+//                        'query.key1~eq': LABKEY.ActionURL.getParameter('key')
+//                    });
+//                },
+//                text: 'Audit History'
+//            });
+//        }
+
+    },
+
+    unbindRecord: function(){
+        this.removeAll();
+
+        var bbar = this.down('toolbar[dock="bottom"]');
+        if(bbar)
+            bbar.removeAll();
+
+        delete this.boundRecord;
+    }
+});
+
+
+/**
+ * This panel can render a series of LABKEY.ext.DetailsPanels, one per record in the store.
+ * @class LABKEY.ext.MultiRecordDetailsPanel
+ * @cfg store
+ * @cfg {string} titleField
+ * @cfg {string} titlePrefix Defaults to 'Details'
+ * @cfg {boolean} showViewGridBtn
+ * @cfg {object} qwpConfig
+ * @cfg {boolean} multiToGrid
+ */
+Ext4.define('LABKEY.ext.MultiRecordDetailsPanel', {
+    extend: 'Ext.panel.Panel',
+    alias: 'widget.labkey-multirecorddetailspanel',
+    initComponent: function(){
+        Ext4.apply(this, {
+            border: false
+
+        });
+
+        this.callParent(arguments);
+
+        this.store = this.getStore();
+        this.mon(this.store, 'load', this.onStoreLoad, this);
+        if (!this.store.getCount() || this.store.isLoading)
+            this.store.load();
+        else
+            this.onStoreLoad();
+    },
+
+    getStore: function(){
+        if(!this.store.events){
+            this.store.autoLoad = false;
+            this.store = Ext4.create('LABKEY.ext4.Store', this.store);
+        }
+
+        return this.store;
+    },
+
+    onStoreLoad: function(store){
+        this.removeAll();
+
+        if (!this.store.getCount()){
+            this.add({html: 'No records found'});
+            return;
+        }
+
+        //TODO: rendering a QWP inside an Ext4 component does not currently work.  Need to figure out some type of solution...
         if (this.store.getCount() > 1 && this.multiToGrid){
-            //NOTE: would be cleaner just to drop an Ext grid in here
-            Ext.applyIf(this.queryConfig, {
+            //TODO: would be cleaner just to drop an Ext grid in here
+
+            //cant render QWP unless the panel is rendered
+            if(!this.rendered){
+                this.on('render', this.onStoreLoad, this, {single: true});
+                return;
+            }
+
+            var config = this.store.getQueryConfig();
+            Ext4.applyIf(config, {
                 allowChooseQuery: false,
                 allowChooseView: true,
                 showInsertNewButton: false,
@@ -107,71 +236,36 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
                 showUpdateColumn: false,
                 showRecordSelectors: true,
                 buttonBarPosition: 'top',
-                title: this.sectionTitle,
+                title: this.titlePrefix,
                 timeout: 0
             });
 
-            if (this.viewName){
-                this.queryConfig.viewName = this.viewName;
-            }
-
             if(this.qwpConfig){
-                Ext.apply(this.queryConfig, this.qwpConfig);
+                Ext4.apply(config, this.qwpConfig);
             }
 
-            delete this.queryConfig.listeners;
             var target = this.add({tag: 'span'});
-            new LABKEY.QueryWebPart(this.queryConfig).render(target.id);
+            new LABKEY.QueryWebPart(config).render(target.id);
             return;
         }
-
-        this.store.each(function(rec, idx){
-            var fields = this.store.getFields();
-            var panel = {
-                xtype: 'form',
-                title: Ext4.isDefined(this.sectionTitle) ?  this.sectionTitle : 'Details',
-                items: [],
-                style: 'margin-bottom:10px',
-                border: true,
-                bodyStyle: 'padding:5px',
-                autoHeight: true,
-                fieldDefaults: {
-                    labelWidth: 150
-                }
-            };
-            fields.each(function(field){
-                if (LABKEY.ext.MetaHelper.shouldShowInDetailsView(field)){
-                    var value;
-
-                    if(rec.raw && rec.raw[field.name]){
-                        value = rec.raw[field.name].displayValue || rec.get(field.name);
-                        if(value && field.jsonType == 'date'){
-                            var format = 'Y-m-d h:m A'; //NOTE: java date formats do not necessarily match Ext
-                            value = value.format(format);
-                        }
-
-                        if(rec.raw[field.name].url)
-                            value = '<a href="'+rec.raw[field.name].url+'" target="new">'+value+'</a>';
-                    }
-                    else
-                        value = rec.get(field.name);
-
-                    panel.items.push({
-                        fieldLabel: field.label || field.caption || field.name,
-                        xtype: 'displayfield',
-                        fieldCls: 'labkey-display-field',  //enforce line wrapping
-                        width: 600,
-                        value: value
-                    });
-
-                    //NOTE: because this panel will render multiple rows as multiple forms, we provide a mechanism to append an identifier field
-                    if (this.titleField == field.name){
-                        panel.title += ': '+value;
-                    }
-                }
+        else
+        {
+            var toAdd = [];
+            this.store.each(function(rec, idx){
+                toAdd.push(this.getDetailsPanelCfg(rec));
             }, this);
+            this.add(toAdd);
+        }
+    },
 
-            this.add(panel)
-        }, this);
+    getDetailsPanelCfg: function(rec){
+        return{
+            xtype: 'labkey-detailspanel',
+            store: this.store,
+            boundRecord: rec,
+            title: Ext4.isDefined(this.titlePrefix) ?  this.titlePrefix : 'Details',
+            style: 'margin-bottom: 10px',
+            showViewGridBtn: this.showViewGridBtn
+        };
     }
 });

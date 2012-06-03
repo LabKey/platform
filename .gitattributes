@@ -6871,6 +6871,7 @@ internal/webapp/extWidgets/Ext4DefaultFilterPanel.js -text
 internal/webapp/extWidgets/Ext4DetailsPanel.css -text
 internal/webapp/extWidgets/Ext4FormPanel.js -text
 internal/webapp/extWidgets/Ext4GridPanel.js -text
+internal/webapp/extWidgets/Ext4Helper.js -text
 internal/webapp/extWidgets/Ext4Store.js -text
 internal/webapp/extWidgets/ExtComponents.js -text
 internal/webapp/extWidgets/FileUploadPanel.js -text
@@ -6878,7 +6879,6 @@ internal/webapp/extWidgets/IconPanel.css -text
 internal/webapp/extWidgets/IconPanel.js -text
 internal/webapp/extWidgets/ImportPanel.js -text
 internal/webapp/extWidgets/ImportWizard.js -text
-internal/webapp/extWidgets/MetaHelper.js -text
 internal/webapp/extWidgets/NavPanel.js -text
 internal/webapp/extWidgets/SearchPanel.js -text
 internal/webapp/gxt/css/gxt-all.css -text

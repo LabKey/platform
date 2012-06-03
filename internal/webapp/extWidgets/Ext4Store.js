@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-LABKEY.requiresScript('/extWidgets/MetaHelper.js');
+LABKEY.requiresScript('/extWidgets/Ext4Helper.js');
 
 Ext4.namespace('LABKEY.ext4');
 
@@ -49,6 +49,7 @@ Ext4.namespace('LABKEY.ext4');
  *       </ul>
  * @param {Object} [config.metadata] A metadata object that will be applied to the default metadata returned by the server.  See example below for usage.
  * @param {Object} [config.metadataDefaults] A metadata object that will be applied to every field of the default metadata returned by the server.  Will be superceeded by the metadata object in case of conflicts. See example below for usage.
+ * @param (boolean) [config.supressErrorAlert] If true, no dialog will appear if there is an exception.  Defaults to false.
  *
  * @example &lt;script type="text/javascript"&gt;
     var _grid, _store;
@@ -287,7 +288,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
         field.dataIndex = field.dataIndex || field.name;
         field.editable = (field.userEditable!==false && !field.readOnly && !field.autoIncrement);
         field.allowBlank = field.nullable;
-        field.jsonType = field.jsonType || LABKEY.ext.MetaHelper.findJsonType(field);
+        field.jsonType = field.jsonType || LABKEY.ext.Ext4Helper.findJsonType(field);
 
     },
 
@@ -402,7 +403,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
     },
 
     //private
-    //NOTE: the intent of this is to allow fields to have an initial value defined through a function.  see getInitialValue in LABKEY.ext.MetaHelper.getDefaultEditorConfig
+    //NOTE: the intent of this is to allow fields to have an initial value defined through a function.  see getInitialValue in LABKEY.ext.Ext4Helper.getDefaultEditorConfig
     onAdd: function(store, records, idx, opts){
         var val;
         this.getFields().each(function(meta){
@@ -604,7 +605,10 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
             messageBody += ' due to an unexpected error';
 
         if(false !== this.fireEvent("exception", this, messageBody, response, operation)){
-            Ext4.Msg.alert("Error", messageBody);
+
+            if(!this.supressErrorAlert)
+                Ext4.Msg.alert("Error", messageBody);
+
             console.log(response);
         }
     },
@@ -650,9 +654,9 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
     /**
      * Using the store's metadata, this method returns an Ext config object suitable for creating an Ext field.
      * The resulting object is configured to be used in a form, as opposed to a grid.
-     * This is a convenience wrapper around LABKEY.ext.MetaHelper.getFormEditorConfig
+     * This is a convenience wrapper around LABKEY.ext.Ext4Helper.getFormEditorConfig
      * <p>
-     * For information on using metadata, see LABKEY.ext.MetaHelper
+     * For information on using metadata, see LABKEY.ext.Ext4Helper
      *
      * @name getFormEditorConfig
      * @function
@@ -664,15 +668,15 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
      */
     getFormEditorConfig: function(fieldName, config){
         var meta = this.findFieldMetadata(fieldName);
-        return LABKEY.ext.MetaHelper.getFormEditorConfig(meta, config);
+        return LABKEY.ext.Ext4Helper.getFormEditorConfig(meta, config);
     },
 
     /**
      * Using the store's metadata, this method returns an Ext config object suitable for creating an Ext field.
      * The resulting object is configured to be used in a grid, as opposed to a form.
-     * This is a convenience wrapper around LABKEY.ext.MetaHelper.getGridEditorConfig
+     * This is a convenience wrapper around LABKEY.ext.Ext4Helper.getGridEditorConfig
      * <p>
-     * For information on using metadata, see LABKEY.ext.MetaHelper
+     * For information on using metadata, see LABKEY.ext.Ext4Helper
      *
      * @name getGridEditorConfig
      * @function
@@ -684,7 +688,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
      */
     getGridEditorConfig: function(fieldName, config){
         var meta = this.findFieldMetadata(fieldName);
-        return LABKEY.ext.MetaHelper.getGridEditorConfig(meta, config);
+        return LABKEY.ext.Ext4Helper.getGridEditorConfig(meta, config);
     },
 
     /**
@@ -770,6 +774,27 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
     //Ext3 compatability??
     commitChanges: function(){
         this.sync();
+    },
+
+    //private
+    getKeyField: function(){
+        return this.model.prototype.idProperty;
+    },
+
+    //private, experimental
+    getQueryConfig: function(){
+        return {
+            containerPath: this.containerPath,
+            schemaName: this.schemaName,
+            queryName: this.queryName,
+            viewName: this.viewName,
+            sql: this.sql,
+            columns: this.columns,
+            filterArray: this.filterArray,
+            sort: this.initialConfig.sort,
+            maxRows: this.maxRows,
+            containerFilter: this.containerFilter,
+        }
     }
 
 });

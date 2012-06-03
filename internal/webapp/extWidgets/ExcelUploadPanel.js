@@ -18,12 +18,15 @@ Ext4.namespace('LABKEY.ext');
  *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=labkeyExt">Tips for Using Ext to Build LabKey Views</a></li>
  *              </ul>
  *           </p>
+ * @class LABKEY.ext4.ExcelUploadPanel
  * @constructor
  * @param config Configuration properties.
  * @param {String} config.schemaName The LabKey schema to query.
  * @param {String} config.queryName The query name within the schema to fetch.
  * @param {String} [config.viewName] A saved custom view of the specified query to use if desired.
  * @param {String} [config.containerPath] The containerPath to use when fetching the query
+ * @param {boolean} showAlertOnSuccess Defaults to true
+ * @param {boolean} showAlertOnFailure Defaults to true
  * @param {String} [config.columns] A comma-delimited list of column names to fetch from the specified query.
  * @param {Object} [config.metadata] A metadata object that will be applied to the default metadata returned by the server.  See example below for usage.
  * @param {Object} [config.metadataDefaults] A metadata object that will be applied to every field of the default metadata returned by the server.  Will be superceeded by the metadata object in case of conflicts. See example below for usage.
@@ -32,6 +35,8 @@ Ext4.namespace('LABKEY.ext');
 Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
     extend: 'Ext.form.Panel',
     alias: 'widget.labkey-exceluploadpanel',
+    showAlertOnSuccess: true,
+    showAlertOnFailure: true,
     initComponent: function(){
         Ext4.QuickTips.init();
 
@@ -108,8 +113,6 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
                             })
                         });
 
-                        this.doLayout();
-
                         this.uploadType = 'text';
                     }
                 },{
@@ -132,7 +135,6 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
                             buttonText: 'Select File...'
 
                         });
-                        this.doLayout();
 
                         this.uploadType = 'file';
                     },
@@ -207,6 +209,13 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
 
         this.on('actioncomplete', this.processResponse, this);
         this.on('actionfailed', this.processResponse, this);
+
+        /**
+         * @event uploadexception
+         */
+        /**
+         * @event uploadcomplete
+         */
         this.addEvents('uploadexception', 'uploadcomplete');
     },
 
@@ -251,7 +260,7 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
                     handler: function(btn){
                         var field = this.down('#selectedTemplate');
                         if(!field.getValue()){
-                            alert('Must pick a template');
+                            Ext4.Msg.alert('Error', 'Must pick a template');
                             return;
                         }
 
@@ -285,17 +294,22 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
         }).submit();
     },
 
-    formSubmit: function(){
+    formSubmit: function(btn){
+        btn.setDisabled(true);
+
         var value = this.down('textarea') ? this.down('textarea').getValue() : this.down('fileuploadfield').getValue();
         if(!value){
-            alert('Must paste text or upload a file');
+            Ext4.Msg.alert('Error', 'Must paste text or upload a file');
+            btn.setDisabled(false);
             return;
         }
+
+        //hold a reference to re-enable it later; the reason we do this is b/c the Window version of this component makes it slightly tricky to query and find the right btn
+        this.btnToEnableOnComplete = btn;
 
         Ext4.Msg.wait("Uploading...");
 
         this.down('#errorArea').removeAll();
-        this.doLayout();
 
         this.form.fileUpload = !(this.uploadType == 'text');
         this.form.url = this.url;
@@ -306,27 +320,36 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
         var errorArea = this.down('#errorArea');
         errorArea.removeAll();
 
+        if(this.btnToEnableOnComplete){
+            this.btnToEnableOnComplete.setDisabled(false);
+            this.btnToEnableOnComplete = null;
+        }
+
         var response = Ext4.JSON.decode(action.response.responseText);
         if(response && response.errors){
-            var html = '<div style="color: red;">';
+            var html = '<div style="color: red;padding-bottom: 10px;">There were errors in the upload: ';
             if(response.errors._form){
-                html += response.errors._form = '<br>';
+                html += response.errors._form;
             }
+            html += '<br><br>';
 
             if(Ext4.isArray(response.errors)){
-                var style = 'style="color:red;padding-right: 10px;"';
-                html += '<table border=0><tr><td colspan=2 '+style+'>There were errors in the upload:</td></tr>';
-
                 var rowErrors;
+                var style = 'style="color:red;padding-right: 10px;vertical-align: top;"';
+
+                html += '<table border=0 style="vertical-align: top;">';
                 Ext4.each(response.errors, function(error){
                     var rowErrors = [];
                     if(error.errors)
                         Ext4.iterate(error.errors, function(field){
-                            rowErrors.push(error.errors[field]);
+                            rowErrors.push(error.errors[field]); //field + ': ' +
                         }, this);
 
                     var hasRow = Ext4.isDefined(error.rowNumber);
-                    html += '<tr>' + (hasRow ? '<td '+style+'>Row '+(error.rowNumber+1) + ':</td>' : '')+'<td style="color:red;" '+(hasRow ? '' : ' colspan="2"')+'>'+rowErrors.join('<br>'+'</td></tr>')
+                    if(hasRow)
+                        html += '<tr><td colspan=2 '+style+'><b>Row '+(error.rowNumber+1) + '</b></td></tr>';
+
+                    html += '<tr><td style="color:red;" '+(hasRow ? '' : ' colspan="2"')+'>'+rowErrors.join('<br>')+'</td></tr>';
                 }, this);
 
                 html += '</table>';
@@ -339,8 +362,11 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
 
         if(!response || !response.success){
             var msg = response ? response.exception || response.message : null;
-            alert(msg || 'There was a problem with the upload');
-            this.fireEvent('uploadexception', response);
+
+            if(this.showAlertOnFailure)
+                Ext4.Msg.alert('Error', msg || 'There was a problem with the upload');
+
+            this.fireEvent('uploadexception', this, response);
         }
         else {
             if(response.rowCount > 0)
@@ -348,11 +374,12 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
             else
                 response.successMessage = 'No rows inserted.';
 
-            if(this.fireEvent('uploadcomplete', response) !== false)
-                alert(response.successMessage);
-        }
+            if(this.showAlertOnSuccess)
+                Ext4.Msg.alert('Error', response.successMessage);
 
-        this.doLayout();
+            this.fireEvent('uploadcomplete', this, response);
+
+        }
     }
 });
 
@@ -380,9 +407,9 @@ Ext4.define('LABKEY.ext4.ExcelUploadWin', {
             buttons: [{
                 text: 'Upload'
                 ,width: 50
-                ,handler: function(){
+                ,handler: function(btn){
                     var form = this.down('#theForm');
-                    form.formSubmit.call(form);
+                    form.formSubmit.call(form, btn);
                 }
                 ,scope: this
                 ,formBind: true
