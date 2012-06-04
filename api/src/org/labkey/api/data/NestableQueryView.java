@@ -76,12 +76,15 @@ public abstract class NestableQueryView extends QueryView
         List<DisplayColumn> originalColumns = getDisplayColumns();
 
         // Figure out if we have nestable columns
-        for (QueryNestingOption queryNestingOption : _queryNestingOptions)
+        if (_allowNesting)
         {
-            if (queryNestingOption.isNested(originalColumns))
+            for (QueryNestingOption queryNestingOption : _queryNestingOptions)
             {
-                _selectedNestingOption = queryNestingOption;
-                break;
+                if (queryNestingOption.isNested(originalColumns))
+                {
+                    _selectedNestingOption = queryNestingOption;
+                    break;
+                }
             }
         }
 
