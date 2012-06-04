@@ -929,10 +929,10 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             };
 
             if(!this.chartInfo.axis[xAxisIndex].range.min){
-                this.chartInfo.axis[xAxisIndex].range.min = d3.min(this.individualData.rows, xFunc);
+                this.chartInfo.axis[xAxisIndex].range.min = d3.min(this.individualData ? this.individualData.rows : this.aggregateData.rows, xFunc);
             }
             if(!this.chartInfo.axis[xAxisIndex].range.max){
-                this.chartInfo.axis[xAxisIndex].range.max = d3.max(this.individualData.rows, xFunc);
+                this.chartInfo.axis[xAxisIndex].range.max = d3.max(this.individualData ? this.individualData.rows : this.aggregateData.rows, xFunc);
             }
 
             if (leftAxisIndex > -1) {
@@ -942,14 +942,14 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
                 if(!this.chartInfo.axis[leftAxisIndex].range.min){
                     for(var i = 0; i < leftMeasures.length; i++){
-                        tempMin = d3.min(this.individualData.rows, leftAccessor);
+                        tempMin = d3.min(this.individualData ? this.individualData.rows : this.aggregateData.rows, leftAccessor);
                         min = min == null ? tempMin : tempMin < min ? tempMin : min;
                     }
                     this.chartInfo.axis[leftAxisIndex].range.min = min;
                 }
                 if(!this.chartInfo.axis[leftAxisIndex].range.max){
                     for(var i = 0; i < leftMeasures.length; i++){
-                        tempMax = d3.max(this.individualData.rows, leftAccessor);
+                        tempMax = d3.max(this.individualData ? this.individualData.rows : this.aggregateData.rows, leftAccessor);
                         max = max == null ? tempMax : tempMax > max ? tempMax : max;
                     }
                     this.chartInfo.axis[leftAxisIndex].range.max = max;
@@ -963,14 +963,14 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
                 if(!this.chartInfo.axis[rightAxisIndex].range.min){
                     for(var i = 0; i < rightMeasures.length; i++){
-                        tempMin = d3.min(this.individualData.rows, rightAccessor);
+                        tempMin = d3.min(this.individualData ? this.individualData.rows : this.aggregateData.rows, rightAccessor);
                         min = min == null ? tempMin : tempMin < min ? tempMin : min;
                     }
                     this.chartInfo.axis[rightAxisIndex].range.min = min;
                 }
                 if(!this.chartInfo.axis[rightAxisIndex].range.max){
                     for(var i = 0; i < rightMeasures.length; i++){
-                        tempMax = d3.max(this.individualData.rows, rightAccessor);
+                        tempMax = d3.max(this.individualData ? this.individualData.rows : this.aggregateData.rows, rightAccessor);
                         max = max == null ? tempMax : tempMax > max ? tempMax : max;
                     }
                     this.chartInfo.axis[rightAxisIndex].range.max = max;
