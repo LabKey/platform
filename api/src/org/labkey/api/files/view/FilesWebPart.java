@@ -385,7 +385,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         private boolean _showFolderTree;
         private boolean _folderTreeCollapsed;
         private boolean _showDetails;
-        private boolean _autoResize = true; // 14891
+        private boolean _autoResize;
         private boolean _enabled;
         private actions[] _buttonConfig;
         private String _rootPath;
