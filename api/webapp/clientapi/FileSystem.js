@@ -1478,7 +1478,7 @@ Ext.extend(LABKEY.FileSystem.AppletFileSystem, LABKEY.FileSystem.AbstractFileSys
                 return false;
         }
         var js = applet.local_getObjects();
-        var json = eval("var $=" + js + ";$;");
+        var json = Ext.decode(js);
         var records = [];
         for (var i=0 ; i<json.records.length ; i++)
         {

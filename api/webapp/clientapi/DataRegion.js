@@ -3823,7 +3823,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         if(this.boundColumn){
             if (this.boundColumn.extFormatFn){
                 try {
-                    this.boundColumn.extFormatFn = eval(this.boundColumn.extFormatFn);
+                    this.boundColumn.extFormatFn = Ext.decode(this.boundColumn.extFormatFn);
                 }
                 catch (error){
                     console.log('improper extFormatFn: ' + this.boundColumn.extFormatFn);
