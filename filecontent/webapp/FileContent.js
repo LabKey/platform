@@ -248,7 +248,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.ext.FileBrowser, {
     // parse the configuration information
     getActionConfiguration : function(response, e)
     {
-        var o = eval('var $=' + response.responseText + ';$;');
+        var o = Ext.decode(response.responseText);
         var config = o.success ? o.config : {};
 
         // check whether the import data button is enabled
@@ -327,7 +327,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.ext.FileBrowser, {
 
     updatePipelineActions : function(response, e)
     {
-        var o = eval('var $=' + response.responseText + ';$;');
+        var o = Ext.decode(response.responseText);
         var actions = o.success ? o.actions : [];
 
         this.pipelineActions = [];
