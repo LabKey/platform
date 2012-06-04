@@ -600,10 +600,13 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
     onBeforeRequest : function(connection, options) {
         if (this.sql)
         {
-            //need to adjust url
+            // need to adjust url
             var qsParams = {};
             if (options.params['query.sort'])
                 qsParams['query.sort'] = options.params['query.sort'];
+
+            LABKEY.Filter.appendFilterParams(qsParams, this.getUserFilters());
+
             options.url = LABKEY.ActionURL.buildURL("query", "executeSql.api", this.containerPath, qsParams);
         }
     },
@@ -735,6 +738,17 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
     setUserFilters: function(filters)
     {
         this.userFilters = filters;
+    },
+
+    getSql : function ()
+    {
+        return this.sql;
+    },
+
+    setSql : function (sql)
+    {
+        this.sql = sql;
+        this.setBaseParam("sql", sql);
     }
 });
 Ext.reg("labkey-store", LABKEY.ext.Store);
