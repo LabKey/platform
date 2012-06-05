@@ -16,6 +16,8 @@
 
 package org.labkey.query.reports;
 
+import org.apache.batik.transcoder.TranscoderException;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
@@ -32,6 +34,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
+import org.labkey.api.thumbnail.ThumbnailOutputStream;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -286,6 +289,39 @@ public class AttachmentReport extends RedirectReport implements DynamicThumbnail
             }
         },
 
+        SVG
+        {
+            @Override
+            String getStaticThumbnailName()
+            {
+                return "image";
+            }
+
+            @Override
+            Thumbnail getDynamicThumbnail(AttachmentReport report) throws IOException
+            {
+                DocumentConversionService svc = ServiceRegistry.get().getService(DocumentConversionService.class);
+
+                if (null != svc)
+                {
+                    ThumbnailOutputStream os = new ThumbnailOutputStream();
+
+                    try
+                    {
+                        svc.svgToPng(PageFlowUtil.getStreamContentsAsString(report.getInputStream()), os, 256.0f);
+
+                        return os.getThumbnail("image/png");
+                    }
+                    catch (TranscoderException e)
+                    {
+                        Logger.getLogger(AttachmentReport.class).error("Couldn't generate thumbnail", e);
+                    }
+                }
+
+                return null;
+            }
+        },
+
         Other
         {
             @Override
@@ -325,6 +361,9 @@ public class AttachmentReport extends RedirectReport implements DynamicThumbnail
                 "application/vnd.ms-powerpoint".equals(contentType) ||
                 "application/vnd.openxmlformats-officedocument.presentationml.presentation".equals(contentType))
                 return Type.Presentation;
+
+            if ("image/svg+xml".equals(contentType))
+                return Type.SVG;
 
             if (contentType.startsWith("image/"))
                 return Type.Image;

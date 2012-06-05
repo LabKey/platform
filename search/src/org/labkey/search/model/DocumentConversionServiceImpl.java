@@ -15,13 +15,20 @@
  */
 package org.labkey.search.model;
 
+import org.apache.batik.transcoder.TranscoderException;
+import org.apache.batik.transcoder.TranscoderInput;
+import org.apache.batik.transcoder.TranscoderOutput;
+import org.apache.batik.transcoder.image.PNGTranscoder;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.DocumentConversionService;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.StringReader;
 import java.util.List;
 
 /**
@@ -32,6 +39,28 @@ import java.util.List;
 public class DocumentConversionServiceImpl implements DocumentConversionService
 {
     private static final int DEFAULT_USER_SPACE_UNIT_DPI = 72;     // From PDFBox PDPage
+
+    @Override
+    public void svgToPng(String svg, OutputStream os) throws TranscoderException
+    {
+        svgToPng(svg, os, null);
+    }
+
+    // If height is provided, we'll auto-size keeping the aspect ratio; if null we'll use the dimensions in the SVG
+    @Override
+    public void svgToPng(String svg, OutputStream os, @Nullable Float height) throws TranscoderException
+    {
+        TranscoderInput xIn = new TranscoderInput(new StringReader(svg));
+        TranscoderOutput xOut = new TranscoderOutput(os);
+
+        PNGTranscoder transcoder = new PNGTranscoder();
+        transcoder.addTranscodingHint(PNGTranscoder.KEY_BACKGROUND_COLOR, java.awt.Color.WHITE);
+
+        if (null != height)
+            transcoder.addTranscodingHint(PNGTranscoder.KEY_HEIGHT, height);
+
+        transcoder.transcode(xIn, xOut);
+    }
 
     @Override
     public BufferedImage pdfToImage(InputStream pdfStream, int page)
@@ -47,7 +76,7 @@ public class DocumentConversionServiceImpl implements DocumentConversionService
         {
             PDDocument document = PDDocument.load(pdfStream);
 
-            // PDFBox won't extract images from SECURED PDF; use the static thumbnail instead of blank
+            // PDFBox extracts blank images from secure PDF; detect and use static thumbnail instead
             if (document.isEncrypted())
                 return null;
 

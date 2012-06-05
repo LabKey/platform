@@ -33,6 +33,7 @@ import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.announcements.DiscussionService;
+import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
@@ -921,7 +922,10 @@ public class VisualizationController extends SpringActionController
             response.setContentType("image/png");
             response.addHeader("Content-Disposition", "attachment; filename=visualization.png");
 
-            VisualizationUtil.svgToPng(getSVGSource(), response.getOutputStream());
+            DocumentConversionService svc = ServiceRegistry.get().getService(DocumentConversionService.class);
+
+            if (null != svc)
+                svc.svgToPng(getSVGSource(), response.getOutputStream());
 
             return null;
         }

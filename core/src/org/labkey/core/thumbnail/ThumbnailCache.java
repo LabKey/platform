@@ -40,7 +40,7 @@ public class ThumbnailCache
     private static final StaticThumbnailLoader _staticLoader = new StaticThumbnailLoader();
     private static final DynamicThumbnailLoader _dynamicLoader = new DynamicThumbnailLoader();
 
-    // Returns the static thumbnail, pulling to from the provider if it's not already in the cache.
+    // Returns the static thumbnail, pulling it from the provider if it's not already in the cache.
     public static CacheableWriter getThumbnailWriter(StaticThumbnailProvider staticProvider)
     {
         return _cache.get(staticProvider.getStaticThumbnailCacheKey(), staticProvider, _staticLoader);

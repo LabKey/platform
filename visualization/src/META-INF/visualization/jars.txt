@@ -1,4 +1,0 @@
-{table}
-Filename|Component|Version|Source|License|LabKey Dev|Purpose
-batik-1.7-all.jar|Apache Batik|1.7|{link:Apache|http://xmlgraphics.apache.org/batik/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|brittp|Used for exporting SVG visualizations to image and PDF formats. This jar includes dependencies.
-{table}

@@ -1242,11 +1242,6 @@ public class ReportsController extends SpringActionController
                 report = (AttachmentReport)ReportService.get().getReport(id);
                 AttachmentService.get().addAttachments(report, getAttachmentFileList(), getViewContext().getUser());
 
-                ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
-
-                if (null != svc)
-                    svc.queueThumbnailRendering(report);
-
                 // additional properties
                 String entityId = report.getEntityId();
                 if (author != null)
@@ -1257,6 +1252,12 @@ public class ReportsController extends SpringActionController
                     ReportPropsManager.get().setPropertyValue(entityId, getContainer(), "refreshDate", form.getRefreshDate());
 
                 scope.commitTransaction();
+
+                ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
+
+                if (null != svc)
+                    svc.queueThumbnailRendering(report);
+
                 return true;
             }
             finally

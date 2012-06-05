@@ -16,7 +16,8 @@
 package org.labkey.visualization.report;
 
 import org.apache.batik.transcoder.TranscoderException;
-import org.labkey.api.reports.Report;
+import org.labkey.api.attachments.DocumentConversionService;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailOutputStream;
@@ -27,7 +28,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.visualization.TimeChartReport;
 import org.labkey.visualization.VisualizationController;
-import org.labkey.visualization.VisualizationUtil;
 
 import java.io.InputStream;
 
@@ -73,10 +73,15 @@ public class TimeChartReportImpl extends TimeChartReport implements DynamicThumb
         {
             try
             {
-                ThumbnailOutputStream os = new ThumbnailOutputStream();
-                VisualizationUtil.svgToPng(_svg, os, 256.0f);
+                DocumentConversionService svc = ServiceRegistry.get().getService(DocumentConversionService.class);
 
-                return os.getThumbnail("image/png");
+                if (null != svc)
+                {
+                    ThumbnailOutputStream os = new ThumbnailOutputStream();
+                    svc.svgToPng(_svg, os, 256.0f);
+
+                    return os.getThumbnail("image/png");
+                }
             }
             catch (TranscoderException e)
             {
