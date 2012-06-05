@@ -38,12 +38,25 @@ public class ModuleDependencySorter
     public List<Module> sortModulesByDependencies(List<Module> modules, Collection<ModuleResourceLoader> loaders)
     {
         List<Pair<Module, Set<String>>> dependencies = new ArrayList<Pair<Module, Set<String>>>();
+        Set<String> moduleNames = new CaseInsensitiveHashSet();
         for (Module module : modules)
         {
             Pair<Module, Set<String>> dependencyInfo = new Pair<Module, Set<String>>(module, new CaseInsensitiveHashSet(module.getModuleDependenciesAsSet()));
             for (ModuleResourceLoader loader : loaders)
                 dependencyInfo.second.addAll(loader.getModuleDependencies(module, module.getExplodedPath()));
             dependencies.add(dependencyInfo);
+            moduleNames.add(module.getName());
+        }
+
+        for (Pair<Module, Set<String>> dependency : dependencies)
+        {
+            for (String dependencyName : dependency.getValue())
+            {
+                if (!moduleNames.contains(dependencyName))
+                {
+                    throw new IllegalArgumentException("Could not find module '" + dependencyName + "' on which module '" + dependency.getKey().getName() + "' depends");
+                }
+            }
         }
 
         List<Module> result = new ArrayList<Module>(modules.size());
