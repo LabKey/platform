@@ -428,6 +428,7 @@ public class AssaySchemaImpl extends AssaySchema
                     col.setFk(new ContainerForeignKey(AssaySchemaImpl.this));
                     table.addColumn(col);
                     table.addWrapColumn(table.getRealTable().getColumn("Label"));
+                    table.setPublic(false);
                     return table;
                 }
             });
