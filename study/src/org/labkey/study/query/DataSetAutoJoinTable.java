@@ -45,6 +45,8 @@ import java.util.Set;
  *   C -> A, B, or C (if C key name and type matches)
  *
  * Other joins may make sense (A -> B or A -> C), but would produce row duplication.
+ * Assay backed datasets use the extra key column to store the original assay result rowid
+ * and so are treated as a (B) type dataset since the assay rowid would never match any other dataset's assay rowid.
  */
 public class DataSetAutoJoinTable extends VirtualTable
 {
@@ -89,7 +91,7 @@ public class DataSetAutoJoinTable extends VirtualTable
             colSequenceNum.setHidden(true);
             addColumn(colSequenceNum);
 
-            // The extra key property is not always available
+            // The extra key property is not always available.
             if (_keyPropertyName != null)
             {
                 ColumnInfo colExtraKey = new AliasedColumn(parent, "_Key", parent.getColumn(keyFieldKey.getName()));
@@ -151,7 +153,7 @@ public class DataSetAutoJoinTable extends VirtualTable
                 // A -> A
                 fk = createParticipantFK(dsd);
         }
-        else if (_keyPropertyName == null)
+        else if (_keyPropertyName == null || _source.isAssayData())
         {
             if (dsd.isDemographicData())
                 // B -> A
@@ -165,7 +167,7 @@ public class DataSetAutoJoinTable extends VirtualTable
             if (dsd.isDemographicData())
                 // C -> A
                 fk = createParticipantFK(dsd);
-            else if (dsd.getKeyPropertyName() == null)
+            else if (dsd.getKeyPropertyName() == null || dsd.isAssayData())
                 // C -> B
                 fk = createParticipantSequenceNumFK(dsd);
             else

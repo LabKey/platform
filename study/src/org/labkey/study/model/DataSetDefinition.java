@@ -727,7 +727,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         if (other == null)
             return false;
 
-        if (getKeyPropertyName() == null || other.getKeyPropertyName() == null)
+        if (isAssayData() || other.isAssayData() || getKeyPropertyName() == null || other.getKeyPropertyName() == null)
             return false;
 
         DomainProperty thisKeyDP = getDomain().getPropertyByName(getKeyPropertyName());
