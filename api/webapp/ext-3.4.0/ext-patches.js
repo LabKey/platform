@@ -1,3 +1,6 @@
+// Set USE_NATIVE_JSON so Ext.decode and Ext.encode use JSON.parse and JSON.stringify instead of eval
+Ext.USE_NATIVE_JSON = true;
+
 Ext.apply(Ext, {
     /**
      * @author Nigel (Animal) White

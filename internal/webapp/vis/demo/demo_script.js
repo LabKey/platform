@@ -200,7 +200,7 @@ var coffeeData = [
     {"person":"Alan","time":"1:30","consumedCoffee":"Coffee","efficiency":88},{"person":"Alan","time":"2:00","consumedCoffee":"No Coffee","efficiency":85},
     {"person":"Alan","time":"2:30","consumedCoffee":"No Coffee","efficiency":82},{"person":"Alan","time":"3:00","consumedCoffee":"No Coffee","efficiency":84},
     {"person":"Alan","time":"3:30","consumedCoffee":"No Coffee","efficiency":79},{"person":"Alan","time":"4:00","consumedCoffee":"No Coffee","efficiency":78},
-    {"person":"Alan","time":"4:30","consumedCoffee":"No Coffee","efficiency":77},{"person":"Alan","time":"5:00","consumedCoffee":"No Coffee","efficiency":76},
+    {"person":"Alan","time":"4:30","consumedCoffee":"No Coffee","efficiency":null},{"person":"Alan","time":"5:00","consumedCoffee":"No Coffee","efficiency":76},
     {"person":"Josh","time":"9:30","consumedCoffee":"No Coffee","efficiency":300},{"person":"Josh","time":"10:00","consumedCoffee":"No Coffee","efficiency":300},
     {"person":"Josh","time":"10:30","consumedCoffee":"No Coffee","efficiency":300},{"person":"Josh","time":"11:00","consumedCoffee":"No Coffee","efficiency":299},
     {"person":"Josh","time":"11:30","consumedCoffee":"No Coffee","efficiency":297},{"person":"Josh","time":"12:00","consumedCoffee":"No Coffee","efficiency":300},

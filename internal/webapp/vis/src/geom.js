@@ -153,7 +153,7 @@ LABKEY.vis.Geom.Path.prototype.render = function(paper, grid, scales, data, laye
     var size = this.size;
     var pathScope = this;
     var xAccessor = function(row){return pathScope.getX(scales.x.scale, row);};
-    var yAccessor = function(row){return -pathScope.getY(yScale, row);};
+    var yAccessor = function(row){var val = pathScope.getY(yScale, row); return val == null ? null : -val;};
 
     if(this.group){
         //Split data into groupedData so we can render 1 path per group.
