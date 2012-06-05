@@ -1157,7 +1157,7 @@ LABKEY.ext.SchemaBrowserHomePanel = Ext.extend(Ext.Panel,
         {
             sortedNames.push(schemaName);
         }
-        sortedNames.sort(function(a,b){return a.localeCompare(b);});
+        sortedNames.sort(function(a,b){return a.toLowerCase().localeCompare(b.toLowerCase());}); // 10572
 
         //IE won't let you create the table rows incrementally
         //so build the rows as a data structure first and then

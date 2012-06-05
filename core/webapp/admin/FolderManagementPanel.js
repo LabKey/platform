@@ -149,7 +149,7 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
         var treeConfig = {
             store       : this.initFolderStore(),
             cls         : 'folder-management-tree', // used by selenium helper
-            rootVisible : true,
+            rootVisible : false,  // 14515
             multiSelect : true,
             listeners : {
                 selectionchange : function(model, records, eOpts) {
