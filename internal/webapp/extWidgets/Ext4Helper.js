@@ -226,7 +226,7 @@ LABKEY.ext.Ext4Helper = new function(){
             {
                 field.xtype = 'displayfield';
             }
-            else if (meta.lookup && meta.lookups !== false)
+            else if (meta.lookup && meta.lookup.public !== false && meta.lookups !== false)
             {
                 var l = meta.lookup;
 
@@ -285,7 +285,7 @@ LABKEY.ext.Ext4Helper = new function(){
                             if (!this._textMeasure)
                             {
                                 this._textMeasure = {};
-                                var ta = Ext.DomHelper.append(document.body,{tag:'textarea', rows:10, cols:80, id:'_hiddenTextArea', style:{display:'none'}});
+                                var ta = Ext4.DomHelper.append(document.body,{tag:'textarea', rows:10, cols:80, id:'_hiddenTextArea', style:{display:'none'}});
                                 this._textMeasure.height = Math.ceil(Ext4.util.TextMetrics.measure(ta,"GgYyJjZ==").height * 1.2);
                                 this._textMeasure.width  = Math.ceil(Ext4.util.TextMetrics.measure(ta,"ABCXYZ").width / 6.0);
                             }
@@ -581,7 +581,7 @@ LABKEY.ext.Ext4Helper = new function(){
             }
 
             //NOTE: this is substantially changed over LABKEY.ext.FormHelper
-            if(meta.lookup && meta.lookups!==false){
+            if(meta.lookup && meta.lookup.public !== false && meta.lookups!==false){
                 displayValue = LABKEY.ext.Ext4Helper.getLookupDisplayValue(meta, displayValue, record, store);
                 meta.usingLookup = true;
                 shouldCache = false;
@@ -773,7 +773,7 @@ LABKEY.ext.Ext4Helper = new function(){
             if(meta.hasOwnProperty('each'))
                 meta.each(testField, this);
             else
-                Ext.each(meta, testField, this);
+                Ext4.each(meta, testField, this);
 
             function testField(fieldMeta){
                 if (LABKEY.Utils.caseInsensitiveEquals(fieldName, fieldMeta.name)
