@@ -16,9 +16,12 @@
 
 package org.labkey.api.reports.report.r;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.reports.Report;
+import org.labkey.api.thumbnail.Thumbnail;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 
@@ -98,5 +101,11 @@ public abstract class AbstractParamReplacement implements ParamReplacement
     public void setProperties(Map<String, String> properties)
     {
         _properties = properties;
+    }
+
+    @Override
+    public @Nullable Thumbnail renderThumbnail() throws IOException
+    {
+        return null; // Subclasses that can should implement this
     }
 }

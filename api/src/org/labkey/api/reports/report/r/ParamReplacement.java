@@ -16,11 +16,14 @@
 
 package org.labkey.api.reports.report.r;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.reports.Report;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Map;
 
 /**
@@ -60,4 +63,5 @@ public interface ParamReplacement
     public boolean getHeaderVisible();
 
     public HttpView render(ViewContext context);
+    public @Nullable Thumbnail renderThumbnail() throws IOException;
 }

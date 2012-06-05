@@ -19,7 +19,6 @@ import org.apache.commons.collections15.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
@@ -38,7 +37,6 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -51,13 +49,12 @@ import org.labkey.api.reports.report.r.view.ImageOutput;
 import org.labkey.api.reports.report.r.view.PdfOutput;
 import org.labkey.api.reports.report.r.view.PostscriptOutput;
 import org.labkey.api.reports.report.r.view.ROutputView;
+import org.labkey.api.reports.report.r.view.SvgOutput;
 import org.labkey.api.reports.report.r.view.TextOutput;
 import org.labkey.api.reports.report.r.view.TsvOutput;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.ImageUtil;
-import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.HttpView;
@@ -66,17 +63,13 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.VirtualFile;
 
-import javax.imageio.ImageIO;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -117,6 +110,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         ParamReplacementSvc.get().registerHandler(new ConsoleOutput());
         ParamReplacementSvc.get().registerHandler(new TextOutput());
         ParamReplacementSvc.get().registerHandler(new HtmlOutput());
+        ParamReplacementSvc.get().registerHandler(new SvgOutput());
         ParamReplacementSvc.get().registerHandler(new TsvOutput());
         ParamReplacementSvc.get().registerHandler(new ImageOutput());
         ParamReplacementSvc.get().registerHandler(new PdfOutput());
@@ -522,36 +516,10 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             @Override
             public boolean handleParameter(ViewContext context, Report report, ParamReplacement param, List<String> sectionNames) throws IOException
             {
-                File file = param.getFile();
-                MimeMap mm = new MimeMap();
-                String contentType = mm.getContentTypeFor(file.getName());
+                _thumbnail = param.renderThumbnail();
 
-                if (contentType.startsWith("image/"))
-                {
-                    _thumbnail = ImageUtil.renderThumbnail(ImageIO.read(file));
-
-                    return false;
-                }
-                else if ("text/html".equals(contentType))
-                {
-                    // TODO: check if we have an SVG and render a thumbnail
-                }
-                else if ("application/pdf".equals(contentType))
-                {
-                    DocumentConversionService svc = ServiceRegistry.get().getService(DocumentConversionService.class);
-
-                    if (null != svc)
-                    {
-                        InputStream pdfStream = new FileInputStream(file);
-                        BufferedImage image = svc.pdfToImage(pdfStream, 0);
-
-                        _thumbnail = ImageUtil.renderThumbnail(image);
-                    }
-
-                    return false;
-                }
-
-                return true;
+                // Return true (keep iterating) if we can't render this output as a thumbnail
+                return null == _thumbnail;
             }
 
             @Override

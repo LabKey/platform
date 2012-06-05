@@ -24,13 +24,17 @@ import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.reports.report.r.AbstractParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacement;
+import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.ImageUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
+import javax.imageio.ImageIO;
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 
 /**
@@ -121,5 +125,11 @@ public class ImageOutput extends AbstractParamReplacement
                     getFile().delete();
             }
         }
+    }
+
+    @Override
+    public Thumbnail renderThumbnail() throws IOException
+    {
+        return ImageUtil.renderThumbnail(ImageIO.read(getFile()));
     }
 }

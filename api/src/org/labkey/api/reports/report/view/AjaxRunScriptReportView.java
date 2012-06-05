@@ -27,8 +27,8 @@ import org.springframework.validation.BindException;
 * Time: 11:52:45 AM
 */
 
-// Duplicates code that's in RunReportView and RunScriptReportView... but we don't want to extend TabStripView
-// TODO: Eliminate those other classes
+// Duplicates code that's in RunReportView... but we don't want to extend TabStripView
+// TODO: Eliminate that other class
 public class AjaxRunScriptReportView extends AjaxScriptReportView
 {
     protected BindException _errors;
@@ -60,16 +60,6 @@ public class AjaxRunScriptReportView extends AjaxScriptReportView
         if (bean.getRedirectUrl() == null)
             bean.setRedirectUrl(getViewContext().cloneActionURL().
                     deleteParameter(RunReportView.CACHE_PARAM).getLocalURIString());
-
-    /*
-        TODO: This redirect url code was in RunRReportView.java
-
-        // set the default redirect url
-        if (form.getRedirectUrl() == null)
-            form.setRedirectUrl(getBaseUrl().
-                    replaceParameter(TAB_PARAM, TAB_SOURCE).
-                    deleteParameter(CACHE_PARAM).getLocalURIString());
-     */
 
         super.init(bean, mode);    //To change body of overridden methods use File | Settings | File Templates.
     }

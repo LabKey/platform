@@ -37,30 +37,40 @@ public class HtmlOutput extends AbstractParamReplacement
 
     public HtmlOutput()
     {
-        super(ID);
+        this(ID);
+    }
+
+    protected HtmlOutput(String id)
+    {
+        super(id);
     }
 
     public File convertSubstitution(File directory) throws Exception
     {
         if (directory != null)
-            _file = File.createTempFile(RReport.FILE_PREFIX, "Result.txt", directory);
+            _file = File.createTempFile(RReport.FILE_PREFIX, "Result.html", directory);
         else
-            _file = File.createTempFile(RReport.FILE_PREFIX, "Result.txt");
+            _file = File.createTempFile(RReport.FILE_PREFIX, "Result.html");
 
         return _file;
     }
 
+    protected String getLabel()
+    {
+        return "HTML output";
+    }
+
     public HttpView render(ViewContext context)
     {
-        return new HtmlOutputView(this);
+        return new HtmlOutputView(this, getLabel());
     }
 
     public static class HtmlOutputView extends ROutputView
     {
-        public HtmlOutputView(ParamReplacement param)
+        public HtmlOutputView(ParamReplacement param, String label)
         {
             super(param);
-            setLabel("HTML output");
+            setLabel(label);
         }
 
         protected void renderInternal(Object model, PrintWriter out) throws Exception

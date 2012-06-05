@@ -16,14 +16,23 @@
 
 package org.labkey.api.reports.report.r.view;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.reports.report.r.AbstractParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacement;
+import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.thumbnail.Thumbnail;
+import org.labkey.api.util.ImageUtil;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Created by IntelliJ IDEA.
@@ -50,7 +59,7 @@ public class PdfOutput extends AbstractParamReplacement
     public HttpView render(ViewContext context)
     {
         if (getReport() instanceof AttachmentParent)
-            return new PdfReportView(this, (AttachmentParent)getReport());
+            return new PdfReportView(this, getReport());
         else
             return new HtmlView("Unable to render this output, no report associated with this replacement param");
     }
@@ -61,5 +70,19 @@ public class PdfOutput extends AbstractParamReplacement
         {
             super(param, parent, "PDF");
         }
+    }
+
+    @Override
+    public @Nullable Thumbnail renderThumbnail() throws IOException
+    {
+        DocumentConversionService svc = ServiceRegistry.get().getService(DocumentConversionService.class);
+
+        if (null == svc)
+            return null;
+
+        InputStream pdfStream = new FileInputStream(getFile());
+        BufferedImage image = svc.pdfToImage(pdfStream, 0);
+
+        return ImageUtil.renderThumbnail(image);
     }
 }
