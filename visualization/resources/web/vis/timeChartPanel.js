@@ -650,7 +650,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
     markDirty : function(value) {
         this.dirty = value;
-        this.dirty = false;
+//        this.dirty = false;
+//console.log(this.dirty);
     },
 
     chartDefinitionChanged: function(requiresDataRefresh) {
@@ -894,7 +895,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             this.addWarningText("The data limit for plotting has been reached. Consider filtering your data.");
         }
 
-        // TODO: report if a series doesn't have any data.
+        // TODO: report if a series doesn't have any data. (issue 15130)
 
 	    // one series per y-axis subject/measure/dimensionvalue combination
 	    var seriesList = this.getSeriesList();

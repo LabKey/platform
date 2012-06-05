@@ -40,6 +40,12 @@ Ext4.define('LABKEY.vis.GroupSelector', {
             'measureMetadataRequestPending',
             'measureMetadataRequestComplete'
         );
+
+        // fix the issue with the group list hidden for saved chart with a measure dimension panel
+        this.on('expand', function(){
+            if (!this.hidden)
+                this.show();
+        });
     },
 
     initComponent : function(){

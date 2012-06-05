@@ -28,7 +28,11 @@ Ext4.define('LABKEY.vis.ParticipantSelector', {
             'measureMetadataRequestComplete'
         );
 
-        // TODO: fix the issue with the ptid list hidden for saved chart with a measure dimension panel
+        // fix the issue with the ptid list hidden for saved chart with a measure dimension panel
+        this.on('expand', function(){
+            if (!this.hidden)
+                this.show();
+        });
     },
 
     getSubjectValues: function() {

@@ -207,11 +207,16 @@ div.thumbnail img
 }
 
 /* Report Filter Panel */
-.x4-reset .report-filter-panel .x4-grid-row .x4-grid-cell {
+.x4-reset .report-filter-panel .x4-grid-row .x4-grid-cell,
+.x4-reset .report-filter-panel .x4-grid-body,
+.x4-reset .report-filter-panel .x4-column-header {
     border-color: transparent;
 }
-.x4-reset .report-filter-panel .x4-grid-row.x4-grid-row-over {
+
+.x4-reset .report-filter-panel .x4-grid-row.x4-grid-row-over,
+.x4-reset .report-filter-panel .x4-column-header-over {
     background-color: #F6F6F6;
+    background-image: none;
 }
 
 .x4-reset .report-filter-panel .x4-grid-row .x4-grid-cell-special {
@@ -221,4 +226,10 @@ div.thumbnail img
 .x4-reset .report-filter-panel .x4-grid-row-selected .x4-grid-cell,
 .x4-reset .report-filter-panel .x4-grid-row-selected .x4-grid-rowwrap-div {
     background-color: transparent !important;
+}
+
+.x4-reset .report-filter-panel .x4-column-header,
+.x4-reset .report-filter-panel .x4-grid-header-ct {
+    background-color: transparent;
+    background-image: none;
 }
