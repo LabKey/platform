@@ -59,9 +59,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             {name : 'shared',               type : 'boolean'},
             {name : 'visible',              type : 'boolean'},
             {name : 'icon'},
-            {name : 'modified',             type : 'string'},
+            {name : 'modified',             type : 'date'},
             {name : 'modifiedBy'},
-            {name : 'refreshDate',          type : 'string'},
+            {name : 'refreshDate',          type : 'date'},
             {name : 'name'},
             {name : 'access'},
             {name : 'runUrl'},
@@ -169,8 +169,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 }
             },
             listeners : {
-                load : this.onViewLoad,
-                scope: this
+                load : {fn : this.onViewLoad, scope: this}
             },
             scope : this
         };
@@ -282,6 +281,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 this._height = parseInt(json.webpart.height);
                 this.setHeight(this._height);
             }
+            this.dateRenderer = Ext4.util.Format.dateRenderer(json.dateFormat);
             this.editInfo = json.editInfo;
             this.initGrid(true, json.visibleColumns);
         };
@@ -365,8 +365,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 '<tpl if="data.status != undefined && data.status.length">' +
                 '<tr><td>Status:</td><td>{[fm.htmlEncode(values.data.status)]}</td></tr>' +
                 '</tpl>' +
-                '<tpl if="data.refreshDate != undefined && data.refreshDate.length">' +
-                '<tr><td valign="top">Data Cut Date:</td><td>{[fm.htmlEncode(values.data.refreshDate)]}</td></tr>' +
+                '<tpl if="data.refreshDate != undefined">' +
+                '<tr><td valign="top">Data Cut Date:</td><td>{[this.renderDate(values.data.refreshDate)]}</td></tr>' +
                 '</tpl>' +
                 '<tpl if="data.description != undefined && data.description.length">' +
                 '<tr><td valign="top">Description:</td><td>{[fm.htmlEncode(values.data.description)]}</td></tr>' +
@@ -376,7 +376,12 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 '</table>' +
                 '<div class="thumbnail"><img src="{data.thumbnail}"/></div>' +
                 '</div>' +
-                '</tpl>').compile();
+                '</tpl>',
+        {
+            renderDate : function(data) {
+                return this.initialConfig.dateRenderer(data);
+            }
+        }, {dateRenderer : this.dateRenderer});
 
         this._tipID = Ext4.id();
         var _tipID = this._tipID;
@@ -591,6 +596,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                  width    : 100,
                  sortable : true,
                  dataIndex: 'refreshDate',
+                 renderer : this.dateRenderer,
                  scope    : this
              });
         }
@@ -627,6 +633,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 text     : 'Modified',
                 width    : 100,
                 sortable : true,
+                renderer : this.dateRenderer,
                 dataIndex: 'modified'
             });
         }

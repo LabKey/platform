@@ -128,6 +128,7 @@ import org.labkey.api.thumbnail.StaticThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
+import org.labkey.api.util.ExtUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
@@ -6954,6 +6955,11 @@ public class StudyController extends BaseStudyController
                 }
             }
             response.put("editInfo", viewTypeProps);
+            String dateFormat = StudyManager.getInstance().getDefaultDateFormatString(getViewContext().getContainer());
+            if (dateFormat == null)
+                dateFormat = DateUtil.getStandardDateFormatString();
+
+            response.put("dateFormat", ExtUtil.toExtDateFormat(dateFormat));
 
             if (form.includeData())
             {
@@ -7007,11 +7013,6 @@ public class StudyController extends BaseStudyController
                             category.setDisplayOrder(defaultCategoryMap.get(category.getLabel()));
                     }
                 }
-
-                String dateFormat = StudyManager.getInstance().getDefaultDateFormatString(getViewContext().getContainer());
-                if (dateFormat == null)
-                    dateFormat = DateUtil.getStandardDateFormatString();
-
                 response.put("data", DataViewService.get().toJSON(getContainer(), getUser(), views, dateFormat));
             }
 
