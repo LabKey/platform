@@ -627,10 +627,15 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.groupingButton.disable();
         this.aestheticsButton.disable();
 
-        this.exportPdfMenuBtn.disable();
-        this.exportPdfSingleBtn.disable();
+        this.disablePdfExportButtons();
+
         this.viewGridBtn.disable();
         this.viewChartBtn.disable();
+    },
+
+    disablePdfExportButtons: function() {
+        this.exportPdfMenuBtn.disable();
+        this.exportPdfSingleBtn.disable();
     },
 
     disableOptionElements: function(){
@@ -680,7 +685,9 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         // Clear previous chart data.
         this.individualData = undefined;
+        this.individualHasData = undefined;
         this.aggregateData = undefined;
+        this.aggregateHasData = undefined;
 
         // get the updated chart information from the various options panels
         this.chartInfo = this.getChartInfoFromOptionPanels();
@@ -715,11 +722,20 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     var gridSortCols = [];
 
                     // make sure each measure/dimension has at least some data
-                    //var seriesList = this.getSeriesList();
-                    //this.individualHasData = {};
-                    //Ext4.each(seriesList, function(s) {
-                    //    this.individualHasData[s.name] = false;
-                    //}, this);
+                    var seriesList = this.getSeriesList();
+                    this.individualHasData = {};
+                    Ext4.each(seriesList, function(s) {
+                        this.individualHasData[s.name] = false;
+                        for (var i = 0; i < this.individualData.rows.length; i++)
+                        {
+                            // break when we find a non-null data value
+                            if (this.individualData.rows[i][this.individualData.measureToColumn[s.name]].value != null)
+                            {
+                                this.individualHasData[s.name] = true;
+                                break;
+                            }
+                        }
+                    }, this);
 
                     // store the temp schema name, query name, etc. for the data grid
                     this.tempGridInfo = {schema: this.individualData.schemaName, query: data.queryName,
@@ -763,12 +779,22 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             LABKEY.Visualization.getData({
                 success: function(data){
                     this.aggregateData = data;
+
                     // make sure each measure/dimension has at least some data
-                    //var seriesList = this.getSeriesList();
-                    //this.aggregateHasData = {};
-                    //Ext4.each(seriesList, function(s) {
-                    //    this.aggregateHasData[s.name] = false;
-                    //}, this);
+                    var seriesList = this.getSeriesList();
+                    this.aggregateHasData = {};
+                    Ext4.each(seriesList, function(s) {
+                        this.aggregateHasData[s.name] = false;
+                        for (var i = 0; i < this.aggregateData.rows.length; i++)
+                        {
+                            // break when we find a non-null data value
+                            if (this.aggregateData.rows[i][this.aggregateData.measureToColumn[s.name]].value != null)
+                            {
+                                this.aggregateHasData[s.name] = true;
+                                break;
+                            }
+                        }
+                    }, this);
 
                     // ready to render the chart or grid
                     this.loaderCount--;
@@ -893,10 +919,36 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             this.addWarningText("The data limit for plotting has been reached. Consider filtering your data.");
         }
 
-        // TODO: report if a series doesn't have any data. (issue 15130)
-
 	    // one series per y-axis subject/measure/dimensionvalue combination
 	    var seriesList = this.getSeriesList();
+
+        // check to see if any of the measures don't have data, and display a message accordingly
+        if (force !== true) {
+            var msg = ""; var sep = "";
+            var noDataCounter = 0;
+            Ext.iterate(this.aggregateHasData ? this.aggregateHasData : this.individualHasData, function(key, value, obj){
+                if (!value)
+                {
+                    noDataCounter++;
+                    msg += sep + key;
+                    sep = ", ";
+                }
+            }, this);
+            if (msg.length > 0)
+            {
+                msg = "No data found for the following measures/dimensions: " + msg;
+
+                // if there is no data for any series, error out completely
+                if (noDataCounter == seriesList.length)
+                {
+                    this.clearChartPanel(msg);
+                    this.disablePdfExportButtons();
+                    return;
+                }
+                else
+                    this.addWarningText(msg);
+            }
+        }
 
         // TODO: Use the same max/min for every chart if displaying more than one chart.
 
