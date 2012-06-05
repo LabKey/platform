@@ -3186,7 +3186,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                     resizable: false,
                     width: 340,
                     tpl: new Ext.XTemplate('<tpl for=".">' +
-                        '<span class="labkey-link" ext:qtip="Click the label to select only this row.  Click the checkbox to toggle this row and preserve other selections.">{[!Ext.isEmpty(values["value"]) ? values["value"] : "[Blank]"]}' +
+                        '<span class="labkey-link" ext:qtip="Click the label to select only this row.  Click the checkbox to toggle this row and preserve other selections.">{[!Ext.isEmpty(values["displayValue"]) ? values["displayValue"] : "[Blank]"]}' +
                         '</span></tpl>')
                 }
             )],
@@ -3794,19 +3794,29 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 scope: this,
                 delay: 50,
                 load: function(store){
-                    //Issue 15124: because the SQL will not necessarily match the display value,
-                    //we reformat on the client.  however, this has the potential to create duplicates (ie. datetime formatted to show date only)
-                    //so we need to remove duplicates
-                    //the total number of records is expected to be small
+                    // Issue 15124: because the SQL will not necessarily match the display value,
+                    // we reformat on the client.
+                    // the total number of records is expected to be small
+                    // technically this is probably better done with a convert() function on the field, but
+                    // LABKEY.ext.Store doesnt make that very easy
                     var valMap = {};
                     store.each(function(rec){
-                        rec.set('value', this.formatValue(rec.data.value));
+                        rec.set('displayValue', this.formatValue(rec.get('value')));
+                        rec.commit(true); //mark dirty = false
 
-                        if(valMap[rec.data.value]){
+                        if(valMap[rec.data.displayValue]){
+                            var dup = valMap[rec.data.displayValue];
+                            // NOTE: because formatting the value could result in 2 distinct raw values having the
+                            // same display value (ie. datetime), we track and save these
+                            if(rec.get('value') !== dup.get('value'))
+                                dup.get('valueArray').push(rec.get('value'));
+
                             store.remove(rec);
                         }
-
-                        valMap[rec.data.value] = true;
+                        else {
+                            rec.data.valueArray = [rec.get('value')];
+                            valMap[rec.get('displayValue')] = rec;
+                        }
                     }, this);
                     this.configureLookupPanel(store);
                 },
@@ -3823,7 +3833,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         if(this.boundColumn){
             if (this.boundColumn.extFormatFn){
                 try {
-                    this.boundColumn.extFormatFn = Ext.decode(this.boundColumn.extFormatFn);
+                    this.boundColumn.extFormatFn = eval(this.boundColumn.extFormatFn);
                 }
                 catch (error){
                     console.log('improper extFormatFn: ' + this.boundColumn.extFormatFn);
@@ -3833,7 +3843,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                     val = this.boundColumn.extFormatFn(val);
                 }
             }
-            else if (this.boundColumn.jsonType == 'int'){
+            else if (this._mappedType == 'INT'){
                 val = parseInt(val);
             }
         }
@@ -3844,7 +3854,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     {
         // Build up a SELECT DISTINCT query to get all of the values that are currently in use
         //NOTE: empty string will be treated as NULL, which is b/c Ext checkboxes can be set to empty string, but not null
-        var sql = 'SELECT CASE WHEN value IS NULL then \'\' ELSE cast(value as varchar) END as value FROM (';
+        var sql = 'SELECT CASE WHEN value IS NULL then \'\' ELSE cast(value as varchar) END as value, null as displayValue FROM (';
         sql += 'SELECT DISTINCT t.';
 
         var fieldKey;
