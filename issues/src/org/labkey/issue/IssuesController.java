@@ -2576,15 +2576,6 @@ public class IssuesController extends SpringActionController
     }
 
 
-    public static class TestCase extends Assert
-    {
-        @Test
-        public void testIssue() throws SQLException, ServletException
-        {
-        }
-    }
-
-
     protected synchronized void afterAction(Throwable t)
     {
         super.afterAction(t);

@@ -152,7 +152,6 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
     public Set<Class> getJUnitTests()
     {
         return new HashSet<Class>(Arrays.asList(
-            org.labkey.issue.IssuesController.TestCase.class,
             org.labkey.issue.model.IssueManager.TestCase.class ));
     }
 
