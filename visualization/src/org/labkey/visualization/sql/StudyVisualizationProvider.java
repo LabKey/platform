@@ -52,6 +52,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
             query.addSelect(factory.create(query.getSchema(), query.getQueryName(), subjectNounSingular + "Visit/Visit/Label", true), false);
             query.addSelect(factory.create(query.getSchema(), query.getQueryName(), subjectNounSingular + "Visit/Visit/DisplayOrder", true), false);
             query.addSelect(factory.create(query.getSchema(), query.getQueryName(), subjectNounSingular + "Visit/VisitDate", true), false);
+            query.addSelect(factory.create(query.getSchema(), query.getQueryName(), subjectNounSingular + "Visit/Visit", true), false);
         }
     }
 
@@ -71,7 +72,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
 
         if (getType() == VisualizationSQLGenerator.ChartType.TIME_VISITBASED)
         {
-            for (String s : Arrays.asList("Visit/Visit/DisplayOrder","Visit/sequencenum","Visit/Visit/Label"))
+            for (String s : Arrays.asList("Visit/Visit/DisplayOrder","Visit/sequencenum","Visit/Visit/Label","Visit/Visit"))
             {
                 VisualizationSourceColumn col = columnAliases.get(subjectColumnName + s).iterator().next();
                 sql.append(", ");
