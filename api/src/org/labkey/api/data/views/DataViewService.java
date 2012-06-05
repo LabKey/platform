@@ -191,9 +191,9 @@ public class DataViewService
             o.put("author", info.getAuthor().getDisplayName(user));
 
         if (info.getCreated() != null)
-            o.put("created",  DateUtil.formatDateTime(info.getCreated(), dateFormat));
+            o.put("created",  info.getCreated());
         if (info.getModified() != null)
-            o.put("modified", DateUtil.formatDateTime(info.getModified(), dateFormat));
+            o.put("modified", info.getModified());
 
         if (info.getRunUrl() != null)
             o.put("runUrl", info.getRunUrl().getLocalURIString());
@@ -223,7 +223,7 @@ public class DataViewService
                 Object value = tag.getValue();
 
                 if (value instanceof Date)
-                    o.put(dp.getName(), DateUtil.formatDateTime((Date)value, dateFormat));
+                    o.put(dp.getName(), value);
                 else
                     o.put(dp.getName(), String.valueOf(tag.getValue()));
             }
