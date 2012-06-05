@@ -36,8 +36,21 @@ LABKEY.vis.Plot = function(config){
         return scales;
     };
 
-    var setDefaultMargins = function(margins){
+    var setDefaultMargins = function(margins, legendPos, allAes){
         var top = 75, right = 75, bottom = 50, left = 75; // Defaults.
+        var foundLegendScale = false, foundYRight = false;
+
+        for(var i = 0; i < allAes.length; i++){
+            var aes = allAes[i];
+            if(!foundLegendScale && (aes.shape || aes.color) && legendPos != 'none'){
+                foundLegendScale = true;
+                right = right + 150;
+            }
+            if(!foundYRight && aes.yRight){
+                foundYRight = true;
+                right = right + 25;
+            }
+        }
 
         if(!margins){
             margins = {};
@@ -77,7 +90,19 @@ LABKEY.vis.Plot = function(config){
     this.gridColor = config.gridColor ? config.gridColor : null;
     this.gridLineColor = config.gridLineColor ? config.gridLineColor : null;
     this.clipRect = config.clipRect ? config.clipRect : false;
-    var margins = setDefaultMargins(config.margins);
+    this.legendPos = config.legendPos;
+
+    var allAes = [];
+    if(this.aes){
+        allAes.push(this.aes);
+    }
+    for(var i = 0; i < this.layers.length; i++){
+        if(this.layers[i].aes){
+            allAes.push(this.layers[i].aes);
+        }
+    }
+
+    var margins = setDefaultMargins(config.margins, this.legendPos, allAes);
 
     if(this.labels.y){
         this.labels.yLeft = this.labels.y;
@@ -192,17 +217,8 @@ LABKEY.vis.Plot = function(config){
             getDomain(this.originalScales, this.scales, this.layers[i].data ? this.layers[i].data : this.data, this.layers[i].aes);
         }
 
-        if(this.scales.color || this.scales.shape){
-            margins.right = margins.right + 150;
-        }
-
-        if(this.scales.yRight){
-            margins.right = margins.right + 25;
-        }
-        
 		this.grid.leftEdge = margins.left;
-
-        this.grid.rightEdge = this.grid.width - margins.right; // Add 10 units of space to top and right of scale as a little padding for the grid area.
+        this.grid.rightEdge = this.grid.width - margins.right + 10;
         this.grid.topEdge = this.grid.height - margins.top + 10;
         this.grid.bottomEdge = margins.bottom;
 
@@ -655,7 +671,7 @@ LABKEY.vis.Plot = function(config){
     };
 
     this.setMargins = function(newMargins){
-        margins = setDefaultMargins(newMargins);
+        margins = setDefaultMargins(newMargins, this.scales, allAes);
     };
 
 	return this;

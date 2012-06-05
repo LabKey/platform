@@ -68,6 +68,7 @@ var plotConfig = {
     width: 900,
 	height: 300,
     clipRect: true,
+//    legendPos: 'none',
 //    bgColor: '#777777',
 //    gridColor: '#FF00FF',
 //    gridLineColor: "#FFFFFF",
