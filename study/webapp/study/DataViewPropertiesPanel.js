@@ -14,6 +14,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
             border  : false,
             frame   : false,
             buttonAlign : 'left',
+            dateFormat  : 'Y-m-d',
             fieldDefaults  : {
                 labelWidth : 100,
                 width      : 375,
@@ -115,7 +116,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 name        : "modifiedDate",
                 value       : this.data.modifiedDate != null && this.data.modifiedDate != '' ? new Date(this.data.modifiedDate) : '',
                 blankText   : 'Modified Date',
-                format      : 'Y-m-d',
+                format      : this.dateFormat,
                 editable    : false
             });
         }
@@ -128,7 +129,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 name        : 'refreshDate',
                 value       : this.data.refreshDate != null  ? this.data.refreshDate : '',
                 blankText   : 'Date of last refresh',
-                format      : 'Y-m-d',
+                format      : this.dateFormat,
                 editable    : true,
                 altFormats  : LABKEY.Utils.getDateAltFormats()
             });

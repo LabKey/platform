@@ -281,6 +281,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 this._height = parseInt(json.webpart.height);
                 this.setHeight(this._height);
             }
+            this.dateFormat = json.dateFormat;
             this.dateRenderer = Ext4.util.Format.dateRenderer(json.dateFormat);
             this.editInfo = json.editInfo;
             this.initGrid(true, json.visibleColumns);
@@ -1116,6 +1117,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         var viewForm = Ext4.create('LABKEY.study.DataViewPropertiesPanel', {
             record          : record,
             extraItems      : formItems,
+            dateFormat      : this.dateFormat,
             visibleFields   : {
                 author  : editInfo['author'],
                 status  : editInfo['status'],
