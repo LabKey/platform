@@ -24,7 +24,14 @@ LABKEY.vis.Scale.Continuous = function(trans, data, value, domain, range){
 		var min = d3.min(data, value);
 		domain = [min, max];
 	}
-	
+
+    if(domain[0] == domain[1]){
+        var min = domain[0] - domain[0],
+            max = domain[0] * 2;
+        domain[0] = min;
+        domain[1] = max;
+    }
+
 	if(trans == 'linear'){
 		scale = d3.scale.linear().domain(domain).range(range);
         return scale;
