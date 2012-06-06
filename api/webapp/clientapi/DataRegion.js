@@ -2658,7 +2658,8 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 
                 if (this.boundColumn.lookup || this.boundColumn.dimension)
                     isFacetingCandidate = true;
-                else if (this.boundColumn.jsonType == 'boolean' || this.boundColumn.jsonType == 'int' || this.boundColumn.jsonType == 'date' ||
+                //ISSUE 15156: disabled faceted filtering on date columns until we address issues described in this bug
+                else if (this.boundColumn.jsonType == 'boolean' || this.boundColumn.jsonType == 'int' ||
                         (this.boundColumn.jsonType == 'string' && this.boundColumn.inputType != 'textarea'))
                     isFacetingCandidate = true;
 
