@@ -567,7 +567,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             _columns.push({
                 xtype    : 'templatecolumn',
                 text     : 'Type',
-                width    : 100,
+                width    : 105,
                 sortable : true,
                 dataIndex: 'type',
                 tdCls    : 'type-column',
@@ -581,7 +581,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             _columns.push({
                 xtype    : 'templatecolumn',
                 text     : 'Details',
-                width    : 100,
+                width    : 70,
                 sortable : true,
                 dataIndex: 'detailsUrl',
                 tdCls    : 'type-column',
@@ -593,7 +593,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         if(visibleColumns['Data Cut Date'] && visibleColumns['Data Cut Date'].checked){
              _columns.push({
                  text     : 'Data Cut Date',
-                 width    : 100,
+                 width    : 120,
                  sortable : true,
                  dataIndex: 'refreshDate',
                  renderer : this.dateRenderer,
