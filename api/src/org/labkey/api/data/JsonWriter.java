@@ -136,6 +136,10 @@ public class JsonWriter
         {
             props.put("displayField", displayField.getFieldKey().toString());
             props.put("displayFieldSqlType", displayField.getSqlTypeName());
+            DisplayColumn renderer = displayField.getRenderer();
+            props.put("displayFieldJsonType", renderer.getJsonTypeName());
+            //String displayFriendlyTypeName = displayField == null ? ColumnInfo.getFriendlyTypeName(renderer.getDisplayValueClass()) : displayField.getFriendlyTypeName();
+            //props.put("displayFieldType", displayFriendlyTypeName);
         }
 
         if (cinfo != null)
