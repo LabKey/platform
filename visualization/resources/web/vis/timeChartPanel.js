@@ -1435,7 +1435,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             xAes = function(row){return row[intervalKey].value}
         } else {
             xAes = function(row){
-                return individualVisitMap[row[intervalKey].value].displayOrder;
+                return visitMap[row[intervalKey].value].displayOrder;
             };
             xTickFormat = function(value){
                 return tickMap[value];
