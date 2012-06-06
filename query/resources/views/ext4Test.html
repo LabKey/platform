@@ -32,7 +32,12 @@ Ext4.onReady(function(){
     Ext4.create('LABKEY.ext4.FormPanel', {
         title: 'Form Panel',
         renderTo: 'formPanel',
-        store: store
+        store: store,
+        metadata: {
+            Name: {
+                fieldLabel: 'Folder Name'
+            }
+        }
     });
 
     Ext4.create('LABKEY.ext4.GridPanel', {
@@ -43,9 +48,11 @@ Ext4.onReady(function(){
 
     Ext4.create('LABKEY.ext.DetailsPanel', {
         renderTo: 'detailsPanel',
-        schemaName: schemaName,
-        queryName: queryName,
-        filterArray: filterArray
+        store: {
+            schemaName: schemaName,
+            queryName: queryName,
+            filterArray: filterArray
+        }
     });
 
     Ext4.create('LABKEY.ext4.ExcelUploadPanel', {
