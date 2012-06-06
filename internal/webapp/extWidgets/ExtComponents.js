@@ -128,21 +128,7 @@ Ext4.define('LABKEY.ext.OperatorCombo', {
         this.meta.jsonType = this.meta.jsonType || 'string';
 
         if(!this.initialValue){
-            switch(this.meta.jsonType){
-                case 'int':
-                case 'float':
-                    this.initialValue = 'eq';
-                    break;
-                case 'date':
-                    this.initialValue = 'dateeq';
-                    break;
-                case 'boolean':
-                    this.initialValue = 'startswith';
-                    break;
-                default:
-                    this.initialValue = 'startswith';
-                    break;
-            }
+            this.initialValue = LABKEY.Filter.getDefaultFilterForType(this.meta.jsonType).getURLSuffix();
         }
 
         Ext4.apply(this, {
@@ -395,24 +381,24 @@ Ext4.define('LABKEY.ext.ContainerFilterCombo', {
  * An extension to the Ext4 combobox.  The primary features this provides are more control over
  * how the display values are rendered and auto-resizing of the pick list based on the size of
  * the items.
- * @cfg showValueInList If true, the underlying value will also be shown in the pick menu, in addition to the display value.
- * @cfg lookupNullCaption
+ * @cfg {Boolean} showValueInList If true, the underlying value will also be shown in the pick menu, in addition to the display value.
+ * @cfg {String} lookupNullCaption A string that will be used at the display text if the displayField is blank.  Defaults to '[none]'
  */
 Ext4.define('LABKEY.ext4.ComboBox', {
     extend: 'Ext.form.field.ComboBox',
     alias: 'widget.labkey-combo',
     initComponent: function(){
         this.listConfig = this.listConfig || {};
-        this.listConfig.itemTpl = this.listConfig.itemTpl || Ext4.create('Ext.XTemplate',
-            '<tpl for=".">' +
-                '{[(typeof values === "string" ? values : (values["' + this.displayField + '"] ? values["' + this.displayField + '"] : '+(Ext4.isDefined(this.lookupNullCaption) ? '"' + '1'+this.lookupNullCaption + '"' : '"[none]"')+'))]}' +
-                //allow a flag to display both display and value fields
-                (this.showValueInList ? '{[values["' + this.valueField + '"] ? " ("+values["' + this.valueField + '"]+")" : ""]}' : '') +
-                (this.multiSelect ? '<tpl if="xindex < xcount">' + '{[(values["' + this.displayField + '"] ? "'+this.delimiter+'" : "")]}' + '</tpl>' : '') +
+        this.listConfig.innerTpl =
+            '{[(typeof values === "string" ? values : (values["' + this.displayField + '"] ? values["' + this.displayField + '"] : '+(Ext4.isDefined(this.lookupNullCaption) ? '"' + '1'+this.lookupNullCaption + '"' : '"[none]"')+'))]}' +
+            //allow a flag to display both display and value fields
+            (this.showValueInList ? '{[values["' + this.valueField + '"] ? " ("+values["' + this.valueField + '"]+")" : ""]}' : '') +
+            (this.multiSelect ? '<tpl if="xindex < xcount">' + '{[(values["' + this.displayField + '"] ? "'+this.delimiter+'" : "")]}' + '</tpl>' : '') +
 
-                '&nbsp;' + //space added so empty strings render with full height
-            '</tpl>'
-        ).compile();
+            '&nbsp;'  //space added so empty strings render with full height
+        this.listConfig.getInnerTpl = function(){
+            return this.innerTpl;
+        }
 
         //auto list width
         this.listConfig.listeners = this.listConfig.listeners || {};

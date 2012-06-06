@@ -22,41 +22,67 @@ Ext4.namespace('LABKEY.ext4');
  * @constructor
  * @augments Ext.form.Panel
  * @param config Configuration properties.
- * @param {String} [config.store] A LABKEY.ext4.Store. If not supplied, so long as a schemaName/queryName
- * @param {String} [config.schemaName] The LabKey schema to query.
- * @param {String} [config.queryName] The query name within the schema to fetch.
- * @param {String} [config.viewName] A saved custom view of the specified query to use if desired.
- * @param {String} [config.containerPath] The container path from which to get the data. If not specified, the current container is used.
- * @param {Object} [config.metadata] A metadata object that will be applied to the default metadata returned by the server.  See example below for usage.
+ * @param {String} config.store A LABKEY.ext4.Store or a store config object which will be used to create a store.
+ * @param {Object} [config.metadata] A metadata object that will be applied to the default metadata returned by the server.  This should be a map where the keys match field names (case-sensitive).  This will not modify the underlying store.  See example below for usage.
  * @param {Object} [config.metadataDefaults] A metadata object that will be applied to every field of the default metadata returned by the server.  Will be superceeded by the metadata object in case of conflicts. See example below for usage.
- * @param {Object} [config.storeConfig] A config object that will be used to create the store.
  * @param (boolean) [config.supressErrorAlert] If true, no dialog will appear on if the store fires a syncerror event.  Defaults to false.
  * @param {boolean} [config.supressSuccessAlert] If true, no alert will appear after a successful save event.  Defaults to false.
+ * @param {object} config.bindConfig
  * @example &lt;script type="text/javascript"&gt;
-    var _grid, _store;
-    Ext.onReady(function(){
+    Ext4.onReady(function(){
 
-        _store = new LABKEY.ext4.Store({
+        var store = new LABKEY.ext4.Store({
             schemaName: 'lists',
             queryName: 'myList'
         });
 
-        //create a grid using that store as the data source
-        _grid = new LABKEY.ext4.FormPanel({
-            store: _store,
-            renderTo: 'formPanel',
-            autoHeight: true,
-            title: 'Example FormPanel',
+        //create a form panel using that store as the data source
+        var formPanel1  = new LABKEY.ext4.FormPanel({
+            store: store,
+            renderTo: 'formPanel1',
+            title: 'Example FormPanel 1',
             bindConfig: {
                 autoCreateRecordOnChange: true,
                 autoBindFirstRecord: true
             }
         });
+
+        //create a formpanel using a store config object
+        var formPanel2 = new LABKEY.ext4.FormPanel({
+            store: {
+                schemaName: 'lists',
+                queryName: 'myList',
+                viewName: 'view1',
+                //this is an alternate method to supply metadata config.  see LABKEY.ext4.Store for more information
+                metadata: {
+                    field2: {
+                        //this config will be applied to the Ext grid editor config object
+                        formEditorConfig: {
+                            xtype: 'datefield',
+                            fieldLabel
+                            width: 250
+                        }
+                    }
+                }
+            },
+            title: 'Example FormPanel 2',
+            bindConfig: {
+                autoCreateRecordOnChange: true,
+                autoBindFirstRecord: true
+            },
+            //this config will be applied to the Ext fields created in this FormPanel only.
+            metadata: {
+               field1: {
+                   fieldLabel: 'Custom Label'
+               }
+            }
+        }).render('formPanel2');
     });
 
 
 &lt;/script&gt;
-&lt;div id='formPanel'/&gt;
+&lt;div id='formPanel1'/&gt;
+&lt;div id='formPanel2'/&gt;
  */
 
 
@@ -70,7 +96,7 @@ Ext4.define('LABKEY.ext4.FormPanel', {
         Ext4.QuickTips.init();
         Ext4.FocusManager.enable();
 
-        this.store = this.store || this.createStore();
+        this.initStore();
 
         Ext4.apply(this, {
             trackResetOnLoad: true
@@ -128,39 +154,24 @@ Ext4.define('LABKEY.ext4.FormPanel', {
          * @description Fired when the record bound to this panel changes
          */
         this.addEvents('fieldconfiguration', 'fieldvaluechange', 'recordchange');
-
-        this.on('recordchange', this.markInvalid, this, {buffer: 100});
+        this.on('recordchange', this.markInvalid, this, {buffer: 50});
     },
 
-    createStore: function(){
-        return Ext4.create('LABKEY.ext4.Store', {
-            containerPath: this.containerPath,
-            schemaName: this.schemaName,
-            queryName: this.queryName,
-            sql: this.sql,
-            viewName: this.viewName,
-            columns: this.columns,
-            storeId: LABKEY.ext.Ext4Helper.getLookupStoreId(this),
-            filterArray: this.filterArray || [],
-            metadata: this.metadata,
-            metadataDefaults: this.metadataDefaults,
-            autoLoad: true,
-            //NOTE: we do this to prevent loading the whole table
-            maxRows: 0,
-            listeners: {
-                scope: this,
-                load: function(store){
-                    delete store.maxRows;
-                }
-            }
-        });
+    initStore: function(){
+        if(!this.store){
+            alert('Must provide a store or store config when creating a formpanel');
+            return;
+        }
+
+        //allow creation of panel using store config object
+        if(!this.store.events)
+            this.store = Ext4.create('LABKEY.ext4.Store', this.store);
+
+        this.store.supressErrorAlert = true;
     },
 
-    onCommitException: function(response, operation){
-        var msg;
-        if(response.errors && response.errors.exception)
-            msg = response.errors.exception;
-        else
+    onCommitException: function(store, msg, response, operation){
+        if(!msg)
             msg = 'There was an error with the submission';
 
         //NOTE: in the case of trigger script errors, this will display the first error, even if many errors were generated
@@ -168,8 +179,6 @@ Ext4.define('LABKEY.ext4.FormPanel', {
             Ext4.Msg.alert('Error', msg);
 
         this.getForm().isValid(); //triggers revalidation
-
-        return false; //prevent store from alerting
     },
 
     loadQuery: function(store, records, success)
@@ -213,6 +222,13 @@ Ext4.define('LABKEY.ext4.FormPanel', {
                 queryName: store.queryName,
                 schemaName: store.schemaName
             };
+
+            if(this.metadataDefaults){
+                Ext4.Object.merge(config, this.metadataDefaults);
+            }
+            if(this.metadata && this.metadata[c.name]){
+                Ext4.Object.merge(config, this.metadata[c.name]);
+            }
 
             if (LABKEY.ext.Ext4Helper.shouldShowInUpdateView(c)){
                 var theField = this.store.getFormEditorConfig(c.name, config);
@@ -346,13 +362,11 @@ Ext4.define('LABKEY.ext4.FormPanelWin', {
             modal: true,
             items: [{
                 xtype: 'labkey-formpanel',
+                store: this.store,
                 bubbleEvents: ['uploadexception', 'uploadcomplete'],
                 itemId: 'theForm',
                 title: null,
-                buttons: null,
-                schemaName: this.schemaName,
-                queryName: this.queryName,
-                viewName: this.viewName
+                buttons: null
             }],
             buttons: [{
                 text: 'Upload'
@@ -672,5 +686,4 @@ Ext4.define('LABKEY.ext4.DatabindPlugin', {
         }
         return this;
     }
-
 });

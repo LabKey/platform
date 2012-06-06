@@ -280,14 +280,12 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             else {
                 op = 'eq';
             }
-
+            var filterType = LABKEY.Filter.getFilterTypeForURLSuffix(op);
             var val = item.getValue();
             if(Ext4.isArray(val))
                 val = val.join(';');
 
-            if (!(Ext4.isEmpty(val) || val==='' || (Ext.isArray(val) && val[0]=="" && val.length==1)) ||
-                op == 'isblank' || op == 'isnonblank'
-            ){
+            if (!Ext4.isEmpty(val) || !filterType.isDataValueRequired()){
                 params[('query.' + item.dataIndex + '~' + op)] = val;
             }
         }, this);
@@ -300,20 +298,3 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
         );
     }
 });
-
-
-
-
-
-var params = {
-    schemaName: 'lists',
-    'query.queryName': 'eligibility'
-};
-
-if(field.cancer)
-    params['query.cancer~eq'] = val;
-if(field.repos)
-    params['query.repository~eq'] = val;
-
-
-window.location = LABKEY.ActionURL.buildURL('query', 'executeQuery', null, params);

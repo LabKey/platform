@@ -9,9 +9,54 @@ Ext4.namespace('LABKEY.ext4');
 /**
  * Constructs a new LabKey GridPanel using the supplied configuration.
  *
+ * @param {LABKEY.ext4.Store} config.store A LABKEY.ext4.Store or a store config object which will be used to create a store.
  * @param (boolean) [config.supressErrorAlert] If true, no dialog will appear on if the store fires a syncerror event
  * @param {boolean} [config.hideNonEditableColumns] If true, columns that are non-editable will be hidden
  * @param {boolean} [config.showPagingToolbar] If true, an Ext PagingToolbar will be appended to the bottom of the grid
+ * @param {boolean} [config.constraintColumnWidths] If true, the column widths will be resized to fit within the current width of the gridPanel.
+ * @example &lt;script type="text/javascript"&gt;
+    Ext4.onReady(function(){
+
+        var store = new LABKEY.ext4.Store({
+            schemaName: 'lists',
+            queryName: 'myList'
+        });
+
+        //create a grid panel using that store as the data source
+        var grid1  = new LABKEY.ext4.GridPanel({
+            store: store,
+            renderTo: 'grid1',
+            title: 'Example GridPanel 1'
+        });
+
+        //create a formpanel using a store config object
+        var formPanel2 = new LABKEY.ext4.GridPanel({
+            store: {
+                schemaName: 'lists',
+                queryName: 'myList',
+                metadata: {
+                    field1: {
+                       //this config will be applied to the Ext column config object only
+                       columnConfig: {
+                           text: 'Custom Caption
+                       },
+                       //this config will be applied to the Ext grid editor config object
+                       gridEditorConfig: {
+                           xtype: 'datefield',
+                           width: 250
+                       },
+                       fieldLabel: 'Custom Label'
+                   }
+                }
+            },
+            title: 'Example GridPanel 2'
+        }).render('grid2');
+    });
+
+
+&lt;/script&gt;
+&lt;div id='grid1'/&gt;
+&lt;div id='grid2'/&gt;
  */
 
 Ext4.define('LABKEY.ext4.GridPanel', {
@@ -25,8 +70,7 @@ Ext4.define('LABKEY.ext4.GridPanel', {
         multiSelect: true
     },
     initComponent: function(){
-
-        this.store = this.store || this.createStore();
+        this.initStore();
 
         Ext4.QuickTips.init({
             constrainPosition: true
@@ -57,22 +101,14 @@ Ext4.define('LABKEY.ext4.GridPanel', {
 
         this.configureHeaders();
 
-        //TODO: need a better solution to this problem.  maybe be smarter when processing load() in the store?
-        //if we sort/filter remotely, we risk losing changes made on the client
-        if(this.editable){
-            this.store.remoteSort = false;
-            this.store.remoteFilter = false;
-        }
-
-        if(this.autoSave)
-            this.store.autoSync = true;  //could we just obligate users to put this on the store directly?
-
         if(!this.columns.length){
             this.mon(this.store, 'load', this.setupColumnModel, this, {single: true});
-            this.store.load({ params : {
-                start: 0,
-                limit: this.pageSize
-            }});
+            if(!this.store.isLoading()){
+                this.store.load({ params : {
+                    start: 0,
+                    limit: this.pageSize
+                }});
+            }
         }
 
         this.mon(this.store, 'exception', this.onCommitException, this);
@@ -100,20 +136,27 @@ Ext4.define('LABKEY.ext4.GridPanel', {
 
     ,onMenuCreate: Ext4.emptyFn
 
-    ,createStore: function(){
-        return Ext4.create('LABKEY.ext4.Store', {
-            containerPath: this.containerPath,
-            schemaName: this.schemaName,
-            queryName: this.queryName,
-            sql: this.sql,
-            viewName: this.viewName,
-            columns: this.columns,
-            storeId: LABKEY.ext.Ext4Helper.getLookupStoreId(this),
-            filterArray: this.filterArray || [],
-            metadata: this.metadata,
-            metadataDefaults: this.metadataDefaults,
-            autoLoad: true
-        });
+    ,initStore: function(){
+        if(!this.store){
+            alert('Must provide a store or store config when creating a formpanel');
+            return;
+        }
+
+        //allow creation of panel using store config object
+        if(!this.store.events)
+            this.store = Ext4.create('LABKEY.ext4.Store', this.store);
+
+        this.store.supressErrorAlert = true;
+
+        //TODO: need a better solution to this problem.  maybe be smarter when processing load() in the store?
+        //if we sort/filter remotely, we risk losing changes made on the client
+        if(this.editable){
+            this.store.remoteSort = false;
+            this.store.remoteFilter = false;
+        }
+
+        if(this.autoSave)
+            this.store.autoSync = true;  //could we just obligate users to put this on the store directly?
     }
 
     //separated to allow subclasses to override
@@ -158,6 +201,13 @@ Ext4.define('LABKEY.ext4.GridPanel', {
                 sortable: false
             }
         };
+
+        if(this.metadataDefaults){
+            Ext4.Object.merge(config, this.metadataDefaults);
+        }
+        if(this.metadata && this.metadata[c.name]){
+            Ext4.Object.merge(config, this.metadata[c.name]);
+        }
 
         var columns = LABKEY.ext.Ext4Helper.getColumnsConfig(this.store, this, config);
 
@@ -258,8 +308,6 @@ Ext4.define('LABKEY.ext4.GridPanel', {
 
         if(!this.supressErrorAlert)
             Ext4.Msg.alert('Error', msg);
-
-        return false; //prevent store from alerting
     }
 });
 

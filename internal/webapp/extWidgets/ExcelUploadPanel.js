@@ -23,13 +23,21 @@ Ext4.namespace('LABKEY.ext');
  * @param config Configuration properties.
  * @param {String} config.schemaName The LabKey schema to query.
  * @param {String} config.queryName The query name within the schema to fetch.
- * @param {String} [config.viewName] A saved custom view of the specified query to use if desired.
  * @param {String} [config.containerPath] The containerPath to use when fetching the query
- * @param {boolean} showAlertOnSuccess Defaults to true
- * @param {boolean} showAlertOnFailure Defaults to true
- * @param {String} [config.columns] A comma-delimited list of column names to fetch from the specified query.
- * @param {Object} [config.metadata] A metadata object that will be applied to the default metadata returned by the server.  See example below for usage.
- * @param {Object} [config.metadataDefaults] A metadata object that will be applied to every field of the default metadata returned by the server.  Will be superceeded by the metadata object in case of conflicts. See example below for usage.
+ * @param {boolean} config.showAlertOnSuccess Defaults to true
+ * @param {boolean} config.showAlertOnFailure Defaults to true
+ * @example &lt;script type="text/javascript"&gt;
+    Ext4.onReady(function(){
+
+         Ext4.create('LABKEY.ext4.ExcelUploadPanel', {
+             renderTo: 'excelUploadPanel',
+             schemaName: schemaName,
+             queryName: queryName
+         });
+
+    });
+&lt;/script&gt;
+&lt;div id='excelUploadPanel'/&gt;
  */
 
 Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
@@ -198,7 +206,6 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
             containerPath: this.containerPath
             ,schemaName: this.schemaName
             ,queryName: this.queryName
-            ,viewName: this.viewName
             ,scope: this
             ,success: this.populateTemplates
         });
@@ -347,9 +354,9 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
 
                     var hasRow = Ext4.isDefined(error.rowNumber);
                     if(hasRow)
-                        html += '<tr><td colspan=2 '+style+'><b>Row '+(error.rowNumber+1) + '</b></td></tr>';
+                        html += '<tr><td '+style+'>Row '+(error.rowNumber+1) + ':</td>';
 
-                    html += '<tr><td style="color:red;" '+(hasRow ? '' : ' colspan="2"')+'>'+rowErrors.join('<br>')+'</td></tr>';
+                    html += '<td style="color:red;" '+(hasRow ? '' : ' colspan="2"')+'>'+rowErrors.join('<br>')+'</td></tr>';
                 }, this);
 
                 html += '</table>';
@@ -400,9 +407,9 @@ Ext4.define('LABKEY.ext4.ExcelUploadWin', {
                 itemId: 'theForm',
                 title: null,
                 buttons: null,
+                containerPath: this.containerPath,
                 schemaName: this.schemaName,
-                queryName: this.queryName,
-                viewName: this.viewName
+                queryName: this.queryName
             }],
             buttons: [{
                 text: 'Upload'
