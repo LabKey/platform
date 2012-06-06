@@ -459,24 +459,26 @@ LABKEY.requiresVisualization = function ()
     {
         LABKEY.requiresScript('vis/lib/raphael-2.1.0.js');
         LABKEY.requiresScript('vis/lib/d3-2.0.4.js');
+
+        LABKEY.requiresScript('vis/lib/patches.js');
+        LABKEY.requiresScript('vis/src/utils.js');
+        LABKEY.requiresScript('vis/src/geom.js');
+        LABKEY.requiresScript('vis/src/stat.js');
+        LABKEY.requiresScript('vis/src/position.js');
+        LABKEY.requiresScript('vis/src/scale.js');
+        LABKEY.requiresScript('vis/src/layer.js');
+        LABKEY.requiresScript('vis/src/plot.js');
+        LABKEY.requiresScript("vis/SVGConverter.js");
+
+        // NOTE: If adding a required file you must add to visualization_jsmin ant target for proper packaging
     }
     else
     {
         LABKEY.requiresScript('vis/lib/raphael-min-2.1.0.js');
         LABKEY.requiresScript('vis/lib/d3-2.0.4.min.js');
 
+        LABKEY.requiresScript('vis/visual.min.js');
     }
-
-    // TODO: Concat and minify the below files for a non-devMode version.
-    LABKEY.requiresScript('vis/lib/patches.js')
-    LABKEY.requiresScript('vis/src/utils.js');
-    LABKEY.requiresScript('vis/src/geom.js');
-    LABKEY.requiresScript('vis/src/stat.js');
-    LABKEY.requiresScript('vis/src/position.js');
-    LABKEY.requiresScript('vis/src/scale.js');
-    LABKEY.requiresScript('vis/src/layer.js');
-    LABKEY.requiresScript('vis/src/plot.js');
-    LABKEY.requiresScript("vis/SVGConverter.js");
 };
 
 // If we're in demo mode, replace each ID with an equal length string of "*".  This code should match DemoMode.id().
