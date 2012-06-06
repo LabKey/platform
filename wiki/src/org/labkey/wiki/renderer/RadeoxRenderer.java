@@ -255,6 +255,36 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         }
     }
 
+    private static class CommentMacro extends BaseMacro
+    {
+        @Override
+        public String getName()
+        {
+            return "comment";
+        }
+
+        private final String[] PARAMS = new String[]
+        {
+        };
+
+        public String[] getParamDescription()
+        {
+            return PARAMS;
+        }
+
+        @Override
+        public String getDescription()
+        {
+            return "Wraps comment text (which will not appear on the rendered wiki page).";
+        }
+
+        @Override
+        public void execute(Writer writer, MacroParameter macroParameter) throws IllegalArgumentException, IOException
+        {
+            // Ignore text within {comment}....{comment}
+        }
+    }
+
     private static class ImageMacro extends BaseMacro
     {
         public void execute(Writer writer, MacroParameter macroParameter) throws IllegalArgumentException, IOException
@@ -365,6 +395,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         repository.put("labkey", new LabKeyMacro());
         repository.put("title", new StylableMacro("h1")); // so user has some way to match html-editor
         repository.put("anchor", new AnchorMacro());
+        repository.put("comment", new CommentMacro());
     }
 
     //
@@ -747,6 +778,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
             test("{code}def fn:\nsomething here\nsomething here\n\nsomething else{code}", "<div class=\"code\"><pre>def fn:<br />something here<br />something here<br /><br />something <span class=\"java&#45;keyword\">else</span></pre></div>");
             // Link
             test("{link:style=border:4px dotted red;|url=https://www.labkey.org/|text=To Labkey}", "<span class=\"nobr\" style=\"border:4px dotted red;\"><a href=\"https://www.labkey.org/\">To Labkey</a></span>");
+            test("before comment{comment}inside comment{comment}after comment", "before commentafter comment");
         }
 
         // Service should wrap rendered HTML in a <div> but renderer shouldn't. 
