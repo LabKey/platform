@@ -259,7 +259,7 @@ public class QueryServiceImpl extends QueryService
                         ModuleQueryDef moduleQueryDef = (ModuleQueryDef) MODULE_RESOURCES_CACHE.get(cacheKey);
                         if (null == moduleQueryDef || moduleQueryDef.isStale())
                         {
-                            moduleQueryDef = new ModuleQueryDef(query, schemaName);
+                            moduleQueryDef = new ModuleQueryDef(query, schemaName, module.getName());
                             MODULE_RESOURCES_CACHE.put(cacheKey, moduleQueryDef);
                         }
 

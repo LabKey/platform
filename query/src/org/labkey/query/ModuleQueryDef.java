@@ -42,15 +42,17 @@ public class ModuleQueryDef extends ResourceRef
 
     private String _name;
     private String _schemaName;
+    private String _moduleName;
     private String _sql;
     private ModuleQueryMetadataDef _metadataRef;
 
-    public ModuleQueryDef(Resource r, String schemaName)
+    public ModuleQueryDef(Resource r, String schemaName, String moduleName)
     {
         super(r);
 
         _schemaName = schemaName;
         _name = getNameFromFile();
+        _moduleName = moduleName;
 
         //load the sql from the sqlFile
         InputStream is = null;
@@ -78,6 +80,11 @@ public class ModuleQueryDef extends ResourceRef
             {
                 _metadataRef = new ModuleQueryMetadataDef(metadataResource);
                 addDependency(_metadataRef);
+
+                if (_metadataRef.getModuleName() != null)
+                {
+                    _moduleName = _metadataRef.getModuleName();
+                }
             }
         }
     }
@@ -95,7 +102,7 @@ public class ModuleQueryDef extends ResourceRef
 
     public String getModuleName()
     {
-        return _metadataRef == null ? "" : _metadataRef.getModuleName();
+        return _moduleName;
     }
 
     public String getSchemaName()
