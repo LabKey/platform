@@ -36,6 +36,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.util.Iterator;
 
 /**
@@ -112,6 +113,11 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
                 try
                 {
                     jsonObj = getJsonObject();
+                }
+                catch (SocketTimeoutException x)
+                {
+                    ExceptionUtil.decorateException(x, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
+                    throw x;
                 }
                 catch (JSONException x)
                 {
