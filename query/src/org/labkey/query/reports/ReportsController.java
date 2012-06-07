@@ -929,7 +929,8 @@ public class ReportsController extends SpringActionController
 
             ApiSimpleResponse response = new ApiSimpleResponse();
 
-            ReportService.get().saveReport(getViewContext(), ReportUtil.getReportQueryKey(report.getDescriptor()), report);
+            int newId = ReportService.get().saveReport(getViewContext(), ReportUtil.getReportQueryKey(report.getDescriptor()), report);
+            report = ReportService.get().getReport(newId);  // Re-select saved report so we get EntityId, etc.
 
             if (report instanceof DynamicThumbnailProvider)
             {
