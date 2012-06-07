@@ -127,7 +127,7 @@ Ext4.define('LABKEY.ext4.FormPanel', {
 
         this.callParent();
 
-        if(!this.store.hasLoaded())
+        if(!LABKEY.ext.Ext4Helper.hasStoreLoaded(this.store))
             this.mon(this.store, 'load', this.loadQuery, this, {single: true});
         else {
             //TODO: calling after callParent() may be forcing an unnecessary second layout
@@ -190,7 +190,7 @@ Ext4.define('LABKEY.ext4.FormPanel', {
             return;
         }
 
-        var fields = this.store.getFields();
+        var fields = LABKEY.ext.Ext4Helper.getStoreFields(this.store);
         if(!fields){
             console.log('There are no fields in the store');
             return;
@@ -217,7 +217,7 @@ Ext4.define('LABKEY.ext4.FormPanel', {
     configureForm: function(store){
         var toAdd = [];
         var compositeFields = {};
-        store.getFields().each(function(c){
+        LABKEY.ext.Ext4Helper.getStoreFields(store).each(function(c){
             var config = {
                 queryName: store.queryName,
                 schemaName: store.schemaName
@@ -231,7 +231,8 @@ Ext4.define('LABKEY.ext4.FormPanel', {
             }
 
             if (LABKEY.ext.Ext4Helper.shouldShowInUpdateView(c)){
-                var theField = this.store.getFormEditorConfig(c.name, config);
+                var fields = LABKEY.ext.Ext4Helper.getStoreFields(this.store);
+                var theField = LABKEY.ext.Ext4Helper.getFormEditorConfig(fields.get(c.name), config);
 
                 if(!c.width)
                     theField.width = this.defaultFieldWidth;

@@ -383,10 +383,12 @@ Ext4.define('LABKEY.ext.ContainerFilterCombo', {
  * the items.
  * @cfg {Boolean} showValueInList If true, the underlying value will also be shown in the pick menu, in addition to the display value.
  * @cfg {String} lookupNullCaption A string that will be used at the display text if the displayField is blank.  Defaults to '[none]'
+ * @cfg {Boolean} lazyCreateStore If the combo is created with a store config object, by default the store will not be instantiated until the combo list is viewed.  If this is set to false, the store will be created immediately.  this can be useful in order to ensure data is loaded.
  */
 Ext4.define('LABKEY.ext4.ComboBox', {
     extend: 'Ext.form.field.ComboBox',
     alias: 'widget.labkey-combo',
+    lazyCreateStore: true,
     initComponent: function(){
         this.listConfig = this.listConfig || {};
         this.listConfig.innerTpl =
@@ -398,6 +400,11 @@ Ext4.define('LABKEY.ext4.ComboBox', {
             '&nbsp;'  //space added so empty strings render with full height
         this.listConfig.getInnerTpl = function(){
             return this.innerTpl;
+        }
+
+        //create store if config object is supplied
+        if(!this.store.events && this.lazyCreateStore === false){
+            this.store = Ext4.create('LABKEY.ext4.Store', this.store);
         }
 
         //auto list width

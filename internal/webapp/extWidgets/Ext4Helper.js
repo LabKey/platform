@@ -189,7 +189,7 @@ LABKEY.ext.Ext4Helper = new function(){
                 dataIndex: meta.dataIndex || meta.name,
                 value: meta.value || meta.defaultValue,
                 helpPopup: [
-                    'Type: ' + meta.friendlyType,
+                    'Type: ' + meta.friendlyType ? meta.friendlyType : '',
                     'Required: ' + !meta.allowBlank,
                     'Description: ' + (meta.description || '')
                 ],
@@ -916,6 +916,25 @@ LABKEY.ext.Ext4Helper = new function(){
             };
 
             return LABKEY.ext.Ext4Helper.getLookupStore(c);
+        },
+
+        /**
+         * Experimental.  If a store has not yet loaded, the implicit model always has zero fields
+         * @param store
+         */
+        hasStoreLoaded: function(store){
+            return store.model &&
+               store.model.prototype.fields &&
+               store.model.prototype.fields.getCount()
+        },
+
+        /**
+         * Experimental.  Returns the fields from the passed store
+         * @param store
+         * @returns {Ext.util.MixedCollection} The fields associated with this store
+         */
+        getStoreFields: function(store){
+            return store.proxy.reader.model.prototype.fields;
         }
     }
 };

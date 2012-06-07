@@ -107,7 +107,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             }
         });
 
-        if(this.store.hasLoaded())
+        if(LABKEY.ext.Ext4Helper.hasStoreLoaded(this.store))
             this.onLoad(this.store, true);
         else
             this.mon(this.store, 'load', this.onLoad, this, {single: true});
@@ -118,7 +118,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
     onLoad: function(store, success){
         this.removeAll();
 
-        if (!success || !store || !store.hasLoaded()){
+        if (!success || !store || !LABKEY.ext.Ext4Helper.hasStoreLoaded(store)){
             this.add({tag: 'div', html: 'Error loading data'});
             return;
         }

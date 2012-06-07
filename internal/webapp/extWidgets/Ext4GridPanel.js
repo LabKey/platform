@@ -93,7 +93,7 @@ Ext4.define('LABKEY.ext4.GridPanel', {
 
         this.configurePlugins();
 
-        if(this.store && this.store.hasLoaded()){
+        if(LABKEY.ext.Ext4Helper.hasStoreLoaded(this.store)){
             this.columns = this.getColumnsConfig();
         }
 
@@ -138,7 +138,7 @@ Ext4.define('LABKEY.ext4.GridPanel', {
 
     ,initStore: function(){
         if(!this.store){
-            alert('Must provide a store or store config when creating a formpanel');
+            alert('Must provide a store or store config when creating a gridpanel');
             return;
         }
 
@@ -328,7 +328,7 @@ LABKEY.ext4.GRIDBUTTONS = {
             tooltip: 'Click to add a row',
             handler: function(btn){
                 var grid = btn.up('gridpanel');
-                if(!grid.store || !grid.store.hasLoaded())
+                if(!grid.store || !LABKEY.ext.Ext4Helper.hasStoreLoaded(grid.store))
                     return;
 
                 grid.getPlugin('cellediting').completeEdit( );

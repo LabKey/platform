@@ -358,22 +358,6 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
     },
 
     /**
-     * Returns true if the store has loaded data from the serer at least once.  The purpose is primarily to idenitfy whether metadata is present.
-     * It does not test whether the store is currently loading (after the initial load, metadata is present).  To identify whether a load is in progress, see the
-     * Ext.data.Store method isLoading()
-     *
-     * @name hasLoaded
-     * @function
-     * @returns {boolean} Returns true if the store has loaded, false if not.
-     * @memberOf LABKEY.ext4.Store#
-     *
-     */
-    hasLoaded: function(){
-        //NOTE: rawData is the JSON returned by the server.  if present, this store has loaded at least once
-        return this.proxy && this.proxy.reader && this.proxy.reader.rawData !== undefined;
-    },
-
-    /**
      * Returns the case-normalized fieldName.  The fact that field names are not normally case-sensitive, but javascript is case-sensitive can cause prolems.  This method is designed to allow you to convert a string into the casing used by the store.
      * @param {String} fieldName The name of the field to test
      * @returns {String} The normalized field name or null if not found
