@@ -28,6 +28,7 @@ import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineQueue;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
+import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.view.ActionURL;
@@ -59,7 +60,7 @@ public class PipelineQueueImpl implements PipelineQueue
 
     JobRunner _runner = new JobRunner(MAX_RUNNING_JOBS);
 
-    public synchronized void addJob(PipelineJob job)
+    public synchronized void addJob(PipelineJob job) throws PipelineValidationException
     {
         if (null == job)
             throw new NullPointerException();

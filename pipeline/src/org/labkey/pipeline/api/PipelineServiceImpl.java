@@ -286,7 +286,7 @@ public class PipelineServiceImpl extends PipelineService
         return _queue;
     }
 
-    public void queueJob(PipelineJob job)
+    public void queueJob(PipelineJob job) throws PipelineValidationException
     {
         getPipelineQueue().addJob(job);
     }

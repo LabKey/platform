@@ -80,6 +80,10 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
         {
             throw new IOException("Failed to restore the checkpoint from the database.");
         }
+        catch (PipelineValidationException e)
+        {
+            throw new IOException("Invalid job parameters", e);
+        }
     }
 
     private PipelineJob fromStatus(String xml)
@@ -136,7 +140,16 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
 
                 // Queue all the split jobs.
                 for (PipelineJob jobSplit : jobs)
-                    PipelineService.get().queueJob(jobSplit);
+                {
+                    try
+                    {
+                        PipelineService.get().queueJob(jobSplit);
+                    }
+                    catch (PipelineValidationException e)
+                    {
+                        throw new IOException(e);
+                    }
+                }                        
 
                 // If there were any split jobs left incomplete, then store the job, and
                 // wait for them to complete.
@@ -184,7 +197,14 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
                         {
                             // begin running the joined job again
                             jobJoin.setActiveTaskId(tid, false);
-                            PipelineService.get().queueJob(jobJoin);
+                            try
+                            {
+                                PipelineService.get().queueJob(jobJoin);
+                            }
+                            catch (PipelineValidationException e)
+                            {
+                                throw new IOException(e);
+                            }
                         }
                     }
                     else

@@ -1242,7 +1242,7 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    public static boolean importFolder(ViewContext context, BindException errors, File folderFile, String originalFilename) throws ServletException, SQLException, IOException, ParserConfigurationException, SAXException, XmlException
+    public static boolean importFolder(ViewContext context, BindException errors, File folderFile, String originalFilename) throws ServletException, SQLException, IOException, ParserConfigurationException, SAXException, XmlException, PipelineValidationException
     {
         Container c = context.getContainer();
         if (!PipelineService.get().hasValidPipelineRoot(c))

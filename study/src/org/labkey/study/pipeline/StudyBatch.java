@@ -19,6 +19,7 @@ package org.labkey.study.pipeline;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.controllers.BaseStudyController;
@@ -58,7 +59,14 @@ public abstract class StudyBatch extends PipelineJob implements Serializable
     {
         File log = StudyPipeline.logForInputFile(_definitionFile);
         setLogFile(log);
-        PipelineService.get().queueJob(this);
+        try
+        {
+            PipelineService.get().queueJob(this);
+        }
+        catch (PipelineValidationException e)
+        {
+            throw new IOException(e);
+        }
     }
 
     public File getDefinitionFile()

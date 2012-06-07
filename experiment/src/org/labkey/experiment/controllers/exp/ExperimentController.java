@@ -89,6 +89,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineRootContainerTree;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
+import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
@@ -3135,7 +3136,7 @@ public class ExperimentController extends SpringActionController
     }
 
     private ActionURL exportXAR(XarExportSelection selection, String lsidRelativizerName, String exportTypeName, String fileName)
-            throws SQLException, ExperimentException, ServletException, IOException
+            throws SQLException, ExperimentException, ServletException, IOException, PipelineValidationException
     {
         final LSIDRelativizer lsidRelativizer;
         final XarExportType exportType;

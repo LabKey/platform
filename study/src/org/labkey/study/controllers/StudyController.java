@@ -61,6 +61,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
+import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.AbstractQueryImportAction;
@@ -4333,8 +4334,14 @@ public class StudyController extends BaseStudyController
 
         User user = getUser();
         ActionURL url = getViewContext().getActionURL();
-
-        PipelineService.get().queueJob(new StudyImportJob(c, user, url, studyXml, originalFilename, errors, pipelineRoot));
+        try
+        {
+            PipelineService.get().queueJob(new StudyImportJob(c, user, url, studyXml, originalFilename, errors, pipelineRoot));
+        }
+        catch (PipelineValidationException e)
+        {
+            throw new IOException(e);
+        }
 
         return !errors.hasErrors();
     }

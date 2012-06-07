@@ -137,7 +137,7 @@ public class AnalysisController extends SpringActionController
     @RequiresPermissionClass(InsertPermission.class)
     public class StartAnalysisAction extends AbstractAnalysisApiAction
     {
-        protected ApiResponse execute(AnalyzeForm form, PipeRoot root, File dirData, AbstractFileAnalysisProtocolFactory factory) throws IOException, PipelineProtocol.PipelineValidationException
+        protected ApiResponse execute(AnalyzeForm form, PipeRoot root, File dirData, AbstractFileAnalysisProtocolFactory factory) throws IOException, PipelineValidationException
         {
             try
             {
@@ -227,7 +227,7 @@ public class AnalysisController extends SpringActionController
             {
                 throw new ApiUsageException(e);
             }
-            catch (PipelineProtocol.PipelineValidationException e)
+            catch (PipelineValidationException e)
             {
                 throw new ApiUsageException(e);
             }
@@ -270,7 +270,7 @@ public class AnalysisController extends SpringActionController
 
     public abstract class AbstractAnalysisApiAction extends ApiAction<AnalyzeForm>
     {
-        protected abstract ApiResponse execute(AnalyzeForm form, PipeRoot root, File dirData, AbstractFileAnalysisProtocolFactory factory) throws IOException, PipelineProtocol.PipelineValidationException;
+        protected abstract ApiResponse execute(AnalyzeForm form, PipeRoot root, File dirData, AbstractFileAnalysisProtocolFactory factory) throws IOException, PipelineValidationException;
 
         public ApiResponse execute(AnalyzeForm form, BindException errors) throws Exception
         {

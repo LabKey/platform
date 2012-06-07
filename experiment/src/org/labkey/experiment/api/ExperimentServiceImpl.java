@@ -94,6 +94,7 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
@@ -1940,7 +1941,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
 
         MoveRunsPipelineJob job = new MoveRunsPipelineJob(info, sourceContainer, rowIds, PipelineService.get().findPipelineRoot(info.getContainer()));
-        PipelineService.get().queueJob(job);
+        try
+        {
+            PipelineService.get().queueJob(job);
+        }
+        catch (PipelineValidationException e)
+        {
+            throw new IOException(e);
+        }
     }
 
 
@@ -3200,7 +3208,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     public PipelineJob importXarAsync(ViewBackgroundInfo info, File file, String description, PipeRoot root) throws IOException
     {
         ExperimentPipelineJob job = new ExperimentPipelineJob(info, file, description, false, root);
-        PipelineService.get().queueJob(job);
+        try
+        {
+            PipelineService.get().queueJob(job);
+        }
+        catch (PipelineValidationException e)
+        {
+            throw new IOException(e);
+        }
         return job;
     }
 
