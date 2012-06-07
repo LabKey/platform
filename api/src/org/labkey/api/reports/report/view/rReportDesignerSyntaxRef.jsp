@@ -105,6 +105,16 @@
         write(txt, file="<%="${htmlout:output}"%>")
         </pre>
             </td></tr>
+        <tr><td class="labkey-form-label">svgout:&lt;name&gt;</td>
+            <td>An svg file that is displayed on LabKey Server as a Section within a View. <code>htmlout</code> can be
+                used to render svg outputs as well, however, using <code>svgout</code> will generate a more appropriate
+                thumbnail image for the report. No downloadable file is created:
+        <pre>
+        svg("<%="${svgout:svg}"%>", width= 4, height=3)
+        plot(x=1:10,y=(1:10)^2, type='b')
+        dev.off()
+        </pre>
+            </td></tr>
     </table></td></tr>
 
     <tr><td>&nbsp;</td></tr>
