@@ -78,14 +78,6 @@ public abstract class PipelineProtocol
             throw new PipelineValidationException("The name '" + name + "' is not a valid protocol name.");
     }
 
-    public static class PipelineValidationException extends Exception
-    {
-        public PipelineValidationException(String message)
-        {
-            super(message);
-        }
-    }
-
     public File getDefinitionFile(PipeRoot root)
     {
         return getFactory().getProtocolFile(root, name);

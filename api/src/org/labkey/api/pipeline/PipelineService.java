@@ -82,7 +82,7 @@ abstract public class PipelineService
     @NotNull
     abstract public PipelineQueue getPipelineQueue();
 
-    abstract public void queueJob(PipelineJob job);
+    abstract public void queueJob(PipelineJob job) throws PipelineValidationException;
 
     abstract public void setPipelineProperty(Container container, String name, String value) throws SQLException;
 

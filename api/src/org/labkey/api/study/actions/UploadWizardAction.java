@@ -29,6 +29,7 @@ import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
+import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -37,6 +38,7 @@ import org.labkey.api.security.permissions.*;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.study.assay.pipeline.AssayUploadPipelineJob;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.*;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.validation.BindException;
@@ -673,7 +675,14 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                         @Override
                         public void run()
                         {
-                            PipelineService.get().queueJob(pipelineJob);
+                            try
+                            {
+                                PipelineService.get().queueJob(pipelineJob);
+                            }
+                            catch (PipelineValidationException e)
+                            {
+                                throw new UnexpectedException(e);
+                            }
                         }
                     });
                     run = null;

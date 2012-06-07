@@ -62,6 +62,12 @@ public interface TaskFactory<SettingsType extends TaskFactorySettings>
 
     boolean isParticipant(PipelineJob job) throws IOException;
 
+    /**
+     * Ensure that the job has enough configuration to succeed. Should not be used for anything expensive - just for
+     * checking the parameters themselves
+     */
+    void validateParameters(PipelineJob job) throws PipelineValidationException;
+
     boolean isAutoRetryEnabled(PipelineJob job); 
 
     String getExecutionLocation();

@@ -477,13 +477,29 @@ abstract public class PipelineJob extends Job implements Serializable
         _queue = queue;
     }
     
-    public boolean setQueue(PipelineQueue queue, String initialState)
+    public boolean setQueue(PipelineQueue queue, String initialState) throws PipelineValidationException
     {
         restoreQueue(queue);
         
         // Initialize the task pipeline
-        if (getTaskPipeline() != null)
+        TaskPipeline taskPipeline = getTaskPipeline();
+        if (taskPipeline != null)
         {
+            for (TaskId taskId : taskPipeline.getTaskProgression())
+            {
+                TaskFactory taskFactory = PipelineJobService.get().getTaskFactory(taskId);
+                try
+                {
+                    if (taskFactory.isParticipant(this))
+                    {
+                        taskFactory.validateParameters(this);
+                    }
+                }
+                catch (IOException e)
+                {
+                    throw new PipelineValidationException(e);
+                }
+            }
             // Save the current job state marshalled to XML, in case of error.
             String xml = PipelineJobService.get().getJobStore().toXML(this);
 

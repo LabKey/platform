@@ -119,6 +119,12 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
         return true;
     }
 
+    @Override
+    public void validateParameters(PipelineJob job) throws PipelineValidationException
+    {
+
+    }
+
     public boolean isAutoRetryEnabled(PipelineJob job)
     {
         // TODO: Check log file for wallclock expiration on cluster jobs

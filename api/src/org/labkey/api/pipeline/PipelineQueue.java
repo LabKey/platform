@@ -28,7 +28,7 @@ public interface PipelineQueue
      *
      * @param job Job to be run
      */
-    void addJob(PipelineJob job);
+    void addJob(PipelineJob job) throws PipelineValidationException;
 
     /**
      * Cancel a previously added <code>PipelineJob</code>.  The job may be still on the
