@@ -86,7 +86,6 @@ public class QueryView extends WebPartView<Object>
     public static final String DATAREGIONNAME_DEFAULT = "query";
     protected DataRegion.ButtonBarPosition _buttonBarPosition = DataRegion.ButtonBarPosition.BOTH;
     private ButtonBarConfig _buttonBarConfig = null;
-    private AggregateRowConfig _aggregateRowConfig = null;
     private boolean _showDetailsColumn = true;
     private boolean _showUpdateColumn = true;
 
@@ -2040,7 +2039,7 @@ public class QueryView extends WebPartView<Object>
                 }
                 else
                 {
-                    // We resolve lookups later.  Assume this will table will have a valid details url.
+                    // We resolve lookups later.  Assume this table will have a valid details url.
                     // this is messy because for most columns we just omit the link if the url is not valid
                     // for details url we want to be sure to omit the column in the grid altogether
                     ret.add(new DetailsColumn(table));

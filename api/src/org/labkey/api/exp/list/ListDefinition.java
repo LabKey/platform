@@ -30,7 +30,6 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.VirtualFile;
 import org.springframework.web.servlet.mvc.Controller;
 
-import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -197,8 +196,8 @@ public interface ListDefinition extends Comparable<ListDefinition>
     TableInfo getTable(User user);
 
     ActionURL urlShowDefinition();
-    ActionURL urlUpdate(Object pk, URLHelper returnUrl);
-    ActionURL urlDetails(Object pk);
+    ActionURL urlUpdate(@Nullable Object pk, @Nullable URLHelper returnUrl);
+    ActionURL urlDetails(@Nullable Object pk);
     ActionURL urlShowData();
     ActionURL urlShowHistory();
 
