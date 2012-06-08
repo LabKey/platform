@@ -215,7 +215,23 @@ LABKEY.Filter = new function()
                     // 10.1 compatibility: treat ~eq=null as a NOOP (ref 10482)
                     if (filter.getFilterType().isDataValueRequired() && null == filter.getURLParameterValue())
                         continue;
-                    params[filter.getURLParameterName(dataRegionName)] = filter.getURLParameterValue();
+
+                    // Create an array of filter values if there is more than one filter for the same column and filter type.
+                    var paramName = filter.getURLParameterName(dataRegionName);
+                    var paramValue = filter.getURLParameterValue();
+                    var currentValue = params[paramName];
+                    if (currentValue === undefined)
+                    {
+                        currentValue = paramValue;
+                    }
+                    else
+                    {
+                        if (Ext.isArray(currentValue))
+                            currentValue.push(paramValue);
+                        else
+                            currentValue = [ currentValue, paramValue ];
+                    }
+                    params[paramName] = currentValue;
                 }
             }
             return params;
@@ -242,7 +258,7 @@ LABKEY.Filter = new function()
         /**
         * Creates a filter
         * @param {String} columnName String name of the column to filter
-        * @param value Value used as the filter criterion
+        * @param value Value used as the filter criterion or an Array of values.
         * @param {LABKEY.Filter#Types} [filterType] Type of filter to apply to the 'column' using the 'value'
 		* @example Example: <pre name="code" class="xml">
 &lt;script type="text/javascript"&gt;
@@ -267,6 +283,7 @@ LABKEY.Filter = new function()
 		filterArray: [
 			LABKEY.Filter.create('FirstName', 'Johnny'),
 			LABKEY.Filter.create('Age', 15, LABKEY.Filter.Types.LESS_THAN_OR_EQUAL)
+            LABKEY.Filter.create('LastName', ['A', 'B'], LABKEY.Filter.Types.DOES_NOT_START_WITH)
 		]
     });
 &lt;/script&gt; </pre>
