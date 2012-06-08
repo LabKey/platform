@@ -30,7 +30,6 @@
     ViewContext ctx = me.getViewContext();
     Container c = ctx.getContainer();
     VisualizationController.GenericReportForm form = me.getModelBean();
-    GenericChartReport.RenderType renderType = GenericChartReport.getRenderType(form.getRenderType());
 
     String renderId = "generic-report-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
@@ -39,6 +38,7 @@
     LABKEY.requiresClientAPI(true);
     LABKEY.requiresExt4Sandbox(true);
     LABKEY.requiresScript("vis/genericChartPanel.js");
+    LABKEY.requiresVisualization();
 
     Ext.QuickTips.init();
 </script>

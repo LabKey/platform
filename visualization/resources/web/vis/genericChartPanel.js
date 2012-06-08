@@ -37,12 +37,151 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             items    : [this.getViewPanel(), this.getDataPanel()]
         });
 
+        Ext4.define('MeasureModel',{
+            extend: 'Ext.data.Model',
+            fields: [
+                {name: 'label', mapping: 'shortCaption', type: 'string'},
+                {name: 'name', type: 'string'},
+                {name: 'hidden', type: 'boolean'},
+                {name: 'measure', type: 'boolean'},
+                {name: 'type'}
+            ]
+        });
+
+        this.yMeasureStore = Ext4.create('Ext.data.Store', {
+            model: 'MeasureModel',
+            proxy: {
+                type: 'memory',
+                reader: {
+                    type: 'json'
+                }
+            },
+            listeners: {
+                load: function(store){
+                    this.yMeasureStore.filterBy(function(record, id){
+                        var type = record.get('type');
+                        var hidden = record.get('hidden');
+                        return (!hidden && (type == 'int' || type == 'float'))
+                    });
+                },
+                scope: this
+            }
+        });
+
+        this.xMeasureStore = Ext4.create('Ext.data.Store', {
+            model: 'MeasureModel',
+            proxy: {
+                type: 'memory',
+                reader: {
+                    type: 'json'
+                }
+            },
+            listeners: {
+                load: function(store){
+                    this.xMeasureStore.filterBy(function(record, id){
+                        var hidden = record.get('hidden');
+                        return !hidden
+                    });
+                },
+                scope: this
+            }
+        });
+
+        this.yMeasureGrid = Ext4.create('Ext.grid.Panel', {
+            store: this.yMeasureStore,
+            columns: [
+                {header: 'Measure', dataIndex: 'label', flex: 1}
+            ],
+            listeners: {
+                select: function(selModel, record, index){
+                    this.yMeasureChoice = selModel.getSelection()[0].data;
+                    this.yOkBtn.setDisabled(false);
+                },
+                scope: this
+            }
+        });
+
+        this.xMeasureGrid = Ext4.create('Ext.grid.Panel', {
+            store: this.xMeasureStore,
+            columns: [
+                {header: 'Measure', dataIndex: 'label', flex: 1}
+            ],
+            listeners: {
+                select: function(selModel, record, index){
+                    this.xMeasureChoice = selModel.getSelection()[0].data;
+                    this.xOkBtn.setDisabled(false);
+                },
+                scope: this
+            }
+        });
+
+        this.yOkBtn = Ext4.create("Ext.Button", {
+            text: 'Ok',
+            disabled: true,
+            handler: function(){
+                this.yAxisMeasure = this.yMeasureChoice;
+                this.yMeasureWindow.hide();
+                this.fireEvent('renderPlot');
+            },
+            scope: this
+        });
+
+        this.xOkBtn = Ext4.create("Ext.Button", {
+            text: 'Ok',
+            disabled: true,
+            handler: function(){
+                this.xAxisMeasure = this.xMeasureChoice;
+                this.xMeasureWindow.hide();
+                this.fireEvent('renderPlot');
+            },
+            scope: this
+        });
+
+        this.yCancelBtn = Ext4.create("Ext.Button", {
+            text: 'Cancel',
+            handler: function(){
+                this.yMeasureWindow.hide();
+            },
+            scope: this
+        });
+
+        this.xCancelBtn = Ext4.create("Ext.Button", {
+            text: 'Cancel',
+            handler: function(){
+                this.xMeasureWindow.hide();
+            },
+            scope: this
+        });
+
+        this.yMeasureWindow = Ext4.create('Ext.window.Window', {
+            title: 'Y Axis',
+            width: '600',
+            layout: 'fit',
+            modal: true,
+            items: [this.yMeasureGrid],
+            bbar: [
+                '->',this.yOkBtn, this.yCancelBtn
+            ]
+        });
+
+        this.xMeasureWindow = Ext4.create('Ext.window.Window', {
+            title: 'X Axis',
+            width: '600',
+            layout: 'fit',
+            modal: true,
+            items: [this.xMeasureGrid],
+            bbar: [
+                '->',this.xOkBtn, this.xCancelBtn
+            ]
+        });
+
         this.items.push(this.centerPanel);
         this.items.push(this.getNorthPanel());
 
         this.callParent();
 
         this.on('tabchange', this.onTabChange, this);
+        this.on('renderPlot', this.renderPlot, this);
 
         if (this.reportId)
             this.loadReport(this.reportId);
@@ -67,7 +206,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 title       : 'View',
                 bodyStyle   : 'overflow-y: auto;',
                 cls         : 'iScroll',
-                ui          : 'custom'
+                ui          : 'custom',
+                listeners   : {
+                    activate  : this.viewPanelActivate,
+                    scope: this
+                }
             });
         }
         return this.viewPanel;
@@ -239,15 +382,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         wp.render(renderTo);
     },
 
-    onTabChange : function(cmp, newCard, oldCard) {
-
-        if (!this.dataPanel.isVisible())
-        {
-            //var config = this.getQueryConfig();
-            //LABKEY.Query.selectRows(config);
-        }
-    },
-
     // Returns a configuration based on the baseUrl plus any filters applied on the dataregion panel
     // the configuration can be used to make a selectRows request
     getQueryConfig : function(serialize) {
@@ -257,6 +391,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             schemaName  : this.schemaName,
             queryName   : this.queryName
         };
+
+        if(!serialize){
+            config.success = this.onSelectRowsSuccess;
+            config.scope = this;
+        }
 
         if (dataRegion)
         {
@@ -272,6 +411,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 filters = newFilters;
             }
             config['filterArray'] = filters;
+        } else {
+            config['filterArray'] = [];
         }
 
         return config;
@@ -660,5 +801,161 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
         }
         this.markDirty(false);
+    },
+
+    renderPlot: function() {
+        if(!this.yAxisMeasure){
+            this.showYMeasureWindow();
+            return;
+        }
+
+        if(!this.xAxisMeasure && this.renderType != 'box_plot'){
+            this.showXMeasureWindow();
+            return;
+        }
+        
+        var scales = {}, geom, plotConfig, newChartDiv, labels, yMin, yMax, yPadding;
+        var xMeasureName = this.xAxisMeasure ? this.xAxisMeasure.name : this.chartData.queryName;
+        var yMeasureName = this.yAxisMeasure.name;
+
+        var xClickHandler = function(scopedThis){
+            return function(){
+                scopedThis.showXMeasureWindow();
+            }
+        };
+
+        var yClickHandler = function(scopedThis){
+            return function(){
+                scopedThis.showYMeasureWindow();
+            }
+        };
+
+        this.viewPanel.removeAll();
+        newChartDiv = Ext4.create('Ext.container.Container', {
+            height: 150,
+            border: 1,
+            autoEl: {tag: 'div'}
+        });
+        this.viewPanel.add(newChartDiv);
+
+        if(this.renderType == "box_plot") {
+            scales.x = {scaleType: 'discrete'};
+            yMin = d3.min(this.chartData.rows, function(row){return row[yMeasureName]});
+            yMax = d3.max(this.chartData.rows, function(row){return row[yMeasureName]});
+            yPadding = ((yMax - yMin) * .1);
+            scales.y = {min: yMin - yPadding, max: yMax + yPadding};
+            geom = new LABKEY.vis.Geom.Boxplot();
+        } else if(this.renderType == "scatter_plot"){
+            scales.x = (this.xAxisMeasure.type == 'int' || this.xAxisMeasure.type == 'float') ?
+                {scaleType: 'continuous', trans: 'linear'} :
+                {scaleType: 'discrete'};
+            geom = new LABKEY.vis.Geom.Point({
+                opacity: .5
+            });
+        } else {
+            return;
+        }
+
+        labels = {
+            main: {value: this.chartData.queryName + ' - ' + this.yAxisMeasure.label},
+            y: {
+                value: this.yAxisMeasure.label,
+                listeners: {
+                    click: yClickHandler(this)
+                }
+            },
+            x: {
+                value: xMeasureName,
+                listeners: {
+                    click: xClickHandler(this)
+                }
+            }
+
+        };
+
+        plotConfig = this.generatePlotConfig(
+                geom,
+                newChartDiv.id,
+                newChartDiv.getWidth(),
+                newChartDiv.getHeight() - 25,
+                this.chartData.rows,
+                labels,
+                scales,
+                this.xAxisMeasure ? xMeasureName : function(row){return xMeasureName},
+                this.yAxisMeasure.name
+        );
+        var plot = new LABKEY.vis.Plot(plotConfig);
+        plot.render();
+    },
+
+    generatePlotConfig: function(geom, renderTo, width, height, data, labels, scales, xAxis, yAxis){
+        var aes = {
+            y: yAxis,
+            x: xAxis
+        };
+        if(geom.type == "Boxplot"){
+            aes.hoverText = function(x, stats){
+                return x + ':\nMin: ' + stats.min + '\nMax: ' + stats.max + '\nQ1: ' + stats.Q1 + '\nQ2: ' + stats.Q2 +
+                        '\nQ3: ' + stats.Q3;
+            };
+        } else if(geom.type == "Point"){
+            aes.hoverText = function(row){
+                return xAxis + ': ' + row[xAxis] + ', ' + yAxis + ': ' + row[yAxis];
+            };
+        }
+
+        var plotConfig = {
+            renderTo: renderTo,
+            width: width,
+            height: height,
+            legendPos: 'none',
+            labels: labels,
+            layers: [new LABKEY.vis.Layer({geom: geom})],
+            scales: scales,
+            aes: aes,
+            data: data
+        };
+
+        return plotConfig;
+    },
+
+    viewPanelActivate: function(){
+        var queryCfg = this.getQueryConfig();
+        var filters = queryCfg.filterArray;
+        if(!this.chartData){
+            LABKEY.Query.selectRows(queryCfg);
+        } else {
+            var lastFilterString = this.createFilterString(this.filters);
+            var currentFilterString = this.createFilterString(filters);
+            if(lastFilterString != currentFilterString){
+                LABKEY.Query.selectRows(queryCfg);
+            }
+        }
+    },
+
+    createFilterString: function(filterArray){
+        var filterString = '';
+        for(var i = 0; i < filterArray.length; i++){
+            filterString = filterString + filterArray[i].getColumnName + filterArray[i].getValue;
+        }
+
+        return filterString;
+    },
+
+    onSelectRowsSuccess: function(response){
+        this.chartData = response;
+        this.filters = this.getQueryConfig(true).filterArray;
+        this.yMeasureStore.loadRawData(this.chartData.metaData.fields);
+        this.xMeasureStore.loadRawData(this.chartData.metaData.fields);
+
+        this.renderPlot();
+    },
+
+    showYMeasureWindow: function(){
+        this.yMeasureWindow.show();
+    },
+
+    showXMeasureWindow: function(){
+        this.xMeasureWindow.show();
     }
 });
