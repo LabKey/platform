@@ -125,7 +125,8 @@ public abstract class BaseStudyTable extends FilteredTable
         };
         lfk.addJoin(new FieldKey(null, "Container"), "Container", false);
         participantColumn.setFk(lfk);
-        participantColumn.setURL(LookupForeignKey.getDetailsURL(participantColumn, lfk.getLookupTableInfo(), subjectColName));
+        if(lfk.getLookupTableInfo() != null)
+            participantColumn.setURL(LookupForeignKey.getDetailsURL(participantColumn, lfk.getLookupTableInfo(), subjectColName));
 
         participantColumn.setKeyField(true);
 
