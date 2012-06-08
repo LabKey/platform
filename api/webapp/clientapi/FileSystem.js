@@ -310,6 +310,7 @@ Ext.extend(LABKEY.FileSystem.AbstractFileSystem, Ext.util.Observable, {
     ready     : true,
     rootPath  : "/",
     separator : "/",
+    directoryMap : {},
 
     constructor : function(config)
     {
