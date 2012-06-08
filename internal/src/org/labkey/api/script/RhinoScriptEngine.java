@@ -27,6 +27,7 @@ package org.labkey.api.script;
 import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import com.sun.phobos.script.util.*;
 import com.sun.phobos.script.util.ExtendedScriptException;
+import org.labkey.api.util.ExceptionUtil;
 import org.mozilla.javascript.*;
 
 import javax.script.*;
@@ -197,11 +198,17 @@ public class RhinoScriptEngine extends AbstractScriptEngine
             String str = (value != null && value.getClass().getName().equals("org.mozilla.javascript.NativeError") ?
                           value.toString() :
                           jse.toString());
-            throw new com.sun.phobos.script.util.ExtendedScriptException(jse, str, jse.sourceName(), line);
+            // kevink: supress mothership logging.
+            ScriptException ex = new ExtendedScriptException(jse, str, jse.sourceName(), line);
+            ExceptionUtil.decorateException(ex, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
+            throw ex;
         } catch (RhinoException re) {
             if (DEBUG) re.printStackTrace();
             int line = (line = re.lineNumber()) == 0 ? -1 : line;
-            throw new ExtendedScriptException(re, re.toString(), re.sourceName(), line);
+            // kevink: supress mothership logging.
+            ScriptException ex = new ExtendedScriptException(re, re.toString(), re.sourceName(), line);
+            ExceptionUtil.decorateException(ex, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
+            throw ex;
         } catch (IOException ee) {
             throw new ScriptException(ee);
         } finally {
@@ -272,11 +279,17 @@ public class RhinoScriptEngine extends AbstractScriptEngine
             String str = (value != null && value.getClass().getName().equals("org.mozilla.javascript.NativeError") ?
                           value.toString() :
                           jse.toString());
-            throw new ExtendedScriptException(jse, str, jse.sourceName(), line);
+            // kevink: supress mothership logging.
+            ScriptException ex = new ExtendedScriptException(jse, str, jse.sourceName(), line);
+            ExceptionUtil.decorateException(ex, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
+            throw ex;
         } catch (RhinoException re) {
             if (DEBUG) re.printStackTrace();
             int line = (line = re.lineNumber()) == 0 ? -1 : line;
-            throw new ExtendedScriptException(re, re.toString(), re.sourceName(), line);
+            // kevink: Throw our exception class to supress mothership logging.
+            ScriptException ex = new ExtendedScriptException(re, re.toString(), re.sourceName(), line);
+            ExceptionUtil.decorateException(ex, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
+            throw ex;
         } finally {
             cx.exit();
         }
