@@ -92,6 +92,7 @@ import java.util.Set;
 public class FileSystemResource extends AbstractWebdavResource
 {
     private static final Logger _log = Logger.getLogger(FileSystemResource.class);
+    public static final String URL_COL_PREFIX = "_labkeyurl_";
 
     protected List<FileInfo> _files;
     String _name = null;
@@ -663,6 +664,7 @@ public class FileSystemResource extends AbstractWebdavResource
                 {
                     customPropertyNames.add(prop.getName() + "_displayvalue");                    
                     customPropertyNames.add(prop.getName());
+                    customPropertyNames.add(URL_COL_PREFIX + prop.getName());
                 }
 
                 TableInfo ti = ExpSchema.TableType.Data.createTable(new ExpSchema(user, getContainer()), ExpSchema.TableType.Data.toString());

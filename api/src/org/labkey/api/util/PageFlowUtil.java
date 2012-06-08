@@ -20,6 +20,13 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.tika.detect.DefaultDetector;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MimeType;
+import org.apache.tika.mime.MimeTypeException;
+import org.apache.tika.mime.MimeTypes;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jfree.chart.encoders.EncoderUtil;
@@ -727,51 +734,160 @@ public class PageFlowUtil
         return contentType;
     }
 
+    public static String getContentTypeFor(File file)
+    {
+        MediaType type = getMediaTypeFor(file);
+        if (type == null || type.toString() == null)
+        {
+            return "application/octet-stream";
+        }
+        return type.toString();
+    }
+
+    /**
+     * Uses Tika to examine the contents of a file to detect the content type
+     * of a file.
+     * @return MediaType object
+     */
+    public static MediaType getMediaTypeFor(File file)
+    {
+        try {
+            DefaultDetector detector = new DefaultDetector();
+            Metadata metaData = new Metadata();
+
+            // use the metadata to hint at the type for a faster lookup
+            metaData.add(Metadata.RESOURCE_NAME_KEY, file.getName());
+            metaData.add(Metadata.CONTENT_TYPE, PageFlowUtil.getContentTypeFor(file.getName()));
+
+            return detector.detect(TikaInputStream.get(file), new Metadata());
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Sets up the response to stream back a file. The content type is inferred by the filename extension.
+     */
     public static void prepareResponseForFile(HttpServletResponse response, Map<String, String> responseHeaders, String filename, boolean asAttachment)
     {
+        if (filename == null)
+            throw new IllegalArgumentException("filename cannot be null");
+
+        _prepareResponseForFile(response, responseHeaders, getContentTypeFor(filename), filename, asAttachment);
+    }
+
+    /**
+     * Sets up the response to stream back a file. The content type is detected by the file contents.
+     */
+    public static void prepareResponseForFile(HttpServletResponse response, Map<String, String> responseHeaders, File file, boolean asAttachment)
+    {
+        if (file == null)
+            throw new IllegalArgumentException("file cannot be null");
+
+        String fileName = file.getName();
+        MediaType mediaType = getMediaTypeFor(file);
+        String contentType = getContentTypeFor(fileName);
+
+        if (mediaType != null && mediaType.compareTo(MediaType.parse(contentType)) != 0)
+        {
+            try
+            {
+                MimeType mimeType = MimeTypes.getDefaultMimeTypes().forName(mediaType.toString());
+                contentType = mediaType.toString();
+
+                // replace the extension of the filename with one that matches the content type
+                String ext = FileUtil.getExtension(fileName);
+                if (ext != null && mimeType != null)
+                {
+                    fileName = fileName.substring(0, fileName.length() - (ext.length() + 1)) + mimeType.getExtension();
+                }
+            }
+            catch (MimeTypeException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+        _prepareResponseForFile(response, responseHeaders, contentType, fileName, asAttachment);
+    }
+
+    private static void _prepareResponseForFile(HttpServletResponse response, Map<String, String> responseHeaders, String fileContentType, String fileName, boolean asAttachment)
+    {
         String contentType = responseHeaders.get("Content-Type");
-        if (null == contentType && null != filename)
-            contentType = getContentTypeFor(filename);
+        if (null == contentType && null != fileContentType)
+            contentType = fileContentType;
         response.reset();
         response.setContentType(contentType);
         if (asAttachment)
         {
-            response.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+            response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
         }
         else
         {
-            response.setHeader("Content-Disposition", "filename=\"" + filename + "\"");
+            response.setHeader("Content-Disposition", "filename=\"" + fileName + "\"");
         }
         for (Map.Entry<String, String> entry : responseHeaders.entrySet())
             response.setHeader(entry.getKey(), entry.getValue());
     }
 
+    /**
+     * Read the file and stream it to the browser through the response.
+     *
+     * @param detectContentType If set to true, then the content type is detected, else it is inferred from the extension
+     * of the file name.
+     * @throws IOException
+     */
+    public static void streamFile(HttpServletResponse response, File file, boolean asAttachment, boolean detectContentType) throws IOException
+    {
+        if (detectContentType)
+            streamFile(response, Collections.<String, String>emptyMap(), file, asAttachment);
+        else
+        {
+            try
+            {
+                streamFile(response, Collections.<String, String>emptyMap(), file.getName(), new FileInputStream(file), asAttachment);
+            }
+            catch (FileNotFoundException e)
+            {
+                throw new NotFoundException(file.getName());
+            }
+        }
+    }
+
     public static void streamFile(HttpServletResponse response, File file, boolean asAttachment) throws IOException
     {
-        streamFile(response, Collections.<String, String>emptyMap(), file, asAttachment);
-    }
-
-    public static void streamFile(HttpServletResponse response, String fileName, boolean asAttachment) throws IOException
-    {
-        streamFile(response, Collections.<String, String>emptyMap(), new File(fileName), asAttachment);
+        streamFile(response, file, asAttachment, false);
     }
 
 
-    // Read the file and stream it to the browser
+    /**
+     * Read the file and stream it to the browser through the response. The content type of the file is detected
+     * from the contents of the file.
+     *
+     * @throws IOException
+     */
     public static void streamFile(HttpServletResponse response, @NotNull Map<String, String> responseHeaders, File file, boolean asAttachment) throws IOException
     {
+        InputStream is = new FileInputStream(file);
         try
         {
-            streamFile(response, responseHeaders, file.getName(), new FileInputStream(file), asAttachment);
+            prepareResponseForFile(response, responseHeaders, file, asAttachment);
+            ServletOutputStream out = response.getOutputStream();
+            FileUtil.copyData(is, out);
         }
-        catch (FileNotFoundException e)
+        finally
         {
-            throw new NotFoundException(file.getName());
+            IOUtils.closeQuietly(is);
         }
     }
 
-
-    // Read the file and stream it to the browser
+    /**
+     * Read the file and stream it to the browser through the response. The content type of the file is detected
+     * from the file name extension.
+     *
+     * @throws IOException
+     */
     public static void streamFile(HttpServletResponse response, @NotNull Map<String, String> responseHeaders, String name, InputStream is, boolean asAttachment) throws IOException
     {
         try
