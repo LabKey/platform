@@ -186,9 +186,11 @@ LABKEY.FileContentConfig = Ext.extend(Ext.util.Observable, {
     tbarBtnConfig : [],             // array of toolbar btn configuration
     gridConfig : {},                // grid column model config
 
+
     constructor : function(config)
     {
         LABKEY.FileContentConfig.superclass.constructor.call(this, config);
+        this.URL_COL_PREFIX = '_labkeyurl_';
 
         this.addEvents(
             /**
@@ -339,16 +341,35 @@ LABKEY.FileContentConfig = Ext.extend(Ext.util.Observable, {
     createColumnModelColumns : function()
     {
         var columns = [];
+        var urlPrefix = this.URL_COL_PREFIX;
+
         var ttRenderer = function(value, p, record) {
             var msg = Ext.util.Format.htmlEncode(value);
             p.attr = 'ext:qtip="' + msg + '"';
             return msg;
         };
+
         var lookupRenderer = function(value, p, record, rIdx, cIdx) {
             var displayCol = this.dataIndex + '_displayValue';
+            var urlCol = urlPrefix + this.dataIndex;
 
             if (record.data[displayCol])
-                return Ext.util.Format.htmlEncode(record.data[displayCol]);
+            {
+                var displayValue = Ext.util.Format.htmlEncode(record.data[displayCol]);
+                if (record.data[urlCol])
+                    return '<a href=' + record.data[urlCol] + '>' + displayValue + '</a>';
+                else
+                    return displayValue;
+            }
+            else
+                return Ext.util.Format.htmlEncode(value);
+        };
+
+        var defaultRenderer = function(value, p, record) {
+            var urlCol = urlPrefix + this.dataIndex;
+
+            if (record.data[urlCol])
+                return '<a href=' + record.data[urlCol] + '>' + Ext.util.Format.htmlEncode(value) + '</a>';
             else
                 return Ext.util.Format.htmlEncode(value);
         };
@@ -364,7 +385,7 @@ LABKEY.FileContentConfig = Ext.extend(Ext.util.Observable, {
                     columns.push({header: prop.label ? prop.label : prop.name, dataIndex: prop.name, renderer: lookupRenderer, sortable:true});
                 else
                     // multiline fields will have a tooltip to display the entire contents
-                    columns.push({header: prop.label ? prop.label : prop.name, dataIndex: prop.name, renderer: idx != -1 ? ttRenderer : Ext.util.Format.htmlEncode, sortable:true});
+                    columns.push({header: prop.label ? prop.label : prop.name, dataIndex: prop.name, renderer: idx != -1 ? ttRenderer : defaultRenderer, sortable:true});
             }
         }
         return columns; 
@@ -392,6 +413,7 @@ LABKEY.FileContentConfig = Ext.extend(Ext.util.Observable, {
             {
                 var prop = this.fileFields[i];
                 var mapName = prop.name;
+                var urlColName = this.URL_COL_PREFIX + mapName;
 
                 if (prop.lookupQuery && prop.lookupSchema){
                     // for lookup columns, show the display value
@@ -399,6 +421,7 @@ LABKEY.FileContentConfig = Ext.extend(Ext.util.Observable, {
                     config.extraDataFields.push({name: displayValueName, mapping: 'propstat/prop/custom/' + displayValueName});
                 }
                 config.extraDataFields.push({name: prop.name, mapping: 'propstat/prop/custom/' + mapName});
+                config.extraDataFields.push({name: urlColName, mapping: 'propstat/prop/custom/' + urlColName});
             }
         }
         return config;

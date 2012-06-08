@@ -2447,7 +2447,7 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(IdForm form, BindException errors) throws Exception
         {
             UploadLog ul = AssayPublishManager.getInstance().getUploadLog(getContainer(), form.getId());
-            PageFlowUtil.streamFile(getViewContext().getResponse(), ul.getFilePath(), true);
+            PageFlowUtil.streamFile(getViewContext().getResponse(), new File(ul.getFilePath()), true);
 
             return null;
         }

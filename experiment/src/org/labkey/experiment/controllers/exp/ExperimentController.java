@@ -999,7 +999,7 @@ public class ExperimentController extends SpringActionController
 
             try
             {
-                PageFlowUtil.streamFile(getViewContext().getResponse(), files.getImageFile().getAbsolutePath(), false);
+                PageFlowUtil.streamFile(getViewContext().getResponse(), new File(files.getImageFile().getAbsolutePath()), false);
             }
             catch (FileNotFoundException e)
             {
@@ -1524,7 +1524,7 @@ public class ExperimentController extends SpringActionController
                     return null;
                 }
 
-                PageFlowUtil.streamFile(getViewContext().getResponse(), realContent.getAbsolutePath(), !inline);
+                PageFlowUtil.streamFile(getViewContext().getResponse(), new File(realContent.getAbsolutePath()), !inline);
             }
             catch (IOException e)
             {
@@ -4303,7 +4303,7 @@ public class ExperimentController extends SpringActionController
                 throw new NotFoundException();
             }
 
-            PageFlowUtil.streamFile(getViewContext().getResponse(), f.getAbsolutePath(), false);
+            PageFlowUtil.streamFile(getViewContext().getResponse(), new File(f.getAbsolutePath()), false);
             return null;
         }
 

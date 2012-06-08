@@ -18,8 +18,10 @@ package org.labkey.filecontent;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.apache.log4j.Logger;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
@@ -47,7 +49,9 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.webdav.FileSystemResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.writer.ContainerUser;
@@ -106,6 +110,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                 for (DomainProperty prop : domain.getProperties())
                 {
                     Object o = selectMap.get(prop.getName());
+                    String urlValue = getUrlValue(prop, selectMap);
 
                     if (o != null)
                     {
@@ -120,6 +125,9 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                                 rowMap.put(prop.getName(), fmt);
                             else
                                 rowMap.put(prop.getName(), o);
+
+                            if (urlValue != null)
+                                rowMap.put(FileSystemResource.URL_COL_PREFIX + prop.getName(), urlValue);
                         }
                         catch (Exception e)
                         {
@@ -139,6 +147,24 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
             }
         }
         return rowMap;
+    }
+
+    private String getUrlValue(DomainProperty prop, Map<String, Object> selectMap)
+    {
+        String urlValue = null;
+        ColumnInfo col = getQueryTable().getColumn(prop.getName());
+
+        if (col != null && col.getDisplayColumnFactory() != null)
+        {
+            DisplayColumn dc = col.getDisplayColumnFactory().createRenderer(col);
+            if (dc != null)
+            {
+                StringExpression url = dc.getURLExpression();
+                if (url != null)
+                    urlValue = url.eval(selectMap);
+            }
+        }
+        return urlValue;
     }
 
     IntegerConverter _converter = new IntegerConverter();
