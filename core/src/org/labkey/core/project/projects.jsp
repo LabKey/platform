@@ -144,8 +144,8 @@ Ext4.onReady(function(){
         }]
     }
 
-    var panel = Ext4.create('LABKEY.ext.IconPanel', panelCfg).render('<%=renderTarget%>');
-
+    var panel = Ext4.create('LABKEY.ext.IconPanel', panelCfg);
+    panel.render('<%=renderTarget%>');
     Ext4.apply(panel, config);
     panel.getFilterArray = getFilterArray;
 });
