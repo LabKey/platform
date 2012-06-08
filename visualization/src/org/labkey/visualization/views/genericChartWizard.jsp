@@ -60,6 +60,12 @@
             allowShare      : <%=c.hasPermission(ctx.getUser(), ShareReportPermission.class)%>,
             hideSave        : <%=ctx.getUser().isGuest()%>
         });
+
+        var _resize = function(w,h) {
+            LABKEY.Utils.resizeToViewport(panel, w, -1); // don't fit to height
+        }
+
+        Ext4.EventManager.onWindowResize(_resize);
     });
 
     function customizeGenericReport(elementId) {

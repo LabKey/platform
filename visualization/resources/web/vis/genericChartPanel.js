@@ -22,6 +22,15 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             editable  : false
         });
 
+        // delayed task to redraw the chart
+        this.updateChartTask = new Ext4.util.DelayedTask(function(){
+
+            if (this.isConfigurationChanged())
+                LABKEY.Query.selectRows(this.getQueryConfig());
+
+        }, this);
+
+        this.reportLoaded = true;
         this.callParent([config]);
     },
 
@@ -213,6 +222,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 }
             });
         }
+        this.viewPanel.on('resize', function(cmp) {
+            // only re-render after the initial chart rendering
+            if (this.chartData)
+                this.renderPlot();
+        }, this);
+
         return this.viewPanel;
     },
 
@@ -397,22 +412,52 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             config.scope = this;
         }
 
-        if (dataRegion)
-        {
-            var filters = dataRegion.getUserFilterArray();
-            if (serialize)
-            {
-                var newFilters = [];
+        var filters;
 
-                for (var i=0; i < filters.length; i++) {
-                    var f = filters[i];
-                    newFilters.push({name : f.getColumnName(), value : f.getValue(), type : f.getFilterType().getURLSuffix()});
-                }
-                filters = newFilters;
+        if (dataRegion)
+            filters = dataRegion.getUserFilterArray();
+        else
+            filters = this.userFilters || [];
+
+        if (serialize)
+        {
+            var newFilters = [];
+
+            for (var i=0; i < filters.length; i++) {
+                var f = filters[i];
+                newFilters.push({name : f.getColumnName(), value : f.getValue(), type : f.getFilterType().getURLSuffix()});
             }
-            config['filterArray'] = filters;
-        } else {
-            config['filterArray'] = [];
+            filters = newFilters;
+        }
+        config['filterArray'] = filters;
+
+        return config;
+    },
+
+    getChartConfig : function() {
+
+        var config = {};
+
+        if (this.xAxisMeasure)
+        {
+            config.xAxisMeasure = {
+                label   : this.xAxisMeasure.label,
+                name    : this.xAxisMeasure.name,
+                hidden  : this.xAxisMeasure.hidden,
+                measure : this.xAxisMeasure.measure,
+                type    : this.xAxisMeasure.type
+            }
+        }
+
+        if (this.yAxisMeasure)
+        {
+            config.yAxisMeasure = {
+                label   : this.yAxisMeasure.label,
+                name    : this.yAxisMeasure.name,
+                hidden  : this.yAxisMeasure.hidden,
+                measure : this.yAxisMeasure.measure,
+                type    : this.yAxisMeasure.type
+            }
         }
 
         return config;
@@ -625,8 +670,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             queryName   : this.queryName,
             renderType  : this.renderType,
             jsonData    : {
-                queryConfig : this.getQueryConfig(true)
-                // chart options go here
+                queryConfig : this.getQueryConfig(true),
+                chartConfig : this.getChartConfig()
             }
         };
 
@@ -758,6 +803,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     loadReport : function(reportId) {
 
+        this.reportLoaded = false;
         Ext4.Ajax.request({
             url     : LABKEY.ActionURL.buildURL('visualization', 'getGenericReport.api'),
             method  : 'GET',
@@ -800,7 +846,16 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 this.userFilters.push(LABKEY.Filter.create(f.name,  f.value, LABKEY.Filter.getFilterTypeForURLSuffix(f.type)));
             }
         }
+
+        if (json.chartConfig)
+        {
+            this.yAxisMeasure = json.chartConfig.yAxisMeasure;
+            this.xAxisMeasure = json.chartConfig.xAxisMeasure;
+        }
+
         this.markDirty(false);
+        this.reportLoaded = true;
+        this.updateChartTask.delay(500);
     },
 
     renderPlot: function() {
@@ -920,31 +975,21 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     },
 
     viewPanelActivate: function(){
-        var queryCfg = this.getQueryConfig();
-        var filters = queryCfg.filterArray;
-        if(!this.chartData){
-            LABKEY.Query.selectRows(queryCfg);
-        } else {
-            var lastFilterString = this.createFilterString(this.filters);
-            var currentFilterString = this.createFilterString(filters);
-            if(lastFilterString != currentFilterString){
-                LABKEY.Query.selectRows(queryCfg);
-            }
-        }
+
+        this.updateChartTask.delay(500);
     },
 
     createFilterString: function(filterArray){
-        var filterString = '';
-        for(var i = 0; i < filterArray.length; i++){
-            filterString = filterString + filterArray[i].getColumnName + filterArray[i].getValue;
+        var filterParams = [];
+        for (var i = 0; i < filterArray.length; i++){
+            filterParams.push(filterArray[i].getURLParameterName() + '=' + filterArray[i].getURLParameterValue());
         }
 
-        return filterString;
+        return filterParams.join('&');
     },
 
     onSelectRowsSuccess: function(response){
         this.chartData = response;
-        this.filters = this.getQueryConfig(true).filterArray;
         this.yMeasureStore.loadRawData(this.chartData.metaData.fields);
         this.xMeasureStore.loadRawData(this.chartData.metaData.fields);
 
@@ -957,5 +1002,40 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     showXMeasureWindow: function(){
         this.xMeasureWindow.show();
+    },
+
+    /**
+     * used to determine if the new chart options are different from the
+     * currently rendered options
+     */
+    isConfigurationChanged : function() {
+
+        var queryCfg = this.getQueryConfig();
+
+        // ugly race condition, haven't loaded a saved report yet
+        if (!this.reportLoaded)
+            return false;
+
+        if (!this.chartData)
+            return true;
+
+        // check if the user filters have changed
+        if (!this.currentFilterStr)
+        {
+            this.currentFilterStr = this.createFilterString(queryCfg.filterArray);
+            return true;
+        }
+        else
+        {
+            var filterStr = this.createFilterString(queryCfg.filterArray);
+
+            if (this.currentFilterStr != filterStr)
+            {
+                this.currentFilterStr = filterStr;
+                return true;
+            }
+        }
+
+        return false;
     }
 });
