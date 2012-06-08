@@ -20,7 +20,8 @@ Ext4.define('LABKEY.vis.MainTitleOptionsPanel', {
 
         this.addEvents(
             'chartDefinitionChanged',
-            'closeOptionsWindow'
+            'closeOptionsWindow',
+            'resetTitle'
         );
     },
 
@@ -29,11 +30,10 @@ Ext4.define('LABKEY.vis.MainTitleOptionsPanel', {
         this.hasChanges = false;
 
         this.chartTitleTextField = Ext4.create('Ext.form.field.Text', {
-            name: 'chart-title-textfield',
-            labelAlign: 'top',
-            fieldLabel: 'Chart Title',
+            name: 'chart-title-textfield', // for selenium testing
+            hideLabel: true,
             value: this.mainTitle,
-            anchor: '100%',
+            flex: 1,
             enableKeyEvents: true,
             listeners: {
                 scope: this,
@@ -45,9 +45,35 @@ Ext4.define('LABKEY.vis.MainTitleOptionsPanel', {
         this.chartTitleTextField.addListener('keyUp', function(){
             this.userEditedTitle = true;
             this.hasChanges = true;
+            this.titleResetButton.enable();
         }, this, {buffer: 500});
 
-        this.items = [this.chartTitleTextField];
+        // button to reset a user defined label to the default
+        this.titleResetButton = Ext4.create('Ext.Button', {
+            disabled: !this.userEditedTitle,
+            iconCls:'iconReload',
+            tooltip: 'Reset the label to the default value based on the selected measures.',
+            handler: function() {
+                this.titleResetButton.disable();
+                this.userEditedTitle = false;
+                this.fireEvent('resetTitle');
+            },
+            scope: this
+        });
+
+        this.items = [
+            Ext4.create('Ext.form.Label', {text: 'Chart Title:'}),
+            {
+                xtype: 'fieldcontainer',
+                layout: 'hbox',
+                anchor: '100%',
+                style: {paddingTop: '5px'},
+                items: [
+                    this.chartTitleTextField,
+                    this.titleResetButton
+                ]
+            }
+        ];
 
         this.buttons = [
             {

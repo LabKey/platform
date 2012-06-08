@@ -30,7 +30,7 @@ Ext4.define('LABKEY.vis.YAxisOptionsPanel', {
 
         this.callParent([config]);
 
-        this.addEvents('chartDefinitionChanged', 'closeOptionsWindow');
+        this.addEvents('chartDefinitionChanged', 'closeOptionsWindow', 'resetLabel');
     },
 
     initComponent : function() {
@@ -63,9 +63,9 @@ Ext4.define('LABKEY.vis.YAxisOptionsPanel', {
         this.labelTextField = Ext4.create('Ext.form.field.Text', {
             fieldLabel: 'Axis label',
             labelWidth: 75,
-            anchor: '100%',
             value: this.axis.label,
             enableKeyEvents: true,
+            flex: 1,
             listeners: {
                 scope: this,
                 'change': function(cmp, newVal, oldVal) {
@@ -74,9 +74,23 @@ Ext4.define('LABKEY.vis.YAxisOptionsPanel', {
             }
         });
         this.labelTextField.addListener('keyUp', function(){
-                this.userEditedLabel = true;
-                this.hasChanges = true;
-            }, this, {buffer: 500});
+            this.userEditedLabel = true;
+            this.hasChanges = true;
+            this.labelResetButton.enable();
+        }, this, {buffer: 500});
+
+        // button to reset a user defined label to the default based on the selected measures
+        this.labelResetButton = Ext4.create('Ext.Button', {
+            disabled: !this.userEditedLabel,
+            iconCls:'iconReload',
+            tooltip: 'Reset the label to the default value based on the selected measures.',
+            handler: function() {
+                this.labelResetButton.disable();
+                this.userEditedLabel = false;
+                this.fireEvent('resetLabel');
+            },
+            scope: this
+        });
 
         this.rangeAutomaticRadio = Ext4.create('Ext.form.field.Radio', {
             fieldLabel: 'Range',
@@ -151,7 +165,15 @@ Ext4.define('LABKEY.vis.YAxisOptionsPanel', {
         });
 
         this.items = [
-            this.labelTextField,
+            {
+                xtype: 'fieldcontainer',
+                layout: 'hbox',
+                anchor: '100%',
+                items: [
+                    this.labelTextField,
+                    this.labelResetButton
+                ]
+            },
             this.scaleCombo,
             this.rangeAutomaticRadio,
             {

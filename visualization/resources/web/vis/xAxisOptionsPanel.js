@@ -39,6 +39,11 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
             ]
         });
 
+        // track if the axis label is something that has been set by the user
+        Ext4.apply(config, {
+            userEditedLabel: false
+        });
+
         this.callParent([config]);
 
         this.addEvents(
@@ -81,18 +86,7 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
                             this.rangeMinNumberField.enable();
                         }
 
-                        if(this.labelTextField.getValue()== "Visit") {
-                            var newLabel = "";
-                            if(this.zeroDateCombo.getValue() != ""){
-                                newLabel = this.intervalCombo.getValue() + " Since " + this.zeroDateCombo.getStore().getAt(this.zeroDateCombo.getStore().find('longlabel', this.zeroDateCombo.getValue())).data.label;
-                            } else {
-                                //If the zeroDateCombo is blank then we try the zeroDateCol, this prevents errors if a
-                                //dataset has been hidden after a chart has been made (Issue 13554: Time chart doesn't refresh when switching chart type).
-                                newLabel = this.intervalCombo.getValue() + " Since " + this.zeroDateCol.label;
-                            }
-
-                            this.labelTextField.setValue(newLabel);
-                        }
+                        this.resetLabel();
 
                         this.hasChanges = true;
                         this.requireDataRefresh = true;
@@ -120,11 +114,7 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
                         this.rangeMaxNumberField.setValue('');
                         this.rangeMinNumberField.disable();
                         this.rangeMinNumberField.setValue('');
-
-                        var beginning = this.intervalCombo.getValue() + " Since ";
-                        if(this.labelTextField.getValue() && this.labelTextField.getValue().indexOf(beginning) == 0) {
-                            this.labelTextField.setValue("Visit");
-                        }
+                        this.resetLabel();
 
                         if(!this.doNotRefreshChart){
                             this.hasChanges = true;
@@ -163,12 +153,14 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
                 listeners: {
                     scope: this,
                     'load': function() {
-                        // if this is not a saved chart and the zerodatecol value has loaded, then set the default axis label
-                        if(!this.axis.label && this.zeroDateCombo && this.zeroDateCombo.getValue()) {
-                            var zeroDateLabel = this.zeroDateCombo.getStore().getAt(this.zeroDateCombo.getStore().find('longlabel', this.zeroDateCombo.getValue())).data.label;
-                            var newLabel = "Days Since " + zeroDateLabel;
-                            this.labelTextField.setValue(newLabel);
+                        // if the zerodatecol value has loaded, check if this is a saved chart or if we need to reset the label to the default
+                        if (this.axis.label && this.zeroDateCombo && this.zeroDateCombo.getValue())
+                        {
+                            this.userEditedLabel = this.axis.label != this.getDefaultLabel();
+                            this.labelResetButton.setDisabled(!this.userEditedLabel);
                         }
+                        else if (!this.axis.label && this.zeroDateCombo && this.zeroDateCombo.getValue())
+                            this.resetLabel();
                     }
                 }
             }),
@@ -183,22 +175,7 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
                 scope: this,
                 'select': function(cmp, records) {
                     // change the axis label if it has not been customized by the user
-                    // note: assume unchanged if contains part of the original label, i.e. " Since <Zero Date Label>"
-                    var zeroDateLabel = '';
-
-                    if(this.zeroDateCombo.getValue() != ""){
-                        zeroDateLabel = this.zeroDateCombo.getStore().getAt(this.zeroDateCombo.getStore().find('longlabel', this.zeroDateCombo.getValue())).data.label;
-                    } else {
-                        //If the zeroDateCombo is blank then we try the zeroDateCol, this prevents errors if a
-                        //dataset has been hidden after a chart has been made (Issue 13809: Saved timecharts don't refresh after changing x-axis duration).
-                        zeroDateLabel = this.zeroDateCol.label;
-                    }
-
-                    var ending = " Since " + zeroDateLabel;
-                    if(this.labelTextField.getValue().indexOf(ending) > -1 && records.length > 0) {
-                        var newLabel = records[0].data.value + " Since " + zeroDateLabel;
-                        this.labelTextField.setValue(newLabel);
-                    }
+                    this.resetLabel();
 
                     this.hasChanges = true;
                     this.requireDataRefresh = true;
@@ -227,13 +204,7 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
                     if (records.length > 0)
                     {
                         // change the axis label if it has not been customized by the user
-                        // note: assume unchanged if contains part of the original label, i.e. " Since <Zero Date Label>"
-                        var beginning = this.intervalCombo.getValue() + " Since ";
-                        if (this.labelTextField.getValue().indexOf(beginning) == 0)
-                        {
-                           var newLabel = this.intervalCombo.getValue() + " Since " + records[0].data.label;
-                           this.labelTextField.setValue(newLabel);
-                        }
+                        this.resetLabel();
 
                         Ext4.apply(this.zeroDateCol, records[0].data);
                         this.hasChanges = true;
@@ -247,10 +218,9 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
         this.labelTextField = Ext4.create('Ext.form.field.Text', {
             cls: 'x-axis-label-textfield-test',
             name: 'x-axis-label-textfield',
-            fieldLabel: 'Axis label',
-            labelAlign: 'top',
+            hideLabel: true,
             value: this.axis.label,
-            anchor: '100%',
+            flex: 1,
             enableKeyEvents: true,
             listeners: {
                 scope: this,
@@ -260,9 +230,35 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
             }
         });
         this.labelTextField.addListener('keyUp', function(){
-                this.hasChanges = true;
-            }, this, {buffer: 500});
-        columnTwoItems.push(this.labelTextField);
+            this.userEditedLabel = true;
+            this.hasChanges = true;
+            this.labelResetButton.enable();
+        }, this, {buffer: 500});
+
+        // button to reset a user defined label to the default based on the selected measures
+        this.labelResetButton = Ext4.create('Ext.Button', {
+            disabled: true,
+            iconCls:'iconReload',
+            tooltip: 'Reset the label to the default value based on the panel settings.',
+            handler: function() {
+                this.labelResetButton.disable();
+                this.userEditedLabel = false;
+                this.resetLabel();
+            },
+            scope: this
+        });
+
+        columnTwoItems.push(Ext4.create('Ext.form.Label', {text: 'Axis label'}));
+        columnTwoItems.push({
+            xtype: 'fieldcontainer',
+            layout: 'hbox',
+            anchor: '100%',
+            style: {paddingTop: '5px'},
+            items: [
+                this.labelTextField,
+                this.labelResetButton
+            ]
+        });
 
         this.rangeAutomaticRadio = Ext4.create('Ext.form.field.Radio', {
             id: 'xaxis_range_automatic', // for selenium testing
@@ -433,7 +429,7 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
                         // set the chart up as a visit based chart since there are no other options.
                         this.doNotRefreshChart = true; // Set doNotRefreshChart to prevent chart from firing ChartDefinitionChanged event.
                         this.visitChartRadio.setValue(true);
-                        this.labelTextField.setValue("Visit");
+                        this.resetLabel();
                         this.dateChartRadio.disable();
                         this.visitChartRadio.disable();
                     }
@@ -463,12 +459,14 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
                         Ext4.apply(this.zeroDateCol, store.getAt(index).data);
                     }
 
-                    // if this is not a saved chart and the interval value has loaded, then set the default axis label
-                    if(!this.axis.label && this.intervalCombo && this.intervalCombo.getValue() && store.find('longlabel', this.zeroDateCombo.getValue()) > -1) {
-                        var zeroDateLabel = store.getAt(store.find('longlabel', this.zeroDateCombo.getValue())).data.label;
-                        var newLabel = this.intervalCombo.getValue() + " Since " + zeroDateLabel;
-                        this.labelTextField.setValue(newLabel);
+                    // if the interval value has loaded, check if this is a saved chart or if we need to reset the label to the default
+                    if (this.axis.label && this.intervalCombo && this.intervalCombo.getValue())
+                    {
+                        this.userEditedLabel = this.axis.label != this.getDefaultLabel();
+                        this.labelResetButton.setDisabled(!this.userEditedLabel);
                     }
+                    else if (!this.axis.label && this.intervalCombo && this.intervalCombo.getValue())
+                        this.resetLabel();
 
                     // this is one of the requests being tracked, see if the rest are done
                     this.fireEvent('measureMetadataRequestComplete');
@@ -497,6 +495,43 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
 
             this.rangeMaxNumberField.disable();
             this.rangeMaxNumberField.setValue("");
+        }
+    },
+
+    resetLabel : function() {
+        if (!this.userEditedLabel)
+        {
+            var newLabel = this.getDefaultLabel();
+            if (newLabel != null)
+                this.labelTextField.setValue(newLabel);
+        }
+    },
+
+    getDefaultLabel : function () {
+        if (this.visitChartRadio.checked && this.intervalCombo.disabled)
+            return "Visit";
+        else // date radio checked
+        {
+            var store = this.zeroDateCombo.getStore();
+            if (this.intervalCombo.getValue())
+            {
+                var zeroDateLabel = null;
+                if (this.zeroDateCombo.getValue() != "" && store.find('longlabel', this.zeroDateCombo.getValue()) > -1)
+                {
+                    zeroDateLabel = store.getAt(store.find('longlabel', this.zeroDateCombo.getValue())).data.label;
+                }
+                else if (this.zeroDateCol.label)
+                {
+                    //If the zeroDateCombo is blank then we try the zeroDateCol, this prevents errors if a
+                    //dataset has been hidden after a chart has been made
+                    // (Issue 13554: Time chart doesn't refresh when switching chart type)
+                    // (Issue 13809: Saved timecharts don't refresh after changing x-axis duration)
+                    zeroDateLabel = this.zeroDateCol.label;
+                }
+
+                return this.intervalCombo.getValue() + " Since " + zeroDateLabel;
+            }
+            return null;
         }
     },
 
