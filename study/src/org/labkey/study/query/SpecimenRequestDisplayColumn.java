@@ -88,13 +88,11 @@ public class SpecimenRequestDisplayColumn extends SimpleDisplayColumn
             out.write(getVialCountHtml(ctx, "<img src=\"" + ctx.getViewContext().getContextPath() + "/_images/exclaim.gif\">",
                     "Zero Vials Available", "No vials of this primary specimen are currently available for request.", null));
         }
-        else if (_showZeroVialIndicator || _showOneVialIndicator)
+        else
         {
             out.write(getVialCountHtml(ctx, "<div style='color:gray'>" + String.valueOf(count)  + "</div>",
                     count + " Vials Available", count + " vials of this primary specimen are currently available for new requests.", script));
         }
-        else
-            out.write("&nbsp;");
 
         if (showCart)
             out.write("</a></span>");
