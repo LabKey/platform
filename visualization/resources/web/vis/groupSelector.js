@@ -106,7 +106,6 @@ Ext4.define('LABKEY.vis.GroupSelector', {
             }),
             maxInitSelection: this.maxInitSelection,
             selection : this.selection,
-            //description : '<b class="filter-description">Groups</b>',
             listeners : {
                 selectionchange : function(){
                     this.fireChangeTask.delay(1000);

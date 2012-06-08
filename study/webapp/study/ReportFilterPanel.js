@@ -5,7 +5,7 @@
  */
 LABKEY.requiresExt4Sandbox(true);
 LABKEY.requiresCss("study/DataViewsPanel.css");
-Ext4.ns('LABKEY.ext4.filter')
+Ext4.ns('LABKEY.ext4.filter');
 
 /**
  * Base class that will render one section of a FilterPanel, displaying a list of checkboxes.
@@ -43,7 +43,6 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
                 xtype : 'box',
                 autoEl: {
                     tag : 'div',
-                    //style: 'padding-left: 5px;',
                     html: this.description
                 }
             });
