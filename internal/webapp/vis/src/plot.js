@@ -6,7 +6,7 @@
 
 LABKEY.vis.Plot = function(config){
 
-    this.error = function(msg){
+    var error = function(msg){
         console.error(msg);
         if(console.trace){
             console.trace();
@@ -109,17 +109,17 @@ LABKEY.vis.Plot = function(config){
     }
 
     if(this.grid.width == null){
-		this.error("Unable to create plot, width not specified");
+		error("Unable to create plot, width not specified");
 		return null;
 	}
 
 	if(this.grid.height == null){
-		this.error("Unable to create plot, height not specified");
+		error("Unable to create plot, height not specified");
 		return null;
 	}
 
 	if(this.renderTo == null){
-		this.error("Unable to create plot, renderTo not specified");
+		error("Unable to create plot, renderTo not specified");
 		return null;
 	}
 
@@ -258,12 +258,12 @@ LABKEY.vis.Plot = function(config){
         }
 
         if(!this.scales.x || !this.scales.x.scale){
-            this.error('Unable to create an x scale, rendering aborted.');
+            error.call(this, 'Unable to create an x scale, rendering aborted.');
             return false;
         }
 
         if((!this.scales.yLeft || !this.scales.yLeft.scale) && (!this.scales.yRight ||!this.scales.yRight.scale)){
-            this.error("Unable to create a y scale, rendering aborted.");
+            error.call(this, "Unable to create a y scale, rendering aborted.");
             return false;
         }
 
@@ -504,7 +504,7 @@ LABKEY.vis.Plot = function(config){
         this.paper.clear();
         
         if(!this.layers || this.layers.length < 1){
-            this.error('No layers added to the plot, nothing to render.');
+            error.call(this,'No layers added to the plot, nothing to render.');
             return false;
         }
 

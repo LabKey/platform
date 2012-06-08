@@ -317,6 +317,7 @@ var boxPlot = new LABKEY.vis.Plot({
         yLeft: 'age',
         x: 'group'
 //        yLeft: function(row){return row.study_LabResults_CD4.value},
+//        x: function(row){return "All Participants"}
 //        x: function(row){return row.study_LabResults_ParticipantId.value}
     },
     scales: {
@@ -326,8 +327,6 @@ var boxPlot = new LABKEY.vis.Plot({
         yLeft: {
             scaleType: 'continuous',
             trans: 'linear'
-            ,min: 0,
-            max: 100
         }
     },
     margins: {
