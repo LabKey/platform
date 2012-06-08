@@ -109,5 +109,4 @@ public class ListSchema extends UserSchema
             root.addChild("Manage lists", ListController.getBeginURL(getContainer()));
         return root;
     }
-
 }

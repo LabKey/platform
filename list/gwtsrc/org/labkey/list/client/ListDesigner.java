@@ -993,7 +993,6 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         {
             errors.addAll(_propEdit.validate());
         }
-
     }
 
 

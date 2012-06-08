@@ -18,6 +18,7 @@ package org.labkey.list.model;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
@@ -268,29 +269,34 @@ public class ListItemImpl implements ListItem
                 AttachmentParent parent = new ListItemAttachmentParent(this, _list.getContainer());
                 List<AttachmentFile> newAttachments = new ArrayList<AttachmentFile>();
                 OntologyObject obj = ensureOntologyObject();
+
                 for (Map.Entry<String, ObjectProperty> entry : _properties.entrySet())
                 {
                     ObjectProperty newProperty = entry.getValue();
                     ObjectProperty oldProperty = _oldProperties.get(entry.getKey());
+
                     if (ObjectUtils.equals(oldProperty, newProperty))
                     {
                         continue;
                     }
+
                     DomainProperty dp = dps.get(entry.getKey());
+
                     if (dp == null)
                     {
                         continue;
                     }
+
                     if (_oldProperties.containsKey(entry.getKey())) // oldProperty may be null, but it could have a record
                     {
                         if (dp.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT && oldProperty != null)
                             AttachmentService.get().deleteAttachment(parent, oldProperty.getStringValue(), user);
                         OntologyManager.deleteProperty(obj.getObjectURI(), entry.getKey(), obj.getContainer(), obj.getContainer());
                     }
+
                     if (newProperty.value() != null || newProperty.getMvIndicator() != null)
                     {
                         Object value = newProperty.value();
-                        String mvIndicator = null;
 
                         // TODO: Should be able to use newProperty instead of creating yet another ObjectProperty... but don't want to try to figure that out right now
                         ObjectProperty insertProperty = new ObjectProperty(obj.getObjectURI(), obj.getContainer(), entry.getKey(), value, dp.getPropertyDescriptor().getPropertyType(), dp.getPropertyDescriptor().getName());
@@ -312,9 +318,11 @@ public class ListItemImpl implements ListItem
                         }
                     }
                 }
+
                 _oldProperties = null;
                 AttachmentService.get().addAttachments(parent, newAttachments, user);
             }
+
             if (_new)
             {
                 if (_list.getKeyType().equals(ListDefinition.KeyType.AutoIncrementInteger) && null == _itm.getKey())
@@ -327,6 +335,11 @@ public class ListItemImpl implements ListItem
             {
                 _itm = Table.update(user, _list.getIndexTable(), _itm, new Object[] { _itmOld.getListId(), _itmOld.getKey()});
                 _itmOld = null;
+            }
+            else
+            {
+                // This updates the Modified and ModifiedBy fields
+                Table.update(user, _list.getIndexTable(), new HashMap<String, Object>(), new Object[] {_itm.getListId(), _itm.getKey()});
             }
 
             if (!bulkLoad)
@@ -418,7 +431,7 @@ public class ListItemImpl implements ListItem
         return _itm;
     }
 
-    private void addAuditEvent(User user, String comment, String entityId, String oldRecord, String newRecord)
+    private void addAuditEvent(User user, String comment, String entityId, @Nullable String oldRecord, @Nullable String newRecord)
     {
         AuditLogEvent event = new AuditLogEvent();
 
@@ -427,8 +440,9 @@ public class ListItemImpl implements ListItem
 
         Container c = _list.getContainer();
         event.setContainerId(c.getId());
-        if (c.getProject() != null)
-            event.setProjectId(c.getProject().getId());
+        Container project = c.getProject();
+        if (null != project)
+            event.setProjectId(project.getId());
         event.setKey1(_list.getDomain().getTypeURI());
 
         event.setEventType(ListManager.LIST_AUDIT_EVENT);
@@ -455,7 +469,7 @@ public class ListItemImpl implements ListItem
             AuditLogService.get().addEvent(event);
     }
 
-    private String _formatItemRecord(User user, Map<String, ObjectProperty> props, Map<String, DomainProperty> dps, Object keyValue)
+    private String _formatItemRecord(User user, Map<String, ObjectProperty> props, @Nullable Map<String, DomainProperty> dps, Object keyValue)
     {
         try
         {

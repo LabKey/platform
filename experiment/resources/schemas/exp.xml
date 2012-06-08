@@ -210,6 +210,11 @@
             <ns:column columnName="Key" />
             <ns:column columnName="ObjectId" />
             <ns:column columnName="EntityId" />
+            <ns:column columnName="Created" />
+            <ns:column columnName="CreatedBy" />
+            <ns:column columnName="Modified" />
+            <ns:column columnName="ModifiedBy" />
+            <ns:column columnName="LastIndexed" />
         </ns:columns>
     </ns:table>
     <ns:table tableName="IndexVarchar" tableDbType="TABLE">
@@ -218,6 +223,11 @@
             <ns:column columnName="Key" />
             <ns:column columnName="ObjectId" />
             <ns:column columnName="EntityId" />
+            <ns:column columnName="Created" />
+            <ns:column columnName="CreatedBy" />
+            <ns:column columnName="Modified" />
+            <ns:column columnName="ModifiedBy" />
+            <ns:column columnName="LastIndexed" />
         </ns:columns>
     </ns:table>
     <ns:table tableName="Material" tableDbType="TABLE">

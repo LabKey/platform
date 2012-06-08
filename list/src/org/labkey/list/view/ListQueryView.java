@@ -23,7 +23,6 @@ import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.list.model.ListSchema;

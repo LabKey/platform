@@ -137,10 +137,14 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
         setTitleColumn(findTitleColumn(listDef, colKey), auto);
 
         // Make EntityId column available so AttachmentDisplayColumn can request it as a dependency
-        // Do this last so the column doesn't get selected as title column, etc.
-        ColumnInfo colEntityId = wrapColumn(getRealTable().getColumn("EntityId"));
-        colEntityId.setHidden(true);
-        addColumn(colEntityId);
+        // Do this late so the column doesn't get selected as title column, etc.
+        addHiddenColumn("EntityId");
+
+        // Make standard created & modified columns available.
+        addHiddenColumn("Created");
+        addHiddenColumn("CreatedBy");
+        addHiddenColumn("Modified");
+        addHiddenColumn("ModifiedBy");
 
         DetailsURL gridURL = new DetailsURL(_list.urlShowData(), Collections.<String, String>emptyMap());
         setGridURL(gridURL);
@@ -164,6 +168,14 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
         }
     }
     
+
+    private void addHiddenColumn(String name)
+    {
+        ColumnInfo hiddenColumn = wrapColumn(getRealTable().getColumn(name));
+        hiddenColumn.setHidden(true);
+        addColumn(hiddenColumn);
+    }
+
 
     @Override
     public Domain getDomain()

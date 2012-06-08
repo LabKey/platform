@@ -733,7 +733,7 @@ public class ListDefinitionImpl implements ListDefinition
         return urlFor(ListController.GridAction.class);
     }
 
-    public ActionURL urlUpdate(Object pk, URLHelper returnUrl)
+    public ActionURL urlUpdate(@Nullable Object pk, @Nullable URLHelper returnUrl)
     {
         ActionURL url = urlFor(ListController.UpdateAction.class);
 
@@ -747,7 +747,7 @@ public class ListDefinitionImpl implements ListDefinition
         return url;
     }
 
-    public ActionURL urlDetails(Object pk)
+    public ActionURL urlDetails(@Nullable Object pk)
     {
         ActionURL url = urlFor(ListController.DetailsAction.class);
         // Can be null if caller will be filling in pk (e.g., grid edit column)
