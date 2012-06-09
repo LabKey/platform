@@ -18,7 +18,11 @@ package org.labkey.list.model;
 
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -39,7 +43,6 @@ import org.labkey.list.view.ListController;
 import org.labkey.list.view.ListItemAttachmentParent;
 
 import java.sql.SQLException;
-import java.util.Collections;
 import java.util.Set;
 
 public class ListDomainType extends AbstractDomainKind
@@ -160,6 +163,6 @@ public class ListDomainType extends AbstractDomainKind
 
     public Set<String> getReservedPropertyNames(Domain domain)
     {
-        return Collections.emptySet();
+        return PageFlowUtil.set("ObjectId", "EntityId", "Created", "CreatedBy", "Modified", "ModifiedBy", "LastIndexed");
     }
 }
