@@ -45,6 +45,7 @@ import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ReturnURLString;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.HtmlView;
@@ -193,16 +194,16 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         if (referer == null || referer.isEmpty())
             referer =  new ReturnURLString(HttpView.currentRequest().getHeader("Referer"));
 
-        ActionURL cancelURL;
+        URLHelper cancelURL;
 
         if (referer.isEmpty())
         {
             cancelURL = new ActionURL(StudyController.DatasetAction.class, getViewContext().getContainer());
-            cancelURL.addParameter(DataSetDefinition.DATASETKEY, form.getDatasetId());
+            cancelURL.addParameter(DataSetDefinition.DATASETKEY, ""+form.getDatasetId());
         }
         else
         {
-            cancelURL = new ActionURL(referer);
+            cancelURL = new URLHelper(referer);
             dataRegion.addHiddenFormField(ActionURL.Param.returnUrl, referer);
         }
 
