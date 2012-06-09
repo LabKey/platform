@@ -506,7 +506,6 @@ public class FileContentController extends SpringActionController
    }
 
 
-
    @RequiresPermissionClass(InsertPermission.class)
    public class AddAttachmentAction extends FormViewAction<AttachmentForm>
    {

@@ -37,7 +37,9 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -50,6 +52,8 @@ import org.labkey.list.view.ListController;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 public class ListTable extends FilteredTable implements UpdateableTableInfo
@@ -68,7 +72,8 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
         }
     }
 
-    private ListDefinition _list;
+    private final ListDefinition _list;
+    private final List<FieldKey> _defaultVisibleColumns;
 
     public ListTable(User user, ListDefinition listDef)
     {
@@ -77,6 +82,7 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
         setDescription(listDef.getDescription());
         _list = listDef;
         addCondition(getRealTable().getColumn("ListId"), listDef.getListId());
+        List<ColumnInfo> defaultColumnsCandidates = new LinkedList<ColumnInfo>();
 
         // All columns visible by default, except for auto-increment integer
         ColumnInfo colKey = wrapColumn(listDef.getKeyName(), getRealTable().getColumn("Key"));
@@ -84,14 +90,19 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
         colKey.setInputType("text");
         colKey.setInputLength(-1);
         colKey.setWidth("180");
+
         if (listDef.getKeyType().equals(ListDefinition.KeyType.AutoIncrementInteger))
         {
             colKey.setUserEditable(false);
             colKey.setAutoIncrement(true);
             colKey.setHidden(true);
         }
+
         addColumn(colKey);
+        defaultColumnsCandidates.add(colKey);
+
         ColumnInfo colObjectId = wrapColumn(getRealTable().getColumn("ObjectId"));
+
         for (DomainProperty property : listDef.getDomain().getProperties())
         {
             PropertyColumn column = new PropertyColumn(property.getPropertyDescriptor(), colObjectId, listDef.getContainer(), user, false);
@@ -106,6 +117,8 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
             column.setReadOnly(false);
             column.setScale(property.getScale()); // UNDONE: PropertyDescriptor does not have getScale() so have to set here, move to PropertyColumn
             safeAddColumn(column);
+            defaultColumnsCandidates.add(column);
+
             if (property.isMvEnabled())
             {
                 MVDisplayColumnFactory.addMvColumns(this, column, property, colObjectId, listDef.getContainer(), user);
@@ -138,13 +151,13 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
 
         // Make EntityId column available so AttachmentDisplayColumn can request it as a dependency
         // Do this late so the column doesn't get selected as title column, etc.
-        addHiddenColumn("EntityId");
+        addColumn("EntityId", true);
 
         // Make standard created & modified columns available.
-        addHiddenColumn("Created");
-        addHiddenColumn("CreatedBy");
-        addHiddenColumn("Modified");
-        addHiddenColumn("ModifiedBy");
+        addColumn("Created", false);
+        addColumn("CreatedBy", false);
+        addColumn("Modified", false);
+        addColumn("ModifiedBy", false);
 
         DetailsURL gridURL = new DetailsURL(_list.urlShowData(), Collections.<String, String>emptyMap());
         setGridURL(gridURL);
@@ -166,14 +179,23 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
             ActionURL importURL = listDef.urlFor(ListController.UploadListItemsAction.class);
             setImportURL(new DetailsURL(importURL));
         }
+
+        _defaultVisibleColumns = Collections.unmodifiableList(QueryService.get().getDefaultVisibleColumns(defaultColumnsCandidates));
     }
     
 
-    private void addHiddenColumn(String name)
+    private void addColumn(String name, boolean hidden)
     {
-        ColumnInfo hiddenColumn = wrapColumn(getRealTable().getColumn(name));
-        hiddenColumn.setHidden(true);
-        addColumn(hiddenColumn);
+        ColumnInfo column = wrapColumn(getRealTable().getColumn(name));
+        column.setHidden(hidden);
+        addColumn(column);
+    }
+
+
+    @Override
+    public List<FieldKey> getDefaultVisibleColumns()
+    {
+        return _defaultVisibleColumns;
     }
 
 

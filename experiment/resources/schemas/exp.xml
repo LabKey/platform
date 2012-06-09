@@ -211,9 +211,21 @@
             <ns:column columnName="ObjectId" />
             <ns:column columnName="EntityId" />
             <ns:column columnName="Created" />
-            <ns:column columnName="CreatedBy" />
+            <ns:column columnName="CreatedBy">
+                <ns:fk>
+                    <ns:fkColumnName>UserId</ns:fkColumnName>
+                    <ns:fkTable>Users</ns:fkTable>
+                    <ns:fkDbSchema>core</ns:fkDbSchema>
+                </ns:fk>
+            </ns:column>
             <ns:column columnName="Modified" />
-            <ns:column columnName="ModifiedBy" />
+            <ns:column columnName="ModifiedBy">
+                <ns:fk>
+                    <ns:fkColumnName>UserId</ns:fkColumnName>
+                    <ns:fkTable>Users</ns:fkTable>
+                    <ns:fkDbSchema>core</ns:fkDbSchema>
+                </ns:fk>
+            </ns:column>
             <ns:column columnName="LastIndexed" />
         </ns:columns>
     </ns:table>
@@ -224,9 +236,21 @@
             <ns:column columnName="ObjectId" />
             <ns:column columnName="EntityId" />
             <ns:column columnName="Created" />
-            <ns:column columnName="CreatedBy" />
+            <ns:column columnName="CreatedBy">
+                <ns:fk>
+                    <ns:fkColumnName>UserId</ns:fkColumnName>
+                    <ns:fkTable>Users</ns:fkTable>
+                    <ns:fkDbSchema>core</ns:fkDbSchema>
+                </ns:fk>
+            </ns:column>
             <ns:column columnName="Modified" />
-            <ns:column columnName="ModifiedBy" />
+            <ns:column columnName="ModifiedBy">
+                <ns:fk>
+                    <ns:fkColumnName>UserId</ns:fkColumnName>
+                    <ns:fkTable>Users</ns:fkTable>
+                    <ns:fkDbSchema>core</ns:fkDbSchema>
+                </ns:fk>
+            </ns:column>
             <ns:column columnName="LastIndexed" />
         </ns:columns>
     </ns:table>
