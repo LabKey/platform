@@ -58,7 +58,7 @@ public class AttachmentService
     {
         public void download(HttpServletResponse response, AttachmentParent parent, String name) throws ServletException, IOException;
 
-        // TODO: we should deprecate add and delete in favor of the void-returning methods addAttachments and deleteAttachments
+        // Use the void-returning methods addAttachments and deleteAttachments instead
         @Deprecated
         public HttpView add(AttachmentParent parent, List<AttachmentFile> files, User auditUser);
         @Deprecated

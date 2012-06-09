@@ -25,7 +25,6 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.FileAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.etl.DataIterator;
