@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     AnnouncementUpdateView me = (AnnouncementUpdateView) HttpView.currentView();
@@ -31,6 +32,7 @@
 
     AnnouncementModel ann = bean.annModel;
     DiscussionService.Settings settings = bean.settings;
+    ActionURL baseUrl = me.getViewContext().cloneActionURL().deleteParameters();
 %>
 <%=formatMissedErrors("form")%>
 <script type="text/javascript">
@@ -53,7 +55,7 @@ Ext.onReady(function(){
     new Ext.Resizable('body', { handles:'se', minWidth:200, minHeight:100, wrap:true });
 });
 </script>
-<form method="post" action="update.post" enctype="multipart/form-data" onSubmit="return validateForm(this)">
+<form method="post" action="<%=h(baseUrl.setAction("update.post").getLocalURIString())%>" enctype="multipart/form-data" onSubmit="return validateForm(this)">
 <input type="hidden" name="rowId" value="<%=ann.getRowId()%>">
 <input type="hidden" name="entityId" value="<%=ann.getEntityId()%>">
 <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(ann)%>">

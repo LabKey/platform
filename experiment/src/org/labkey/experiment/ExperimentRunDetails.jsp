@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ExpRun> me = (JspView<ExpRun>) HttpView.currentView();
@@ -34,7 +35,7 @@
     </tr>
     <tr>
         <td class="labkey-form-label">Protocol</td>
-        <td><a href="protocolDetails.view?rowId=<%= protocol.getRowId() %>"><%= h(protocol.getName()) %></a></td>
+        <td><a href="<%=h(buildURL(ExperimentController.ProtocolDetailsAction.class, "rowId=" + protocol.getRowId()))%>"><%= h(protocol.getName()) %></a></td>
     </tr>
     <tr>
         <td class="labkey-form-label">Created on</td>

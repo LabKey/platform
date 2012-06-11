@@ -18,12 +18,13 @@
 <%@ page import="org.labkey.announcements.AnnouncementsController.AnnouncementEmailDefaults.EmailDefaultsBean"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.message.settings.MessageConfigService" %>
+<%@ page import="org.labkey.announcements.AnnouncementsController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<EmailDefaultsBean> me = (HttpView<EmailDefaultsBean>) HttpView.currentView();
     EmailDefaultsBean bean = me.getModelBean();
 %>
-<form action="setDefaultEmailOptions.view">
+<form action="<%=h(buildURL(AnnouncementsController.SetDefaultEmailOptionsAction.class))%>">
 <table width="50%">
 <tr>
     <td align="left" style="padding-top:2px;padding-bottom:4px;"><b>Folder default settings</b></td>

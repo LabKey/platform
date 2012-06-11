@@ -18,13 +18,14 @@
 <%@ page import="org.labkey.announcements.AnnouncementsController.CustomizeBean" %>
 <%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.announcements.AnnouncementsController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<CustomizeBean> me = (HttpView<CustomizeBean>) HttpView.currentView();
     CustomizeBean bean = me.getModelBean();
     DiscussionService.Settings settings = bean.settings;
 
-%><form action="customize.post" method="post">
+%><form action="<%=h(buildURL(AnnouncementsController.CustomizeAction.class))%>" method="post">
 <%=generateReturnUrlFormField(bean.returnURL)%>
 <table>
     <tr>

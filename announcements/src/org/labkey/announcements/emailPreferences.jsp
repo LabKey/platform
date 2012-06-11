@@ -16,9 +16,10 @@
  */
 %>
 <%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
+<%@ page import="org.labkey.announcements.AnnouncementsController" %>
 <%@ page extends="org.labkey.announcements.EmailPreferencesPage" %>
 <b><%=message == null ? "" : message%></b>
-<form action="emailPreferences.post" method="post">
+<form action="<%=h(buildURL(AnnouncementsController.EmailPreferencesAction.class))%>" method="post">
     <br>Send email notifications for these <%=conversationName%>s<br>
     <input type="radio" value="<%=AnnouncementManager.EMAIL_PREFERENCE_NONE%>" name="emailPreference" <%=emailPreference == AnnouncementManager.EMAIL_PREFERENCE_NONE ? " checked" : ""%>>
     <b>None</b> - Don't send me any email for this message board<br>
