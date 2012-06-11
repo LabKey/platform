@@ -312,6 +312,12 @@ public class ExcelColumn extends RenderColumn
 
     private CellStyle getExcelFormat(Object o, ColumnInfo columnInfo)
     {
+        if (columnInfo == null)
+        {
+            // Not all DisplayColumns have a ColumnInfo
+            return null;
+        }
+        
         for (ConditionalFormat format : columnInfo.getConditionalFormats())
         {
             if (format.meetsCriteria(o))
