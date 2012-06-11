@@ -287,7 +287,22 @@ public class ViewServlet extends HttpServlet
         Path path = url.getParsedPath();
         Container c = ContainerManager.getForPath(path);
         if (null == c)
+        {
             url.setIsCanonical(false);
+            // recover from duplicated controller (e.g. /project/home/announcements-begin.view)
+            if (null != url.getController() && path.size() > 0 && null != ModuleLoader.getInstance().getModuleForController(path.get(0)))
+            {
+                Path shortened = path.subpath(1,path.size());
+                c = ContainerManager.getForPath(shortened);
+                if (null != c)
+                {
+                    path = shortened;
+                    url.setPath(path);
+                    if ("GET".equals(request.getMethod()))
+                        throw new RedirectException(url.getLocalURIString());
+                }
+            }
+        }
 
         // We support two types of permanent link encoding for containers:
         // 1) for backwards compatibility, long container ids (37 chars long, including the first "/"
@@ -320,7 +335,7 @@ public class ViewServlet extends HttpServlet
             if (c != null)
             {
                 url.setContainer(c);
-                if (request.getMethod().equals("GET"))
+                if ("GET".equals(request.getMethod()))
                     throw new RedirectException(url.getLocalURIString());
             }
         }
@@ -343,7 +358,7 @@ public class ViewServlet extends HttpServlet
                     if (!DataRegion.LAST_FILTER_PARAM.equals(parameter.getKey()))
                         expand.replaceParameter(parameter.getKey(), parameter.getValue());
                 }
-                if (request.getMethod().equals("GET"))
+                if ("GET".equals(request.getMethod()))
                     throw new RedirectException(expand.getLocalURIString());
                 _log.error(DataRegion.LAST_FILTER_PARAM + " not supported for " + request.getMethod());
             }
