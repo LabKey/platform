@@ -51,6 +51,7 @@ Ext4.define('LABKEY.vis.MainTitleOptionsPanel', {
         // button to reset a user defined label to the default
         this.titleResetButton = Ext4.create('Ext.Button', {
             disabled: !this.userEditedTitle,
+            cls: 'revertMainTitle',
             iconCls:'iconReload',
             tooltip: 'Reset the label to the default value based on the selected measures.',
             handler: function() {

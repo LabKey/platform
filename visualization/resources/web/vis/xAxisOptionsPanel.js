@@ -238,6 +238,7 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
         // button to reset a user defined label to the default based on the selected measures
         this.labelResetButton = Ext4.create('Ext.Button', {
             disabled: true,
+            cls: 'revertxAxisLabel',
             iconCls:'iconReload',
             tooltip: 'Reset the label to the default value based on the panel settings.',
             handler: function() {

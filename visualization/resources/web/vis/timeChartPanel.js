@@ -270,6 +270,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             }
         });
         //Set radio/textfield names to aid with TimeChartTest.
+        this.editorYAxisLeftPanel.labelResetButton.cls = "revertleftAxisLabel";
         this.editorYAxisLeftPanel.rangeManualRadio.id = "leftaxis_range_manual";
         this.editorYAxisLeftPanel.rangeManualRadio.name = "leftaxis_range";
         this.editorYAxisLeftPanel.rangeAutomaticRadio.id = "leftaxis_range_automatic";
@@ -292,6 +293,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             }
         });
         //Set radio/textfield names to aid with TimeChartTest.
+        this.editorYAxisRightPanel.labelResetButton.cls = "revertrightAxisLabel";
         this.editorYAxisRightPanel.rangeManualRadio.id = "rightaxis_range_manual";
         this.editorYAxisRightPanel.rangeManualRadio.name = "rightaxis_range";
         this.editorYAxisRightPanel.rangeAutomaticRadio.id = "rightaxis_range_automatic";
