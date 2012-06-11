@@ -1001,7 +1001,7 @@ abstract public class PipelineJob extends Job implements Serializable
             // Update PATH environment variable to make sure all files in the tools
             // directory and the directory of the executable or on the path.
             String toolDir = PipelineJobService.get().getAppProperties().getToolsDirectory();
-            if (toolDir != null && !"".equals(toolDir))
+            if (!StringUtils.isEmpty(toolDir))
             {
                 String path = System.getenv("PATH");
                 if (path == null)
@@ -1025,6 +1025,17 @@ abstract public class PipelineJob extends Job implements Serializable
                 }
 
                 pb.environment().put("PATH", path);
+
+                String dyld = System.getenv("DYLD_LIBRARY_PATH");
+                if (dyld == null)
+                {
+                    dyld = toolDir;
+                }
+                else
+                {
+                    dyld = toolDir + File.pathSeparatorChar + dyld;
+                }
+                pb.environment().put("DYLD_LIBRARY_PATH", dyld);
             }
 
             // tell more modern TPP tools to run headless (so no perl calls etc) bpratt 4-14-09
