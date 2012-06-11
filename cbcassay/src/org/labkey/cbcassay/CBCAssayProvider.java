@@ -157,7 +157,6 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
     {
         List<AssayDataCollector> result = super.getDataCollectors(uploadedFiles, context);
         result.add(0, new TextAreaDataCollector());
-        result.add(new PipelineDataCollector());
         return result;
     }
 
