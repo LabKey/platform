@@ -1,3 +1,4 @@
+<%@ page import="org.labkey.experiment.types.TypesController" %>
 <%
 /*
  * Copyright (c) 2006-2009 LabKey Corporation
@@ -15,13 +16,14 @@
  * limitations under the License.
  */
 %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <div>
 <p>This is the admin console for defining types, such as SampleSets or Forms.
 Note that creating a type is typically done in the context of another module.
 This page is for troubleshooting and testing purposes.
 </p>
 
-[&nbsp;<a href="importVocabulary.view">Import&nbsp;Concepts</a>&nbsp;]<br>
-[&nbsp;<a href="findConcepts.view">Search&nbsp;Concepts</a>&nbsp;]<br>
-[&nbsp;<a href="types.view">View&nbsp;Types</a>&nbsp;]<br>
+[&nbsp;<a href="<%=h(buildURL(TypesController.ImportVocabularyAction.class))%>">Import&nbsp;Concepts</a>&nbsp;]<br>
+[&nbsp;<a href="<%=h(buildURL(TypesController.FindConceptsAction.class))%>">Search&nbsp;Concepts</a>&nbsp;]<br>
+[&nbsp;<a href="<%=h(buildURL(TypesController.TypesAction.class))%>">View&nbsp;Types</a>&nbsp;]<br>
 </div>

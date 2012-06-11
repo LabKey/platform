@@ -18,11 +18,12 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <labkey:errors />
 <p>
-<form name="upload" action="showAddXarFile.post" enctype="multipart/form-data" method="post">
+<form name="upload" action="<%=h(buildURL(ExperimentController.ShowAddXarFileAction.class))%>" enctype="multipart/form-data" method="post">
     Local file: <input id="UploadFile" type="file" name="uploadFile" value="" size="60"> <input type=SUBMIT value="Upload" name="upload">
 </form>
 </p>

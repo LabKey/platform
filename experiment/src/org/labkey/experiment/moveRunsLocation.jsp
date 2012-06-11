@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.data.DataRegionSelection" %>
 <%@ page import="org.labkey.api.data.DataRegion" %>
+<%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
@@ -33,7 +34,7 @@
         document.forms["moveForm"].submit();
     }
 </script>
-<form name="moveForm" action="moveRuns.post" method="POST">
+<form name="moveForm" action="<%=h(buildURL(ExperimentController.MoveRunsAction.class))%>" method="POST">
     <%
         for (String id : DataRegionSelection.getSelected(HttpView.currentContext(), false))
         { %>

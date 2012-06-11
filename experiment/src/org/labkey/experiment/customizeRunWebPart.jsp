@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.experiment.ExperimentRunWebPartFactory" %>
+<%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ExperimentRunWebPartFactory.Bean> me = (JspView<ExperimentRunWebPartFactory.Bean>) HttpView.currentView();
@@ -41,7 +42,7 @@
         <tr>
             <td colspan=2 align="right">
                 <%=generateSubmitButton("Submit")%>
-                <%=generateButton("Cancel", "begin.view")%>
+                <%=generateButton("Cancel", buildURL(ExperimentController.BeginAction.class))%>
             </td>
         </tr>
     </table>

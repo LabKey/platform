@@ -51,7 +51,7 @@ for (found in foundSemanticTypes)
 */
 %>
 <labkey:errors/>
-<form action="findConcepts.view" method=GET>
+<form action="<%=h(buildURL(TypesController.FindConceptsAction.class))%>" method=GET>
 <table >
 	<tr><td class="labkey-form-label">Search for</td><td><input name=query style="width:320;" value="<%=h(form.getQuery())%>"></td></tr>
 	<tr><td class="labkey-form-label">Prefix match</td><td><input type=checkbox name=prefixMatch <%=form.isPrefixMatch()?"checked":""%>></td></tr>

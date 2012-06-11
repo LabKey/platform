@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.api.data.DataRegionSelection" %>
 <%@ page import="org.labkey.api.data.DataRegion" %>
 <%@ page import="org.labkey.api.exp.api.ExperimentUrls" %>
+<%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -37,7 +38,7 @@
 <% if (bean.getObjects().isEmpty())
 {
     %><p>There are no selected objects to delete.</p>
-    <%= bean.getReturnUrl() == null || bean.getReturnUrl().isEmpty() ? generateButton("OK", "begin.view") : generateButton("OK", bean.getReturnUrl())%><%
+    <%= bean.getReturnUrl() == null || bean.getReturnUrl().isEmpty() ? generateButton("OK", buildURL(ExperimentController.BeginAction.class)) : generateButton("OK", bean.getReturnUrl())%><%
 }
 else
 { %>
@@ -90,7 +91,7 @@ else
         </ul>
     <% } %>
 
-    <form action="<%= bean.getViewContext().getActionURL().getAction() %>.post" method="post">
+    <form action="<%= h(bean.getViewContext().cloneActionURL().deleteParameters()) %>" method="post">
         <%
             if (bean.getViewContext().getRequest().getParameterValues(DataRegion.SELECT_CHECKBOX_NAME) != null)
             {
@@ -115,6 +116,6 @@ else
         { %>
             <%= generateSubmitButton("Confirm Delete") %>
         <% } %>
-        <%= bean.getReturnUrl() == null || bean.getReturnUrl().isEmpty()? generateButton("Cancel", "begin.view") : generateButton("Cancel", bean.getReturnUrl())%>
+        <%= bean.getReturnUrl() == null || bean.getReturnUrl().isEmpty()? generateButton("Cancel", buildURL(ExperimentController.BeginAction.class)) : generateButton("Cancel", bean.getReturnUrl())%>
     </form>
 <% } %>

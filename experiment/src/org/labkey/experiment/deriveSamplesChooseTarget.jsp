@@ -28,7 +28,7 @@
     ExperimentController.DeriveSamplesChooseTargetBean bean = me.getModelBean();
 %>
 
-<form action="describeDerivedSamples.view" method="get">
+<form action="<%=h(buildURL(ExperimentController.DescribeDerivedSamplesAction.class))%>" method="get">
 
     <table>
         <tr>
