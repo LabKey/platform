@@ -2942,6 +2942,7 @@ study/src/org/labkey/study/pipeline/DatasetFileReader.java -text
 study/src/org/labkey/study/pipeline/DatasetImportRunnable.java -text
 study/src/org/labkey/study/pipeline/DatasetJobSupport.java -text
 study/src/org/labkey/study/pipeline/ParticipantImportRunnable.java -text
+study/src/org/labkey/study/pipeline/SampleMindedTransformTask.java -text
 study/src/org/labkey/study/pipeline/SpecimenArchive.java -text
 study/src/org/labkey/study/pipeline/SpecimenBatch.java -text
 study/src/org/labkey/study/pipeline/SpecimenJobSupport.java -text

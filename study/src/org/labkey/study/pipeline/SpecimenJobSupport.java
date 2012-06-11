@@ -25,6 +25,9 @@ import java.io.File;
 */
 public interface SpecimenJobSupport
 {
+    /** The original input file, without any transformation */
+    File getInputFile();
+    /** A specimen archive in our expected format, possibly the created by a transform step */
     File getSpecimenArchive();
     boolean isMerge();
 }

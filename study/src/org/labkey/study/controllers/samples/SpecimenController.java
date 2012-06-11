@@ -3713,20 +3713,13 @@ public class SpecimenController extends BaseStudyController
             _filePaths = form.getFile();
             for (File dataFile : dataFiles)
             {
-                String path = form.getPath();
-                if (!path.endsWith("/"))
-                {
-                    path += "/";
-                }
-                path += dataFile.getName();
-
                 if (null == dataFile || !dataFile.exists() || !dataFile.isFile())
                 {
                     throw new NotFoundException();
                 }
 
                 if (!dataFile.canRead())
-                    errors.add("Can't read data file: " + path);
+                    errors.add("Can't read data file: " + dataFile);
 
                 SpecimenArchive archive = new SpecimenArchive(dataFile);
                 archives.add(archive);

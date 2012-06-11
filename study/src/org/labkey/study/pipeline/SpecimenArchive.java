@@ -48,22 +48,29 @@ public class SpecimenArchive
     public List<EntryDescription> getEntryDescriptions() throws IOException
     {
         List<SpecimenArchive.EntryDescription> entryList = new ArrayList<EntryDescription>();
-        ZipFile zip = null;
-        try
+        if (SpecimenBatch.SAMPLE_MINDED_FILE_TYPE.isType(_definitionFile))
         {
-            zip = new ZipFile(_definitionFile);
-            Enumeration<? extends ZipEntry> entries = zip.entries();
-            while (entries.hasMoreElements())
-            {
-                ZipEntry entry = entries.nextElement();
-                if (entry.isDirectory())
-                    continue;
-                entryList.add(new SpecimenArchive.EntryDescription(entry.getName(), entry.getSize(), new Date(entry.getTime())));
-            }
+            entryList.add(new EntryDescription(_definitionFile.getName(), _definitionFile.length(), new Date(_definitionFile.lastModified())));
         }
-        finally
+        else
         {
-            if (zip != null) try { zip.close(); } catch (IOException e) {}
+            ZipFile zip = null;
+            try
+            {
+                zip = new ZipFile(_definitionFile);
+                Enumeration<? extends ZipEntry> entries = zip.entries();
+                while (entries.hasMoreElements())
+                {
+                    ZipEntry entry = entries.nextElement();
+                    if (entry.isDirectory())
+                        continue;
+                    entryList.add(new SpecimenArchive.EntryDescription(entry.getName(), entry.getSize(), new Date(entry.getTime())));
+                }
+            }
+            finally
+            {
+                if (zip != null) try { zip.close(); } catch (IOException e) {}
+            }
         }
         return entryList;
     }

@@ -76,7 +76,7 @@ public class StudyPipeline extends PipelineProvider
             {
                 public boolean accept(File f)
                 {
-                    return f.getName().endsWith(".specimens");
+                    return SpecimenBatch.ARCHIVE_FILE_TYPE.isType(f) || SpecimenBatch.SAMPLE_MINDED_FILE_TYPE.isType(f);
                 }
             });
 
