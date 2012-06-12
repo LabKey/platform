@@ -29,6 +29,8 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.core.admin.FolderManagementAction" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="org.json.JSONObject" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
@@ -52,6 +54,13 @@ Collections.sort(allModules, new Comparator<Module>()
 });
 Set<Module> activeModules = c.getActiveModules();
 Set<Module> requiredModules = c.getRequiredModules();
+Map<String, Set<String>> dependencyMap = c.getModuleDependencyMap();
+JSONObject dependencyMapJson = new JSONObject();
+for (String m : dependencyMap.keySet())
+{
+    dependencyMapJson.put(m, dependencyMap.get(m));
+}
+
 Module defaultModule = c.getDefaultModule();
 FolderType folderType = c.getFolderType();
 
@@ -117,8 +126,44 @@ function getSelectedFolderType()
     return null;
 }
 
-function updateDefaultOptions()
+function updateDefaultOptions(cb)
     {
+    var dependencyMap = <%=dependencyMapJson%>;
+    //if this module is required by others, we alert before disabling it
+    if(cb)
+    {
+        if(!cb.checked){
+            var dm = dependencyMap[cb.value];
+            if(dm && dm.length){
+                Ext.Msg.confirm('Warning', 'This module is required by the following other modules: ' + dm.join(', ') + '. Disabling this module will also disable these modules.  Do you want to continue?', function(btn){
+                    if(btn == 'yes'){
+                        //uncheck boxes without firing onclick events
+                        uncheckEl(cb.value);
+                        Ext.each(dm, function(m){
+                            uncheckEl(m);
+                        }, this);
+
+                        function uncheckEl(m){
+                            var el = Ext.Element.select('input[value='+m+']');
+                            el.elements[0].checked = false;
+                        }
+                    }
+                }, this);
+                return false;
+            }
+        }
+        else {
+            //also turn on dependencies, silently
+            for (var m in dependencyMap){
+                if(dependencyMap[m].indexOf(cb.value) > -1)
+                {
+                    var el = Ext.Element.select('input[value='+m+']');
+                    el.elements[0].checked = true;
+                }
+            }
+        }
+    }
+
     var defaultDropdown = document.folderModules.defaultModule;
 
     var defaultName = "";
@@ -253,7 +298,7 @@ for (Module module : allModules)
         {
         %>
         <input type="checkbox" name="activeModules[<%= i++ %>]" title="<%= module.getTabName(HttpView.currentContext())%>" value="<%= module.getName()%>"
-        <%= enabled ? "" : "disabled" %> <%= active ? "checked" : "" %> onClick="return updateDefaultOptions()"><%= module.getTabName(HttpView.currentContext()) %><br>
+        <%= enabled ? "" : "disabled" %> <%= active ? "checked" : "" %> onClick="return updateDefaultOptions(this);"><%= module.getTabName(HttpView.currentContext()) %><br>
         <%
         }
     }
