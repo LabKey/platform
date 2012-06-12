@@ -39,12 +39,16 @@ public class RequestNotificationSettings
     private static final String KEY_CC = "CC";
     private static final String KEY_SUBJECTSUFFIX = "SubjectSuffix";
     private static final String KEY_NEWREQUESTNOTIFY = "NewRequestNotify";
+    private static final String KEY_DEFAULTEMAILNOTIFY = "DefaultEmailNotify";
     private String _replyTo;
     private String _cc;
     private String _subjectSuffix;
     private String _newRequestNotify;
     private boolean _ccCheckbox;
     private boolean _newRequestNotifyCheckbox;
+    private DefaultEmailNotifyEnum _defaultEmailNotify = DefaultEmailNotifyEnum.ActorsInvolved;
+
+    public enum DefaultEmailNotifyEnum {All, None, ActorsInvolved}
 
     public RequestNotificationSettings()
     {
@@ -57,6 +61,7 @@ public class RequestNotificationSettings
         _cc = map.get(KEY_CC);
         _subjectSuffix = map.get(KEY_SUBJECTSUFFIX);
         _newRequestNotify = map.get(KEY_NEWREQUESTNOTIFY);
+        setDefaultEmailNotify(map.get(KEY_DEFAULTEMAILNOTIFY));
     }
 
     public String getReplyToEmailAddress(User currentAdmin)
@@ -133,6 +138,7 @@ public class RequestNotificationSettings
         map.put(KEY_CC, _cc);
         map.put(KEY_SUBJECTSUFFIX, _subjectSuffix);
         map.put(KEY_NEWREQUESTNOTIFY, _newRequestNotify);
+        map.put(KEY_DEFAULTEMAILNOTIFY, getDefaultEmailNotify());
     }
 
     public static RequestNotificationSettings getDefaultSettings(Container c)
@@ -178,5 +184,23 @@ public class RequestNotificationSettings
     public boolean isReplyToCurrentUser()
     {
         return RequestNotificationSettings.REPLY_TO_CURRENT_USER_VALUE.equals(getReplyTo());
+    }
+
+    public String getDefaultEmailNotify()
+    {
+        return _defaultEmailNotify.name();
+    }
+
+    public DefaultEmailNotifyEnum getDefaultEmailNotifyEnum()
+    {
+        return _defaultEmailNotify;
+    }
+
+    public void setDefaultEmailNotify(String defaultEmailNotify)
+    {
+        if (null == defaultEmailNotify)
+            _defaultEmailNotify = DefaultEmailNotifyEnum.ActorsInvolved;
+        else
+            _defaultEmailNotify = DefaultEmailNotifyEnum.valueOf(defaultEmailNotify);
     }
 }

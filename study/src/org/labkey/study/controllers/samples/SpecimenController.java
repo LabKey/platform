@@ -2151,6 +2151,20 @@ public class SpecimenController extends BaseStudyController
         
         public boolean isDefaultNotification(ActorNotificationRecipientSet notification)
         {
+            try
+            {
+                RequestNotificationSettings settings = SampleManager.getInstance().getRequestNotificationSettings(getContainer());
+                if (settings.getDefaultEmailNotifyEnum() == RequestNotificationSettings.DefaultEmailNotifyEnum.All)
+                    return true;        // All should be checked
+                else if (settings.getDefaultEmailNotifyEnum() == RequestNotificationSettings.DefaultEmailNotifyEnum.None)
+                    return false;       // None should be checked
+                // Otherwise use Actor Notification
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+
             Integer requirementActorId = _requirement.getActorId();
             Integer notificationActorId = notification.getActor() != null ? notification.getActor().getRowId() : null;
             Integer requirementSiteId = _requirement.getSiteId();
@@ -4576,9 +4590,8 @@ public class SpecimenController extends BaseStudyController
             return new JspView<RequestNotificationSettings>("/org/labkey/study/view/samples/manageNotifications.jsp", settings, errors);
         }
 
-        public boolean handlePost(RequestNotificationSettings form, BindException errors) throws Exception
+        public boolean handlePost(RequestNotificationSettings settings, BindException errors) throws Exception
         {
-            RequestNotificationSettings settings = form;
             if (!settings.isNewRequestNotifyCheckbox())
                 settings.setNewRequestNotify(null);
             else
