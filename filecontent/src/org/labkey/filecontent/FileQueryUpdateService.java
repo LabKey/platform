@@ -118,7 +118,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                         {
                             String fmt = DomainUtil.getFormattedDefaultValue(user, prop, o);
                             
-                            if (!String.valueOf(o).equals(fmt) && !rowMap.containsKey(prop.getName() + "_displayValue"))
+                            if (!rowMap.containsKey(prop.getName() + "_displayValue"))
                                 rowMap.put(prop.getName() + "_displayValue", fmt);
 
                             if (o instanceof Date)

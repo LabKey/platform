@@ -352,17 +352,17 @@ LABKEY.FileContentConfig = Ext.extend(Ext.util.Observable, {
         var lookupRenderer = function(value, p, record, rIdx, cIdx) {
             var displayCol = this.dataIndex + '_displayValue';
             var urlCol = urlPrefix + this.dataIndex;
+            var displayValue;
 
             if (record.data[displayCol])
-            {
-                var displayValue = Ext.util.Format.htmlEncode(record.data[displayCol]);
-                if (record.data[urlCol])
-                    return '<a href=' + record.data[urlCol] + '>' + displayValue + '</a>';
-                else
-                    return displayValue;
-            }
+                displayValue = Ext.util.Format.htmlEncode(record.data[displayCol]);
             else
-                return Ext.util.Format.htmlEncode(value);
+                displayValue = Ext.util.Format.htmlEncode(value);
+
+            if (record.data[urlCol])
+                return '<a href=' + record.data[urlCol] + '>' + displayValue + '</a>';
+            else
+                return displayValue;
         };
 
         var defaultRenderer = function(value, p, record) {
