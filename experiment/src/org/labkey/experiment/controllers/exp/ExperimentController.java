@@ -16,6 +16,9 @@
 
 package org.labkey.experiment.controllers.exp;
 
+import au.com.bytecode.opencsv.CSVWriter;
+import org.apache.commons.collections15.iterators.ArrayIterator;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -54,6 +57,7 @@ import org.labkey.api.data.PanelButton;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.AbstractParameter;
@@ -166,6 +170,7 @@ import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.samples.UploadMaterialSetForm;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 import org.labkey.experiment.xar.XarExportSelection;
+import org.springframework.jca.cci.core.support.CommAreaRecord;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -182,8 +187,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -1559,7 +1566,6 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-
     @RequiresPermissionClass(ReadPermission.class)
     public class ConvertArraysToExcelAction extends ExportAction<ConvertArraysToExcelForm>
     {
@@ -1605,6 +1611,82 @@ public class ExperimentController extends SpringActionController
             catch (JSONException e)
             {
                 HttpView errorView = ExceptionUtil.getErrorView(HttpServletResponse.SC_BAD_REQUEST, "Failed to convert to Excel - invalid input", e, getViewContext().getRequest(), false);
+                errorView.render(getViewContext().getRequest(), getViewContext().getResponse());
+            }
+        }
+    }
+
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ConvertArraysToTableAction extends ExportAction<ConvertArraysToExcelForm>
+    {
+        @Override
+        public void validate(ConvertArraysToExcelForm form, BindException errors)
+        {
+            if (form.getJson() == null)
+            {
+                errors.reject(ERROR_MSG, "Unable to convert to table - no data given");
+            }
+        }
+
+        public void export(ConvertArraysToExcelForm form, HttpServletResponse response, BindException errors) throws Exception
+        {
+            try
+            {
+                JSONObject rootObject;
+                JSONArray rowsArray;
+                if (form.getJson() == null || form.getJson().trim().length() == 0)
+                {
+                    // Create JSON so that we return an empty file
+                    rootObject = new JSONObject();
+                    rowsArray = new JSONArray();
+                }
+                else
+                {
+                    rootObject = new JSONObject(form.getJson());
+                    rowsArray = rootObject.getJSONArray("rows");
+                }
+
+                TSVWriter.DELIM_ENUM delimType = (rootObject.getString("delim") != null ? TSVWriter.DELIM_ENUM.valueOf(rootObject.getString("delim")) : TSVWriter.DELIM_ENUM.TAB);
+                TSVWriter.QUOTE_ENUM quoteType = (rootObject.getString("quoteChar") != null ? TSVWriter.QUOTE_ENUM.valueOf(rootObject.getString("quoteChar")) : TSVWriter.QUOTE_ENUM.NONE);
+                String filenamePrefix = (rootObject.getString("fileNamePrefix") != null ? rootObject.getString("fileNamePrefix") : "Export" );
+                String filename = filenamePrefix + "." + delimType.extension;
+
+                String exportAsWebPage = StringUtils.trimToNull(rootObject.getString("exportAsWebPage"));
+                if(exportAsWebPage != null && !"false".equalsIgnoreCase(exportAsWebPage))
+                {
+                    response.setHeader("Content-disposition", "inline; filename=\"" + filename + "\"");
+                }
+                else
+                {
+                    PageFlowUtil.prepareResponseForFile(response, Collections.<String, String>emptyMap(), filename, true);
+                }
+                response.setContentType(delimType.contentType);
+
+                //NOTE: we could also have used TSVWriter; however, this is in use elsewhere and we dont need a custom subclass
+                CSVWriter writer = new CSVWriter(response.getWriter(), delimType.delim, quoteType.quoteChar);
+                for (int i=0; i < rowsArray.length(); i++)
+                {
+                    Object[] oa = ((JSONArray)rowsArray.get(i)).toArray();
+                    ArrayIterator it = new ArrayIterator(oa);
+                    List<String> list = new ArrayList<String>();
+
+                    while (it.hasNext())
+                    {
+                        Object o = it.next();
+                        if(o != null)
+                            list.add(o.toString());
+                        else
+                            list.add("");
+                    }
+
+                    writer.writeNext(list.toArray(new String[list.size()]));
+                }
+                writer.close();
+            }
+            catch (JSONException e)
+            {
+                HttpView errorView = ExceptionUtil.getErrorView(HttpServletResponse.SC_BAD_REQUEST, "Failed to convert to table - invalid input", e, getViewContext().getRequest(), false);
                 errorView.render(getViewContext().getRequest(), getViewContext().getResponse());
             }
         }
