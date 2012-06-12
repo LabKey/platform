@@ -256,6 +256,7 @@
         
         $button-small-padding,
         $button-small-text-padding,
+        $button-small-text-transform,
 
         $button-default-background-color,
         $button-default-background-color-over,
@@ -310,6 +311,7 @@
         
         $button-medium-padding,
         $button-medium-text-padding,
+        $button-medium-text-transform,
 
         $button-default-background-color,
         $button-default-background-color-over,
@@ -364,6 +366,7 @@
         
         $button-large-padding,
         $button-large-text-padding,
+        $button-large-text-transform,
 
         $button-default-background-color,
         $button-default-background-color-over,
@@ -418,6 +421,7 @@
         
         $button-small-padding,
         $button-small-text-padding,
+        $button-small-text-transform,
 
         $button-toolbar-background-color,
         $button-toolbar-background-color-over,
@@ -472,6 +476,7 @@
         
         $button-medium-padding,
         $button-medium-text-padding,
+        $button-medium-text-transform,
 
         $button-toolbar-background-color,
         $button-toolbar-background-color-over,
@@ -526,6 +531,7 @@
         
         $button-large-padding,
         $button-large-text-padding,
+        $button-large-text-transform,
 
         $button-toolbar-background-color,
         $button-toolbar-background-color-over,
@@ -591,6 +597,7 @@
     
     $padding: null,
     $text-padding: null,
+    $text-transform: null,
     
     $background-color: null,
     $background-color-over: null,
@@ -643,6 +650,7 @@
         color: $color;
         background-repeat: no-repeat;
         padding: 0 $text-padding;
+        text-transform: $text-transform;
     }
     
     .#{$prefix}btn-#{$ui}-icon,

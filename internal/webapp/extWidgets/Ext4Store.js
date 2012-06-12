@@ -149,7 +149,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
         this.on('update', this.onUpdate, this);
         this.on('add', this.onAdd, this);
 
-        this.proxy.reader.on('dataload', this.onReaderLoad, this);
+        this.proxy.reader.on('datachange', this.onReaderLoad, this);
 
         //Add this here instead of allowing Ext.store to autoLoad to make sure above listeners are added before 1st load
         if(autoLoad){
@@ -237,9 +237,8 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
 
     //private
     //NOTE: the purpose of this is to provide a way to modify the server-supplied metadata and supplement with a client-supplied object
-    onReaderLoad: function(data){
-        var meta = data.metaData;
-        this.model.prototype.idProperty = this.proxy.reader.idProperty;
+    onReaderLoad: function(meta){
+        //this.model.prototype.idProperty = this.proxy.reader.idProperty;
 
         if(meta.fields && meta.fields.length){
             var fields = [];
@@ -265,6 +264,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
                 var field;
                 for (var i in this.metadata){
                     field = this.metadata[i];
+                    //TODO: we should investigate how convert() works and probably use this instead
                     if(field.createIfDoesNotExist && Ext4.Array.indexOf(i)==-1){
                         field.name = field.name || i;
                         field.notFromServer = true;
@@ -777,7 +777,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
             filterArray: this.filterArray,
             sort: this.initialConfig.sort,
             maxRows: this.maxRows,
-            containerFilter: this.containerFilter,
+            containerFilter: this.containerFilter
         }
     }
 
@@ -800,7 +800,7 @@ Ext4.define('LABKEY.ext4.ExtendedJsonReader', {
     },
     readRecords: function(data) {
         if(data.metaData){
-            this.idProperty = data.metaData.id; //NOTE: normalize which field holds the PK.
+            this.idProperty = data.metaData.id || "id"; //NOTE: normalize which field holds the PK.
             this.model.prototype.idProperty = this.idProperty;
             this.totalProperty = data.metaData.totalProperty; //NOTE: normalize which field holds total rows.
             this.model.prototype.totalProperty = this.totalProperty;
@@ -824,78 +824,72 @@ Ext4.define('LABKEY.ext4.ExtendedJsonReader', {
 
                 }
             });
-
-            this.fireEvent('dataload', data); //NOTE: provide an event the store can consume in order to modify the server-supplied metadata
         }
 
         return this.callParent([data]);
     },
 
+    //added event to allow store to modify metadata before it is applied
     onMetaChange : function(meta) {
-        var fields = meta.fields,
-            newModel;
+        this.fireEvent('datachange', meta);
 
-        Ext4.apply(this, meta);
-
-        //NOTE: In Ext4.1 the store restores the metachange event, so we can probably simplify this
-        if (fields) {
-            newModel = Ext4.define("Ext.data.reader.Json-Model" + Ext4.id(), {
-                extend: 'Ext.data.Model',
-                idProperty: this.model.prototype.idProperty,
-                fields: fields,
-                defaultProxyType:'LabkeyProxy'
-            });
-            this.setModel(newModel, true);
-        } else {
-            this.buildExtractors(true);
-        }
+        this.callParent(arguments);
     },
 
-    //NOTE: because our 9.1 API format returns results as objects, we transform them here
-    buildFieldExtractors: function() {
-        //now build the extractors for all the fields
-        var me = this,
-            fields = me.getFields(),
-            ln = fields.length,
-            i  = 0,
-            extractorFunctions = [],
-            field, map;
-
-        for (; i < ln; i++) {
-            field = fields[i];
-            map   = field.fieldKey || field.name;
-            if(!field.notFromServer)
-                extractorFunctions.push(me.createAccessor('["'+map+'"].value'));  //NOTE: modified to support 9.1 API format and to support lookups, ie. field1/field2.
-            else
-                extractorFunctions.push(me.createAccessor(map));  //if this field doesnt exist on the server, it wont have a value
-        }
-        me.fieldCount = ln;
-
-        me.extractorFunctions = extractorFunctions;
-    },
     /*
-    NOTE: see above comment on 9.1 API.  In addition to extracting the values, Ext creates an accessor for the record's ID
+    because our 9.1 API format returns results as objects, we transform them here.  In addition to extracting the values, Ext creates an accessor for the record's ID
     this must also be modified to support the 9.1 API.  Because I believe getId() can be called both on initial load (prior to
     when we transform the data) and after, I modified the method to test whether the field's value is an object instead of
     looking for '.value' exclusively.
-     */
+    */
+    createFieldAccessExpression: (function() {
+        var re = /[\[\.]/;
+
+        return function(field, fieldVarName, dataName) {
+            var me     = this,
+                hasMap = (field.mapping !== null),
+                map    = hasMap ? field.mapping : field.name,
+                result,
+                operatorSearch;
+
+            if (typeof map === 'function') {
+                result = fieldVarName + '.mapping(' + dataName + ', this)';
+            } else if (this.useSimpleAccessors === true || ((operatorSearch = String(map).search(re)) < 0)) {
+                if (!hasMap || isNaN(map)) {
+                    // If we don't provide a mapping, we may have a field name that is numeric
+                    map = '"' + map + '"';
+                }
+                //TODO: account for field.notFromServer here...
+                //also: we should investigate how convert() works and probably use this instead
+                result = dataName + "[" + map + "] !== undefined ? " + dataName + "[" + map + "].value : ''";
+            } else {
+                result = dataName + (operatorSearch > 0 ? '.' : '') + map;
+            }
+            return result;
+        };
+    }()),
+
+    //see note for createFieldAccessExpression()
     buildExtractors: function(force) {
         this.callParent(arguments);
 
-        var idProp = this.getIdProperty();
-        var me = this;
+        var me = this,
+            idProp      = me.getIdProperty(),
+            accessor,
+            idField,
+            map;
+
         if (idProp) {
-            var accessor = me.createAccessor(idProp);
+            idField = me.model.prototype.fields.get(idProp);
+            if (idField) {
+                map = idField.mapping;
+                idProp = (map !== undefined && map !== null) ? map : idProp;
+            }
+            accessor = me.createAccessor('["' + idProp + '"].value');
 
             me.getId = function(record) {
                 var id = accessor.call(me, record);
-                return (id === undefined || id === '') ? null
-                : (id && Ext4.isObject(id)) ? id.value  //NOTE: added line to support 9.1 API
-                : id;
-            };
-        } else {
-            me.getId = function() {
-                return null;
+                return (id === undefined || id === '') ? null : id;
             };
         }
     }

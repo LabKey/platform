@@ -4377,6 +4377,9 @@ api/webapp/ext-4.1.0/ext-neptune-debug.js -text
 api/webapp/ext-4.1.0/ext-neptune.js -text
 api/webapp/ext-4.1.0/ext-patches.js -text
 api/webapp/ext-4.1.0/ext.js -text
+api/webapp/ext-4.1.0/ext3-sb-compat.css -text
+api/webapp/ext-4.1.0/ext3-sb-compat.js -text
+api/webapp/ext-4.1.0/ext3-sb-core-compat.js -text
 api/webapp/ext-4.1.0/index.html -text
 api/webapp/ext-4.1.0/license.txt -text
 api/webapp/ext-4.1.0/pkgs/classes.js -text

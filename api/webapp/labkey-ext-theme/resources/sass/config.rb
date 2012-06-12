@@ -1,5 +1,5 @@
 # $ext_path: This should be the path of the Ext JS SDK relative to this file
-$ext_path = "../../../ext-4.0.7"
+$ext_path = "../../../ext-4.1.0"
 
 # This is the path relative to the webapp directory. In the standard case it will be
 # the same as $ext_path. If a theme is defined in a separate labkey module than

@@ -196,18 +196,18 @@ LABKEY.ext.Ext4Helper = new function(){
                 width: meta.width,
                 height: meta.height,
                 msgTarget: 'qtip',
-                labelableRenderTpl: LABKEY.ext.Ext4Helper.labelableRenderTpl,
-                getLabelableRenderData: function(){
-                    var data = Ext4.form.Labelable.prototype.getLabelableRenderData.apply(this, arguments);
-                    data.allowBlank = this.allowBlank;
-                    if(this.allowBlank === false){
-                        data.labelStyle = data.labelStyle || '';
-                        data.labelStyle = data.labelStyle.split(';');
-                        data.labelStyle.push('font-weight:bold');
-                        data.labelStyle = data.labelStyle.join(';');
-                    }
-                    return data;
-                },
+//                labelableRenderTpl: LABKEY.ext.Ext4Helper.labelableRenderTpl,
+//                getLabelableRenderData: function(){
+//                    var data = Ext4.form.Labelable.prototype.getLabelableRenderData.apply(this, arguments);
+//                    data.allowBlank = this.allowBlank;
+//                    if(this.allowBlank === false){
+//                        data.labelStyle = data.labelStyle || '';
+//                        data.labelStyle = data.labelStyle.split(';');
+//                        data.labelStyle.push('font-weight:bold');
+//                        data.labelStyle = data.labelStyle.join(';');
+//                    }
+//                    return data;
+//                },
                 validateOnChange: true
             };
 
@@ -925,7 +925,7 @@ LABKEY.ext.Ext4Helper = new function(){
         hasStoreLoaded: function(store){
             return store.model &&
                store.model.prototype.fields &&
-               store.model.prototype.fields.getCount()
+               store.model.prototype.fields.getCount() > 1 // TODO: why is there 1 field initially with Ext4.1.0?
         },
 
         /**

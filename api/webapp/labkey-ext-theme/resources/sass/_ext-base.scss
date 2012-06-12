@@ -144,6 +144,11 @@ $tabbar-border-color: transparent; //no background around tabbar
 $tab-height: 23px;
 $tab-spacing: 3px;
 
+/*** PATCHES ***/
+/* A margin is being explicitly added to the inner element of buttons in Ext 4.1.0. */
+.x4-reset .x4-btn .x4-btn-center .x4-btn-inner {
+    margin: 0 !important;
+}
 
 @import 'ext4/default/all';
 

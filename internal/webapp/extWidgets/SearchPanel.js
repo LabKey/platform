@@ -126,13 +126,12 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
         var toAdd = [];
 
         store.getFields().each(function(f){
-            toAdd.push(this.addRow(f));
+            toAdd = toAdd.concat(this.addRow(f));
         }, this);
 
         if (this.showContainerFilter){
+            toAdd.push({html: 'Container Filter:', width: 125});
             toAdd.push({
-                html: 'Container Filter:', width: 125
-            },{
                 xtype: 'labkey-containerfiltercombo'
                 ,width: 165
                 ,value: this.defaultContainerFilter || ''
@@ -143,9 +142,8 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
         }
 
         if (this.allowSelectView!==false){
+            toAdd.push({html: 'View:', width: 125});
             toAdd.push({
-                html: 'View:', width: 125
-            },{
                 xtype: 'labkey-viewcombo'
                 ,containerPath: this.containerPath
                 ,queryName: this.queryName
@@ -173,7 +171,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
                 replicates = 2;
 
             for(var i=0;i<replicates;i++)
-                rows.push(this.createRow(meta));
+                rows = rows.concat(this.createRow(meta));
 
         }
 
