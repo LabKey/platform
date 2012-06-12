@@ -542,8 +542,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         if (form.isValid())
                         {
                             dialog.hide();
-
-                            // fire an event or call some method to render data
+                            this.updateChartTask.delay(500);
                         }
                     },
                     scope   : this
@@ -1042,6 +1041,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     isConfigurationChanged : function() {
 
         var queryCfg = this.getQueryConfig();
+
+        if (!queryCfg.schemaName || !queryCfg.queryName)
+            return false;
 
         // ugly race condition, haven't loaded a saved report yet
         if (!this.reportLoaded)
