@@ -58,7 +58,9 @@
             baseUrl         : '<%=ctx.getActionURL()%>',
             renderTo        : '<%= renderId %>',
             allowShare      : <%=c.hasPermission(ctx.getUser(), ShareReportPermission.class)%>,
-            hideSave        : <%=ctx.getUser().isGuest()%>
+            hideSave        : <%=ctx.getUser().isGuest()%>,
+            autoColumnYName  : <%=form.getAutoColumnYName() != null ? q(form.getAutoColumnYName()) : null%>,
+            autoColumnXName  : <%=form.getAutoColumnXName() != null ? q(form.getAutoColumnXName()) : null%>
         });
 
         var _resize = function(w,h) {

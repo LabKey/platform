@@ -65,8 +65,6 @@ public class VisualizationModule extends DefaultModule
         ReportService.get().registerReport(new GenericChartReportImpl());
 
         ReportService.get().addUIProvider(new VisualizationUIProvider());
-
-        AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_BOXPLOT, "Box/Scatter Plots", "New Generic Chart types built over the Raphael/D3 Charting APIs.", false);
     }
 
     public void startup(ModuleContext moduleContext)

@@ -26,7 +26,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.updateChartTask = new Ext4.util.DelayedTask(function(){
 
             if (this.isConfigurationChanged())
+            {
+                this.viewPanel.getEl().mask('loading data...');
                 LABKEY.Query.selectRows(this.getQueryConfig());
+            }
 
         }, this);
 
@@ -384,11 +387,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             showBorders : false,
             removeableFilters       : userFilters,
             removeableSort          : userSort,
-            buttonBarPosition       : 'none',
             showSurroundingBorder   : false,
             showDetailsColumn       : false,
             showUpdateColumn        : false,
-            showRecordSelectors     : false
+            showRecordSelectors     : false,
+            buttonBar   : {
+                position : 'none'
+            }
         });
 
         // save the dataregion
@@ -409,6 +414,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         if(!serialize){
             config.success = this.onSelectRowsSuccess;
+            config.failure = function(){this.viewPanel.getEl().unmask();};
             config.scope = this;
         }
 
@@ -860,13 +866,35 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     renderPlot: function() {
         if(!this.yAxisMeasure){
-            this.showYMeasureWindow();
-            return;
+
+            if (this.autoColumnYName)
+            {
+                var measure = this.yMeasureStore.findRecord('name', this.autoColumnYName);
+                if (measure)
+                    this.yAxisMeasure = measure.data;
+            }
+
+            if (!this.yAxisMeasure)
+            {
+                this.showYMeasureWindow();
+                return;
+            }
         }
 
         if(!this.xAxisMeasure && this.renderType != 'box_plot'){
-            this.showXMeasureWindow();
-            return;
+
+            if (this.autoColumnXName)
+            {
+                measure = this.xMeasureStore.findRecord('name', this.autoColumnXName);
+                if (measure)
+                    this.xAxisMeasure = measure.data;
+            }
+
+            if (!this.xAxisMeasure)
+            {
+                this.showXMeasureWindow();
+                return;
+            }
         }
         
         var scales = {}, geom, plotConfig, newChartDiv, labels, yMin, yMax, yPadding;
@@ -991,6 +1019,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     },
 
     onSelectRowsSuccess: function(response){
+        this.viewPanel.getEl().unmask();
         this.chartData = response;
         this.yMeasureStore.loadRawData(this.chartData.metaData.fields);
         this.xMeasureStore.loadRawData(this.chartData.metaData.fields);
@@ -1022,7 +1051,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             return true;
 
         // check if the user filters have changed
-        if (!this.currentFilterStr)
+        if (this.currentFilterStr == null)
         {
             this.currentFilterStr = this.createFilterString(queryCfg.filterArray);
             return true;
