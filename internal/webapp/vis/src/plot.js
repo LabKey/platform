@@ -281,14 +281,14 @@ LABKEY.vis.Plot = function(config){
         }
 
         if(this.labels.main && this.labels.main.value){
-            this.setMainLabel(this.labels.main.value);
+            this.setMainLabel(this.labels.main.value, this.labels.main.lookClickable);
         }
 
 		// Now that we have all the scales situated we need to render the axis lines, tick marks, and titles.
 		this.paper.path(LABKEY.vis.makeLine(this.grid.leftEdge, -this.grid.bottomEdge +.5, this.grid.rightEdge, -this.grid.bottomEdge+.5)).attr('stroke', '#000').attr('stroke-width', '1').transform("t0," + this.grid.height);
 
         if(this.labels.x && this.labels.x.value){
-            this.setXLabel(this.labels.x.value);
+            this.setXLabel(this.labels.x.value, this.labels.x.lookClickable);
         }
 
         var xTicks;
@@ -338,7 +338,7 @@ LABKEY.vis.Plot = function(config){
 			this.paper.path(LABKEY.vis.makeLine(this.grid.leftEdge +.5, -this.grid.bottomEdge + 1, this.grid.leftEdge+.5, -this.grid.topEdge)).attr('stroke', '#000').attr('stroke-width', '1').transform("t0," + this.grid.height);
 
             if(this.labels.yLeft && this.labels.yLeft.value){
-                this.setYLeftLabel(this.labels.yLeft.value);
+                this.setYLeftLabel(this.labels.yLeft.value, this.labels.yLeft.lookClickable);
             }
 
 			for(i = 0; i < leftTicks.length; i++){
@@ -369,7 +369,7 @@ LABKEY.vis.Plot = function(config){
             this.paper.path(LABKEY.vis.makeLine(this.grid.rightEdge + .5, -this.grid.bottomEdge + 1, this.grid.rightEdge + .5, -this.grid.topEdge)).attr('stroke', '#000').attr('stroke-width', '1').transform("t0," + this.grid.height);
 
             if(this.labels.yRight && this.labels.yRight.value){
-                this.setYRightLabel(this.labels.yRight.value);
+                this.setYRightLabel(this.labels.yRight.value, this.labels.yRight.lookClickable);
             }
 
 			for(i = 0; i < rightTicks.length; i++){
@@ -533,25 +533,117 @@ LABKEY.vis.Plot = function(config){
         return this.paper.text(x, y, value);
     };
 
-    var setLabel = function(name, x, y, value, render){
+    var renderClickArea = function(bbox, labelName){
+        var clickArea = this.paper.set();
+        var box, triangle;
+        var wPad = 10, x = bbox.x, y = bbox.y, height = bbox.height, width = bbox.width;
+        var tx, ty, r, tFn;
+        if(labelName == 'x' || labelName == 'main'){
+            width = width + height + (wPad * 2);
+            x = x - wPad;
+            r = (height / 2) * .7;
+            tx = x + width - r - (wPad / 2);
+            ty = y + (height / 2);
+        } else if(labelName == 'yLeft' || labelName == 'yRight'){
+            height = height + width + (wPad * 2);
+            y = y - width - wPad;
+            r = (width / 2) * .7;
+            tx = x + (width /2);
+            ty = y + r + (wPad / 2);
+        }
+
+        if(labelName == 'main'){
+            //down arrow
+            tFn = function(x, y, r){
+                var yBottom = y + r, yTop = y - r, xLeft = x - r, xRight = x + r;
+                return 'M ' + x + ' ' + yBottom + ' L ' + xLeft + ' ' + yTop + ' L ' + xRight + ' ' + yTop + ' L ' + x + ' ' + yBottom + ' Z';
+            };
+
+        }else if(labelName == 'x'){
+            // up arrow
+            tFn = function(x, y, r){
+                var yBottom = y + r, yTop = y - r, xLeft = x - r, xRight = x + r;
+                return 'M ' + x + ' ' + yTop + ' ' + ' L ' + xRight + ' ' + yBottom + ' L ' + xLeft + ' ' + yBottom + ' L ' + x + ' ' + yTop + ' Z';
+            };
+        } else if(labelName == 'yLeft'){
+            // right arrow
+            tFn = function(x, y, r){
+                var yBottom = y + r, yTop = y - r, xLeft = x - r, xRight = x + r;
+                return 'M ' + xRight + ' ' + y + ' L ' + xLeft + ' ' + yBottom + ' L ' + xLeft + ' ' + yTop + ' L ' + xRight + ' ' + y + ' Z';
+            };
+        } else if(labelName == 'yRight'){
+            // left arrow
+            tFn = function(x, y, r){
+                var yBottom = y + r, yTop = y - r, xLeft = x - r, xRight = x + r;
+                return 'M ' + xLeft + ' ' + y + ' L ' + xRight + ' ' + yTop + ' L ' + xRight + ' ' + yBottom + ' L ' + xLeft + ' ' + y + ' Z';
+            };
+        }
+        triangle = this.paper.path(tFn(tx, ty, r)).attr('fill', 'black');
+        clickArea.push(triangle);
+
+        box = this.paper.rect(Math.floor(x) + .5, Math.floor(y) + .5, width, height);
+        box.attr('fill', '#FFFFFF').attr('fill-opacity', 0);
+        clickArea.push(box);
+
+        box.mouseover(function(){
+            this.attr('stroke', '#777777');
+            triangle.attr('fill', '#777777');
+            triangle.attr('stroke', '#777777');
+        });
+        box.mouseout(function(){
+            this.attr('stroke', '#000000');
+            triangle.attr('fill', '#000000');
+            triangle.attr('stroke', '#000000');
+        });
+
+        return clickArea;
+    };
+
+    var setLabel = function(name, x, y, value, lookClickable, render){
         if(!this.labels[name]){
             this.labels[name] = {};
         }
 
-        this.labels[name].value = value;
+        if(this.labels[name].value != value){
+            this.labels[name].value = value;
+        }
+
+        if(this.labels[name].lookClickable != lookClickable){
+            this.labels[name].lookClickable = lookClickable;
+        }
 
         if(render){
-            if(labelElements[name]){
-                labelElements[name].remove();
+            if(labelElements[name] && labelElements[name].text){
+                labelElements[name].text.remove();
+            } else if(!labelElements[name]){
+                labelElements[name] = {};
             }
 
-            labelElements[name] = renderLabel.call(this, x, y, value);
+            labelElements[name].text = renderLabel.call(this, x, y, value);
+            if(name == 'main'){
+                labelElements[name].text.attr({font: "18px Georgia, sans-serif"});
+            } else if(name == 'x'){
+                labelElements[name].text.attr({font: "14px Georgia, sans-serif"}).attr({'text-anchor': 'middle'});
+            } else if(name == 'yRight') {
+                labelElements[name].text.attr({font: "14px Georgia, sans-serif"});
+                labelElements[name].text.transform("t0," + this.h+"r90");
+            } else if(name == 'yLeft'){
+                labelElements[name].text.attr({font: "14px Georgia, sans-serif"});
+                labelElements[name].text.transform("t0," + this.h+"r270");
+            }
+
+            if(labelElements[name].clickArea){
+                labelElements[name].clickArea.remove();
+            }
+            if(this.labels[name].lookClickable === true){
+                var bbox = labelElements[name].text.getBBox();
+                labelElements[name].clickArea = renderClickArea.call(this, bbox, name);
+            }
 
             // Replace the listeners.
             if(this.labels[name].listeners){
                 for(var listener in this.labels[name].listeners){
                     this.addLabelListener(name, listener, this.labels[name].listeners[listener]);
-
                 }
             }
 
@@ -559,35 +651,35 @@ LABKEY.vis.Plot = function(config){
         }
     };
 
-    this.setMainLabel = function(value){
+    this.setMainLabel = function(value, lookClickable){
         if(this.paper){
-            setLabel.call(this, 'main', this.grid.width / 2, 30, value, true).attr({font: "18px Georgia, sans-serif"});
+            setLabel.call(this, 'main', this.grid.width / 2, 30, value, lookClickable, true);
         } else {
-            setLabel.call(this, 'main', this.grid.width / 2, 30, value, false);
+            setLabel.call(this, 'main', this.grid.width / 2, 30, value, lookClickable, false);
         }
     };
 
-    this.setXLabel = function(value){
+    this.setXLabel = function(value, lookClickable){
         if(this.paper){
-            setLabel.call(this, 'x', this.grid.leftEdge + (this.grid.rightEdge - this.grid.leftEdge)/2, this.grid.height - 10, value, true).attr({font: "14px Georgia, sans-serif"}).attr({'text-anchor': 'middle'});
+           setLabel.call(this, 'x', this.grid.leftEdge + (this.grid.rightEdge - this.grid.leftEdge)/2, this.grid.height - 10, value, lookClickable, true);
         } else {
-            setLabel.call(this, 'x', this.grid.leftEdge + (this.grid.rightEdge - this.grid.leftEdge)/2, this.grid.height - 10, value, false);
+            setLabel.call(this, 'x', this.grid.leftEdge + (this.grid.rightEdge - this.grid.leftEdge)/2, this.grid.height - 10, value, lookClickable, false);
         }
     };
 
-    this.setYRightLabel = function(value){
+    this.setYRightLabel = function(value, lookClickable){
         if(this.paper){
-            setLabel.call(this, 'yRight', this.grid.rightEdge + 55, this.grid.height / 2, value, true).attr({font: "14px Georgia, sans-serif"}).transform("t0," + this.h+"r90");
+            setLabel.call(this, 'yRight', this.grid.rightEdge + 45, this.grid.height / 2, value, lookClickable, true);
         } else {
-            setLabel.call(this, 'yRight', this.grid.rightEdge + 55, this.grid.height / 2, value, false);
+            setLabel.call(this, 'yRight', this.grid.rightEdge + 45, this.grid.height / 2, value, lookClickable, false);
         }
     };
     
-    this.setYLeftLabel = this.setYLabel = function(value){
+    this.setYLeftLabel = this.setYLabel = function(value, lookClickable){
         if(this.paper){
-            setLabel.call(this, 'yLeft', this.grid.leftEdge - 55, this.grid.height / 2, value, true).attr({font: "14px Georgia, sans-serif"}).transform("t0," + this.h+"r270");
+            setLabel.call(this, 'yLeft', this.grid.leftEdge - 55, this.grid.height / 2, value, lookClickable, true);
         } else {
-            setLabel.call(this, 'yLeft', this.grid.leftEdge - 55, this.grid.height / 2, value, false);
+            setLabel.call(this, 'yLeft', this.grid.leftEdge - 55, this.grid.height / 2, value, lookClickable, false);
         }
     };
 
@@ -612,15 +704,21 @@ LABKEY.vis.Plot = function(config){
                 if(this.labels[label].listeners[listener]){
                     // There is already a listener of the requested type, so we should purge it.
                     var unEvent = 'un' + listener;
-                    labelElements[label][unEvent].call(labelElements[label], this.labels[label].listeners[listener]);
+                    labelElements[label].text[unEvent].call(labelElements[label].text, this.labels[label].listeners[listener]);
+                    if(labelElements[label].clickArea){
+                        labelElements[label].clickArea[unEvent].call(labelElements[label].clickArea, this.labels[label].listeners[listener]);
+                    }
                 }
 
                 this.labels[label].listeners[listener] = fn;
 
                 // Need to call the listener function and keep it within the scope of the Raphael object that we're accessing,
                 // so we pass itself into the call function as the scope object. It's essentially doing something like:
-                // labelElements.x.click.call(labelElements.x, fn);
-                labelElements[label][listener].call(labelElements[label], fn);
+                // labelElements.x.text.click.call(labelElements.x.text, fn);
+                labelElements[label].text[listener].call(labelElements[label].text, fn);
+                if(labelElements[label].clickArea){
+                    labelElements[label].clickArea[listener].call(labelElements[label].clickArea, fn);
+                }
                 return true;
             } else {
                 console.error('The ' + label + ' label is not available.');

@@ -351,18 +351,25 @@ var scatterPlot = new LABKEY.vis.Plot({
     labels: {
         main: {
             value:'Scatter With Null Points',
+            lookClickable: true,
             listeners: {
                 click: function(){console.log("Main Label clicked!")}
             }
         },
         x: {
             value: "X Axis",
+            lookClickable: true,
             listeners: {
                 click: function(){console.log("Clicking the X Axis!")}
             }
         },
         y: {
-            value:"Y Axis"
+            value:"Y Axis",
+            lookClickable: true
+        },
+        yRight: {
+            value:"Y Axis",
+            lookClickable: true
         }
     },
     layers: [new LABKEY.vis.Layer({
