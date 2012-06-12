@@ -763,15 +763,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
         _activeModules = null;
     }
 
-
-    // UNDONE: (MAB) getActiveModules() and setActiveModules()
-    // UNDONE: these don't feel like they belong on this class
-    // UNDONE: move to ModuleLoader? 
-    public Set<Module> getActiveModules()
-    {
-        return getActiveModules(false);
-    }
-
     public void appendWorkbookModulesToParent()
     {
         appendWorkbookModulesToParent(new HashSet<Module>());
@@ -784,7 +775,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
         boolean isChanged = false;
         Set<Module> existingModules = new HashSet<Module>();
-        existingModules.addAll(getParent().getActiveModules());
+        existingModules.addAll(getParent().getActiveModules(false, false));
 
         newModules.addAll(getFolderType().getActiveModules());
 
@@ -803,14 +794,27 @@ public class Container implements Serializable, Comparable<Container>, Securable
         }
     }
 
+    // UNDONE: (MAB) getActiveModules() and setActiveModules()
+    // UNDONE: these don't feel like they belong on this class
+    // UNDONE: move to ModuleLoader?
+    public Set<Module> getActiveModules()
+    {
+        return getActiveModules(false, true);
+    }
+
     public Set<Module> getActiveModules(boolean init)
+    {
+        return getActiveModules(init, true);
+    }
+
+    public Set<Module> getActiveModules(boolean init, boolean includeDepencendies)
     {
         if(isWorkbook())
         {
             if(init)
                 appendWorkbookModulesToParent();
 
-            return getParent().getActiveModules(init);
+            return getParent().getActiveModules(init, includeDepencendies);
         }
 
         if (_activeModules == null)
@@ -875,7 +879,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
                 else
                 {
                     //if this is a subfolder, set active modules to inherit from parent
-                    Set<Module> parentModules = getParent().getActiveModules();
+                    Set<Module> parentModules = getParent().getActiveModules(false, false);
                     for (Module module : parentModules)
                     {
                         //set the default module for the subfolder to be the default module of the parent.
@@ -921,7 +925,21 @@ public class Container implements Serializable, Comparable<Container>, Securable
                     modules.remove(module);
             }
 
-            _activeModules = Collections.unmodifiableSet(modules);
+            if(includeDepencendies)
+            {
+                Set<Module> withDependencies = new HashSet<Module>();
+                for (Module m : modules)
+                {
+                    withDependencies.add(m);
+                    withDependencies.addAll(m.getResolvedModuleDependencies());
+                }
+
+                _activeModules = Collections.unmodifiableSet(withDependencies);
+            }
+            else
+            {
+                _activeModules = Collections.unmodifiableSet(modules);
+            }
         }
 
         return _activeModules;
@@ -940,6 +958,25 @@ public class Container implements Serializable, Comparable<Container>, Securable
             cur = cur.getParent();
         }
         return false;
+    }
+
+    public Map<String, Set<String>> getModuleDependencyMap()
+    {
+        Map<String, Set<String>> dependencies = new HashMap<String, Set<String>>();
+
+        for (Module m : ModuleLoader.getInstance().getModules())
+        {
+            for (Module dm : m.getResolvedModuleDependencies())
+            {
+                String name = dm.getName(); //modules can declare a dependency using the wrong case, so we normalize
+                if(dependencies.get(name) == null)
+                    dependencies.put(name, new HashSet<String>());
+
+                dependencies.get(name).add(m.getName());
+            }
+        }
+
+        return dependencies;
     }
 
     /**
