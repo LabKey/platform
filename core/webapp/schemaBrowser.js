@@ -843,6 +843,24 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel,
                     tag: 'span',
                     html: ' Include system queries',
                     cls: 'lk-sb-instructions'
+                },
+                {
+                    tag: 'span',
+                    html: '&nbsp;',
+                    cls: 'lk-sb-instructions'
+                },
+                //TODO: this option allows a more thorough validation of queries, metadata and custom views.  it is disabled until we cleanup more of the built-in queries
+                {
+                    id: 'lk-vq-validatemetadata',
+                    tag: 'input',
+                    hidden: true,
+                    type: 'checkbox'
+                },
+                {
+                    tag: 'span',
+                    html: ' Validate metadata and views',
+                    hidden: true,
+                    cls: 'lk-sb-instructions'
                 }
             ]
         });
@@ -933,6 +951,7 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel,
             Ext.get("lk-vq-stop").dom.disabled = false;
             Ext.get("lk-vq-subfolders").dom.disabled = true;
             Ext.get("lk-vq-systemqueries").dom.disabled = true;
+            Ext.get("lk-vq-validatemetadata").dom.disabled = true;
             Ext.get("lk-vq-stop").focus();
             this.numErrors = 0;
             this.numValid = 0;
@@ -962,6 +981,7 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel,
         Ext.get("lk-vq-stop").dom.disabled = true;
         Ext.get("lk-vq-subfolders").dom.disabled = false;
         Ext.get("lk-vq-systemqueries").dom.disabled = false;
+        Ext.get("lk-vq-validatemetadata").dom.disabled = false;
         this.currentContainer = undefined;
     },
 
@@ -1008,6 +1028,7 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel,
             errorCallback: this.onValidationFailure,
             scope: this,
             includeAllColumns: true,
+            validateQueryMetadata: Ext.get("lk-vq-validatemetadata").dom.checked,
             containerPath: this.currentContainer
         });
     },
@@ -1065,6 +1086,7 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel,
             Ext.get("lk-vq-stop").dom.disabled = true;
             Ext.get("lk-vq-subfolders").dom.disabled = false;
             Ext.get("lk-vq-systemqueries").dom.disabled = false;
+            Ext.get("lk-vq-validatemetadata").dom.disabled = false;
             Ext.get("lk-vq-start").focus();
             this.validating = false;
             this.currentContainer = undefined;
@@ -1092,7 +1114,7 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel,
             });
         }
 
-        var error = errors.createChild({
+        var config = {
             tag: 'div',
             cls: 'lk-vq-error',
             children: [
@@ -1106,14 +1128,41 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel,
                             html: Ext.util.Format.htmlEncode(this.currentContainer) + ": " + Ext.util.Format.htmlEncode(schemaName) + "." + Ext.util.Format.htmlEncode(queryName)
                         }
                     ]
-                },
-                {
-                    tag: 'div',
-                    cls: 'lk-vq-error-message',
-                    html: Ext.util.Format.htmlEncode(errorInfo.exception)
                 }
             ]
-        });
+        };
+
+        if(errorInfo.errors){
+            var messages = [];
+            Ext.each(errorInfo.errors, function(e){
+                messages.push(e.msg);
+            }, this);
+            messages = Ext.unique(messages);
+            messages.sort();
+
+            Ext.each(messages, function(msg){
+                var cls = 'lk-vq-error-message';
+                if(msg.match(/^INFO:/))
+                    cls = 'lk-vq-info-message';
+                if(msg.match(/^WARNING:/))
+                    cls = 'lk-vq-warn-message';
+
+                config.children.push({
+                    tag: 'div',
+                    cls: cls,
+                    html: Ext.util.Format.htmlEncode(msg)
+                })
+            }, this);
+        }
+        else {
+            config.children.push({
+                tag: 'div',
+                cls: 'lk-vq-error-message',
+                html: Ext.util.Format.htmlEncode(errorInfo.exception)
+            });
+        }
+        var error = errors.createChild(config);
+
         var errorContainer = this.currentContainer;
         error.down("div span.labkey-link").on("click", function(){
             this.fireEvent("queryclick", schemaName, queryName, errorContainer);

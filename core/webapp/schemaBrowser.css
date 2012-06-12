@@ -157,3 +157,15 @@
     color: #FF0000 !important;
     padding-left: 5px !important;
 }
+
+.lk-vq-warn-message
+{
+    color: #E87600 !important;
+    padding-left: 5px !important;
+}
+
+.lk-vq-info-message
+{
+    /*color: #FFFF00 !important;*/
+    padding-left: 5px !important;
+}

@@ -4724,4 +4724,24 @@ public class QueryController extends SpringActionController
             };
         }
     }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ValidateQueryMetadataAction extends ApiAction<QueryForm>
+    {
+        public ApiResponse execute(QueryForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            QueryManager.get().validateQuery(form.getSchema().getName(), form.getQueryName(), getUser(), getContainer(), true);
+
+            Set<String> queryErrors = QueryManager.get().validateQueryMetadata(form.getSchema().getName(), form.getQueryName(), getUser(), getContainer());
+            queryErrors.addAll(QueryManager.get().validateQueryViews(form.getSchema().getName(), form.getQueryName(), getUser(), getContainer()));
+
+            for (String e : queryErrors)
+            {
+                errors.reject(ERROR_MSG, e);
+            }
+            return response;
+        }
+    }
 }
