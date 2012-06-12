@@ -29,6 +29,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.PopupMenu;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.visualization.GenericChartReport;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -553,6 +554,7 @@ public abstract class DisplayColumn extends RenderColumn
         NavTree navtree = null;
         boolean addSortItems = isSortable() &&  rgn.isSortable();
         boolean addFilterItems = isFilterable() && rgn.getShowFilters();
+
         if (addSortItems || addFilterItems)
         {
             navtree = new NavTree();
@@ -613,6 +615,17 @@ public abstract class DisplayColumn extends RenderColumn
                 navtree.addChild(clearFilterItem);
             }
 
+            NavTree chartItem = GenericChartReport.getQuickChartItem(ctx.getContainer(), ctx.getViewContext().getUser(), 
+                    rgn.getDisplayColumns(), getColumnInfo(), rgn.getSettings());
+
+            if (chartItem != null)
+            {
+                if (navtree.hasChildren())
+                    navtree.addSeparator();
+
+                chartItem.setId(baseId + ":quick-chart");
+                navtree.addChild(chartItem);
+            }
         }
         return navtree;
     }

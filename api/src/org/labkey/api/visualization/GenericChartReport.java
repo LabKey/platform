@@ -15,9 +15,19 @@
  */
 package org.labkey.api.visualization;
 
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
+
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -122,5 +132,38 @@ public abstract class GenericChartReport extends AbstractReport
     public String getDescriptorType()
     {
         return GenericChartReportDescriptor.TYPE;
+    }
+
+    /**
+     * Create a menu item for the auto chart option based on the specified column type
+     * @return
+     */
+    public static NavTree getQuickChartItem(Container container, User user, List<DisplayColumn> columns, ColumnInfo col, QuerySettings settings)
+    {
+        Class cls = col.getJavaClass();
+        RenderType type = null;
+
+        if (Integer.class.equals(cls))
+        {
+            type = RenderType.BOX_PLOT;
+        }
+        else if (Double.class.equals(cls))
+        {
+            type = RenderType.SCATTER_PLOT;
+        }
+
+        if (type != null)
+        {
+            VisualizationUrls urlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
+            ActionURL plotURL = urlProvider.getGenericChartDesignerURL(container, user, settings, type).addParameter("autoColumnYName", col.getName());
+
+            NavTree navItem = new NavTree("Quick Chart");
+
+            navItem.setImageSrc(type.getIconPath());
+            navItem.setHref(plotURL.getLocalURIString());
+
+            return navItem;
+        }
+        return null;
     }
 }
