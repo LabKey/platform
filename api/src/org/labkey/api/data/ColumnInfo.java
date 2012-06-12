@@ -1251,6 +1251,14 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             col.scale = reader.getScale();
             col.nullable = reader.isNullable();
 
+            //fix up metadata
+            if(col.isAutoIncrement)
+            {
+                col.setShownInInsertView(false);
+                col.setShownInUpdateView(false);
+                col.setUserEditable(false);
+            }
+
             // TODO: This is a temporary hack... move to SAS dialect(s)
             String databaseFormat = reader.getDatabaseFormat();
 

@@ -1053,12 +1053,13 @@ LABKEY.Query = new function()
          * @param {String} config.queryName the name of the query.
          * @param {Boolean} config.includeAllColumns If set to false, only the columns in the user's default view
          * of the specific query will be tested (defaults to true).
+         * @param {Boolean} config.validateQueryMetadata If true, the query metadata and custom views will also be validated.
          * @param {function} config.success The function to call when the function finishes successfully.
          * This function will be called with a simple object with one property named "valid" set to true.
          * @param {function} [config.failure] The function to call if this function encounters an error.
          * This function will be called with the following parameters:
          * <ul>
-         * <li><b>errorInfo:</b> An object with a property called "exception," which contains the error message.</li>
+         * <li><b>errorInfo:</b> An object with a property called "exception," which contains the error message. If validateQueryMetadata was used, this will also hae a property called 'errors', which is an array of objects describing each error.</li>
          * </ul>
          * @param {String} [config.containerPath] A container path in which to execute this command. If not supplied,
          * the current container will be used.
@@ -1079,7 +1080,7 @@ LABKEY.Query = new function()
             });
 
             return LABKEY.Ajax.request({
-                url: LABKEY.ActionURL.buildURL('query', 'validateQuery', config.containerPath),
+                url: LABKEY.ActionURL.buildURL('query', (config.validateQueryMetadata ? 'validateQueryMetadata' : 'validateQuery'), config.containerPath),
                 method : 'GET',
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
