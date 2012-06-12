@@ -140,29 +140,32 @@ public abstract class GenericChartReport extends AbstractReport
      */
     public static NavTree getQuickChartItem(Container container, User user, List<DisplayColumn> columns, ColumnInfo col, QuerySettings settings)
     {
-        Class cls = col.getJavaClass();
-        RenderType type = null;
-
-        if (Integer.class.equals(cls))
+        if (settings != null && settings.getSchemaName() != null && settings.getQueryName() != null)
         {
-            type = RenderType.BOX_PLOT;
-        }
-        else if (Double.class.equals(cls))
-        {
-            type = RenderType.SCATTER_PLOT;
-        }
+            Class cls = col.getJavaClass();
+            RenderType type = null;
 
-        if (type != null)
-        {
-            VisualizationUrls urlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
-            ActionURL plotURL = urlProvider.getGenericChartDesignerURL(container, user, settings, type).addParameter("autoColumnYName", col.getName());
+            if (Integer.class.equals(cls))
+            {
+                type = RenderType.BOX_PLOT;
+            }
+            else if (Double.class.equals(cls))
+            {
+                type = RenderType.SCATTER_PLOT;
+            }
 
-            NavTree navItem = new NavTree("Quick Chart");
+            if (type != null)
+            {
+                VisualizationUrls urlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
+                ActionURL plotURL = urlProvider.getGenericChartDesignerURL(container, user, settings, type).addParameter("autoColumnYName", col.getName());
 
-            navItem.setImageSrc(type.getIconPath());
-            navItem.setHref(plotURL.getLocalURIString());
+                NavTree navItem = new NavTree("Quick Chart");
 
-            return navItem;
+                navItem.setImageSrc(type.getIconPath());
+                navItem.setHref(plotURL.getLocalURIString());
+
+                return navItem;
+            }
         }
         return null;
     }
