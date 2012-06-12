@@ -80,9 +80,7 @@ public class PipelineQueryView extends QueryView
 
         if (_buttonOption == PipelineService.PipelineButtonOption.Minimal)
         {
-            SimpleFilter filter = new SimpleFilter();
-            filter.addCondition("Status", PipelineJob.COMPLETE_STATUS, CompareType.NEQ);
-            view.getRenderContext().setBaseFilter(filter);
+            view.getRenderContext().setBaseFilter(createCompletedFilter());
         }
 
         view.getRenderContext().setBaseSort(new Sort("-Created"));
@@ -91,6 +89,13 @@ public class PipelineQueryView extends QueryView
             view.getRenderContext().setUseContainerFilter(false);
         }
         return view;
+    }
+
+    public static Filter createCompletedFilter()
+    {
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition("Status", PipelineJob.COMPLETE_STATUS + ";" + PipelineJob.CANCELLED_STATUS, CompareType.NOT_IN);
+        return filter;
     }
 
     @Override

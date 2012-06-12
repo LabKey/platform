@@ -17,7 +17,9 @@ package org.labkey.pipeline.status;
 
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.Filter;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -92,18 +94,11 @@ public class StatusDataRegion extends DataRegion
         out.write("<table><tr>");
         out.write("<td>Show:</td>");
 
-        String name = "StatusFiles.Status~neqornull";
-        String value = PipelineJob.COMPLETE_STATUS;
+        String name = "StatusFiles.Status~" + CompareType.NOT_IN.getPreferredUrlKey();
+        String value = PipelineJob.COMPLETE_STATUS + ";" + PipelineJob.CANCELLED_STATUS;
         url.deleteParameters();
         url.addParameter(name, value);
-        boolean selected = value.equals(urlFilter.getParameter(name));
-        if (!selected && ctx.getBaseFilter() != null)
-        {
-            TableInfo tinfo = PipelineStatusManager.getTableInfo();
-            // UNDONE: MAB this seems too implementation dependant!
-            List values = ctx.getBaseFilter().getSQLFragment(tinfo, tinfo.getColumns("Status")).getParams();
-            selected = (values != null && values.size() == 1 && value.equals(values.get(0)));
-        }
+        boolean selected = value.equals(urlFilter.getParameter(name)) || PipelineQueryView.createCompletedFilter().equals(ctx.getBaseFilter());
         renderTab(out, "Running", url, selected);
         boolean selSeen = selected;
 

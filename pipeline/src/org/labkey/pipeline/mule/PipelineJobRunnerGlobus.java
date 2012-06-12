@@ -368,9 +368,9 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
                 // so that we can't read or write to it anymore, meaning that we can't delete it again or copy its
                 // contents to the main job log. So, we wait a bit for it to be flushed and then try deleting it.
                 // We'll have to wait and see if it's reliably done after ten seconds or not.
-                job.getLogger().info("Waiting 10 seconds to get log files...");
+                job.getLogger().debug("Waiting 10 seconds to get log files...");
                 Thread.sleep(10000);
-                job.getLogger().info("Retrieving log files");
+                job.getLogger().debug("Retrieving log files");
             }
             catch (InterruptedException ignored) {}
 
@@ -406,7 +406,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
         {
             if (f.length() > 0)
             {
-                job.getLogger().info("Reading log file " + f + ", which is now of size " + f.length());
+                job.getLogger().debug("Reading log file " + f + ", which is now of size " + f.length());
                 FileInputStream fIn = null;
                 try
                 {
@@ -431,7 +431,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
                 }
             }
 
-            job.getLogger().info("Deleting log file " + f + ", which is now of size " + f.length());
+            job.getLogger().debug("Deleting log file " + f + ", which is now of size " + f.length());
             f.delete();
         }
     }

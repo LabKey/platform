@@ -200,19 +200,19 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
 
         if (xarSource.shouldIgnoreDataFiles())
         {
-            job.info("Skipping load of data file " + dataFileURL + " based on the XAR source");
+            job.debug("Skipping load of data file " + dataFileURL + " based on the XAR source");
             return;
         }
 
         try
         {
-            job.info("Trying to load data file " + dataFileURL + " into the system");
+            job.debug("Trying to load data file " + dataFileURL + " into the system");
 
             File file = new File(new URI(dataFileURL));
 
             if (!file.exists())
             {
-                job.warn("Unable to find the data file " + file.getPath() + " on disk.");
+                job.debug("Unable to find the data file " + file.getPath() + " on disk.");
                 return;
             }
 
@@ -226,7 +226,7 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
                     job.warn("No pipeline root was set, skipping load of file " + file.getPath());
                     return;
                 }
-                job.warn("The data file " + file.getAbsolutePath() + " is not under the folder's pipeline root: " + pr + ". It will not be loaded directly, but may be loaded if referenced from other files that are under the pipeline root.");
+                job.debug("The data file " + file.getAbsolutePath() + " is not under the folder's pipeline root: " + pr + ". It will not be loaded directly, but may be loaded if referenced from other files that are under the pipeline root.");
                 return;
             }
 
@@ -240,7 +240,7 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
                 throw new XarFormatException(e);
             }
 
-            job.info("Finished trying to load data file " + dataFileURL + " into the system");
+            job.debug("Finished trying to load data file " + dataFileURL + " into the system");
         }
         catch (URISyntaxException e)
         {

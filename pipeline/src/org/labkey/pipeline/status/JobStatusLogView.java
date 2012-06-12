@@ -30,32 +30,65 @@ import java.io.PrintWriter;
 public class JobStatusLogView extends ReaderView
 {
     boolean _highlightingError = false;
+    private final boolean _showDetails;
+    private String _previousLine;
 
-    public JobStatusLogView(InputStream in, boolean htmlEncodeContent, @Nullable String prefix, @Nullable String suffix)
+    public JobStatusLogView(InputStream in, boolean showDetails, @Nullable String prefix, @Nullable String suffix)
     {
-        super(in, htmlEncodeContent, prefix, suffix);
+        super(in, true, prefix, suffix);
+        _showDetails = showDetails;
     }
-
 
     @Override
     public void outputLine(PrintWriter out, String line)
     {
-        String[] tokens = line.split(" ");
-        // for a normal log file INFO, ERROR, etc. line, the type will be the 5th token
-        if (tokens.length > 4)
+        try
         {
-            String type = tokens[4];
-            if (!_highlightingError && (type.equals("ERROR:") || type.equals("FATAL:")))
+            if (!_showDetails && line.startsWith("\tat "))
             {
-                _highlightingError = true;
-                out.write("<span class=\"labkey-error\">");
+                // Hide stack traces in summary views
+                return;
             }
-            else if (_highlightingError && (type.equals("INFO") || type.equals("DEBUG:") || type.equals("WARN")))
+
+            if (_previousLine != null && _highlightingError && !_showDetails)
             {
-                _highlightingError = false;
-                out.write("</span>");
+                int index = _previousLine.indexOf("ERROR:");
+                if (index != -1)
+                {
+                    String message = _previousLine.substring(index + "ERROR:".length()).trim();
+                    if (line.endsWith(": " + message))
+                    {
+                        return;
+                    }
+                }
             }
+
+            String[] tokens = line.split(" ");
+            // for a normal log file INFO, ERROR, etc. line, the type will be the 5th token
+            if (tokens.length > 4)
+            {
+                String type = tokens[4];
+                if (!_highlightingError && (type.equals("ERROR:") || type.equals("FATAL:")))
+                {
+                    _highlightingError = true;
+                    out.write("<span class=\"labkey-error\">");
+                }
+                else if (_highlightingError && (type.equals("INFO") || type.equals("DEBUG:") || type.equals("WARN")))
+                {
+                    _highlightingError = false;
+                    out.write("</span>");
+                }
+
+                if (type.equals("DEBUG:") && !_showDetails)
+                {
+                    return;
+                }
+            }
+            super.outputLine(out, line);
         }
-        super.outputLine(out, line);
+        finally
+        {
+            _previousLine = line;
+        }
     }
 }

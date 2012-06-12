@@ -335,7 +335,12 @@ public class StatusController extends SpringActionController
                 {
                     try
                     {
-                        WebPartView logFileView = new JobStatusLogView(new FileInputStream(f), true, "<pre>", "</pre>");
+                        ActionURL url = getViewContext().cloneActionURL();
+                        url.replaceParameter("showDetails", Boolean.toString(!form.isShowDetails()));
+
+                        String prefix = PageFlowUtil.textLink(form.isShowDetails() ? "Show summary" : "Show full log file", url) + "<pre>";
+
+                        WebPartView logFileView = new JobStatusLogView(new FileInputStream(f), form.isShowDetails(), prefix, "</pre>");
                         logFileView.setTitle(f.getName());
                         result.addView(logFileView);
                     }
@@ -375,6 +380,7 @@ public class StatusController extends SpringActionController
         enum Params { rowId }
 
         private int _rowId;
+        private boolean _showDetails;
 
         public int getRowId()
         {
@@ -384,6 +390,16 @@ public class StatusController extends SpringActionController
         public void setRowId(int rowId)
         {
             _rowId = rowId;
+        }
+
+        public boolean isShowDetails()
+        {
+            return _showDetails;
+        }
+
+        public void setShowDetails(boolean showDetails)
+        {
+            _showDetails = showDetails;
         }
     }
 

@@ -240,7 +240,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
 
             runInputsWithRoles.putAll(actionSet.getOtherInputs());
 
-            getJob().info("Investigating files involved in experiment run");
+            getJob().info("Checking files referenced by experiment run");
             for (RecordedAction action : actions)
             {
                 for (RecordedAction.DataFile dataFile : action.getInputs())
@@ -267,7 +267,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
                     source.getCanonicalDataFileURL(dataFile.getURI().toString());
                 }
             }
-            getJob().info("File investigation complete");
+            getJob().debug("File check complete");
 
             // Files count as inputs to the run if they're used by one of the actions and weren't produced by one of
             // the actions.

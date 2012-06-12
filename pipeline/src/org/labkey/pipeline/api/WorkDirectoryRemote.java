@@ -281,7 +281,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
             return new SimpleCopyingResource();
         }
 
-        _jobLog.info("Starting to acquire lock for copying files");
+        _jobLog.debug("Starting to acquire lock for copying files");
 
         MasterLockInfo lockInfo;
 
@@ -309,11 +309,11 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
             }
         }
 
-        _jobLog.info("Acquiring lock #" + lockInfo.getCurrentLock());
+        _jobLog.debug("Acquiring lock #" + lockInfo.getCurrentLock());
         File f = new File(_lockDirectory, "lock" + lockInfo.getCurrentLock());
         FileChannel lockChannel = new FileOutputStream(f, true).getChannel();
         FileLockCopyingResource result = new FileLockCopyingResource(lockChannel, lockInfo.getCurrentLock(), f);
-        _jobLog.info("Lock #" + lockInfo.getCurrentLock() + " acquired");
+        _jobLog.debug("Lock #" + lockInfo.getCurrentLock() + " acquired");
 
         return result;
     }
@@ -394,7 +394,7 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
                 // Unlock the file part first
                 try { _lock.release(); } catch (IOException e) {}
                 try { _channel.close(); } catch (IOException e) {}
-                _jobLog.info("Lock #" + _lockNumber + " released");
+                _jobLog.debug("Lock #" + _lockNumber + " released");
                 _lock = null;
                 _channel = null;
                 super.release();
