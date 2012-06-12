@@ -35,7 +35,7 @@ public class DefaultExperimentDataHandler extends AbstractExperimentDataHandler
 {
     public void importFile(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context) throws ExperimentException
     {
-        log.info("No ExperimentDataHandler registered for data file " + data.getDataFileURI() + ", no special loading will be done on this file.");
+        log.debug("No ExperimentDataHandler registered for data file " + data.getDataFileURI() + ", no special loading will be done on this file.");
     }
 
     public ActionURL getContentURL(Container container, ExpData data)

@@ -179,6 +179,53 @@ public class SimpleFilter implements Filter
         public abstract String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap);
 
         public abstract SQLFragment toSQLFragment(Map<String, ? extends ColumnInfo> columnMap, SqlDialect dialect);
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            FilterClause that = (FilterClause) o;
+
+            if (_includeNull != that._includeNull) return false;
+            if (_isNegated != that._isNegated) return false;
+            if (_urlClause != that._urlClause) return false;
+            // Probably incorrect - comparing Object[] arrays with Arrays.equals
+            if (!Arrays.equals(_paramVals, that._paramVals)) return false;
+            if (!getColumnNames().equals(that.getColumnNames())) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result = (_urlClause ? 1 : 0);
+            result = 31 * result + (_paramVals != null ? Arrays.hashCode(_paramVals) : 0);
+            result = 31 * result + (_includeNull ? 1 : 0);
+            result = 31 * result + (_isNegated ? 1 : 0);
+            return result;
+        }
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        SimpleFilter filter = (SimpleFilter) o;
+
+        if (_clauses != null ? !_clauses.equals(filter._clauses) : filter._clauses != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return _clauses != null ? _clauses.hashCode() : 0;
     }
 
     public static class SQLClause extends FilterClause
