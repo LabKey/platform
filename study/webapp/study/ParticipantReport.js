@@ -40,9 +40,9 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 '<tpl for="rows">',
                     '<tr class="{[this.getGridRowClass()]}">',
         // again nested tpl
-                    '<tpl for="this.data.gridFields"><tpl for="parent.asArray[values.index]">',
-                        '{[ this.getGridCellHtml(values) ]}',
-                    '</tpl></tpl>',
+                        '<tpl for="this.data.gridFields">',
+                            '{[ this.getGridCellHtml(parent.asArray[values.index]) ]}',
+                        '</tpl>',
                     '</tr>',
                 '</tpl>',
             '</tpl>',
@@ -407,7 +407,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                         align : 'center',
                         sortable : false,
                         items : [{
-                            icon    : LABKEY.contextPath + '/' + LABKEY.extJsRoot_40 + '/resources/themes/images/access/qtip/close.gif',
+                            icon    : LABKEY.contextPath + '/' + LABKEY.extJsRoot_41 + '/resources/themes/images/access/qtip/close.gif',
                             tooltip : 'Delete'
                         }],
                         listeners : {
@@ -474,7 +474,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                         align : 'center',
                         sortable : false,
                         items : [{
-                            icon    : LABKEY.contextPath + '/' + LABKEY.extJsRoot_40 + '/resources/themes/images/access/qtip/close.gif',
+                            icon    : LABKEY.contextPath + '/' + LABKEY.extJsRoot_41 + '/resources/themes/images/access/qtip/close.gif',
                             tooltip : 'Delete'
                         }],
                         listeners : {

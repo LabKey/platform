@@ -44,7 +44,7 @@ Ext4.define('LABKEY.vis.ParticipantSelector', {
             hideLabel: true,
             hidden: true,
             width: 210,
-            html: '<span style="font-size:75%;color:red;">Selecting 5 values by default</span>'
+            value: '<span style="font-size:75%;color:red;">Selecting 5 values by default</span>'
         });
         this.add(this.defaultDisplayField);
 

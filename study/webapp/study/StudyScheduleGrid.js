@@ -14,7 +14,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
         Ext4.QuickTips.init();
 
         Ext4.applyIf(config, {
-            layout : 'border',
+            layout : 'fit',
             frame  : false, border : false
         });
 
@@ -154,7 +154,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                 defaults : {
                     style : 'margin-left: 4px; margin-right: 4px; margin-bottom: 3px;'
                 },
-                items: [tbarPanelItems]
+                items: tbarPanelItems
             },{
                 xtype: 'toolbar',
                 style: {
@@ -205,12 +205,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             }
         });
 
-        return Ext4.create('Ext.panel.Panel', {
-            border : false, frame : false,
-            layout : 'fit',
-            region : 'center',
-            items  : [this.centerPanel]
-        });
+        return this.centerPanel;
     },
 
     configureGrid : function() {
@@ -248,7 +243,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             autoScroll  : true,
             columnLines : false,
             columns     : columns,
-            selType     : 'cellmodelfixed',
+            selType     : 'cellmodel',
             enableColumnMove: false,
             listeners: {
                 scope: this,
@@ -287,7 +282,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                             } else {
                                 delete timepointValue.required;
                             }
-                            record.set(timepointId, timepointValue);
+                            record.set(timepointId.toString(), timepointValue);
                         }
                     }
                 },
@@ -343,6 +338,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             }
         },
             {name : 'name',         mapping : 'dataset.name'},
+            {name : 'datasetId',    mapping : 'dataset.id'},
             {name : 'dataType',     mapping : 'dataset.dataType'},
             {name : 'status',       mapping : 'dataset.status'},
             {name : 'category',     mapping : 'dataset.category'},
@@ -384,12 +380,17 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                 '</tpl>';
 
         var urlRenderer = function(val) {
-            if(val.type == "Standard"){
+            if (val.type == "Standard")
+            {
                 return '<a href="' + LABKEY.ActionURL.buildURL('study', 'dataset.view', null, {datasetId: val.id}) + '">' +
                         '<img height="16px" width="16px" src="' + LABKEY.ActionURL.getContextPath() + '/reports/grid.gif" alt="dataset">' +
                         '</a>';
             }
-            return '<img height="16px" style="cursor: pointer" src="' +  LABKEY.ActionURL.getContextPath() + '/reports/link_data.png" alt="link data">';
+            else if (val.type == "Placeholder")
+            {
+                return '<img height="16px" style="cursor: pointer" src="' +  LABKEY.ActionURL.getContextPath() + '/reports/link_data.png" alt="link data">';
+            }
+            return "&nbsp;";
         }
 
         var visitRenderer = function(val) {
@@ -500,7 +501,8 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
 
                 reader: {
                     type: 'json',
-                    root: 'data'
+                    root: 'data',
+                    idProperty: 'datasetId'
                 },
                 writer: {
                     type : 'json',

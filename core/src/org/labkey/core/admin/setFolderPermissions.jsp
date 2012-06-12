@@ -32,8 +32,7 @@
     User user = ctx.getUser();
 %>
 <script type="text/javascript">
-    //LABKEY.requiresExt4Sandbox(true);
-    LABKEY.requiresExt4ClientAPI();
+    LABKEY.requiresExt4ClientAPI(true, true);
     LABKEY.requiresCss('/createFolder.css');
 </script>
 <script type="text/javascript">

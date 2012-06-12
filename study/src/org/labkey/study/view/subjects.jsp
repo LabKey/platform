@@ -397,7 +397,6 @@ li.ptid a.unhighlight
             title     : 'Show',
             border    : true,
             width     : 260,
-            autoHeight: true,
             height    : 400,
             overCls   : 'iScroll',
             bodyStyle : 'padding: 8px',

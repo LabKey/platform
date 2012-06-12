@@ -22,7 +22,6 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
     extend : 'Ext.panel.Panel',
     alias: 'widget.labkey-filterselectlist',
 
-    layout : 'fit',
     border : false,
     frame  : false,
     bubbleEvents : ['select', 'selectionchange', 'itemmouseenter', 'itemmouseleave', 'initSelectionComplete'],
@@ -168,8 +167,9 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
         // allows for proper selection even if render is delayed
         var target = this.getGrid();
         if (target) {
-            if (target.rendered)
+            if (target.rendered) {
                 this.initSelection();
+            }
             else {
                 target.on('afterrender', this.initSelection, this, {single: true});
             }
@@ -372,7 +372,6 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
         }
 
         return {
-            layout : 'fit',
             border : false, frame : false,
             items  : filterPanels
         };
@@ -490,7 +489,6 @@ Ext4.define('LABKEY.ext4.ReportFilterWindow', {
 
         if (!this.items && this.sections) {
             this.filterPanel = Ext4.create('LABKEY.ext4.filter.SelectPanel', {
-                layout  : 'fit',
                 filters : this.sections,
                 border  : false, frame : false
             });

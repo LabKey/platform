@@ -494,9 +494,9 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
     },
 
     optionsButtonClicked : function(button, panel, width, height, align) {
-        var pos = button.getPosition();
+        var pos = button.getEl().getXY();
         var pLeft = pos[0];
-        var pTop = pos[1];
+        var pTop = pos[1] + 13;
 
         if (align == 'center')
             pLeft = pLeft - width/2 + button.getWidth()/2;
@@ -531,7 +531,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             pTop = pTop - height/2;
         }
 
-        this.showOptionsWindow(this.chart, panel, width, height, pLeft, pTop);
+        // no good animation target for the chart elements
+        this.showOptionsWindow(null, panel, width, height, pLeft, pTop);
     },
 
     showOptionsWindow : function(animateTarget, panel, width, height, positionLeft, positionTop) {
@@ -540,7 +541,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             this.optionWindow = Ext4.create('Ext.window.Window', {
                 floating: true,
                 cls: 'extContainer',
-                bodyStyle: 'background-color: white;',
+                bodyStyle: 'background-color: white; border: solid black 1px;',
                 padding: 10,
                 header: false,
                 frame: true,
@@ -577,11 +578,13 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         {
             this.participantSelector.hide();
             this.groupsSelector.show();
+            this.groupsSelector.expand();
         }
         else
         {
             this.groupsSelector.hide();
             this.participantSelector.show();
+            this.participantSelector.expand();
         }
     },
 
@@ -612,6 +615,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         // (i.e. showing saved chart or first measure selected for new chart)
         if(!fromMeasurePanel){
             this.participantSelector.getSubjectValues();
+            this.groupsSelector.getGroupValues();
             this.editorXAxisPanel.setZeroDateStore();
         }
 

@@ -48,13 +48,12 @@ Ext4.define('LABKEY.vis.GroupSelector', {
         });
     },
 
-    initComponent : function(){
-
+    getGroupValues : function(){
         // add a text link to the manage participant groups page
         this.manageGroupsLink = Ext4.create('Ext.form.field.Display', {
             hideLabel: true,
             width: 175,
-            html: LABKEY.Utils.textLink({href: LABKEY.ActionURL.buildURL("study", "manageParticipantCategories"), text: 'Manage Groups'})
+            value: LABKEY.Utils.textLink({href: LABKEY.ActionURL.buildURL("study", "manageParticipantCategories"), text: 'Manage Groups'})
         });
 
         // add a hiden display field to show what is selected by default
@@ -62,7 +61,7 @@ Ext4.define('LABKEY.vis.GroupSelector', {
             hideLabel: true,
             hidden: true,
             width: 210,
-            html: '<span style="font-size:75%;color:red;">Selecting 5 values by default</span>'
+            value: '<span style="font-size:75%;color:red;">Selecting 5 values by default</span>'
         });
 
         // add a hidden display field for warning the user if a saved chart has a group that is no longer available
@@ -71,7 +70,7 @@ Ext4.define('LABKEY.vis.GroupSelector', {
             hidden: true,
             padding: 3,
             width: 210,
-            html: '<span style="font-size:90%;font-style:italic;">One or more of the participant groups originally saved with this chart are not currently visible. ' +
+            value: '<span style="font-size:90%;font-style:italic;">One or more of the participant groups originally saved with this chart are not currently visible. ' +
                     'The group(s) may have been deleted or you may not have permission to view them.</span><br> <br>'
         });
 
@@ -136,14 +135,10 @@ Ext4.define('LABKEY.vis.GroupSelector', {
             }
         });
 
-        this.items = [
-            this.groupsRemovedDisplayField,
-            this.manageGroupsLink,
-            this.defaultDisplayField,
-            this.groupFilterList
-        ];
-
-        this.callParent();
+        this.add(this.groupsRemovedDisplayField);
+        this.add(this.manageGroupsLink);
+        this.add(this.defaultDisplayField);
+        this.add(this.groupFilterList);
     },
 
     getUniqueGroupSubjectValues: function(groups){

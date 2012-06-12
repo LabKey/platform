@@ -232,4 +232,5 @@ div.thumbnail img
 .x4-reset .report-filter-panel .x4-grid-header-ct {
     background-color: transparent;
     background-image: none;
+    border: none;
 }

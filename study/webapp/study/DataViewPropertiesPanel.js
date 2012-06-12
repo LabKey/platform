@@ -18,7 +18,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
             fieldDefaults  : {
                 labelWidth : 100,
                 width      : 375,
-                style      : 'padding: 4px 0',
+                style      : 'margin: 0px 0px 10px 0px',
                 labelSeparator : ''
             }
         });
@@ -230,7 +230,10 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
         }
 
         this.items = formItems;
-        this.items.push(this.extraItems);
+
+        Ext4.each(this.extraItems, function(item) {
+            this.items.push(item);
+        }, this);
 
         this.callParent([arguments]);
     },

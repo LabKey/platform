@@ -395,16 +395,10 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
 
         var tbarItems = [{xtype:'tbspacer'}];
 
-        this.searchDisplayField = Ext4.create('Ext.form.DisplayField', {
-            width: 35,
-            value: "Filter: "
-        });
-
-        tbarItems.push(this.searchDisplayField);
-        tbarItems.push({xtype:'tbspacer'});
-
         this.searchBox = Ext4.create('Ext.form.TextField', {
-            width: 200,
+            fieldLabel: 'Filter',
+            labelWidth: 40,
+            width: 225,
             enableKeyEvents: true,
             emptyText : 'Search',
             name : 'filterSearch'
@@ -417,7 +411,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
         this.errorField = Ext4.create('Ext.form.DisplayField', {
             width: 250,
             hidden: true,
-            html: "<span style='color:red;'>No results found for current filter</span>"
+            value: "<span style='color:red;'>No results found for current filter</span>"
         });
         tbarItems.push(this.errorField);
 

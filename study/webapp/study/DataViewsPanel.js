@@ -478,7 +478,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 },
                 emptyText : '0 Matching Results'
             },
-            selType   : 'rowmodelfixed',
+            selType   : 'rowmodel',
             features  : [groupingFeature],
             listeners : {
                 itemclick : function(view, record, item, index, e, opts) {
@@ -665,7 +665,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
     initSearch : function() {
 
-        function filterSearch() {
+        var filterSearch = function() {
             this.searchVal = searchField.getValue();
             this.hiddenFilter();
         }
@@ -678,6 +678,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             cls             : 'dataset-search',
             size            : 57,
             height          : 25,
+            width           : 400,
             border: false, frame : false,
             listeners       : {
                 change       : function(cmp, e){
@@ -701,7 +702,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             scope : this
         });
 
-        var tbar = {
+        // toolbar
+        return {
             height  : 30,
             items   : [{
                 xtype   : 'panel',
@@ -722,16 +724,13 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 '->', this.mineField
             ]
         };
-
-        return tbar;
     },
 
     initCustomization : function() {
 
         var customPanel = Ext4.create('Ext.panel.Panel', {
             layout : 'fit',
-            border : false, frame : false,
-            flex   : 1
+            border : false, frame : false
         });
 
         this.north.setHeight(185);
@@ -881,11 +880,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         this.hiddenFilter();
 
         // hide edit column
-        var editColumn = Ext4.getCmp('edit-column-' + this.webpartId);
-        if (editColumn)
-        {
-            editColumn.hide();
-        }
+        this._getEditColumn().hide();
     },
 
     // private
@@ -900,11 +895,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             this.hiddenFilter();
 
             // show edit column
-            var editColumn = Ext4.getCmp('edit-column-' + this.webpartId);
-            if (editColumn)
-            {
-                editColumn.show();
-            }
+            this._getEditColumn().show();
 
             this.north.getEl().unmask();
             return;
@@ -934,13 +925,13 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         {
             for (var col in data.visibleColumns) {
                 var prop = data.visibleColumns[col];
-                cbColumns.push({boxLabel : col, name : col, checked : prop.checked, uncheckedValue : '0', width: 150, handler : function(){this.updateConfig = true;}, scope : this});
+                cbColumns.push({boxLabel : col, name : col, checked : prop.checked, uncheckedValue : '0', width: 115, maxWidth: 150, handler : function(){this.updateConfig = true;}, scope : this});
             }
         }
 
         for (var h in heights) {
             if (heights.hasOwnProperty(h)) {
-                sizeItems.push({boxLabel : heights[h], name : 'webpart.height', inputValue : h, checked : false, handler : function(grp){
+                sizeItems.push({boxLabel : heights[h], name : 'webpart.height', inputValue : h, minWidth: 75, checked : false, handler : function(grp){
                     // this is called for each 'change' -- only bother with true case
                     if (grp.getValue()) {
                         this.updateConfig = true;
@@ -954,7 +945,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         var namePanel = Ext4.create('Ext.form.Panel', {
             border : false,
-            fieldDefaults  :{
+            fieldDefaults  : {
                 labelAlign : 'top',
                 labelWidth : 130,
                 labelSeparator : ''
@@ -970,13 +961,13 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 xtype      : 'radiogroup',
                 fieldLabel : 'Display',
                 columns    : 3,
+                height     : 50,
                 items      : sizeItems
             }]
         });
         
         var formPanel = Ext4.create('Ext.form.Panel',{
             border : false,
-            flex   : 1,
             layout : 'hbox',
             fieldDefaults  :{
                 labelAlign : 'top',
@@ -989,14 +980,17 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 fieldLabel : 'Types (All Users)',
                 colspan    : 1,
                 columns    : 1,
-                flex       : 1,
-                style      : 'padding-left: 25px;',
+                flex       : 0.75,
+                maxWidth   : 225,
+                style      : 'margin-left: 20px;',
                 items      : cbItems
             },{
                 xtype      : 'checkboxgroup',
                 fieldLabel : 'Columns (All Users)',
                 columns    : 2,
-                flex       : 1.2,
+                flex       : 1,
+                maxWidth   : 300,
+                minHeight  : 110,
                 items      : cbColumns
             },{
                 xtype   : 'hidden',
@@ -1008,10 +1002,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
         var panel = Ext4.create('Ext.panel.Panel',{
             bodyPadding : 10,
-            layout : {
-                type:'vbox',
-                align:'stretch'
-            },
             items : [formPanel,{
                 xtype   : 'panel',
                 border  : false,
@@ -1073,14 +1063,14 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         this.hiddenFilter();
 
         // show edit column
-        var editColumn = Ext4.getCmp('edit-column-' + this.webpartId);
-        if (editColumn)
-        {
-            editColumn.show();
-        }
+        this._getEditColumn().show();
 
         this.customPanel.add(panel);
         this.north.getEl().unmask();
+    },
+
+    _getEditColumn : function() {
+        return Ext4.getCmp('edit-column-' + this.webpartId);
     },
 
     onEditClick : function(view, record) {
@@ -1104,12 +1094,10 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         // hidden items
         formItems.push({
             xtype : 'hidden',
-            style : 'display:none;',
             name  : 'id',
             value : record.data.id
         },{
             xtype : 'hidden',
-            style : 'display:none;',
             name  : 'dataType',
             value : record.data.dataType
         });
@@ -1209,7 +1197,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 align    : 'center',
                 sortable : false,
                 items : [{
-                    icon    : LABKEY.contextPath + '/' + LABKEY.extJsRoot_40 + '/resources/themes/images/access/qtip/close.gif',
+                    icon    : LABKEY.contextPath + '/' + LABKEY.extJsRoot_41 + '/resources/themes/images/access/qtip/close.gif',
                     tooltip : 'Delete'
                 }],
                 listeners : {
@@ -1271,7 +1259,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 }
             },
             plugins   : [cellEditing],
-            selType   : 'rowmodelfixed',
+            selType   : 'rowmodel',
             scope     : this
         });
 
@@ -1304,10 +1292,10 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 }
             }],
             listeners : {
-                beforeclose : function()
-                {
-                    if (confirm)
+                beforeclose : function() {
+                    if (confirm) {
                         this.onEditSave();
+                    }
                 },
                 scope : this
             },

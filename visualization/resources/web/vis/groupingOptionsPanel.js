@@ -115,7 +115,7 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
             name      : 'Show Individual Lines',
             checked   : this.displayIndividual,
             value     : this.displayIndividual,
-            style     : {paddingLeft: '20px'}, // show indented
+            style     : {marginLeft: '20px'}, // show indented
             disabled  : this.chartSubjectSelection != 'groups',
             listeners : {
                 change : function(cmp, checked){
@@ -132,7 +132,7 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
             checked   : this.displayAggregate,
             value     : this.displayAggregate,
             width     : 125,
-            style     : {paddingLeft: '20px'}, // show indented
+            style     : {marginLeft: '20px'}, // show indented
             disabled  : this.chartSubjectSelection != 'groups',
             listeners : {
                 change : function(cmp, checked){
@@ -276,6 +276,7 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
         colTwoItems.push(this.oneChartPerDimensionRadio);
 
         this.items = [{
+            xtype: 'panel',
             border: false,
             layout: 'column',
             items:[
@@ -284,14 +285,14 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
                     columnWidth: 0.5,
                     border: false,
                     padding: 5,
-                    items: [colOneItems]
+                    items: colOneItems
                 },
                 {
                     xtype: 'form',
                     columnWidth: 0.5,
                     border: false,
                     padding: 5,
-                    items: [colTwoItems]
+                    items: colTwoItems
                 }
             ]
         }];

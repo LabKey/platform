@@ -233,6 +233,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
             inputValue: 'per_subject',
             hideLabel: true,
             boxLabel: 'One Per ' + this.viewInfo.subjectNounSingular,
+            width: 150,
             checked: true,
             listeners: {
                 scope: this,
@@ -796,7 +797,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                             sortableColumns: false,
                             border: false,
                             frame: false,
-                            columns: [{    // TODO: fix styling for the ALL column header background and hover colors
+                            columns: [{    
                                 text: 'All',
                                 dataIndex:'value',
                                 menuDisabled: true,
