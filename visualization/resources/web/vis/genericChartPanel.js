@@ -914,12 +914,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         labels = {
             main: {value: this.chartData.queryName + ' - ' + this.yAxisMeasure.label},
             y: {
+                lookClickable: true,
                 value: this.yAxisMeasure.label,
                 listeners: {
                     click: yClickHandler(this)
                 }
             },
             x: {
+                lookClickable: true,
                 value: xMeasureName,
                 listeners: {
                     click: xClickHandler(this)

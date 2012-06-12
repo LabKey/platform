@@ -1481,24 +1481,28 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             labels: {
                 main: {
                     value: mainTitle,
+                    lookClickable: true,
                     listeners: {
                         click: mainTitleClickFn(this)
                     }
                 },
                 x: {
                     value: xTitle,
+                    lookClickable: true,
                     listeners: {
                         click: xAxisLabelClickFn(this)
                     }
                 },
                 yLeft: {
                     value: yLeftTitle,
+                    lookClickable: true,
                     listeners: {
                         click: yAxisLeftLabelClickFn(this)
                     }
                 },
                 yRight: {
                     value: yRightTitle,
+                    lookClickable: true,
                     listeners: {
                         click: yAxisRightLabelClickFn(this)
                     }
