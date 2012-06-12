@@ -48,8 +48,11 @@ public class DisplaySettings
 
     public DisplaySettings(Map<String, String> map)
     {
-        _lastVial = DisplayOption.valueOf(map.get(KEY_FLAG_ONE_AVAIL_VIAL));
-        _zeroVials = DisplayOption.valueOf(map.get(KEY_FLAG_ZERO_AVAIL_VIALS));
+        // Defect 15165: check for NULL properties; (this case seems to be _lastVial was present but not _zeroVials)
+        String propertyValue = map.get(KEY_FLAG_ONE_AVAIL_VIAL);
+        _lastVial = (propertyValue != null) ? DisplayOption.valueOf(propertyValue) : DisplayOption.ALL_USERS;
+        propertyValue = map.get(KEY_FLAG_ZERO_AVAIL_VIALS);
+        _zeroVials = (propertyValue != null) ? DisplayOption.valueOf(propertyValue) : DisplayOption.ALL_USERS;
         _defaultToCommentsMode = getBoolean(map.get(KEY_DEFAULT_COMMENT_MODE), false);
         _enableManualQCFlagging = getBoolean(map.get(KEY_ENABLE_MANUAL_QC_FLAGGING), true);
     }
