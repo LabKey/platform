@@ -431,6 +431,38 @@ LABKEY.Utils.convertToExcel(
             newForm.submit();
         },
 
+
+        /**
+         * Sends a JSON object to the server which turns it into an TSV or CSV file and returns it to the browser to be saved or opened.
+         * @param {Object} config.  The config object
+         * @param {String} config.fileNamePrefix name to suggest to the browser for saving the file. The appropriate extension (either ".txt" or ".csv", will be appended based on the delim character used (see below).  Defaults to 'Export'
+         * @param {String} config.delim The separator between fields.  Allowable values are 'COMMA' or 'TAB'.
+         * @param {String} config.quoteChar The character that will be used to quote each field.  Allowable values are 'DOUBLE' (ie. double-quote character), 'SINLGE' (ie. single-quote character) or 'NONE' (ie. no character used).  Defaults to none.
+         * @param {String} config.rows array of rows, which are arrays with values for each cell.
+         * @example &lt;script type="text/javascript"&gt;
+LABKEY.Utils.convertToTable(
+{
+	fileName: 'output.csv',
+    rows:
+    [
+        ['Row1Col1', 'Row1Col2'],
+        ['Row2Col1', 'Row2Col2']
+    ],
+    delim: 'COMMA'
+});
+&lt;/script&gt;
+         */
+        convertToTable : function(config) {
+            // Insert a hidden <form> into to page, put the JSON into it, and submit it - the server's response
+            // will make the browser pop up a dialog
+            var newForm = Ext.DomHelper.append(document.getElementsByTagName('body')[0],
+                '<form method="POST" action="' + LABKEY.ActionURL.buildURL("experiment", "convertArraysToTable") + '">' +
+                '<input type="hidden" name="json" value="' + Ext.util.Format.htmlEncode(Ext.util.JSON.encode(config)) + '" />' +
+                '</form>');
+            newForm.submit();
+        },
+
+
         /**
          * This is used internally by other class methods to automatically parse returned JSON
          * and call another success function passing that parsed JSON.

@@ -36,6 +36,46 @@ public class TSVWriter extends TextWriter
     protected List<String> _fileHeader = null;
     protected boolean _headerRowVisible = true;
 
+    public static enum DELIM_ENUM {
+        COMMA("comma", ',', "csv", "text/csv"),
+        TAB("tab", '\t', "txt", "text/tab-separated-values")
+        ;
+
+        private DELIM_ENUM(final String text, char delim, String extension, String contentType) {
+            this.text = text;
+            this.delim = delim;
+            this.extension = extension;
+            this.contentType = contentType;
+        }
+
+        public String toString()
+        {
+            return this.text;
+        }
+
+        public String text;
+        public char delim;
+        public String extension;
+        public String contentType;
+    };
+
+    public static enum QUOTE_ENUM {
+        DOUBLE('"'),
+        SINGLE('\''),
+        NONE((char)Character.UNASSIGNED)
+        ;
+
+        private QUOTE_ENUM(final char quoteChar) {
+            this.quoteChar = quoteChar;
+        }
+
+        public String toString()
+        {
+            return Character.toString(this.quoteChar);
+        }
+
+        public char quoteChar;
+    };
 
     public TSVWriter()
     {
