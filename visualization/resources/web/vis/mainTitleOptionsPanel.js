@@ -68,7 +68,7 @@ Ext4.define('LABKEY.vis.MainTitleOptionsPanel', {
                 xtype: 'fieldcontainer',
                 layout: 'hbox',
                 anchor: '100%',
-                style: {paddingTop: '5px'},
+                style: {marginTop: '5px'},
                 items: [
                     this.chartTitleTextField,
                     this.titleResetButton

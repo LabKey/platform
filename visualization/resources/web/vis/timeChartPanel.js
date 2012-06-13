@@ -390,7 +390,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                                 handler: function(btn){this.optionsButtonClicked(btn, this.editorGroupingPanel, 600, 210, 'center');}, scope: this});
 
         this.aestheticsButton = Ext4.create('Ext.button.Button', {text: 'Options', disabled: true,
-                                handler: function(btn){this.optionsButtonClicked(btn, this.editorAestheticsPanel, 300, 135, 'center');}, scope: this});
+                                handler: function(btn){this.optionsButtonClicked(btn, this.editorAestheticsPanel, 300, 125, 'center');}, scope: this});
 
         this.saveButton = Ext4.create('Ext.button.Button', {text: 'Save', disabled: true, hidden: !this.canEdit, handler: function(btn){
                                 this.editorSavePanel.setSaveAs(false);

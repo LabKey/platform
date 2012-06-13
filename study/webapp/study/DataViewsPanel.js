@@ -342,7 +342,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
          * Enable Grouping by Category
          */
         var groupingFeature = Ext4.create('Ext4.grid.feature.Grouping', {
-            groupHeaderTpl : '&nbsp;{name:htmlEncode}' // &nbsp; allows '+/-' to show up
+            groupHeaderTpl : '&nbsp;{name}' // &nbsp; allows '+/-' to show up
         });
 
         /**

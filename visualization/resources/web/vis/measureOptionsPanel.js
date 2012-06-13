@@ -396,6 +396,18 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
         this.dataFilterQuery = this.filterQuery;
         this.dataFilterWarning = Ext4.create('Ext.form.Label', {
             // No text by default
+            listeners: {
+                'afterrender': function() {
+                    if (this.fullFilterText)
+                    {
+                        Ext4.tip.QuickTipManager.register({
+                            target: this.dataFilterWarning.getId(),
+                            text: this.fullFilterText
+                        });
+                    }
+                },
+                scope: this
+            }
         });
         this.dataFilterRemoveButton = Ext4.create('Ext.button.Button', {
             hidden: true,
@@ -452,15 +464,10 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
 
     setFilterWarningText: function(text)
     {
-        var tipText;
-        var tip;
+        this.fullFilterText = null;
         text = LABKEY.Utils.encodeHtml(text);
         if(text.length > 25) {
-            tipText = text;
-            Ext4.tip.QuickTipManager.register({
-                target: this.dataFilterWarning.getId(),
-                text: tipText
-            });
+            this.fullFilterText = text;
             text = text.substr(0, 24) + "...";
         }
         var warning = "<b>This chart data is filtered:</b> " + text;
