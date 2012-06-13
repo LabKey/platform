@@ -21,7 +21,6 @@ import com.google.gwt.user.client.ui.RadioButton;
 import org.labkey.api.gwt.client.util.IPropertyWrapper;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Mar 30, 2010
  * Time: 1:53:26 PM
@@ -38,9 +37,14 @@ public class BoundRadioButton extends RadioButton
 
     public BoundRadioButton(String name, String label, IPropertyWrapper prop, Object value)
     {
+        this(name, label, prop, value, null);
+    }
+
+    public BoundRadioButton(String name, String label, IPropertyWrapper prop, Object value, final DirtyCallback dirtyCallback)
+    {
         super(name, label);
-        this._boundValue = value;
-        this._prop = prop;
+        _boundValue = value;
+        _prop = prop;
 
         if (value.equals(prop.get()))
             setValue(true);
@@ -51,5 +55,16 @@ public class BoundRadioButton extends RadioButton
                 _prop.set(_boundValue);
             }
         });
+
+        if (null != dirtyCallback)
+        {
+            addClickHandler(new ClickHandler()
+            {
+                public void onClick(ClickEvent event)
+                {
+                    dirtyCallback.setDirty(true);
+                }
+            });
+        }
     }
 }

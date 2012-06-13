@@ -168,6 +168,61 @@ public interface ListDefinition extends Comparable<ListDefinition>
         }
     }
 
+    enum BodySetting
+    {
+        TextOnly(0),
+        AllFields(1),
+        Custom(2);
+
+        private final int _value;
+
+        BodySetting(int value)
+        {
+            _value = value;
+        }
+
+        public int getValue()
+        {
+            return _value;
+        }
+
+        public static BodySetting getForValue(int value)
+        {
+            for (BodySetting s : BodySetting.values())
+                if (s.getValue() == value)
+                    return s;
+
+            return null;
+        }
+    }
+
+    enum TitleSetting
+    {
+        Standard(0),
+        Custom(1);
+
+        private final int _value;
+
+        TitleSetting(int value)
+        {
+            _value = value;
+        }
+
+        public int getValue()
+        {
+            return _value;
+        }
+
+        public static TitleSetting getForValue(int value)
+        {
+            for (TitleSetting s : TitleSetting.values())
+                if (s.getValue() == value)
+                    return s;
+
+            return null;
+        }
+    }
+
     int getListId();
     Container getContainer();
     Domain getDomain();
@@ -215,6 +270,36 @@ public interface ListDefinition extends Comparable<ListDefinition>
     boolean getAllowExport();
     void setAllowExport(boolean allowExport);
 
-    boolean getIndexMetaData();
-    void setIndexMetaData(boolean indexMetaData);
+    boolean getMetaDataIndex();
+    void setMetaDataIndex(boolean index);
+
+    boolean getEntireListIndex();
+    void setEntireListIndex(boolean index);
+
+    TitleSetting getEntireListTitleSetting();
+    void setEntireListTitleSetting(TitleSetting setting);
+
+    String getEntireListTitleTemplate();
+    void setEntireListTitleTemplate(String template);
+
+    BodySetting getEntireListBodySetting();
+    void setEntireListBodySetting(BodySetting setting);
+
+    String getEntireListBodyTemplate();
+    void setEntireListBodyTemplate(String template);
+
+    boolean getEachItemIndex();
+    void setEachItemIndex(boolean index);
+
+    TitleSetting getEachItemTitleSetting();
+    void setEachItemTitleSetting(TitleSetting setting);
+
+    String getEachItemTitleTemplate();
+    void setEachItemTitleTemplate(String template);
+
+    BodySetting getEachItemBodySetting();
+    void setEachItemBodySetting(BodySetting setting);
+
+    String getEachItemBodyTemplate();
+    void setEachItemBodyTemplate(String template);
 }

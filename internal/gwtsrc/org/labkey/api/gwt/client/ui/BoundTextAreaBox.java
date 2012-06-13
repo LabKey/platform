@@ -27,7 +27,7 @@ import org.labkey.api.gwt.client.util.StringUtils;
 public class BoundTextAreaBox extends HorizontalPanel
 {
     protected TextArea _box;
-    protected String _caption;
+    protected String _caption;  // TODO: Remove?  We validate but never use this
 
     public BoundTextAreaBox(String caption, String id, final StringProperty property, final DirtyCallback dirtyCallback)
     {
@@ -81,5 +81,19 @@ public class BoundTextAreaBox extends HorizontalPanel
     public TextArea getBox()
     {
         return _box;
+    }
+
+    public void setEnabled(boolean enabled)
+    {
+        //this.setDisabled(!enabled);
+
+        if (enabled)
+        {
+            removeStyleDependentName("disabled");
+        }
+        else
+        {
+            addStyleDependentName("disabled");
+        }
     }
 }

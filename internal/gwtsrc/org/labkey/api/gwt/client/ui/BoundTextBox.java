@@ -40,14 +40,19 @@ public class BoundTextBox extends HorizontalPanel
         this(caption, id, initialValue, updatable, null);
     }
 
-    public BoundTextBox(String caption, String id, final StringProperty prop)
+    public BoundTextBox(String caption, String id, StringProperty prop)
+    {
+        this(caption, id, prop, null);
+    }
+
+    public BoundTextBox(String caption, String id, final StringProperty prop, DirtyCallback dirtyCallback)
     {
         this(caption, id, prop.getString(), new WidgetUpdatable(){
             public void update(Widget widget)
             {
                 prop.set(((TextBox)widget).getText());
             }
-        }, null);
+        }, dirtyCallback);
     }
 
     public BoundTextBox(String caption, String id, String initialValue, WidgetUpdatable updatable, final DirtyCallback dirtyCallback)
