@@ -2654,7 +2654,8 @@ public class StudyManager
                 def.setLabel(label);
                 def.setName(name);
                 def.setDescription(info.description);
-                def.setTypeURI(getDomainURI(c, user, def));
+                if (null == def.getTypeURI())
+                    def.setTypeURI(getDomainURI(c, user, def));
                 def.setVisitDatePropertyName(info.visitDatePropertyName);
                 def.setShowByDefault(!info.isHidden);
                 def.setKeyPropertyName(info.keyPropertyName);
