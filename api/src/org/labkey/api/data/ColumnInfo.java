@@ -1246,7 +1246,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             col.metaDataName = metaDataName;
             col.selectName = dialect.getSelectNameFromMetaDataName(metaDataName);
             col.sqlTypeName = reader.getSqlTypeName();
-            col.jdbcType = JdbcType.valueOf(reader.getSqlType());
+            col.jdbcType = dialect.getJdbcType(reader.getSqlType(), reader.getSqlTypeName());
             col.isAutoIncrement = reader.isAutoIncrement();
             col.scale = reader.getScale();
             col.nullable = reader.isNullable();

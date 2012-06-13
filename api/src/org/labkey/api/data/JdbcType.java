@@ -185,6 +185,8 @@ public enum JdbcType
             }
         },
 
+    GUID(Types.VARCHAR, String.class),
+
     NULL(Types.NULL, Object.class),
 
     OTHER(Types.OTHER, Object.class);
@@ -288,6 +290,10 @@ public enum JdbcType
         return OTHER;
     }
 
+    public boolean isText()
+    {
+        return this.cls == String.class;
+    }
 
     public boolean isNumeric()
     {

@@ -28,6 +28,7 @@ import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -917,6 +918,35 @@ public abstract class SqlDialect
         // ONLY primary dialects need to support this for now
         throw new UnsupportedOperationException();
     }
+
+
+    public JdbcType getJdbcType(int type, String typeName)
+    {
+        JdbcType t = JdbcType.valueOf(type);
+        if ((t == JdbcType.VARCHAR || t == JdbcType.CHAR) && null != typeName)
+        {
+            if (StringUtils.equalsIgnoreCase("entityid",typeName) ||
+                StringUtils.equalsIgnoreCase("uniqueidentifier",typeName))
+                t = JdbcType.GUID;
+        }
+        return t;
+    }
+
+
+    public SQLFragment implicitConvertToString(JdbcType from, SQLFragment sql)
+    {
+        if (from == JdbcType.GUID)
+        {
+            SQLFragment ret = new SQLFragment();
+            ret.append("CAST(");
+            ret.append(sql).append(" AS ");
+            ret.append(sqlTypeNameFromSqlType(from.sqlType)).append("(36))");
+            return ret;
+        }
+        // let server do default conversion
+        return sql;
+    }
+
 
     public abstract List<String> getChangeStatements(TableChange change);
     public abstract void initializeConnection(Connection conn) throws SQLException;
