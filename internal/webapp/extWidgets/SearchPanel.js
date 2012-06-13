@@ -50,23 +50,23 @@ Ext4.namespace('LABKEY.ext4');
     }).render('searchPanel');
 
  &lt;/script&gt;
-    &lt;div id='searchPanel'/&gt;
+ &lt;div id='searchPanel'/&gt;
  */
 
 
 Ext4.define('LABKEY.ext4.SearchPanel', {
     extend: 'Ext.panel.Panel',
     alias: 'widget.labkey-searchpanel',
+    LABEL_WIDTH: 150,
+    FIELD_WIDTH: 150,
+    OP_FIELD_WIDTH: 165,
+
     initComponent: function(){
         Ext4.apply(this, {
             title: this.title,
             bodyStyle: 'padding: 5px;',
-            layout: {
-                type: 'table',
-                columns: 3
-            },
             fieldDefaults: {
-                labelWidth: 150
+                labelWidth: this.LABEL_WIDTH
             },
             buttons: [
                 {text: 'Submit', scope: this, handler: this.onSubmit}
@@ -75,16 +75,20 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
                 border: false,
                 bodyBorder: false
             },
-            items: [{html: 'Loading...'}],
+            items: [{
+                html: 'Loading...'
+            }],
             border: true,
             bodyBorder: false,
-            width: 492,
+            width: 505,
             autoHeight: true,
-            keys: [{
-                key: Ext4.EventObject.ENTER,
-                handler: this.onSubmit,
-                scope: this
-            }]
+            keys: [
+                {
+                    key: Ext4.EventObject.ENTER,
+                    handler: this.onSubmit,
+                    scope: this
+                }
+            ]
         });
 
         this.callParent();
@@ -107,7 +111,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             }
         });
 
-        if(LABKEY.ext.Ext4Helper.hasStoreLoaded(this.store))
+        if (LABKEY.ext.Ext4Helper.hasStoreLoaded(this.store))
             this.onLoad(this.store, true);
         else
             this.mon(this.store, 'load', this.onLoad, this, {single: true});
@@ -130,64 +134,85 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
         }, this);
 
         if (this.showContainerFilter){
-            toAdd.push({html: 'Container Filter:', width: 125});
-            toAdd.push({
-                xtype: 'labkey-containerfiltercombo'
-                ,width: 165
-                ,value: this.defaultContainerFilter || ''
-                ,fieldType: 'containerFilterName'
-                ,itemId: 'containerFilterName'
-            });
-            toAdd.push({html: ''});
+            toAdd.push(Ext4.apply(this.getRowCfg(), {
+                items: [{
+                    html: 'Container Filter:',
+                    width: this.LABEL_WIDTH
+                },{
+                    xtype: 'labkey-containerfiltercombo'
+                    ,width: this.OP_FIELD_WIDTH
+                    ,value: this.defaultContainerFilter || ''
+                    ,fieldType: 'containerFilterName'
+                    ,itemId: 'containerFilterName'
+                }]
+            }));
         }
 
-        if (this.allowSelectView!==false){
-            toAdd.push({html: 'View:', width: 125});
-            toAdd.push({
-                xtype: 'labkey-viewcombo'
-                ,containerPath: this.containerPath
-                ,queryName: this.queryName
-                ,schemaName: this.schemaName
-                ,width: 165
-                ,value: this.defaultViewName || ''
-                ,fieldType: 'viewName'
-                ,itemId: 'viewNameField'
-            });
-            toAdd.push({html: ''});
+        if (this.allowSelectView !== false){
+            toAdd.push(Ext4.apply(this.getRowCfg(), {
+                items: [{
+                    html: 'View:',
+                    width: this.LABEL_WIDTH
+                },{
+                    xtype: 'labkey-viewcombo',
+                    containerPath: this.containerPath,
+                    queryName: this.queryName,
+                    schemaName: this.schemaName,
+                    width: this.OP_FIELD_WIDTH,
+                    value: this.defaultViewName || '',
+                    fieldType: 'viewName',
+                    itemId: 'viewNameField'
+                }]
+            }));
+            //toAdd.push({html: ''});
         }
 
         this.add(toAdd);
     },
 
-   addRow: function(meta){
-        if(meta.inputType == 'textarea'){
+    addRow: function(meta){
+        if (meta.inputType == 'textarea'){
             meta.inputType = 'textbox';
         }
 
-       var rows = [];
+        var rows = [];
         if (!meta.hidden && meta.selectable !== false){
             var replicates = 1;
-            if(meta.duplicate)
+            if (meta.duplicate)
                 replicates = 2;
 
-            for(var i=0;i<replicates;i++)
-                rows = rows.concat(this.createRow(meta));
-
+            for (var i = 0; i < replicates; i++){
+                rows.push({
+                    items: Ext4.apply(this.getRowCfg(), {items: this.createRow(meta)})
+                });
+            }
         }
 
-       return rows;
-   },
+        return rows;
+    },
 
-   createRow: function(meta){
-       var row = [];
-        if (meta.lookup && meta.lookups!==false){
+    getRowCfg: function(){
+        return {
+            xtype: 'container',
+            layout: 'hbox',
+            bodyStyle: 'padding: 5px;',
+            defaults: {
+                style: 'margin: 2px;',
+                border: false
+            }
+        };
+    },
+
+    createRow: function(meta){
+        var row = [];
+        if (meta.lookup && meta.lookups !== false){
             meta.includeNullRecord = false;
             meta.editorConfig = meta.editorConfig || {};
             meta.editorConfig.multiSelect = true;
             meta.editorConfig.delimiter = ';';
         }
 
-        if(meta.jsonType == 'boolean'){
+        if (meta.jsonType == 'boolean'){
             meta.editorConfig = meta.editorConfig || {};
             meta.editorConfig.includeNullRecord = true;
             meta.xtype = 'labkey-booleancombo';
@@ -195,32 +220,32 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
 
         //create the field
         var theField = LABKEY.ext.Ext4Helper.getFormEditorConfig(meta);
-       theField.fieldLabel = null;
-
+        theField.fieldLabel = null;
         theField.disabled = false;
 
         //the label
-        row.push({html: meta.caption + ':', width: 150});
+        row.push({html: meta.caption + ':', width: this.LABEL_WIDTH});
 
         Ext4.apply(theField, {
             nullable: true,
             allowBlank: true,
-            width: 150,
+            width: this.FIELD_WIDTH,
             isSearchField: true,
             style: 'padding-left: 5px;'
         });
 
-       //NOTE: if the field is a lookup, the dataRegion will display/filter this field on the value
-       //therefore on submit, we actually filter on display value, not raw value
-       //Issue: 13723
-       if(meta.lookup){
+        //NOTE: if the field is a lookup, the dataRegion will display/filter this field on the value
+        //therefore on submit, we actually filter on display value, not raw value
+        //Issue: 13723
+        if (meta.lookup){
             theField.dataIndex = meta.name + '/' + meta.lookup.displayColumn;
             theField.valueField = theField.displayField;
-       }
+        }
 
         //the operator
-        if(meta.jsonType=='boolean')
-            row.push({});
+        if (meta.jsonType == 'boolean'){
+            row.push({width: this.OP_FIELD_WIDTH});
+        }
         else if (theField.xtype == 'labkey-combo'){
             var id = Ext4.id();
             theField.opField = id;
@@ -228,6 +253,10 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
                 xtype: 'displayfield',
                 value: 'in',
                 itemId: id,
+                width: this.OP_FIELD_WIDTH,
+                //TODO: spacing not correct in 4.1
+                hideMode: 'offsets',
+                border: true,
                 hidden: true
             });
         }
@@ -238,14 +267,15 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
                 xtype: 'labkey-operatorcombo',
                 meta: meta,
                 itemId: id,
-                width: 165
+                width: this.OP_FIELD_WIDTH
             });
         }
 
         //the field itself
         row.push(theField);
-       return row;
+        return row;
     },
+
     onSubmit: function(){
         var params = {
             schemaName: this.schemaName,
@@ -256,7 +286,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
         if (cf && cf.getValue()){
             params['query.containerFilterName'] = cf.getValue();
         }
-        else if(this.defaultContainerFilter){
+        else if (this.defaultContainerFilter){
             params['query.containerFilterName'] = this.defaultContainerFilter;
         }
 
@@ -266,13 +296,13 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
         }
 
         this.items.each(function(item){
-            if(!item.isSearchField)
+            if (!item.isSearchField)
                 return;
 
             var op;
             if (item.opField){
-                var opField = this.down('#'+item.opField);
-                if(opField.getValue())
+                var opField = this.down('#' + item.opField);
+                if (opField.getValue())
                     op = opField.getValue();
             }
             else {
@@ -280,7 +310,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             }
             var filterType = LABKEY.Filter.getFilterTypeForURLSuffix(op);
             var val = item.getValue();
-            if(Ext4.isArray(val))
+            if (Ext4.isArray(val))
                 val = val.join(';');
 
             if (!Ext4.isEmpty(val) || !filterType.isDataValueRequired()){

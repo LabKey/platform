@@ -85,12 +85,12 @@ Ext4.define('LABKEY.ext.NavPanel', {
                 frame: false,
                 width: this.colWidth,
                 style: 'padding-right:10px;background-color: transparent;',
-                bodyStyle: 'background-color: transparent;',
+                bodyStyle: 'background-color: transparent;border-top-width:0px;',
                 defaults: {
-                    border: false,
-                    cls: 'labkey-wiki'
+                    border: false
                 },
-                items: [{
+                items: [],
+                dockedItems: [{
                     dock: 'top',
                     xtype: 'header',
                     title: sectionCfg.header + ':',

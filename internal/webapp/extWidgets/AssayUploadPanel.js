@@ -85,20 +85,23 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
             },
             buttonAlign: 'left',
             monitorValid: true,
-            buttons: [{
-                text: 'Upload'
-                ,width: 50
-                ,hidden: !LABKEY.Security.currentUser.canInsert
-                ,handler: this.formSubmit
-                ,scope: this
-                ,formBind: true
-            },{
-                text: 'Cancel'
-                ,width: 50
-                ,scope: this
-                ,href: LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.buildURL('project', 'begin')
-                ,target: '_self'
-                ,formBind: true
+            dockedItems: [{
+                xtype: 'toolbar',
+                dock: 'bottom',
+                ui: 'footer',
+                style: 'background-color: transparent;',
+                items: [{
+                    text: 'Upload'
+                    ,hidden: !LABKEY.Security.currentUser.canInsert
+                    ,handler: this.formSubmit
+                    ,scope: this
+                    ,formBind: true
+                },{
+                    text: 'Cancel'
+                    ,scope: this
+                    ,href: LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.buildURL('project', 'begin')
+                    ,hrefTarget: '_self'
+                }]
             }],
             listeners: {
                 scope: this,
@@ -236,8 +239,8 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
         if (!this.selectedMethod.noTemplateDownload){
             this.down('#sampleDataArea').add({
                 xtype: 'button'
+                ,border: true
                 ,text: 'Download Excel Template'
-                ,border: false
                 ,style: 'margin-bottom: 10px;'
                 ,listeners: {
                     scope: this,
@@ -251,7 +254,7 @@ Ext4.define('LABKEY.ext.AssayUploadPanel', {
         if (this.selectedMethod.exampleData){
             this.down('#sampleDataArea').add({
                 xtype: 'button'
-                ,border: false
+                ,border: true
                 ,style: 'margin-bottom: 10px'
                 ,text: 'Download Example Data'
                 ,href: this.selectedMethod.exampleData

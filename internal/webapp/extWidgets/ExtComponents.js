@@ -209,7 +209,7 @@ Ext4.define('LABKEY.ext.LinkButton', {
             '<a id="{id}-btnEl" role="link" ' +
                 '<tpl if="linkCls">class="{linkCls}"</tpl>' +
                 '<tpl if="href">href="{href}" </tpl>' +
-                '<tpl if="href">target="{linkTarget}" </tpl>' +
+                '<tpl if="linkTarget">target="{linkTarget}" </tpl>' +
                 '<tpl if="tooltip">data-qtip="{tooltip}"</tpl>' +
                 '<tpl if="tabIndex"> tabIndex="{tabIndex}"</tpl>' +
             '>' +
@@ -392,12 +392,13 @@ Ext4.define('LABKEY.ext4.ComboBox', {
     initComponent: function(){
         this.listConfig = this.listConfig || {};
         this.listConfig.innerTpl =
+            //allow a custom null caption, defaults to '[none]'
             '{[(typeof values === "string" ? values : (values["' + this.displayField + '"] ? values["' + this.displayField + '"] : '+(Ext4.isDefined(this.lookupNullCaption) ? '"' + '1'+this.lookupNullCaption + '"' : '"[none]"')+'))]}' +
             //allow a flag to display both display and value fields
             (this.showValueInList ? '{[values["' + this.valueField + '"] ? " ("+values["' + this.valueField + '"]+")" : ""]}' : '') +
             (this.multiSelect ? '<tpl if="xindex < xcount">' + '{[(values["' + this.displayField + '"] ? "'+this.delimiter+'" : "")]}' + '</tpl>' : '') +
-
-            '&nbsp;'  //space added so empty strings render with full height
+            //space added so empty strings render with full height
+            '&nbsp;'
         this.listConfig.getInnerTpl = function(){
             return this.innerTpl;
         }
@@ -410,8 +411,9 @@ Ext4.define('LABKEY.ext4.ComboBox', {
         //auto list width
         this.listConfig.listeners = this.listConfig.listeners || {};
         Ext4.apply(this.listConfig.listeners, {
-            scope: this,
-            viewready: this.resizeToFitContent
+            scope: this
+            //TODO: broken in 4.1
+            //viewready: this.resizeToFitContent
         });
 
         //note: will be addressed in resizeToFitContent()

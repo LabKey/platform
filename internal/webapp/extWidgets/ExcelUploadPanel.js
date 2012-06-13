@@ -284,7 +284,7 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
                 xtype: 'button',
                 style: 'margin-bottom: 10px;',
                 text: meta.importTemplates[0].label,
-                border: false,
+                border: true,
                 handler: this.generateExcelTemplate,
                 templateUrl: meta.importTemplates[0].url
 

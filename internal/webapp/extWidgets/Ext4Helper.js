@@ -188,35 +188,20 @@ LABKEY.ext.Ext4Helper = new function(){
                 name: meta.name,
                 dataIndex: meta.dataIndex || meta.name,
                 value: meta.value || meta.defaultValue,
-                helpPopup: [
-                    'Type: ' + meta.friendlyType ? meta.friendlyType : '',
-                    'Required: ' + !meta.allowBlank,
-                    'Description: ' + (meta.description || '')
-                ],
                 width: meta.width,
                 height: meta.height,
                 msgTarget: 'qtip',
-//                labelableRenderTpl: LABKEY.ext.Ext4Helper.labelableRenderTpl,
-//                getLabelableRenderData: function(){
-//                    var data = Ext4.form.Labelable.prototype.getLabelableRenderData.apply(this, arguments);
-//                    data.allowBlank = this.allowBlank;
-//                    if(this.allowBlank === false){
-//                        data.labelStyle = data.labelStyle || '';
-//                        data.labelStyle = data.labelStyle.split(';');
-//                        data.labelStyle.push('font-weight:bold');
-//                        data.labelStyle = data.labelStyle.join(';');
-//                    }
-//                    return data;
-//                },
                 validateOnChange: true
             };
 
-            if(field.description)
-                field.helpPopup.push('Description: '+meta.description);
-
-            field.renderData = {
-                helpPopup: field.helpPopup.join('<br>')
-            };
+            var helpPopup = meta.helpPopup || [
+                'Type: ' + (meta.friendlyType ? meta.friendlyType : ''),
+                'Required: ' + !meta.allowBlank,
+                'Description: ' + (meta.description || '')
+            ];
+            if(Ext4.isArray(helpPopup))
+                helpPopup = helpPopup.join('<br>');
+            field.helpPopup = helpPopup;
 
             if (meta.hidden)
             {
@@ -253,7 +238,7 @@ LABKEY.ext.Ext4Helper = new function(){
                     initialValue: field.value,
                     showValueInList: meta.showValueInList,
     //                listClass: 'labkey-grid-editor',
-                    lookupNullCaption: meta.lookupNullCaption
+                    lookupNullCaption: meta.lookupNullCaption,
                 });
             }
             else
@@ -813,26 +798,6 @@ LABKEY.ext.Ext4Helper = new function(){
                 return null;
             }
         },
-
-        labelableRenderTpl: [
-            '<tpl if="!hideLabel && !(!fieldLabel && hideEmptyLabel)">',
-                '<label id="{id}-labelEl"<tpl if="inputId"> for="{inputId}"</tpl> class="{labelCls}"',
-                    '<tpl if="labelStyle"> style="{labelStyle}"</tpl>>',
-                    '<tpl if="fieldLabel">{fieldLabel:htmlEncode}',
-                        '{labelSeparator}' +
-                        //'<tpl if="!allowBlank"> *</tpl>',
-                        '<tpl if="helpPopup"><a href="#" data-qtip="{helpPopup:htmlEncode}"><span class="labkey-help-pop-up">?</span></a></tpl>',
-                    '</tpl>',
-                '</label>',
-            '</tpl>',
-            '<div class="{baseBodyCls} {fieldBodyCls}" id="{id}-bodyEl" role="presentation">{subTplMarkup}</div>',
-            '<div id="{id}-errorEl" class="{errorMsgCls}" style="display:none"></div>',
-            '<div class="{clearCls}" role="presentation"><!-- --></div>',
-            {
-                compiled: true,
-                disableFormats: true
-            }
-        ],
 
         //private
         findJsonType: function(fieldObj){
