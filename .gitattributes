@@ -6628,7 +6628,9 @@ internal/webapp/_images/callout_tip.gif -text
 internal/webapp/_images/cancel.gif -text
 internal/webapp/_images/cancel.png -text
 internal/webapp/_images/cart.gif -text
+internal/webapp/_images/cart.png -text
 internal/webapp/_images/cart_added.gif -text
+internal/webapp/_images/cart_added.png -text
 internal/webapp/_images/check.png -text
 internal/webapp/_images/close.png -text
 internal/webapp/_images/collapse_folders.gif -text
@@ -6684,6 +6686,7 @@ internal/webapp/_images/minus.gif -text
 internal/webapp/_images/move.png -text
 internal/webapp/_images/mv_indicator.gif -text
 internal/webapp/_images/one.gif -text
+internal/webapp/_images/one.png -text
 internal/webapp/_images/paperclip.gif -text
 internal/webapp/_images/paperclip.png -text
 internal/webapp/_images/partadded.gif -text
@@ -6741,6 +6744,7 @@ internal/webapp/_images/upload.png -text
 internal/webapp/_images/warning-icon-alt.png -text
 internal/webapp/_images/warning-icon.png -text
 internal/webapp/_images/warning-small.png -text
+internal/webapp/_images/zero.png -text
 internal/webapp/applet.js -text
 internal/webapp/color_functions.js -text
 internal/webapp/completion.js -text
