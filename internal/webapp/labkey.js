@@ -19,7 +19,7 @@ if (typeof LABKEY == "undefined")
     LABKEY.devMode = false;
     LABKEY.demoMode = false;
     LABKEY.extJsRoot = "ext-3.4.0";
-    LABKEY.extJsRoot_40 = "ext-4.0.7"; // TODO: to be removed
+    //LABKEY.extJsRoot_40 = "ext-4.0.7";
     LABKEY.extJsRoot_41 = "ext-4.1.0";
     LABKEY.extThemeRoot = "labkey-ext-theme";
     LABKEY.verbose = false;
@@ -271,20 +271,12 @@ LABKEY.requiresExtJs = function(immediate)
     LABKEY.requiresScript(LABKEY.extJsRoot + "/ext-patches.js", immediate);
 };
 
-LABKEY.requiresExt4Sandbox = function(immediate, useExt40)
+LABKEY.requiresExt4Sandbox = function(immediate)
 {
     if (arguments.length < 1) immediate = true;
 
-    if (useExt40) // TODO: to be removed once create folder page is working with Ext 4.1
-    {
-        LABKEY.requiresScript(LABKEY.extJsRoot_40 + "/ext-all-sandbox" + (LABKEY.devMode ?  "-debug.js" : ".js"), immediate);
-        LABKEY.requiresScript(LABKEY.extJsRoot_40 + "/ext-patches.js", immediate);
-    }
-    else
-    {
-        LABKEY.requiresScript(LABKEY.extJsRoot_41 + "/ext-all-sandbox" + (LABKEY.devMode ?  "-debug.js" : ".js"), immediate);
-        LABKEY.requiresScript(LABKEY.extJsRoot_41 + "/ext-patches.js", immediate);
-    }
+    LABKEY.requiresScript(LABKEY.extJsRoot_41 + "/ext-all-sandbox" + (LABKEY.devMode ?  "-debug.js" : ".js"), immediate);
+    LABKEY.requiresScript(LABKEY.extJsRoot_41 + "/ext-patches.js", immediate);
 };
 
 // adds the compatibility layer to be used on the Ext4 sandbox components
@@ -341,12 +333,12 @@ LABKEY.requiresClientAPI = function(immediate)
 };
 
 
-LABKEY.requiresExt4ClientAPI = function(immediate, useExt40)
+LABKEY.requiresExt4ClientAPI = function(immediate)
 {
     if (arguments.length < 1) immediate = true;
 
     //for now we assume this is only dev mode
-    LABKEY.requiresExt4Sandbox(immediate, useExt40);
+    LABKEY.requiresExt4Sandbox(immediate);
 
     //load individual scripts so that they get loaded from source tree
     LABKEY.requiresScript("extWidgets/Ext4Helper.js", immediate);
