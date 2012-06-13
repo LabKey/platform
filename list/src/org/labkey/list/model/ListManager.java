@@ -141,7 +141,7 @@ public class ListManager implements SearchService.DocumentProvider
                     Domain domain = list.getDomain();
 
                     // Delete from index if list has just been deleted or admin has chosen not to index it 
-                    if (null == domain || !list.getIndexMetaData())
+                    if (null == domain || !list.getMetaDataIndex())
                     {
                         ServiceRegistry.get(SearchService.class).deleteResource(documentId);
                         continue;

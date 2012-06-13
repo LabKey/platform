@@ -171,6 +171,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         _hasDeleteListPermission =  Boolean.valueOf(PropertyUtil.getServerProperty("hasDeleteListPermission"));
         boolean startInEdit = "#edit".equals(Window.Location.getHash()) || "1".equals(Window.Location.getParameter("edit"));
 
+        //noinspection GwtToHtmlReferences
         _root = RootPanel.get("org.labkey.list.Designer-Root");
         clearLoading(_root);
 
@@ -220,6 +221,8 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                     if (null != _list && !isEmpty(_list.getName()))
                     {
                         _log("Create List clicked");
+                        setDirty(false);
+
                         //Issue 13457: dont actually create the list until later for excel import
                         if (_importFromFile.booleanValue())
                         {
@@ -303,6 +306,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                 }
             }));
         }
+        //noinspection GWTStyleCheck
         _buttons.setStyleName("gwt-ButtonBar");
     }
 
@@ -322,7 +326,8 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         int titlePropByRename = -1;
         _titleListBox.clear();
         _titleListBox.addItem("<AUTO>", "0|<AUTO>");
-        for (int i=0 ; i<count ; i++)
+
+        for (int i = 0; i < count; i++)
         {
             if (_propTable.isDeleted(i))
                 continue;
@@ -341,8 +346,9 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
             }
             _titleListBox.addItem(pd.getName(), String.valueOf(pd.getPropertyId()) + "|" + pd.getName());
         }
-        int titleProp = 0<titlePropById?titlePropById : 0<titlePropByName?titlePropByName : titlePropByRename;
-        _titleListBox.setSelectedIndex(Math.max(0,titleProp));
+
+        int titleProp = 0 < titlePropById ? titlePropById : 0 < titlePropByName ? titlePropByName : titlePropByRename;
+        _titleListBox.setSelectedIndex(Math.max(0, titleProp));
     }
 
 
@@ -727,6 +733,18 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
     }
 
 
+    private class DirtySetter implements DirtyCallback
+    {
+        @Override
+        public void setDirty(boolean dirty)
+        {
+            ListDesigner.this.setDirty(true);
+        }
+    }
+
+
+    private DirtySetter dirtySetter = new DirtySetter();
+
     private class CreateListPanel extends VerticalPanel
     {
         final FlexTable _table = new FlexTable();
@@ -739,7 +757,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
         private void createPanel()
         {
-            String labelStyleName="labkey-form-label"; // Pretty yellow background for labels
+            String labelStyleName = "labkey-form-label"; // Pretty yellow background for labels
             HTMLTable.CellFormatter cellFormatter = _table.getCellFormatter();
 
             int row = 0;
@@ -748,7 +766,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
             // NAME
             {
-                Widget listNameTextBox = new _ListNameTextBox("Name", "ff_name", _list.name);
+                Widget listNameTextBox = new _ListNameTextBox("Name", "ff_name", _list.name, dirtySetter);
                 HorizontalPanel panel = new HorizontalPanel();
                 panel.add(new Label("Name"));
                 panel.add(new HelpPopup("Name", "Name of new list"));
@@ -761,7 +779,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
             // PK NAME
             {
                 _list.setKeyPropertyName("Key");
-                BoundTextBox name = new BoundTextBox("Primary Key Name", "ff_keyName", _list.keyPropertyName);
+                BoundTextBox name = new BoundTextBox("Primary Key Name", "ff_keyName", _list.keyPropertyName, dirtySetter);
                 name.setRequired(true);
                 HorizontalPanel panel = new HorizontalPanel();
                 panel.add(new Label("Primary Key"));
@@ -775,7 +793,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
             // PK TYPE
             {
                 _list.keyPropertyType.set("AutoIncrementInteger");
-                BoundListBox type = new BoundListBox("ff_keyType", false, _list.keyPropertyType, null);
+                BoundListBox type = new BoundListBox("ff_keyType", false, _list.keyPropertyType, dirtySetter);
                 type.addItem("Auto-Increment Integer", "AutoIncrementInteger");
                 type.addItem("Integer", "Integer");
                 type.addItem("Text (String)", "Varchar");
@@ -790,7 +808,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
             // IMPORT
             {
-                CheckBox importFile = new BoundCheckBox("fileImport", _importFromFile, null);
+                CheckBox importFile = new BoundCheckBox("fileImport", _importFromFile, dirtySetter);
                 HorizontalPanel panel = new HorizontalPanel();
                 panel.add(new Label("Import from file"));
                 panel.add(new HelpPopup("Import from file", "Use this option if you have a spreadsheet that you would like uploaded as a list."));
@@ -805,7 +823,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
     private class ListPropertiesPanel extends VerticalPanel
     {
-        final FlexTable _table = new FlexTable();
+        private final String checkboxStyleName = "gwt-label";      // Standard checkbox style is 8pt... let's match label instead
 
         public ListPropertiesPanel(boolean readonly)
         {
@@ -815,24 +833,25 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
         private void createPanel(boolean readonly)
         {
-            String labelStyleName="labkey-form-label"; // Pretty yellow background for labels
-            HTMLTable.CellFormatter cellFormatter = _table.getCellFormatter();
+            String labelStyleName = "labkey-form-label"; // Pretty yellow background for labels
+            FlexTable table = new FlexTable();
+            HTMLTable.CellFormatter cellFormatter = table.getCellFormatter();
 
             int row = 0;
 
-            add(_table);
+            add(table);
 
             // NAME
             {
                 Widget listNameTextBox = readonly ?
                         new Label(_list.getName()) :
-                        new _ListNameTextBox("Name", "ff_name", _list.name);
+                        new _ListNameTextBox("Name", "ff_name", _list.name, dirtySetter);
                 HorizontalPanel panel = new HorizontalPanel();
                 panel.add(new Label("Name"));
                 //panel.add(new HelpPopup("Name", "Name of this List"));
-                _table.setWidget(row, 0, panel);
+                table.setWidget(row, 0, panel);
                 cellFormatter.setStyleName(row, 0, labelStyleName);
-                _table.setWidget(row, 1, listNameTextBox);
+                table.setWidget(row, 1, listNameTextBox);
                 row++;
             }
 
@@ -840,16 +859,15 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
             {
                 Widget descriptionTextBox = readonly ?
                         new Label(_list.getDescription()) :
-                        new BoundTextAreaBox("Description", "ff_description", _list.description, null);
+                        new BoundTextAreaBox("Description", "ff_description", _list.description, dirtySetter);
                 HorizontalPanel panel = new HorizontalPanel();
                 panel.add(new Label("Description"));
                 //panel.add(new HelpPopup("Name", "Name of this List"));
-                _table.setWidget(row, 0, panel);
+                table.setWidget(row, 0, panel);
                 cellFormatter.setStyleName(row, 0, labelStyleName);
-                _table.setWidget(row, 1, descriptionTextBox);
+                table.setWidget(row, 1, descriptionTextBox);
                 row++;
             }
-
 
             // TITLE
             {
@@ -862,9 +880,9 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                 HorizontalPanel panel = new HorizontalPanel();
                 panel.add(new Label("Title Field"));
                 //panel.add(new HelpPopup("Name", "Name of this List"));
-                _table.setWidget(row, 0, panel);
+                table.setWidget(row, 0, panel);
                 cellFormatter.setStyleName(row, 0, labelStyleName);
-                _table.setWidget(row, 1, titleListBox);
+                table.setWidget(row, 1, titleListBox);
                 row++;
 
                 if (!_readonly)
@@ -884,6 +902,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                             int split = value.indexOf('|');
                             _titlePropertyId = Integer.parseInt(value.substring(0,split));
                             _list.setTitleField(value.substring(split+1));
+                            setDirty(true);
                         }
                     });
                     refreshTitleListBox();
@@ -892,11 +911,11 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
             // DISCUSSION LINKS
             {
-                RadioButton none = new BoundRadioButton("ff_discussionSetting", "None", _list.discussionSetting, 0);
+                RadioButton none = new BoundRadioButton("ff_discussionSetting", "None", _list.discussionSetting, 0, dirtySetter);
                 none.setEnabled(!readonly);
-                RadioButton one = new BoundRadioButton("ff_discussionSetting", "Allow one discussion per item", _list.discussionSetting, 1);
+                RadioButton one = new BoundRadioButton("ff_discussionSetting", "Allow one discussion per item", _list.discussionSetting, 1, dirtySetter);
                 one.setEnabled(!readonly);
-                RadioButton multi = new BoundRadioButton("ff_discussionSetting", "Allow multiple discussions per item", _list.discussionSetting, 2);
+                RadioButton multi = new BoundRadioButton("ff_discussionSetting", "Allow multiple discussions per item", _list.discussionSetting, 2, dirtySetter);
                 multi.setEnabled(!readonly);
                 Panel radios = new VerticalPanel();
                 radios.add(none);
@@ -905,56 +924,145 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
                 HorizontalPanel panel = new HorizontalPanel();
                 panel.add(new Label("Discussion Links"));
-                _table.setWidget(row, 0, panel);
+                table.setWidget(row, 0, panel);
                 cellFormatter.setStyleName(row, 0, labelStyleName);
-                _table.setWidget(row, 1, radios);
+                table.setWidget(row, 1, radios);
                 row++;
             }
 
-            // ALLOW
+            // ALLOWABLE ACTIONS
             {
-                BoundCheckBox allow = new BoundCheckBox("ff_allowDelete", _list.allowDelete, null);
-                allow.setEnabled(!readonly);
                 HorizontalPanel panel = new HorizontalPanel();
-                panel.add(new Label("Allow Delete"));
-                _table.setWidget(row, 0, panel);
+                panel.add(new Label("Allowable Actions"));
+                table.setWidget(row, 0, panel);
                 cellFormatter.setStyleName(row, 0, labelStyleName);
-                _table.setWidget(row, 1, allow);
+
+                VerticalPanel allowablePanel = new VerticalPanel();
+                table.setWidget(row, 1, allowablePanel);
+
+                BoundCheckBox allowDelete = new BoundCheckBox("ff_allowDelete", _list.allowDelete, dirtySetter);
+                allowDelete.setText("Delete");
+                allowDelete.setStyleName(checkboxStyleName);
+                allowDelete.setEnabled(!readonly);
+                allowablePanel.add(allowDelete);
+
+                BoundCheckBox allowUpload = new BoundCheckBox("ff_allowUpload", _list.allowUpload, dirtySetter);
+                allowUpload.setText("Upload");
+                allowUpload.setStyleName(checkboxStyleName);
+                allowUpload.setEnabled(!readonly);
+                allowablePanel.add(allowUpload);
+
+                BoundCheckBox allowExport = new BoundCheckBox("ff_allowExport", _list.allowExport, dirtySetter);
+                allowExport.setText("Export and print");
+                allowExport.setStyleName(checkboxStyleName);
+                allowExport.setEnabled(!readonly);
+                allowablePanel.add(allowExport);
+
                 row++;
             }
 
+            // FULL-TEXT SEARCH INDEXING
             {
-                BoundCheckBox allow = new BoundCheckBox("ff_allowUpload", _list.allowUpload, null);
-                allow.setEnabled(!readonly);
                 HorizontalPanel panel = new HorizontalPanel();
-                panel.add(new Label("Allow Upload"));
-                _table.setWidget(row, 0, panel);
+                panel.add(new Label("Full-Text Search Indexing"));
+                table.setWidget(row, 0, panel);
                 cellFormatter.setStyleName(row, 0, labelStyleName);
-                _table.setWidget(row, 1, allow);
+
+                VerticalPanel indexPanel = new VerticalPanel();
+                table.setWidget(row, 1, indexPanel);
+
+                BoundCheckBox metaDataIndex = new BoundCheckBox("ff_metaDataIndex", _list.metaDataIndex, dirtySetter);
+                metaDataIndex.setText("Index meta data");
+                metaDataIndex.setStyleName(checkboxStyleName);
+                metaDataIndex.setEnabled(!readonly);
+                indexPanel.add(metaDataIndex);
+
+                addIndexSettings(indexPanel, "eachItem", "Index data: each item as a separate document", _list.eachItemIndex, _list.eachItemTitleSetting, _list.eachItemTitleTemplate, _list.eachItemBodySetting, _list.eachItemBodyTemplate, readonly);
+                addIndexSettings(indexPanel, "entireList", "Index data: entire list as a single document", _list.entireListIndex, _list.entireListTitleSetting, _list.entireListTitleTemplate, _list.entireListBodySetting, _list.entireListBodyTemplate, readonly);
+
                 row++;
+            }
+        }
+
+
+        private void addIndexSettings(VerticalPanel panel, String type, String description, BooleanProperty indexProperty,
+              IntegerProperty titleSetting, StringProperty titleTemplate, IntegerProperty bodySetting, StringProperty bodyTemplate, boolean readonly)
+        {
+            final BoundCheckBox indexCheckBox = new BoundCheckBox("ff_" + type + "Index", indexProperty, dirtySetter);
+            indexCheckBox.setText(description);
+            indexCheckBox.setStyleName(checkboxStyleName);
+            indexCheckBox.setEnabled(!readonly);
+            panel.add(indexCheckBox);
+
+            final VerticalPanel settingsPanel = new VerticalPanel();
+            panel.add(settingsPanel);
+
+            HorizontalPanel hPanel = new HorizontalPanel();
+            settingsPanel.add(hPanel);
+
+            hPanel.add(new Spacer());
+            VerticalPanel vPanel = new VerticalPanel();
+            hPanel.add(vPanel);
+
+            vPanel.add(createOptionsAndTemplatePanel(new String[]{"Standard title", "Custom title"}, "ff_" + type + "TitleSetting", titleSetting, "ff_" + type + "TitleTemplate", titleTemplate, readonly));
+            vPanel.add(new Spacer());
+            vPanel.add(createOptionsAndTemplatePanel(new String[]{"Index all text fields", "Index all fields (text, number, date and boolean)", "Index using custom template"}, "ff_" + type + "BodySetting", bodySetting, "ff_" + type + "BodyTemplate", bodyTemplate, readonly));
+
+            ClickHandler ch = new ClickHandler()
+            {
+                @Override
+                public void onClick(ClickEvent event)
+                {
+                    settingsPanel.setVisible(indexCheckBox.getValue());
+                }
+            };
+
+            ch.onClick(null);   // Set initial visibility based on current setting
+            indexCheckBox.addClickHandler(ch);
+        }
+
+
+        private Panel createOptionsAndTemplatePanel(String[] radioCaptions, String radioName, final IntegerProperty radioProperty, String templateName, StringProperty templateProperty, boolean readonly)
+        {
+            Panel vPanel = new VerticalPanel();
+            final HorizontalPanel templatePanel = new HorizontalPanel();
+            final int lastTemplateOption = radioCaptions.length - 1;
+
+            ClickHandler ch = new ClickHandler()
+            {
+                @Override
+                public void onClick(ClickEvent event)
+                {
+                    templatePanel.setVisible(radioProperty.intValue() == lastTemplateOption);
+                }
+            };
+
+            int i = 0;
+
+            for (String caption : radioCaptions)
+            {
+                RadioButton radio = new BoundRadioButton(radioName, caption, radioProperty, i++, dirtySetter);
+                radio.setEnabled(!readonly);
+                vPanel.add(radio);
+                radio.addClickHandler(ch);
             }
 
+            templatePanel.add(new Spacer());
+
+            if (readonly)
             {
-                BoundCheckBox allow = new BoundCheckBox("ff_allowExport", _list.allowExport, null);
-                allow.setEnabled(!readonly);
-                HorizontalPanel panel = new HorizontalPanel();
-                panel.add(new Label("Allow Export and Print"));
-                _table.setWidget(row, 0, panel);
-                cellFormatter.setStyleName(row, 0, labelStyleName);
-                _table.setWidget(row, 1, allow);
-                row++;
+                templatePanel.add(new Label(templateProperty.getString()));
+            }
+            else
+            {
+                BoundTextAreaBox titleTemplate = new BoundTextAreaBox("Template", templateName, templateProperty, dirtySetter);
+                templatePanel.add(titleTemplate);
             }
 
-            {
-                BoundCheckBox index = new BoundCheckBox("ff_indexMetaData", _list.indexMetaData, null);
-                index.setEnabled(!readonly);
-                HorizontalPanel panel = new HorizontalPanel();
-                panel.add(new Label("Index list meta data"));
-                _table.setWidget(row, 0, panel);
-                cellFormatter.setStyleName(row, 0, labelStyleName);
-                _table.setWidget(row, 1, index);
-                row++;
-            }
+            vPanel.add(templatePanel);
+
+            ch.onClick(null);  // Set initial visibility on template box
+            return vPanel;
         }
 
 
@@ -968,6 +1076,15 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
             if (_list.getName().length() > ListEditorService.MAX_NAME_LENGTH)
                 errors.add("List name cannot be longer than " + ListEditorService.MAX_NAME_LENGTH + " characters");
+        }
+    }
+
+
+    private static class Spacer extends InlineHTML
+    {
+        public Spacer()
+        {
+            super("&nbsp;&nbsp;&nbsp;&nbsp;");
         }
     }
 
@@ -1000,9 +1117,9 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
     {
         String origName;
 
-        _ListNameTextBox(String caption, String id, StringProperty prop)
+        _ListNameTextBox(String caption, String id, StringProperty prop, DirtyCallback dirtyCallback)
         {
-            super(caption, id, prop);
+            super(caption, id, prop, dirtyCallback);
             setRequired(true);
             origName = prop.getString();
             if (null == origName)

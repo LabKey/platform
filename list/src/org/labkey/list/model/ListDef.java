@@ -19,7 +19,9 @@ package org.labkey.list.model;
 import org.labkey.api.data.CacheKey;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Entity;
-import org.labkey.api.exp.list.ListDefinition;
+import org.labkey.api.exp.list.ListDefinition.BodySetting;
+import org.labkey.api.exp.list.ListDefinition.DiscussionSetting;
+import org.labkey.api.exp.list.ListDefinition.TitleSetting;
 import org.labkey.api.util.UnexpectedException;
 
 public class ListDef extends Entity implements Cloneable
@@ -39,147 +41,299 @@ public class ListDef extends Entity implements Cloneable
         }
     }
 
-    private int rowId;
-    private String name;
-    private int domainId;
-    private String keyName;
-    private String keyType;
-    private String titleColumn;
-    private String description;
-    private ListDefinition.DiscussionSetting discussionSetting = ListDefinition.DiscussionSetting.None;
-    private boolean allowDelete = true;
-    private boolean allowUpload = true;
-    private boolean allowExport = true;
-    private boolean indexMetaData = true;
+    private int _rowId;
+    private String _name;
+    private int _domainId;
+    private String _keyName;
+    private String _keyType;
+    private String _titleColumn;
+    private String _description;
+    private DiscussionSetting _discussionSetting = DiscussionSetting.None;
+    private boolean _allowDelete = true;
+    private boolean _allowUpload = true;
+    private boolean _allowExport = true;
+    private boolean _metaDataIndex = true;
+
+    private boolean _entireListIndex = true;
+    private TitleSetting _entireListTitleSetting = TitleSetting.Standard;
+    private String _entireListTitleTemplate = null;
+    private BodySetting _entireListBodySetting = BodySetting.TextOnly;
+    private String _entireListBodyTemplate = null;
+
+    private boolean _eachItemIndex = true;
+    private TitleSetting _eachItemTitleSetting = TitleSetting.Standard;
+    private String _eachItemTitleTemplate = null;
+    private BodySetting _eachItemBodySetting = BodySetting.TextOnly;
+    private String _eachItemBodyTemplate = null;
 
     public int getRowId()
     {
-        return rowId;
+        return _rowId;
     }
 
     public void setRowId(int rowId)
     {
-        this.rowId = rowId;
+        _rowId = rowId;
     }
 
     public String getName()
     {
-        return name;
+        return _name;
     }
 
     public void setName(String name)
     {
-        this.name = name;
+        _name = name;
     }
 
     public int getDomainId()
     {
-        return domainId;
+        return _domainId;
     }
 
     public void setDomainId(int domainId)
     {
-        this.domainId = domainId;
+        _domainId = domainId;
     }
 
     public String getKeyName()
     {
-        return keyName;
+        return _keyName;
     }
 
     public void setKeyName(String keyName)
     {
-        this.keyName = keyName;
+        _keyName = keyName;
     }
 
     public String getKeyType()
     {
-        return keyType;
+        return _keyType;
     }
 
     public void setKeyType(String keyType)
     {
-        this.keyType = keyType;
+        _keyType = keyType;
     }
 
     public String getTitleColumn()
     {
-        return titleColumn;
+        return _titleColumn;
     }
 
     public void setTitleColumn(String titleColumn)
     {
-        this.titleColumn = titleColumn;
+        _titleColumn = titleColumn;
     }
 
     public String getDescription()
     {
-        return description;
+        return _description;
     }
 
     public void setDescription(String description)
     {
-        this.description = description;
+        _description = description;
     }
 
     public int getDiscussionSetting()
     {
-        return discussionSetting.getValue();
+        return _discussionSetting.getValue();
     }
 
     public void setDiscussionSetting(int value)
     {
-        discussionSetting = ListDefinition.DiscussionSetting.getForValue(value);
+        _discussionSetting = DiscussionSetting.getForValue(value);
     }
 
-    public ListDefinition.DiscussionSetting getDiscussionSettingEnum()
+    public DiscussionSetting getDiscussionSettingEnum()
     {
-        return discussionSetting;
+        return _discussionSetting;
     }
 
-    public void setDiscussionSettingEnum(ListDefinition.DiscussionSetting discussionSetting)
+    public void setDiscussionSettingEnum(DiscussionSetting discussionSetting)
     {
-        this.discussionSetting = discussionSetting;
+        _discussionSetting = discussionSetting;
     }
 
     public boolean getAllowDelete()
     {
-        return allowDelete;
+        return _allowDelete;
     }
 
     public void setAllowDelete(boolean allowDelete)
     {
-        this.allowDelete = allowDelete;
+        _allowDelete = allowDelete;
     }
 
     public boolean getAllowUpload()
     {
-        return allowUpload;
+        return _allowUpload;
     }
 
     public void setAllowUpload(boolean allowUpload)
     {
-        this.allowUpload = allowUpload;
+        _allowUpload = allowUpload;
     }
 
     public boolean getAllowExport()
     {
-        return allowExport;
+        return _allowExport;
     }
 
     public void setAllowExport(boolean allowExport)
     {
-        this.allowExport = allowExport;
+        _allowExport = allowExport;
     }
 
-    public boolean getIndexMetaData()
+    public boolean getMetaDataIndex()
     {
-        return indexMetaData;
+        return _metaDataIndex;
     }
 
-    public void setIndexMetaData(boolean indexMetaData)
+    public void setMetaDataIndex(boolean metaDataIndex)
     {
-        this.indexMetaData = indexMetaData;
+        _metaDataIndex = metaDataIndex;
+    }
+
+    public boolean getEntireListIndex()
+    {
+        return _entireListIndex;
+    }
+
+    public void setEntireListIndex(boolean entireListIndex)
+    {
+        _entireListIndex = entireListIndex;
+    }
+
+    public int getEntireListTitleSetting()
+    {
+        return _entireListTitleSetting.getValue();
+    }
+
+    public void setEntireListTitleSetting(int settingInt)
+    {
+        _entireListTitleSetting = TitleSetting.getForValue(settingInt);
+    }
+
+    public TitleSetting getEntireListTitleSettingEnum()
+    {
+        return _entireListTitleSetting;
+    }
+
+    public void setEntireListTitleSettingEnum(TitleSetting setting)
+    {
+        _entireListTitleSetting = setting;
+    }
+
+    public String getEntireListTitleTemplate()
+    {
+        return _entireListTitleTemplate;
+    }
+
+    public void setEntireListTitleTemplate(String template)
+    {
+        _entireListTitleTemplate = template;
+    }
+
+    public int getEntireListBodySetting()
+    {
+        return _entireListBodySetting.getValue();
+    }
+
+    public void setEntireListBodySetting(int settingInt)
+    {
+        _entireListBodySetting = BodySetting.getForValue(settingInt);
+    }
+
+    public BodySetting getEntireListBodySettingEnum()
+    {
+        return _entireListBodySetting;
+    }
+
+    public void setEntireListBodySettingEnum(BodySetting setting)
+    {
+        _entireListBodySetting = setting;
+    }
+
+    public String getEntireListBodyTemplate()
+    {
+        return _entireListBodyTemplate;
+    }
+
+    public void setEntireListBodyTemplate(String template)
+    {
+        _entireListBodyTemplate = template;
+    }
+
+    public boolean getEachItemIndex()
+    {
+        return _eachItemIndex;
+    }
+
+    public void setEachItemIndex(boolean index)
+    {
+        _eachItemIndex = index;
+    }
+
+    public int getEachItemTitleSetting()
+    {
+        return _eachItemTitleSetting.getValue();
+    }
+
+    public void setEachItemTitleSetting(int settingInt)
+    {
+        _eachItemTitleSetting = TitleSetting.getForValue(settingInt);
+    }
+
+    public TitleSetting getEachItemTitleSettingEnum()
+    {
+        return _eachItemTitleSetting;
+    }
+
+    public void setEachItemTitleSettingEnum(TitleSetting setting)
+    {
+        _eachItemTitleSetting = setting;
+    }
+
+    public String getEachItemTitleTemplate()
+    {
+        return _eachItemTitleTemplate;
+    }
+
+    public void setEachItemTitleTemplate(String template)
+    {
+        _eachItemTitleTemplate = template;
+    }
+
+    public int getEachItemBodySetting()
+    {
+        return _eachItemBodySetting.getValue();
+    }
+
+    public void setEachItemBodySetting(int settingInt)
+    {
+        _eachItemBodySetting = BodySetting.getForValue(settingInt);
+    }
+
+    public BodySetting getEachItemBodySettingEnum()
+    {
+        return _eachItemBodySetting;
+    }
+
+    public void setEachItemBodySettingEnum(BodySetting setting)
+    {
+        _eachItemBodySetting = setting;
+    }
+
+    public String getEachItemBodyTemplate()
+    {
+        return _eachItemBodyTemplate;
+    }
+
+    public void setEachItemBodyTemplate(String template)
+    {
+        _eachItemBodyTemplate = template;
     }
 
     protected ListDef clone()

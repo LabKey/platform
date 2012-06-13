@@ -66,7 +66,6 @@ import org.labkey.list.view.ListImportHelper;
 import org.labkey.list.view.ListItemAttachmentParent;
 import org.springframework.web.servlet.mvc.Controller;
 
-import java.io.File;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -211,15 +210,135 @@ public class ListDefinitionImpl implements ListDefinition
     }
 
     @Override
-    public boolean getIndexMetaData()
+    public boolean getMetaDataIndex()
     {
-        return _def.getIndexMetaData();
+        return _def.getMetaDataIndex();
     }
 
     @Override
-    public void setIndexMetaData(boolean indexMetaData)
+    public void setMetaDataIndex(boolean metaDataIndex)
     {
-        _def.setIndexMetaData(indexMetaData);
+        _def.setMetaDataIndex(metaDataIndex);
+    }
+
+    @Override
+    public boolean getEntireListIndex()
+    {
+        return _def.getEntireListIndex();
+    }
+
+    @Override
+    public void setEntireListIndex(boolean eachItemIndex)
+    {
+        _def.setEntireListIndex(eachItemIndex);
+    }
+
+    @Override
+    public TitleSetting getEntireListTitleSetting()
+    {
+        return _def.getEntireListTitleSettingEnum();
+    }
+
+    @Override
+    public void setEntireListTitleSetting(TitleSetting setting)
+    {
+        _def.setEntireListTitleSettingEnum(setting);
+    }
+
+    @Override
+    public String getEntireListTitleTemplate()
+    {
+        return _def.getEntireListTitleTemplate();
+    }
+
+    @Override
+    public void setEntireListTitleTemplate(String template)
+    {
+        _def.setEntireListTitleTemplate(template);
+    }
+
+    @Override
+    public BodySetting getEntireListBodySetting()
+    {
+        return _def.getEntireListBodySettingEnum();
+    }
+
+    @Override
+    public void setEntireListBodySetting(BodySetting setting)
+    {
+        _def.setEntireListBodySettingEnum(setting);
+    }
+
+    @Override
+    public String getEntireListBodyTemplate()
+    {
+        return _def.getEntireListBodyTemplate();
+    }
+
+    @Override
+    public void setEntireListBodyTemplate(String template)
+    {
+        _def.setEntireListBodyTemplate(template);
+    }
+
+    @Override
+    public boolean getEachItemIndex()
+    {
+        return _def.getEachItemIndex();
+    }
+
+    @Override
+    public void setEachItemIndex(boolean eachItemIndex)
+    {
+        _def.setEachItemIndex(eachItemIndex);
+    }
+
+    @Override
+    public TitleSetting getEachItemTitleSetting()
+    {
+        return _def.getEachItemTitleSettingEnum();
+    }
+
+    @Override
+    public void setEachItemTitleSetting(TitleSetting setting)
+    {
+        _def.setEachItemTitleSettingEnum(setting);
+    }
+
+    @Override
+    public String getEachItemTitleTemplate()
+    {
+        return _def.getEachItemTitleTemplate();
+    }
+
+    @Override
+    public void setEachItemTitleTemplate(String template)
+    {
+        _def.setEachItemTitleTemplate(template);
+    }
+
+    @Override
+    public BodySetting getEachItemBodySetting()
+    {
+        return _def.getEachItemBodySettingEnum();
+    }
+
+    @Override
+    public void setEachItemBodySetting(BodySetting setting)
+    {
+        _def.setEachItemBodySettingEnum(setting);
+    }
+
+    @Override
+    public String getEachItemBodyTemplate()
+    {
+        return _def.getEachItemBodyTemplate();
+    }
+
+    @Override
+    public void setEachItemBodyTemplate(String template)
+    {
+        _def.setEachItemBodyTemplate(template);
     }
 
     public void save(User user) throws Exception

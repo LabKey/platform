@@ -39,7 +39,19 @@ public class GWTList implements IsSerializable
     public BooleanProperty allowDelete = new BooleanProperty(true);
     public BooleanProperty allowUpload = new BooleanProperty(true);
     public BooleanProperty allowExport = new BooleanProperty(true);
-    public BooleanProperty indexMetaData = new BooleanProperty(true);
+    public BooleanProperty metaDataIndex = new BooleanProperty(true);
+
+    public BooleanProperty entireListIndex = new BooleanProperty(false);
+    public IntegerProperty entireListTitleSetting = new IntegerProperty(0); // IndexFields.TextOnly
+    public StringProperty entireListTitleTemplate = new StringProperty("Here's my initial title template");
+    public IntegerProperty entireListBodySetting = new IntegerProperty(0); // IndexFields.TextOnly
+    public StringProperty entireListBodyTemplate = new StringProperty("Here's my initial body template");
+
+    public BooleanProperty eachItemIndex = new BooleanProperty(false);
+    public IntegerProperty eachItemTitleSetting = new IntegerProperty(0); // IndexFields.TextOnly
+    public StringProperty eachItemTitleTemplate = new StringProperty("Here's my initial title template");
+    public IntegerProperty eachItemBodySetting = new IntegerProperty(0); // IndexFields.TextOnly
+    public StringProperty eachItemBodyTemplate = new StringProperty("Here's my initial body template");
 
     // client should only read these
     private String _typeURI;
@@ -63,7 +75,7 @@ public class GWTList implements IsSerializable
 
     public void _listId(int listId)
     {
-        this._listId.setInt(listId);
+        _listId.setInt(listId);
     }
 
     public String getKeyPropertyName()
@@ -171,14 +183,114 @@ public class GWTList implements IsSerializable
         this.allowExport.set(allowExport);
     }
 
-    public boolean getIndexMetaData()
+    public boolean getMetaDataIndex()
     {
-        return indexMetaData.getBool();
+        return metaDataIndex.getBool();
     }
 
-    public void setIndexMetaData(boolean shouldIndexMetaData)
+    public void setMetaDataIndex(boolean metaDataIndex)
     {
-        this.indexMetaData.set(shouldIndexMetaData);
+        this.metaDataIndex.set(metaDataIndex);
+    }
+
+    public boolean getEntireListIndex()
+    {
+        return entireListIndex.getBool();
+    }
+
+    public void setEntireListIndex(boolean index)
+    {
+        this.entireListIndex.set(index);
+    }
+
+    public int getEntireListTitleSetting()
+    {
+        return entireListTitleSetting.intValue();
+    }
+
+    public void setEntireListTitleSetting(int setting)
+    {
+        this.entireListTitleSetting.set(setting);
+    }
+
+    public String getEntireListTitleTemplate()
+    {
+        return entireListTitleTemplate.getString();
+    }
+
+    public void setEntireListTitleTemplate(String template)
+    {
+        this.entireListTitleTemplate.set(template);
+    }
+
+    public int getEntireListBodySetting()
+    {
+        return entireListBodySetting.intValue();
+    }
+
+    public void setEntireListBodySetting(int setting)
+    {
+        this.entireListBodySetting.set(setting);
+    }
+
+    public String getEntireListBodyTemplate()
+    {
+        return entireListBodyTemplate.getString();
+    }
+
+    public void setEntireListBodyTemplate(String template)
+    {
+        this.entireListBodyTemplate.set(template);
+    }
+
+    public boolean getEachItemIndex()
+    {
+        return eachItemIndex.getBool();
+    }
+
+    public void setEachItemIndex(boolean index)
+    {
+        this.eachItemIndex.set(index);
+    }
+
+    public int getEachItemTitleSetting()
+    {
+        return eachItemTitleSetting.intValue();
+    }
+
+    public void setEachItemTitleSetting(int setting)
+    {
+        this.eachItemTitleSetting.set(setting);
+    }
+
+    public String getEachItemTitleTemplate()
+    {
+        return eachItemTitleTemplate.getString();
+    }
+
+    public void setEachItemTitleTemplate(String template)
+    {
+        this.eachItemTitleTemplate.set(template);
+    }
+
+    public int getEachItemBodySetting()
+    {
+        return eachItemBodySetting.intValue();
+    }
+
+    public void setEachItemBodySetting(int setting)
+    {
+        this.eachItemBodySetting.set(setting);
+    }
+
+    public String getEachItemBodyTemplate()
+    {
+        return eachItemBodyTemplate.getString();
+    }
+
+    public void setEachItemBodyTemplate(String template)
+    {
+        this.eachItemBodyTemplate.set(template);
     }
 
     public void _defaultTitleField(String title)

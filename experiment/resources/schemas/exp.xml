@@ -201,7 +201,15 @@
           <ns:column columnName="AllowDelete" />
           <ns:column columnName="AllowUpload" />
           <ns:column columnName="AllowExport" />
-          <ns:column columnName="IndexMetaData" />
+          <ns:column columnName="MetaDataIndex"/>
+          <ns:column columnName="EntireListIndex"/>
+          <ns:column columnName="EntireListFields"/>
+          <ns:column columnName="EntireListBodyTemplate"/>
+          <ns:column columnName="EntireListTitleTemplate"/>
+          <ns:column columnName="EachItemIndex"/>
+          <ns:column columnName="EachItemFields"/>
+          <ns:column columnName="EachItemBodyTemplate"/>
+          <ns:column columnName="EachItemTitleTemplate"/>
       </ns:columns>
   </ns:table>
     <ns:table tableName="IndexInteger" tableDbType="TABLE">

@@ -23,6 +23,7 @@ import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
+import org.labkey.api.exp.list.ListDefinition.*;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.exp.property.DomainUtil;
@@ -138,7 +139,20 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         gwt.setAllowDelete(def.getAllowDelete());
         gwt.setAllowExport(def.getAllowExport());
         gwt.setAllowUpload(def.getAllowUpload());
-        gwt.setIndexMetaData(def.getIndexMetaData());
+        gwt.setMetaDataIndex(def.getMetaDataIndex());
+
+        gwt.setEntireListIndex(def.getEntireListIndex());
+        gwt.setEntireListTitleSetting(def.getEntireListTitleSetting().getValue());
+        gwt.setEntireListTitleTemplate(def.getEntireListTitleTemplate());
+        gwt.setEntireListBodySetting(def.getEntireListBodySetting().getValue());
+        gwt.setEntireListBodyTemplate(def.getEntireListBodyTemplate());
+
+        gwt.setEachItemIndex(def.getEachItemIndex());
+        gwt.setEachItemTitleSetting(def.getEachItemTitleSetting().getValue());
+        gwt.setEachItemTitleTemplate(def.getEachItemTitleTemplate());
+        gwt.setEachItemBodySetting(def.getEachItemBodySetting().getValue());
+        gwt.setEachItemBodyTemplate(def.getEachItemBodyTemplate());
+
         gwt.setDescription(def.getDescription());
         gwt.setDiscussionSetting(def.getDiscussionSetting().getValue());
         gwt.setKeyPropertyName(def.getKeyName());
@@ -168,7 +182,20 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         def.setAllowDelete(gwt.getAllowDelete());
         def.setAllowExport(gwt.getAllowExport());
         def.setAllowUpload(gwt.getAllowUpload());
-        def.setIndexMetaData(gwt.getIndexMetaData());
+        def.setMetaDataIndex(gwt.getMetaDataIndex());
+
+        def.setEntireListIndex(gwt.getEachItemIndex());
+        def.setEntireListTitleSetting(gwt.getEntireListTitleSetting());
+        def.setEntireListTitleTemplate(gwt.getEntireListTitleTemplate());
+        def.setEntireListBodySetting(gwt.getEntireListBodySetting());
+        def.setEntireListBodyTemplate(gwt.getEntireListBodyTemplate());
+
+        def.setEachItemIndex(gwt.getEachItemIndex());
+        def.setEachItemTitleSetting(gwt.getEachItemTitleSetting());
+        def.setEachItemTitleTemplate(gwt.getEachItemTitleTemplate());
+        def.setEachItemBodySetting(gwt.getEachItemBodySetting());
+        def.setEachItemBodyTemplate(gwt.getEachItemBodyTemplate());
+
         def.setDescription(gwt.getDescription());
         def.setDiscussionSetting(gwt.getDiscussionSetting());
         def.setKeyName(gwt.getKeyPropertyName());
@@ -177,17 +204,30 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
     }
 
 
-    private void update(ListDefinition def, GWTList gwt)
+    private void update(ListDefinition defn, GWTList gwt)
     {
-        def.setAllowDelete(gwt.getAllowDelete());
-        def.setAllowExport(gwt.getAllowExport());
-        def.setAllowUpload(gwt.getAllowUpload());
-        def.setIndexMetaData(gwt.getIndexMetaData());
-        def.setDescription(gwt.getDescription());
-        def.setDiscussionSetting(ListDefinition.DiscussionSetting.getForValue(gwt.getDiscussionSetting()));
-        def.setKeyName(gwt.getKeyPropertyName());
-        def.setKeyType(ListDefinition.KeyType.valueOf(gwt.getKeyPropertyType()));
-        def.setTitleColumn(gwt.getTitleField());
+        defn.setAllowDelete(gwt.getAllowDelete());
+        defn.setAllowExport(gwt.getAllowExport());
+        defn.setAllowUpload(gwt.getAllowUpload());
+        defn.setMetaDataIndex(gwt.getMetaDataIndex());
+
+        defn.setEntireListIndex(gwt.getEntireListIndex());
+        defn.setEntireListTitleSetting(TitleSetting.getForValue(gwt.getEntireListTitleSetting()));
+        defn.setEntireListTitleTemplate(gwt.getEntireListTitleTemplate());
+        defn.setEntireListBodySetting(BodySetting.getForValue(gwt.getEntireListBodySetting()));
+        defn.setEntireListBodyTemplate(gwt.getEntireListBodyTemplate());
+
+        defn.setEachItemIndex(gwt.getEachItemIndex());
+        defn.setEachItemTitleSetting(TitleSetting.getForValue(gwt.getEachItemTitleSetting()));
+        defn.setEachItemTitleTemplate(gwt.getEachItemTitleTemplate());
+        defn.setEachItemBodySetting(BodySetting.getForValue(gwt.getEachItemBodySetting()));
+        defn.setEachItemBodyTemplate(gwt.getEachItemBodyTemplate());
+
+        defn.setDescription(gwt.getDescription());
+        defn.setDiscussionSetting(DiscussionSetting.getForValue(gwt.getDiscussionSetting()));
+        defn.setKeyName(gwt.getKeyPropertyName());
+        defn.setKeyType(KeyType.valueOf(gwt.getKeyPropertyType()));
+        defn.setTitleColumn(gwt.getTitleField());
     }
 
 
@@ -276,7 +316,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
             // we need to create this property now, so that it doesn't look like an 'added' property in the designer
             key = new GWTPropertyDescriptor(def.getKeyName(), PropertyType.INTEGER.getTypeUri());
             try {
-                key.setRangeURI(ListDefinition.KeyType.valueOf(def.getKeyType()).getPropertyType().getTypeUri());
+                key.setRangeURI(KeyType.valueOf(def.getKeyType()).getPropertyType().getTypeUri());
             } catch (Exception x) {/* */}
 
             GWTDomain<GWTPropertyDescriptor> update = new GWTDomain<GWTPropertyDescriptor>(domain);
