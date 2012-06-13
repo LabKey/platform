@@ -22,6 +22,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UsageReportingLevel;
+import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
@@ -85,8 +86,8 @@ public class HomeTemplate extends PrintTemplate
 
         setView("topmenu", new MenuBarView(context.getContainer()));
 
-        setView("appbar", getAppBarView(context, page));
         setBody(body);
+        setView("appbar", getAppBarView(context, page));
     }
 
 
@@ -136,6 +137,10 @@ public class HomeTemplate extends PrintTemplate
         }
         page.setNavTrail(appBar.setNavTrail(navTrail, context));
 
+        //conditionalize page title for simple html pages
+        if(getBody() instanceof HtmlView && FrameType.PORTAL.equals(((HtmlView)getBody()).getFrame())){
+            appBar.setPageTitle(null);
+        }
         return new AppBarView(appBar);
     }
 
