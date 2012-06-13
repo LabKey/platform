@@ -4628,13 +4628,26 @@ public class QueryController extends SpringActionController
             QNode e = null;
             if (null != expr)
             {
-                e = _parse(expr,qpe);
+                try
+                {
+                    e = _parse(expr,qpe);
+                }
+                catch (RuntimeException x)
+                {
+                    qpe.add(new QueryParseException(x.getMessage(),x, 0, 0));
+                }
             }
 
             Tree tree = null;
             if (null != expr)
             {
-                try { tree = _tree(expr); } catch (Exception x){}
+                try
+                {
+                    tree = _tree(expr);
+                } catch (Exception x)
+                {
+                    qpe.add(new QueryParseException(x.getMessage(),x, 0, 0));
+                }
             }
 
             for (Throwable x : qpe)

@@ -17,6 +17,7 @@
 package org.labkey.query.sql;
 
 
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 
 import java.util.*;
@@ -103,7 +104,13 @@ public enum Operator
         {
             ArrayList<SQLFragment> terms = new ArrayList<SQLFragment>();
             for (QNode operand : operands)
-                terms.add(((QExpr)operand).getSqlFragment(builder.getDbSchema()));
+            {
+                SQLFragment sqlf = ((QExpr)operand).getSqlFragment(builder.getDbSchema());
+                JdbcType type = ((QExpr)operand).getSqlType();
+                if (null != builder.getDialect())
+                    sqlf = builder.getDialect().implicitConvertToString(type, sqlf);
+                terms.add(sqlf);
+            }
             SQLFragment f = builder.getDialect().concatenate(terms.toArray(new SQLFragment[terms.size()]));
             builder.append(f);
         }
