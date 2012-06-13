@@ -150,6 +150,11 @@ $tab-spacing: 3px;
     margin: 0 !important;
 }
 
+/* The form field triggers are getting widths of 0px in Ext 4.1.0. */
+.x4-form-trigger {
+    width: 17px !important;
+}
+
 @import 'ext4/default/all';
 
 // This line changes the location of your images when creating UIs to be relative instead of within the ExtJS directory.
