@@ -80,12 +80,12 @@ public class SpecimenRequestDisplayColumn extends SimpleDisplayColumn
 
         if (_showOneVialIndicator && count == 1)
         {
-            out.write(getVialCountHtml(ctx, "<img src=\"" + ctx.getViewContext().getContextPath() + "/_images/one.gif\">",
+            out.write(getVialCountHtml(ctx, "<img src=\"" + ctx.getViewContext().getContextPath() + "/_images/one.png\">",
                     "One Vial Available", "Only one vial of this primary specimen is available.", script));
         }
         else if (_showZeroVialIndicator && count == 0)
         {
-            out.write(getVialCountHtml(ctx, "<img src=\"" + ctx.getViewContext().getContextPath() + "/_images/exclaim.gif\">",
+            out.write(getVialCountHtml(ctx, "<img src=\"" + ctx.getViewContext().getContextPath() + "/_images/zero.png\">",
                     "Zero Vials Available", "No vials of this primary specimen are currently available for request.", null));
         }
         else
@@ -104,7 +104,7 @@ public class SpecimenRequestDisplayColumn extends SimpleDisplayColumn
         StringBuilder builder = new StringBuilder();
         if (requestScript != null)
         {
-            cellHtml += "<img src=\"" + ctx.getViewContext().getContextPath() + "/_images/cart.gif\">";
+            cellHtml += "<img src=\"" + ctx.getViewContext().getContextPath() + "/_images/cart.png\">";
             popupBody += "<br><br>Click the shopping cart icon to request this specimen.";
         }
         builder.append(PageFlowUtil.helpPopup(popupTitle, popupBody, true, cellHtml, requestScript));

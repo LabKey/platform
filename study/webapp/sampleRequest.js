@@ -288,7 +288,7 @@ function failedAddCallback(exceptionObj, responseObj)
 function markVialRequested(span)
 {
     span.innerHTML = "<a href=\"#\" onclick=\"showRequestWindow(undefined, _requestWin.vialIdType); return false;\">" +
-                     "<img src=\"" + LABKEY.ActionURL.getContextPath() + "/_images/cart_added.gif\"></a>";
+                     "<img src=\"" + LABKEY.ActionURL.getContextPath() + "/_images/cart_added.png\"></a>";
 }
 
 function succesfulAddCallback(request)
