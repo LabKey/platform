@@ -255,7 +255,6 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
             boxLabel: 'One Per ' + this.viewInfo.subjectNounSingular + ' and ',
             disabled: true,
             width: 185,
-            flex: 1,
             listeners: {
                 scope: this,
                 'change': function(field, checked){
@@ -266,6 +265,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                         this.measureDimensionComboBox.enable();
                         this.dimensionAggregateLabel.enable();
                         this.dimensionAggregateComboBox.enable();
+                        this.setDimensionAggregate(LABKEY.Visualization.Aggregate.AVG);
 
                         // if saved chart, then set dimension value based on the saved value
                         if (this.measures[this.getSelectedMeasureIndex()].dimension.name)
@@ -282,11 +282,6 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                                 this.measureDimensionComboBox.fireEvent('select', this.measureDimensionComboBox, [selRecord]);
                             }
                         }
-
-                        // enable and set the dimension aggregate combo box
-                        this.dimensionAggregateLabel.enable();
-                        this.dimensionAggregateComboBox.enable();
-                        this.setDimensionAggregate(LABKEY.Visualization.Aggregate.AVG);
                     }
                 }
             }
@@ -304,7 +299,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
             displayField: 'label',
             disabled: true,
             editable: false,
-            flex: 1,
+            width: 195,
             listeners: {
                 scope: this,
                 'select': function(cmp, records) {
@@ -362,8 +357,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
             displayField: 'name',
             disabled: true,
             editable: false,
-            boxWidth: 50,
-            flex: 1,
+            width: 80,
             style: {
                 marginLeft: '20px'
             },
@@ -382,12 +376,9 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
 
         // the aggregate combo label has to be a separate component so that it can also be disabled/enabled
         this.dimensionAggregateLabel = Ext4.create('Ext.form.Label', {
-            flex: 1,
-            width: 75,
+            width: 195,
             text: 'Display Duplicate Values as: ',
-            style: {
-                marginLeft: '20px'
-            },
+            style: {marginLeft: '20px'},
             disabled: true
         });
 

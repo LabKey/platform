@@ -384,7 +384,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         // setup buttons for the charting options panels (items to be added to the toolbar)
         this.measuresButton = Ext4.create('Ext.button.Button', {text: 'Measures', disabled: true,
-                                handler: function(btn){this.optionsButtonClicked(btn, this.editorMeasurePanel, 860, 250, 'center');}, scope: this});
+                                handler: function(btn){this.optionsButtonClicked(btn, this.editorMeasurePanel, 860, 225, 'center');}, scope: this});
 
         this.groupingButton = Ext4.create('Ext.button.Button', {text: 'Grouping', disabled: true,
                                 handler: function(btn){this.optionsButtonClicked(btn, this.editorGroupingPanel, 600, 210, 'center');}, scope: this});
@@ -1112,7 +1112,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                             null,
                             null,
                             null,
-                            this.chartInfo.subject.values.length > 1 ? 380 : 600  // chart height
+                            this.chartInfo.subject.values.length > 1 ? 380 : 600,  // chart height
+                            this.chartInfo.subject.values.length > 1 ? 'border-bottom: solid black 1px;' : null // chart style
                         );
                     charts.push(newChart);
 
@@ -1175,7 +1176,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                             groupDataAggregate && groupDataAggregate[group.label] ? groupDataAggregate[group.label] : null,
                             this.aggregateData ? this.aggregateData.measureToColumn : null,
                             this.aggregateData ? this.aggregateData.visitMap : null,
-                            this.chartInfo.subject.groups.length > 1 ? 380 : 600 // chart height
+                            this.chartInfo.subject.groups.length > 1 ? 380 : 600, // chart height
+                            this.chartInfo.subject.groups.length > 1 ? 'border-bottom: solid black 1px;' : null // chart style
                         );
                     charts.push(newChart);
 
@@ -1228,7 +1230,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                             null,
                             null,
                             null,
-                            seriesList.length > 1 ? 380 : 600  // chart height
+                            seriesList.length > 1 ? 380 : 600,  // chart height
+                            seriesList.length > 1 ? 'border-bottom: solid black 1px;' : null // chart style
                         );
                     charts.push(newChart);
 
@@ -1270,7 +1273,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                         this.aggregateData ? this.aggregateData.rows : null,
                         this.aggregateData ? this.aggregateData.measureToColumn : null,
                         this.aggregateData ? this.aggregateData.visitMap : null,
-                        600    // chart height
+                        610,    // chart height
+                        null    // chart style
                 );
                 charts.push(newChart);
 
@@ -1301,7 +1305,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         }
     },
 
-    generatePlot: function(chart, studyType, viewInfo, chartInfo, mainTitle, seriesList, individualData, individualMeasureToColumn, individualVisitMap, aggregateData, aggregateMeasureToColumn, aggregateVisitMap, chartHeight){
+    generatePlot: function(chart, studyType, viewInfo, chartInfo, mainTitle, seriesList, individualData, individualMeasureToColumn, individualVisitMap, aggregateData, aggregateMeasureToColumn, aggregateVisitMap, chartHeight, chartStyle){
         // This function generates a plot config and renders a plot for given data.
         // Should be used in per_subject, single, per_measure, and per_group
         var generateLayerAes = function(name, yAxisSide, columnName, intervalKey, subjectColumn, hoverText){
@@ -1345,7 +1349,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         var aggregateSubjectColumn = "GroupId";
         var newChartDiv = Ext4.create('Ext.container.Container', {
             height: chartHeight,
-            border: 1,
+            style: chartStyle ? chartStyle : 'border: none;',
             autoEl: {tag: 'div'}
         });
         chart.add(newChartDiv);

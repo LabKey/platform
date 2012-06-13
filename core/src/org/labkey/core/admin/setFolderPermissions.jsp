@@ -32,7 +32,7 @@
     User user = ctx.getUser();
 %>
 <script type="text/javascript">
-    LABKEY.requiresExt4ClientAPI(true, true);
+    LABKEY.requiresExt4ClientAPI(true);
     LABKEY.requiresCss('/createFolder.css');
 </script>
 <script type="text/javascript">
@@ -41,7 +41,7 @@
         var containerNoun = isProject ? 'Project' : 'Folder';
 
         Ext4.FocusManager.enable(false);
-        Ext4.QuickTips.init();
+        Ext4.tip.QuickTipManager.init();
 
         var panel = Ext4.create('Ext.form.Panel', {
             border: false,
@@ -71,22 +71,6 @@
                         }
                     }
                 },
-                listeners: {
-                    change: {
-                        fn: function(btn, newVal, oldVal){
-                            var form = btn.up('form');
-                            var panel = form.down('#usersArea');
-                            panel.removeAll();
-
-                            if(newVal.permissionType)
-                                form['render'+newVal.permissionType](panel);
-
-                            form.doLayout();
-                        },
-                        buffer: 20,
-                        scope: this
-                    }
-                },
                 items: [{
                     //note: folders cant inherit permissions from a parent
                     boxLabel: 'Inherit From Parent ' + containerNoun,
@@ -94,35 +78,64 @@
                     hidden: isProject,
                     name: 'permissionType',
                     inputValue: 'Inherit',
-                    autoEl: {
-                        'data-qtip': 'If selected, all permissions will be inherited from the parent '+containerNoun+'.  Any changes made to the parent will automatically be reflected in the child.'
+                    listeners: {
+                        scope: this,
+                        single: true,
+                        afterrender: function(radio){
+                            radio.boxLabelEl.set({
+                                'data-qtip': 'If selected, all permissions will be inherited from the parent '+containerNoun+'.  Any changes made to the parent will automatically be reflected in the child.'
+                            })
+                        }
                     }
                 },{
                     boxLabel: 'My User Only',
                     checked: isProject,
                     name: 'permissionType',
                     inputValue: 'CurrentUser',
-                    autoEl: {
-                        'data-qtip': 'If selected, only the current user and site admins will have permissions in this folder.'
+                    listeners: {
+                        scope: this,
+                        single: true,
+                        afterrender: function(radio){
+                            radio.boxLabelEl.set({
+                                'data-qtip': 'If selected, only the current user and site admins will have permissions in this folder.'
+                            })
+                        }
                     }
                 },{
-                    xtype: 'form',
+                    xtype: 'fieldcontainer',
                     layout: 'hbox',
-                    width: '100%',
                     itemId: 'hbox',
                     hidden: !isProject,
                     border: false,
+                    style: 'padding-bottom: 5px;',
                     defaults: {
                         border: false
                     },
                     items: [{
                         xtype: 'radio',
                         boxLabel: 'Copy From Existing Project',
+                        width: 200,
                         checked: false,
                         name: 'permissionType',
                         inputValue: 'CopyExistingProject',
-                        autoEl: {
-                            'data-qtip': 'If selected, the permissions for all users and groups from the selected project will be applied to this project.  If this project has project groups, copies of all groups will be made in the new project.'
+                        listeners: {
+                            scope: this,
+                            afterrender: function(radio){
+                                radio.boxLabelEl.set({
+                                    'data-qtip': 'If selected, the permissions for all users and groups from the selected project will be applied to this project.  If this project has project groups, copies of all groups will be made in the new project.'
+                                })
+                            },
+                            change: function(field, checked){
+                                var form = field.up('form');
+                                var formPanel = form.down('#usersArea');
+                                if (checked)
+                                {
+                                    if(field.inputValue)
+                                        form['render'+field.inputValue](formPanel);
+                                }
+                                else
+                                    formPanel.removeAll();
+                            }
                         }
                     },{
                         xtype: 'panel',
@@ -140,8 +153,14 @@
                     checked: false,
                     name: 'permissionType',
                     inputValue: 'Advanced',
-                    autoEl: {
-                        'data-qtip': 'If selected, on the final page of the wizard there will be a link allowing you to set permissions using the default security policy editor.  This option is the most powerful, yet most complex to use.'
+                    listeners: {
+                        scope: this,
+                        single: true,
+                        afterrender: function(radio){
+                            radio.boxLabelEl.set({
+                                'data-qtip': 'If selected, on the final page of the wizard there will be a link allowing you to set permissions using the default security policy editor.  This option is the most powerful, yet most complex to use.'
+                            })
+                        }
                     }
                 }]
             }],
