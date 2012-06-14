@@ -117,7 +117,6 @@ function messageMoreSlide(elem)
     parent.scale(null, text.dom.scrollHeight,
     {
         easing: 'easeOut',
-        duration: 4.0,
         callback:function(){
             parent.applyStyles({height:''});
             parent.removeClass("message-expanding");
@@ -135,7 +134,7 @@ function messageMoreSimple(elem)
     return false;
 }
 var messageMore = messageMoreSimple;
-function messageLess(elem)
+function messageLessSimple(elem)
 {
     var more=Ext.get(elem);
     var parent = more.parent("TD.message");
@@ -143,6 +142,8 @@ function messageLess(elem)
     parent.addClass("message-collapsed");
     return false;
 }
+var messageLess = messageLessSimple;
+
 function messageFixup(e)
 {
     var container = Ext.get(e);
@@ -209,8 +210,8 @@ for (AnnouncementModel a : bean.announcementModels)
             <div class="message-text"><%=a.translateBody(c)%></div><%
             if (!bean.isPrint)
             {
-                %><div class="message-overflow"><div class="message-more"><div class="labkey-wp-text-buttons"><a href="#more" onclick="return messageMore(this);">more&gt;&gt;</a></div></div></div><%
-                %><table width="100%"><tr><td align="right"><div class="message-less"><div class="labkey-wp-text-buttons"><a href="#less" onclick="return messageLess(this);">&lt;&lt;less</a></div></div></td></tr></table><%
+                %><div class="message-overflow"><div class="message-more"><div class="labkey-wp-text-buttons"><a href="#more" style="font-weight:normal;" onclick="return messageMore(this);">more&#9660;</a></div></div></div><%
+                %><table width="100%"><tr><td align="right"><div class="message-less"><div class="labkey-wp-text-buttons"><a href="#less" style="font-weight:normal;" onclick="return messageLess(this);">less&#9650;</a></div></div></td></tr></table><%
             }            
         %></div>
     </tr><%
