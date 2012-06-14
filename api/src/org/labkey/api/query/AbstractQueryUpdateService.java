@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -149,7 +150,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     //
     // TODO do import and insert have different behavior wrt importAlaises?
     //
-    protected int _importRowsUsingETL(User user, Container container, DataIterator rows, final ArrayList<Map<String,Object>> outputRows, BatchValidationException errors, Map<String, Object> extraScriptContext, boolean forImport)
+    protected int _importRowsUsingETL(User user, Container container, DataIterator rows, @Nullable final ArrayList<Map<String, Object>> outputRows, BatchValidationException errors, Map<String, Object> extraScriptContext, boolean forImport)
             throws SQLException
     {
         if (!hasPermission(user, InsertPermission.class))
@@ -173,7 +174,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
 
     /** this is extracted so subclasses can add wrap */
-    protected int _pump(DataIteratorBuilder etl, final ArrayList<Map<String, Object>> rows, BatchValidationException errors)
+    protected int _pump(DataIteratorBuilder etl, final @Nullable ArrayList<Map<String, Object>> rows, BatchValidationException errors)
     {
         DataIterator it = etl.getDataIterator(errors);
 
