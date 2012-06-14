@@ -29,6 +29,7 @@ import org.labkey.api.action.ExtFormAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
@@ -103,12 +104,14 @@ import org.labkey.api.settings.AdminConsole.SettingsLinkType;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.thumbnail.BaseThumbnailAction;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
+import org.labkey.api.thumbnail.ImageStreamThumbnailProvider;
 import org.labkey.api.thumbnail.StaticThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.IdentifierString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GWTView;
 import org.labkey.api.view.HtmlView;
@@ -134,6 +137,8 @@ import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import javax.servlet.ServletException;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -2044,6 +2049,47 @@ public class ReportsController extends SpringActionController
         public void setReportId(ReportIdentifier reportId)
         {
             _reportId = reportId;
+        }
+    }
+
+
+    // TODO: Delete (or modify) this -- test action for Cory's custom thumbnail uploading
+    @RequiresPermissionClass(AdminPermission.class)
+    public class TestCustomThumbnailAction extends RedirectAction<ThumbnailForm>
+    {
+        @Override
+        public URLHelper getSuccessURL(ThumbnailForm thumbnailForm)
+        {
+            return null;
+        }
+
+        @Override
+        public boolean doAction(ThumbnailForm form, BindException errors) throws Exception
+        {
+            // Grab a random image... should be posted by user instead
+            InputStream is = new FileInputStream("C:\\Windows\\Web\\Wallpaper\\Architecture\\img13.jpg");
+            Report report = form.getReportId().getReport();
+
+            // I don't like this... need to rethink static vs. dynamic providers. Reports that aren't dynamic providers
+            // should still allow custom thumbnails.
+            if (report instanceof DynamicThumbnailProvider)
+            {
+                DynamicThumbnailProvider wrapper = new ImageStreamThumbnailProvider((DynamicThumbnailProvider)report, is);
+
+                ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
+
+                if (null != svc)
+                    svc.replaceThumbnail(wrapper, getViewContext());
+
+                // TODO: Also need to update the report properties
+            }
+
+            return false;
+        }
+
+        @Override
+        public void validateCommand(ThumbnailForm target, Errors errors)
+        {
         }
     }
 }
