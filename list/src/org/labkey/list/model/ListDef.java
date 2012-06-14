@@ -54,13 +54,13 @@ public class ListDef extends Entity implements Cloneable
     private boolean _allowExport = true;
     private boolean _metaDataIndex = true;
 
-    private boolean _entireListIndex = true;
+    private boolean _entireListIndex = false;
     private TitleSetting _entireListTitleSetting = TitleSetting.Standard;
     private String _entireListTitleTemplate = null;
     private BodySetting _entireListBodySetting = BodySetting.TextOnly;
     private String _entireListBodyTemplate = null;
 
-    private boolean _eachItemIndex = true;
+    private boolean _eachItemIndex = false;
     private TitleSetting _eachItemTitleSetting = TitleSetting.Standard;
     private String _eachItemTitleTemplate = null;
     private BodySetting _eachItemBodySetting = BodySetting.TextOnly;

@@ -18,6 +18,7 @@ package org.labkey.list.model;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.ColumnRenderProperties;
@@ -41,15 +42,16 @@ import org.labkey.data.xml.FacetingBehaviorType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
+import org.labkey.list.xml.ListsDocument;
 
+import java.io.InputStream;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import java.io.InputStream;
 
 /*
 * User: adam
@@ -59,30 +61,58 @@ import java.io.InputStream;
 public class ListImporter
 {
     private static final String TYPE_NAME_COLUMN = "ListName";
-    private static final String SCHEMA_FILE_NAME = "lists.xml";
 
     public void process(VirtualFile listsDir, Container c, User user, List<String> errors, Logger log) throws Exception
     {
         TablesDocument tablesDoc;
         try
         {
-            XmlObject listXml = listsDir.getXmlBean(SCHEMA_FILE_NAME);
+            XmlObject listXml = listsDir.getXmlBean(ListWriter.SCHEMA_FILENAME);
             if (listXml instanceof TablesDocument)
             {
                 tablesDoc = (TablesDocument)listXml;
                 XmlBeansUtil.validateXmlDocument(tablesDoc);
             }
             else
-                throw new ImportException("Unable to get an instance of TablesDocument from " + SCHEMA_FILE_NAME);
+                throw new ImportException("Unable to get an instance of TablesDocument from " + ListWriter.SCHEMA_FILENAME);
         }
         catch (XmlValidationException xve)
         {
             // Note: different constructor than the one below
-            throw new InvalidFileException(SCHEMA_FILE_NAME, xve);
+            throw new InvalidFileException(ListWriter.SCHEMA_FILENAME, xve);
         }
         catch (Exception e)
         {
-            throw new InvalidFileException(SCHEMA_FILE_NAME, e);
+            throw new InvalidFileException(ListWriter.SCHEMA_FILENAME, e);
+        }
+
+        Map<String, ListsDocument.Lists.List> listSettingsMap = new HashMap<String, ListsDocument.Lists.List>();
+
+        try
+        {
+            XmlObject listSettingsXml = listsDir.getXmlBean(ListWriter.SETTINGS_FILENAME);
+
+            // Settings file is optional
+            if (listSettingsXml instanceof ListsDocument)
+            {
+                ListsDocument listSettingsDoc = (ListsDocument)listSettingsXml;
+                XmlBeansUtil.validateXmlDocument(listSettingsDoc);
+
+                ListsDocument.Lists.List[] listArray = listSettingsDoc.getLists().getListArray();
+
+                // Create a name->list setting map
+                for (ListsDocument.Lists.List list : listArray)
+                    listSettingsMap.put(list.getName(), list);
+            }
+        }
+        catch (XmlValidationException xve)
+        {
+            // Note: different constructor than the one below
+            throw new InvalidFileException(ListWriter.SETTINGS_FILENAME, xve);
+        }
+        catch (Exception e)
+        {
+            throw new InvalidFileException(ListWriter.SETTINGS_FILENAME, e);
         }
 
         TablesType tablesXml = tablesDoc.getTables();
@@ -102,7 +132,7 @@ public class ListImporter
 
             try
             {
-                createNewList(c, user, name, tableType, errors);
+                createNewList(c, user, name, tableType, listSettingsMap.get(name), errors);
             }
             catch (ImportException e)
             {
@@ -132,7 +162,7 @@ public class ListImporter
         log.info(names.size() + " list" + (1 == names.size() ? "" : "s") + " imported");
     }
 
-    private void createNewList(Container c, User user, String listName, TableType listXml, List<String> errors) throws Exception
+    private void createNewList(Container c, User user, String listName, TableType listXml, @Nullable ListsDocument.Lists.List listSettingsXml, List<String> errors) throws Exception
     {
         String keyName = listXml.getPkColumnName();
 
@@ -150,6 +180,28 @@ public class ListImporter
 
         if (listXml.isSetTitleColumn())
             list.setTitleColumn(listXml.getTitleColumn());
+
+        if (null != listSettingsXml)
+        {
+            list.setDiscussionSetting(ListDefinition.DiscussionSetting.getForValue(listSettingsXml.getDiscussions()));
+            list.setAllowDelete(listSettingsXml.getAllowDelete());
+            list.setAllowUpload(listSettingsXml.getAllowUpload());
+            list.setAllowExport(listSettingsXml.getAllowExport());
+
+            list.setMetaDataIndex(listSettingsXml.getMetaDataIndex());
+
+            list.setEachItemIndex(listSettingsXml.getEachItemIndex());
+            list.setEachItemTitleSetting(ListDefinition.TitleSetting.getForValue(listSettingsXml.getEachItemTitleSetting()));
+            list.setEachItemTitleTemplate(listSettingsXml.getEachItemTitleTemplate());
+            list.setEachItemBodySetting(ListDefinition.BodySetting.getForValue(listSettingsXml.getEachItemBodySetting()));
+            list.setEachItemBodyTemplate(listSettingsXml.getEachItemBodyTemplate());
+
+            list.setEntireListIndex(listSettingsXml.getEntireListIndex());
+            list.setEntireListTitleSetting(ListDefinition.TitleSetting.getForValue(listSettingsXml.getEntireListTitleSetting()));
+            list.setEntireListTitleTemplate(listSettingsXml.getEntireListTitleTemplate());
+            list.setEntireListBodySetting(ListDefinition.BodySetting.getForValue(listSettingsXml.getEntireListBodySetting()));
+            list.setEntireListBodyTemplate(listSettingsXml.getEntireListBodyTemplate());
+        }
 
         list.save(user);
 

@@ -44,6 +44,7 @@ import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
 import org.labkey.list.view.ListItemAttachmentParent;
+import org.labkey.list.xml.ListsDocument;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -69,7 +70,8 @@ import java.util.Set;
 */
 public class ListWriter
 {
-    private static final String SCHEMA_FILENAME = "lists.xml";
+    static final String SCHEMA_FILENAME = "lists.xml";
+    static final String SETTINGS_FILENAME = "settings.xml";
 
     public boolean write(Container c, User user, VirtualFile listsDir) throws Exception
     {
@@ -80,6 +82,10 @@ public class ListWriter
             // Create meta data doc
             TablesDocument tablesDoc = TablesDocument.Factory.newInstance();
             TablesType tablesXml = tablesDoc.addNewTables();
+
+            // Create doc for non-table settings (discussions, indexing settings & templates)
+            ListsDocument listSettingsDoc = ListsDocument.Factory.newInstance();
+            ListsDocument.Lists listSettingsXml = listSettingsDoc.addNewLists();
 
             // Insert standard comment explaining where the data lives, who exported it, and when
             XmlBeansUtil.addStandardExportComment(tablesXml, c, user);
@@ -93,6 +99,10 @@ public class ListWriter
                 TableType tableXml = tablesXml.addNewTable();
                 ListTableInfoWriter xmlWriter = new ListTableInfoWriter(ti, def, getColumnsToExport(ti, true));
                 xmlWriter.writeTable(tableXml);
+
+                // Write settings
+                ListsDocument.Lists.List settings = listSettingsXml.addNewList();
+                writeSettings(settings, def);
 
                 // Write data
                 Collection<ColumnInfo> columns = getColumnsToExport(ti, false);
@@ -119,12 +129,37 @@ public class ListWriter
             }
 
             listsDir.saveXmlBean(SCHEMA_FILENAME, tablesDoc);
+            listsDir.saveXmlBean(SETTINGS_FILENAME, listSettingsDoc);
+
             return true;
         }
         else
         {
             return false;
         }
+    }
+
+    private void writeSettings(ListsDocument.Lists.List settings, ListDefinition def)
+    {
+        settings.setName(def.getName());
+
+        if (def.getDiscussionSetting().getValue() != 0) settings.setDiscussions(def.getDiscussionSetting().getValue());
+        if (!def.getAllowDelete()) settings.setAllowDelete(def.getAllowDelete());
+        if (!def.getAllowUpload()) settings.setAllowUpload(def.getAllowUpload());
+        if (!def.getAllowExport()) settings.setAllowExport(def.getAllowExport());
+        if (!def.getMetaDataIndex()) settings.setMetaDataIndex(def.getMetaDataIndex());
+
+        if (def.getEachItemIndex()) settings.setEachItemIndex(def.getEachItemIndex());
+        if (def.getEachItemTitleSetting().getValue() != 0) settings.setEachItemTitleSetting(def.getEachItemTitleSetting().getValue());
+        if (null != def.getEachItemTitleTemplate()) settings.setEachItemTitleTemplate(def.getEachItemTitleTemplate());
+        if (def.getEachItemBodySetting().getValue() != 0) settings.setEachItemBodySetting(def.getEachItemBodySetting().getValue());
+        if (null != def.getEachItemBodyTemplate()) settings.setEachItemBodyTemplate(def.getEachItemBodyTemplate());
+
+        if (def.getEntireListIndex()) settings.setEntireListIndex(def.getEntireListIndex());
+        if (def.getEntireListTitleSetting().getValue() != 0) settings.setEntireListTitleSetting(def.getEntireListTitleSetting().getValue());
+        if (null != def.getEntireListTitleTemplate()) settings.setEntireListTitleTemplate(def.getEntireListTitleTemplate());
+        if (def.getEntireListBodySetting().getValue() != 0) settings.setEntireListBodySetting(def.getEntireListBodySetting().getValue());
+        if (null != def.getEntireListBodyTemplate()) settings.setEntireListBodyTemplate(def.getEntireListBodyTemplate());
     }
 
     private void writeAttachments(TableInfo ti, ListDefinition def, Container c, VirtualFile listsDir) throws SQLException, IOException

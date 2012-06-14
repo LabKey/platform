@@ -42,16 +42,16 @@ public class GWTList implements IsSerializable
     public BooleanProperty metaDataIndex = new BooleanProperty(true);
 
     public BooleanProperty entireListIndex = new BooleanProperty(false);
-    public IntegerProperty entireListTitleSetting = new IntegerProperty(0); // IndexFields.TextOnly
-    public StringProperty entireListTitleTemplate = new StringProperty("Here's my initial title template");
-    public IntegerProperty entireListBodySetting = new IntegerProperty(0); // IndexFields.TextOnly
-    public StringProperty entireListBodyTemplate = new StringProperty("Here's my initial body template");
+    public IntegerProperty entireListTitleSetting = new IntegerProperty(0); // TitleSetting.Standard
+    public StringProperty entireListTitleTemplate = new StringProperty();
+    public IntegerProperty entireListBodySetting = new IntegerProperty(0); // BodySetting.TextOnly
+    public StringProperty entireListBodyTemplate = new StringProperty();
 
     public BooleanProperty eachItemIndex = new BooleanProperty(false);
-    public IntegerProperty eachItemTitleSetting = new IntegerProperty(0); // IndexFields.TextOnly
-    public StringProperty eachItemTitleTemplate = new StringProperty("Here's my initial title template");
-    public IntegerProperty eachItemBodySetting = new IntegerProperty(0); // IndexFields.TextOnly
-    public StringProperty eachItemBodyTemplate = new StringProperty("Here's my initial body template");
+    public IntegerProperty eachItemTitleSetting = new IntegerProperty(0); // TitleSetting.Standard
+    public StringProperty eachItemTitleTemplate = new StringProperty();
+    public IntegerProperty eachItemBodySetting = new IntegerProperty(0); // BodySetting.TextOnly
+    public StringProperty eachItemBodyTemplate = new StringProperty();
 
     // client should only read these
     private String _typeURI;
