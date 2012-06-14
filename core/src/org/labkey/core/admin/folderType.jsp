@@ -132,10 +132,20 @@ function updateDefaultOptions(cb)
     //if this module is required by others, we alert before disabling it
     if(cb)
     {
-        if(!cb.checked){
-            var dm = dependencyMap[cb.value];
+        if(!cb.checked && dependencyMap[cb.value]){
+            var dm = [];
+            //only warn about dependencies if they are active
+            Ext.each(dependencyMap[cb.value], function(m){
+                var els = Ext.Element.select('input[value='+m+'][type="checkbox"]');
+                if(!els.elements.length){
+                    return;
+                }
+                if(els.elements[0].checked)
+                    dm.push(m);
+            }, this);
+
             if(dm && dm.length){
-                Ext.Msg.confirm('Warning', 'This module is required by the following other modules: ' + dm.join(', ') + '. Disabling this module will also disable these modules.  Do you want to continue?', function(btn){
+                Ext.Msg.confirm('Warning', 'This module is required by the following other active modules: ' + dm.join(', ') + '. Disabling this module will also disable these modules.  Do you want to continue?', function(btn){
                     if(btn == 'yes'){
                         //uncheck boxes without firing onclick events
                         uncheckEl(cb.value);
@@ -144,7 +154,7 @@ function updateDefaultOptions(cb)
                         }, this);
 
                         function uncheckEl(m){
-                            var el = Ext.Element.select('input[value='+m+']');
+                            var el = Ext.Element.select('input[value='+m+'][type="checkbox"]');
                             el.elements[0].checked = false;
                         }
                     }
@@ -157,7 +167,7 @@ function updateDefaultOptions(cb)
             for (var m in dependencyMap){
                 if(dependencyMap[m].indexOf(cb.value) > -1)
                 {
-                    var el = Ext.Element.select('input[value='+m+']');
+                    var el = Ext.Element.select('input[value='+m+'][type="checkbox"]');
                     el.elements[0].checked = true;
                 }
             }
