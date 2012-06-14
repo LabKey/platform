@@ -426,18 +426,22 @@ public class FileSystemResource extends AbstractWebdavResource
 
     public boolean canRead(User user, boolean forRead)
     {
-        if (!super.canRead(user, forRead))
-            return false;
+        boolean canReadPerm = super.canRead(user, forRead);
+        if (!canReadPerm || !isFile() || !forRead)
+            return canReadPerm;
         File f = getFile();
         if (null == f)
-            return false;
+            return canReadPerm;
+
+        // for real files that we are about to actually read, we want to
+        // check that the OS will allow LabKey server to read the file
+        // should always return true, unless there is a configuration problem
         if (!f.canRead())
         {
-            if (forRead)
-                _log.warn(user.getEmail() + " attempted to read file that is not readable by LabKey Server.  This may be a configuration problem. file: " + f.getPath());
+            _log.warn(user.getEmail() + " attempted to read file that is not readable by LabKey Server.  This may be a configuration problem. file: " + f.getPath());
             return false;
         }
-        return true;
+        return canReadPerm;
     }
 
     public boolean canWrite(User user, boolean forWrite)
