@@ -55,7 +55,7 @@ public class Wiki extends AttachmentParentEntity implements Serializable
     private float _displayOrder = 0;
     private Integer _pageVersionId;
     private boolean _showAttachments = true;
-
+    private boolean _shouldIndex = true;
 
     public Wiki()
     {
@@ -196,6 +196,17 @@ public class Wiki extends AttachmentParentEntity implements Serializable
     {
         _showAttachments = showAttachments;
     }
+
+    public boolean isShouldIndex()
+    {
+        return _shouldIndex;
+    }
+
+    public void setShouldIndex(boolean shouldIndex)
+    {
+        _shouldIndex = shouldIndex;
+    }
+
 
     @Override
     public String toString()

@@ -492,6 +492,7 @@ public class WikiController extends SpringActionController
             // Now update wiki with newly submitted properties  TODO: Should clone wiki instead of changing cached copy (e.g., for concurrency and in case something goes wrong with update)
             _wiki.setName(newName);
             _wiki.setParent(form.getParent());
+            _wiki.setShouldIndex(form.isShouldIndex());
             HString title = form.getTitle() == null ? newName : form.getTitle();
 
             //update version only if title has changed
@@ -1682,6 +1683,7 @@ public class WikiController extends SpringActionController
         private HString _siblingOrder;
         private HString _nextAction;
         private HString _containerPath;
+        private boolean _shouldIndex;
 
         public HString getContainerPath()
         {
@@ -1703,6 +1705,16 @@ public class WikiController extends SpringActionController
         {
             _childOrder = childIdList;
         }
+
+       public boolean isShouldIndex()
+       {
+            return _shouldIndex;
+       }
+
+       public void setShouldIndex(boolean shouldIndex)
+       {
+            _shouldIndex = shouldIndex;
+       }
 
         @SuppressWarnings({"UnusedDeclaration"})
         public HString getSiblingOrder()
@@ -2104,6 +2116,7 @@ public class WikiController extends SpringActionController
         private int _index = -1;
         private int _webPartId = -1;
         private boolean _showAttachments = true;
+        private boolean _shouldIndex = true;
 
         public GUID getEntityId()
         {
@@ -2237,6 +2250,17 @@ public class WikiController extends SpringActionController
         {
             _showAttachments = showAttachments;
         }
+
+        public boolean isShouldIndex()
+        {
+            return _shouldIndex;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setShouldIndex(boolean shouldIndex)
+        {
+            _shouldIndex = shouldIndex;
+        }
     }
 
     @RequiresPermissionClass(ReadPermission.class) //will check below
@@ -2310,6 +2334,7 @@ public class WikiController extends SpringActionController
             Wiki wiki = new Wiki(c, wikiname);
             wiki.setParent(form.getParentId());
             wiki.setShowAttachments(form.isShowAttachments());
+            wiki.setShouldIndex(form.isShouldIndex());
 
             WikiVersion wikiversion = new WikiVersion(wikiname);
 
@@ -2364,6 +2389,7 @@ public class WikiController extends SpringActionController
             wikiProps.put("parent", wiki.getParent());
             wikiProps.put("pageVersionId", wiki.getPageVersionId());
             wikiProps.put("showAttachments", wiki.isShowAttachments());
+            wikiProps.put("shouldIndex", wiki.isShouldIndex());
 
             return wikiProps;
         }
@@ -2406,9 +2432,11 @@ public class WikiController extends SpringActionController
                     (null != wikiversion.getBody() && null != form.getBody() && wikiversion.getBody().compareTo(form.getBody().trim()) != 0) ||
                     !wikiversion.getRendererTypeEnum().equals(currentRendererType) ||
                     wikiUpdate.getParent() != form.getParentId() ||
-                    wikiUpdate.isShowAttachments() != form.isShowAttachments())
+                    wikiUpdate.isShowAttachments() != form.isShowAttachments() ||
+                    wikiUpdate.isShouldIndex() != form.isShouldIndex())
             {
                 wikiUpdate.setShowAttachments(form.isShowAttachments());
+                wikiUpdate.setShouldIndex(form.isShouldIndex());
                 wikiUpdate.setName(form.getName());
                 wikiUpdate.setParent(form.getParentId());
                 wikiversion.setTitle(title);

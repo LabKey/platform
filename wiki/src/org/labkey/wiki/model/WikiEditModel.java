@@ -162,4 +162,9 @@ public class WikiEditModel
     {
         return null == _wiki || _wiki.isShowAttachments();
     }
+
+    public boolean isShouldIndex()
+    {
+        return null == _wiki || _wiki.isShouldIndex();
+    }
 }

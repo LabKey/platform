@@ -56,9 +56,10 @@
         rendererType: <%=model.getRendererType()%>,
         webPartId: <%=model.getWebPartId()%>,
         showAttachments: <%=model.isShowAttachments()%>,
+        shouldIndex: <%=model.isShouldIndex()%>,
         isDirty: false
     };
-    var _editableProps = ['name', 'title', 'body', 'parent', 'showAttachments'];
+    var _editableProps = ['name', 'title', 'body', 'parent', 'showAttachments', 'shouldIndex'];
     var _attachments = [
         <%
         if (model.hasAttachments())
@@ -130,6 +131,12 @@
                     <td class="labkey-form-label">Title</td>
                     <td width="99%">
                         <input type="text" name="title" id="<%=ID_PREFIX%>title" size="80" onkeypress="setWikiDirty()" onchange="setWikiDirty()"/>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="labkey-form-label" nowrap="true">Index <%= PageFlowUtil.helpPopup("Index", "Uncheck if the content on this page should not be searchable") %></td>
+                    <td width="99%">
+                        <input type="checkbox" name="shouldIndex" id="<%=ID_PREFIX%>shouldIndex" onkeypress="setWikiDirty()" onchange="setWikiDirty()"/>
                     </td>
                 </tr>
                 <tr>

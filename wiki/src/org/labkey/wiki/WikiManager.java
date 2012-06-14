@@ -465,6 +465,7 @@ public class WikiManager implements WikiService
             newWikiPage = new Wiki(cDest, destName);
             newWikiPage.setDisplayOrder(srcPage.getDisplayOrder());
             newWikiPage.setShowAttachments(srcPage.isShowAttachments());
+            newWikiPage.setShouldIndex(srcPage.isShouldIndex());
 
             //look up parent page via map
             if (pageIdMap != null)
@@ -578,6 +579,11 @@ public class WikiManager implements WikiService
 
     void indexWiki(Wiki page)
     {
+        if (!page.isShouldIndex())
+        {
+            unindexWiki(page.getEntityId());
+            return;
+        }
         SearchService ss = getSearchService();
         Container c = getContainerService().getForId(page.getContainerId());
         if (null != ss && null != c)

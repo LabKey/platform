@@ -6,6 +6,7 @@ announcements/resources/schemas/dbscripts/postgresql/comm-10.30-11.10.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-11.10-11.20.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-11.30-12.10.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-11.31-11.32.sql -text
+announcements/resources/schemas/dbscripts/postgresql/comm-12.10-12.11.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-create.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-drop.sql -text
 announcements/resources/schemas/dbscripts/postgresql/obsolete/comm-0.00-1.00.sql -text
@@ -46,6 +47,7 @@ announcements/resources/schemas/dbscripts/sqlserver/comm-0.00-10.10.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-10.30-11.10.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-11.30-12.10.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-11.31-11.32.sql -text
+announcements/resources/schemas/dbscripts/sqlserver/comm-12.10-12.11.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-create.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-drop.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/obsolete/comm-0.00-1.00.sql -text

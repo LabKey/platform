@@ -268,6 +268,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
                     WikiVersion wikiVersion = wiki.getLatestVersion();
                     wikiXml.setTitle(wikiVersion.getTitle().getSource());
                     wikiXml.setShowAttachments(wiki.isShowAttachments());
+                    wikiXml.setShouldIndex(wiki.isShouldIndex());
                 }
 
                 XmlOptions options = new XmlOptions();

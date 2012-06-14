@@ -118,6 +118,10 @@
     <td><input type="text" size="40" name="title" value="<%=h(wiki.getLatestVersion().getTitle()) %>"></td>
   </tr>
   <tr>
+     <td class='labkey-form-label'>Index</td>
+     <td><input type="checkbox" name="shouldIndex" id="shouldIndex" <%= wiki.isShouldIndex() ? " checked" : "" %>></td>
+  </tr>
+    <tr>
     <td class='labkey-form-label'>Parent</td>
     <td><select name="parent" onChange="document.manage.nextAction.value = 'manage'; submit();">
         <option <%= wiki.getParent() == -1 ? "selected" : "" %> value="-1">[none]</option>

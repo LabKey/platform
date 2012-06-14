@@ -216,6 +216,9 @@
       <ns:column columnName="LastIndexed">
         <ns:isReadOnly>true</ns:isReadOnly>
       </ns:column>
+      <ns:column columnName="ShouldIndex">
+        <ns:isHidden>true</ns:isHidden>
+      </ns:column>
     </ns:columns>
     <ns:tableTitle>Pages</ns:tableTitle>
     <ns:pkColumnName>RowId</ns:pkColumnName>

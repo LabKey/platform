@@ -108,7 +108,10 @@ public class WikiImporterFactory implements FolderImporterFactory
                     {
                         ctx.getLogger().error("Could not find content subdirectory for wiki with name \"" + wikiXml.getName() + "\"");
                     }
-                    Wiki wiki = importWiki(wikiXml.getName(), wikiXml.getTitle(), wikiXml.getShowAttachments(), wikiSubDir, ctx, displayOrder++);
+                    // ensure that older versions of exported wikis that do not have the shouldIndex bit set
+                    // continue to be indexed by default
+                    boolean shouldIndex = !wikiXml.isSetShouldIndex() || wikiXml.getShouldIndex();
+                    Wiki wiki = importWiki(wikiXml.getName(), wikiXml.getTitle(), shouldIndex, wikiXml.getShowAttachments(), wikiSubDir, ctx, displayOrder++);
                     if (wikiXml.getParent() != null)
                     {
                         parentsToBeSet.put(wiki, wikiXml.getParent());
@@ -122,7 +125,7 @@ public class WikiImporterFactory implements FolderImporterFactory
                     VirtualFile wikiSubDir = wikisDir.getDir(wikiSubDirName);
                     if (null != wikiSubDir && !importedWikiNames.contains(wikiSubDirName))
                     {
-                        importWiki(wikiSubDirName, null, true, wikiSubDir, ctx, displayOrder++);
+                        importWiki(wikiSubDirName, null, true, true, wikiSubDir, ctx, displayOrder++);
                         importedWikiNames.add(wikiSubDirName);
                     }
                 }
@@ -155,7 +158,7 @@ public class WikiImporterFactory implements FolderImporterFactory
             }
         }
 
-        private Wiki importWiki(String name, String title, boolean showAttachments, VirtualFile wikiSubDir, ImportContext ctx, int displayOrder) throws IOException, SQLException, ImportException
+        private Wiki importWiki(String name, String title, boolean shouldIndex, boolean showAttachments, VirtualFile wikiSubDir, ImportContext ctx, int displayOrder) throws IOException, SQLException, ImportException
         {
             Wiki existingWiki = WikiSelectManager.getWiki(ctx.getContainer(), new HString(name));
             List<String> existingAttachmentNames = new ArrayList<String>();
@@ -175,6 +178,7 @@ public class WikiImporterFactory implements FolderImporterFactory
                 }
             }
             wiki.setShowAttachments(showAttachments);
+            wiki.setShouldIndex(shouldIndex);
             wiki.setDisplayOrder(displayOrder);
 
             // since the WikiWriter saves the webdav tree, the files need to be accessed as InputStreams
