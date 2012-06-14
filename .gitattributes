@@ -6889,6 +6889,7 @@ internal/webapp/extWidgets/IconPanel.css -text
 internal/webapp/extWidgets/IconPanel.js -text
 internal/webapp/extWidgets/ImportPanel.js -text
 internal/webapp/extWidgets/ImportWizard.js -text
+internal/webapp/extWidgets/LabkeyCombo.js -text
 internal/webapp/extWidgets/NavPanel.js -text
 internal/webapp/extWidgets/SearchPanel.js -text
 internal/webapp/gxt/css/gxt-all.css -text

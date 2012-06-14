@@ -68,6 +68,8 @@ Ext4.define('LABKEY.ext.NavPanel', {
             border: false,
             frame: false,
             frameHeader: false,
+            style: 'background-color: transparent;',
+            bodyStyle: 'background-color: transparent;',
             width: this.width || '80%',
             defaults: {
                 border: false,
@@ -130,6 +132,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
         assayRenderer: function(item){
             return {
                 layout: 'hbox',
+                bodyStyle: 'background-color: transparent;',
                 defaults: this.ITEM_DEFAULTS,
                 items: [
                     this.getLabelItemCfg(item)
@@ -153,6 +156,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
         defaultRenderer: function(item){
             return {
                 layout: 'hbox',
+                bodyStyle: 'background-color: transparent;',
                 defaults: this.ITEM_DEFAULTS,
                 items: [{
                     xtype: 'labkey-linkbutton',
@@ -167,6 +171,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
         queryRenderer: function(item){
             return {
                 layout: 'hbox',
+                bodyStyle: 'background-color: transparent;',
                 defaults: this.ITEM_DEFAULTS,
                 items: [
                     this.getLabelItemCfg(item)
@@ -186,6 +191,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
         sampleSetRenderer: function(item){
             return {
                 layout: 'hbox',
+                bodyStyle: 'background-color: transparent;',
                 defaults: this.ITEM_DEFAULTS,
                 items: [
                     this.getLabelItemCfg(item)
@@ -205,6 +211,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
         fileRenderer: function(item){
             return {
                 layout: 'hbox',
+                bodyStyle: 'background-color: transparent;',
                 defaults: this.ITEM_DEFAULTS,
                 items: [
                     this.getLabelItemCfg(item)
@@ -221,6 +228,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
         workbookRenderer: function(item){
             return {
                 layout: 'hbox',
+                bodyStyle: 'background-color: transparent;',
                 defaults: this.ITEM_DEFAULTS,
                 items: [
                     this.getLabelItemCfg(item)
@@ -251,6 +259,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
         summaryCountRenderer: function(item){
             return {
                 layout: 'hbox',
+                bodyStyle: 'background-color: transparent;',
                 defaults: this.ITEM_DEFAULTS,
                 items: [
                     this.getLabelItemCfg(item)
@@ -320,7 +329,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
 });
 
 Ext4.apply(LABKEY.ext.NavPanel.prototype, {
-    ITEM_STYLE_DEFAULT: 'padding: 2px;'
+    ITEM_STYLE_DEFAULT: 'padding: 2px;background-color: transparent;'
 });
 
 Ext4.apply(LABKEY.ext.NavPanel.prototype, {

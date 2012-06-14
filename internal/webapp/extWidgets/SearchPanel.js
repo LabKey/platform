@@ -170,6 +170,19 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
         this.add(toAdd);
     },
 
+    getRowCfg: function(){
+        return {
+            xtype: 'container',
+            layout: 'hbox',
+            bodyStyle: 'padding: 5px;',
+            border: false,
+            defaults: {
+                style: 'margin: 2px;',
+                border: false
+            }
+        }
+    },
+
     addRow: function(meta){
         if (meta.inputType == 'textarea'){
             meta.inputType = 'textbox';
@@ -182,28 +195,16 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
                 replicates = 2;
 
             for (var i = 0; i < replicates; i++){
-                rows.push({
-                    items: Ext4.apply(this.getRowCfg(), {items: this.createRow(meta)})
-                });
+                rows.push(Ext4.apply(this.getRowCfg(), {
+                    items: this.getRowItems(meta)
+                }));
             }
         }
 
         return rows;
     },
 
-    getRowCfg: function(){
-        return {
-            xtype: 'container',
-            layout: 'hbox',
-            bodyStyle: 'padding: 5px;',
-            defaults: {
-                style: 'margin: 2px;',
-                border: false
-            }
-        };
-    },
-
-    createRow: function(meta){
+    getRowItems: function(meta){
         var row = [];
         if (meta.lookup && meta.lookups !== false){
             meta.includeNullRecord = false;
@@ -218,54 +219,51 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             meta.xtype = 'labkey-booleancombo';
         }
 
+        meta.editable = true; //force read only fields to give an input
+
         //create the field
         var theField = LABKEY.ext.Ext4Helper.getFormEditorConfig(meta);
         theField.fieldLabel = null;
         theField.disabled = false;
+        theField.hidden = false;
 
         //the label
         row.push({html: meta.caption + ':', width: this.LABEL_WIDTH});
-
         Ext4.apply(theField, {
             nullable: true,
             allowBlank: true,
             width: this.FIELD_WIDTH,
-            isSearchField: true,
-            style: 'padding-left: 5px;'
+            isSearchField: true
         });
 
         //NOTE: if the field is a lookup, the dataRegion will display/filter this field on the value
         //therefore on submit, we actually filter on display value, not raw value
         //Issue: 13723
         if (meta.lookup){
-            theField.dataIndex = meta.name + '/' + meta.lookup.displayColumn;
+            theField.dataIndex = meta.displayField;
             theField.valueField = theField.displayField;
         }
 
         //the operator
+        var id = Ext4.id();
         if (meta.jsonType == 'boolean'){
             row.push({width: this.OP_FIELD_WIDTH});
         }
         else if (theField.xtype == 'labkey-combo'){
-            var id = Ext4.id();
             theField.opField = id;
             row.push({
-                xtype: 'displayfield',
+                xtype: 'hidden',
                 value: 'in',
                 itemId: id,
-                width: this.OP_FIELD_WIDTH,
-                //TODO: spacing not correct in 4.1
-                hideMode: 'offsets',
-                border: true,
-                hidden: true
+                width: this.OP_FIELD_WIDTH
             });
         }
         else {
-            var id = Ext4.id();
             theField.opField = id;
             row.push({
                 xtype: 'labkey-operatorcombo',
-                meta: meta,
+                jsonType: meta.jsonType,
+                mvEnabled: meta.mvEnabled,
                 itemId: id,
                 width: this.OP_FIELD_WIDTH
             });
@@ -295,7 +293,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             params['query.viewName'] = vf.getValue();
         }
 
-        this.items.each(function(item){
+        this.cascade(function(item){
             if (!item.isSearchField)
                 return;
 
