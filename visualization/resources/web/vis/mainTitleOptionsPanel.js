@@ -39,7 +39,8 @@ Ext4.define('LABKEY.vis.MainTitleOptionsPanel', {
                 scope: this,
                 'change': function(cmp, newVal, oldVal) {
                     this.hasChanges = true;
-                }
+                },
+                'specialkey': this.specialKeyPressed
             }
         });
         this.chartTitleTextField.addListener('keyUp', function(){
@@ -76,18 +77,18 @@ Ext4.define('LABKEY.vis.MainTitleOptionsPanel', {
             }
         ];
 
-        this.buttons = [
-            {
-                text: 'Apply',
-                handler: function(){
-                    this.fireEvent('closeOptionsWindow');
-                    this.checkForChangesAndFireEvents();
-                },
-                scope: this
-            }
-        ];
+        this.buttons = [{
+            text: 'Apply',
+            handler: this.applyButtonClicked,
+            scope: this
+        }];
 
         this.callParent();
+    },
+
+    applyButtonClicked: function() {
+        this.fireEvent('closeOptionsWindow');
+        this.checkForChangesAndFireEvents();
     },
 
     setMainTitle: function(newMainTitle){

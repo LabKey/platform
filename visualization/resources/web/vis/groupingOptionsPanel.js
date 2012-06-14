@@ -297,18 +297,18 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
             ]
         }];
 
-        this.buttons = [
-            {
-                text: 'Apply',
-                handler: function(){
-                    this.fireEvent('closeOptionsWindow');
-                    this.checkForChangesAndFireEvents();
-                },
-                scope: this
-            }
-        ];
+        this.buttons = [{
+            text: 'Apply',
+            handler: this.applyButtonClicked,
+            scope: this
+        }];
 
         this.callParent();
+    },
+
+    applyButtonClicked: function() {
+        this.fireEvent('closeOptionsWindow');
+        this.checkForChangesAndFireEvents();
     },
 
     chartPerRadioChecked: function(field, checked){

@@ -39,17 +39,19 @@ Ext4.define('LABKEY.vis.InitialMeasurePanel', {
             text: 'To get started, choose a Measure:'
         }];
 
-        this.buttons = [{
-            xtype: 'button',
+        this.chooseMeasureBtn = Ext4.create('Ext.Button', {
             text: 'Choose a Measure',
             handler: this.showMeasureSelectionWindow,
             scope: this
-        }];
+        });
+
+        this.buttons = [this.chooseMeasureBtn];
 
         this.callParent();
     },
 
     showMeasureSelectionWindow: function() {
+        this.chooseMeasureBtn.disable();
         var win = Ext4.create('LABKEY.ext4.MeasuresDialog', {
             allColumns: false,
             multiSelect : false,
@@ -63,7 +65,11 @@ Ext4.define('LABKEY.vis.InitialMeasurePanel', {
                 },
                 'measuresSelected': function (records, userSelected){
                     this.fireEvent('initialMeasureSelected', records[0].data);
-                    win.close();
+                    win.hide();
+                },
+                'hide': function() {
+                    if (this.chooseMeasureBtn.isVisible())
+                        this.chooseMeasureBtn.enable();
                 }
             }
         });

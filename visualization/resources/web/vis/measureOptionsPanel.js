@@ -570,9 +570,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
     },
 
     showMeasureSelectionWindow: function() {
-        delete this.changeMeasureSelection;
-        this.measureSelectionBtnId = Ext4.id();
-
+        this.addMeasureButton.disable();
         var win = Ext4.create('LABKEY.ext4.MeasuresDialog', {
             allColumns: false,
             multiSelect : false,
@@ -588,6 +586,9 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                     this.hasChanges = true;
                     this.requireDataRefresh = true;
                     win.hide();
+                },
+                'hide': function() {
+                    this.addMeasureButton.enable();
                 }
             }
         });

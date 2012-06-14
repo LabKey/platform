@@ -136,6 +136,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 }
                 else
                 {
+                    this.toggleOptionButtons(true);
                     this.chart.add(Ext4.create('LABKEY.vis.InitialMeasurePanel', {
                         listeners: {
                             scope: this,
@@ -144,6 +145,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                                 this.editorMeasurePanel.setMeasuresStoreData(data);
                             },
                             'initialMeasureSelected': function(initMeasure) {
+                                this.maskAndRemoveCharts();
                                 this.editorMeasurePanel.addMeasure(initMeasure, true);
                                 this.measureSelectionChange(false);
                             }
@@ -383,21 +385,24 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         });
 
         // setup buttons for the charting options panels (items to be added to the toolbar)
-        this.measuresButton = Ext4.create('Ext.button.Button', {text: 'Measures', disabled: true,
+        this.measuresButton = Ext4.create('Ext.button.Button', {text: 'Measures',
                                 handler: function(btn){this.optionsButtonClicked(btn, this.editorMeasurePanel, 860, 225, 'center');}, scope: this});
 
-        this.groupingButton = Ext4.create('Ext.button.Button', {text: 'Grouping', disabled: true,
+        this.groupingButton = Ext4.create('Ext.button.Button', {text: 'Grouping',
                                 handler: function(btn){this.optionsButtonClicked(btn, this.editorGroupingPanel, 600, 210, 'center');}, scope: this});
 
-        this.aestheticsButton = Ext4.create('Ext.button.Button', {text: 'Options', disabled: true,
+        this.aestheticsButton = Ext4.create('Ext.button.Button', {text: 'Options',
                                 handler: function(btn){this.optionsButtonClicked(btn, this.editorAestheticsPanel, 300, 125, 'center');}, scope: this});
 
-        this.saveButton = Ext4.create('Ext.button.Button', {text: 'Save', disabled: true, hidden: !this.canEdit, handler: function(btn){
+        this.saveButton = Ext4.create('Ext.button.Button', {text: 'Save', hidden: !this.canEdit,
+                        handler: function(btn){
                                 this.editorSavePanel.setSaveAs(false);
                                 this.optionsButtonClicked(btn, this.editorSavePanel, 850, 200, 'right');
                         }, scope: this});
 
-        this.saveAsButton = Ext4.create('Ext.button.Button', {text: 'Save AS', disabled: true, hidden: !this.editorSavePanel.isSavedReport(), handler: function(btn){
+
+        this.saveAsButton = Ext4.create('Ext.button.Button', {text: 'Save As', hidden: !this.editorSavePanel.isSavedReport() || LABKEY.Security.currentUser.isGuest,
+                        handler: function(btn){
                                 this.editorSavePanel.setSaveAs(true);
                                 this.optionsButtonClicked(btn, this.editorSavePanel, 850, 200, 'right');
                         }, scope: this});
@@ -415,7 +420,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             {
                 panelRef = scopedThis.editorXAxisPanel;
                 height = 250;
-                width = 860;
+                width = 800;
             }
             else if (type == 'Left-Axis')
             {
@@ -628,15 +633,15 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         if (this.editorMeasurePanel.getNumMeasures() == 0)
             this.disableNonMeasureOptionButtons();
         else
-            this.enableOptionButtons();
+            this.toggleOptionButtons(false);
     },
 
-    enableOptionButtons: function(){
-        this.measuresButton.enable();
-        this.groupingButton.enable();
-        this.aestheticsButton.enable();
-        this.saveButton.enable();
-        this.saveAsButton.enable();
+    toggleOptionButtons: function(disable){
+        this.measuresButton.setDisabled(disable);
+        this.groupingButton.setDisabled(disable);
+        this.aestheticsButton.setDisabled(disable);
+        this.saveButton.setDisabled(disable);
+        this.saveAsButton.setDisabled(disable);
     },
 
     disableNonMeasureOptionButtons: function(){
@@ -695,9 +700,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
     },
 
     getChartData: function() {
-        // mask panel and remove the chart(s)
-        this.chart.getEl().mask("loading...");
-        this.clearChartPanel();
+        this.maskAndRemoveCharts();
 
         // Clear previous chart data.
         this.individualData = undefined;
@@ -761,7 +764,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
                     // now that we have the temp grid info, enable the View Data button
                     // and make sure that the view charts button is hidden
-                    this.viewGridBtn.setDisabled(false);
+                    this.viewGridBtn.enable();
                     this.viewChartBtn.hide();
 
                     // ready to render the chart or grid
@@ -884,9 +887,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
     renderLineChart: function(force)
     {
-        // mask panel and remove the chart(s)
-        this.chart.getEl().mask("loading...");
-        this.clearChartPanel("");
+        this.maskAndRemoveCharts();
 
         // get the updated chart information from the various options panels
         this.chartInfo = this.getChartInfoFromOptionPanels();
@@ -1281,7 +1282,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 this.firstChartComponent = newChart.renderTo;
 
                 this.exportPdfSingleBtn.addListener('click', function(){
-                    LABKEY.vis.SVGConverter.convert(Ext4.get(newChart.renderTo).child('svg').dom, 'pdf');
+                    LABKEY.vis.SVGConverter.convert(Ext4.get(this.firstChartComponent).child('svg').dom, 'pdf');
                 }, this);
 
                 this.toggleExportPdfBtns(true);
@@ -1298,11 +1299,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             }));
         }
 
-        // unmask the panel if needed
-        if (this.chart.getEl().isMasked())
-        {
-            this.chart.getEl().unmask();
-        }
+        this.unmaskPanel();
     },
 
     generatePlot: function(chart, studyType, viewInfo, chartInfo, mainTitle, seriesList, individualData, individualMeasureToColumn, individualVisitMap, aggregateData, aggregateMeasureToColumn, aggregateVisitMap, chartHeight, chartStyle){
@@ -1465,7 +1462,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         // functions to call on click of axis labels to open the options panel (need to be closures to correctly handle scoping of this)
         var xAxisLabelClickFn = function(scopedThis){
             return function(event){
-                scopedThis.chartElementClicked(scopedThis.editorXAxisPanel, [event.clientX, event.clientY], 860, 250, 'above');
+                scopedThis.chartElementClicked(scopedThis.editorXAxisPanel, [event.clientX, event.clientY], 800, 250, 'above');
             }
         };
         var yAxisLeftLabelClickFn = function(scopedThis){
@@ -1486,6 +1483,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         var plotConfig = {
             renderTo: newChartDiv.getId(),
+            clipRect: true,
             labels: {
                 main: {
                     value: mainTitle,
@@ -1623,9 +1621,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
     viewDataGrid: function() {
         // make sure the tempGridInfo is available
         if(typeof this.tempGridInfo == "object") {
-            // mask panel and remove the chart(s)
-            this.chart.getEl().mask("loading...");
-            this.clearChartPanel();
+            this.maskAndRemoveCharts();
             this.loaderFn = this.viewDataGrid;
             this.loaderName = 'viewDataGrid';
 
@@ -1673,14 +1669,27 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 // redo the layout of the qwp panel to set reset the auto height
                 qwpPanelDiv.doLayout();
 
-                // unmask the panel if needed
-                if (this.chart.getEl().isMasked())
-                    this.chart.getEl().unmask();
+                this.unmaskPanel();
             }, this);
 
             this.chart.removeAll();
             this.chart.add(dataGridPanel);
         }
+    },
+
+    maskAndRemoveCharts: function() {
+        // mask panel and remove the chart(s)
+        if (!this.chart.getEl().isMasked())
+        {
+            this.chart.getEl().mask("loading...");
+            this.clearChartPanel();
+        }
+    },
+
+    unmaskPanel: function() {
+        // unmask the panel if needed
+        if (this.chart.getEl().isMasked())
+            this.chart.getEl().unmask();
     },
 
     getInitializedChartInfo: function(){
@@ -1924,8 +1933,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 padding: 10,
                 html : "<table width='100%'><tr><td align='center' style='font-style:italic'>" + message + "</td></tr></table>"
             }));
-            if (this.chart.getEl().isMasked)
-                this.chart.getEl().unmask();
+            this.unmaskPanel();
         }
     },
 
