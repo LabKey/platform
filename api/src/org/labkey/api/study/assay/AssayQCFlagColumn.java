@@ -203,8 +203,6 @@ public class AssayQCFlagColumn extends ExprColumn
         @Test
         public void testCollapseQCFlags() throws Exception
         {
-            String[] values;
-            Boolean[] enabled;
             String expected;
 
             // single flag, enabled

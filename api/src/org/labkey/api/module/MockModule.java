@@ -160,7 +160,13 @@ public class MockModule implements Module
     }
 
     @NotNull
-    public Set<Class> getJUnitTests()
+    public Set<Class> getIntegrationTests()
+    {
+        return Collections.emptySet();
+    }
+
+    @NotNull
+    public Set<Class> getUnitTests()
     {
         return Collections.emptySet();
     }

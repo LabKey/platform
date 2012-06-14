@@ -396,7 +396,14 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     @Override
     @NotNull
-    public Set<Class> getJUnitTests()
+    public Set<Class> getIntegrationTests()
+    {
+        return Collections.emptySet();
+    }
+
+    @Override
+    @NotNull
+    public Set<Class> getUnitTests()
     {
         return Collections.emptySet();
     }

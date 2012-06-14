@@ -156,12 +156,21 @@ public interface Module extends Comparable<Module>
     public TabDisplayMode getTabDisplayMode();
 
     /**
-     * Modules can provide JUnit tests that will be run inside the server
-     * VM. These tests will be executed as part of the DRT.
+     * Modules can provide JUnit tests that must be run inside the server
+     * VM. These tests will be executed as part of the DRT. These are not true unit tests, and may rely on external
+     * resources such as a database connection or services provided by other modules.
+     * @return the integration tests that this module provides
+     */
+    @NotNull
+    public Set<Class> getIntegrationTests();
+
+    /**
+     * Modules can provide JUnit tests that can be run independent of the server VM. Satisfies the requirements for a
+     * traditional unit test.
      * @return the unit tests that this module provides
      */
     @NotNull
-    public Set<Class> getJUnitTests();
+    public Set<Class> getUnitTests();
 
     /**
      * Returns a set of schemas that the module wants tested.
