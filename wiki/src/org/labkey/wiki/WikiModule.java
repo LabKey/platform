@@ -223,7 +223,7 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
 
     @Override
     @NotNull
-    public Set<Class> getJUnitTests()
+    public Set<Class> getIntegrationTests()
     {
         return new HashSet<Class>(Arrays.asList(
                 WikiManager.TestCase.class,

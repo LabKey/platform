@@ -47,7 +47,7 @@ public class PortalModule extends DefaultModule
 
     @Override
     @NotNull
-    public Set<Class> getJUnitTests()
+    public Set<Class> getIntegrationTests()
     {
         return Collections.singleton((Class) PortalJUnitTest.class);
     }

@@ -16,12 +16,13 @@
 package org.labkey.pipeline.status;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ReaderView;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.util.Set;
 
 /**
  * User: cnathe
@@ -32,6 +33,10 @@ public class JobStatusLogView extends ReaderView
     boolean _highlightingError = false;
     private final boolean _showDetails;
     private String _previousLine;
+    private String _previousLogLevel;
+
+    private static final Set<String> ERROR_LOG_LEVELS = new CaseInsensitiveHashSet(PageFlowUtil.set("ERROR", "FATAL"));
+    private static final Set<String> LOG_LEVELS = new CaseInsensitiveHashSet(PageFlowUtil.set("DEBUG", "INFO", "WARN", "ERROR", "FATAL"));
 
     public JobStatusLogView(InputStream in, boolean showDetails, @Nullable String prefix, @Nullable String suffix)
     {
@@ -44,7 +49,7 @@ public class JobStatusLogView extends ReaderView
     {
         try
         {
-            if (!_showDetails && line.startsWith("\tat "))
+            if (!_showDetails && (line.startsWith("\tat ") || (line.startsWith("\t... ") && line.endsWith(" more"))))
             {
                 // Hide stack traces in summary views
                 return;
@@ -63,26 +68,45 @@ public class JobStatusLogView extends ReaderView
                 }
             }
 
+            String logLevel;
             String[] tokens = line.split(" ");
             // for a normal log file INFO, ERROR, etc. line, the type will be the 5th token
             if (tokens.length > 4)
             {
                 String type = tokens[4];
-                if (!_highlightingError && (type.equals("ERROR:") || type.equals("FATAL:")))
+                if (type.endsWith(":"))
                 {
-                    _highlightingError = true;
-                    out.write("<span class=\"labkey-error\">");
+                    // Strip off trailing : if present
+                    type = type.substring(0, type.indexOf(":"));
                 }
-                else if (_highlightingError && (type.equals("INFO") || type.equals("DEBUG:") || type.equals("WARN")))
+                if (LOG_LEVELS.contains(type))
                 {
-                    _highlightingError = false;
-                    out.write("</span>");
+                    if (!_highlightingError && ERROR_LOG_LEVELS.contains(type))
+                    {
+                        _highlightingError = true;
+                        out.write("<span class=\"labkey-error\">");
+                    }
+                    else if (_highlightingError)
+                    {
+                        _highlightingError = false;
+                        out.write("</span>");
+                    }
+                    logLevel = type;
+                    _previousLogLevel = type;
                 }
+                else
+                {
+                    logLevel = _previousLogLevel;
+                }                    
+            }
+            else
+            {
+                logLevel = _previousLogLevel;
+            }
 
-                if (type.equals("DEBUG:") && !_showDetails)
-                {
-                    return;
-                }
+            if ("DEBUG".equalsIgnoreCase(logLevel) && !_showDetails)
+            {
+                return;
             }
             super.outputLine(out, line);
         }

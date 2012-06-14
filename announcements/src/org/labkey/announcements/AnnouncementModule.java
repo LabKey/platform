@@ -208,7 +208,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
 
     @Override
     @NotNull
-    public Set<Class> getJUnitTests()
+    public Set<Class> getIntegrationTests()
     {
         return new HashSet<Class>(Arrays.asList(AnnouncementManager.TestCase.class));
     }

@@ -196,12 +196,20 @@ public class QueryModule extends DefaultModule
 
     @Override
     @NotNull
-    public Set<Class> getJUnitTests()
+    public Set<Class> getIntegrationTests()
+    {
+        return new HashSet<Class>(Arrays.asList(
+                Query.QueryTestCase.class,
+                QueryServiceImpl.TestCase.class
+        ));
+    }
+
+    @Override
+    @NotNull
+    public Set<Class> getUnitTests()
     {
         return new HashSet<Class>(Arrays.asList(
                 SqlParser.SqlParserTestCase.class,
-                Query.QueryTestCase.class,
-                QueryServiceImpl.TestCase.class,
                 JdbcType.TestCase.class,
                 QNode.TestCase.class,
                 SimpleFilter.FilterTestCase.class

@@ -392,9 +392,7 @@ public class GlobusJobWrapper
         return factorySettings.mergeOverrides(jobSettings).getLocation();
     }
 
-
-
-       public static class TestCase extends Assert
+    public static class TestCase extends Assert
     {
         private GlobusClientPropertiesImpl getDefaultGlobusSettings()
         {

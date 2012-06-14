@@ -674,7 +674,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     @Override
     @NotNull
-    public Set<Class> getJUnitTests()
+    public Set<Class> getIntegrationTests()
     {
         Set<Class> set = new HashSet<Class>();
         set.add(SpecimenImporter.TestCase.class);

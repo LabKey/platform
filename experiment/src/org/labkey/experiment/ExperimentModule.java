@@ -292,14 +292,20 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
     @Override
     @NotNull
-    public Set<Class> getJUnitTests()
+    public Set<Class> getIntegrationTests()
     {
         return new HashSet<Class>(Arrays.asList(
-            LSIDRelativizer.TestCase.class,
             OntologyManager.TestCase.class,
             LsidUtils.TestCase.class));
     }
 
+    @NotNull
+    @Override
+    public Set<Class> getUnitTests()
+    {
+        return new HashSet<Class>(Arrays.asList(
+            LSIDRelativizer.TestCase.class));
+    }
 
     @Override
     @NotNull

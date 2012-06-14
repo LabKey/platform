@@ -185,11 +185,22 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
     @Override
     @NotNull
-    public Set<Class> getJUnitTests()
+    public Set<Class> getIntegrationTests()
     {
         return new HashSet<Class>(Arrays.asList(
-            PipelineQueueImpl.TestCase.class, PathMapperImpl.TestCase.class, GlobusClientPropertiesImpl.TestCase.class,
-            GlobusJobWrapper.TestCase.class, PipelineCommandTestCase.class));
+            PipelineQueueImpl.TestCase.class,
+            PipelineCommandTestCase.class));
+    }
+
+    @Override
+    @NotNull
+    public Set<Class> getUnitTests()
+    {
+        return new HashSet<Class>(Arrays.asList(
+            PathMapperImpl.TestCase.class,
+            GlobusClientPropertiesImpl.TestCase.class,
+            GlobusJobWrapper.TestCase.class
+        ));
     }
 
     @Override

@@ -419,7 +419,14 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
                         sb.append(line);
                         sb.append("\n");
                     }
-                    job.getLogger().info("Content of std" + outputType + ":\n" + sb.toString());
+                    if (outputType == GlobusJobWrapper.OutputType.out)
+                    {
+                        job.getLogger().debug("Content of std" + outputType + ":\n" + sb.toString());
+                    }
+                    else
+                    {
+                        job.getLogger().warn("Content of std" + outputType + ":\n" + sb.toString());
+                    }
                 }
                 catch (IOException e)
                 {

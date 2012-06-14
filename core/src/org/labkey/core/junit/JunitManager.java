@@ -45,10 +45,18 @@ public class JunitManager
 
         for (Module module : ModuleLoader.getInstance().getModules())
         {
-            Set<Class> clazzes = module.getJUnitTests();
             List<Class> moduleClazzes = new ArrayList<Class>();
 
-            for (Class clazz : clazzes)
+            for (Class clazz : module.getIntegrationTests())
+            {
+                if (allCases.contains(clazz))
+                    continue;
+
+                allCases.add(clazz);
+                moduleClazzes.add(clazz);
+            }
+
+            for (Class clazz : module.getUnitTests())
             {
                 if (allCases.contains(clazz))
                     continue;

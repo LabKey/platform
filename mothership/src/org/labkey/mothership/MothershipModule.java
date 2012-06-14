@@ -133,7 +133,7 @@ public class MothershipModule extends DefaultModule
 
     @Override
     @NotNull
-    public Set<Class> getJUnitTests()
+    public Set<Class> getUnitTests()
     {
         return PageFlowUtil.<Class>set(ExceptionStackTrace.TestCase.class);
     }

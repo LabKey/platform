@@ -585,7 +585,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     @Override
     @NotNull
-    public Set<Class> getJUnitTests()
+    public Set<Class> getIntegrationTests()
     {
         @SuppressWarnings({"unchecked"})
         Set<Class> testClasses = new HashSet<Class>(Arrays.asList(
@@ -596,50 +596,26 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 ActionURL.TestCase.class,
                 SecurityManager.TestCase.class,
                 PropertyManager.TestCase.class,
-                DateUtil.TestCase.class,
                 ContainerManager.TestCase.class,
                 TabLoader.TabLoaderTestCase.class,
                 MapLoader.MapLoaderTestCase.class,
-                TSVWriter.TestCase.class,
-                ExcelLoader.ExcelLoaderTestCase.class,
-                ExcelFactory.ExcelFactoryTestCase.class,
-                ModuleDependencySorter.TestCase.class,
                 GroupManager.TestCase.class,
-                DateUtil.TestCase.class,
-                DatabaseCache.TestCase.class,
                 SecurityController.TestCase.class,
-                PasswordExpiration.TestCase.class,
                 AttachmentServiceImpl.TestCase.class,
-                BooleanFormat.TestCase.class,
-                XMLWriterTest.TestCase.class,
                 WebdavResolverImpl.TestCase.class,
                 Lsid.TestCase.class,
                 MimeMap.TestCase.class,
-                FileUtil.TestCase.class,
-                FileType.TestCase.class,
-                MemTracker.TestCase.class,
                 HString.TestCase.class,
-                StringExpressionFactory.TestCase.class,
-                Path.TestCase.class,
                 ModuleStaticResolverImpl.TestCase.class,
-                PageFlowUtil.TestCase.class,
-                ResultSetUtil.TestCase.class,
                 StorageProvisioner.TestCase.class,
-                ArrayListMap.TestCase.class,
-                DbScope.DialectTestCase.class,
                 RhinoService.TestCase.class,
-                ValidEmail.TestCase.class,
                 SimpleTranslator.TranslateTestCase.class,
-                RemoveDuplicatesDataIterator.DeDuplicateTestCase.class,
-                CachingDataIterator.ScrollTestCase.class,
                 ResultSetDataIterator.TestCase.class,
                 ExceptionUtil.TestCase.class,
                 ViewCategoryManager.TestCase.class,
                 TableSelectorTestCase.class,
                 NestedGroupsTest.class,
-                StringUtilsLabKey.TestCase.class,
-                Compress.TestCase.class,
-                ExtUtil.TestCase.class
+                Compress.TestCase.class
                 //,RateLimiter.TestCase.class
         ));
 
@@ -648,6 +624,37 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         return testClasses;
     }
 
+    @NotNull
+    @Override
+    public Set<Class> getUnitTests()
+    {
+        return new HashSet<Class>(Arrays.asList(
+                DateUtil.TestCase.class,
+                TSVWriter.TestCase.class,
+                ExcelLoader.ExcelLoaderTestCase.class,
+                ExcelFactory.ExcelFactoryTestCase.class,
+                ModuleDependencySorter.TestCase.class,
+                DateUtil.TestCase.class,
+                DatabaseCache.TestCase.class,
+                PasswordExpiration.TestCase.class,
+                BooleanFormat.TestCase.class,
+                XMLWriterTest.TestCase.class,
+                FileUtil.TestCase.class,
+                FileType.TestCase.class,
+                MemTracker.TestCase.class,
+                StringExpressionFactory.TestCase.class,
+                Path.TestCase.class,
+                PageFlowUtil.TestCase.class,
+                ResultSetUtil.TestCase.class,
+                ArrayListMap.TestCase.class,
+                DbScope.DialectTestCase.class,
+                ValidEmail.TestCase.class,
+                RemoveDuplicatesDataIterator.DeDuplicateTestCase.class,
+                CachingDataIterator.ScrollTestCase.class,
+                StringUtilsLabKey.TestCase.class,
+                ExtUtil.TestCase.class
+        ));
+    }
 
     @Override
     @NotNull
