@@ -151,7 +151,7 @@ $tab-spacing: 3px;
 }
 
 /* The form field triggers are getting widths of 0px in Ext 4.1.0. */
-.x4-form-trigger {
+.x4-reset .x4-form-trigger {
     width: 17px !important;
 }
 
