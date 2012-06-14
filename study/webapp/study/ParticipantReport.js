@@ -880,10 +880,8 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 title    : 'Filter Report',
                 items    : [panel],
                 bodyStyle: 'overflow-y: auto; overflow-x: hidden;',
-//                autoShow : true,
                 relative : this.centerPanel,
                 collapsed: true,
-//                expandOnShow : true,
                 scope    : this
             });
             if (!this.fitted) {
