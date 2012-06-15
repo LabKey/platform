@@ -4371,6 +4371,7 @@ api/webapp/ext-4.1.0/ext-all-sandbox-debug.js -text
 api/webapp/ext-4.1.0/ext-all-sandbox-dev.js -text
 api/webapp/ext-4.1.0/ext-all-sandbox.js -text
 api/webapp/ext-4.1.0/ext-all.js -text
+api/webapp/ext-4.1.0/ext-all.js.gz -text
 api/webapp/ext-4.1.0/ext-debug-w-comments.js -text
 api/webapp/ext-4.1.0/ext-debug.js -text
 api/webapp/ext-4.1.0/ext-dev.js -text
@@ -4399,6 +4400,7 @@ api/webapp/ext-4.1.0/resources/css/ext-all-gray.css -text
 api/webapp/ext-4.1.0/resources/css/ext-all-scoped-debug.css -text
 api/webapp/ext-4.1.0/resources/css/ext-all-scoped.css -text
 api/webapp/ext-4.1.0/resources/css/ext-all.css -text
+api/webapp/ext-4.1.0/resources/css/ext-all.css.gz -text
 api/webapp/ext-4.1.0/resources/css/ext-ie-debug.css -text
 api/webapp/ext-4.1.0/resources/css/ext-ie-scoped-debug.css -text
 api/webapp/ext-4.1.0/resources/css/ext-ie-scoped.css -text
