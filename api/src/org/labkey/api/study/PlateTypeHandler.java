@@ -17,11 +17,13 @@
 package org.labkey.api.study;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 
 import java.util.List;
 import java.sql.SQLException;
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -42,4 +44,12 @@ public interface PlateTypeHandler
     public List<Pair<Integer, Integer>> getSupportedPlateSizes();
 
     public WellGroup.Type[] getWellGroupTypes();
+
+    /**
+     * Validate a new or edited plate template for handler specific errors.
+     * @throws ValidationException
+     */
+    public void validate(Container container, User user, PlateTemplate template) throws ValidationException;
+
+    public Map<String, List<String>> getDefaultGroupsForTypes();
 }
