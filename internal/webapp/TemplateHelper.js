@@ -142,7 +142,7 @@
      * The most common templates render values in <TD>, this helper generates a <TD> and
      * handles these fields to customize the layout
      * ) align
-     * ) rowspan
+     * ) rowspan (becomes colspan if grid is transposed)
      * ) className
      * ) style
      * ) width (should this me merged into style?)
@@ -152,30 +152,41 @@
      *
      * UNDONE: missing values, out-of-range values
      */
-    FieldDefinition.prototype.getGridCellHtml = function(value, withUrls)
+    FieldDefinition.prototype.getGridCellHtml = function(value, asHeader, withUrls, transposed)
     {
         if (value.rowspan == -1)
             return "";
         var innerHtml = this.getDisplayValueHtml(value, withUrls);
-        var td = "<td valign=top";
-        // align
-        if (this.align)
+        var td = !asHeader ? "<td valign=top" : "<th style=\"padding-right: 10px;\" class=\"labkey-column-header\"";
+
+        // align (for transposed, align all values to the right)
+        if (!asHeader && !transposed && this.align)
             td += " align=\"" + this.align + "\"";
+        else if (!asHeader)
+            td += " align=\"right\"";
+
+        // width
         if (this.width)
             td += " width=\"" + this.width + "\"";
+
         // rowspan
-        if (value.rowspan > 1)
+        if (!transposed && value.rowspan > 1)
             td += " rowspan=\"" + value.rowspan + "\"";
+        // colspan
+        if (transposed && value.rowspan > 1)
+            td += " colspan=\"" + value.rowspan + "\"";
+
         // className
         var className = value.className || this.className;
-        if (className)
+        if (!asHeader && className)
             td += " class=\"" + className + "\"";
+
         // style
         var style = value.style || this.style;
         if (style)
             td += " style=\"" + style + "\"";
 
-        return td + ">" + innerHtml + "</td>";
+        return td + ">" + innerHtml + (!asHeader ? "</td>" : "</th>");
     };
 
 
@@ -578,10 +589,10 @@ X.define('LABKEY.TemplateReport',
                         return field.getCaptionHtml();
                     return field.shortCaption || field.name;
                 },
-                getGridCellHtml : function(d)
+                getGridCellHtml : function(d, asHeader)
                 {
                     var field = d.field || defaultField;
-                    return field.getGridCellHtml(d, !this.isPrint);
+                    return field.getGridCellHtml(d, asHeader, !this.isPrint, this.transposed);
                 },
                 getHtml : function(d,values)    // values is just for debugging
                 {
@@ -600,6 +611,7 @@ X.define('LABKEY.TemplateReport',
                 },
                 gridRow : 0,
                 isPrint : -1 != window.location.href.indexOf("_print=true") || -1 != window.location.href.indexOf("_print=1"),
+                transposed : this.transposed,
                 start : (new Date()).valueOf()
         };
         X.apply(tplConfig, this.reportTemplate);
