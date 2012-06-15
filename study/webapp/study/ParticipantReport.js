@@ -14,7 +14,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
     REPORT_PAGE_TEMPLATE :
     {
-        template : [
+        headerTemplate : [
             '<table class="report" cellspacing=0>',
             '<tpl for="pages">',
                 '{[this.resetGrid(),""]}',
@@ -30,8 +30,10 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                         '</tpl></tpl>',
                     '</table>',
                     '</div>',
-                '</td></tr>',
-        // GRID TEMPLATE
+                '</td></tr>'
+        ],
+        // GRID TEMPLATES
+        originalGrid : [
                 '<tr>',
                     '<tpl for="this.data.gridFields">',
                         '<th style="padding-right: 10px;" class="labkey-column-header" data-qtip="{qtip}">{[this.getCaptionHtml(values)]}</th>',
@@ -41,10 +43,32 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     '<tr class="{[this.getGridRowClass()]}">',
         // again nested tpl
                         '<tpl for="this.data.gridFields">',
-                            '{[ this.getGridCellHtml(parent.asArray[values.index]) ]}',
+                            '{[ this.getGridCellHtml(parent.asArray[values.index], false) ]}',
                         '</tpl>',
                     '</tr>',
-                '</tpl>',
+                '</tpl>'
+        ],
+        transposeGrid : [
+                '<tpl for="this.data.gridFields">',
+                    // use the first gridField for the header row (likely visit label)
+                    '<tpl if="values.rowIndex == 0">',
+                        '<tr>',
+                            '<th style="padding-right: 10px;" class="labkey-column-header">{[values.caption]}</th>',
+                            '<tpl for="parent.rows">', //this.data.pages[parent.xindex - 1].rows
+                                '{[ this.getGridCellHtml(values.asArray[parent.index], true) ]}',
+                            '</tpl>',
+                        '</tr>',
+                    '<tpl else>',
+                        '<tr class="{[this.getGridRowClass()]}">',
+                            '<td data-qtip="{qtip}">{[values.caption]}</td>',
+                            '<tpl for="parent.rows">', // this.data.pages[0].rows
+                                '{[ this.getGridCellHtml(values.asArray[parent.index], false) ]}',
+                            '</tpl>',
+                        '</tr>',
+                    '</tpl>',
+                '</tpl>'
+        ],
+        footerTemplate : [
             '</tpl>',
             '</table>'
             //'{[((new Date()).valueOf() - this.start)/1000.0]}'
@@ -79,7 +103,15 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     // tack on our own default url
                     if (!page.headerValue.url)
                         page.headerValue.url = LABKEY.ActionURL.buildURL('study', 'participant.view', null, {participantId : page.headerValue.value});
+
+                    // store the index of the page, for transpose template
+                    page.index = p;
                 }
+
+                // set rowIndex for each gridField
+                for (var g=0 ; g<data.gridFields.length ; g++)
+                    data.gridFields[g].rowIndex = g;
+
                 // we don't want the subject id showing in the page break list (since it's already on the header)
                 data.pageFields.shift();
             }
@@ -97,6 +129,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             editable  : false,
             printMode : LABKEY.ActionURL.getParameter('_print') != undefined,
             fitted    : false,
+            transposed : false,
             allowCustomize : false,
             subjectNoun    : {singular : 'Participant', plural : 'Participants', columnName: 'Participant'}
         });
@@ -170,6 +203,18 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                                 btn.setText('Collapse');
                                 this.fitToReport();
                             }
+                        },
+                        scope   : this
+                    },{
+                        text    : 'Transpose',
+                        tooltip : 'Tranpose the data grid so that the rows become columns (i.e. visits/measures across the top)',
+                        handler : function(btn) {
+                            if (this.transposed)   // transposed refers to changing the grid render so that visits are accross the top (as columns)
+                                this.transposed = false;
+                            else
+                                this.transposed = true;
+
+                            this.renderData();
                         },
                         scope   : this
                     },'->',this.lengthReportField]
@@ -642,21 +687,31 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
     },
 
     renderData : function(qr) {
+        // store the getData API query response
+        if (qr)
+            this.response = qr;
+
+        // build the array for the template based on whether it is to be transposed
+        this.REPORT_PAGE_TEMPLATE.template = this.REPORT_PAGE_TEMPLATE.headerTemplate.concat(
+                this.transposed ? this.REPORT_PAGE_TEMPLATE.transposeGrid : this.REPORT_PAGE_TEMPLATE.originalGrid,
+                this.REPORT_PAGE_TEMPLATE.footerTemplate
+            );
 
         var config = {
             pageFields : [],
             pageBreakInfo : [],
             gridFields : [],
             rowBreakInfo : [],
-            reportTemplate : this.REPORT_PAGE_TEMPLATE
+            reportTemplate : this.REPORT_PAGE_TEMPLATE,
+            transposed : this.transposed      
         };
 
-        this.lengthReportField.setValue('<i>Showing ' + qr.rows.length + ' Results</i>');
+        this.lengthReportField.setValue('<i>Showing ' + this.response.rows.length + ' Results</i>');
 
         if (this.pageFieldStore.getCount() > 0) {
 
             for (var i=0; i < this.pageFieldStore.getCount(); i++) {
-                var mappedColName = qr.measureToColumn[this.pageFieldStore.getAt(i).data.name];
+                var mappedColName = this.response.measureToColumn[this.pageFieldStore.getAt(i).data.name];
                 if (mappedColName) {
                     if (i==0)
                         config.pageBreakInfo.push({name : mappedColName, rowspan: false});
@@ -666,26 +721,26 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         }
         else {
             // try to look for a participant ID measure to use automatically
-            if (qr.measureToColumn[this.subjectColumn]) {
-                config.pageBreakInfo.push({name : qr.measureToColumn[this.subjectColumn], rowspan: false});
-                config.pageFields.push(qr.measureToColumn[this.subjectColumn]);
+            if (this.response.measureToColumn[this.subjectColumn]) {
+                config.pageBreakInfo.push({name : this.response.measureToColumn[this.subjectColumn], rowspan: false});
+                config.pageFields.push(this.response.measureToColumn[this.subjectColumn]);
             }
         }
 
         // as long as there is page break info then we can render the report
         if (config.pageBreakInfo.length > 0) {
 
-            if (qr.measureToColumn[this.subjectVisitColumn + '/Visit/Label']) {
-                config.gridFields.push(qr.measureToColumn[this.subjectVisitColumn + '/Visit/Label']);
-                config.rowBreakInfo.push({name: qr.measureToColumn[this.subjectVisitColumn + '/Visit/Label'], rowspans : true});
+            if (this.response.measureToColumn[this.subjectVisitColumn + '/Visit/Label']) {
+                config.gridFields.push(this.response.measureToColumn[this.subjectVisitColumn + '/Visit/Label']);
+                config.rowBreakInfo.push({name: this.response.measureToColumn[this.subjectVisitColumn + '/Visit/Label'], rowspans : true});
             }
 
-            if (qr.measureToColumn[this.subjectVisitColumn + '/VisitDate'])
-                config.gridFields.push(qr.measureToColumn[this.subjectVisitColumn + '/VisitDate']);
+            if (this.response.measureToColumn[this.subjectVisitColumn + '/VisitDate'])
+                config.gridFields.push(this.response.measureToColumn[this.subjectVisitColumn + '/VisitDate']);
 
             for (i=0; i < this.gridFieldStore.getCount(); i++) {
                 var item = this.gridFieldStore.getAt(i);
-                var mappedColName = qr.measureToColumn[item.data.name];
+                var mappedColName = this.response.measureToColumn[item.data.name];
                 if (mappedColName) {
 
                     // map any demographic data to the pagefields else push them into the grid fields
@@ -700,21 +755,21 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             // for the corresponding measure is probably the friendliest
             var columnToMeasure = {};
 
-            for (var m in qr.measureToColumn) {
-                if (qr.measureToColumn.hasOwnProperty(m)) {
+            for (var m in this.response.measureToColumn) {
+                if (this.response.measureToColumn.hasOwnProperty(m)) {
 
                     // special case visit label and date
                     if (this.subjectVisitColumn + '/Visit/Label' == m)
-                        columnToMeasure[qr.measureToColumn[m]] = 'Visit'
+                        columnToMeasure[this.response.measureToColumn[m]] = 'Visit'
                     else if (this.subjectVisitColumn + '/VisitDate' == m)
-                        columnToMeasure[qr.measureToColumn[m]] = 'Visit Date'
+                        columnToMeasure[this.response.measureToColumn[m]] = 'Visit Date'
                     else
-                        columnToMeasure[qr.measureToColumn[m]] = m;
+                        columnToMeasure[this.response.measureToColumn[m]] = m;
                 }
             }
 
-            for (i=0; i < qr.metaData.fields.length; i++) {
-                var field = qr.metaData.fields[i];
+            for (i=0; i < this.response.metaData.fields.length; i++) {
+                var field = this.response.metaData.fields[i];
 
                 var rec = this.gridFieldStore.findRecord('name', columnToMeasure[field.name], 0, false, true, true);
                 if (rec)
@@ -751,7 +806,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 this.templateReport.on('afterrender', this.fitToReport, this);
             }
 
-            this.templateReport.loadData(qr);
+            this.templateReport.loadData(this.response);
 
             if (!this.printMode) {
                 this.on('resize', this.showFilter, this);

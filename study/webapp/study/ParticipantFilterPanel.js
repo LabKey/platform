@@ -19,7 +19,6 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
     constructor : function(config) {
 
         Ext4.applyIf(config, {
-            layout    : 'fit',
             allowAll  : true,
             cls       : 'participant-filter-panel',
             border    : false, frame : false,
@@ -58,7 +57,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                 columns: 1,
                 vertical: true,
                 width: 180,
-                style: 'padding: 5px;padding-bottom: 15px;',
+                style: 'padding: 5px;margin-bottom: 10px;',
                 listeners: {
                     scope: this,
                     buffer: 20,

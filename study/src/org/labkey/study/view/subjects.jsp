@@ -399,6 +399,7 @@ li.ptid a.unhighlight
             width     : 260,
             height    : 400,
             overCls   : 'iScroll',
+            layout    : 'fit',
             bodyStyle : 'padding: 8px',
             listeners : {
                 itemmouseenter : function(v,r,item,idx)
