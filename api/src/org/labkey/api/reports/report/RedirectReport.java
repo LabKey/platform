@@ -15,7 +15,9 @@
  */
 package org.labkey.api.reports.report;
 
-import org.labkey.api.view.ActionURL;
+import org.labkey.api.data.Container;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 
@@ -34,26 +36,25 @@ public abstract class RedirectReport extends AbstractReport
 
     public HttpView renderReport(ViewContext viewContext) throws Exception
     {
-        return HttpView.redirect(getUrl(viewContext));
+        return HttpView.redirect(getUrl(viewContext.getContainer()));
     }
 
-    public String getParams()
+    public void setUrl(URLHelper url)
+    {
+        String redirectUrl = url.getURIString();
+
+        // XXX: Is there a better way to check if a link is local to this server?
+        if (url.getScheme() == null || url.getHost() == null ||
+                redirectUrl.startsWith(AppProps.getInstance().getBaseServerUrl()))
+        {
+            redirectUrl = url.getLocalURIString();
+        }
+
+        getDescriptor().setProperty(REDIRECT_URL, redirectUrl);
+    }
+
+    public String getUrl(Container c)
     {
         return getDescriptor().getProperty(REDIRECT_URL);
-    }
-
-    public void setParams(String params)
-    {
-        getDescriptor().setProperty(REDIRECT_URL, params);
-    }
-
-    public void setUrl(ActionURL url)
-    {
-        setParams(url.toString());
-    }
-
-    public String getUrl(ViewContext c)
-    {
-        return getParams();
     }
 }
