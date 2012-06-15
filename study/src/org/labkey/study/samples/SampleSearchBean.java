@@ -52,6 +52,7 @@ public class SampleSearchBean
     private Map<String, DisplayColumnInfo> _defaultDetailCols;
     private Map<String, DisplayColumnInfo> _defaultSummaryCols;
     private boolean _inWebPart;
+    private int _webPartId = 0;
     private boolean _advancedExpanded;
 
     private static class DisplayColumnInfo
@@ -239,5 +240,15 @@ public class SampleSearchBean
     public void setAdvancedExpanded(boolean advancedExpanded)
     {
         _advancedExpanded = advancedExpanded;
+    }
+
+    public int getWebPartId()
+    {
+        return _webPartId;
+    }
+
+    public void setWebPartId(int webPartId)
+    {
+        _webPartId = webPartId;
     }
 }

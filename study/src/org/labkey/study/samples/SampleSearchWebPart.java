@@ -32,6 +32,7 @@ public class SampleSearchWebPart extends JspView<SampleSearchBean>
     {
         super("/org/labkey/study/view/samples/search.jsp", new SampleSearchBean());
         getModelBean().init(getViewContext(), showVials, true);
+        getModelBean().setWebPartId(getWebPartRowId());
         setTitle(showVials ? "Vial Search" : "Vial Group Search");
     }
 }

@@ -1,3 +1,7 @@
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.Portal" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.study.samples.SampleSearchBean" %>
 <%
 /*
  * Copyright (c) 2011-2012 LabKey Corporation
@@ -16,8 +20,15 @@
  */
 %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+
+<%
+    JspView<SampleSearchBean> me = (JspView) HttpView.currentView();
+    int webPartId = me.getModelBean().getWebPartId();
+    String renderTarget = "labkey-specimen-search-"+ webPartId;
+%>
 <script type="text/javascript">
     LABKEY.requiresScript("study/redesignUtils.js", true);
+    LABKEY.requiresExt4ClientAPI();
 </script>
 <style type="text/css">
     .labkey-specimen-search-toggle {
@@ -70,223 +81,350 @@ select {
 }
 </style>
 <script type="text/javascript">
+
+Ext4.onReady(function(){
+    var multi = new LABKEY.MultiRequest();
+    var requestFailed = false;
+    var errorMessages = [];
     var studyMetadata = null;
 
-    function populateSearchDropDowns()
-    {
-        if (LABKEY.demoMode)
-            populateDropDown("participantId", 'study', studyMetadata.SubjectNounSingular, studyMetadata.SubjectColumnName, 'Any ' + studyMetadata.SubjectNounSingular, '', function(row)
+    multi.add(LABKEY.Query.selectRows, {schemaName:"study",
+        queryName:"StudyProperties",
+        success:function (result) {
+            if (result.rows.length > 0)
             {
-                var value = row[studyMetadata.SubjectColumnName];
-                return { text : LABKEY.id(value), value : value };
-            });
-        else
-            populateDropDown("participantId", 'study', studyMetadata.SubjectNounSingular, studyMetadata.SubjectColumnName, 'Any ' + studyMetadata.SubjectNounSingular, '');
+                studyMetadata = result.rows[0];
+            }
+            else
+                errorMessages.push("<i>No study found in this folder</i>");
+        },
+        failure: function(result) {
+            errorMessages.push("<i>Could not retrieve study information for this folder: " + result.exception);
+        },
+    columns:"*"});
 
-        populateDropDown('primaryType', 'study', 'SpecimenPrimaryType', 'Description', 'Any Primary Type', '');
-        populateDropDown('derivativeType', 'study', 'SpecimenDerivative', 'Description', 'Any Derivative Type', '');
-        populateDropDown('additiveType', 'study', 'SpecimenAdditive', 'Description', 'Any Additive Type', '');
-
-        LABKEY.Query.selectRows({
-            schemaName: 'study',
-            queryName: 'Visit',
-            columns: "SequenceNumMin,Label",
-            sort: "DisplayOrder,Label",
-            success: getDropDownPopulator('visit', 'Any Visit', '', function(row)
-            {
-                var text = row.Label ? row.Label : row.SequenceNumMin;
-                return { text : text, value : row.SequenceNumMin };
-            })
-        });
-    }
-
-    function toggleSearchType(selectId)
-    {
-        var specimenSelected = selectId == 'specimen-search-selector';
-        var deselectId = specimenSelected ? 'vial-search-selector' : 'specimen-search-selector';
-        document.getElementById(selectId).className = 'youarehere';
-        document.getElementById(deselectId).className = '';
-        document.getElementById('globalUniqueIdLabel').style.display = specimenSelected ? 'none' : 'block';
-        document.getElementById('globalUniqueIdChooser').style.display = specimenSelected ? 'none' : 'block';
-        return false;
-    }
-
-    function addSearchParameter(params, paramName, paramElementId)
-    {
-        var value = getDropDownValue(paramElementId);
-        if (value)
-            params[paramName] = value;
-    }
-
-    function submitSearch()
-    {
-        var vialSearch = (document.getElementById('vial-search-selector').className == 'youarehere');
-        var params = {
-            showVials: vialSearch
-        };
-
-        var paramBase = vialSearch ? "SpecimenDetail." : "SpecimenSummary.";
-        if (vialSearch)
+    // Test query to verify that there's specimen data in this study:
+    multi.add(LABKEY.Query.selectRows,
         {
-            var guid = document.getElementById('globalUniqueId').value;
-            var compareType = getDropDownValue('globalUniqueId.compareType');
-            if (compareType)
-                params[paramBase + "GlobalUniqueId~" + compareType] = guid;
-        }
-
-        addSearchParameter(params, paramBase + studyMetadata.SubjectColumnName + '~eq', 'participantId');
-        addSearchParameter(params, paramBase + 'PrimaryType/Description~eq', 'primaryType');
-        addSearchParameter(params, paramBase + 'DerivativeType/Description~eq', 'derivativeType');
-        addSearchParameter(params, paramBase + 'AdditiveType/Description~eq', 'additiveType');
-        addSearchParameter(params, paramBase + 'Visit/SequenceNumMin~eq', 'visit');
-
-        document.location = LABKEY.ActionURL.buildURL('study-samples', 'samples', LABKEY.ActionURL.getContainer(), params);
-    }
-
-    function verifySpecimenData()
-    {
-        var multi = new LABKEY.MultiRequest();
-        var requestFailed = false;
-        var errorMessages = [];
-
-        multi.add(LABKEY.Query.selectRows, {schemaName:"study",
-            queryName:"StudyProperties",
-            success:function (result) {
-                if (result.rows.length > 0)
-                {
-                    studyMetadata = result.rows[0];
-                    Ext.get("participantIdLabel").update(studyMetadata.SubjectNounSingular);
-                }
-                else
-                    errorMessages.push("<i>No study found in this folder</i>");
+            schemaName: 'study',
+            queryName: 'SimpleSpecimen',
+            maxRows: 1,
+            success : function(data)
+            {
+                if (data.rows.length == 0)
+                     errorMessages.push('<i>No specimens found.</i>');
             },
             failure: function(result) {
-                errorMessages.push("<i>Could not retrieve study information for this folder: " + result.exception);
-            },
-        columns:"*"});
+                errorMessages.push("<i>Could not retrieve specimen information for this folder: </i>" + result.exception);
+            }
+    });
 
-        // Test query to verify that there's specimen data in this study:
-        multi.add(LABKEY.Query.selectRows,
-            {
-                schemaName: 'study',
-                queryName: 'SimpleSpecimen',
-                maxRows: 1,
-                success : function(data)
-                {
-                    if (data.rows.length == 0)
-                         errorMessages.push('<i>No specimens found.</i>');
+    multi.send(function() {
+        if (errorMessages.length > 0)
+            Ext4.get('<%=renderTarget%>').update(errorMessages.join("<br>"));
+        else
+            Ext4.create('LABKEY.ext.SampleSearchPanel', {}).render('<%=renderTarget%>');
+    });
+
+    //TODO: move to JS file?
+    Ext4.define('LABKEY.ext.SampleSearchPanel', {
+        extend: 'Ext.form.Panel',
+        LABEL_WIDTH: 150,
+        MAX_COMBO_ITEMS: 200,
+        initComponent: function(){
+            Ext4.QuickTips.init();
+            Ext4.apply(this, {
+                border: false,
+                bodyStyle: 'padding: 5px;',
+                defaults: {
+                    border: false
                 },
-                failure: function(result) {
-                    errorMessages.push("<i>Could not retrieve specimen information for this folder: </i>" + result.exception);
+                items: [{
+                    xtype: 'radiogroup',
+                    itemId: 'searchType',
+                    fieldLabel: 'Search Type',
+                    labelWidth: this.LABEL_WIDTH,
+                    labelStyle: 'font-weight: bold;',
+                    afterLabelTextTpl: '<a href="#" data-qtip="Vial group search returns a single row per subject, time point, and sample type.  These results may be easier to read and navigate, but lack vial-level detail"><span class="labkey-help-pop-up">?</span></a>',
+                    width: 450,
+                    items: [{
+                        boxLabel: 'Individual Vials',
+                        inputValue: 'individual',
+                        name: 'groupType',
+                        checked: true
+                    },{
+                        boxLabel: 'Grouped Vials',
+                        inputValue: 'grouped',
+                        name: 'groupType',
+                        checked: false
+                    }],
+                    listeners: {
+                        buffer: 50,
+                        change: function(rg, r){
+                            var form = rg.up('form');
+                            var panel = form.down('#searchFields');
+
+                            var guidOp = panel.down('#guidOpField');
+                            if(guidOp){
+                                var guidField = panel.down('#guidField');
+                                guidOp.setVisible(r.groupType != 'grouped');
+                                if(r.groupType == 'grouped'){
+                                    guidOp.setVisible(false);
+                                    guidOp.reset();
+                                    guidField.reset();
+                                }
+                            }
+                        }
+                    }
+                },{
+                    itemId: 'searchFields',
+                    width: 400,
+                    defaults: {
+                        labelWidth: this.LABEL_WIDTH,
+                        width: 400
+                    },
+                    items: [{
+                        border: false,
+                        html: 'Loading...'
+                    }],
+                    buttons: [{
+                        text: 'Search',
+                        handler: this.onSubmit
+                    }]
+                },{
+                    xtype: 'container',
+                    layout: 'hbox',
+                    style: 'padding-top: 15px;',
+                    defaults: {
+                        style: 'margin-right: 5px;'
+                    },
+                    items: [{
+                        html: 'Advanced Search:',
+                        //width: this.LABEL_WIDTH,
+                        border: false
+                    },{
+                        xtype: 'labkey-linkbutton',
+                        text: 'Individual Vials',
+                        linkCls: 'labkey-text-link',
+                        href: LABKEY.ActionURL.buildURL('study-samples', 'showSearch', null, {showAdvanced: true, showVials: true})
+                    },{
+                        xtype: 'labkey-linkbutton',
+                        text: 'Grouped Vials',
+                        linkCls: 'labkey-text-link',
+                        href: LABKEY.ActionURL.buildURL('study-samples', 'showSearch', null, {showAdvanced: true, showVials: false})
+                    }]
+                }]
+            });
+
+            this.callParent(arguments);
+
+            this.preloadStores();
+        },
+
+        preloadStores: function(){
+            var toCreate = this.getGroupSearchItems();
+            this.pendingStores = toCreate.length;
+            Ext4.each(toCreate, function(args){
+                var store = this.createStore.apply(this, args);
+                this.mon(store, 'load', this.onStoreLoad, this);
+            }, this);
+        },
+
+        onStoreLoad: function(store){
+            this.pendingStores--;
+
+            if(this.pendingStores == 0){
+                var val = this.down('#searchType').getValue().groupType;
+                var panel = this.down('#searchFields');
+                panel.removeAll();
+                if(val == 'grouped'){
+                    panel.add(this.getGroupedSearchCfg());
                 }
-        });
+                else {
+                    panel.add(this.getIndividualSearchCfg());
+                }
+            }
+        },
 
-        multi.send(function() {
-            if (errorMessages.length > 0)
-                document.getElementById('specimen-search-webpart-content').innerHTML = errorMessages.join("<br>");
-            else
-                populateSearchDropDowns();
-        })
-    }
+        getIndividualSearchCfg: function(){
+            var cfg = [{
+                xtype: 'labkey-operatorcombo',
+                itemId: 'guidOpField',
+                jsonType: 'string',
+                mvEnabled: false,
+                emptyText: 'Any Global Unique ID',
+                includeHasAnyValue: true,
+                initialValue: null,
+                fieldLabel: 'Global Unique ID',
+                listeners: {
+                    scope: this,
+                    change: function(field, val){
+                        this.down('#guidField').setVisible(val);
+                    }
+                }
+            },{
+                xtype: 'textfield',
+                itemId: 'guidField',
+                filterParam: 'GlobalUniqueId',
+                fieldLabel: '&nbsp;',
+                labelSeparator: '',
+                hidden: true
+            }].concat(this.getGroupedSearchCfg());
 
-    Ext.onReady(verifySpecimenData);
+            return cfg;
+        },
+
+        getGroupedSearchCfg: function(){
+            var cfg = [];
+            Ext4.each(this.getGroupSearchItems(), function(item){
+                cfg.push(this.getComboCfg.apply(this, item));
+            }, this);
+
+            return cfg;
+        },
+
+        getGroupSearchItems: function(){
+            return [
+                [studyMetadata.SubjectNounSingular, 'study', studyMetadata.SubjectNounSingular, studyMetadata.SubjectColumnName, studyMetadata.SubjectColumnName, studyMetadata.SubjectColumnName, 'Any ' + studyMetadata.SubjectNounSingular, null],
+                ['Primary Type', 'study', 'SpecimenPrimaryType', 'PrimaryType/Description', 'Description', 'Description', 'Any Primary Type', null],
+                ['Derivative Type', 'study', 'SpecimenDerivative', 'DerivativeType/Description', 'Description', 'Description', 'Any Derivative Type', null],
+                ['Additive Type', 'study', 'SpecimenAdditive', 'AdditiveType/Description', 'Description', 'Description', 'Any Additive Type', null],
+                ['Visit', 'study', 'Visit', 'Visit/SequenceNumMin', 'Label', 'SequenceNumMin', 'Any Visit', null, 'DisplayOrder,Label']
+            ]
+        },
+
+        getComboCfg: function(label, schemaName, queryName, filterParam, displayColumn, valueColumn, defaultOptionText, defaultOptionValue, sort){
+            var store = this.createStore.apply(this, arguments);
+            if(store.getCount() != 0 && store.getCount() >= this.MAX_COMBO_ITEMS){
+                return {
+                    xtype: 'textfield',
+                    itemId: queryName,
+                    fieldLabel: label,
+                    filterParam: displayColumn,
+                    emptyText: defaultOptionText,
+                    value: defaultOptionValue
+                }
+            }
+            else {
+                return {
+                    xtype: 'labkey-combo',
+                    itemId: queryName,
+                    multiSelect: true,
+                    fieldLabel: label,
+                    filterParam: filterParam,
+                    displayField: displayColumn,
+                    valueField: displayColumn,
+                    emptyText: defaultOptionText,
+                    value: defaultOptionValue,
+                    store: store
+                }
+            }
+        },
+
+        createStore: function(label, schemaName, queryName, filterParam, displayColumn, valueColumn, defaultOptionText, defaultOptionValue, sort){
+            //only create stores once
+            var storeId = ['specimen-search', schemaName, queryName, displayColumn, valueColumn].join('||');
+            var store = Ext4.StoreMgr.get(storeId);
+            if(!store){
+                var columns = displayColumn;
+                if(valueColumn != displayColumn){
+                    columns += ','+valueColumn;
+                }
+
+                var storeCfg = {
+                    type: 'labkey-store',
+                    storeId: storeId,
+                    schemaName: schemaName,
+                    queryName: queryName,
+                    columns: columns,
+                    sort: sort || displayColumn,
+                    autoLoad: true,
+                    maxRows: this.MAX_COMBO_ITEMS
+                };
+
+                //special case participant
+                if(LABKEY.demoMode && queryName == studyMetadata.SubjectNounSingular){
+                    storeCfg.listeners = {
+                        load: function(store){
+                            store.each(function(rec){
+                                rec.set(displayColumn, LABKEY.id(valueColumn))
+                            }, this);
+                        },
+                        scope: this
+                    };
+                }
+
+                store = Ext4.create('LABKEY.ext4.Store', storeCfg);
+            }
+
+            return store;
+        },
+
+        onSubmit: function(btn){
+            var form = btn.up('form')
+            var panel = form.down('#searchFields');
+            var vialSearch = form.down('#searchType').getValue().groupType != 'grouped';
+
+            var paramBase = vialSearch ? "SpecimenDetail." : "SpecimenSummary.";
+            var params = {
+                showVials: vialSearch
+            };
+
+            panel.items.each(function(item){
+                var op, val;
+                if(item.filterParam){
+                    //special case GUID:
+                    if(item.itemId == 'guidField'){
+                        op = panel.down('#guidOpField').getValue();
+                    }
+                    else {
+                        op = 'eq';
+                    }
+
+                    val = item.getValue();
+                    if(Ext4.isArray(val)){
+                        if(val.length > 1)
+                            op = 'in';
+
+                        var optimized = form.optimizeFilter(op, val, item);
+                        if(optimized){
+                            op = optimized[0];
+                            val = optimized[1];
+                        }
+
+                        val = val.join(';');
+                    }
+
+                    var filterType = LABKEY.Filter.getFilterTypeForURLSuffix(op);
+                    if(!Ext4.isEmpty(val) || (filterType && !filterType.isDataValueRequired())){
+                        params[paramBase + item.filterParam + '~' + op] = val;
+                    }
+                }
+            }, this);
+
+            window.location = LABKEY.ActionURL.buildURL('study-samples', 'samples', null, params);
+        },
+
+        optimizeFilter: function(op, values, field){
+            if(field && field.store){
+                if(values.length > (field.store.getCount() / 2)){
+                    op = LABKEY.Filter.getFilterTypeForURLSuffix(op).getOpposite().getURLSuffix();
+
+                    var newValues = [];
+                    field.store.each(function(rec){
+                        var v = rec.get(field.displayField)
+                        if(values.indexOf(v) == -1){
+                            newValues.push(v);
+                        }
+                    }, this);
+                    values = newValues;
+                }
+            }
+            values = Ext4.unique(values);
+            return [op, values];
+        }
+    });
+
+});
 </script>
-<!-- specimen search -->
-<span id="specimen-search-webpart-content">
-<div class="labkey-specimen-search-toggle">
-    <a id="vial-search-selector" href="#"  class="youarehere" onclick="return toggleSearchType('vial-search-selector');">Individual Vials</a> |
-    <a href="#" id="specimen-search-selector" onclick="return toggleSearchType('specimen-search-selector');">Grouped Vials</a><a
-                                       onmouseover="return showHelpDivDelay(this, 'Grouped Vials', 'Vial group search returns a single row per subject, time point, and sample type.  These results may be easier to read and navigate, but lack vial-level detail.');"
-                                       onmouseout="return hideHelpDivDelay();"
-                                       onclick="return showHelpDiv(this, 'Grouped Vials', 'Vial group search returns a single row per subject, time point, and sample type.  These results may be easier to read and navigate, but lack vial-level detail.');"
-                                       tabindex="-1"
-                                       href="#"><span class="labkey-help-pop-up">?</span></a>
-</div>
-<div id="labkey-specimen-search">
-
-    <form>
-    <table>
-        <tr>
-            <td class="labkey-padright"><span id="globalUniqueIdLabel" style="display:block">Global Unique ID</span></td>
-            <td>
-                <span id="globalUniqueIdChooser" style="display:block">
-                    <select id="globalUniqueId.compareType" onchange="document.getElementById('globalUniqueId').disabled = (this.value) ? false : true; document.getElementById('globalUniqueId').style.display = (this.value) ? 'block' : 'none';">
-                        <option value="">Any Global Unique ID</option>
-                        <option value="eq">Equals</option>
-                        <option value="neq">Does Not Equal</option>
-                        <option value="isblank">Is Blank</option>
-                        <option value="isnonblank">Is Not Blank</option>
-                        <option value="gt">Is Greater Than</option>
-                        <option value="lt">Is Less Than</option>
-                        <option value="gte">Is Greater Than or Equal To</option>
-                        <option value="lte">Is Less Than or Equal To</option>
-                        <option value="contains">Contains</option>
-                        <option value="doesnotcontain">Does Not Contain</option>
-                        <option value="doesnotstartwith">Does Not Start With</option>
-                        <option value="startswith">Starts With</option>
-                        <option value="in">Equals One Of (e.g. 'a;b;c')</option>
-                    </select>&nbsp;<input type="text" size="30" id="globalUniqueId"  style="display:none" disabled>
-                </span>
-            </td>
-        </tr>
-        <tr>
-            <td id="participantIdLabel" class="labkey-padright">Participant ID</td>
-            <td>
-                <select id="participantId">
-                    <option value="">Loading...</option>
-                </select>
-            </td>
-        </tr>
-        <tr>
-            <td class="labkey-padright">Visit</td>
-            <td>
-                <select id="visit">
-                    <option value="">Loading...</option>
-                </select>
-            </td>
-        </tr>
-        <tr>
-            <td  class="labkey-padright">Primary Type</td>
-            <td>
-                <select id="primaryType">
-                    <option value="">Loading...</option>
-                </select>
-            </td>
-        </tr>
-        <tr>
-            <td  class="labkey-padright">Derivative Type</td>
-            <td>
-                <select id="derivativeType">
-                    <option value="">Loading...</option>
-                </select>
-            </td>
-        </tr>
-        <tr>
-            <td  class="labkey-padright">Additive Type</td>
-            <td>
-                <select id="additiveType">
-                    <option value="">Loading...</option>
-                </select>
-            </td>
-        </tr>
-        <tr>
-            <td></td>
-            <td class="labkey-specimen-search-button">
-                <a class="labkey-button" href="#" onclick="submitSearch(); return false;">
-                    <span>Search</span>
-                </a>
-            </td>
-        </tr>
-    </table>
-</form>
-</div>
-<!-- end specimen search -->
-
-<!-- webpart footer -->
-<div class="labkey-wp-footer">
-<span class="labkey-advanced-search">Advanced Search:</span>
-<a class="labkey-text-link" href="#" onClick="return clickLink('study-samples', 'showSearch', {showAdvanced: 'true', showVials: 'true'});">Individual Vials</a>
-    <a class="labkey-text-link" href="#" onClick="return clickLink('study-samples', 'showSearch', {showAdvanced: 'true', showVials: 'false'});">Grouped Vials</a>
-</div>
-<!-- end webpart footer -->
-</span>
+<div id="<%=renderTarget%>"></div>
