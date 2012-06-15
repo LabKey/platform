@@ -18,7 +18,7 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.query.reports.ReportsController" %>
-<%@ page import="org.labkey.query.reports.ReportsController.UploadForm" %>
+<%@ page import="org.labkey.query.reports.ReportsController.AttachmentReportForm" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -28,15 +28,15 @@
     LABKEY.requiresScript("study/DataViewPropertiesPanel.js");
 </script>
 <%
-    JspView<UploadForm> me = (JspView<UploadForm>) HttpView.currentView();
-    ReportsController.UploadForm bean = me.getModelBean();
+    JspView<ReportsController.AttachmentReportForm> me = (JspView<ReportsController.AttachmentReportForm>) HttpView.currentView();
+    ReportsController.AttachmentReportForm bean = me.getModelBean();
 
     boolean canUseDiskFile = HttpView.currentContext().getUser().isAdministrator() && bean.getReportId() == null;
 %>
 
 <table>
 <%
-    for (ObjectError e : (List<ObjectError>) bean.getErrors().getAllErrors())
+    for (ObjectError e : (List<ObjectError>) me.getErrors().getAllErrors())
     {
 %>      <tr><td colspan=3><font class="labkey-error"><%=h(HttpView.currentContext().getMessage(e))%></font></td></tr><%
     }
@@ -50,51 +50,6 @@
 
     Ext4.onReady(function(){
 
-        var localFileUploadRadio = {
-            boxLabel: 'Upload File',
-            name: 'fileUploadRadio',
-            inputValue: 'local',
-            checked: true,
-            listeners: {
-                scope: this,
-                change: function(cmp, newVal, oldVal){
-                    if(newVal){
-                        serverFileTextField.setVisible(false);
-                        serverFileTextField.disable();
-                        fileUploadField.setVisible(true);
-                        fileUploadField.enable();
-                    }
-                }
-            }
-        };
-
-        var serverFileRadio = {
-            boxLabel: 'Use a file on server localhost',
-            name: 'fileUploadRadio',
-            inputValue: 'server',
-            listeners: {
-                scope: this,
-                change: function(cmp, newVal, oldVal){
-                    if(newVal){
-                        serverFileTextField.setVisible(true);
-                        serverFileTextField.enable();
-                        fileUploadField.setVisible(false);
-                        fileUploadField.disable();
-                    }
-                }
-            }
-        };
-
-        var fileUploadRadioGroup = {
-            xtype: 'radiogroup',
-            fieldLabel: 'Upload Type',
-            columns: [125, 100],
-            items: [
-                localFileUploadRadio,
-                serverFileRadio
-            ]
-        };
-
         var fileUploadField = Ext4.create('Ext.form.field.File', {
             name: 'uploadFile',
             id: 'uploadFile',
@@ -102,16 +57,72 @@
             allowBlank: false
         });
 
+        <% if (canUseDiskFile) { %>
         var serverFileTextField = Ext4.create('Ext.form.field.Text', {
             name: "filePath",
             hidden: true,
             disabled: true,
-            fieldLabel: "Full path on server",
+            fieldLabel: "Path on server",
             allowBlank: false
         });
+        <% } %>
+
+        var urlTextField = Ext4.create('Ext.form.field.Text', {
+            name: "linkUrl",
+            hidden: true,
+            disabled: true,
+            fieldLabel: "Link URL",
+            allowBlank: false,
+            validator: function (value) {
+                if (!(value.charAt(0) == '/' || value.indexOf("http://") == 0 || value.indexOf("https://") == 0))
+                    return "URL must be absolute (starting with http or https) or relative to this server (start with '/')";
+
+                return true;
+            }
+        });
+
+        var fileUploadRadioGroup = {
+            xtype: 'radiogroup',
+            fieldLabel: 'Attachment Type',
+            columns: 1,
+            items: [{
+                boxLabel: 'Upload file to server',
+                name: 'attachmentType',
+                inputValue: '<%=AttachmentReportForm.AttachmentReportType.local.toString()%>',
+                checked: true,
+                inputField: fileUploadField
+            },{
+            <% if (canUseDiskFile) { %>
+                boxLabel: 'Full file path on server',
+                name: 'attachmentType',
+                inputValue: '<%=AttachmentReportForm.AttachmentReportType.server.toString()%>',
+                inputField: serverFileTextField
+            },{
+            <% } %>
+                boxLabel: 'Link URL',
+                name: 'attachmentType',
+                inputValue: '<%=AttachmentReportForm.AttachmentReportType.url.toString()%>',
+                inputField: urlTextField
+            }],
+            listeners: {
+                scope: this,
+                change: function (field, newVal, oldVal, opts) {
+                    var value = newVal['attachmentType'];
+                    field.items.each(function (item) {
+                        if (item.inputValue === value) {
+                            item.inputField.setVisible(true);
+                            item.inputField.setDisabled(false);
+                        } else {
+                            item.inputField.setVisible(false);
+                            item.inputField.setDisabled(true);
+                        }
+                    });
+                }
+            }
+        };
 
         var form = Ext4.create('LABKEY.study.DataViewPropertiesPanel', {
-            url : LABKEY.ActionURL.buildURL('reports', 'uploadReport', null, {returnUrl: LABKEY.ActionURL.getParameter('returnUrl')}),
+            url : LABKEY.ActionURL.buildURL('reports', 'createAttachmentReport', null, {returnUrl: LABKEY.ActionURL.getParameter('returnUrl')}),
             standardSubmit  : true,
             bodyStyle       :'background-color: transparent;',
             bodyPadding     : 10,
@@ -133,7 +144,10 @@
                 shared      : true
             },
             extraItems : [
-                <%=canUseDiskFile ? "fileUploadRadioGroup, fileUploadField, serverFileTextField" : "fileUploadField"%>
+                fileUploadRadioGroup,
+                fileUploadField,
+                <%= canUseDiskFile ? "serverFileTextField, " : "" %>
+                urlTextField
             ],
             renderTo    : 'attachmentReportForm',
             buttons     : [{

@@ -17,7 +17,6 @@ package org.labkey.query.reports.view;
 
 import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.attachments.Attachment;
-import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.query.QueryService;
@@ -44,7 +43,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.query.reports.AttachmentReport;
 import org.labkey.query.reports.ReportsController;
 
@@ -94,7 +92,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
         }
 
         DesignerInfoImpl di = new DesignerInfoImpl(AttachmentReport.TYPE, "Attachment Report",
-                ReportsController.getAttachmentReportURL(context.getContainer(), context.getActionURL()),
+                ReportsController.getCreateAttachmentReportURL(context.getContainer(), context.getActionURL()),
                 _getIconPath(AttachmentReport.TYPE));
         di.setId("create_attachment_report");
         di.setDisabled(!context.hasPermission(InsertPermission.class));
@@ -188,17 +186,33 @@ public class ReportUIProvider extends DefaultReportUIProvider
     {
         if (report != null)
         {
-            if (AttachmentReport.TYPE.equals(report.getType()))
+            if (report instanceof AttachmentReport)
             {
-                String filename = report.getDescriptor().getProperty("filePath");
+                Container c = ContainerManager.getForId(report.getContainerId());
+                AttachmentReport attachmentReport = (AttachmentReport)report;
+                String filename = attachmentReport.getFilePath();
 
                 if (null == filename)
                 {
-                    List<Attachment> list = AttachmentService.get().getAttachments(report);
-                    filename = list.isEmpty() ? "" : list.get(0).getName();
+                    Attachment attachment = attachmentReport.getLatestVersion();
+                    filename = attachment == null ? null : attachment.getName();
                 }
-                Container c = ContainerManager.getForId(report.getContainerId());
-                return PageFlowUtil.urlProvider(CoreUrls.class).getAttachmentIconURL(c, filename).toString();
+
+                if (null != filename)
+                {
+                    return PageFlowUtil.urlProvider(CoreUrls.class).getAttachmentIconURL(c, filename).toString();
+                }
+
+                // external link versus internal link
+                String url = attachmentReport.getUrl(c);
+                if (url != null)
+                {
+                    // XXX: Is there a better way to check if a link is local to this server?
+                    if (url.startsWith("/") || url.startsWith(AppProps.getInstance().getBaseServerUrl()))
+                        return AppProps.getInstance().getContextPath() + "/reports/link_data.png";
+                    else
+                        return AppProps.getInstance().getContextPath() + "/reports/external-link.png";
+                }
             }
             return _getIconPath(report.getType());
         }

@@ -2153,11 +2153,11 @@ query/src/org/labkey/query/reports/view/ReportUIProvider.java -text
 query/src/org/labkey/query/reports/view/ReportsWebPart.java -text
 query/src/org/labkey/query/reports/view/ReportsWebPartConfig.java -text
 query/src/org/labkey/query/reports/view/configReportsAndScripts.jsp -text
+query/src/org/labkey/query/reports/view/createAttachmentReport.jsp -text
 query/src/org/labkey/query/reports/view/manageViews.jsp -text
 query/src/org/labkey/query/reports/view/rReportTabHeader.jsp -text
 query/src/org/labkey/query/reports/view/reportDetails.jsp -text
 query/src/org/labkey/query/reports/view/reportsWebPartConfig.jsp -text
-query/src/org/labkey/query/reports/view/uploadAttachmentReport.jsp -text
 query/src/org/labkey/query/reports/wordprocessing.png -text
 query/src/org/labkey/query/sql/Builder.java -text
 query/src/org/labkey/query/sql/ConvertType.java -text

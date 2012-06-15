@@ -77,10 +77,8 @@ public class ExportExcelReport extends RedirectReport
     }
 
     @Override
-    public String getUrl(ViewContext context)
+    public String getUrl(Container c)
     {
-        Container c = getContainer();
-
         ActionURL url = new ActionURL(ReportsController.ExportExcelAction.class, c);
         url.addParameter("reportId", getReportId().toString());
 
@@ -115,32 +113,6 @@ public class ExportExcelReport extends RedirectReport
     protected int getSiteId()
     {
         return NumberUtils.toInt(getDescriptor().getProperty(SITE_ID));
-    }
-
-    @Override
-    public String getParams()
-    {
-        int siteId = getSiteId();
-        return siteId == 0 ? "" : "siteId=" + siteId;
-    }
-
-
-    @Override
-    public void setParams(String params)
-    {
-        Map m = PageFlowUtil.mapFromQueryString(params);
-        String siteIdStr = (String)m.get("siteId");
-        if (null != siteIdStr)
-        {
-            try
-            {
-                setSiteId(Integer.valueOf(siteIdStr));
-            }
-            catch (NumberFormatException x)
-            {
-                setSiteId(0);
-            }
-        }
     }
 
 

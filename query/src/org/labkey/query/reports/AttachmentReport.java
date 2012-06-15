@@ -24,6 +24,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.model.ViewCategory;
@@ -43,6 +44,7 @@ import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.query.reports.ReportsController.DownloadAction;
 import org.labkey.query.reports.ReportsController.DownloadReportFileAction;
 
@@ -52,6 +54,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 import java.util.ListIterator;
@@ -78,49 +81,35 @@ public class AttachmentReport extends RedirectReport implements DynamicThumbnail
         return "Attachment Report";
     }
 
-    @Override
-    public String getParams()
-    {
-        return getFilePath() == null ? null : "filePath=" + PageFlowUtil.encode(getFilePath());
-    }
-
-    @Override
-    public void setParams(String params)
-    {
-        if (null == params)
-            setFilePath(null);
-        else
-        {
-            Map<String,String> paramMap = PageFlowUtil.mapFromQueryString(params);
-            setFilePath(paramMap.get("filePath"));
-        }
-    }
-
     protected Container getContainer()
     {
         return ContainerManager.getForId(getDescriptor().getContainerId());
     }
-    
+
     @Override
-    public @Nullable String getUrl(ViewContext context)
+    public @Nullable String getUrl(Container c)
     {
-        Container c = getContainer();
         String entityId = getEntityId();
 
         //Can't throw because table layer calls this in uninitialized state...
         if (null == c || null == entityId)
             return null;
 
+        // Server filePath attachment report type
         if (null != getFilePath())
         {
-            ActionURL url = new ActionURL(DownloadReportFileAction.class, getContainer());
+            ActionURL url = new ActionURL(DownloadReportFileAction.class, c);
             url.addParameter("reportId", getReportId().toString());
             return url.getLocalURIString();
         }
 
+        // Uploaded attachment attachment report type
         Attachment latest = getLatestVersion();
+        if (null != latest)
+            return latest.getDownloadUrl(DownloadAction.class).getLocalURIString();
 
-        return null != latest ? latest.getDownloadUrl(DownloadAction.class).getLocalURIString() : null;
+        // Link URL attachment report type
+        return super.getUrl(c);
     }
 
     public @Nullable Attachment getLatestVersion()
@@ -147,6 +136,28 @@ public class AttachmentReport extends RedirectReport implements DynamicThumbnail
         return attachments.get(attachments.size() - 1);
     }
 
+    @Override
+    public void beforeDelete(ContainerUser context)
+    {
+        deleteAttachments();
+        super.beforeDelete(context);
+    }
+
+    private void deleteAttachments()
+    {
+        if (null == getEntityId())
+            return;
+
+        try
+        {
+            AttachmentService.get().deleteAttachments(this);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
     public void setFilePath(String filePath)
     {
         getDescriptor().setProperty(FILE_PATH, filePath);
@@ -171,6 +182,16 @@ public class AttachmentReport extends RedirectReport implements DynamicThumbnail
     {
         return getDescriptor().getReportDescription();
     }
+
+    /*
+    UNDONE: The createAttachmentReport.jsp doesn't support editing yet.
+    @Override
+    public ActionURL getEditReportURL(ViewContext context)
+    {
+        return ReportsController.getAttachmentReportURL(context.getContainer(), context.getActionURL()).
+            addParameter(ReportDescriptor.Prop.reportId, getReportId().toString());
+    }
+    */
 
     public void setCategory(Integer id)
     {
@@ -487,4 +508,5 @@ public class AttachmentReport extends RedirectReport implements DynamicThumbnail
         }
         return errors.isEmpty();
     }
+
 }
