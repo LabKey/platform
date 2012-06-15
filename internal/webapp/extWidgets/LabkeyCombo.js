@@ -45,7 +45,6 @@ Ext4.define('LABKEY.ext4.ComboBox', {
 
         //will only run if picker has been created
         if(this.expandToFitContent){
-            console.log('expand')
             this.resizeToFitContent();
         }
     },
