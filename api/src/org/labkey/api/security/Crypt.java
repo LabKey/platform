@@ -31,6 +31,7 @@ public abstract class Crypt
 
     public static final Crypt MD5 = new _md5();
     public static final Crypt SaltMD5 = new _saltmd5();
+    public static final Crypt BCrypt = new _bcrypt();
 
 
     private static final MessageDigest md;
@@ -100,6 +101,24 @@ public abstract class Crypt
                 md.update(credentials.getBytes());
                 return salt + encodeBase64(md.digest());
             }
+        }
+    }
+
+    public static class _bcrypt extends Crypt
+    {
+        @Override
+        public boolean matches(String credentials, String digest)
+        {
+            return org.labkey.api.security.BCrypt.checkpw(credentials, digest);
+        }
+
+        @Override
+        public String digest(String credentials)
+        {
+            long n = System.nanoTime();
+            String ret = org.labkey.api.security.BCrypt.hashpw(credentials, org.labkey.api.security.BCrypt.gensalt(11));
+            double d = (System.nanoTime() - n)/1000000000.0;
+            return ret;
         }
     }
 

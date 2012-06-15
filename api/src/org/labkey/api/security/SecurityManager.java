@@ -896,6 +896,7 @@ public class SecurityManager
         try
         {
             String crypt = "salt:" + Crypt.SaltMD5.digest(password);
+//            String crypt = "b:" + Crypt.BCrypt.digest(password);
             List<String> history = new ArrayList<String>(getCryptHistory(email.getEmailAddress()));
             history.add(crypt);
 
@@ -976,7 +977,9 @@ public class SecurityManager
 
     public static boolean matchPassword(String password, String hash)
     {
-        if (hash.startsWith("salt:"))
+        if (hash.startsWith("b:"))
+            return Crypt.BCrypt.matches(password, hash.substring(2));
+        else if (hash.startsWith("salt:"))
             return Crypt.SaltMD5.matches(password, hash.substring(5));
         else if (hash.startsWith("md5:"))
             return Crypt.MD5.matches(password, hash.substring(4));
