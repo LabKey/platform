@@ -78,6 +78,7 @@ public class AnnouncementTable extends FilteredTable
             {
                 AnnouncementTable result = new AnnouncementTable(_schema);
                 result.addCondition(new SimpleFilter(new CompareType.CompareClause("Parent", CompareType.ISBLANK, null)));
+                result.setPublic(false);
                 return result;
             }
         });

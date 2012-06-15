@@ -546,7 +546,7 @@ public class QueryManager
                         QueryManager.get().validateQuery(fkTable.getSchema().getName(), fkTable.getName(), user, container);
                     }
                     catch (Exception e){
-                        queryErrors.add("ERROR: " + errorBase + " has a foreign key to a table that does not exist: " + fkt);
+                        queryErrors.add("ERROR: " + errorBase + " has a foreign key to a table that fails query validation: " + fkt + ". Often this means the target table is non-public.  The error was: " + e.getMessage());
                     }
 
                     if(col.getFk().getLookupColumnName() == null)
