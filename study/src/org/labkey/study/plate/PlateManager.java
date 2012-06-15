@@ -41,6 +41,7 @@ import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.study.AbstractPlateTypeHandler;
 import org.labkey.api.study.Plate;
 import org.labkey.api.study.PlateQueryView;
 import org.labkey.api.study.PlateService;
@@ -89,7 +90,7 @@ public class PlateManager implements PlateService.Service
 
     public PlateManager()
     {
-        registerPlateTypeHandler(new PlateTypeHandler()
+        registerPlateTypeHandler(new AbstractPlateTypeHandler()
         {
             public PlateTemplate createPlate(String templateTypeName, Container container, int rowCount, int colCount) throws SQLException
             {

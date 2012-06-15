@@ -35,6 +35,7 @@ public class GWTPlate implements IsSerializable
 
     private List<String> _groupTypes;
     private Map<String, Object> _plateProperties = new HashMap<String, Object>();
+    private Map<String, List<String>> _typesToDefaultGroups = new HashMap<String, List<String>>();
     private transient Map<GWTPosition, Set<GWTWellGroup>> _positionToGroups = null;
     private transient Map<String, List<GWTWellGroup>> _typeToGroups = null;
 
@@ -154,5 +155,15 @@ public class GWTPlate implements IsSerializable
     public String getType()
     {
         return _type;
+    }
+
+    public Map<String, List<String>> getTypesToDefaultGroups()
+    {
+        return _typesToDefaultGroups;
+    }
+
+    public void setTypesToDefaultGroups(Map<String, List<String>> typesToDefaultGroups)
+    {
+        _typesToDefaultGroups = typesToDefaultGroups;
     }
 }

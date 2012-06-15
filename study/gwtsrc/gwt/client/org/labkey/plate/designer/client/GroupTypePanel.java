@@ -16,17 +16,17 @@
 
 package gwt.client.org.labkey.plate.designer.client;
 
-import com.google.gwt.event.dom.client.BlurEvent;
-import com.google.gwt.event.dom.client.BlurHandler;
+import com.extjs.gxt.ui.client.event.ComponentEvent;
+import com.extjs.gxt.ui.client.event.KeyListener;
+import com.extjs.gxt.ui.client.event.SelectionChangedEvent;
+import com.extjs.gxt.ui.client.event.SelectionChangedListener;
+import com.extjs.gxt.ui.client.widget.form.ComboBox;
+import com.extjs.gxt.ui.client.widget.form.Field;
+import com.extjs.gxt.ui.client.widget.form.SimpleComboBox;
+import com.extjs.gxt.ui.client.widget.form.TextField;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.event.dom.client.FocusEvent;
-import com.google.gwt.event.dom.client.FocusHandler;
 import com.google.gwt.event.dom.client.KeyCodes;
-import com.google.gwt.event.dom.client.KeyDownEvent;
-import com.google.gwt.event.dom.client.KeyDownHandler;
-import com.google.gwt.event.dom.client.KeyUpEvent;
-import com.google.gwt.event.dom.client.KeyUpHandler;
 import com.google.gwt.user.client.DeferredCommand;
 import com.google.gwt.user.client.IncrementalCommand;
 import com.google.gwt.user.client.Window;
@@ -35,13 +35,13 @@ import com.google.gwt.user.client.ui.FlexTable;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ScrollPanel;
-import com.google.gwt.user.client.ui.TextBox;
 import gwt.client.org.labkey.plate.designer.client.model.GWTWellGroup;
 import org.labkey.api.gwt.client.ui.BoundTextBox;
 import org.labkey.api.gwt.client.ui.ImageButton;
 import org.labkey.api.gwt.client.util.StringProperty;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: brittp
@@ -53,6 +53,10 @@ public class GroupTypePanel extends ScrollPanel implements GroupChangeListener
     private TemplateView _view;
     private String _type;
     private static final String NEW_GROUP_DEFAULT_TEXT = "Enter Group Name";
+
+    private Field _newGroupField;
+    private ImageButton _createButton;
+    private ImageButton _multiCreateButton;
 
     public GroupTypePanel(TemplateView view, String type)
     {
@@ -80,24 +84,95 @@ public class GroupTypePanel extends ScrollPanel implements GroupChangeListener
         else
             groupList.setWidget(0, 1, new Label("No groups defined."));
         add(groupList);
-        final TextBox newGroupTextBox = new TextBox();
 
-        final ImageButton createButton = new ImageButton("Create");
-        createButton.setEnabled(false);
-        createButton.addClickHandler(new ClickHandler()
+        KeyListener fieldKeyListener = new KeyListener(){
+
+            @Override
+            public void componentKeyDown(ComponentEvent event)
+            {
+                if (event.getKeyCode() == KeyCodes.KEY_ENTER)
+                {
+                    _view.createWellGroup(_newGroupField.getRawValue(), _type);
+                }
+                super.componentKeyDown(event);
+            }
+
+            @Override
+            public void componentKeyUp(ComponentEvent event)
+            {
+                Field cmp = event.getComponent();
+                if (cmp != null)
+                {
+                    String value = cmp.getRawValue();
+
+                    boolean enable = (value.length() > 0);
+
+                    _createButton.setEnabled(enable);
+                    _multiCreateButton.setEnabled(enable);
+                }
+                super.componentKeyUp(event);
+            }
+        };
+
+        // if the group type is furnishing any default group names, populate them into a combo box
+        // else just use a text field
+        Map<String, List<String>> typeToGroupMap = _view.getPlate().getTypesToDefaultGroups();
+
+        if (!typeToGroupMap.containsKey(_type))
+        {
+            final TextField textField = new TextField();
+
+            textField.setEmptyText(NEW_GROUP_DEFAULT_TEXT);
+            textField.enableEvents(true);
+            textField.addKeyListener(fieldKeyListener);
+
+            _newGroupField = textField;
+        }
+        else
+        {
+            List<String> defaults = typeToGroupMap.get(_type);
+
+            final SimpleComboBox selector = new SimpleComboBox<String>();
+
+            selector.setEmptyText(NEW_GROUP_DEFAULT_TEXT);
+            selector.enableEvents(true);
+            selector.setTriggerAction(ComboBox.TriggerAction.ALL);
+            selector.addKeyListener(fieldKeyListener);
+            selector.addSelectionChangedListener(new SelectionChangedListener(){
+                @Override
+                public void selectionChanged(SelectionChangedEvent event)
+                {
+                    String value = selector.getRawValue();
+
+                    boolean enable = (value.length() > 0);
+
+                    _createButton.setEnabled(enable);
+                    _multiCreateButton.setEnabled(enable);
+                }
+            });
+
+            for (String name : defaults)
+                selector.add(name);
+
+            _newGroupField = selector;
+        }
+
+        _createButton = new ImageButton("Create");
+        _createButton.setEnabled(false);
+        _createButton.addClickHandler(new ClickHandler()
         {
             public void onClick(ClickEvent event)
             {
-                _view.createWellGroup(newGroupTextBox.getText(), _type);
+                _view.createWellGroup(_newGroupField.getRawValue(), _type);
             }
         });
 
-        final ImageButton multiCreateButton = new ImageButton("Create multiple...");
-        multiCreateButton.addClickHandler(new ClickHandler()
+        _multiCreateButton = new ImageButton("Create multiple...");
+        _multiCreateButton.addClickHandler(new ClickHandler()
         {
             public void onClick(ClickEvent event)
             {
-                String defaultBaseName = newGroupTextBox.getText();
+                String defaultBaseName = _newGroupField.getRawValue();
                 if (NEW_GROUP_DEFAULT_TEXT.equals(defaultBaseName))
                     defaultBaseName = "";
 
@@ -107,50 +182,10 @@ public class GroupTypePanel extends ScrollPanel implements GroupChangeListener
             }
         });
 
-        newGroupTextBox.setText(NEW_GROUP_DEFAULT_TEXT);
-        newGroupTextBox.addFocusHandler(new FocusHandler()
-        {
-            public void onFocus(FocusEvent event)
-            {
-                if (NEW_GROUP_DEFAULT_TEXT.equals(newGroupTextBox.getText()))
-                    newGroupTextBox.setText("");
-            }
-        });
-
-        newGroupTextBox.addBlurHandler(new BlurHandler()
-        {
-            public void onBlur(BlurEvent event)
-            {
-                if ("".equals(newGroupTextBox.getText()))
-                    newGroupTextBox.setText(NEW_GROUP_DEFAULT_TEXT);
-            }
-        });
-
-        newGroupTextBox.addKeyUpHandler(new KeyUpHandler()
-        {
-            public void onKeyUp(KeyUpEvent event)
-            {
-                boolean enable = (newGroupTextBox.getText().length() > 0 && !NEW_GROUP_DEFAULT_TEXT.equals(newGroupTextBox.getText()));
-                createButton.setEnabled(enable);
-                multiCreateButton.setEnabled(enable);
-            }
-        });
-
-        newGroupTextBox.addKeyDownHandler(new KeyDownHandler()
-        {
-            public void onKeyDown(KeyDownEvent event)
-            {
-                if (event.getNativeKeyCode() == KeyCodes.KEY_ENTER)
-                {
-                    _view.createWellGroup(newGroupTextBox.getText(), _type);
-                }
-            }
-        });
-
         groupList.setWidget(groupList.getRowCount(), 0, new Label("New:"));
-        groupList.setWidget(groupList.getRowCount() - 1, 1, newGroupTextBox);
-        groupList.setWidget(groupList.getRowCount() - 1, 2, createButton);
-        groupList.setWidget(groupList.getRowCount() - 1, 3, multiCreateButton);
+        groupList.setWidget(groupList.getRowCount() - 1, 1, _newGroupField);
+        groupList.setWidget(groupList.getRowCount() - 1, 2, _createButton);
+        groupList.setWidget(groupList.getRowCount() - 1, 3, _multiCreateButton);
     }
 
     private static class MultiCreatePopupPanel extends DialogBox
