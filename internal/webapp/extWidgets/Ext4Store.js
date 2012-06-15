@@ -485,7 +485,11 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
                 return;
 
             //find the record using the id sent to the server
-            record = (this.snapshot || this.data).map[row.oldKeys[idCol]];
+            record = this.getById(row.oldKeys[idCol]);
+
+            //records created client-side might not have a PK yet, so we try to use internalId to find it
+            //we defer to snapshot, since this will contain all records, even if the store is filtered
+            record = (this.snapshot || this.data).get(row.oldKeys['_internalId']);
 
             if(!record)
                 return;
@@ -511,6 +515,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
             //after it has been added to the store. This might break in future versions of Ext
             if(record.internalId != row.values[idCol])
             {
+                record.setId(row.values[idCol]);
                 record.internalId = row.values[idCol];
                 index = this.data.indexOf(record);
                 if (index > -1) {
@@ -895,7 +900,10 @@ Ext4.define('LABKEY.ext4.ExtendedJsonReader', {
     }
 });
 
-
+/**
+ * The primary reason to create a custom proxy is to support batching CRUD requests into a single request to saveRows().  Otherwise Ext
+ * would perform each action as a separate request.
+ */
 Ext4.define('LABKEY.ext4.AjaxProxy', {
     extend: 'Ext.data.proxy.Ajax',
     alias: 'proxy.LabkeyProxy',
@@ -922,6 +930,7 @@ Ext4.define('LABKEY.ext4.AjaxProxy', {
         this.addEvents('exception');
         this.callParent(arguments);
     },
+
     saveRows: function(operation, callback, scope){
         var request = operation.request;
         Ext4.apply(request, {
@@ -947,39 +956,61 @@ Ext4.define('LABKEY.ext4.AjaxProxy', {
         'Content-Type' : 'application/json'
     },
 
-    //NOTE: these are overriden so we can batch insert/update/deletes into a single request, rather than submitting 3 sequential ones
-    batch: function(operations, listeners) {
-        var batch = this.buildBatch(operations, listeners);
-
-        batch.start();
-        return batch;
-    },
-    buildBatch: function(operations, listeners){
+    /**
+     * @Override Ext.data.proxy.Proxy (4.1.0)
+     * Overriden so we can batch insert/update/deletes into a single request using saveRows, rather than submitting 3 sequential ones
+     */
+    batch: function(options, listeners) {
         var me = this,
-            batch = Ext4.create('Ext.data.Batch', {
-                proxy: me,
-                listeners: listeners || {}
-            }),
             useBatch = me.batchActions,
-            records;
+            batch,
+            records,
+            actions, aLen, action, a, r, rLen, record;
 
-        var commands = [];
-        Ext4.each(me.batchOrder.split(','), function(action) {
-            records = operations[action];
-            if (records) {
-                var operation = Ext4.create('Ext.data.Operation', {
-                    action: action,
-                    records: records
+        var commands = []; //this array is not from Ext
+
+        if (options.operations === undefined) {
+            // the old-style (operations, listeners) signature was called
+            // so convert to the single options argument syntax
+            options = {
+                operations: options,
+                listeners: listeners
+            };
+        }
+
+        if (options.batch) {
+            if (Ext4.isDefined(options.batch.runOperation)) {
+                batch = Ext4.applyIf(options.batch, {
+                    proxy: me,
+                    listeners: {}
                 });
-
-                if(action == 'read'){
-                    batch.add(operation);
-                }
-                else {
-                    commands.push(this.buildCommand(operation));
-                }
             }
-        }, me);
+        } else {
+            options.batch = {
+                proxy: me,
+                listeners: options.listeners || {}
+            };
+        }
+
+        if (!batch) {
+            batch = new Ext4.data.Batch(options.batch);
+        }
+
+        batch.on('complete', Ext4.bind(me.onBatchComplete, me, [options], 0));
+
+        actions = me.batchOrder.split(',');
+        aLen    = actions.length;
+
+        for (a = 0; a < aLen; a++) {
+            action  = actions[a];
+            records = options.operations[action];
+            if (records) {
+                //the body of this is changed compared to Ext4.1
+                this.processRecord(action, batch, records, commands);
+            }
+        }
+
+        //this is added compared ot Ext 4.1
         if(commands.length){
             var request = Ext4.create('Ext.data.Request', {
                 action: 'saveRows',
@@ -996,8 +1027,30 @@ Ext4.define('LABKEY.ext4.AjaxProxy', {
             batch.add(b);
         }
 
+        batch.start();
         return batch;
     },
+
+    /**
+     * Not an Ext method.
+     */
+    processRecord: function(action, batch, records, commands){
+        var operation = Ext4.create('Ext.data.Operation', {
+            action: action,
+            records: records
+        });
+
+        if(action == 'read'){
+            batch.add(operation);
+        }
+        else {
+            commands.push(this.buildCommand(operation));
+        }
+    },
+
+    /**
+     * @Override Ext.data.proxy.Server (4.1.0)
+     */
     buildRequest: function(operation) {
         if(this.extraParams.sql){
             this.api.read = "executeSql.api";
@@ -1022,6 +1075,8 @@ Ext4.define('LABKEY.ext4.AjaxProxy', {
 
         return request;
     },
+
+    //does not override an Ext method - used internally
     buildCommand: function(operation){
         if(operation.action!='read'){
             var command = {
@@ -1045,7 +1100,8 @@ Ext4.define('LABKEY.ext4.AjaxProxy', {
 
             Ext4.each(operation.records, function(record){
                 var oldKeys = {};
-                oldKeys[this.reader.getIdProperty()] = record.internalId;
+                oldKeys[this.reader.getIdProperty()] = record.getId();
+                oldKeys['_internalId'] = record.internalId;  //NOTE: also include internalId for records that do not have a server-assigned PK yet
 
                 if(command.command == 'delete'){
                     command.rows.push(this.getRowData(record));
@@ -1061,10 +1117,16 @@ Ext4.define('LABKEY.ext4.AjaxProxy', {
             return command;
         }
     },
-    buildUrl: function(request) {
+
+    /**
+     * @Override Ext.data.proxy.Server (4.1.0)
+     */
+    getUrl: function(request) {
         var url = this.callParent(arguments);
         return LABKEY.ActionURL.buildURL("query", url, request.params.containerPath);
     },
+
+    //does not override an Ext method - used internally
     getRowData : function(record) {
         //convert empty strings to null before posting
         var data = {};
@@ -1077,8 +1139,14 @@ Ext4.define('LABKEY.ext4.AjaxProxy', {
         return data;
     },
 
+    /**
+     * @Override Ext.data.proxy.Server (4.1.0)
+     */
     getParams: function(operation){
         var params = this.callParent(arguments);
+
+        //this is a little funny.  Ext expects to encode filters into a filter 'filter' param.
+        //if present, we split it apart here.
         if(params.filter && params.filter.length){
             var val;
             Ext4.each(params.filter, function(f){
@@ -1090,7 +1158,14 @@ Ext4.define('LABKEY.ext4.AjaxProxy', {
         return params;
     },
 
+    /**
+     * @Override Ext.data.proxy.Server (4.1.0)
+     */
     sortParam: 'query.sort',
+
+    /**
+     * @Override Ext.data.proxy.Server (4.1.0)
+     */
     encodeSorters: function(sorters){
          var length   = sorters.length,
              sortStrs = [],
@@ -1105,6 +1180,10 @@ Ext4.define('LABKEY.ext4.AjaxProxy', {
          return sortStrs.join(",");
     },
 
+    /**
+     * @Override Ext.data.proxy.Server (4.1.0)
+     * See note in body of getParams()
+     */
     encodeFilters: function(filters){
         var result = [];
         if(filters && filters.length){
