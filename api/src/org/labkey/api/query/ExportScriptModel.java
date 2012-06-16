@@ -178,6 +178,8 @@ public abstract class ExportScriptModel
         ExportScriptFactory factory = QueryView.getExportScriptFactory(scriptType);
         WebPartView scriptView = factory.getView(queryView);
         scriptView.setFrame(WebPartView.FrameType.NONE);
+
+        QueryService.get().addAuditEvent(queryView, "Exported to script type " + scriptType);
         return scriptView;
     }
 

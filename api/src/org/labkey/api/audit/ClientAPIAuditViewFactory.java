@@ -54,7 +54,6 @@ public class ClientAPIAuditViewFactory extends SimpleAuditViewFactory
         filter.addCondition("EventType", EVENT_TYPE);
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, EVENT_TYPE);
-        view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
         view.setSort(new Sort("-Date"));
 
         return view;

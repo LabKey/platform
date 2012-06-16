@@ -354,7 +354,7 @@ public class QueryView extends WebPartView<Object>
         return button;
     }
 
-    protected User getUser()
+    public User getUser()
     {
         return _schema.getUser();
     }
@@ -1818,7 +1818,7 @@ public class QueryView extends WebPartView<Object>
         exportToExcel(response, true, captionType, insertColumnsOnly, ExcelWriter.ExcelDocumentType.xls, respectView, prefix);
     }
 
-    private void exportToExcel(HttpServletResponse response, boolean templateOnly, ExcelWriter.CaptionType captionType, boolean insertColumnsOnly, ExcelWriter.ExcelDocumentType docType, boolean respectView, @Nullable String prefix) throws Exception
+    protected void exportToExcel(HttpServletResponse response, boolean templateOnly, ExcelWriter.CaptionType captionType, boolean insertColumnsOnly, ExcelWriter.ExcelDocumentType docType, boolean respectView, @Nullable String prefix) throws Exception
     {
         _exportView = true;
         TableInfo table = getTable();
@@ -1830,6 +1830,9 @@ public class QueryView extends WebPartView<Object>
             if(prefix != null)
                 ew.setFilenamePrefix(prefix);
             ew.write(response);
+
+            if (!templateOnly)
+                logAuditEvent("Exported to Excel");
         }
     }
 
@@ -1855,6 +1858,8 @@ public class QueryView extends WebPartView<Object>
                     doExport(response, isExportAsWebPage);
                 }
             });
+
+            logAuditEvent("Exported to TSV");
         }
     }
 
@@ -1929,6 +1934,13 @@ public class QueryView extends WebPartView<Object>
         response.setHeader("Cache-Control", "private");
 
         new HtmlWriter().write(rs, getExportColumns(rgn.getDisplayColumns()), response, view.getRenderContext(), true);
+
+        logAuditEvent("Exported to Excel Web Query data");
+    }
+
+    protected void logAuditEvent(String comment)
+    {
+        QueryService.get().addAuditEvent(this, comment);
     }
 
     public CustomView getCustomView()

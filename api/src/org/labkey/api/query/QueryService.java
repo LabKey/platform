@@ -210,4 +210,13 @@ abstract public class QueryService
 
     abstract public void bindNamedParameters(SQLFragment frag, Map<String, Object> in);
     abstract public void validateNamedParameters(SQLFragment frag) throws SQLException;
+
+    /**
+     * Add an audit log entry for this QueryView. The
+     * schemaName, queryName, and sortFilters are logged along with a comment message.
+     *
+     * @param comment Comment to log.
+     */
+    abstract public void addAuditEvent(QueryView queryView, String comment);
+    abstract public void addAuditEvent(User user, Container c, String schemaName, String queryName, ActionURL sortFilter, String comment);
 }

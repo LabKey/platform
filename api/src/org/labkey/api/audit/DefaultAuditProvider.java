@@ -21,6 +21,7 @@ import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.audit.query.DefaultAuditQueryView;
 import org.labkey.api.audit.query.DefaultAuditSchema;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
@@ -87,7 +88,9 @@ public class DefaultAuditProvider implements AuditLogService.I, AuditLogService.
         UserSchema schema = createSchema(context.getUser(), context.getContainer());
         QuerySettings settings = schema.getSettings(context, getTableName(), getTableName());
 
-        return new DefaultAuditQueryView(schema, settings, filter);
+        AuditLogQueryView view = new DefaultAuditQueryView(schema, settings, filter);
+        view.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
+        return view;
     }
 
     public AuditLogQueryView createQueryView(ViewContext context, @Nullable SimpleFilter filter, String propertyURI)
