@@ -85,16 +85,20 @@ Ext4.define('LABKEY.vis.MainTitleOptionsPanel', {
 
         this.callParent();
     },
-
+    
     applyButtonClicked: function() {
         this.fireEvent('closeOptionsWindow');
         this.checkForChangesAndFireEvents();
     },
 
-    setMainTitle: function(newMainTitle){
+    setMainTitle: function(newMainTitle, suspendEvents){
         if (!this.userEditedTitle)
         {
+            if(suspendEvents){
+                this.chartTitleTextField.suspendEvents(false);
+            }
             this.chartTitleTextField.setValue(newMainTitle);
+            this.chartTitleTextField.resumeEvents();
         }
     },
 

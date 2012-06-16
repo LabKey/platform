@@ -108,6 +108,26 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             }
         });
 
+        this.colorLabel = Ext4.create('Ext.form.Label', {
+            width: labelWidth,
+            text: 'Point Color'
+        });
+
+        this.pointColorPicker = Ext4.create('Ext.picker.Color', {
+            hidden: this.renderType == 'box_plot',
+            value: '3366FF',  // initial selected color
+            fieldLabel: 'Point Color',
+            width: 275,
+            listeners: {
+                select: function(picker, selColor) {
+                    if(!this.suppressEvents){
+                        this.fireEvent('chartDefinitionChanged', this);
+                    }
+                },
+                scope: this
+            }
+        });
+
         this.lineWidthSlider = Ext4.create('Ext.slider.Single', {
             hidden: this.renderType == 'scatter_plot',
             labelSeparator: labelSeparator,
@@ -132,6 +152,11 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             this.renderTypeCombo,
             this.opacitySlider,
             this.pointSizeSlider,
+            {
+                xtype: 'fieldcontainer',
+                layout: 'hbox',
+                items: [this.colorLabel, this.pointColorPicker]
+            },
             this.lineWidthSlider
         ];
 
@@ -143,6 +168,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             renderType: this.getRenderType(),
             opacity: this.getOpacity(),
             pointSize: this.getPointSize(),
+            pointColor: this.getPointColor(),
             lineWidth: this.getLineWidth()
         };
     },
@@ -151,19 +177,23 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         this.suppressEvents = true;
 
         if(config.renderType){
-            this.setRenderType(config.renderType, true);
+            this.setRenderType(config.renderType);
         }
 
         if(config.opacity){
-            this.setOpacity(config.opacity, true);
+            this.setOpacity(config.opacity);
         }
 
         if(config.pointSize){
-            this.setPointSize(config.pointSize, true);
+            this.setPointSize(config.pointSize);
+        }
+
+        if(config.pointColor){
+            this.setPointColor(config.pointColor);
         }
 
         if(config.lineWidth){
-            this.setLineWidth(config.lineWidth, true);
+            this.setLineWidth(config.lineWidth);
         }
 
         this.suppressEvents = false;
@@ -193,6 +223,14 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         this.pointSizeSlider.setValue(value);
     },
 
+    getPointColor: function(){
+        return this.pointColorPicker.getValue();
+    },
+
+    setPointColor: function(value){
+        this.pointColorPicker.select(value);
+    },
+
     getLineWidth: function(){
         return this.lineWidthSlider.getValue();
     },
@@ -202,16 +240,20 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
     },
 
     enableScatterPlotOptions: function(){
+        // Scatter
         this.opacitySlider.show();
         this.pointSizeSlider.show();
-
+        this.pointColorPicker.show();
+        // Box
         this.lineWidthSlider.hide();
     },
 
     enableBoxPlotOptions: function(){
+        // Scatter
         this.opacitySlider.hide();
         this.pointSizeSlider.hide();
-
+        this.pointColorPicker.hide();
+        // Box
         this.lineWidthSlider.show();
     }
 });

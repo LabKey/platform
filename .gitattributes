@@ -3550,6 +3550,7 @@ visualization/resources/web/protovis/protovis-d3.2.js -text
 visualization/resources/web/protovis/protovis-r3.2.js -text
 visualization/resources/web/vis/SVGConverter.js -text
 visualization/resources/web/vis/aestheticOptionsPanel.js -text
+visualization/resources/web/vis/genericChartAxisPanel.js -text
 visualization/resources/web/vis/genericChartOptionsPanel.js -text
 visualization/resources/web/vis/genericChartPanel.js -text
 visualization/resources/web/vis/genericOptionsPanel.js -text
