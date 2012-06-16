@@ -537,17 +537,15 @@ LABKEY.vis.Plot = function(config){
         var clickArea = this.paper.set();
         var box, triangle;
         var wPad = 10, x = bbox.x, y = bbox.y, height = bbox.height, width = bbox.width;
-        var tx, ty, r, tFn;
+        var tx, ty, r = 4, tFn;
         if(labelName == 'x' || labelName == 'main'){
             width = width + height + (wPad * 2);
             x = x - wPad;
-            r = (height / 2) * .7;
             tx = x + width - r - (wPad / 2);
             ty = y + (height / 2);
         } else if(labelName == 'yLeft' || labelName == 'yRight'){
             height = height + width + (wPad * 2);
             y = y - width - wPad;
-            r = (width / 2) * .7;
             tx = x + (width /2);
             ty = y + r + (wPad / 2);
         }

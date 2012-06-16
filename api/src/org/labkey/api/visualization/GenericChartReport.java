@@ -145,14 +145,16 @@ public abstract class GenericChartReport extends AbstractReport
             Class cls = col.getJavaClass();
             RenderType type = null;
 
-            if (Integer.class.equals(cls))
-            {
-                type = RenderType.BOX_PLOT;
-            }
-            else if (Double.class.equals(cls))
-            {
-                type = RenderType.SCATTER_PLOT;
-            }
+//            if (Integer.class.equals(cls))
+//            {
+//                type = RenderType.BOX_PLOT;
+//            }
+//            else if (Double.class.equals(cls))
+//            {
+//                type = RenderType.SCATTER_PLOT;
+//            }
+
+            type = RenderType.BOX_PLOT;
 
             if (type != null)
             {
