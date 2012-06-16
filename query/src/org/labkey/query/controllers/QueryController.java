@@ -1350,7 +1350,6 @@ public class QueryController extends SpringActionController
     {
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            ensureQueryExists(form);
             getPageConfig().setTemplate(PageConfig.Template.None);
             ensureQueryExists(form);
             String queryViewActionURL = form.getQueryViewActionURL();
@@ -1371,6 +1370,8 @@ public class QueryController extends SpringActionController
             writer.println("WEB");
             writer.println("1");
             writer.println(url.getURIString());
+
+            QueryService.get().addAuditEvent(getUser(), getContainer(), form.getSchemaName().toString(), form.getQueryName(), url, "Exported to Excel Web Query definition");
             return null;
         }
 

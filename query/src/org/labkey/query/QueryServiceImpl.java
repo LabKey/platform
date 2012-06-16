@@ -26,6 +26,8 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.audit.AuditLogEvent;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -52,6 +54,7 @@ import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.MetadataException;
 import org.labkey.api.query.QueryAction;
@@ -85,6 +88,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
+import org.labkey.query.audit.QueryAuditViewFactory;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.ExternalSchemaDef;
 import org.labkey.query.persist.QueryDef;
@@ -1508,6 +1512,41 @@ public class QueryServiceImpl extends QueryService
         environments.get().clear();
     }
 
+    @Override
+    public void addAuditEvent(QueryView queryView, String comment)
+    {
+        TableInfo table = queryView.getTable();
+        if (table == null)
+            return;
+
+        String schemaName = table.getPublicSchemaName();
+        String queryName = table.getPublicName();
+        ActionURL sortFilter = queryView.getSettings().getSortFilterURL();
+        addAuditEvent(queryView.getUser(), queryView.getContainer(), schemaName, queryName, sortFilter, comment);
+    }
+
+    @Override
+    public void addAuditEvent(User user, Container c, String schemaName, String queryName, ActionURL sortFilter, String comment)
+    {
+        AuditLogEvent event = new AuditLogEvent();
+        event.setCreatedBy(user);
+        if (c.getProject() != null)
+            event.setProjectId(c.getProject().getId());
+        event.setContainerId(c.getId());
+        event.setEventType(QueryAuditViewFactory.QUERY_AUDIT_EVENT);
+        event.setComment(comment);
+        event.setKey1(schemaName);
+        event.setKey2(queryName);
+
+        ActionURL url = sortFilter.clone();
+        url.deleteParameter(ActionURL.Param.cancelUrl);
+        url.deleteParameter(ActionURL.Param.redirectUrl);
+        url.deleteParameter(ActionURL.Param.returnUrl);
+        DetailsURL detailsURL = new DetailsURL(url);
+        event.setKey3(detailsURL.toString());
+
+        AuditLogService.get().addEvent(event);
+    }
 
     public static class TestCase extends Assert
     {

@@ -291,7 +291,9 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         // if the user is an admin, they should see everything, else default to current folder
         if (context.getUser().isAdministrator())
             settings.setContainerFilterName(ContainerFilter.Type.AllFolders.name());
-        return new AuditQueryViewImpl(schema, settings, filter);
+        AuditQueryViewImpl view = new AuditQueryViewImpl(schema, settings, filter);
+        view.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
+        return view;
     }
 
     public String getTableName()

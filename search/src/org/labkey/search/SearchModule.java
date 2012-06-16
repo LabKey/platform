@@ -225,7 +225,6 @@ public class SearchModule extends DefaultModule
         {
             AuditLogQueryView view = AuditLogService.get().createQueryView(context, null, getEventType());
             view.setSort(new Sort("-Date"));
-            view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
 
             return view;
         }

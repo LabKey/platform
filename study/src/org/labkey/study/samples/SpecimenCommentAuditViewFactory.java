@@ -73,7 +73,6 @@ public class SpecimenCommentAuditViewFactory extends SimpleAuditViewFactory
     {
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, null, getEventType());
         view.setSort(new Sort("-Date"));
-        view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
 
         return view;
     }

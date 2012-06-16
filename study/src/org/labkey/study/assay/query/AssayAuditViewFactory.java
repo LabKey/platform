@@ -93,7 +93,6 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
     public QueryView createDefaultQueryView(ViewContext context)
     {
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, null, AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT);
-        view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
         view.setSort(new Sort("-Date"));
         addDetailsColumn(view);
 

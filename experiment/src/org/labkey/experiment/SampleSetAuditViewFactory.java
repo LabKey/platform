@@ -65,7 +65,6 @@ public class SampleSetAuditViewFactory extends SimpleAuditViewFactory
         filter.addCondition("EventType", EVENT_TYPE, CompareType.EQUAL);
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter);
-        view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
         view.setSort(new Sort("-Date"));
 
         return view;

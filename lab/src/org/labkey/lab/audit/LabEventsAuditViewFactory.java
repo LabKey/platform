@@ -194,7 +194,6 @@ public class LabEventsAuditViewFactory extends SimpleAuditViewFactory
         filter.addCondition("EventType", EVENT_TYPE_MAP.keySet(), CompareType.IN);
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter);
-        view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
         view.setSort(new Sort("-Date"));
 
         return view;

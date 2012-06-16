@@ -18,6 +18,7 @@ package org.labkey.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.FolderSerializationRegistry;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -57,6 +58,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.query.audit.QueryAuditViewFactory;
 import org.labkey.query.controllers.QueryController;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.SchemaReloadMaintenanceTask;
@@ -132,6 +134,8 @@ public class QueryModule extends DefaultModule
         QueryView.register(new PerlExportScriptFactory());
 //		WebdavService.addProvider(new QueryWebdavprovider());
         DataViewService.get().registerProvider(QueryDataViewProvider.getType(), new QueryDataViewProvider());
+
+        AuditLogService.get().addAuditViewFactory(QueryAuditViewFactory.getInstance());
     }
 
 
