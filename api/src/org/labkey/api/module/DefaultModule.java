@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
@@ -117,6 +118,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private String _buildPath = null;
     private String _sourcePath = null;
     private File _explodedPath = null;
+    private Map<String, ModuleProperty> _moduleProperties = new HashMap<String, ModuleProperty>();
 
     private static final Cache<Path, ModuleRReportDescriptor> REPORT_DESCRIPTOR_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.DAY, "Report descriptor cache");
 
@@ -1121,5 +1123,37 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             }
         }
         return modules;
+    }
+
+    public Map<String, ModuleProperty> getModuleProperties()
+    {
+        return _moduleProperties;
+    }
+
+    protected void addModuleProperty(ModuleProperty property)
+    {
+        _moduleProperties.put(property.getName(), property);
+    }
+
+    /**
+     * This intent of this method is to allow modules to provide JSON that will be written to
+     * the client on all pages when this module is enabled.  By default, it will include only
+     * properties defined by _moduleProperties; however, modules can override this to include
+     * any content they choose.
+     */
+    public JSONObject getPageContextJson(User u, Container c)
+    {
+        return new JSONObject(getDefaultPageContextJson(u, c));
+    }
+
+    protected Map<String, String> getDefaultPageContextJson(User u, Container c)
+    {
+        Map<String, String> props = new HashMap<String, String>();
+        for (ModuleProperty p : getModuleProperties().values())
+        {
+            if (!p.isExcludeFromClientContext())
+                props.put(p.getName(), p.getEffectiveValue(u, c, p.getName()));
+        }
+        return props;
     }
 }

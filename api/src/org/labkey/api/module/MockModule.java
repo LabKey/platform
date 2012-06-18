@@ -17,6 +17,7 @@ package org.labkey.api.module;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -43,6 +44,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -329,5 +331,15 @@ public class MockModule implements Module
     public Controller getController(HttpServletRequest request, String name)
     {
         throw new UnsupportedOperationException();
+    }
+
+    public Map<String, ModuleProperty> getModuleProperties()
+    {
+        return new HashMap<String, ModuleProperty>();
+    }
+
+    public JSONObject getPageContextJson(User u, Container c)
+    {
+        return new JSONObject();
     }
 }

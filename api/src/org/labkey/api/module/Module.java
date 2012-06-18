@@ -18,6 +18,7 @@ package org.labkey.api.module;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -291,4 +292,13 @@ public interface Module extends Comparable<Module>
      */
     public void addDeferredUpgradeTask(Method task);
     public void runDeferredUpgradeTasks(ModuleContext context);
+
+    public Map<String, ModuleProperty> getModuleProperties();
+
+    /**
+     * This will return a JSONObject that will be written to the page automatically.  By default, it will include any
+     * module properties where 'writeToClient' is true.  However, individual modules can override this to return any content they choose.
+     * Note: this is written as plain text.
+     */
+    public JSONObject getPageContextJson(User u, Container c);
 }

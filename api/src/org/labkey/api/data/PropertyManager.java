@@ -140,6 +140,79 @@ public class PropertyManager
         return NULL_MAP == m ? m : Collections.unmodifiableMap(m);
     }
 
+    /**
+     * This is designed to coalesce up the container hierarchy, returning the first non-null value
+     * If a userId is provided, it first traverses containers using that user.  If no value is found,
+     * it then default to all users (ie. 0), then retry all containers
+     *
+     * NOTE: this does not test permissions.  Callers should ensure the requested user has the appropriate
+     * permissions to read these properties
+     */
+    public static String getCoalecedProperty(int userId, Container c, String category, String name, boolean includeNullUser)
+    {
+        String value = getCoalecedPropertyForContainer(userId, c, category, name);
+
+        if(includeNullUser && value == null && userId != 0)
+            value = getCoalecedPropertyForContainer(0, c, category, name);
+
+        return value;
+    }
+
+    public static String getCoalecedProperty(int userId, Container c, String category, String name)
+    {
+        return getCoalecedProperty(userId, c, category, name, true);
+    }
+
+    private static String getCoalecedPropertyForContainer(int userId, Container c, String category, String name)
+    {
+        Container curContainer = c;
+        while (curContainer.isWorkbook())
+            curContainer = curContainer.getParent();
+
+        String value;
+        while (curContainer != null)
+        {
+            value = getProperty(userId, curContainer.getId(), category, name);
+            if(value != null)
+                return value;
+
+            curContainer = curContainer.getParent();
+        }
+        return null;
+    }
+
+    /**
+     * NOTE: does not test permissions
+     */
+    public static Map<Container, Map<Integer, String>> getPropertyValueAndAncestors(int userId, Container c, String category, String name, boolean includeNullContainers)
+    {
+        Map<Container, Map<Integer, String>> map = new HashMap<Container, Map<Integer, String>>();
+
+        Container curContainer = c;
+        while (curContainer != null)
+        {
+            String value = getProperty(userId, curContainer.getId(), category, name);
+            Map<Integer, String> containerMap = new HashMap<Integer, String>();
+
+            if(value != null)
+                containerMap.put(userId, value);
+            else if (includeNullContainers)
+                containerMap.put(0, value);
+
+            if(!containerMap.isEmpty())
+                map.put(curContainer, containerMap);
+
+            curContainer = curContainer.getParent();
+        }
+
+        return map;
+    }
+
+    private static String getProperty(int userId, String objectId, String category, String name)
+    {
+        Map<String, String> props = PropertyManager.getProperties(userId, objectId, category);
+        return props.get(name);
+    }
 
     // For global system properties that get attached to the root container
     public static PropertyMap getWritableProperties(String category, boolean create)
