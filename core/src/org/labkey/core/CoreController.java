@@ -40,6 +40,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.ContainerParent;
 import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.ObjectProperty;
@@ -47,12 +48,15 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.ModuleProperty;
 import org.labkey.api.security.IgnoresTermsOfUse;
+import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
@@ -82,6 +86,7 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.TermsOfUseException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.WebTheme;
@@ -112,6 +117,7 @@ import java.io.OutputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -1492,6 +1498,216 @@ public class CoreController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Styling Overview");
+        }
+    }
+
+    @RequiresPermissionClass(UpdatePermission.class) @RequiresLogin
+    public class GetModulePropertiesAction extends ApiAction<ModulePropertiesForm>
+    {
+        @Override
+        public ApiResponse execute(ModulePropertiesForm form, BindException errors) throws Exception
+        {
+            JSONObject ret = new JSONObject();
+
+            if(form.getModuleName() == null)
+            {
+                errors.reject(ERROR_MSG, "Must provide the name of the module");
+                return null;
+            }
+
+            Module m = ModuleLoader.getInstance().getModule(form.getModuleName());
+
+            List<ModuleProperty> included = new ArrayList<ModuleProperty>();
+            if(form.getProperties() == null)
+            {
+                included.addAll(m.getModuleProperties().values());
+            }
+            else
+            {
+                for (String name : form.getProperties())
+                    included.add(m.getModuleProperties().get(name));
+            }
+
+            if(form.isIncludePropertyValues())
+            {
+                JSONObject siteValues = new JSONObject();
+                for (ModuleProperty mp : included)
+                {
+                    JSONObject record = new JSONObject();
+
+                    Container c = mp.isCanSetPerContainer() ? getContainer() :  ContainerManager.getRoot();
+                    int propUser = 0;  //currently user-specific props not supported
+
+                    Map<Container, Map<Integer, String>> propValues = PropertyManager.getPropertyValueAndAncestors(propUser, c, mp.getCategory(), mp.getName(), true);
+                    List<JSONObject> containers = new ArrayList<JSONObject>();
+                    for (Container ct : propValues.keySet())
+                    {
+                        JSONObject o = new JSONObject();
+                        o.put("value", propValues.get(ct) != null && propValues.get(ct).get(propUser) != null ? propValues.get(ct).get(propUser) : "");
+                        o.put("container", ct.toJSON(getUser()));
+                        boolean canEdit = true;
+                        for (Class<? extends Permission> p : mp.getEditPermissions())
+                        {
+                            if (!ct.hasPermission(getUser(), p))
+                            {
+                                canEdit = false;
+                                break;
+                            }
+                        }
+                        o.put("canEdit", canEdit);
+
+                        containers.add(o);
+                        ct = ct.getParent();
+                    }
+                    record.put("effectiveValue", mp.getEffectiveValue(getUser(), getContainer(), mp.getName()));
+                    Collections.reverse(containers);  //reverse so root first
+                    record.put("siteValues", containers);
+
+                    siteValues.put(mp.getName(), record);
+                }
+                ret.put("values", siteValues);
+            }
+
+            if(form.isIncludePropertyDescriptors())
+            {
+                Map<String, JSONObject> pds = new HashMap<String, JSONObject>();
+                for (ModuleProperty mp : included)
+                {
+                    pds.put(mp.getName(), mp.toJson());
+                }
+
+                ret.put("properties", pds);
+            }
+
+            return new ApiSimpleResponse(ret);
+        }
+    }
+
+    static class ModulePropertiesForm
+    {
+        private String _moduleName;
+        private String[] _properties;
+        private boolean _includePropertyDescriptors;
+        private boolean _includePropertyValues;
+
+        public String getModuleName()
+        {
+            return _moduleName;
+        }
+
+        public void setModuleName(String moduleName)
+        {
+            _moduleName = moduleName;
+        }
+
+        public String[] getProperties()
+        {
+            return _properties;
+        }
+
+        public void setProperties(String[] properties)
+        {
+            _properties = properties;
+        }
+
+        public boolean isIncludePropertyDescriptors()
+        {
+            return _includePropertyDescriptors;
+        }
+
+        public void setIncludePropertyDescriptors(boolean includePropertyDescriptors)
+        {
+            _includePropertyDescriptors = includePropertyDescriptors;
+        }
+
+        public boolean isIncludePropertyValues()
+        {
+            return _includePropertyValues;
+        }
+
+        public void setIncludePropertyValues(boolean includePropertyValues)
+        {
+            _includePropertyValues = includePropertyValues;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class) @RequiresLogin
+    public class SaveModulePropertiesAction extends ApiAction<SaveModulePropertiesForm>
+    {
+        @Override
+        public ApiResponse execute(SaveModulePropertiesForm form, BindException errors) throws Exception
+        {
+            ViewContext ctx = getViewContext();
+            JSONObject formData = form.getJsonObject();
+            JSONArray a = ((JSONObject) formData).getJSONArray("properties");
+            try
+            {
+                ExperimentService.get().ensureTransaction();
+                for (int i = 0 ; i < a.length(); i++)
+                {
+                    JSONObject row = a.getJSONObject(i);
+                    String moduleName = row.getString("moduleName");
+                    String name = row.getString("propName");
+                    if (moduleName == null)
+                        throw new IllegalArgumentException("Missing moduleName for property: " + name);
+                    if (name == null)
+                        throw new IllegalArgumentException("Missing property name");
+
+                    Module m = ModuleLoader.getInstance().getModule(moduleName);
+                    if (m == null)
+                        throw new IllegalArgumentException("Unknown module: " + moduleName);
+
+                    ModuleProperty mp = m.getModuleProperties().get(name);
+                    if (mp == null)
+                        throw new IllegalArgumentException("Invalid module property: " + name);
+
+                    Container ct = ContainerManager.getForId(row.getString("container"));
+                    if (ct == null)
+                        throw new IllegalArgumentException("Invalid container: " + row.getString("container"));
+
+                    mp.saveValue(ctx.getUser(), ct, row.getInt("userId"), row.getString("value"));
+                }
+                ExperimentService.get().commitTransaction();
+            }
+            catch (IllegalArgumentException e)
+            {
+                errors.reject(e.getMessage());
+            }
+            finally
+            {
+                ExperimentService.get().closeTransaction();
+            }
+
+
+            JSONObject ret = new JSONObject();
+            ret.put("success", errors.getErrorCount() == 0);
+            return new ApiSimpleResponse(ret);
+        }
+    }
+
+    public static class SaveModulePropertiesForm extends SimpleApiJsonForm
+    {
+        String moduleName;
+        String properties;
+
+        public String getModuleName()
+        {
+            return moduleName;
+        }
+
+        public void setModuleName(String moduleName)
+        {
+            this.moduleName = moduleName;
+        }
+
+        public String getProperties()
+        {
+            return properties;
+        }
+
+        public void setProperties(String properties)
+        {
+            this.properties = properties;
         }
     }
 }

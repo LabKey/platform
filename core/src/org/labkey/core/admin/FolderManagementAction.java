@@ -605,6 +605,23 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                 tabs.add(new TabInfo("Folder Type", "folderType", url));
             }
             tabs.add(new TabInfo("Missing Values", "mvIndicators", url));
+
+            //only show module properties tab if a module w/ properties to set is present
+            boolean showProps = _container.isRoot();
+            if (!showProps)
+            {
+                for (Module m : getViewContext().getContainer().getActiveModules())
+                {
+                    if(m.getModuleProperties().size() > 0)
+                    {
+                        showProps = true;
+                        break;
+                    }
+                }
+            }
+            if (showProps)
+                tabs.add(new TabInfo("Module Properties", "props", url));
+
             if (!_container.isRoot())
             {
                 tabs.add(new TabInfo("Search", "fullTextSearch", url));
@@ -654,6 +671,10 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             else if ("info".equals(tabId))
             {
                 return AdminController.getContainerInfoView(_container);
+            }
+            else if ("props".equals(tabId))
+            {
+                return new JspView<FolderManagementForm>("/org/labkey/core/project/modulePropertiesAdmin.jsp", _form, _errors);
             }
             else
             {

@@ -555,6 +555,8 @@ core/resources/scripts/global.js -text
 core/resources/scripts/labkey.js -text
 core/resources/scripts/labkey/adapter/bridge.js -text
 core/resources/scripts/labkey/init.js -text
+core/resources/views/ModulePropertyAdmin.html -text
+core/resources/views/ModulePropertyAdmin.view.xml -text
 core/script-fragments/Ext.footer.js -text
 core/script-fragments/Ext.header.js -text
 core/script-fragments/Ext.middle.js -text
@@ -679,6 +681,7 @@ core/src/org/labkey/core/login/login.jsp -text
 core/src/org/labkey/core/login/pickAuthLogo.jsp -text
 core/src/org/labkey/core/login/resetPassword.jsp -text
 core/src/org/labkey/core/login/setPassword.jsp -text
+core/src/org/labkey/core/project/modulePropertiesAdmin.jsp -text
 core/src/org/labkey/core/project/projects.jsp -text
 core/src/org/labkey/core/query/AttachmentAuditViewFactory.java -text
 core/src/org/labkey/core/query/ContainerAuditViewFactory.java -text
@@ -732,6 +735,7 @@ core/src/org/labkey/core/workbook/createWorkbook.jsp -text
 core/src/org/labkey/core/workbook/moveWorkbooks.jsp -text
 core/src/org/labkey/core/workbook/workbookDescription.jsp -text
 core/src/org/labkey/core/workbook/workbookSearch.jsp -text
+core/webapp/ModulePropertiesAdminPanel.js -text
 core/webapp/SecurityAdmin.css -text
 core/webapp/SecurityAdmin.js -text
 core/webapp/admin/FolderManagementPanel.js -text
