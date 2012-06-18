@@ -18,6 +18,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             '<table class="report" cellspacing=0>',
             '<tpl for="pages">',
                 '{[this.resetGrid(),""]}',
+                '{[this.setPageIndex(xindex),""]}',
         // PAGE TEMPLATE
                 '<tr><td class="break-spacer">&nbsp;<br>&nbsp;</td></tr>',
                 '<tr><td colspan="{[this.data.fields.length]}">',
@@ -25,9 +26,11 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     '<table>',
                         '<tr><td colspan=2 style="padding:5px; font-weight:bold; font-size:1.3em; text-align:center;">{[ this.getHtml(values.headerValue) ]}</td></tr>',
         // note nested <tpl>, this will make values==datavalue and parent==field
-                        '<tpl for="this.data.pageFields"><tpl for="parent.first.asArray[values.index]">',
-                            '<tr><td align=right data-qtip="{[parent.qtip]}">{[this.getPageField(parent)]}:&nbsp;</td><td align=left style="{parent.style}">{[this.getPageFieldHtml(values)]}</td></tr>',
-                        '</tpl></tpl>',
+                        '<tpl for="this.data.pageFields">' +
+                            '<tpl for="this.data.pages[this.data.pageIndex].first.asArray[values.index]">',
+                            '   <tr><td align=right data-qtip="{[parent.qtip]}">{[this.getPageField(parent)]}:&nbsp;</td><td align=left style="{parent.style}">{[this.getPageFieldHtml(values)]}</td></tr>',
+                            '</tpl>',
+                        '</tpl>',
                     '</table>',
                     '</div>',
                 '</td></tr>'
@@ -53,15 +56,15 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     // use the first gridField for the header row (likely visit label)
                     '<tpl if="values.rowIndex == 0">',
                         '<tr>',
-                            '<th style="padding-right: 10px;" class="labkey-column-header">{[values.caption]}</th>',
-                            '<tpl for="parent.rows">', //this.data.pages[parent.xindex - 1].rows
+                            '<th style="padding-right: 10px;" class="labkey-column-header"></th>',
+                            '<tpl for="this.data.pages[this.data.pageIndex].rows">',
                                 '{[ this.getGridCellHtml(values.asArray[parent.index], true) ]}',
                             '</tpl>',
                         '</tr>',
                     '<tpl else>',
                         '<tr class="{[this.getGridRowClass()]}">',
-                            '<td data-qtip="{qtip}">{[values.caption]}</td>',
-                            '<tpl for="parent.rows">', // this.data.pages[0].rows
+                            '<td data-qtip="{qtip}">{[this.getCaptionHtml(values)]}</td>',
+                            '<tpl for="this.data.pages[this.data.pageIndex].rows">',
                                 '{[ this.getGridCellHtml(values.asArray[parent.index], false) ]}',
                             '</tpl>',
                         '</tr>',
@@ -207,7 +210,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                         scope   : this
                     },{
                         text    : 'Transpose',
-                        tooltip : 'Tranpose the data grid so that the rows become columns (i.e. visits/measures across the top)',
+                        tooltip : 'Tranpose the data grids so that the rows become columns (i.e. visits vs. measures as columns)',
                         handler : function(btn) {
                             if (this.transposed)   // transposed refers to changing the grid render so that visits are accross the top (as columns)
                                 this.transposed = false;
