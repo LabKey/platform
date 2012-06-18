@@ -609,6 +609,13 @@ X.define('LABKEY.TemplateReport',
                     this.gridRow++;
                     return this.gridRow%2 ? "labkey-alternate-row" : "labkey-row";
                 },
+                setPageIndex : function(pagesXindex)
+                {
+                    // workaround for http://www.sencha.com/forum/showthread.php?180125-4.1B2-Ext.XTemplate-no-longer-handles-nested-parent-references
+                    // keep track of the array index into the pages array for nested looping in the XTemplate
+                    this.data.pageIndex = pagesXindex -1; // pageIndex is 1-based
+                    return "";
+                },
                 gridRow : 0,
                 isPrint : -1 != window.location.href.indexOf("_print=true") || -1 != window.location.href.indexOf("_print=1"),
                 transposed : this.transposed,
