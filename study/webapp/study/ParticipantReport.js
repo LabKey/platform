@@ -126,7 +126,6 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         Ext4.QuickTips.init();
 
         Ext4.applyIf(config, {
-            layout    : 'border',
             frame     : false,
             border    : false,
             editable  : false,
@@ -137,6 +136,14 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             subjectNoun    : {singular : 'Participant', plural : 'Participants', columnName: 'Participant'}
         });
 
+        if (config.allowOverflow)
+        {
+            config.shrinkWrap = true;
+            config.layout = 'auto';
+        }
+        else
+            config.layout = 'border';
+        
         this.callParent([config]);
     },
 
@@ -166,7 +173,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         });
 
         this.lengthReportField = Ext4.create('Ext.form.field.Display', {
-            value : '<i>Showing 1000 Results</i>'
+            value : '<i>Showing 0 Results</i>'
         });
 
         if (!this.printMode) {
@@ -195,6 +202,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                         },
                         scope   : this
                     },{
+/*
                         text    : this.fitted ? 'Collapse' : 'Expand',
                         handler : function(btn) {
                             if (this.fitted) {
@@ -209,6 +217,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                         },
                         scope   : this
                     },{
+*/
                         text    : 'Transpose',
                         tooltip : 'Tranpose the data grids so that the rows become columns (i.e. visits vs. measures as columns)',
                         handler : function(btn) {
@@ -234,6 +243,12 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                             panel.setDisabled(false);
                             panel.setDisabled(true);
                         }
+                        if (this.shrinkWrap) {
+                            // hack to set the initial nortpanel width to match the center panel's
+                            this.northPanel.setWidth(panel.getWidth());
+                            if (this.customMode)
+                                this.northPanel.show();
+                        }
                     }
                 }
             });
@@ -241,8 +256,6 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         else {
             this.centerPanel = this.previewPanel;
         }
-
-        this.items.push(this.centerPanel);
 
         if (this.allowCustomize) {
             this.saveButton = Ext4.create('Ext.button.Button', {
@@ -302,6 +315,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 ]
             });
             this.items.push(this.northPanel);
+            this.items.push(this.centerPanel);
         }
         this.initNorthPanel();
 
@@ -318,6 +332,14 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             var sorts = this.getSorts();
 
             if (measures.length > 0) {
+                var limit = 10000;
+                if (this._inCustomMode()) {
+                    limit = 50;
+                    this.queryLimited = true;
+                }
+                else
+                    this.queryLimited = false;
+
                 this.mask();
                 Ext4.Ajax.request({
                     url     : LABKEY.ActionURL.buildURL('visualization', 'getData.api'),
@@ -325,7 +347,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     jsonData: {
                         measures : measures,
                         sorts    : sorts,
-                        limit    : 10000
+                        limit    : limit
                     },
                     success : function(response){
                         this.unmask();
@@ -635,7 +657,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             else
                 this.northPanel.add(this.formPanel, this.designerPanel);
 
-            this.northPanel.show(); // might be hidden
+            //this.northPanel.show(); // might be hidden
         }
     },
 
@@ -799,7 +821,11 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             this.templateReport = Ext4.create('LABKEY.TemplateReport', config);
             this.templateReport.on('afterdatatransform', function(th, reportData) {
                 reportData.gridFields[0].style="border: solid 1px white;"
-                this.lengthReportField.setValue('<i>Showing ' + reportData.pages.length + ' Results</i>');
+
+                if (this._inCustomMode())
+                    this.lengthReportField.setValue('<i>Showing a Maximum of 50 Results (results are limited while a report is being customized)</i>');
+                else
+                    this.lengthReportField.setValue('<i>Showing ' + reportData.pages.length + ' Results</i>');
             }, this);
 
             if (this.printMode) {
@@ -864,7 +890,8 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         }
         // if the north panel hasn't been fully populated, initialize the dataset store, else
         // just show the panel
-        this.northPanel.show();
+        if (this.centerPanel.rendered)
+            this.northPanel.show();
         this.customMode = true;
 
         if (this.fitted)
@@ -880,6 +907,10 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
         if (this.fitted)
             this.fitToReport();
+
+        // when we close the customize dialog, show all results if the current query is limited
+        if (this.queryLimited)
+            this.generateTask.delay(500);
     },
 
     generateTemplateConfig : function(delay) {

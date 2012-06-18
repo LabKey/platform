@@ -79,14 +79,16 @@
             allowShare      : <%=c.hasPermission(user, ShareReportPermission.class)%>,
             hideSave        : <%=user.isGuest()%>,
             fitted          : <%=bean.isExpanded()%>,
-            openCustomize   : true
+            openCustomize   : true,
+            allowOverflow   : <%=bean.isAllowOverflow()%>
         });
 
         var _resize = function(w,h) {
             LABKEY.Utils.resizeToViewport(panel, w, -1); // don't fit to height
         }
 
-        Ext4.EventManager.onWindowResize(_resize);
+        if (<%=!bean.isAllowOverflow()%>)
+            Ext4.EventManager.onWindowResize(_resize);
     });
 
     function customizeParticipantReport(elementId) {

@@ -15,6 +15,8 @@
  */
 package org.labkey.study.reports;
 
+import org.apache.commons.lang3.BooleanUtils;
+import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.settings.AppProps;
@@ -65,7 +67,11 @@ public class ParticipantReport extends AbstractReport
 
         JspView<ReportsController.ParticipantReportForm> view = new JspView<ReportsController.ParticipantReportForm>("/org/labkey/study/view/participantReport.jsp", form);
 
-        form.setExpanded(!(context.get("reportWebPart") != null));
+        String rwp = (String)context.get("reportWebPart");
+        form.setExpanded(!(rwp != null));
+
+        form.setAllowOverflow(!BooleanUtils.toBoolean(rwp));
+
         view.setTitle(getDescriptor().getReportName());
         view.setFrame(WebPartView.FrameType.PORTAL);
 

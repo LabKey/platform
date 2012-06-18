@@ -2204,6 +2204,7 @@ public class ReportsController extends BaseStudyController
         private String _measures;
         private boolean _expanded;
         private String _groups;
+        private boolean _allowOverflow = true;
 
         public boolean isExpanded()
         {
@@ -2233,6 +2234,16 @@ public class ReportsController extends BaseStudyController
         public void setGroups(String groups)
         {
             _groups = groups;
+        }
+
+        public boolean isAllowOverflow()
+        {
+            return _allowOverflow;
+        }
+
+        public void setAllowOverflow(boolean allowOverflow)
+        {
+            _allowOverflow = allowOverflow;
         }
 
         @Override
