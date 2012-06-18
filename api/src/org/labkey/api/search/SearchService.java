@@ -83,7 +83,8 @@ public interface SearchService
         participantId("org.labkey.study#StudySubject"),
         navtrail(NavTree.class.getName());  // as in NavTree.toJS()
 
-        final String _propName;
+        private final String _propName;
+
         PROPERTY(String name)
         {
             _propName = name;

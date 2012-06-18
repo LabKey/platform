@@ -30,7 +30,6 @@ import org.labkey.api.reports.permissions.ShareReportPermission;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -38,8 +37,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.api.writer.VirtualFile;
 
 import java.io.File;
 import java.io.IOException;

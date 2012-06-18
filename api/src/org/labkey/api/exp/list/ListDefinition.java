@@ -17,6 +17,7 @@
 package org.labkey.api.exp.list;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.DomainNotFoundException;
@@ -33,6 +34,7 @@ import org.springframework.web.servlet.mvc.Controller;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
 public interface ListDefinition extends Comparable<ListDefinition>
@@ -170,9 +172,30 @@ public interface ListDefinition extends Comparable<ListDefinition>
 
     enum BodySetting
     {
-        TextOnly(0),
-        AllFields(1),
-        Custom(2);
+        TextOnly(0)
+                {
+                    @Override
+                    public boolean accept(ColumnInfo column)
+                    {
+                        return AllFields.accept(column) && column.isStringType();
+                    }
+                },
+        AllFields(1)
+                {
+                    @Override
+                    public boolean accept(ColumnInfo column)
+                    {
+                        return column.isUserEditable();
+                    }
+                },
+        Custom(2)
+                {
+                    @Override
+                    public boolean accept(ColumnInfo column)
+                    {
+                        throw new IllegalStateException();
+                    }
+                };
 
         private final int _value;
 
@@ -194,6 +217,8 @@ public interface ListDefinition extends Comparable<ListDefinition>
 
             return null;
         }
+
+        abstract public boolean accept(ColumnInfo column);
     }
 
     enum TitleSetting
@@ -233,6 +258,10 @@ public interface ListDefinition extends Comparable<ListDefinition>
     String getDescription();
     void setTitleColumn(String titleColumn);
     String getTitleColumn();
+    Date getModified();
+    void setModified(Date modified);
+    public Date getLastIndexed();
+    public void setLastIndexed(Date modified);
 
     KeyType getKeyType();
     void setKeyType(KeyType type);
