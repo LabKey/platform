@@ -986,15 +986,19 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             }
 
             var xName;
+            var xFunc;
             if(this.viewInfo.TimepointType === "date"){
                 xName = this.chartInfo.measures[0].dateOptions.interval;
+                xFunc = function(row){
+                    return row[xName].value;
+                };
             } else {
+                var visitMap = this.individualData ? this.individualData.visitMap : this.aggregateData.visitMap;
                 xName = measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit"];
+                xFunc = function(row){
+                    return visitMap[row[xName].value].displayOrder;
+                };
             }
-
-            var xFunc = function(row){
-                return row[xName].value;
-            };
 
             if(!this.chartInfo.axis[xAxisIndex].range.min){
                 this.chartInfo.axis[xAxisIndex].range.min = d3.min(this.individualData ? this.individualData.rows : this.aggregateData.rows, xFunc);
@@ -1225,12 +1229,12 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                             this.chartInfo,
                             this.chartInfo.title + ': ' + seriesList[i].name,
                             [seriesList[i]],
-                            this.individualData.rows,
-                            this.individualData.measureToColumn,
-                            this.individualData.visitMap,
-                            null,
-                            null,
-                            null,
+                            this.individualData ? this.individualData.rows : null,
+                            this.individualData ? this.individualData.measureToColumn : null,
+                            this.individualData ? this.individualData.visitMap : null,
+                            this.aggregateData ? this.aggregateData.rows : null,
+                            this.aggregateData ? this.aggregateData.measureToColumn : null,
+                            this.aggregateData ? this.aggregateData.visitMap : null,
                             seriesList.length > 1 ? 380 : 600,  // chart height
                             seriesList.length > 1 ? 'border-bottom: solid black 1px;' : null // chart style
                         );
