@@ -308,6 +308,7 @@ Ext4.onReady(function(){
             else {
                 return {
                     xtype: 'labkey-combo',
+                    editable: false,
                     itemId: queryName,
                     multiSelect: true,
                     fieldLabel: label,
