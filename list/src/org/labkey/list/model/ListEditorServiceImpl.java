@@ -296,6 +296,9 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         {
             scope.closeConnection();
         }
+
+        // schedules a scan (doesn't touch db)
+        ListManager.get().enumerateDocuments(null, getContainer(), null);
         return new ArrayList<String>(); // GWT error Collections.emptyList();
     }
 

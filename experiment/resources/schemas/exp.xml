@@ -201,6 +201,7 @@
           <ns:column columnName="AllowDelete" />
           <ns:column columnName="AllowUpload" />
           <ns:column columnName="AllowExport" />
+          <ns:column columnName="LastIndexed"/>
           <ns:column columnName="MetaDataIndex"/>
           <ns:column columnName="EntireListIndex"/>
           <ns:column columnName="EntireListBodyTemplate"/>

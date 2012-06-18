@@ -71,6 +71,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -94,6 +95,7 @@ public class ListDefinitionImpl implements ListDefinition
     ListDef _defOld;
     ListDef _def;
     Domain _domain;
+
     public ListDefinitionImpl(ListDef def)
     {
         _def = def;
@@ -166,7 +168,7 @@ public class ListDefinitionImpl implements ListDefinition
 
     public void setKeyType(KeyType type)
     {
-        _def.setKeyType(type.toString());
+        edit().setKeyType(type.toString());
     }
 
     public DiscussionSetting getDiscussionSetting()
@@ -176,7 +178,7 @@ public class ListDefinitionImpl implements ListDefinition
 
     public void setDiscussionSetting(DiscussionSetting discussionSetting)
     {
-        _def.setDiscussionSettingEnum(discussionSetting);
+        edit().setDiscussionSettingEnum(discussionSetting);
     }
 
     public boolean getAllowDelete()
@@ -186,7 +188,7 @@ public class ListDefinitionImpl implements ListDefinition
 
     public void setAllowDelete(boolean allowDelete)
     {
-        _def.setAllowDelete(allowDelete);
+        edit().setAllowDelete(allowDelete);
     }
 
     public boolean getAllowUpload()
@@ -196,7 +198,7 @@ public class ListDefinitionImpl implements ListDefinition
 
     public void setAllowUpload(boolean allowUpload)
     {
-        _def.setAllowUpload(allowUpload);
+        edit().setAllowUpload(allowUpload);
     }
 
     public boolean getAllowExport()
@@ -206,7 +208,7 @@ public class ListDefinitionImpl implements ListDefinition
 
     public void setAllowExport(boolean allowExport)
     {
-        _def.setAllowExport(allowExport);
+        edit().setAllowExport(allowExport);
     }
 
     @Override
@@ -218,7 +220,7 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public void setMetaDataIndex(boolean metaDataIndex)
     {
-        _def.setMetaDataIndex(metaDataIndex);
+        edit().setMetaDataIndex(metaDataIndex);
     }
 
     @Override
@@ -230,7 +232,7 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public void setEntireListIndex(boolean eachItemIndex)
     {
-        _def.setEntireListIndex(eachItemIndex);
+        edit().setEntireListIndex(eachItemIndex);
     }
 
     @Override
@@ -242,7 +244,7 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public void setEntireListTitleSetting(TitleSetting setting)
     {
-        _def.setEntireListTitleSettingEnum(setting);
+        edit().setEntireListTitleSettingEnum(setting);
     }
 
     @Override
@@ -254,7 +256,7 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public void setEntireListTitleTemplate(String template)
     {
-        _def.setEntireListTitleTemplate(template);
+        edit().setEntireListTitleTemplate(template);
     }
 
     @Override
@@ -266,7 +268,7 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public void setEntireListBodySetting(BodySetting setting)
     {
-        _def.setEntireListBodySettingEnum(setting);
+        edit().setEntireListBodySettingEnum(setting);
     }
 
     @Override
@@ -278,7 +280,7 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public void setEntireListBodyTemplate(String template)
     {
-        _def.setEntireListBodyTemplate(template);
+        edit().setEntireListBodyTemplate(template);
     }
 
     @Override
@@ -290,7 +292,7 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public void setEachItemIndex(boolean eachItemIndex)
     {
-        _def.setEachItemIndex(eachItemIndex);
+        edit().setEachItemIndex(eachItemIndex);
     }
 
     @Override
@@ -302,7 +304,7 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public void setEachItemTitleSetting(TitleSetting setting)
     {
-        _def.setEachItemTitleSettingEnum(setting);
+        edit().setEachItemTitleSettingEnum(setting);
     }
 
     @Override
@@ -314,7 +316,7 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public void setEachItemTitleTemplate(String template)
     {
-        _def.setEachItemTitleTemplate(template);
+        edit().setEachItemTitleTemplate(template);
     }
 
     @Override
@@ -326,7 +328,7 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public void setEachItemBodySetting(BodySetting setting)
     {
-        _def.setEachItemBodySettingEnum(setting);
+        edit().setEachItemBodySettingEnum(setting);
     }
 
     @Override
@@ -338,7 +340,7 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public void setEachItemBodyTemplate(String template)
     {
-        _def.setEachItemBodyTemplate(template);
+        edit().setEachItemBodyTemplate(template);
     }
 
     public void save(User user) throws Exception
@@ -834,7 +836,31 @@ public class ListDefinitionImpl implements ListDefinition
         edit().setTitleColumn(titleColumn);
     }
 
-    /** NOTE consisiduer using ListSchema.getTable(), unless you have a good reason */
+    @Override
+    public Date getModified()
+    {
+        return _def.getModified();
+    }
+
+    @Override
+    public void setModified(Date modified)
+    {
+        edit().setModified(modified);
+    }
+
+    @Override
+    public Date getLastIndexed()
+    {
+        return _def.getLastIndexed();
+    }
+
+    @Override
+    public void setLastIndexed(Date modified)
+    {
+        edit().setLastIndexed(modified);
+    }
+
+    /** NOTE consider using ListSchema.getTable(), unless you have a good reason */
     public TableInfo getTable(User user)
     {
         ListTable ret = new ListTable(user, this);

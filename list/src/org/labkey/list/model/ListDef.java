@@ -24,6 +24,8 @@ import org.labkey.api.exp.list.ListDefinition.DiscussionSetting;
 import org.labkey.api.exp.list.ListDefinition.TitleSetting;
 import org.labkey.api.util.UnexpectedException;
 
+import java.util.Date;
+
 public class ListDef extends Entity implements Cloneable
 {
     public enum Column
@@ -48,6 +50,8 @@ public class ListDef extends Entity implements Cloneable
     private String _keyType;
     private String _titleColumn;
     private String _description;
+    private Date _lastIndexed;
+
     private DiscussionSetting _discussionSetting = DiscussionSetting.None;
     private boolean _allowDelete = true;
     private boolean _allowUpload = true;
@@ -134,6 +138,16 @@ public class ListDef extends Entity implements Cloneable
     public void setDescription(String description)
     {
         _description = description;
+    }
+
+    public Date getLastIndexed()
+    {
+        return _lastIndexed;
+    }
+
+    public void setLastIndexed(Date lastIndexed)
+    {
+        _lastIndexed = lastIndexed;
     }
 
     public int getDiscussionSetting()
