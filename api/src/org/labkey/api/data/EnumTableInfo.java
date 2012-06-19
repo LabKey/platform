@@ -32,6 +32,7 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
     private final Class<EnumType> _enum;
     private final EnumValueGetter<EnumType> _getter;
     @Nullable private String _schemaName;
+    @Nullable private String _queryName;
 
     /**
      * Turns an enum value into a string to expose in the virtual table
@@ -103,6 +104,17 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
     public void setPublicSchemaName(@Nullable String schemaName)
     {
         _schemaName = schemaName;
+    }
+
+    public void setPublicName(@Nullable String queryName)
+    {
+        _queryName = queryName;
+    }
+
+    @Override
+    public String getPublicName()
+    {
+        return _queryName == null ? super.getPublicName() : _queryName;
     }
 
     @Override
