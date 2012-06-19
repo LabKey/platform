@@ -127,7 +127,7 @@ public class SampleMindedTransformTask extends PipelineJob.Task<SampleMindedTran
             if (NetworkDrive.exists(labsFile) && labsFile.isFile())
             {
                 parseLabs(labIds, labsFile);
-                getJob().info("Parsed " + labIds + " labs from " + labsFile);
+                getJob().info("Parsed " + labIds.size() + " labs from " + labsFile);
             }
             else
             {
