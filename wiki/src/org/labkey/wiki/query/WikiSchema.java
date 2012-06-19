@@ -68,6 +68,7 @@ public class WikiSchema extends UserSchema
         {
             EnumTableInfo<WikiRendererType> result = new EnumTableInfo<WikiRendererType>(WikiRendererType.class, CommSchema.getInstance().getSchema(), "Contains the type of renderers available to format content");
             result.setPublicSchemaName(getName());
+            result.setName(WikiService.RENDERER_TYPE_TABLE_NAME);
             return result;
         }
         return null;
