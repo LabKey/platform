@@ -69,6 +69,12 @@ public class TSVMapWriter extends TSVWriter
     }
 
     @Override
+    public void write()
+    {
+        super.write();
+    }
+
+    @Override
     protected void writeBody()
     {
         for (Map<String, Object> row : _rows)
