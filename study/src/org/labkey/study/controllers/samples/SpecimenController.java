@@ -5201,9 +5201,10 @@ public class SpecimenController extends BaseStudyController
         {
             _requestId = form.getId();
             setHasColumnHeaders(false);
-            setImportMessage("Upload a list of Global Unique Identifiers from a TSV, CSV or Excel file or paste the list directly into the text box below. " +
+            setImportMessage("Upload a list of Global Unique Identifiers from a TXT, CSV or Excel file or paste the list directly into the text box below. " +
                     "The list must have only one column and no header row.");
             setNoTableInfo();
+            setHideTsvCsvCombo(true);
         }
 
         public ModelAndView getView(IdForm form, BindException errors) throws Exception
