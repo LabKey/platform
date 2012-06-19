@@ -295,8 +295,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     public Set<Class> getIntegrationTests()
     {
         return new HashSet<Class>(Arrays.asList(
-            OntologyManager.TestCase.class,
-            LsidUtils.TestCase.class));
+            OntologyManager.TestCase.class));
     }
 
     @NotNull
@@ -304,7 +303,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     public Set<Class> getUnitTests()
     {
         return new HashSet<Class>(Arrays.asList(
-            LSIDRelativizer.TestCase.class));
+            LSIDRelativizer.TestCase.class,
+            LsidUtils.TestCase.class));
     }
 
     @Override
