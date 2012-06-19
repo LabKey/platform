@@ -263,7 +263,7 @@
     }
 
 
-    function onReady()
+    function onReady(bean)
     {
         importTsvForm = new Ext.form.FormPanel({
             fileUpload : false,
@@ -295,6 +295,7 @@
                             ['csv', 'Comma-separated text (csv)']
                         ]
                     }),
+                    hidden: <%=bean.hideTsvCsvCombo%>,
                     mode: 'local',
                     hiddenName: 'format',
                     name: 'format',

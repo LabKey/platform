@@ -72,6 +72,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         public String urlEndpoint = null;
         public List<Pair<String, String>> urlExcelTemplates = null;
         public String importMessage = null;
+        public boolean hideTsvCsvCombo = false;
     }
 
     protected AbstractQueryImportAction(Class<? extends FORM> formClass)
@@ -87,6 +88,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     protected boolean _hasColumnHeaders = true;
     protected String _importMessage = null;
     protected boolean _targetHasBeenSet = false;    // You can only set target TableInfo or NoTableInfo once
+    protected boolean _hideTsvCsvCombo = false;
 
     protected void setTarget(TableInfo t) throws ServletException
     {
@@ -115,6 +117,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         _importMessage = importMessage;
     }
 
+    protected void setHideTsvCsvCombo(boolean hideTsvCsvCombo)
+    {
+        _hideTsvCsvCombo = hideTsvCsvCombo;
+    }
+
     public ModelAndView getDefaultImportView(FORM form, BindException errors) throws Exception
     {
         ActionURL url = getViewContext().getActionURL();
@@ -126,6 +133,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
         bean.urlReturn = StringUtils.trimToNull(url.getParameter(ActionURL.Param.returnUrl));
         bean.urlCancel = StringUtils.trimToNull(url.getParameter(ActionURL.Param.cancelUrl));
+        bean.hideTsvCsvCombo = _hideTsvCsvCombo;
 
         if (null == bean.urlReturn)
         {
