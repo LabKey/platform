@@ -552,6 +552,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         var wp = new LABKEY.QueryWebPart({
             schemaName  : this.schemaName,
             queryName   : this.queryName,
+            columns     : this.savedColumns,        // TODO, qwp does not support passing in a column list
             frame       : 'none',
             showBorders : false,
             removeableFilters       : userFilters,
@@ -580,6 +581,15 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             schemaName  : this.schemaName,
             queryName   : this.queryName
         };
+
+        if (this.savedColumns)
+            config.columns = this.savedColumns;
+        else if (this.chartData)
+        {
+            config.columns = [];
+            for (var i=0; i < this.chartData.metaData.fields.length; i++)
+                config.columns.push(this.chartData.metaData.fields[i].name);
+        }
 
         if(!serialize){
             config.success = this.onSelectRowsSuccess;
@@ -999,7 +1009,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.schemaName = config.schemaName;
         this.queryName = config.queryName;
         this.renderType = config.renderType;
-        
+
         if (this.reportName)
             this.reportName.setValue(config.name);
 
@@ -1020,6 +1030,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 this.userFilters.push(LABKEY.Filter.create(f.name,  f.value, LABKEY.Filter.getFilterTypeForURLSuffix(f.type)));
             }
         }
+
+        if (json.queryConfig.columns)
+            this.savedColumns = json.queryConfig.columns;
 
         if (json.chartConfig)
         {
