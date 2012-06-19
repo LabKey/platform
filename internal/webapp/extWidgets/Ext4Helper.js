@@ -238,7 +238,7 @@ LABKEY.ext.Ext4Helper = new function(){
                     initialValue: field.value,
                     showValueInList: meta.showValueInList,
     //                listClass: 'labkey-grid-editor',
-                    lookupNullCaption: meta.lookupNullCaption,
+                    lookupNullCaption: meta.lookupNullCaption
                 });
             }
             else
