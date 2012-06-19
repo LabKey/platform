@@ -106,9 +106,9 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     }
 
 
-    public static DataLoader getDataLoaderForFile(File file) throws ServletException, IOException
+    public static DataLoader getDataLoaderForFile(File file, boolean  hasColumnHeaders) throws ServletException, IOException
     {
-        return getDataLoaderForFile(file, null);
+        return getDataLoaderForFile(file, null, hasColumnHeaders);
     }
 
     public static DataLoader getDataLoaderForInputStream(InputStream is, boolean asCSV) throws ServletException, IOException
@@ -162,11 +162,11 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     }
 
 
-    public static DataLoader getDataLoaderForFile(WebdavResource r) throws ServletException, IOException
+    public static DataLoader getDataLoaderForFile(WebdavResource r, boolean hasColumnHeaders) throws ServletException, IOException
     {
         File fOnDisk = r.getFile();
         if (null != fOnDisk)
-            return getDataLoaderForFile(fOnDisk);
+            return getDataLoaderForFile(fOnDisk, hasColumnHeaders);
 
         String origName = StringUtils.trimToEmpty(r.getName());
         String filename = origName.toLowerCase();
@@ -176,19 +176,19 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             File f = File.createTempFile("import", origName);
             f.deleteOnExit();
             IOUtils.copy(r.getInputStream(),new FileOutputStream(f));
-            ExcelLoader loader = new ExcelLoader(f, true);
+            ExcelLoader loader = new ExcelLoader(f, hasColumnHeaders);
             loader.setDeleteFileOnClose(true);
             return loader;
         }
         else if (filename.endsWith(".txt") || filename.endsWith(".tsv"))
         {
             Reader reader = new InputStreamReader(r.getInputStream());
-            return new TabLoader(reader, true);
+            return new TabLoader(reader, hasColumnHeaders);
         }
         else if (filename.endsWith(".csv"))
         {
             Reader reader = new InputStreamReader(r.getInputStream());
-            TabLoader loader = new TabLoader(reader, true);
+            TabLoader loader = new TabLoader(reader, hasColumnHeaders);
             loader.parseAsCSV();
             return loader;
         }
@@ -198,7 +198,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             f.deleteOnExit();
             IOUtils.copy(r.getInputStream(),new FileOutputStream(f));
 
-            FastaDataLoader loader = new FastaDataLoader(f, true);
+            FastaDataLoader loader = new FastaDataLoader(f, hasColumnHeaders);
             return loader;
         }
 
@@ -206,27 +206,27 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     }
 
 
-    public static DataLoader getDataLoaderForFile(File file, Container mvIndicatorContainer) throws ServletException, IOException
+    public static DataLoader getDataLoaderForFile(File file, Container mvIndicatorContainer, boolean hasColumnHeaders) throws ServletException, IOException
     {
         String filename = file.getName().toLowerCase();
 
         if (filename.endsWith("xls") || filename.endsWith("xlsx"))
         {
-            return new ExcelLoader(file, true, mvIndicatorContainer);
+            return new ExcelLoader(file, hasColumnHeaders, mvIndicatorContainer);
         }
         else if (filename.endsWith("txt") || filename.endsWith("tsv"))
         {
-            return new TabLoader(file, true, mvIndicatorContainer);
+            return new TabLoader(file, hasColumnHeaders, mvIndicatorContainer);
         }
         else if (filename.endsWith("csv"))
         {
-            TabLoader loader = new TabLoader(file, true, mvIndicatorContainer);
+            TabLoader loader = new TabLoader(file, hasColumnHeaders, mvIndicatorContainer);
             loader.parseAsCSV();
             return loader;
         }
         else if (FastaDataLoader.isFastaFile(filename))
         {
-            FastaDataLoader loader = new FastaDataLoader(file, true, mvIndicatorContainer);
+            FastaDataLoader loader = new FastaDataLoader(file, hasColumnHeaders, mvIndicatorContainer);
             return loader;
         }
 

@@ -58,7 +58,7 @@
 <div id="<%=errorDivId%>" class="labkey-error">
 <labkey:errors></labkey:errors>&nbsp;
 </div>
-<table class="labkey-wp" style="background-color:#ffffff;">
+<table class="labkey-wp" style="background-color:#ffffff;max-width: 760px;">
 <tr class="labkey-wp-header" style="min-width:600px;">
     <th class="labkey-wp-title-left" style="padding:5px;"><span class="labkey-wp-title-left">Copy/paste text</span></th>
     <th class="labkey-wp-title-right"><%=PageFlowUtil.generateButtonHtml("&ndash;","#",null,"id='"+copyPasteDivId+"Expando'")%></th>
@@ -66,7 +66,7 @@
 <tr><td colspan=2 style="display:inline;"><div id="<%=copyPasteDivId%>"></div></td></tr>
 </table>
 <br>
-<table class="labkey-bordered labkey-wp" style="background-color:#ffffff;">
+<table class="labkey-bordered labkey-wp" style="background-color:#ffffff;max-width: 760px;">
 <tr class="labkey-wp-header" style="min-width:600px;">
     <th class="labkey-wp-title-left" style="padding:5px;"><span class="labkey-wp-title-left">Upload file (.xls, .csv, .txt)</span></th>
     <th class="labkey-wp-title-right"><%=PageFlowUtil.generateButton("+","#",null,"id='"+uploadFileDivId+"Expando'")%></tr>

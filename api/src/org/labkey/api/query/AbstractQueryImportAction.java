@@ -79,17 +79,41 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         super(formClass);
     }
 
-
+    // Caller can import into table, using TableInfo or into simpler List of Objects, using ColumnDescriptors
     protected TableInfo _target;
     protected QueryUpdateService _updateService;
 
+    protected boolean _noTableInfo = false;         // No table info; expect importData to be overridden; DERIVED MUST OVERRIDE validatePermissions
+    protected boolean _hasColumnHeaders = true;
+    protected String _importMessage = null;
+    protected boolean _targetHasBeenSet = false;    // You can only set target TableInfo or NoTableInfo once
 
-    protected void setTarget(TableInfo t)
+    protected void setTarget(TableInfo t) throws ServletException
     {
+        if (_targetHasBeenSet)
+            throw new ServletException("Import/Upload target has already been set.");
         _target = t;
         _updateService = _target.getUpdateService();
+        _targetHasBeenSet = true;
     }
 
+    protected void setNoTableInfo() throws ServletException
+    {
+        if (_targetHasBeenSet)
+            throw new ServletException("Import/Upload target has already been set.");
+        _noTableInfo = true;
+        _targetHasBeenSet = true;
+    }
+
+    protected void setHasColumnHeaders(boolean hasColumnHeaders)
+    {
+        _hasColumnHeaders = hasColumnHeaders;
+    }
+
+    protected void setImportMessage(String importMessage)
+    {
+        _importMessage = importMessage;
+    }
 
     public ModelAndView getDefaultImportView(FORM form, BindException errors) throws Exception
     {
@@ -117,16 +141,28 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             bean.urlCancel = bean.urlReturn;
 
         bean.urlEndpoint = url.getLocalURIString();
-        bean.importMessage = _target.getImportMessage();
-        bean.urlExcelTemplates = new ArrayList<Pair<String, String>>();
 
-        List<Pair<String, String>> it = _target.getImportTemplates(getViewContext());
-        if(it != null)
+        if (_target != null)
         {
-            for (Pair<String, String> pair : it)
+            bean.importMessage = _target.getImportMessage();    // Get message from TableInfo
+            bean.urlExcelTemplates = new ArrayList<Pair<String, String>>();
+
+            List<Pair<String, String>> it = _target.getImportTemplates(getViewContext());
+            if (it != null)
             {
-                bean.urlExcelTemplates.add(Pair.of(pair.first, pair.second));
+                for (Pair<String, String> pair : it)
+                {
+                    bean.urlExcelTemplates.add(Pair.of(pair.first, pair.second));
+                }
             }
+        }
+        else if (_noTableInfo)
+        {
+            bean.importMessage = _importMessage;     // Use passed in message if no TableInfo
+        }
+        else
+        {
+            errors.reject(SpringActionController.ERROR_MSG, "No table has been set to receive imported data");
         }
 
         return new JspView<ImportViewBean>(AbstractQueryImportAction.class, "import.jsp", bean, errors);
@@ -159,7 +195,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             {
                 hasPostData = true;
                 originalName = "upload.tsv";
-                TabLoader tabLoader = new TabLoader(text, true);
+                TabLoader tabLoader = new TabLoader(text, _hasColumnHeaders);
                 if ("csv".equals(getViewContext().getRequest().getParameter("format")))
                 {
                     tabLoader.setDelimiterCharacter(',');
@@ -179,7 +215,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                 else
                 {
                     hasPostData = true;
-                    loader = DataLoader.getDataLoaderForFile(resource);
+                    loader = DataLoader.getDataLoaderForFile(resource, _hasColumnHeaders);
                     file = resource.getFileStream(user);
                     originalName = resource.getName();
                 }
@@ -195,7 +231,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                     // can't read the multipart file twice so create temp file (12800)
                     tempFile = File.createTempFile("~upload", multipartfile.getOriginalFilename());
                     multipartfile.transferTo(tempFile);
-                    loader = DataLoader.getDataLoaderForFile(tempFile);
+                    loader = DataLoader.getDataLoaderForFile(tempFile, _hasColumnHeaders);
                     file = new FileAttachmentFile(tempFile, multipartfile.getOriginalFilename());
                 }
             }
@@ -235,7 +271,12 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
     protected void validatePermission(User user, BindException errors)
     {
-        if (null == _target)
+        if (_noTableInfo)
+        {
+            // There is no TableInfo; Derived class should check permissions
+            errors.reject(SpringActionController.ERROR_MSG, "Table not specified");
+        }
+        else if (null == _target)
         {
             errors.reject(SpringActionController.ERROR_MSG, "Table not specified");
         }
@@ -272,46 +313,54 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     /* TODO change prototype if/when QueryUpdateServie supports DataIterator */
     protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors) throws IOException
     {
-        DbScope scope = _target.getSchema().getScope();
-        try
+        if (_target != null)
         {
-            scope.beginTransaction();
-            List res = _updateService.insertRows(getViewContext().getUser(), getViewContext().getContainer(), dl.load(), errors, new HashMap<String, Object>());
-//            List res = _updateService.importRows(getViewContext().getUser(), getViewContext().getContainer(), dl.getDataIterator(errors), errors, new HashMap<String, Object>());
-            if (errors.hasErrors())
-                return 0;
-            scope.commitTransaction();
-            return res.size();
-        }
-        catch (BatchValidationException x)
-        {
-            assert x.hasErrors();
-            if (x != errors)
+            DbScope scope = _target.getSchema().getScope();
+            try
             {
-                for (ValidationException e : x.getRowErrors())
-                    errors.addRowError(e);
+                scope.beginTransaction();
+                List res = _updateService.insertRows(getViewContext().getUser(), getViewContext().getContainer(), dl.load(), errors, new HashMap<String, Object>());
+    //            List res = _updateService.importRows(getViewContext().getUser(), getViewContext().getContainer(), dl.getDataIterator(errors), errors, new HashMap<String, Object>());
+                if (errors.hasErrors())
+                    return 0;
+                scope.commitTransaction();
+                return res.size();
+            }
+            catch (BatchValidationException x)
+            {
+                assert x.hasErrors();
+                if (x != errors)
+                {
+                    for (ValidationException e : x.getRowErrors())
+                        errors.addRowError(e);
+                }
+            }
+            catch (DuplicateKeyException x)
+            {
+                errors.addRowError(new ValidationException(x.getMessage()));
+            }
+            catch (QueryUpdateServiceException x)
+            {
+                errors.addRowError(new ValidationException(x.getMessage()));
+            }
+            catch (SQLException x)
+            {
+                boolean isConstraint = scope.getSqlDialect().isConstraintException(x);
+                if (isConstraint)
+                    errors.addRowError(new ValidationException(x.getMessage()));
+                else
+                    throw new RuntimeSQLException(x);
+            }
+            finally
+            {
+                scope.closeConnection();
             }
         }
-        catch (DuplicateKeyException x)
+        else
         {
-            errors.addRowError(new ValidationException(x.getMessage()));
+            errors.addRowError(new ValidationException("Table not specified"));
         }
-        catch (QueryUpdateServiceException x)
-        {
-            errors.addRowError(new ValidationException(x.getMessage()));
-        }
-        catch (SQLException x)
-        {
-            boolean isConstraint = scope.getSqlDialect().isConstraintException(x);
-            if (isConstraint)
-                errors.addRowError(new ValidationException(x.getMessage()));
-            else
-                throw new RuntimeSQLException(x);
-        }
-        finally
-        {
-            scope.closeConnection();
-        }
+
         return 0;
     }
 
