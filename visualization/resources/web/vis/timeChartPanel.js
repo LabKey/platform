@@ -1309,35 +1309,52 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
     generatePlot: function(chart, studyType, viewInfo, chartInfo, mainTitle, seriesList, individualData, individualMeasureToColumn, individualVisitMap, aggregateData, aggregateMeasureToColumn, aggregateVisitMap, chartHeight, chartStyle){
         // This function generates a plot config and renders a plot for given data.
         // Should be used in per_subject, single, per_measure, and per_group
-        var generateLayerAes = function(name, yAxisSide, columnName, intervalKey, subjectColumn, hoverText){
+        var generateLayerAes = function(name, yAxisSide, columnName){
             var yName = yAxisSide == "left" ? "yLeft" : "yRight";
             var aes = {};
             aes[yName] = function(row){return parseFloat(row[columnName].value)}; // Have to parseFlot because for some reason ObsCon from Luminex was returning strings not floats/ints.
-            if(hoverText){
-                aes.hoverText = function(row){return row[subjectColumn].value + ' '  + name + ', ' + intervalKey + ' ' + row[intervalKey].value + ', ' + row[columnName].value};
-            }
             return aes;
         };
 
-        var generateAggregateLayerAes = function(name, yAxisSide, columnName, intervalKey, subjectColumn, hoverText, errorColumn, errorType){
+        var generateAggregateLayerAes = function(name, yAxisSide, columnName, intervalKey, subjectColumn, errorColumn){
             var yName = yAxisSide == "left" ? "yLeft" : "yRight";
             var aes = {};
-            aes[yName] = function(row){return parseFloat(row[columnName].value)}; // Have to parseFlot because for some reason ObsCon from Luminex was returning strings not floats/ints.
-            if(hoverText){
-                if(errorColumn){
-                    aes.hoverText = function(row){
-                        var errorVal = row[errorColumn].value ? row[errorColumn].value : 'n/a';
-                        return row[subjectColumn].displayValue + ' ' + name + ', '
-                                + intervalKey + ' ' + row[intervalKey].value + ', ' + row[columnName].value + ' '
-                                + errorType + ': ' + errorVal
-                    };
-                } else {
-                    aes.hoverText = function(row){return row[subjectColumn].displayValue + ' '  + name + ', ' + intervalKey + ' ' + row[intervalKey].value + ', ' + row[columnName].value};
-                }
-            }
+            aes[yName] = function(row){return parseFloat(row[columnName].value)}; // Have to parseFloat because for some reason ObsCon from Luminex was returning strings not floats/ints.
             aes.group = aes.color = aes.shape = function(row){return row[subjectColumn].displayValue};
             aes.error = function(row){return row[errorColumn].value};
             return aes;
+        };
+
+        var hoverTextFn = function(subjectColumn, intervalKey, name, columnName, visitMap, errorColumn, errorType){
+            if(visitMap){
+                if(errorColumn){
+                    return function(row){
+                        var subject = row[subjectColumn].displayValue ? row[subjectColumn].displayValue : row[subjectColumn].value;
+                        var errorVal = row[errorColumn].value ? row[errorColumn].value : 'n/a';
+                        return ' ' + subject + ',\n '+ visitMap[row[intervalKey].value].displayName + ',\n ' + name + ': ' + row[columnName].value +
+                                ',\n ' + errorType + ': ' + errorVal;
+                    }
+                } else {
+                    return function(row){
+                        var subject = row[subjectColumn].displayValue ? row[subjectColumn].displayValue : row[subjectColumn].value;
+                        return ' ' + subject + ',\n '+ visitMap[row[intervalKey].value].displayName + ',\n ' + name + ': ' + row[columnName].value;
+                    };
+                }
+            } else {
+                if(errorColumn){
+                    return function(row){
+                        var subject = row[subjectColumn].displayValue ? row[subjectColumn].displayValue : row[subjectColumn].value;
+                        var errorVal = row[errorColumn].value ? row[errorColumn].value : 'n/a';
+                        return ' ' + subject + ',\n ' + intervalKey + ': ' + row[intervalKey].value + ',\n ' + name + ': ' + row[columnName].value +
+                                ',\n ' + errorType + ': ' + errorVal;
+                    }
+                } else {
+                    return function(row){
+                        var subject = row[subjectColumn].displayValue ? row[subjectColumn].displayValue : row[subjectColumn].value;
+                        return ' ' + subject + ',\n ' + intervalKey + ': ' + row[intervalKey].value + ',\n ' + name + ': ' + row[columnName].value;
+                    };
+                }
+            }
         };
 
         var layers = [];
@@ -1348,6 +1365,28 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         var intervalKey = null;
         var individualSubjectColumn = individualMeasureToColumn ? individualMeasureToColumn[viewInfo.subjectColumn] : null;
         var aggregateSubjectColumn = "GroupId";
+        var xAes, xTickFormat, tickMap = {};
+        var visitMap = individualVisitMap ? individualVisitMap : aggregateVisitMap;
+
+        for(var rowId in visitMap){
+            tickMap[visitMap[rowId].displayOrder] = visitMap[rowId].displayName;
+        }
+
+        if(studyType == 'date'){
+            intervalKey = chartInfo.measures[seriesList[0].measureIndex].dateOptions.interval;
+            xAes = function(row){return row[intervalKey].value}
+        } else {
+            intervalKey = individualMeasureToColumn ?
+                    individualMeasureToColumn[viewInfo.subjectNounSingular + "Visit/Visit"] :
+                    aggregateMeasureToColumn[viewInfo.subjectNounSingular + "Visit/Visit"];
+            xAes = function(row){
+                return visitMap[row[intervalKey].value].displayOrder;
+            };
+            xTickFormat = function(value){
+                return tickMap[value];
+            }
+        }
+
         var newChartDiv = Ext4.create('Ext.container.Container', {
             height: chartHeight,
             style: chartStyle ? chartStyle : 'border: none;',
@@ -1379,18 +1418,12 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         for(var i = seriesList.length -1; i >= 0; i--){
             var chartSeries = seriesList[i];
-            intervalKey = studyType == "date" ?
-                    chartInfo.measures[chartSeries.measureIndex].dateOptions.interval :
-                    individualMeasureToColumn ?
-                            individualMeasureToColumn[viewInfo.subjectNounSingular + "Visit/Visit"] :
-                            aggregateMeasureToColumn[viewInfo.subjectNounSingular + "Visit/Visit"];
-
             var columnName = individualMeasureToColumn ? individualMeasureToColumn[chartSeries.name] : aggregateMeasureToColumn[chartSeries.name];
             if(individualData && individualMeasureToColumn){
                 var pathLayerConfig = {
                     name: chartSeries.name,
                     geom: new LABKEY.vis.Geom.Path({size: chartInfo.lineWidth}),
-                    aes: generateLayerAes(chartSeries.name, chartSeries.yAxisSide, columnName, intervalKey, individualSubjectColumn, false)
+                    aes: generateLayerAes(chartSeries.name, chartSeries.yAxisSide, columnName)
                 };
                 layers.push(new LABKEY.vis.Layer(pathLayerConfig));
 
@@ -1398,8 +1431,13 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     var pointLayerConfig = {
                         name: chartSeries.name,
                         geom: new LABKEY.vis.Geom.Point(),
-                        aes: generateLayerAes(chartSeries.name, chartSeries.yAxisSide, columnName, intervalKey, individualSubjectColumn, true)
+                        aes: generateLayerAes(chartSeries.name, chartSeries.yAxisSide, columnName)
                     };
+                    if(studyType == 'date'){
+                        pointLayerConfig.aes.hoverText = hoverTextFn(individualSubjectColumn, intervalKey, chartSeries.name, columnName, null, null, null);
+                    } else {
+                        pointLayerConfig.aes.hoverText = hoverTextFn(individualSubjectColumn, intervalKey, chartSeries.name, columnName, visitMap, null, null);
+                    }
                     layers.push(new LABKEY.vis.Layer(pointLayerConfig));
                 }
             }
@@ -1417,7 +1455,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     name: chartSeries.name,
                     data: aggregateData,
                     geom: new LABKEY.vis.Geom.Path({size: chartInfo.lineWidth}),
-                    aes: generateAggregateLayerAes(chartSeries.name, chartSeries.yAxisSide, columnName, intervalKey, aggregateSubjectColumn, false, errorColumnName, chartInfo.errorBars)
+                    aes: generateAggregateLayerAes(chartSeries.name, chartSeries.yAxisSide, columnName, intervalKey, aggregateSubjectColumn, errorColumnName)
                 };
                 layers.push(new LABKEY.vis.Layer(aggregatePathLayerConfig));
 
@@ -1426,7 +1464,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                         name: chartSeries.name,
                         data: aggregateData,
                         geom: new LABKEY.vis.Geom.ErrorBar(),
-                        aes: generateAggregateLayerAes(chartSeries.name, chartSeries.yAxisSide, columnName, intervalKey, aggregateSubjectColumn, false, errorColumnName, chartInfo.errorBars)
+                        aes: generateAggregateLayerAes(chartSeries.name, chartSeries.yAxisSide, columnName, intervalKey, aggregateSubjectColumn, errorColumnName)
                     };
                     layers.push(new LABKEY.vis.Layer(aggregateErrorLayerConfig));
                 }
@@ -1436,30 +1474,15 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                         name: chartSeries.name,
                         data: aggregateData,
                         geom: new LABKEY.vis.Geom.Point(),
-                        aes: generateAggregateLayerAes(chartSeries.name, chartSeries.yAxisSide, columnName, intervalKey, aggregateSubjectColumn, true, errorColumnName, chartInfo.errorBars)
+                        aes: generateAggregateLayerAes(chartSeries.name, chartSeries.yAxisSide, columnName, intervalKey, aggregateSubjectColumn, errorColumnName)
                     };
+                    if(studyType == 'date'){
+                        aggregatePointLayerConfig.aes.hoverText = hoverTextFn(aggregateSubjectColumn, intervalKey, chartSeries.name, columnName, null, errorColumnName, chartInfo.errorBars)
+                    } else {
+                        aggregatePointLayerConfig.aes.hoverText = hoverTextFn(aggregateSubjectColumn, intervalKey, chartSeries.name, columnName, visitMap, errorColumnName, chartInfo.errorBars);
+                    }
                     layers.push(new LABKEY.vis.Layer(aggregatePointLayerConfig));
                 }
-            }
-        }
-
-        var xAes, xTickFormat, tickMap = {};
-        var visitMap = individualVisitMap ? individualVisitMap : aggregateVisitMap;
-
-        for(var rowId in visitMap){
-            var visitDisplayOrder = visitMap[rowId].displayOrder;
-            var visitLabel = visitMap[rowId].displayName;
-            tickMap[visitDisplayOrder] = visitLabel;
-        }
-
-        if(studyType == 'date'){
-            xAes = function(row){return row[intervalKey].value}
-        } else {
-            xAes = function(row){
-                return visitMap[row[intervalKey].value].displayOrder;
-            };
-            xTickFormat = function(value){
-                return tickMap[value];
             }
         }
 
