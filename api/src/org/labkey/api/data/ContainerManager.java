@@ -133,6 +133,11 @@ public class ContainerManager
         return parent.getParsedPath().append(name, true);
     }
 
+    public static Container createMockContainer()
+    {
+        return new Container(null, "MockContainer", "01234567-8901-2345-6789-012345678901", 99999999, 0, new Date(), true);
+    }
+
     private static Container createRoot()
     {
         try

@@ -77,6 +77,11 @@ public class XarContext
 
     public XarContext(String jobDescription, Container c, User user)
     {
+        this(jobDescription, c, user, AppProps.getInstance().getDefaultLsidAuthority());
+    }
+
+    public XarContext(String jobDescription, Container c, User user, String defaultLsidAuthority)
+    {
         _jobDescription = jobDescription;
         _originalURLs = new HashMap<String, ExpData>();
         _originalCaseInsensitiveURLs = new CaseInsensitiveHashMap<ExpData>();
@@ -101,7 +106,7 @@ public class XarContext
         _substitutions.put(FOLDER_LSID_BASE_NAME, "urn:lsid:" + LSID_AUTHORITY_SUBSTITUTION + ":${LSIDNamespace.Prefix}.Folder-" + CONTAINER_ID_SUBSTITUTION);
         _substitutions.put(RUN_LSID_BASE_NAME, "urn:lsid:" + LSID_AUTHORITY_SUBSTITUTION + ":${LSIDNamespace.Prefix}.Run-" + EXPERIMENT_RUN_ID_SUBSTITUTION);
 
-        _substitutions.put(LSID_AUTHORITY_NAME, AppProps.getInstance().getDefaultLsidAuthority());
+        _substitutions.put(LSID_AUTHORITY_NAME, defaultLsidAuthority);
 
         _container = c;
         _user = user;

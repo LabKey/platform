@@ -49,7 +49,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
 
     public static final User guest = new GuestUser("guest");
     // Search user is guest plus Reader everywhere
-    private static final User search = new LimitedUser(new GuestUser("search"), new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
+    private static User search;
 
 
     public User()
@@ -256,14 +256,18 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         _active = active;
     }
 
-    public static User getSearchUser()
+    public static synchronized User getSearchUser()
     {
+        if (search == null)
+        {
+            search = new LimitedUser(new GuestUser("search"), new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
+        }
         return search;
     }
 
     public boolean isSearchUser()
     {
-        return this == search;
+        return this == getSearchUser();
     }
 
     public String getPhone()

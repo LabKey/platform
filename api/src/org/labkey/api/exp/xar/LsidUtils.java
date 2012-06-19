@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.XarContext;
@@ -211,7 +212,7 @@ public class LsidUtils
         @Before
         public void setUp() throws Exception
         {
-            _context = new XarContext("TestCase", ContainerManager.getRoot(), UserManager.getGuestUser());
+            _context = new XarContext("TestCase", ContainerManager.createMockContainer(), UserManager.getGuestUser(), "localhost");
             _context.addSubstitution("Value1", "One");
             _context.addSubstitution("Value2", "Two");
             _context.addSubstitution("Reference1", "${Value1}");
