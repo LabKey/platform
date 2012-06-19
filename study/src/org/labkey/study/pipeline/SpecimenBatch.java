@@ -38,7 +38,7 @@ public class SpecimenBatch extends StudyBatch implements Serializable, SpecimenJ
 {
     private boolean _isMerge;
 
-    public static final FileType SAMPLE_MINDED_FILE_TYPE = new FileType(".specimens.xlsx");
+    public static final FileType SAMPLE_MINDED_FILE_TYPE = new FileType(".xlsx");
     public static final FileType ARCHIVE_FILE_TYPE = new FileType(".specimens");
 
     public SpecimenBatch(ViewBackgroundInfo info, File definitionFile, PipeRoot root, boolean merge) throws SQLException
