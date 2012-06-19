@@ -68,7 +68,7 @@ public class AJAXDetailsDisplayColumn extends DataColumn
         {
             evaluatedURL = _detailsURL.eval(ctx);
         }
-        if (evaluatedURL != null)
+        if (evaluatedURL != null && getValue(ctx) != null)
         {
             String divId = GUID.makeGUID();
             JSONObject props = new JSONObject(_properties);
