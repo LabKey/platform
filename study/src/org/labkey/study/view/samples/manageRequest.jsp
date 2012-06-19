@@ -50,6 +50,13 @@
         SampleRequestStatus cartStatus = SampleManager.getInstance().getRequestShoppingCartStatus(context.getContainer(), context.getUser());
         notYetSubmitted = bean.getSampleRequest().getStatusId() == cartStatus.getRowId();
     }
+
+    String specimenSearchButton = SampleManager.getInstance().hasEditRequestPermissions(context.getUser(), bean.getSampleRequest()) ?
+        generateButton("Specimen Search", buildURL(ShowSearchAction.class) + "showVials=true", null) : "";
+    String importVialIdsButton = SampleManager.getInstance().hasEditRequestPermissions(context.getUser(), bean.getSampleRequest()) ?
+        generateButton("Upload Specimen Ids", buildURL(SpecimenController.ImportVialIdsAction.class,
+                "id=" + bean.getSampleRequest().getRowId()), null) : "";
+
 %>
 <script type="text/javascript">
     var NONSITE_ACTORS = [<%
@@ -194,7 +201,7 @@
         <tr>
             <td class="labkey-form-label">
                 <span class="labkey-error"><b>WARNING: Vials are at multiple locations.</b></span><br>
-                Requests containing vials from multiple providing locations may require increased processing time.
+                Requests containing vials from multiple providing locations may require increased processing time.<br>
                 Multiple locations are expected if some vials have already shipped while others have not.
                 Current locations for this request are:<br>
                 <%
@@ -270,8 +277,8 @@
             {
 %>
                 You must add specimens before submitting your request.<br><br>
-                <%= SampleManager.getInstance().hasEditRequestPermissions(context.getUser(), bean.getSampleRequest()) ?
-                        generateButton("Specimen Search", buildURL(ShowSearchAction.class) + "showVials=true") : "" %>
+                <%= specimenSearchButton %>
+                <%= importVialIdsButton %>
 <%
             }
 %>
@@ -448,8 +455,8 @@
                     {
                 %>
                 No specimens are associated with this request.<br>
-                <%= SampleManager.getInstance().hasEditRequestPermissions(context.getUser(), bean.getSampleRequest()) ? 
-                        generateButton("Specimen Search", buildURL(ShowSearchAction.class) + "showVials=true") : "" %>
+                <%= specimenSearchButton %>
+                <%= importVialIdsButton %>
                 <%
                     }
                 %>

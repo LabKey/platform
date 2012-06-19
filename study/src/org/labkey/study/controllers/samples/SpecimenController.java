@@ -54,12 +54,17 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
+import org.labkey.api.query.AbstractQueryImportAction;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
@@ -75,6 +80,7 @@ import org.labkey.api.study.Visit;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileStream;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
@@ -185,6 +191,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -988,8 +995,15 @@ public class SpecimenController extends BaseStudyController
                 {
                     ActionButton addButton = new ActionButton(new ActionURL(OverviewAction.class, getContainer()), "Specimen Search");
                     ActionButton deleteButton = new ActionButton(HandleRemoveRequestSamplesAction.class, "Remove Selected");
-                    _specimenQueryView.addHiddenFormField("id", "" + _sampleRequest.getRowId());
+                    _specimenQueryView.addHiddenFormField("id", "" + sampleRequest.getRowId());
                     buttons.add(addButton);
+
+                    ActionURL importActionURL = new ActionURL(ImportVialIdsAction.class, getContainer());
+                    importActionURL.addParameter("id", sampleRequest.getRowId());
+                    ActionButton importButton = new ActionButton(importActionURL, "Upload Specimen Ids");
+                    importButton.setActionType(ActionButton.Action.GET);
+                    buttons.add(importButton);
+
                     buttons.add(deleteButton);
                 }
                 _specimenQueryView.setButtons(buttons);
@@ -5170,4 +5184,193 @@ public class SpecimenController extends BaseStudyController
             return outer;
         }
     }
+
+    @RequiresPermissionClass(RequestSpecimensPermission.class)
+    public class ImportVialIdsAction extends AbstractQueryImportAction<IdForm>
+    {
+        private Study _study;
+        private int _requestId = -1;
+
+        public ImportVialIdsAction()
+        {
+            super(IdForm.class);
+        }
+
+        @Override
+        protected void initRequest(IdForm form) throws ServletException
+        {
+            _requestId = form.getId();
+            setHasColumnHeaders(false);
+            setImportMessage("Upload a list of Global Unique Identifiers from a TSV, CSV or Excel file or paste the list directly into the text box below. " +
+                    "The list must have only one column and no header row.");
+            setNoTableInfo();
+        }
+
+        public ModelAndView getView(IdForm form, BindException errors) throws Exception
+        {
+            initRequest(form);
+            SampleRequest request = SampleManager.getInstance().getRequest(getContainer(), _requestId);
+            if (request == null)
+                throw new NotFoundException();
+
+            if (!SampleManager.getInstance().hasEditRequestPermissions(getViewContext().getUser(), request) ||
+                    SampleManager.getInstance().isInFinalState(request))
+            {
+                return new HtmlView("<div class=\"labkey-error\">You do not have permissions to modify this request.</div>");
+            }
+
+            _study = getStudy();
+            if (_study == null)
+                throw new NotFoundException("No study exists in this folder.");
+
+            return getDefaultImportView(form, errors);
+        }
+
+        @Override
+        protected void validatePermission(User user, BindException errors)
+        {
+            checkPermissions();
+            try
+            {
+                SampleRequest request = SampleManager.getInstance().getRequest(getContainer(), _requestId);
+
+                if (!SampleManager.getInstance().hasEditRequestPermissions(getViewContext().getUser(), request) ||
+                        SampleManager.getInstance().isInFinalState(request))
+                {
+                    // No permission
+                    errors.reject(SpringActionController.ERROR_MSG, "You do not have permission to modify this request.");
+                }
+            }
+            catch (SQLException e)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "Unexpected Exception checking permissions.");
+            }
+            catch (ServletException e)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "Unexpected Exception checking permissions.");
+            }
+        }
+
+        @Override
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors) throws IOException
+        {
+            List<String> errorList = new LinkedList<String>();
+
+            ColumnDescriptor[] columns = new ColumnDescriptor[2];   // Only 1 actual column of type String
+            columns[0] = new ColumnDescriptor("Actual", String.class);
+            columns[1] = new ColumnDescriptor("Dummy", String.class);
+            dl.setColumns(columns);
+
+            List<Map<String, Object>> rows = dl.load();
+            String[] globalIds = new String[rows.size()];
+            int i = 0;
+            for (Map<String, Object> row : rows)
+            {
+                String idActual = (String)row.get("Actual");
+                if (idActual == null)
+                {
+                    errorList.add("Malformed input data.");
+                    break;
+                }
+
+                String idDummy = (String)row.get("Dummy");
+                if (idDummy != null)
+                {
+                    errorList.add("Only one id per line is allowed.");
+                    break;
+                }
+                globalIds[i] = idActual;
+                i += 1;
+            }
+
+            if (errorList.size() == 0)
+            {
+                // Get all the specimen objects. If it throws IOException then there was an error and we'll
+                // root around to figure out what to report
+                DbScope scope = StudySchema.getInstance().getSchema().getScope();
+                try
+                {
+                    scope.ensureTransaction();
+                    Specimen[] specimens = SampleManager.getInstance().getSpecimens(getContainer(), globalIds);
+
+                    if (specimens != null && specimens.length == globalIds.length)
+                    {
+                        // All the specimens exist; add them to the request.
+                        // There still may be errors (like someone already has requested that specimen) which will be
+                        // caught by createRequestSampleMapping
+
+                        ArrayList<Specimen> specimenList = new ArrayList<Specimen>(specimens.length);
+                        Collections.addAll(specimenList, specimens);
+                        SampleRequest request = SampleManager.getInstance().getRequest(getContainer(), _requestId);
+                        SampleManager.getInstance().createRequestSampleMapping(getUser(), request, specimenList, true, true);
+
+                        scope.commitTransaction();
+                    }
+                    else
+                    {
+                        errors.addRowError(new ValidationException("Duplicate Ids found."));
+                    }
+                }
+                catch (SQLException e)
+                {
+                    errorList.add(e.getMessage());
+                }
+                catch (RequestabilityManager.InvalidRuleException e)
+                {
+                    errorList.add("The request could not be created because a requestability rule is configured incorrectly. " +
+                            "Please report this problem to an administrator.  Error details: " + e.getMessage());
+                }
+                catch (SampleManager.SpecimenRequestException e)
+                {
+                    // There was an error; some id had no specimen matching
+                    boolean hasSpecimenError = false;
+                    for (String id : globalIds)
+                    {
+                        Specimen specimen = SampleManager.getInstance().getSpecimen(getContainer(), id);
+                        if (specimen == null)
+                        {
+                            errors.addRowError(new ValidationException("Global Unique Id " + id + " not found."));
+                            hasSpecimenError = true;
+                        }
+                    }
+
+                    if (!hasSpecimenError)
+                    {   // Expected one of them to not be found, so this is unusual
+                        errors.addRowError(new ValidationException("Error adding all of the specimens together."));
+                    }
+                }
+                finally
+                {
+                    scope.closeConnection();
+                }
+            }
+
+            if (null != errorList && !errorList.isEmpty())
+            {
+                for (String error : errorList)
+                    errors.addRowError(new ValidationException(error));
+            }
+
+            if (errors.hasErrors())
+                return 0;
+            return rows.size();
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root = appendSpecimenRequestNavTrail(root, _requestId);
+            root.addChild("Upload Specimen Identifiers");
+            return root;
+        }
+
+        @Override
+        protected ActionURL getSuccessURL(IdForm form)
+        {
+            ActionURL requestDetailsURL = new ActionURL(ManageRequestAction.class, getContainer());
+            requestDetailsURL.addParameter("id", _requestId);
+            return requestDetailsURL;
+        }
+
+    }
+
 }

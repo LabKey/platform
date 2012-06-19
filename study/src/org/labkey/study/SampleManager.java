@@ -164,7 +164,7 @@ public class SampleManager
     }
 
     /** Looks for any specimens that have the given id as a globalUniqueId  */
-    public Specimen getSpecimen(Container container, String globalUniqueId) throws SQLException
+    public Specimen getSpecimen(Container container, String globalUniqueId)
     {
         SimpleFilter filter = new SimpleFilter();
         filter.addClause(new SimpleFilter.SQLClause("LOWER(GlobalUniqueId) = LOWER(?)", new Object[] { globalUniqueId }));
@@ -1272,6 +1272,24 @@ public class SampleManager
         Specimen[] specimens = _specimenDetailHelper.get(container, filter);
         if (specimens.length != rowIds.size())
             throw new IllegalStateException("One or more specimen RowIds had no matching specimen.");
+        return specimens;
+    }
+
+    public static class SpecimenRequestException extends Exception
+    {
+    }
+
+    public Specimen[] getSpecimens(Container container, String[] globalUniqueIds) throws SpecimenRequestException
+    {
+        SimpleFilter filter = new SimpleFilter("Container", container.getId());
+        Set<String> uniqueRowIds = new HashSet<String>(globalUniqueIds.length);
+        for (String globalUniqueId : globalUniqueIds)
+            uniqueRowIds.add(globalUniqueId);
+        List<String> ids = new ArrayList<String>(uniqueRowIds);
+        filter.addInClause("GlobalUniqueId", ids);
+        Specimen[] specimens = _specimenDetailHelper.get(container, filter);
+        if (specimens == null || specimens.length != ids.size())
+            throw new SpecimenRequestException();       // an id has no matching specimen, let caller determine what to report
         return specimens;
     }
 
