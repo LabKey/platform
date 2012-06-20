@@ -104,7 +104,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 name        : 'status',
                 store       : statusStore,
                 editable    : false,
-                value       : this.data.status,
+                value       : this.data.status != null && this.data.status != '' ? this.data.status : undefined,
                 queryMode      : 'local',
                 displayField   : 'label',
                 valueField     : 'value',
@@ -227,7 +227,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                     xtype      : 'filefield',
                     id         : 'customThumbnail',
                     name       : 'customThumbnail',
-                    fieldLabel : 'Replace Thumbnail',
+                    fieldLabel : 'Change Thumbnail',
                     msgTarget  : 'side',
                     validator  : function(value) {
                         value = value.toLowerCase();

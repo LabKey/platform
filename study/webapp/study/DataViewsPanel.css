@@ -206,6 +206,13 @@ div.thumbnail img
     vertical-align: middle;
 }
 
+div.thumbnail svg
+{
+    height: 200px !important;
+    width: 300px !important;
+    display: block;
+}
+
 /* Report Filter Panel */
 .x4-reset .report-filter-panel .x4-grid-row .x4-grid-cell,
 .x4-reset .report-filter-panel .x4-grid-body,

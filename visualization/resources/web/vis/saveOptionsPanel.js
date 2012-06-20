@@ -100,7 +100,7 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
                         name: 'reportThumbnailType',
                         boxLabel: 'Auto-generate',
                         description: 'Auto-generate a new thumbnail based on the first chart in this report',
-                        thumbnailPreview: null,
+                        thumbnailPreview: null, // to be poplulated by calls to updateCurrentChartThumbnail
                         inputValue: 'AUTO',
                         checked: this.thumbnailType == 'AUTO'
                     },
@@ -129,10 +129,12 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
                     afterrender: function(cmp) {
                         Ext4.each(Ext4.ComponentQuery.query('#reportThumbnailType radio'), function(item) {
                             Ext4.create('Ext.tip.ToolTip', {
+                                itemId: item.itemId + "Tip",
                                 target: item.getId(),
-                                html: item.description + '<br/>' + (item.thumbnailPreview ? '<div class="thumbnail" style="width: 200px; height: 200px;">' + item.thumbnailPreview + '</div>' : '')
+                                description: item.description,
+                                html: this.generateToolTipHtml(item.description, item.thumbnailPreview)
                             });
-                        });
+                        }, this);
                     },
                     scope: this
                 }
@@ -257,9 +259,22 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
         }
     },
 
+    generateToolTipHtml: function(desc, thumbnailPreview)
+    {
+        return desc + '<br/>' + (thumbnailPreview ? '<div class="thumbnail">' + thumbnailPreview + '</div>' : '')
+    },
+
     updateCurrentChartThumbnail: function(chartSVGStr)
     {
-        // TODO: svg needs to be resized and the tooltip needs to be updated as the chart changes
+        // resize the svg by resetting the viewBox and width/height attributes
+        chartSVGStr = chartSVGStr.replace(/width="\d+"/, 'width="25%"');
+        chartSVGStr = chartSVGStr.replace(/height="\d+"/, 'height="25%"');
+        chartSVGStr = chartSVGStr.replace(/<svg /, '<svg viewBox="0 0 1000 590"'); // TODO: how to get actual width/height for viewBox?
+
+        // update the html contents of the auto-gen tooltip
         this.down('#autoGenerate').thumbnailPreview = chartSVGStr;
+        var tooltip = Ext4.ComponentQuery.query('#autoGenerateTip');
+        if (tooltip.length > 0)
+            tooltip[0].update(this.generateToolTipHtml(tooltip[0].description, chartSVGStr));
     }
 });
