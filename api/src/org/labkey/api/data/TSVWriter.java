@@ -21,6 +21,7 @@ import org.junit.Test;
 import org.labkey.api.util.FileUtil;
 
 import java.io.PrintWriter;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -192,6 +193,11 @@ public class TSVWriter extends TextWriter
     public void setFileHeader(List<String> fileHeader)
     {
         _fileHeader = fileHeader;
+    }
+
+    public void setFileHeader(String... fileHeaders)
+    {
+        _fileHeader = Arrays.asList(fileHeaders);
     }
 
     public boolean isHeaderRowVisible()

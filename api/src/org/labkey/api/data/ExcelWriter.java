@@ -45,6 +45,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -264,13 +265,13 @@ public class ExcelWriter
         _rs = rs;
     }
 
-    @Deprecated
+    @Deprecated /** Use setResults() */
     public void setResultSet(ResultSet rs)
     {
         _rs = new ResultsImpl(rs);
     }
 
-    @Deprecated
+    @Deprecated /** Use setResults() */
     public void setResultSet(ResultSet rs, Map<FieldKey, ColumnInfo> fieldMap)
     {
         _rs = new ResultsImpl(rs, fieldMap);
@@ -339,8 +340,13 @@ public class ExcelWriter
         _headers = headers;
     }
 
+    public void setHeaders(String... headers)
+    {
+        _headers = Arrays.asList(headers);
+    }
 
-    public List getHeaders()
+
+    public List<String> getHeaders()
     {
         return _headers;
     }
