@@ -170,14 +170,14 @@ public class DatasetViewProvider implements DataViewProvider
         }
 
         @Override
-        public void updateProperties(Container container, User user, String id, Map<String, Object> props) throws Exception
+        public void updateProperties(ViewContext context, String id, Map<String, Object> props) throws Exception
         {
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
             try {
                 scope.ensureTransaction();
 
-                StudyImpl study = StudyManager.getInstance().getStudy(container);
+                StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
                 if (study != null)
                 {
                     DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinitionByEntityId(study, id);
@@ -190,7 +190,7 @@ public class DatasetViewProvider implements DataViewProvider
                         {
                             String categoryName = String.valueOf(props.get(Property.category.name()));
                             if (categoryName != null && !categoryName.trim().isEmpty())
-                                category = ViewCategoryManager.getInstance().ensureViewCategory(container, user, categoryName);
+                                category = ViewCategoryManager.getInstance().ensureViewCategory(context.getContainer(), context.getUser(), categoryName);
                         }
 
                         boolean dirty = false;
@@ -216,14 +216,14 @@ public class DatasetViewProvider implements DataViewProvider
                         }
 
                         if (dirty)
-                            dsDef.save(user);
+                            dsDef.save(context.getUser());
 
                         if (props.containsKey(Property.author.name()))
-                            ReportPropsManager.get().setPropertyValue(id, container, Property.author.name(), props.get(Property.author.name()));
+                            ReportPropsManager.get().setPropertyValue(id, context.getContainer(), Property.author.name(), props.get(Property.author.name()));
                         if (props.containsKey(Property.status.name()))
-                            ReportPropsManager.get().setPropertyValue(id, container, Property.status.name(), props.get(Property.status.name()));
+                            ReportPropsManager.get().setPropertyValue(id, context.getContainer(), Property.status.name(), props.get(Property.status.name()));
                         if (props.containsKey(Property.refreshDate.name()))
-                            ReportPropsManager.get().setPropertyValue(id, container, Property.refreshDate.name(), props.get(Property.refreshDate.name()));
+                            ReportPropsManager.get().setPropertyValue(id, context.getContainer(), Property.refreshDate.name(), props.get(Property.refreshDate.name()));
 
                         scope.commitTransaction();
                     }

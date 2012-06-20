@@ -7243,7 +7243,7 @@ public class StudyController extends BaseStudyController
             _dataType = dataType;
         }
 
-        public Map<String, Object> getPropertyMap(PropertyValues pv, List<String> editableValues)
+        public Map<String, Object> getPropertyMap(PropertyValues pv, List<String> editableValues, Map<String, MultipartFile> files) throws ValidationException
         {
             Map<String, Object> map = new HashMap<String, Object>();
 
@@ -7252,6 +7252,21 @@ public class StudyController extends BaseStudyController
                 if (editableValues.contains(value.getName()))
                     map.put(value.getName(), value.getValue());
             }
+
+            for (String fileName : files.keySet())
+            {
+                if (editableValues.contains(fileName) && !files.get(fileName).isEmpty())
+                {
+                    try {
+                        map.put(fileName, files.get(fileName).getInputStream());
+                    }
+                    catch(IOException e)
+                    {
+                        throw new ValidationException("Unable to read file: " + fileName);
+                    }
+                }
+            }
+
             return map;
         }
     }
@@ -7261,6 +7276,16 @@ public class StudyController extends BaseStudyController
     {
         private DataViewProvider _provider;
         private Map<String, Object> _propertiesMap;
+
+        public EditViewAction()
+        {
+            super();
+            //because this will typically be called from a hidden iframe
+            //we must respond with a content-type of text/html or the
+            //browser will prompt the user to save the response, as the
+            //browser won't natively show application/json content-type            
+            setContentTypeOverride("text/html");
+        }
 
         @Override
         public void validateForm(EditViewsForm form, Errors errors)
@@ -7275,7 +7300,7 @@ public class StudyController extends BaseStudyController
                 {
                     List<String> editable = Arrays.asList(editInfo.getEditableProperties(getContainer(), getUser()));
                     try {
-                        _propertiesMap = form.getPropertyMap(getPropertyValues(), editable);
+                        _propertiesMap = form.getPropertyMap(getPropertyValues(), editable, getFileMap());
                         editInfo.validateProperties(getContainer(), getUser(), form.getId(), _propertiesMap);
                     }
                     catch (ValidationException e)
@@ -7297,10 +7322,11 @@ public class StudyController extends BaseStudyController
             DataViewProvider.EditInfo editInfo = _provider.getEditInfo();
             if (editInfo != null && _propertiesMap != null)
             {
-                editInfo.updateProperties(getContainer(), getUser(), form.getId(), _propertiesMap);
+                editInfo.updateProperties(getViewContext(), form.getId(), _propertiesMap);
                 response.put("success", true);
             }
-            response.put("success", false);
+            else
+                response.put("success", false);
 
             return response;
         }

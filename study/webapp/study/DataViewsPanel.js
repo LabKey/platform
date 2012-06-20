@@ -67,6 +67,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             {name : 'runUrl'},
             {name : 'detailsUrl'},
             {name : 'thumbnail'},
+            {name : 'thumbnailType'},
             {name : 'status'}
         ];
 
@@ -1116,7 +1117,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 visible     : editInfo['visible'],
                 created     : true,
                 shared      : editInfo['shared'],
-                modified    : true
+                modified    : true,
+                customThumbnail : editInfo['customThumbnail']
             },
             buttons     : [{
                 text : 'Save',
@@ -1125,15 +1127,18 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     var form = btn.up('form').getForm();
                     if (form.isValid())
                     {
-                        Ext4.Ajax.request({
-                            url     : LABKEY.ActionURL.buildURL('study', 'editView.api'),
-                            method  : 'POST',
-                            params  : form.getValues(),
+                        editWindow.getEl().mask("Saving...");
+                        form.submit({
+                            url : LABKEY.ActionURL.buildURL('study', 'editView'),
+                            method : 'POST',
                             success : function(){
-                                this.onEditSave(record, form.getValues());
+                                this.onEditSave(record, form.getValues());                        
+                                this.onEditSave();
+                                editWindow.getEl().unmask();
                                 editWindow.close();
                             },
                             failure : function(response){
+                                editWindow.getEl().unmask();
                                 Ext4.Msg.alert('Failure', Ext4.decode(response.responseText).exception);
                             },
                             scope : this
@@ -1145,7 +1150,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         });
 
         var editWindow = Ext4.create('Ext.window.Window', {
-            width  : 450,
+            width  : 475,
             height : 510,
             layout : 'fit',
             cls    : 'data-window',
@@ -1155,7 +1160,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             defaults: {
                 border: false, frame: false
             },
-            bodyPadding : 20,
+            bodyPadding : 10,
             items : viewForm,
             scope : this
         });
@@ -1163,7 +1168,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         editWindow.show();
     },
 
-    onEditSave : function(record, values) {
+    onEditSave : function() {
         this.store.load();
     },
 

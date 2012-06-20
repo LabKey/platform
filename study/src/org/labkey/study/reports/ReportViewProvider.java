@@ -17,9 +17,6 @@ package org.labkey.study.reports;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.labkey.api.admin.CoreUrls;
-import org.labkey.api.attachments.Attachment;
-import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.views.DataViewInfo;
@@ -40,13 +37,18 @@ import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.thumbnail.DynamicThumbnailProvider;
+import org.labkey.api.thumbnail.ImageStreamThumbnailProvider;
+import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudySchema;
 
+import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -112,6 +114,7 @@ public class ReportViewProvider implements DataViewProvider
             ReportPropsManager.get().ensureProperty(c, user, "status", "Status", PropertyType.STRING);
             ReportPropsManager.get().ensureProperty(c, user, "author", "Author", PropertyType.INTEGER);
             ReportPropsManager.get().ensureProperty(c, user, "refreshDate", "RefreshDate", PropertyType.DATE_TIME);
+            ReportPropsManager.get().ensureProperty(c, user, "thumbnailType", "ThumbnailType", PropertyType.STRING);
 
             for (Report r : ReportUtil.getReports(c, user, reportKey, true))
             {
@@ -227,6 +230,7 @@ public class ReportViewProvider implements DataViewProvider
                 Property.status.name(),
                 Property.refreshDate.name(),
                 Property.shared.name(),
+                Property.customThumbnail.name()
         };
 
         @Override
@@ -259,12 +263,12 @@ public class ReportViewProvider implements DataViewProvider
         }
 
         @Override
-        public void updateProperties(Container container, User user, String id, Map<String, Object> props) throws Exception
+        public void updateProperties(ViewContext context, String id, Map<String, Object> props) throws Exception
         {
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
             try {
-                Report report = ReportService.get().getReportByEntityId(container, id);
+                Report report = ReportService.get().getReportByEntityId(context.getContainer(), id);
                 if (report != null)
                 {
                     scope.ensureTransaction();
@@ -276,7 +280,7 @@ public class ReportViewProvider implements DataViewProvider
                     {
                         String categoryName = StringUtils.trimToNull(String.valueOf(props.get(Property.category.name())));
                         if (categoryName != null)
-                            category = ViewCategoryManager.getInstance().ensureViewCategory(container, user, categoryName);
+                            category = ViewCategoryManager.getInstance().ensureViewCategory(context.getContainer(), context.getUser(), categoryName);
                     }
 
                     if (category != null)
@@ -292,16 +296,36 @@ public class ReportViewProvider implements DataViewProvider
                     if(shared)
                         report.getDescriptor().setOwner(null);
                     else
-                        report.getDescriptor().setOwner(user.getUserId());
+                        report.getDescriptor().setOwner(context.getUser().getUserId());
 
-                    ReportService.get().saveReport(new DefaultContainerUser(container, user), report.getDescriptor().getReportKey(), report);
+                    ReportService.get().saveReport(new DefaultContainerUser(context.getContainer(), context.getUser()), report.getDescriptor().getReportKey(), report);
 
                     if (props.containsKey(Property.author.name()))
-                        ReportPropsManager.get().setPropertyValue(id, container, Property.author.name(), props.get(Property.author.name()));
+                        ReportPropsManager.get().setPropertyValue(id, context.getContainer(), Property.author.name(), props.get(Property.author.name()));
                     if (props.containsKey(Property.status.name()))
-                        ReportPropsManager.get().setPropertyValue(id, container, Property.status.name(), props.get(Property.status.name()));
+                        ReportPropsManager.get().setPropertyValue(id, context.getContainer(), Property.status.name(), props.get(Property.status.name()));
                     if (props.containsKey(Property.refreshDate.name()))
-                        ReportPropsManager.get().setPropertyValue(id, container, Property.refreshDate.name(), props.get(Property.refreshDate.name()));
+                        ReportPropsManager.get().setPropertyValue(id, context.getContainer(), Property.refreshDate.name(), props.get(Property.refreshDate.name()));
+
+                    if (props.containsKey(Property.customThumbnail.name()))
+                    {
+                        // custom thumbnail file provided by the user would be store in the properties map as an InputStream
+                        InputStream is = (InputStream)props.get(Property.customThumbnail.name());
+
+                        // TODO: I don't like this... need to rethink static vs. dynamic providers. Reports that aren't dynamic providers should still allow custom thumbnails
+                        if (report instanceof DynamicThumbnailProvider)
+                        {
+                            DynamicThumbnailProvider wrapper = new ImageStreamThumbnailProvider((DynamicThumbnailProvider)report, is);
+
+                            ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
+
+                            if (null != svc)
+                            {
+                                svc.replaceThumbnail(wrapper, context);
+                                ReportPropsManager.get().setPropertyValue(report.getEntityId(), context.getContainer(), "thumbnailType", ThumbnailType.CUSTOM.name());
+                            }
+                        }
+                    }
 
                     scope.commitTransaction();
                 }

@@ -43,6 +43,7 @@ import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
@@ -57,6 +58,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
@@ -962,7 +964,7 @@ public class VisualizationController extends SpringActionController
         private String _type;
         private boolean _replace;
         private boolean _shared = true;
-        private boolean _saveThumbnail;
+        private String _thumbnailType;
         private String _svg;
 
         public String getJson()
@@ -1015,14 +1017,16 @@ public class VisualizationController extends SpringActionController
             _shared = shared;
         }
 
-        public boolean isSaveThumbnail()
+        public String getThumbnailType()
         {
-            return _saveThumbnail;
+            if (_thumbnailType == null)
+                _thumbnailType = DataViewProvider.EditInfo.ThumbnailType.AUTO.name();
+            return _thumbnailType;
         }
 
-        public void setSaveThumbnail(boolean saveThumbnail)
+        public void setThumbnailType(String thumbnailType)
         {
-            _saveThumbnail = saveThumbnail;
+            _thumbnailType = thumbnailType;
         }
 
         public String getSvg()
@@ -1201,6 +1205,8 @@ public class VisualizationController extends SpringActionController
             resp.put("shared", vizDescriptor.getOwner() == null);
             resp.put("ownerId", vizDescriptor.getOwner() != null ? vizDescriptor.getOwner() : null);
             resp.put("createdBy", vizDescriptor.getCreatedBy());
+            resp.put("reportProps", vizDescriptor.getReportProps());
+            resp.put("thumbnailURL", PageFlowUtil.urlProvider(ReportUrls.class).urlThumbnail(getContainer(), getReport(form)));
             return resp;
         }
     }
@@ -1292,16 +1298,18 @@ public class VisualizationController extends SpringActionController
                     TimeChartReportImpl tcReport = (TimeChartReportImpl)report;
                     String svg = form.getSvg();
 
-                    if (!form.isSaveThumbnail())
+                    if (form.getThumbnailType().equals(DataViewProvider.EditInfo.ThumbnailType.NONE.name()))
                     {
                         // User checked the "no thumbnail" checkbox... need to proactively delete the thumbnail
                         svc.deleteThumbnail(tcReport);
+                        ReportPropsManager.get().setPropertyValue(tcReport.getEntityId(), getContainer(), "thumbnailType", DataViewProvider.EditInfo.ThumbnailType.NONE.name());
                     }
-                    else if (svg != null)
+                    else if (form.getThumbnailType().equals(DataViewProvider.EditInfo.ThumbnailType.AUTO.name()) && svg != null)
                     {
                         // Generate and save the thumbnail (in the background)
                         tcReport.setSvg(form.getSvg());
                         svc.queueThumbnailRendering(tcReport);
+                        ReportPropsManager.get().setPropertyValue(tcReport.getEntityId(), getContainer(), "thumbnailType", DataViewProvider.EditInfo.ThumbnailType.AUTO.name());
                     }
                 }
             }

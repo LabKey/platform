@@ -3590,6 +3590,7 @@ visualization/src/org/labkey/visualization/views/timeChartWizard.jsp -text
 visualization/webapp/visualization/report/box_plot.gif -text
 visualization/webapp/visualization/report/scatter_plot.gif -text
 visualization/webapp/visualization/report/timechart.gif -text
+visualization/webapp/visualization/report/timechart.png -text
 wiki/lib/radeox-api.jar -text
 wiki/lib/radeox.jar -text
 wiki/module.properties -text

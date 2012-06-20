@@ -29,6 +29,9 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
     initComponent : function() {
         this.isSaveAs = false;
 
+        // default to auto generate thumbnail from report svg
+        this.thumbnailType = this.isSavedReport() && this.reportInfo.reportProps && this.reportInfo.reportProps.thumbnailType ? this.reportInfo.reportProps.thumbnailType : 'AUTO';
+
         // Note that Readers are allowed to save new charts (readers own new charts they're creating)- this is by design.
         this.currentlyShared = (this.isSavedReport() && this.reportInfo.shared) || (!this.isSavedReport() && this.canSaveSharedCharts());
         this.createdBy = this.isSavedReport() ? this.reportInfo.createdBy : LABKEY.Security.currentUser.id;
@@ -84,14 +87,55 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
                         { itemId: 'onlyMe', name: 'reportShared', boxLabel: 'Only me', inputValue: 'false', disabled: !this.canSaveSharedCharts(), checked: !this.currentlyShared }
                     ]
             }),
-            Ext4.create('Ext.form.field.Checkbox', {
-                itemId: 'reportSaveThumbnail',
-                name: 'reportSaveThumbnail',
-                fieldLabel: 'Save Thumbnail',
+            Ext4.create('Ext.form.RadioGroup', {
+                itemId: 'reportThumbnailType',
+                fieldLabel: 'Thumbnail',
                 labelWidth: 125,
-                checked: this.saveThumbnail,
-                value: this.saveThumbnail,
-                hidden: (Ext4.isIE6 || Ext4.isIE7 || Ext4.isIE8)
+                width: 480,
+                hidden: (Ext4.isIE6 || Ext4.isIE7 || Ext4.isIE8),
+                items: [
+                    {
+                        itemId: 'autoGenerate',
+                        width: 140,
+                        name: 'reportThumbnailType',
+                        boxLabel: 'Auto-generate',
+                        description: 'Auto-generate a new thumbnail based on the first chart in this report',
+                        thumbnailPreview: null,
+                        inputValue: 'AUTO',
+                        checked: this.thumbnailType == 'AUTO'
+                    },
+                    {
+                        itemId: 'none',
+                        width: 75,
+                        name: 'reportThumbnailType',
+                        boxLabel: 'None',
+                        description: 'Use the default static image for this report',
+                        thumbnailPreview: '<img src="' + LABKEY.contextPath + '/visualization/report/timechart.png"/>', 
+                        inputValue: 'NONE',                                                   // TODO: point to the same png used in TimeChartReportImpl.getStaticThumbnail
+                        checked: this.thumbnailType == 'NONE'
+                    },
+                    {
+                        itemId: 'keepCustom',
+                        width: 140,
+                        name: 'reportThumbnailType',
+                        boxLabel: 'Keep existing',
+                        description: 'Keep the existing custom thumbnail that has been provided for this report',
+                        thumbnailPreview: (this.isSavedReport() ? '<img src="' + this.reportInfo.thumbnailURL + '"/>'  : null),
+                        inputValue: 'CUSTOM',
+                        checked: this.thumbnailType == 'CUSTOM'
+                    }
+                ],
+                listeners: {
+                    afterrender: function(cmp) {
+                        Ext4.each(Ext4.ComponentQuery.query('#reportThumbnailType radio'), function(item) {
+                            Ext4.create('Ext.tip.ToolTip', {
+                                target: item.getId(),
+                                html: item.description + '<br/>' + (item.thumbnailPreview ? '<div class="thumbnail" style="width: 200px; height: 200px;">' + item.thumbnailPreview + '</div>' : '')
+                            });
+                        });
+                    },
+                    scope: this
+                }
             })
         ];
 
@@ -123,10 +167,16 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
                         reportName: formVals.reportName,
                         reportDescription: formVals.reportDescription,
                         shared: shared,
-                        saveThumbnail: this.getSaveThumbnail(),
+                        thumbnailType: formVals.reportThumbnailType,
                         canSaveSharedCharts: this.canSaveSharedCharts(),
                         createdBy: this.createdBy
                     });
+
+                    // store the update report properties
+                    this.reportInfo.name = formVals.reportName;
+                    this.reportInfo.description = formVals.reportDescription;
+                    this.currentlyShared = shared;
+                    this.thumbnailType = formVals.reportThumbnailType;
 
                     this.fireEvent('closeOptionsWindow');
                 },
@@ -171,7 +221,11 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
 
             if (!this.canSaveSharedCharts())
                 this.down('#onlyMe').setValue(true);
-            this.down('#reportSaveThumbnail').setValue(true);
+            else
+                this.down('#allReaders').setValue(true);
+
+            this.down('#reportThumbnailType').setValue({reportThumbnailType: 'AUTO'});
+            this.down('#keepCustom').hide();
 
             this.down('#reportSaveButton').show();
         }
@@ -187,21 +241,25 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
             this.down('#reportDescriptionDisplay').setVisible(!this.canSaveChanges());
             this.down('#reportDescriptionDisplay').setValue($h(this.isSavedReport() ? this.reportInfo.description : null));
 
-            if (this.currentlyShared)
+            if (!this.currentlyShared)
+                this.down('#onlyMe').setValue(true);
+            else
                 this.down('#allReaders').setValue(true);
-            this.down('#reportSaveThumbnail').setValue(this.saveThumbnail);
+
+            this.down('#reportThumbnailType').setValue({reportThumbnailType: this.thumbnailType});
+            // hide the Keep existing option if there hasn't been a custom thumbnail saved for this report
+            if (this.thumbnailType == 'CUSTOM')
+                this.down('#keepCustom').show();
+            else
+                this.down('#keepCustom').hide();
 
             this.down('#reportSaveButton').setVisible(this.canEdit);
         }
     },
 
-    getSaveThumbnail: function() {
-        return this.down('#reportSaveThumbnail').checked;
-    },
-
-    getPanelOptionValues: function() {
-        return {
-            saveThumbnail: this.getSaveThumbnail()
-        };
+    updateCurrentChartThumbnail: function(chartSVGStr)
+    {
+        // TODO: svg needs to be resized and the tooltip needs to be updated as the chart changes
+        this.down('#autoGenerate').thumbnailPreview = chartSVGStr;
     }
 });

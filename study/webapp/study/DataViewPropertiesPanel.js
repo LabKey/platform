@@ -4,6 +4,8 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
+Ext4.tip.QuickTipManager.init();
+
 Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
 
     extend : 'Ext.form.Panel',
@@ -13,10 +15,12 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
         Ext4.applyIf(config, {
             border  : false,
             frame   : false,
+            autoScroll : true,
+            cls     : 'iScroll', // webkit custom scroll bars
             buttonAlign : 'left',
             dateFormat  : 'Y-m-d',
             fieldDefaults  : {
-                labelWidth : 100,
+                labelWidth : 120,
                 width      : 375,
                 style      : 'margin: 0px 0px 10px 0px',
                 labelSeparator : ''
@@ -207,6 +211,40 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                     {boxLabel : 'Hidden',   name : 'visible', checked : !this.data.visible,  inputValue : false}
                 ]
             });
+        }
+                                                   
+        if (this.visibleFields['customThumbnail']) {
+            formItems.push({
+                xtype      : 'displayfield',
+                fieldLabel : 'Thumbnail',
+                value      : '<div class="thumbnail"><img src="' + this.data.thumbnail + '"/></div>',
+                readOnly   : true
+            });
+
+            // TODO: see todo from ReportViewProvider.updateProperties, this should be possible for any report type
+            if (this.record.get('type') == "Time Chart" || this.record.get('type') == "R View")
+                formItems.push({
+                    xtype      : 'filefield',
+                    id         : 'customThumbnail',
+                    name       : 'customThumbnail',
+                    fieldLabel : 'Replace Thumbnail',
+                    msgTarget  : 'side',
+                    validator  : function(value) {
+                        value = value.toLowerCase();
+                        if (value != null && value.length > 0 && !(/\.png$/.test(value) || /\.jpg$/.test(value) || /\.jpeg$/.test(value) || /\.gif$/.test(value)))
+                            return "Please choose a PNG, JPG, or GIF image.";
+                        else
+                            return true;
+                    },
+                    listeners  : {
+                        afterrender : function(cmp) {
+                            Ext4.tip.QuickTipManager.register({
+                                target: cmp.getId(),
+                                text: 'Choose a PNG, JPG, or GIF image. Images will be scaled to 250 pixels high.'
+                            });
+                        }
+                    }
+                });
         }
 
         if (this.visibleFields['created'] && this.data.created) {

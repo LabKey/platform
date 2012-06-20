@@ -2122,44 +2122,4 @@ public class ReportsController extends SpringActionController
         }
     }
 
-
-    // TODO: Delete (or modify) this -- test action for Cory's custom thumbnail uploading
-    @RequiresPermissionClass(AdminPermission.class)
-    public class TestCustomThumbnailAction extends RedirectAction<ThumbnailForm>
-    {
-        @Override
-        public URLHelper getSuccessURL(ThumbnailForm thumbnailForm)
-        {
-            return null;
-        }
-
-        @Override
-        public boolean doAction(ThumbnailForm form, BindException errors) throws Exception
-        {
-            // Grab a random image... should be posted by user instead
-            InputStream is = new FileInputStream("C:\\Windows\\Web\\Wallpaper\\Architecture\\img13.jpg");
-            Report report = form.getReportId().getReport();
-
-            // I don't like this... need to rethink static vs. dynamic providers. Reports that aren't dynamic providers
-            // should still allow custom thumbnails.
-            if (report instanceof DynamicThumbnailProvider)
-            {
-                DynamicThumbnailProvider wrapper = new ImageStreamThumbnailProvider((DynamicThumbnailProvider)report, is);
-
-                ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
-
-                if (null != svc)
-                    svc.replaceThumbnail(wrapper, getViewContext());
-
-                // TODO: Also need to update the report properties
-            }
-
-            return false;
-        }
-
-        @Override
-        public void validateCommand(ThumbnailForm target, Errors errors)
-        {
-        }
-    }
 }

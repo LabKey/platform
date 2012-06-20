@@ -110,7 +110,9 @@
                 schemaName: result.schemaName,
                 shared: result.shared,
                 ownerId: result.ownerId,
-                createdBy: result.createdBy
+                createdBy: result.createdBy,
+                reportProps: result.reportProps,
+                thumbnailURL: result.thumbnailURL
             };
 
             initializeTimeChartPanel(response.initialConfig, result.visualizationConfig, saveReportInfo);
@@ -135,7 +137,7 @@
             frame: false,
             border: false,
             items: [
-                new LABKEY.vis.TimeChartPanel({
+                Ext4.create('LABKEY.vis.TimeChartPanel', {
                     region: 'center',
                     layout: 'border',
                     flex: 1,

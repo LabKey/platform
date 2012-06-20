@@ -49,8 +49,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 //This is for charts saved prior to 2011-10-07
                 chartSubjectSelection: config.chartInfo.chartLayout == 'per_group' ? 'groups' : 'subjects',
                 displayIndividual: true,
-                displayAggregate: false,
-                saveThumbnail: true
+                displayAggregate: false
             });
             for (var i = 0; i < config.chartInfo.measures.length; i++)
             {
@@ -100,6 +99,17 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 }
             } // end of : for
         } // end of : if (config.chartInfo)
+
+        // backwards compatibility for save thumbnail options (2012-06-19)
+        if(typeof config.saveReportInfo == "object" && config.chartInfo.saveThumbnail != undefined)
+        {
+            if (config.saveReportInfo.reportProps == null)
+                config.saveReportInfo.reportProps = {};
+
+            Ext4.applyIf(config.saveReportInfo.reportProps, {
+                thumbnailType: !config.chartInfo.saveThumbnail ? 'NONE' : 'AUTO'
+            });
+        }
 
         this.callParent([config]);
     },
@@ -214,7 +224,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         this.editorSavePanel = Ext4.create('LABKEY.vis.SaveOptionsPanel', {
             reportInfo: this.saveReportInfo,
-            saveThumbnail: this.chartInfo.saveThumbnail == undefined ? true : this.chartInfo.saveThumbnail,
             canEdit: this.canEdit,
             canShare: this.canShare,
             bubbleEvents: ['closeOptionsWindow'],
@@ -850,7 +859,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         simplified.filterUrl = config.filterUrl;
         simplified.hideDataPoints = config.hideDataPoints;
         simplified.lineWidth = config.lineWidth;
-        simplified.saveThumbnail = config.saveThumbnail;
         simplified.title = config.title;
 
         // compare subject groups by labels and participantIds (not id and created date)
@@ -1301,6 +1309,12 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 padding: 10,
                 html : "<table width='100%'><tr><td align='center' style='font-style:italic'>" + this.warningText + "</td></tr></table>"
             }));
+        }
+
+        if (this.firstChartComponent && Raphael.svg)
+        {
+            // pass the svg for the first chart component to the save options panel for use in the thumbnail preview
+            this.editorSavePanel.updateCurrentChartThumbnail(LABKEY.vis.SVGConverter.svgToStr(Ext4.get(this.firstChartComponent).child('svg').dom));
         }
 
         this.unmaskPanel();
@@ -1754,9 +1768,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         config.filterUrl = measurePanelValues.dataFilterUrl;
         config.filterQuery = measurePanelValues.dataFilterQuery;
 
-        // get chart related options from save panel
-        Ext4.apply(config, this.editorSavePanel.getPanelOptionValues());
-
         // get the subject info based on the selected chart layout
         if (config.chartSubjectSelection == 'groups')
             config.subject = this.groupsSelector.getSubject();
@@ -1843,8 +1854,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             reportName: saveChartInfo.reportName,
             reportDescription: saveChartInfo.reportDescription,
             reportShared: saveChartInfo.shared,
-            reportSaveThumbnail: saveChartInfo.saveThumbnail,
-            reportSvg: saveChartInfo.saveThumbnail ? reportSvg : null,
+            reportThumbnailType: saveChartInfo.thumbnailType,
+            reportSvg: saveChartInfo.thumbnailType == 'AUTO' ? reportSvg : null,
             createdBy: saveChartInfo.createdBy,
             query: query,
             schema: schema
@@ -1907,7 +1918,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             description: config.reportDescription,
             shared: config.reportShared,
             visualizationConfig: this.chartInfo,
-            saveThumbnail: config.reportSaveThumbnail,
+            thumbnailType: config.reportThumbnailType,
             svg: config.reportSvg,
             replace: config.replace,
             type: LABKEY.Visualization.Type.TimeChart,
