@@ -470,6 +470,7 @@ public class ReportUtil
                 ReportPropsManager.get().ensureProperty(c, user, "status", "Status", PropertyType.STRING);
                 ReportPropsManager.get().ensureProperty(c, user, "author", "Author", PropertyType.INTEGER);
                 ReportPropsManager.get().ensureProperty(c, user, "refreshDate", "RefreshDate", PropertyType.DATE_TIME);
+                ReportPropsManager.get().ensureProperty(c, user, "thumbnailType", "ThumbnailType", PropertyType.STRING);
 
                 for (Report r : ReportUtil.getReports(c, user, reportKey, true))
                 {
