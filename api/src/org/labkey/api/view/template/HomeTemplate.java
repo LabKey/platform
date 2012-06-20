@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 
 public class HomeTemplate extends PrintTemplate
@@ -189,6 +190,8 @@ public class HomeTemplate extends PrintTemplate
             if (extraPath.length() > 0)
                 page.setTitle(page.getTitle() + ": " + getRootContext().getActionURL().getExtraPath());
         }
+
+        page.addClientDependencies((Set)getClientDependencies());
 
         if (null == getView("header"))
             setView("header", getHeaderView(page));

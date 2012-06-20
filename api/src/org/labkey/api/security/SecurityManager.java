@@ -50,6 +50,8 @@ import org.labkey.api.security.impersonation.ImpersonateGroupContextFactory;
 import org.labkey.api.security.impersonation.ImpersonateRoleContextFactory;
 import org.labkey.api.security.impersonation.ImpersonateUserContextFactory;
 import org.labkey.api.security.impersonation.ImpersonationContextFactory;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -198,6 +200,28 @@ public class SecurityManager
         }
     }
 
+    public enum PermissionTypes
+    {
+        READ("READ", ReadPermission.class),
+        INSERT("INSERT", InsertPermission.class),
+        UPDATE("UPDATE", UpdatePermission.class),
+        DELETE("DELETE", DeletePermission.class),
+        ADMIN("ADMIN", AdminPermission.class);
+
+        private Class<? extends Permission> _permission;
+        private String _label;
+
+        private PermissionTypes(String label, Class<? extends Permission> permission)
+        {
+            _label = label;
+            _permission = permission;
+        }
+
+        public Class<? extends Permission> getPermission()
+        {
+            return _permission;
+        }
+    }
 
     private SecurityManager()
     {

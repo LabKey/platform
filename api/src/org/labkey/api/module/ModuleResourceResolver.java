@@ -190,4 +190,9 @@ public class ModuleResourceResolver implements Resolver
     {
         return _module.getName();
     }
+
+    public Module getModule()
+    {
+        return _module;
+    }
 }

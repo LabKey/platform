@@ -1,0 +1,42 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="true">
+        <script path="clientapi/ActionURL.js"/>
+        <script path="clientapi/Ajax.js"/>
+        <script path="clientapi/Assay.js"/>
+        <script path="clientapi/Chart.js"/>
+        <script path="clientapi/DataRegion.js"/>
+        <script path="clientapi/EditorGridPanel.js"/>
+        <script path="clientapi/Experiment.js"/>
+        <script path="clientapi/ExtendedJsonReader.js"/>
+        <script path="clientapi/ExtJsConfig.js"/>
+        <script path="clientapi/FileSystem.js"/>
+        <script path="clientapi/Filter.js"/>
+        <script path="clientapi/Form.js"/>
+        <script path="clientapi/FormPanel.js"/>
+        <script path="clientapi/GridView.js"/>
+        <script path="clientapi/HoverPopup.js"/>
+        <script path="clientapi/LongTextEditor.js"/>
+        <script path="clientapi/Message.js"/>
+        <script path="clientapi/MultiRequest.js"/>
+        <script path="clientapi/NavTrail.js"/>
+        <script path="clientapi/PersistentToolTip.js"/>
+        <script path="clientapi/Pipeline.js"/>
+        <script path="clientapi/Portal.js"/>
+        <script path="clientapi/Query.js"/>
+        <script path="clientapi/QueryWebPart.js"/>
+        <script path="clientapi/Security.js"/>
+        <script path="clientapi/SecurityPolicy.js"/>
+        <script path="clientapi/Specimen.js"/>
+        <script path="clientapi/Store.js"/>
+        <script path="clientapi/Utils.js"/>
+        <script path="clientapi/Visualization.js"/>
+    </library>
+    <dependencies>
+        <dependency path="Ext3" />
+        <dependency path="GuidedTip.js"/>
+        <dependency path="GuidedTip.css"/>
+    </dependencies>
+</libraries>
+
+
+

@@ -24,15 +24,21 @@ import org.labkey.api.resource.ResourceRef;
 import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.security.ACL;
+import org.labkey.data.xml.view.DependenciesType;
+import org.labkey.data.xml.view.DependencyType;
+import org.labkey.data.xml.view.ModuleContextType;
 import org.labkey.data.xml.view.PermissionType;
 import org.labkey.data.xml.view.PermissionsListType;
+import org.labkey.data.xml.view.RequiredModuleType;
 import org.labkey.data.xml.view.ViewDocument;
 import org.labkey.data.xml.view.ViewType;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -55,6 +61,7 @@ public class ModuleHtmlViewDefinition extends ResourceRef
     private String _html;
     private int _requiredPerms = ACL.PERM_READ;  //8550: Default perms for simple module views should be read
     private boolean _requiresLogin = false;
+    private LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<ClientDependency>();
     private ViewType _viewDef = null;
 
     public ModuleHtmlViewDefinition(Resource r)
@@ -110,7 +117,11 @@ public class ModuleHtmlViewDefinition extends ResourceRef
                 ViewDocument viewDoc = ViewDocument.Factory.parse(r.getInputStream(), xmlOptions);
                 _viewDef = viewDoc.getView();
                 if (null != _viewDef)
+                {
                     calculatePermissions();
+                    addResources();
+                    addModuleContext();
+                }
             }
             catch(Exception e)
             {
@@ -142,10 +153,50 @@ public class ModuleHtmlViewDefinition extends ResourceRef
         {
             SimpleAction.Permission perm = SimpleAction.Permission.valueOf(permEntry.getName().toString());
 
+
             if (SimpleAction.Permission.login == perm)
                 _requiresLogin = true;
             else if (null != perm)
                 _requiredPerms |= perm.toInt();
+        }
+    }
+
+    protected void addResources()
+    {
+        DependenciesType resourcesList = _viewDef.getDependencies();
+        if(null == resourcesList)
+            return;
+
+        DependencyType[] resources = resourcesList.getDependencyArray();
+        if(null == resources)
+            return;
+
+        for (DependencyType r : resources)
+        {
+            ClientDependency cr = ClientDependency.fromString(r.getPath());
+
+            if (cr != null)
+                _clientDependencies.add(cr);
+        }
+    }
+
+    protected void addModuleContext()
+    {
+        ModuleContextType modulesList = _viewDef.getRequiredModuleContext();
+        if(null == modulesList)
+            return;
+
+        RequiredModuleType[] modules = modulesList.getRequiredModuleArray();
+        if(null == modules)
+            return;
+
+        for (RequiredModuleType mn : modules)
+        {
+            ClientDependency cr = ClientDependency.fromModuleName(mn.getName());
+            if (cr != null)
+                _clientDependencies.add(cr);
+            else
+                _log.error("Module '" + mn.getName() + "' not found, from view XML file: " + getName());
         }
     }
 
@@ -184,5 +235,10 @@ public class ModuleHtmlViewDefinition extends ResourceRef
     {
         return null != _viewDef && null != _viewDef.getTemplate() ?
             PageConfig.Template.valueOf(StringUtils.capitalize(_viewDef.getTemplate().toString().toLowerCase())) : null;
+    }
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        return _clientDependencies;
     }
 }

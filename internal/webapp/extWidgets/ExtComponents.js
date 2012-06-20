@@ -328,6 +328,7 @@ Ext4.define('LABKEY.ext4.ViewCombo', {
             displayField: 'displayText'
             ,valueField: 'value'
             ,queryMode: 'local'
+            ,editable: false
             ,store: Ext4.create('LABKEY.ext4.ViewStore', {
                 containerPath: config.containerPath,
                 schemaName: config.schemaName,

@@ -175,7 +175,7 @@ public class ModuleProperty
     /**
      * NOTE: does not test permissions
      */
-    public String getEffectiveValue(User user, Container c, String name)
+    public String getEffectiveValue(User user, Container c)
     {
         int userId = 0;
 
@@ -186,9 +186,9 @@ public class ModuleProperty
 
         String value;
         if(isCanSetPerContainer())
-            value = PropertyManager.getCoalecedProperty(userId, c, getCategory(), name);
+            value = PropertyManager.getCoalecedProperty(userId, c, getCategory(), getName());
         else
-            value = PropertyManager.getCoalecedProperty(userId, ContainerManager.getRoot(), getCategory(), name);
+            value = PropertyManager.getCoalecedProperty(userId, ContainerManager.getRoot(), getCategory(), getName());
 
         if(value == null)
             value = getDefaultValue();

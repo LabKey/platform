@@ -211,7 +211,7 @@ LABKEY.ext.Ext4Helper = new function(){
             {
                 field.xtype = 'displayfield';
             }
-            else if (meta.lookup && meta.lookup.public !== false && meta.lookups !== false)
+            else if (meta.lookup && meta.lookup['public'] !== false && meta.lookups !== false)
             {
                 var l = meta.lookup;
 
@@ -566,7 +566,7 @@ LABKEY.ext.Ext4Helper = new function(){
             }
 
             //NOTE: this is substantially changed over LABKEY.ext.FormHelper
-            if(meta.lookup && meta.lookup.public !== false && meta.lookups!==false){
+            if(meta.lookup && meta.lookup['public'] !== false && meta.lookups!==false){
                 displayValue = LABKEY.ext.Ext4Helper.getLookupDisplayValue(meta, displayValue, record, store);
                 meta.usingLookup = true;
                 shouldCache = false;

@@ -30,6 +30,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.template.ClientDependency;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletException;
@@ -46,6 +47,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -342,4 +344,10 @@ public class MockModule implements Module
     {
         return new JSONObject();
     }
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        return new LinkedHashSet<ClientDependency>();
+    }
+
 }

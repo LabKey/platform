@@ -24,6 +24,7 @@ import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
 
 import java.util.Map;
@@ -54,9 +55,16 @@ public class ModuleHtmlView extends HtmlView
         super(null);
         _viewdef = getViewDef(r);
         setTitle(_viewdef.getTitle());
+        setClientDependencies(_viewdef.getClientDependencies());
         setHtml(replaceTokens(_viewdef.getHtml(), getViewContext(), webpart));
         if(null != _viewdef.getFrameType())
             setFrame(_viewdef.getFrameType());
+
+        if(_viewdef.getResource().getResolver() instanceof ModuleResourceResolver)
+        {
+            Module _module = ((ModuleResourceResolver)_viewdef.getResource().getResolver()).getModule();
+            _clientDependencies.add(ClientDependency.fromModule(_module));
+        }
     }
 
 

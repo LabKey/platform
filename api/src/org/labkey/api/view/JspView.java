@@ -17,6 +17,7 @@
 package org.labkey.api.view;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.jsp.JspBase;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.jsp.JspLoader;
@@ -72,6 +73,9 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
         assert MemTracker.put(this);
         _path = page;
         _page = JspLoader.createPage((String)null, page);
+
+        if(_page instanceof JspBase)
+            addClientDependencies((Set)((JspBase)_page).getClientDependencies());
     }
 
     public JspView(String page, ModelClass model, BindException errors)
@@ -86,6 +90,9 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
         assert MemTracker.put(this);
         _path = jspName;
         _page = JspLoader.createPage(packageClass, jspName);
+
+        if(_page instanceof JspBase)
+            addClientDependencies((Set)((JspBase)_page).getClientDependencies());
     }
 
 

@@ -42,6 +42,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.security.ACL;
@@ -60,8 +61,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebTheme;
 import org.labkey.api.view.WebThemeManager;
-import org.labkey.api.webdav.WebdavResource;
-import org.labkey.api.webdav.WebdavService;
+import org.labkey.api.view.template.ClientDependency;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.web.servlet.ModelAndView;
@@ -1767,16 +1767,21 @@ public class PageFlowUtil
 
     public static String getStandardIncludes(Container c)
     {
-        return getStandardIncludes(c, null);
+        return getStandardIncludes(c, null, null);
+    }
+
+    public static String getStandardIncludes(Container c, @Nullable String userAgent)
+    {
+        return getStandardIncludes(c, userAgent, null);
     }
 
     // UNDONE: use a user-agent parsing library
-    public static String getStandardIncludes(Container c, @Nullable String userAgent)
+    public static String getStandardIncludes(Container c, @Nullable String userAgent, LinkedHashSet<ClientDependency> resources)
     {
         StringBuilder sb = getFaviconIncludes(c);
-        sb.append(getStylesheetIncludes(c, userAgent));
-        sb.append(getLabkeyJS());
-        sb.append(getJavaScriptIncludes());
+        sb.append(getStylesheetIncludes(c, userAgent, resources));
+        sb.append(getLabkeyJS(resources));
+        sb.append(getJavaScriptIncludes(resources));
         return sb.toString();
     }
 
@@ -1804,9 +1809,13 @@ public class PageFlowUtil
         return getStylesheetIncludes(c, null);
     }
 
+    public static String getStylesheetIncludes(Container c, @Nullable String userAgent)
+    {
+        return getStylesheetIncludes(c, userAgent, null);
+    }
 
     /** */
-    public static String getStylesheetIncludes(Container c, @Nullable String userAgent)
+    public static String getStylesheetIncludes(Container c, @Nullable String userAgent, @Nullable LinkedHashSet<ClientDependency> resources)
     {
         boolean useLESS = null != HttpView.currentRequest().getParameter("less");
         WebTheme theme = WebThemeManager.getTheme(c);
@@ -1861,6 +1870,19 @@ public class PageFlowUtil
         sb.append(filter(printStyleURL));
         sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\">\n");
 
+        if (resources != null)
+        {
+            for (ClientDependency r : resources)
+            {
+                for (String script : (r.getCssPaths(AppProps.getInstance().isDevMode())))
+                {
+                    sb.append("<link href=\"");
+                    sb.append(AppProps.getInstance().getContextPath() + "/");
+                    sb.append(filter(script));
+                    sb.append("\" type=\"text/css\" rel=\"stylesheet\">");
+                }
+            }
+        }
         return sb.toString();
     }
 
@@ -1924,70 +1946,69 @@ public class PageFlowUtil
         }
     }
 
-    /** scripts are the explicitly included scripts,
-     * @param scripts   the scripts that should be explicitly included
-     * @param included  the scripts that are implicitly included
+    /**
+     * Returns the default scripts included on all pages.  ClientDependency will handle dev/production
+     * mode differences
+     */
+    public static LinkedHashSet<ClientDependency> getDefaultJavaScriptPaths()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+        resources.add(ClientDependency.fromString("Ext3.lib.xml"));
+        resources.add(ClientDependency.fromString("clientapi.lib.xml"));
+        resources.add(ClientDependency.fromString("util.js"));
+        return resources;
+    }
+
+    /**
+     * Used by CombinedJavascriptAction only - it's possible this can be depreciated
      */
     public static void getJavaScriptPaths(Set<String> scripts, Set<String> included)
     {
         boolean explodedExt = AppProps.getInstance().isDevMode() && false;
         boolean explodedClient = AppProps.getInstance().isDevMode();
 
-        // EXT
-        scripts.add(AppProps.getInstance().isDevMode() ? extBaseDebug : extBase);
-        if (explodedExt)
+        LinkedHashSet<ClientDependency> resources = getDefaultJavaScriptPaths();
+        if (resources != null)
         {
-            String jsonString = getFileContentsAsString(new File(ModuleLoader.getServletContext().getRealPath("/" + extJsRoot + "/ext.jsb2")));
-            JSONObject json = new JSONObject(jsonString);
-            Map<String, JSONObject> packages = new HashMap<String, JSONObject>();
-            for (JSONObject pkgObject : json.getJSONArray("pkgs").toJSONObjectArray())
-            {
-                packages.put(pkgObject.getString("file"), pkgObject);
+            for (ClientDependency r : resources) {
+                if(AppProps.getInstance().isDevMode())
+                {
+                    scripts.addAll(r.getJsPaths(true));
+                    included.addAll(r.getJsPaths(true));
+                }
+                else
+                {
+                    scripts.addAll(r.getJsPaths(false));
+                    //include both production and devmode scripts for requiresScript()
+                    included.addAll(r.getJsPaths(true));
+                    included.addAll(r.getJsPaths(false));
+                }
             }
-            explodedExtPaths(packages, "ext-all.js", scripts);
-        }
-        else
-            scripts.add(AppProps.getInstance().isDevMode() ? extDebug : extMin);
-        scripts.add(extJsRoot + "/ext-patches.js");
-        included.add(extDebug);
-        included.add(extMin);
-
-        // LABKEY
-        scripts.add("util.js");
-
-        // CLIENT
-        if(explodedClient)
-        {
-            for (String e : getClientExploded())
-                scripts.add(e);
-        }
-        else
-        {
-            scripts.add(AppProps.getInstance().isDevMode() ? clientDebug : clientMin);
         }
 
-        included.add(clientDebug);
-        included.add(clientMin);
-
-        included.addAll(scripts);
     }
 
-    private static String[] getClientExploded()
-    {
-        List<String> files = new ArrayList<String>();
-        WebdavResource dir = WebdavService.get().getRootResolver().lookup(Path.parse("/clientapi"));
-
-        FileType js = new FileType(".js", FileType.gzSupportLevel.NO_GZ);
-        for (WebdavResource r : dir.list())
-        {
-            File f = r.getFile();
-            if(js.isType(f) && !f.getName().startsWith("clientapi"))
-                files.add("clientapi/" + f.getName());
-        }
-        return files.toArray(new String[files.size()]);
-    }
+//    private static String[] getClientExploded()
+//    {
+//        List<String> files = new ArrayList<String>();
+//        WebdavResource dir = WebdavService.get().getRootResolver().lookup(Path.parse("/clientapi"));
+//
+//        FileType js = new FileType(".js", FileType.gzSupportLevel.NO_GZ);
+//        for (WebdavResource r : dir.list())
+//        {
+//            File f = r.getFile();
+//            if(js.isType(f) && !f.getName().startsWith("clientapi"))
+//                files.add("clientapi/" + f.getName());
+//        }
+//        return files.toArray(new String[files.size()]);
+//    }
 
     public static String getLabkeyJS()
+    {
+        return getLabkeyJS(new LinkedHashSet<ClientDependency>());
+    }
+
+    public static String getLabkeyJS(LinkedHashSet<ClientDependency> resources)
     {
         String contextPath = AppProps.getInstance().getContextPath();
         String serverHash = getServerSessionHash();
@@ -1996,7 +2017,7 @@ public class PageFlowUtil
 
         sb.append("    <script src=\"").append(contextPath).append("/labkey.js?").append(serverHash).append("\" type=\"text/javascript\"></script>\n");
         sb.append("    <script type=\"text/javascript\">\n");
-        sb.append("        LABKEY.init(").append(jsInitObject()).append(");\n");
+        sb.append("        LABKEY.init(").append(jsInitObject(resources)).append(");\n");
         sb.append("    </script>\n");
 
         // Include client-side error reporting scripts only if necessary and as early as possible.
@@ -2010,29 +2031,41 @@ public class PageFlowUtil
         return sb.toString();
     }
 
-
-    public static String getJavaScriptIncludes()
+    public static String getJavaScriptIncludes(LinkedHashSet<ClientDependency> extraResources)
     {
-        boolean combinedJS = false;
-
         String contextPath = AppProps.getInstance().getContextPath();
         String serverHash = getServerSessionHash();
 
+        /**
+          * scripts: the scripts that should be explicitly included
+          * included: the scripts that are implicitly included, which will include the component scripts on a minified library.
+          */
         LinkedHashSet<String> scripts = new LinkedHashSet<String>();
         LinkedHashSet<String> includes = new LinkedHashSet<String>();
-        getJavaScriptPaths(scripts, includes);
 
+        LinkedHashSet<ClientDependency> resources = getDefaultJavaScriptPaths();
+        if (extraResources != null)
+            resources.addAll(extraResources);
+
+        if (resources != null)
+        {
+            for (ClientDependency r : resources) {
+                if(AppProps.getInstance().isDevMode())
+                {
+                    scripts.addAll(r.getJsPaths(true));
+                    includes.addAll(r.getJsPaths(true));
+                }
+                else
+                {
+                    scripts.addAll(r.getJsPaths(false));
+                    //include both production and devmode scripts for requiresScript()
+                    includes.addAll(r.getJsPaths(true));
+                    includes.addAll(r.getJsPaths(false));
+                }
+            }
+        }
         StringBuilder sb = new StringBuilder();
 
-        if (combinedJS && !AppProps.getInstance().isDevMode())
-        {
-            sb.append("    <script src=\"").append(contextPath).append("/core/combinedJavascript.view?").append(serverHash).append("\" type=\"text/javascript\"></script>\n");
-        }
-        else
-        {
-            for (String s : scripts)
-                sb.append("    <script src=\"").append(contextPath).append("/").append(filter(s)).append("?").append(serverHash).append("\" type=\"text/javascript\"></script>\n");
-        }
         sb.append("    <script type=\"text/javascript\">\n        LABKEY.loadedScripts(");
         String comma = "";
         for (String s : includes)
@@ -2041,6 +2074,12 @@ public class PageFlowUtil
             comma = ",";
         }
         sb.append(");\n");
+        sb.append("    </script>\n");
+
+        for (String s : scripts)
+            sb.append("    <script src=\"").append(contextPath).append("/").append(filter(s)).append("?").append(serverHash).append("\" type=\"text/javascript\"></script>\n");
+
+        sb.append("    <script type=\"text/javascript\">\n");
         sb.append("        Ext.Ajax.timeout = 5 * 60 * 1000; // Default to 5 minute timeout\n");
         sb.append("    </script>\n");
         return sb.toString();
@@ -2137,6 +2176,11 @@ public class PageFlowUtil
 
     public static JSONObject jsInitObject()
     {
+        return jsInitObject(new LinkedHashSet<ClientDependency>());
+    }
+
+    public static JSONObject jsInitObject(LinkedHashSet<ClientDependency> resources)
+    {
         AppProps props = AppProps.getInstance();
         String contextPath = props.getContextPath();
         JSONObject json = new JSONObject();
@@ -2154,6 +2198,9 @@ public class PageFlowUtil
         Container container = context.getContainer();
         User user = HttpView.currentView().getViewContext().getUser();
         HttpServletRequest request = context.getRequest();
+
+        if(container != null)
+            json.put("moduleContext", getModuleClientContext(container, user, resources));
 
         JSONObject userProps = new JSONObject();
 
@@ -2627,5 +2674,24 @@ public class PageFlowUtil
 
         response.setContentType("image/png");
         EncoderUtil.writeBufferedImage(buffer, ImageFormat.PNG, response.getOutputStream());
+    }
+
+    public static JSONObject getModuleClientContext(Container c, User u, LinkedHashSet<ClientDependency> resources)
+    {
+        JSONObject ret = new JSONObject();
+        if (resources != null)
+        {
+            Set<Module> modules = new HashSet<Module>();
+            for (ClientDependency cd : resources)
+            {
+                modules.addAll(cd.getRequiredModuleContexts());
+            }
+
+            for (Module m : modules)
+            {
+                ret.put(m.getName().toLowerCase(), m.getPageContextJson(u, c));
+            }
+        }
+        return ret;
     }
 }

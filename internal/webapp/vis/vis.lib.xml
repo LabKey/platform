@@ -1,0 +1,16 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="true">
+        <script path="/vis/lib/patches.js"/>
+        <script path="/vis/src/utils.js"/>
+        <script path="/vis/src/geom.js"/>
+        <script path="/vis/src/stat.js"/>
+        <script path="/vis/src/position.js"/>
+        <script path="/vis/src/scale.js"/>
+        <script path="/vis/src/layer.js"/>
+        <script path="/vis/src/plot.js"/>
+    </library>
+    <dependencies>
+        <dependency path="/vis/src/SVGConverter.js"/>
+        <dependency path="/vis/visDependencies.lib.xml"/>
+    </dependencies>
+</libraries>

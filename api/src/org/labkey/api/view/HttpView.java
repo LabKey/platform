@@ -24,6 +24,8 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.view.template.PageConfig;
 import org.springframework.beans.PropertyValues;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.servlet.ModelAndView;
@@ -37,6 +39,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
@@ -51,6 +54,7 @@ import java.util.Stack;
 public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean> implements View, HasViewContext
 {
     private static final int _debug = Debug.getLevel(HttpView.class);
+    protected LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<ClientDependency>();
 
     private static final ThreadLocal<ViewStack> _viewContexts = new ThreadLocal<ViewStack>()
     {
@@ -702,5 +706,37 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
             }
         }
         return null;
+    }
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+        resources.addAll(_clientDependencies);
+
+        //include resources of nested views
+        if(_views != null)
+        {
+            for (ModelAndView v : _views.values())
+            {
+                if(v instanceof HtmlView)
+                    resources.addAll(((HtmlView) v).getClientDependencies());
+            }
+        }
+        return resources;
+    }
+
+    public void setClientDependencies(LinkedHashSet<ClientDependency> scripts)
+    {
+        _clientDependencies = scripts;
+        if( getModelBean() instanceof PageConfig)
+            ((PageConfig)getModelBean()).addClientDependencies(scripts);
+
+        if(_view instanceof HtmlView)
+            ((HtmlView)_view).addClientDependencies(scripts);
+    }
+
+    public void addClientDependencies(Set<ClientDependency> resources)
+    {
+        _clientDependencies.addAll(resources);
     }
 }

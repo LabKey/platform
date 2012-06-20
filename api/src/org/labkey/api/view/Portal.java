@@ -616,6 +616,7 @@ public class Portal
                 if (null == view)
                     continue;
                 view.prepare(view.getModelBean());
+                template.addClientDependencies((Set)view.getClientDependencies());
 
                 NavTree navTree = view.getPortalLinks();
                 if (canCustomize)

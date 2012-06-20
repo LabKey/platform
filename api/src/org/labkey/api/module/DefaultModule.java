@@ -17,6 +17,7 @@ package org.labkey.api.module;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -39,7 +40,9 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.resource.AbstractResource;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
@@ -51,6 +54,13 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.template.ClientDependency;
+import org.labkey.data.xml.PermissionType;
+import org.labkey.data.xml.view.DependencyType;
+import org.labkey.data.xml.view.RequiredModuleType;
+import org.labkey.moduleProperties.xml.ModuleDocument;
+import org.labkey.moduleProperties.xml.ModuleType;
+import org.labkey.moduleProperties.xml.PropertyType;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -73,6 +83,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -102,6 +113,8 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     private final Map<String, Class<? extends Controller>> _pageFlowNameToClass = new LinkedHashMap<String, Class<? extends Controller>>();
     private final Map<Class<? extends Controller>, String> _pageFlowClassToName = new HashMap<Class<? extends Controller>, String>();
+    private static final String XML_FILENAME = "module.xml";
+
     private Collection<WebPartFactory> _webPartFactories;
 
     private ModuleResourceResolver _resolver;
@@ -119,6 +132,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private String _sourcePath = null;
     private File _explodedPath = null;
     private Map<String, ModuleProperty> _moduleProperties = new HashMap<String, ModuleProperty>();
+    private LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<ClientDependency>();
 
     private static final Cache<Path, ModuleRReportDescriptor> REPORT_DESCRIPTOR_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.DAY, "Report descriptor cache");
 
@@ -171,6 +185,10 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             ModuleLoader.getInstance().registerResourcePrefix(getResourcePath(), new ResourceFinder(this));
 
         _resolver = new ModuleResourceResolver(this, getResourceDirectories(), getResourceClasses());
+
+        Resource xml = _resolver.lookup(Path.parse(XML_FILENAME));
+        if(xml != null)
+            loadXmlFile(xml);
 
         init();
 
@@ -772,6 +790,89 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return new ModuleQueryRReportDescriptor(this, key.toString("",""), reportFile, reportKey);
     }
 
+    protected void loadXmlFile(Resource r)
+    {
+        if (r.exists())
+        {
+            try
+            {
+                XmlOptions xmlOptions = new XmlOptions();
+                Map<String,String> namespaceMap = new HashMap<String,String>();
+                namespaceMap.put("", "http://labkey.org/moduleProperties/xml/");
+                xmlOptions.setLoadSubstituteNamespaces(namespaceMap);
+
+                ModuleDocument moduleDoc = ModuleDocument.Factory.parse(r.getInputStream(), xmlOptions);
+                ModuleType mt = moduleDoc.getModule();
+                if (null != mt && mt.getProperties() != null)
+                {
+                    for (PropertyType pt : mt.getProperties().getPropertyDescriptorArray())
+                    {
+                        ModuleProperty mp;
+                        if (pt.isSetName())
+                            mp = new ModuleProperty(this, pt.getName());
+                        else
+                            continue;
+
+                        if (pt.isSetCanSetPerContainer())
+                            mp.setCanSetPerContainer(pt.getCanSetPerContainer());
+                        if (pt.isSetDefaultValue())
+                            mp.setDefaultValue(pt.getDefaultValue());
+                        if (pt.isSetDescription())
+                            mp.setDescription(pt.getDescription());
+                        if (pt.isSetRequired())
+                            mp.setRequired(pt.getRequired());
+                        if (pt.isSetEditPermissions() && pt.getEditPermissions() != null && pt.getEditPermissions().getPermissionArray() != null)
+                        {
+                            List<Class<? extends Permission>> editPermissions = new ArrayList<Class<? extends Permission>>();
+                            for (PermissionType.Enum permEntry : pt.getEditPermissions().getPermissionArray())
+                            {
+                                SecurityManager.PermissionTypes perm = SecurityManager.PermissionTypes.valueOf(permEntry.toString());
+                                Class<? extends Permission> permClass = perm.getPermission();
+                                if (permClass != null)
+                                    editPermissions.add(permClass);
+                            }
+
+                            if (editPermissions.size() > 0)
+                                mp.setEditPermissions(editPermissions);
+                        }
+
+                        if (mp.getName() != null)
+                            _moduleProperties.put(mp.getName(), mp);
+                    }
+                }
+
+                if (mt.getClientDependencies() != null && mt.getClientDependencies().getDependencyArray() != null)
+                {
+                    for (DependencyType rt : mt.getClientDependencies().getDependencyArray())
+                    {
+                        if (rt.getPath() != null)
+                        {
+                            ClientDependency cd = ClientDependency.fromString(rt.getPath());
+                            if (cd != null)
+                                _clientDependencies.add(cd);
+                        }
+                    }
+                }
+
+                if (mt.getRequiredModuleContext() != null && mt.getRequiredModuleContext().getRequiredModuleArray() != null)
+                {
+                    for (RequiredModuleType rmt : mt.getRequiredModuleContext().getRequiredModuleArray())
+                    {
+                        if (rmt.getName() != null)
+                        {
+                            Module m = ModuleLoader.getInstance().getModule(rmt.getName());
+                            if (m != null)
+                                _clientDependencies.add(ClientDependency.fromModule(m));
+                        }
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                _log.error("Error trying to read and parse the metadata XML for module " + getName() + " from " + r.getPath(), e);
+            }
+        }
+    }
 
     protected ModuleRReportDescriptor createReportDescriptor(Resource reportFile)
     {
@@ -1152,8 +1253,13 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         for (ModuleProperty p : getModuleProperties().values())
         {
             if (!p.isExcludeFromClientContext())
-                props.put(p.getName(), p.getEffectiveValue(u, c, p.getName()));
+                props.put(p.getName(), p.getEffectiveValue(u, c));
         }
         return props;
+    }
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        return _clientDependencies;
     }
 }

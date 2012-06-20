@@ -1,0 +1,8 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="false">
+        <script path="/vis/lib/d3-2.0.4.js" mode="dev"/>
+        <script path="/vis/lib/d3-2.0.4.min.js" mode="production"/>
+        <script path="/vis/lib/raphael-2.1.0.js" mode="dev"/>
+        <script path="/vis/lib/raphael-min-2.1.0.js" mode="production"/>
+    </library>
+</libraries>

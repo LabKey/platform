@@ -75,6 +75,7 @@ LABKEY.init = function(config)
 {
     for (var p in config)
     {
+        //TODO: we should be trying to seal some of these objects, or at least wrap them to make them harder to manipulate
         this[p] = config[p];
     }
     if ("Security" in LABKEY)
@@ -343,7 +344,7 @@ LABKEY.requiresExt4ClientAPI = function(immediate)
     //load individual scripts so that they get loaded from source tree
     LABKEY.requiresScript("extWidgets/Ext4Helper.js", immediate);
     LABKEY.requiresScript("extWidgets/Ext4Store.js", immediate);
-    LABKEY.requiresScript("extWidgets/LabKeyCombo.js", immediate);
+    LABKEY.requiresScript("extWidgets/LabkeyCombo.js", immediate);
     LABKEY.requiresScript("extWidgets/ExtComponents.js", immediate);
     LABKEY.requiresScript("extWidgets/Ext4FormPanel.js", immediate);
     LABKEY.requiresScript("extWidgets/Ext4GridPanel.js", immediate);
@@ -495,3 +496,12 @@ LABKEY.id = function(id)
         return id;
     }
 };
+
+/**
+ * @param {String} The name of the module
+ * @returns {Object} The context object for this module.  The current view must have specifically requested
+ * the context for this module in its view XML
+ */
+LABKEY.getModuleContext = function(moduleName){
+    return LABKEY.moduleContext[moduleName.toLowerCase()];
+}

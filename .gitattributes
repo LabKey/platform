@@ -1243,6 +1243,7 @@ api/src/org/labkey/api/view/tabbox.jsp -text
 api/src/org/labkey/api/view/tabstrip.jsp -text
 api/src/org/labkey/api/view/template/AppBar.java -text
 api/src/org/labkey/api/view/template/AppBarView.java -text
+api/src/org/labkey/api/view/template/ClientDependency.java -text
 api/src/org/labkey/api/view/template/CommonTemplate.jsp -text
 api/src/org/labkey/api/view/template/EmptyView.java -text
 api/src/org/labkey/api/view/template/MenuBarView.java -text
@@ -1313,10 +1314,13 @@ api/src/proteowizard/pwiz/RAMPAdapter/pwiz_swigbindings.java -text
 api/src/proteowizard/pwiz/RAMPAdapter/pwiz_swigbindingsConstants.java -text
 api/src/proteowizard/pwiz/RAMPAdapter/pwiz_swigbindingsJNI.java -text
 api/src/proteowizard/pwiz/RAMPAdapter/vectord.java -text
+api/webapp/Ext3.lib.xml -text
+api/webapp/Ext4.lib.xml -text
 api/webapp/WEB-INF/applicationContext.xml -text
 api/webapp/WEB-INF/labkey.tld -text
 api/webapp/WEB-INF/spring-form.tld -text
 api/webapp/WEB-INF/spring.tld -text
+api/webapp/clientapi.lib.xml -text
 api/webapp/clientapi/ActionURL.js -text
 api/webapp/clientapi/Ajax.js -text
 api/webapp/clientapi/Assay.js -text
@@ -6555,6 +6559,7 @@ internal/webapp/Ext.ux.MultiSelectTreePanel.js -text
 internal/webapp/Ext.ux.dd.GridDragDropRowOrder.js -text
 internal/webapp/Ext.ux.form.LovCombo.css -text
 internal/webapp/Ext.ux.form.LovCombo.js -text
+internal/webapp/Ext4ClientApi.lib.xml -text
 internal/webapp/FileUploadField.css -text
 internal/webapp/FileUploadField.js -text
 internal/webapp/GuidedTip.css -text
@@ -7544,4 +7549,6 @@ internal/webapp/vis/src/position.js -text
 internal/webapp/vis/src/scale.js -text
 internal/webapp/vis/src/stat.js -text
 internal/webapp/vis/src/utils.js -text
+internal/webapp/vis/vis.lib.xml -text
+internal/webapp/vis/visDependencies.lib.xml -text
 internal/webapp/wikitoc.js -text

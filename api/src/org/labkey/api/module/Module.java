@@ -30,6 +30,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.template.ClientDependency;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletException;
@@ -40,6 +41,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -301,4 +303,6 @@ public interface Module extends Comparable<Module>
      * Note: this is written as plain text.
      */
     public JSONObject getPageContextJson(User u, Container c);
+
+    public LinkedHashSet<ClientDependency> getClientDependencies();
 }

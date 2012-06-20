@@ -32,6 +32,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
@@ -44,8 +46,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Base class for nearly all JSP pages that we use.
@@ -64,6 +68,7 @@ abstract public class JspBase extends JspContext implements HasViewContext
     }
 
     ViewContext _viewContext;
+    protected LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<ClientDependency>();
 
     public ViewContext getViewContext()
     {
@@ -548,4 +553,27 @@ abstract public class JspBase extends JspContext implements HasViewContext
             return full.substring(full.lastIndexOf('/')+1) + query;
         return full + query;
     }
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        return _clientDependencies;
+    }
+
+    public void setClientDependencies(LinkedHashSet<ClientDependency> scripts)
+    {
+        _clientDependencies = scripts;
+        if( getModelBean() instanceof PageConfig)
+            ((PageConfig)getModelBean()).addClientDependencies(scripts);
+    }
+
+    public void addClientDependency(String scriptPath)
+    {
+        _clientDependencies.add(ClientDependency.fromString(scriptPath));
+    }
+
+    public void addClientDependencies(Set<ClientDependency> resources)
+    {
+        _clientDependencies.addAll(resources);
+    }
+
 }

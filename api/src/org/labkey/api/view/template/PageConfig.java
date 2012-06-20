@@ -29,8 +29,10 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: brittp
@@ -72,6 +74,7 @@ public class PageConfig
     private String _styleSheet;
     private String _styles;
     private String _script;
+    private LinkedHashSet<ClientDependency> _resources = new LinkedHashSet<ClientDependency>();
     private TrueFalse _showHeader = TrueFalse.Default;
     private List<NavTree> _navTrail;
     private AppBar _appBar;
@@ -374,5 +377,20 @@ public class PageConfig
     public boolean getAllowTrackingScript()
     {
         return _trackingScript;
+    }
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        return _resources;
+    }
+
+    public void addClientDependencies(Set<ClientDependency> resources)
+    {
+        _resources.addAll(resources);
+    }
+
+    public void addClientDependency(ClientDependency resource)
+    {
+        _resources.add(resource);
     }
 }
