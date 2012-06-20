@@ -29,6 +29,8 @@
 <script type="text/javascript">
     LABKEY.requiresScript("study/redesignUtils.js", true);
     LABKEY.requiresExt4ClientAPI();
+    LABKEY.requiresCss("ux/CheckCombo/CheckCombo.css");
+    LABKEY.requiresScript("ux/CheckCombo/CheckCombo.js");
 </script>
 <style type="text/css">
     .labkey-specimen-search-toggle {
@@ -308,7 +310,7 @@ Ext4.onReady(function(){
             }
             else {
                 return {
-                    xtype: 'labkey-combo',
+                    xtype: 'checkcombo',
                     editable: false,
                     itemId: queryName,
                     multiSelect: true,
@@ -318,7 +320,9 @@ Ext4.onReady(function(){
                     valueField: displayColumn,
                     emptyText: defaultOptionText,
                     value: defaultOptionValue,
-                    store: store
+                    store: store,
+                    createNewOnEnter: true,
+                    addAllSelector: true
                 }
             }
         },
@@ -378,12 +382,13 @@ Ext4.onReady(function(){
                     //special case GUID:
                     if(item.itemId == 'guidField'){
                         op = panel.down('#guidOpField').getValue();
+                        val = item.getValue();
                     }
                     else {
                         op = 'eq';
+                        val = item.getValueAsArray();
                     }
 
-                    val = item.getValue();
                     if(Ext4.isArray(val)){
                         if(val.length > 1)
                             op = 'in';
