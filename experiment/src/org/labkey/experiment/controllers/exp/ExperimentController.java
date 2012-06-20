@@ -1073,7 +1073,7 @@ public class ExperimentController extends SpringActionController
             lowerView.setIsWebPart(false);
 
             vbox.addView(lowerView);
-            vbox.addView(new ExperimentRunGroupsView(getUser(), getContainer(), _experimentRun, getViewContext().getActionURL()));
+            vbox.addView(new ExperimentRunGroupsView(getUser(), getContainer(), _experimentRun, getViewContext().getActionURL(), errors));
 
             StringBuilder html = new StringBuilder();
             html.append("<form id=\"exportFilesForm\" method=\"post\" action=\"");

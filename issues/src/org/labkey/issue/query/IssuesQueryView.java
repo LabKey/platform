@@ -27,6 +27,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.issue.IssuesController;
+import org.springframework.validation.BindException;
 
 import java.io.IOException;
 import java.sql.ResultSet;
@@ -37,9 +38,9 @@ public class IssuesQueryView extends QueryView
 {
     private ViewContext _context;
 
-    public IssuesQueryView(ViewContext context, UserSchema schema, QuerySettings settings)
+    public IssuesQueryView(ViewContext context, UserSchema schema, QuerySettings settings, BindException errors)
     {
-        super(schema, settings);
+        super(schema, settings, errors);
         _context = context;
         setShowDetailsColumn(false);
         getSettings().setAllowChooseQuery(false);

@@ -109,7 +109,7 @@ public class IssuesQuerySchema extends UserSchema
             @Override
             public QueryView createView(ViewContext context, IssuesQuerySchema schema, QuerySettings settings, BindException errors)
             {
-                return new IssuesQueryView(context, schema, settings);
+                return new IssuesQueryView(context, schema, settings, errors);
             }
         };
 

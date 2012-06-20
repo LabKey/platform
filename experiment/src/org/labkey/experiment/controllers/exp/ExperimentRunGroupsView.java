@@ -24,6 +24,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.springframework.validation.BindException;
 
 /**
  * User: jeckels
@@ -31,12 +32,12 @@ import org.labkey.api.security.permissions.UpdatePermission;
  */
 public class ExperimentRunGroupsView extends VBox
 {
-    public ExperimentRunGroupsView(User user, final Container c, final ExpRun run, final ActionURL currentURL)
+    public ExperimentRunGroupsView(User user, final Container c, final ExpRun run, final ActionURL currentURL, BindException errors)
     {
         ExpSchema schema = new ExpSchema(user, c);
         QuerySettings settings = schema.getSettings(getViewContext(), "Experiments", ExpSchema.EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME);
         settings.setAllowChooseQuery(false);
-        QueryView experimentsView = new QueryView(schema, settings)
+        QueryView experimentsView = new QueryView(schema, settings, errors)
         {
             protected TableInfo createTable()
             {
