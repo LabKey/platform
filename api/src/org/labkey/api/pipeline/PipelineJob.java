@@ -476,12 +476,9 @@ abstract public class PipelineJob extends Job implements Serializable
             throw new IllegalStateException();
         _queue = queue;
     }
-    
-    public boolean setQueue(PipelineQueue queue, String initialState) throws PipelineValidationException
+
+    public void validateParameters() throws PipelineValidationException
     {
-        restoreQueue(queue);
-        
-        // Initialize the task pipeline
         TaskPipeline taskPipeline = getTaskPipeline();
         if (taskPipeline != null)
         {
@@ -490,6 +487,17 @@ abstract public class PipelineJob extends Job implements Serializable
                 TaskFactory taskFactory = PipelineJobService.get().getTaskFactory(taskId);
                 taskFactory.validateParameters(this);
             }
+        }
+    }
+
+    public boolean setQueue(PipelineQueue queue, String initialState)
+    {
+        restoreQueue(queue);
+        
+        // Initialize the task pipeline
+        TaskPipeline taskPipeline = getTaskPipeline();
+        if (taskPipeline != null)
+        {
             // Save the current job state marshalled to XML, in case of error.
             String xml = PipelineJobService.get().getJobStore().toXML(this);
 
