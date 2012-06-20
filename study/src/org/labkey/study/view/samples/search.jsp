@@ -178,7 +178,8 @@ Ext4.onReady(function(){
                     }
                 },{
                     itemId: 'searchFields',
-                    width: 400,
+                    //TODO: remove once Ext4.1 bug fixed
+                    width: 400 + 20,
                     defaults: {
                         labelWidth: this.LABEL_WIDTH,
                         width: 400
@@ -289,7 +290,7 @@ Ext4.onReady(function(){
                 ['Primary Type', 'study', 'SpecimenPrimaryType', 'PrimaryType/Description', 'Description', 'Description', 'Any Primary Type', null],
                 ['Derivative Type', 'study', 'SpecimenDerivative', 'DerivativeType/Description', 'Description', 'Description', 'Any Derivative Type', null],
                 ['Additive Type', 'study', 'SpecimenAdditive', 'AdditiveType/Description', 'Description', 'Description', 'Any Additive Type', null],
-                ['Visit', 'study', 'Visit', 'Visit/SequenceNumMin', 'Label', 'SequenceNumMin', 'Any Visit', null, 'DisplayOrder,Label']
+                ['Visit', 'study', 'Visit', 'Visit/Label', 'Label', 'SequenceNumMin', 'Any Visit', null, 'DisplayOrder,Label']
             ]
         },
 
