@@ -239,6 +239,8 @@ public class EPipelineQueueImpl implements PipelineQueue
 
     public void addJob(PipelineJob job) throws PipelineValidationException
     {
+        job.validateParameters();
+
         // Duplicate code from PipelineQueueImpl, should be refactored into a superclass
         File logFile = job.getLogFile();
         try

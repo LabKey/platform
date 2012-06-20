@@ -29,7 +29,6 @@ import org.labkey.api.pipeline.PipelineQueue;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineValidationException;
-import org.labkey.api.util.GUID;
 import org.labkey.api.util.JobRunner;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -38,7 +37,6 @@ import java.io.File;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
@@ -64,6 +62,9 @@ public class PipelineQueueImpl implements PipelineQueue
     {
         if (null == job)
             throw new NullPointerException();
+
+        job.validateParameters();
+
         _logDebug("PENDING:   " + job.toString());
 
         // Make sure status file path and Job ID are in synch.
@@ -178,9 +179,7 @@ public class PipelineQueueImpl implements PipelineQueue
     boolean inContainer(Container c, PipelineJob job)
     {
         // We use null to mean "all containers"
-        if (c == null)
-            return true;
-        return c.getId().equals(job.getContainerId());
+        return c == null || c.getId().equals(job.getContainerId());
     }
 
     public synchronized boolean cancelJob(Container c, PipelineStatusFile statusFile)
