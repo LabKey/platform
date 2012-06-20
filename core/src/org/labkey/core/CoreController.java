@@ -1516,6 +1516,11 @@ public class CoreController extends SpringActionController
             }
 
             Module m = ModuleLoader.getInstance().getModule(form.getModuleName());
+            if (m == null)
+            {
+                errors.reject(ERROR_MSG, "Unknown module: " + form.getModuleName());
+                return null;
+            }
 
             List<ModuleProperty> included = new ArrayList<ModuleProperty>();
             if(form.getProperties() == null)
@@ -1559,7 +1564,7 @@ public class CoreController extends SpringActionController
                         containers.add(o);
                         ct = ct.getParent();
                     }
-                    record.put("effectiveValue", mp.getEffectiveValue(getUser(), getContainer(), mp.getName()));
+                    record.put("effectiveValue", mp.getEffectiveValue(getUser(), getContainer()));
                     Collections.reverse(containers);  //reverse so root first
                     record.put("siteValues", containers);
 

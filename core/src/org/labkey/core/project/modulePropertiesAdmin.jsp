@@ -61,7 +61,7 @@
 Ext4.onReady(function(){
     Ext4.onReady(function(){
         Ext4.create('LABKEY.ext.ModulePropertiesAdminPanel', {
-            modules: ['<%=PageFlowUtil.filter(StringUtils.join(modules, "','"))%>']
+            modules: ['<%=StringUtils.join(modules, "','")%>']
         }).render('<%=renderTarget%>');
     });
 });

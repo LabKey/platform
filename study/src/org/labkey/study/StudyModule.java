@@ -18,6 +18,7 @@ package org.labkey.study;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
@@ -50,6 +51,7 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
@@ -167,6 +169,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
 
 
@@ -701,5 +704,20 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     public void indexDeleted() throws SQLException
     {
+    }
+
+    @Override
+    public JSONObject getPageContextJson(User u, Container c)
+    {
+        Map<String, String> ret = getDefaultPageContextJson(u, c);
+        Study study = StudyManager.getInstance().getStudy(c);
+        if (study != null)
+        {
+            ret.put("ParticipantNounSingular", study.getSubjectNounSingular());
+            ret.put("ParticipantNounPlural", study.getSubjectNounPlural());
+            ret.put("ParticipantColumnName", study.getSubjectColumnName());
+            ret.put("TimepointType", study.getTimepointType().name());
+        }
+        return new JSONObject(ret);
     }
 }

@@ -20,6 +20,9 @@ import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.RollingFileAppender;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.attachments.AttachmentService;
@@ -34,6 +37,7 @@ import org.labkey.api.etl.ResultSetDataIterator;
 import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.FirstRequestHandler;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeResourceLoader;
@@ -41,6 +45,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleDependencySorter;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.ModuleProperty;
 import org.labkey.api.module.ModuleResourceLoader;
 import org.labkey.api.module.ResourceFinder;
 import org.labkey.api.module.SpringModule;
@@ -96,6 +101,7 @@ import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
@@ -615,7 +621,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 ViewCategoryManager.TestCase.class,
                 TableSelectorTestCase.class,
                 NestedGroupsTest.class,
-                Compress.TestCase.class
+                Compress.TestCase.class,
+                CoreModule.TestCase.class
                 //,RateLimiter.TestCase.class
         ));
 
@@ -795,5 +802,110 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         Table.execute(CoreSchema.getInstance().getSchema(), new SQLFragment(
             "UPDATE core.Documents SET lastIndexed=NULL"
         ));
+    }
+
+    public static class TestCase extends Assert
+    {
+        private TestContext _ctx;
+        private User _user;
+        Module _module;
+        Container _project;
+        Container _subFolder;
+        String PROP1 = "TestProp";
+        String PROP2 = "TestPropContainer";
+        String PROJECT_NAME = "__ModulePropsTestProject";
+        String FOLDER_NAME = "subfolder";
+
+        @Before
+        public void setUp()
+        {
+            _ctx = TestContext.get();
+            User loggedIn = _ctx.getUser();
+            assertTrue("login before running this test", null != loggedIn);
+            assertFalse("login before running this test", loggedIn.isGuest());
+            _user = _ctx.getUser().cloneUser();
+
+            _module = new TestModule();
+            ((TestModule)_module).init();
+        }
+
+        /**
+         * Make sure module properties can be set, and that the correct coalesced values is returned (ie. if value not set on
+         * a container, coalesce backwards to the first parent container where the value is set).
+         */
+        @Test
+        public void testModuleProperties() throws Exception
+        {
+            if (ContainerManager.getForPath(PROJECT_NAME) != null)
+            {
+                ContainerManager.deleteAll(ContainerManager.getForPath(PROJECT_NAME), _user);
+            }
+
+            _project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, null, null, false, _user);
+            _subFolder = ContainerManager.createContainer(_project, FOLDER_NAME);
+
+            Map<String, ModuleProperty> props = _module.getModuleProperties();
+            ModuleProperty prop2 = props.get(PROP2);
+
+            String rootVal = "RootValue";
+            String projectVal = "ProjectValue";
+            String folderVal = "FolderValue";
+
+            prop2.saveValue(_user, ContainerManager.getRoot(), 0, rootVal);
+            prop2.saveValue(_user, _project, 0, projectVal);
+            prop2.saveValue(_user, _subFolder, 0, folderVal);
+
+            assertEquals(rootVal, prop2.getEffectiveValue(_user, ContainerManager.getRoot()));
+            assertEquals(projectVal, prop2.getEffectiveValue(_user, _project));
+            assertEquals(folderVal, prop2.getEffectiveValue(_user, _subFolder));
+
+            prop2.saveValue(_user, _subFolder, 0, null);
+            assertEquals(projectVal, prop2.getEffectiveValue(_user, _subFolder));
+
+            prop2.saveValue(_user, _project, 0, null);
+            assertEquals(rootVal, prop2.getEffectiveValue(_user, _subFolder));
+
+            prop2.saveValue(_user, ContainerManager.getRoot(), 0, null);
+            assertEquals(prop2.getDefaultValue(), prop2.getEffectiveValue(_user, _subFolder));
+
+            String newVal = "NewValue";
+            prop2.saveValue(_user, _project, 0, newVal);
+            assertEquals(prop2.getDefaultValue(), prop2.getEffectiveValue(_user, ContainerManager.getRoot()));
+            assertEquals(newVal, prop2.getEffectiveValue(_user, _project));
+            assertEquals(newVal, prop2.getEffectiveValue(_user, _subFolder));
+        }
+
+        private class TestModule extends DefaultModule {
+            @Override
+            public void startup(ModuleContext c)
+            {
+            }
+
+            @Override
+            public void init()
+            {
+                setName("__JunitTestModule");
+                ModuleProperty mp = new ModuleProperty(this, PROP1);
+                mp.setCanSetPerContainer(false);
+                addModuleProperty(mp);
+
+                ModuleProperty mp2 = new ModuleProperty(this, PROP2);
+                mp2.setCanSetPerContainer(true);
+                mp2.setDefaultValue("Default");
+                addModuleProperty(mp2);
+            }
+
+            @Override
+            protected Collection<WebPartFactory> createWebPartFactories()
+            {
+                return new HashSet<WebPartFactory>();
+            }
+
+            @Override
+            public boolean hasScripts()
+            {
+                return false;
+            }
+        }
     }
 }
