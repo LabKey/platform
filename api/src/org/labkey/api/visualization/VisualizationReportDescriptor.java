@@ -17,6 +17,8 @@ package org.labkey.api.visualization;
 
 import org.labkey.api.reports.report.ReportDescriptor;
 
+import java.util.Map;
+
 /**
  * User: brittp
  * Date: Feb 3, 2011 11:15:10 AM
@@ -31,5 +33,10 @@ public class VisualizationReportDescriptor extends ReportDescriptor
     public void setJSON(String json)
     {
         setProperty(Prop.json, json);
+    }
+
+    public Map<String, Object> getReportProps() throws Exception
+    {
+        return null;
     }
 }

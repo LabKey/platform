@@ -256,6 +256,8 @@ LABKEY.Visualization = new function() {
          * @param {String} [config.description] A description of the saved report.
          * @param {String} [config.shared] Boolean indicating whether this report is viewable by all users with read
          * permissions to the visualization's folder.  If false, only the creating user can see the visualization.  Defaults to true.
+         * @param {Boolean} [config.thumbnailType] String indicating whether a thumbnail should be auto-generated ('AUTO'), no thumbnail
+         * should be saved ('NONE'), or the existing custom thumbnail should be kept ('CUSTOM')
          * @param {String} [config.svg] String svg to be used to generate a thumbnail
          * @param {String} [config.schemaName] Optional, but required if config.queryName is provided.  Allows the visualization to
          * be scoped to a particular query.  If scoped, this visualization will appear in the 'views' menu for that query.
@@ -285,7 +287,7 @@ LABKEY.Visualization = new function() {
                 json : Ext.util.JSON.encode(config.visualizationConfig),
                 replace: config.replace,
                 shared: config.shared,
-                saveThumbnail: config.saveThumbnail,
+                thumbnailType: config.thumbnailType,
                 svg : config.svg,
                 type : config.type,
                 schemaName: config.schemaName,

@@ -16,7 +16,13 @@
 
 package org.labkey.api.visualization;
 
-import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.reports.model.ReportPropsManager;
+import org.labkey.api.util.Pair;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /*
 * User: brittp
@@ -32,4 +38,18 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
         setDescriptorType(TYPE);
     }
 
+    public Map<String, Object> getReportProps() throws Exception
+    {
+        Map<String, Object> props = new HashMap<String, Object>();
+        List<Pair<DomainProperty, Object>> propsList = ReportPropsManager.get().getProperties(getEntityId(), getResourceContainer());
+        if (propsList.size() > 0)
+        {
+            for (Pair<DomainProperty, Object> pair : propsList)
+                props.put(pair.getKey().getName(), pair.getValue());
+
+            return props;
+        }
+        else
+            return null;
+    }
 }

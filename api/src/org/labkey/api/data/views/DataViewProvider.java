@@ -66,6 +66,15 @@ public interface DataViewProvider
             author,
             refreshDate,
             status,
+            
+            customThumbnail
+        }
+
+        // a list of thumbnail types
+        enum ThumbnailType {
+            AUTO, // auto-generated
+            CUSTOM, // custom thumbnail provided by Data Views edit properties page
+            NONE 
         }
 
         /**
@@ -91,6 +100,6 @@ public interface DataViewProvider
          *
          * @throws Exception
          */
-        void updateProperties(Container container, User user, String id, Map<String, Object> props) throws Exception;
+        void updateProperties(ViewContext context, String id, Map<String, Object> props) throws Exception;
     }
 }
