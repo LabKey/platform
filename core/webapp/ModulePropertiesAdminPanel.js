@@ -90,9 +90,10 @@ Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
         var tooltip = [
             'Module: ' + pd.module,
             'Required: ' + pd.required,
+            'Default Value: ' + (Ext4.isEmpty(pd.defaultValue) ? '' : pd.defaultValue),
             'Description: ' + (pd.description || ''),
-            'Can Set Per Folder?: ' + pd.canSetPerContainer,
-            //'Can Set Per User?: ' + pd.canSetPerUser,
+            'Can Set Per Folder: ' + pd.canSetPerContainer,
+            //'Can Set Per User: ' + pd.canSetPerUser,
             'Required: ' + pd.required
         ].join(',<br>');
 
@@ -100,7 +101,7 @@ Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
             border: false,
             items: [{
                 name: pd.name,
-                html: '<b>Property: ' + pd.name + '</b><a href="#" data-qtip="' + tooltip + '"><span class="labkey-help-pop-up">?</span></a>',
+                html: '<i>Property: ' + pd.name + '</i><a href="#" data-qtip="' + tooltip + '"><span class="labkey-help-pop-up">?</span></a>',
                 border: false,
                 bodyStyle: 'padding-left: 5px; padding-bottom: 10px;'
             },{
@@ -122,6 +123,7 @@ Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
                 moduleName: module,
                 moduleProp: v,
                 propName: name,
+                containerPath: v.container.path,
                 xtype: (v.canEdit ? 'textfield' : 'displayfield'),
                 value: v.value
             });
