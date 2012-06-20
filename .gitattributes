@@ -7525,6 +7525,10 @@ internal/webapp/tiny_mce/utils/form_utils.js -text
 internal/webapp/tiny_mce/utils/mctabs.js -text
 internal/webapp/tiny_mce/utils/validate.js -text
 internal/webapp/util.js -text
+internal/webapp/ux/BoxSelect/BoxSelect.css -text
+internal/webapp/ux/BoxSelect/BoxSelect.js -text
+internal/webapp/ux/CheckCombo/CheckCombo.css -text
+internal/webapp/ux/CheckCombo/CheckCombo.js -text
 internal/webapp/viewPicker.js -text
 internal/webapp/vis/demo/demo_script.js -text
 internal/webapp/vis/demo/index.html -text
