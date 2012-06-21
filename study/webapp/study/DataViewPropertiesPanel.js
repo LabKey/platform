@@ -223,6 +223,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
 
             // TODO: see todo from ReportViewProvider.updateProperties, this should be possible for any report type
             if (this.record.get('type') == "Time Chart" || this.record.get('type') == "R View")
+            {
                 formItems.push({
                     xtype      : 'filefield',
                     id         : 'customThumbnail',
@@ -245,6 +246,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                         }
                     }
                 });
+            }
         }
 
         if (this.visibleFields['created'] && this.data.created) {

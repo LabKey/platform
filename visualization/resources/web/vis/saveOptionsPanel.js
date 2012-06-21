@@ -109,7 +109,7 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
                         width: 75,
                         name: 'reportThumbnailType',
                         boxLabel: 'None',
-                        description: 'Use the default static image for this report',
+                        description: 'Use the default static image for this report type',
                         thumbnailPreview: '<img src="' + LABKEY.contextPath + '/visualization/report/timechart.png"/>', 
                         inputValue: 'NONE',                                                   // TODO: point to the same png used in TimeChartReportImpl.getStaticThumbnail
                         checked: this.thumbnailType == 'NONE'

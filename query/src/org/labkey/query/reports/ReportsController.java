@@ -43,6 +43,7 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -946,7 +947,18 @@ public class ReportsController extends SpringActionController
                 if (null != svc)
                 {
                     DynamicThumbnailProvider provider = (DynamicThumbnailProvider) report;
-                    svc.replaceThumbnail(provider, getViewContext());
+
+                    if (form.getThumbnailType().equals(DataViewProvider.EditInfo.ThumbnailType.NONE.name()))
+                    {
+                        // User checked the "no thumbnail" radio... need to proactively delete the thumbnail
+                        svc.deleteThumbnail(provider);
+                        ReportPropsManager.get().setPropertyValue(report.getEntityId(), getViewContext().getContainer(), "thumbnailType", DataViewProvider.EditInfo.ThumbnailType.NONE.name());
+                    }
+                    else if (form.getThumbnailType().equals(DataViewProvider.EditInfo.ThumbnailType.AUTO.name()))
+                    {
+                        svc.replaceThumbnail(provider, getViewContext());
+                        ReportPropsManager.get().setPropertyValue(report.getEntityId(), getViewContext().getContainer(), "thumbnailType", DataViewProvider.EditInfo.ThumbnailType.AUTO.name());
+                    }
                 }
             }
             response.put("success", true);
