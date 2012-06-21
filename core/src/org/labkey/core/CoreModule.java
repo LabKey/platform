@@ -873,6 +873,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             assertEquals(prop2.getDefaultValue(), prop2.getEffectiveValue(_user, ContainerManager.getRoot()));
             assertEquals(newVal, prop2.getEffectiveValue(_user, _project));
             assertEquals(newVal, prop2.getEffectiveValue(_user, _subFolder));
+
+            ContainerManager.deleteAll(_project, _user);
         }
 
         private class TestModule extends DefaultModule {
