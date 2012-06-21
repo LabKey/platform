@@ -607,8 +607,24 @@ function setDisabled(checkbox, label, disabled)
                     %> onchange="LABKEY.setDirty(true);return true;"> Run this view in the background as a pipeline job
             </td></tr><%
                 } %>
-            <tr><td>&nbsp;</td></tr><%
+            <tr><td>&nbsp;</td></tr>
 
+            <tr class="labkey-wp-header"><th align="left" colspan="2">Report Thumbnail</th></tr>
+            <tr><td><input type="radio" name="thumbnailType" value="AUTO" <%=bean.getThumbnailType().equals("AUTO") ? "checked" : ""%> onchange="LABKEY.setDirty(true);return true;"/>
+                Auto-generate<%=helpPopup("Auto-generate thumbnail", "Auto-generate a new thumbnail based on the first acceptable output from this report (i.e. image, pdf, etc.)")%></td></tr>
+            <tr><td><input type="radio" name="thumbnailType" value="NONE" <%=bean.getThumbnailType().equals("NONE") ? "checked" : ""%> onchange="LABKEY.setDirty(true);return true;"/>
+                None<%=helpPopup("No thumbnail", "Use the default static image for this report")%></td></tr>
+             <% if (bean.getThumbnailType().equals("CUSTOM"))
+                {
+            %>
+            <tr><td><input type="radio" name="thumbnailType" value="CUSTOM" <%=bean.getThumbnailType().equals("CUSTOM") ? "checked" : ""%> onchange="LABKEY.setDirty(true);return true;"/>
+                Keep existing<%=helpPopup("Keep custom thumbnail", "Keep the existing custom thumbnail that has been provided for this report type")%></td></tr>
+            <%
+                }
+            %>
+            <tr><td>&nbsp;</td></tr>
+            
+    <%
                 if (!sharedReports.isEmpty())
                 {
     %>

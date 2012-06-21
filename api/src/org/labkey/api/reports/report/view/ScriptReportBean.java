@@ -17,8 +17,10 @@ package org.labkey.api.reports.report.view;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.Report;
+import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ScriptReport;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
@@ -48,6 +50,7 @@ public class ScriptReportBean extends ReportDesignBean
     private List<String> _includedReports = Collections.emptyList();
     private Mode _mode = Mode.create;  // TODO: setting value for backward compatibility -- remove
     private boolean _sourceTabVisible;
+    private String _thumbnailType;
 
     public ScriptReportBean()
     {
@@ -169,6 +172,9 @@ public class ScriptReportBean extends ReportDesignBean
 
         setRunInBackground(BooleanUtils.toBoolean(descriptor.getProperty(ScriptReportDescriptor.Prop.runInBackground)));
         setIncludedReports(srDescriptor.getIncludedReports());
+
+        if (ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), descriptor.getResourceContainer(), "thumbnailType") != null)
+            setThumbnailType(ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), descriptor.getResourceContainer(), "thumbnailType").toString());
     }
 
     Map<String, Object> getCacheableMap()
@@ -256,5 +262,17 @@ public class ScriptReportBean extends ReportDesignBean
     public void setSourceTabVisible(boolean sourceTabVisible)
     {
         _sourceTabVisible = sourceTabVisible;
+    }
+
+    public String getThumbnailType()
+    {
+        if (_thumbnailType == null)
+            _thumbnailType = DataViewProvider.EditInfo.ThumbnailType.AUTO.name();
+        return _thumbnailType;
+    }
+
+    public void setThumbnailType(String thumbnailType)
+    {
+        _thumbnailType = thumbnailType;
     }
 }
