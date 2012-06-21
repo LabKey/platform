@@ -764,18 +764,18 @@ public class SimpleFilter implements Filter
             else
                 oc = new OrClause();
 
-
+            String name = colInfo == null ? getColName() : colInfo.getName();
             if (params.length > 0)
             {
                 for(Object param : params)
                 {
                     if(isNegated())
                     {
-                        oc.addClause(new CompareType.DoesNotContainClause(colInfo.getName(), param));
+                        oc.addClause(new CompareType.DoesNotContainClause(name, param));
                     }
                     else
                     {
-                        oc.addClause(new CompareType.ContainsClause(colInfo.getName(), param));
+                        oc.addClause(new CompareType.ContainsClause(name, param));
                     }
                 }
             }
@@ -788,9 +788,9 @@ public class SimpleFilter implements Filter
                     clause.addClause(oc);
 
                 if(isNegated())
-                    clause.addClause(CompareType.NONBLANK.createFilterClause(colInfo.getName(), null));
+                    clause.addClause(CompareType.NONBLANK.createFilterClause(name, null));
                 else
-                    clause.addClause(CompareType.ISBLANK.createFilterClause(colInfo.getName(), null));
+                    clause.addClause(CompareType.ISBLANK.createFilterClause(name, null));
                 return clause;
             }
 

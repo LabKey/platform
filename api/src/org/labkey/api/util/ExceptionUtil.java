@@ -57,6 +57,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.MalformedURLException;
+import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.security.Principal;
 import java.sql.BatchUpdateException;
@@ -388,6 +389,10 @@ public class ExceptionUtil
             if (ex.getCause() != ex)
             {
                 return isClientAbortException(ex.getCause());
+            }
+            if (ex.getClass().equals(SocketException.class) && "Connection reset".equalsIgnoreCase(ex.getMessage()))
+            {
+                return true;
             }
         }
         return false;
