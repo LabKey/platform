@@ -24,7 +24,10 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 '<tr><td colspan="{[this.data.fields.length]}">',
                     '<div style="padding-left:5px; padding-bottom:15px;">',
                     '<table>',
-                        '<tr><td colspan=2 style="padding-bottom:5px; font-weight:bold; font-size:1.3em; text-align:left;">{[ this.getHtml(values.headerValue) ]}</td></tr>',
+                        '<tr><td colspan=2 style="padding-bottom:10px; font-weight:bold; font-size:1.3em; text-align:left;">{[ this.getHtml(values.headerValue) ]}</td></tr>',
+                        '<tr style="border-top: solid 1px #DDDDDD;"><td align=left style="padding: 10px 0px 10px 0px;">Cohort:&nbsp;</td><td align=left style="{parent.style}">{[this.getCohortHtml(values.headerValue)]}</td></tr>',
+                        '<tr style="border-bottom: solid 1px #DDDDDD;"><td align=left style="padding: 10px 0px 10px 0px;">Groups:&nbsp;</td><td align=left style="{parent.style}">{[this.getGroupsHtml(values.headerValue)]}</td></tr>',
+                        '<tr style="padding-bottom: 10px;"><td>&nbsp;</td></tr>',
         // note nested <tpl>, this will make values==datavalue and parent==field
                         '<tpl for="this.data.pageFields">' +
                             '<tpl for="this.data.pages[this.data.pageIndex].first.asArray[values.index]">',
@@ -89,6 +92,30 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             var html = this.getHtml(value);
             if (html)
                 return html.replace(/\s/g, '&nbsp;');
+        },
+        getCohortHtml : function(header)
+        {
+            // don't wrap on the page field values
+            var rec = this.subjectGroupMap[header.value];
+            var html;
+            if (rec && rec.cohort){
+                html = Ext4.util.Format.htmlEncode(rec.cohort);
+                return html.replace(/\s/g, '&nbsp;');
+            }
+        },
+        getGroupsHtml : function(header)
+        {
+            var rec = this.subjectGroupMap[header.value];
+            var html = [];
+            if (rec && rec.groups){
+                for (var i=0;i<rec.groups.length;i++)
+                    html.push(Ext4.util.Format.htmlEncode(rec.groups[i]));
+
+                if (html.length){
+                    html = html.join(',<br>');
+                    return html.replace(/\s/g, '&nbsp;')
+                }
+            }
         },
         on :
         {
@@ -156,6 +183,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         this.customMode = false;
         this.initialRender = true;
         this.items = [];
+        this.pendingRequests = 0;
 
         this.previewPanel = Ext4.create('Ext.panel.Panel', {
             bodyStyle : 'padding: 0 20px;',
@@ -345,6 +373,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     this.queryLimited = false;
 
                 this.mask();
+                this.pendingRequests++;
                 Ext4.Ajax.request({
                     url     : LABKEY.ActionURL.buildURL('visualization', 'getData.api'),
                     method  : 'POST',
@@ -354,12 +383,45 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                         limit    : limit
                     },
                     success : function(response){
-                        this.unmask();
-                        this.renderData(Ext4.decode(response.responseText));
+                        this.response = Ext4.decode(response.responseText);
+                        onLoad.call(this);
                     },
                     failure : this.onFailure,
                     scope   : this
                 });
+
+                this.subjectGroupMap = {};
+                this.pendingRequests++;
+                LABKEY.Query.selectRows({
+                    schemaName: 'study',
+                    queryName: this.subjectNoun.singular + 'GroupMap',
+                    columns: 'GroupId,GroupId/Label,' + this.subjectColumn + ',' + this.subjectColumn + '/Cohort' + ',' + this.subjectColumn + '/Cohort/label',
+                    success: function(response){
+                        var row;
+                        for (var i=0;i<response.rows.length;i++){
+                            row = response.rows[i];
+
+                            if(!this.subjectGroupMap[row[this.subjectColumn]]){
+                                this.subjectGroupMap[row[this.subjectColumn]] = {
+                                    cohort: row[this.subjectColumn + '/Cohort/label'],
+                                    groups: []
+                                }
+                            }
+                            this.subjectGroupMap[row[this.subjectColumn]].groups.push(row['GroupId/Label']);
+                        }
+                        onLoad.call(this);
+                    },
+                    failure : this.onFailure,
+                    scope   : this
+                });
+
+                function onLoad(){
+                    this.pendingRequests--;
+                    if(this.pendingRequests == 0){
+                        this.unmask();
+                        this.renderData();
+                    }
+                }
             }
             else {
                 this.previewPanel.update('');
@@ -726,11 +788,14 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 this.REPORT_PAGE_TEMPLATE.footerTemplate
             );
 
+        this.REPORT_PAGE_TEMPLATE.subjectGroupMap = this.subjectGroupMap
+
         var config = {
             pageFields : [],
             pageBreakInfo : [],
             gridFields : [],
             rowBreakInfo : [],
+            subjectGroupMap : this.subjectGroupMap,
             reportTemplate : this.REPORT_PAGE_TEMPLATE,
             transposed : this.transposed      
         };
