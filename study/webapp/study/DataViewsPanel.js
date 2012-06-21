@@ -1150,7 +1150,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         });
 
         var editWindow = Ext4.create('Ext.window.Window', {
-            width  : 475,
+            width  : 460,
             maxHeight : 750,
             layout : 'fit',
             cls    : 'data-window',

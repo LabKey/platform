@@ -36,6 +36,9 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
         this.currentlyShared = (this.isSavedReport() && this.reportInfo.shared) || (!this.isSavedReport() && this.canSaveSharedCharts());
         this.createdBy = this.isSavedReport() ? this.reportInfo.createdBy : LABKEY.Security.currentUser.id;
 
+        // generate unique id for the thumbnail preview div
+        this.thumbnailPreviewId = Ext4.id();
+
         this.items = [
             Ext4.create('Ext.form.field.Text', {
                 itemId: 'reportName',
@@ -129,15 +132,23 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
                     afterrender: function(cmp) {
                         Ext4.each(Ext4.ComponentQuery.query('#reportThumbnailType radio'), function(item) {
                             Ext4.create('Ext.tip.ToolTip', {
-                                itemId: item.itemId + "Tip",
                                 target: item.getId(),
-                                description: item.description,
-                                html: this.generateToolTipHtml(item.description, item.thumbnailPreview)
+                                html: item.description
                             });
                         }, this);
+
+                        this.setThumbnailPreview();
                     },
+                    change: this.setThumbnailPreview,
                     scope: this
                 }
+            }),
+            Ext4.create('Ext.form.field.Display', {
+                itemId: 'thumbnailPreview',
+                fieldLabel: ' ',
+                labelSeparator: '',
+                labelWidth: 125,
+                value: '<div class="thumbnail" id="' + this.thumbnailPreviewId + '" style="border: solid #C0C0C0 1px;"></div>'
             })
         ];
 
@@ -259,22 +270,21 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
         }
     },
 
-    generateToolTipHtml: function(desc, thumbnailPreview)
-    {
-        return desc + '<br/>' + (thumbnailPreview ? '<div class="thumbnail">' + thumbnailPreview + '</div>' : '')
+    setThumbnailPreview: function() {
+        var checkedRadio = this.down('#reportThumbnailType').getChecked();
+        if (Ext4.getDom(this.thumbnailPreviewId) && checkedRadio.length > 0 && checkedRadio[0].thumbnailPreview)
+            Ext4.getDom(this.thumbnailPreviewId).innerHTML = checkedRadio[0].thumbnailPreview;
     },
 
-    updateCurrentChartThumbnail: function(chartSVGStr)
+    updateCurrentChartThumbnail: function(chartSVGStr, size)
     {
         // resize the svg by resetting the viewBox and width/height attributes
-        chartSVGStr = chartSVGStr.replace(/width="\d+"/, 'width="25%"');
-        chartSVGStr = chartSVGStr.replace(/height="\d+"/, 'height="25%"');
-        chartSVGStr = chartSVGStr.replace(/<svg /, '<svg viewBox="0 0 1000 590"'); // TODO: how to get actual width/height for viewBox?
+        chartSVGStr = chartSVGStr.replace(/width="\d+"/, 'width="100%"');
+        chartSVGStr = chartSVGStr.replace(/height="\d+"/, 'height="100%"');
+        chartSVGStr = chartSVGStr.replace(/<svg /, '<svg viewBox="0 0 ' + size.width + ' ' + size.height + '"');
 
-        // update the html contents of the auto-gen tooltip
+        // update the html contents of the thumbnail preview div
         this.down('#autoGenerate').thumbnailPreview = chartSVGStr;
-        var tooltip = Ext4.ComponentQuery.query('#autoGenerateTip');
-        if (tooltip.length > 0)
-            tooltip[0].update(this.generateToolTipHtml(tooltip[0].description, chartSVGStr));
+        this.setThumbnailPreview();
     }
 });

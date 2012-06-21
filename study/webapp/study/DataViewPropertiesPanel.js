@@ -21,7 +21,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
             dateFormat  : 'Y-m-d',
             fieldDefaults  : {
                 labelWidth : 120,
-                width      : 375,
+                width      : 400,
                 style      : 'margin: 0px 0px 10px 0px',
                 labelSeparator : ''
             }
@@ -222,7 +222,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
             });
 
             // TODO: see todo from ReportViewProvider.updateProperties, this should be possible for any report type
-            if (this.record.get('type') == "Time Chart" || this.record.get('type') == "R View")
+            if (this.record.get('type') == "Time Chart" || this.record.get('type') == "R View" || this.record.get('type') == "Attachment Report")
             {
                 formItems.push({
                     xtype      : 'filefield',

@@ -190,7 +190,7 @@ div.data-views-tip-content table
     width: 100%;
 }
 
-/* Thumbnails -- seen in hover tooltip */
+/* Thumbnails -- seen in hover tooltip, edit prop panel, and some report save dialogs */
 div.thumbnail
 {
     margin-top: 5px;

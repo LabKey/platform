@@ -1161,7 +1161,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             defaults: {
                 border: false, frame: false
             },
-            bodyPadding : 20,
+            bodyPadding : 10,
             items : viewForm,
             autoShow : true,
             scope : this

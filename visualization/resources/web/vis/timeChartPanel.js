@@ -406,14 +406,14 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.saveButton = Ext4.create('Ext.button.Button', {text: 'Save', hidden: !this.canEdit,
                         handler: function(btn){
                                 this.editorSavePanel.setSaveAs(false);
-                                this.optionsButtonClicked(btn, this.editorSavePanel, 850, 200, 'right');
+                                this.optionsButtonClicked(btn, this.editorSavePanel, 850, 420, 'right');
                         }, scope: this});
 
 
         this.saveAsButton = Ext4.create('Ext.button.Button', {text: 'Save As', hidden: !this.editorSavePanel.isSavedReport() || LABKEY.Security.currentUser.isGuest,
                         handler: function(btn){
                                 this.editorSavePanel.setSaveAs(true);
-                                this.optionsButtonClicked(btn, this.editorSavePanel, 850, 200, 'right');
+                                this.optionsButtonClicked(btn, this.editorSavePanel, 850, 420, 'right');
                         }, scope: this});
 
         // for selenium testing, add a funtion that can be evaluated by selenium to open the axis/title panels similar to clicking on the axis label or title
@@ -1314,7 +1314,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         if (this.firstChartComponent && Raphael.svg)
         {
             // pass the svg for the first chart component to the save options panel for use in the thumbnail preview
-            this.editorSavePanel.updateCurrentChartThumbnail(LABKEY.vis.SVGConverter.svgToStr(Ext4.get(this.firstChartComponent).child('svg').dom));
+            this.editorSavePanel.updateCurrentChartThumbnail(LABKEY.vis.SVGConverter.svgToStr(Ext4.get(this.firstChartComponent).child('svg').dom), Ext4.get(this.firstChartComponent).getSize());
         }
 
         this.unmaskPanel();
