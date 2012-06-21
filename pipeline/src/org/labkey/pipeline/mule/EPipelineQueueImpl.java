@@ -119,7 +119,7 @@ public class EPipelineQueueImpl implements PipelineQueue
         {
             String name = globus.getLocation();
             // Check if it's running through Globus
-            if (taskFactory.getExecutionLocation().equals(name))
+            if (taskFactory != null && taskFactory.getExecutionLocation() != null && taskFactory.getExecutionLocation().equals(name))
             {
                 // It is running through Globus - kill it
                 JobRunner.getDefault().execute(new Runnable()

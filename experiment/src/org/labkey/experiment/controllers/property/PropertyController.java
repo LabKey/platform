@@ -232,6 +232,7 @@ public class PropertyController extends SpringActionController
             String prefix = filename.substring(0, dotIndex);
             if (prefix.length() < 3)
             {
+                // File.createTempFile() requires that the prefix be at least three characters long
                 prefix = "prefix-" + prefix;  
             }
             File tempFile = File.createTempFile(prefix, suffix);
