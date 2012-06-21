@@ -470,16 +470,18 @@ Ext4.define('LABKEY.ext4.ReportFilterWindow', {
     constructor : function(config) {
 
         Ext4.applyIf(config, {
-            height        : 500,
             width         : 250,
             collapsible   : true,
             collapsed     : true,
             expandOnShow  : true,
             titleCollapse : true,
             draggable     : false,
-            closable      : false,
             cls           : 'report-filter-window',
-            title         : 'Filter Report'
+            title         : 'Filter Report',
+            alignConfig   : {
+                position : 'tl-tr',
+                offsets  : [-300, 27]
+            }
         });
 
         this.callParent([config]);
@@ -512,6 +514,6 @@ Ext4.define('LABKEY.ext4.ReportFilterWindow', {
 
         // elements topleft to targets topright
         if (this.el)
-            this.alignTo(this.relative, 'tl-tr', [-300,27]);
+            this.alignTo(this.relative, this.alignConfig.position, this.alignConfig.offsets);
     }
 });

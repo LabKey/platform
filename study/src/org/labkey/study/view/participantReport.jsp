@@ -39,6 +39,7 @@
     Study s = StudyManager.getInstance().getStudy(c);
 
     String renderId = "participant-report-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+    String filterRenderId = "participant-filter-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
 <style type="text/css" media="print">
     #headerpanel,
@@ -73,6 +74,7 @@
             subjectNoun     : {singular : <%=PageFlowUtil.jsString(s.getSubjectNounSingular())%>, plural : <%=PageFlowUtil.jsString(s.getSubjectNounPlural())%>, columnName: <%=PageFlowUtil.jsString(s.getSubjectColumnName())%>},
             visitBased      : <%=s.getTimepointType().isVisitBased()%>,
             renderTo        : '<%= renderId %>',
+            filterDiv       : '<%=filterRenderId%>',
             id              : '<%= bean.getComponentId() %>',
             reportId        : <%=q(reportId)%>,
             allowCustomize  : true,
@@ -103,4 +105,6 @@
 
 </script>
 
+<div id="<%=filterRenderId%>" style="position:<%=bean.isAllowOverflow() ? "absolute" : "absolute"%>;"></div>
 <div id="<%= renderId%>" class="data-views-container" style="width:100%;"></div>
+

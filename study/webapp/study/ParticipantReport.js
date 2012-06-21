@@ -22,13 +22,13 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         // PAGE TEMPLATE
                 '<tr><td class="break-spacer">&nbsp;<br>&nbsp;</td></tr>',
                 '<tr><td colspan="{[this.data.fields.length]}">',
-                    '<div style="border:solid 1px #eeeeee; padding:5px; margin:10px;">',
+                    '<div style="padding-left:5px; padding-bottom:15px;">',
                     '<table>',
-                        '<tr><td colspan=2 style="padding:5px; font-weight:bold; font-size:1.3em; text-align:center;">{[ this.getHtml(values.headerValue) ]}</td></tr>',
+                        '<tr><td colspan=2 style="padding-bottom:5px; font-weight:bold; font-size:1.3em; text-align:left;">{[ this.getHtml(values.headerValue) ]}</td></tr>',
         // note nested <tpl>, this will make values==datavalue and parent==field
                         '<tpl for="this.data.pageFields">' +
                             '<tpl for="this.data.pages[this.data.pageIndex].first.asArray[values.index]">',
-                            '   <tr><td align=right data-qtip="{[parent.qtip]}">{[this.getPageField(parent)]}:&nbsp;</td><td align=left style="{parent.style}">{[this.getPageFieldHtml(values)]}</td></tr>',
+                            '   <tr><td align=left data-qtip="{[parent.qtip]}">{[this.getPageField(parent)]}:&nbsp;</td><td align=left style="{parent.style}">{[this.getPageFieldHtml(values)]}</td></tr>',
                             '</tpl>',
                         '</tpl>',
                     '</table>',
@@ -39,7 +39,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         originalGrid : [
                 '<tr>',
                     '<tpl for="this.data.gridFields">',
-                        '<th style="padding-right: 10px;" class="labkey-column-header" data-qtip="{qtip}">{[this.getCaptionHtml(values)]}</th>',
+                        '<th style="border: solid 1px #DDDDDD; padding: 4px;" class="labkey-column-header" data-qtip="{qtip}">{[this.getCaptionHtml(values)]}</th>',
                     '</tpl>',
                 '</tr>',
                 '<tpl for="rows">',
@@ -56,14 +56,14 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     // use the first gridField for the header row (likely visit label)
                     '<tpl if="values.rowIndex == 0">',
                         '<tr>',
-                            '<th style="padding-right: 10px;" class="labkey-column-header"></th>',
+                            '<th style="border: solid 1px #DDDDDD; padding-right: 10px;" class="labkey-column-header"></th>',
                             '<tpl for="this.data.pages[this.data.pageIndex].rows">',
                                 '{[ this.getGridCellHtml(values.asArray[parent.index], true) ]}',
                             '</tpl>',
                         '</tr>',
                     '<tpl else>',
                         '<tr class="{[this.getGridRowClass()]}">',
-                            '<td data-qtip="{qtip}">{[this.getCaptionHtml(values)]}</td>',
+                            '<td style="border: solid 1px #DDDDDD;" data-qtip="{qtip}">{[this.getCaptionHtml(values)]}</td>',
                             '<tpl for="this.data.pages[this.data.pageIndex].rows">',
                                 '{[ this.getGridCellHtml(values.asArray[parent.index], false) ]}',
                             '</tpl>',
@@ -112,8 +112,12 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 }
 
                 // set rowIndex for each gridField
-                for (var g=0 ; g<data.gridFields.length ; g++)
-                    data.gridFields[g].rowIndex = g;
+                var idx = 0;
+                // set rowIndex for each gridField and the default style
+                Ext4.each(data.gridFields, function(field){
+                    field.rowIndex = idx++;
+                    field.style = "border: solid 1px #DDDDDD";
+                });
 
                 // we don't want the subject id showing in the page break list (since it's already on the header)
                 data.pageFields.shift();
@@ -820,7 +824,6 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             Ext4.get(config.renderTo).update('');
             this.templateReport = Ext4.create('LABKEY.TemplateReport', config);
             this.templateReport.on('afterdatatransform', function(th, reportData) {
-                reportData.gridFields[0].style="border: solid 1px white;"
 
                 if (this._inCustomMode())
                     this.lengthReportField.setValue('<i>Showing a Maximum of 50 Results (results are limited while a report is being customized)</i>');
@@ -967,26 +970,65 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         else {
             this.filterWindow = Ext4.create('LABKEY.ext4.ReportFilterWindow', {
                 title    : 'Filter Report',
+                layout   : 'fit',
                 items    : [panel],
                 bodyStyle: 'overflow-y: auto; overflow-x: hidden;',
                 relative : this.centerPanel,
+                alignConfig : {
+                    position : 'tl-tl',
+                    offsets  : [-9, 27]
+                },
+                collapseDirection : 'left',
                 collapsed: true,
+                closeable: true,
+                closeAction : 'hide',
+                renderTo: this.filterDiv,
                 scope    : this
             });
-            if (!this.fitted) {
-                  this.centerPanel.getDockedItems('toolbar')[0].insert((this.centerPanel.getDockedItems('toolbar')[0].items.length-2),
-                          Ext4.create('Ext.Button', {
-                              text : 'Filter Report',
-                              handler : function(b) {
-                                  this.filterWindow.show();
-                                  b.hide();
-                              },
-                              scope: this
-                          })
-                  );
-            }
-            else
+
+            this.filterButton = Ext4.create('Ext.Button', {
+                text    : 'Filter Report',
+                hidden  : this.fitted,
+                handler : function(b) {
+                    this.filterWindow.show();
+                    b.hide();
+                },
+                scope: this
+            });
+
+            this.centerPanel.getDockedItems('toolbar')[0].insert((this.centerPanel.getDockedItems('toolbar')[0].items.length-2), this.filterButton);
+
+            if (this.fitted) {
                 this.filterWindow.show();
+                this.filterWindow.collapse();                
+            }
+
+/*
+            this.filterWindow.on('show', function(cmp){
+                
+                var e = cmp.getEl();
+                if ((e.getBottom() - 7) > window.outerHeight) {
+
+                    var el = Ext.get(this.filterDiv);
+                    var pos = el.getPositioning();
+                    pos.position = 'absolute';
+
+                    el.setPositioning(pos);
+                    this.filterWindow.alignTo(this.centerPanel, 'tl-tl', [-9, 27]);
+                }
+                else {
+
+                    var el = Ext.get(this.filterDiv);
+                    var pos = el.getPositioning();
+                    pos.position = 'fixed';
+
+                    el.setPositioning(pos);
+                    this.filterWindow.alignTo(this.centerPanel, 'tl-tl', [-9, 27]);
+                }
+            }, this);
+*/
+
+            this.filterWindow.on('close', function(cmp){this.filterButton.show();}, this);
         }
     },
 
