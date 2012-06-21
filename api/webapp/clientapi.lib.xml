@@ -5,6 +5,7 @@
         <script path="clientapi/Assay.js"/>
         <script path="clientapi/Chart.js"/>
         <script path="clientapi/DataRegion.js"/>
+        <script path="clientapi/Domain.js"/>
         <script path="clientapi/EditorGridPanel.js"/>
         <script path="clientapi/Experiment.js"/>
         <script path="clientapi/ExtendedJsonReader.js"/>
@@ -30,6 +31,7 @@
         <script path="clientapi/Store.js"/>
         <script path="clientapi/Utils.js"/>
         <script path="clientapi/Visualization.js"/>
+        <script path="clientapi/WebPart.js"/>
     </library>
     <dependencies>
         <dependency path="Ext3" />
