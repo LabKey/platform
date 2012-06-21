@@ -56,7 +56,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     // use the first gridField for the header row (likely visit label)
                     '<tpl if="values.rowIndex == 0">',
                         '<tr>',
-                            '<th style="border: solid 1px #DDDDDD; padding-right: 10px;" class="labkey-column-header"></th>',
+                            '<th class="labkey-column-header">&nbsp;</th>',
                             '<tpl for="this.data.pages[this.data.pageIndex].rows">',
                                 '{[ this.getGridCellHtml(values.asArray[parent.index], true) ]}',
                             '</tpl>',
