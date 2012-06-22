@@ -1251,13 +1251,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             col.scale = reader.getScale();
             col.nullable = reader.isNullable();
 
-            //fix up metadata
-            if(col.isAutoIncrement)
-            {
-                col.setShownInInsertView(false);
-                col.setShownInUpdateView(false);
-                col.setUserEditable(false);
-            }
+            inferMetadata(col);
 
             // TODO: This is a temporary hack... move to SAS dialect(s)
             String databaseFormat = reader.getDatabaseFormat();
@@ -1389,6 +1383,54 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         return colMap.values();
     }
 
+    private static void inferMetadata(ColumnInfo col)
+    {
+        String colName = col.getName();
+        DbSchema schema = col.getParentTable().getSchema();
+
+        if(col.isAutoIncrement)
+        {
+            col.setUserEditable(false);
+            col.setShownInInsertView(false);
+            col.setShownInUpdateView(false);
+            col.setReadOnly(true);
+        }
+
+        if (JdbcType.INTEGER == col.getJdbcType() &&
+           (colName.equalsIgnoreCase("createdby") || colName.equalsIgnoreCase("modifiedby")) &&
+           (schema.getScope().isLabKeyScope()))
+        {
+            col.setUserEditable(false);
+            col.setShownInInsertView(false);
+            col.setShownInUpdateView(false);
+            col.setReadOnly(true);
+
+            if(colName.equalsIgnoreCase("createdby"))
+                col.setLabel("Created By");
+            if(colName.equalsIgnoreCase("modifiedby"))
+                col.setLabel("Modified By");
+        }
+
+        if (JdbcType.DATE == col.getJdbcType() &&
+           (colName.equalsIgnoreCase("created") || colName.equalsIgnoreCase("modified")) &&
+           (schema.getScope().isLabKeyScope()))
+        {
+            col.setUserEditable(false);
+            col.setShownInInsertView(false);
+            col.setShownInUpdateView(false);
+            col.setReadOnly(true);
+
+            if(colName.equalsIgnoreCase("created"))
+                col.setLabel("Created");
+            if(colName.equalsIgnoreCase("modified"))
+                col.setLabel("Modified");
+        }
+
+        if (col.getJdbcType().getJavaClass().equals(String.class) && col.scale > 255)
+        {
+            col.setInputType("textarea");
+        }
+    }
 
     // Safe version of findColumn().  Returns jdbc column index to specified column, or 0 if it doesn't exist or an
     // exception occurs.  SAS JDBC driver throws when attempting to resolve indexes when no records exist.
