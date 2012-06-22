@@ -9,6 +9,8 @@
  * @cfg {Boolean} expandToFitContent If true, the pick list will automatically expand to the width of the longest item.  Defaults to true.
  * @cfg {Integer} maxExpandWidth If provided, the pick list will not expand beyond this value.  Defaults to null.
  */
+
+//TODO: we should rename lookupNullCaption to nullCaption
 Ext4.define('LABKEY.ext4.ComboBox', {
     extend: 'Ext.form.field.ComboBox',
     alias: 'widget.labkey-combo',
@@ -24,7 +26,7 @@ Ext4.define('LABKEY.ext4.ComboBox', {
         Ext4.apply(this.listConfig, {
             innerTpl: [
                 //allow a custom null caption, defaults to '[none]'
-                '{[(typeof values === "string" ? values : (values["' + this.displayField + '"] ? values["' + this.displayField + '"] : '+(Ext4.isDefined(this.lookupNullCaption) ? '"' + '1'+this.lookupNullCaption + '"' : '"[none]"')+'))]}' +
+                '{[(typeof values === "string" ? values : (values["' + this.displayField + '"] ? values["' + this.displayField + '"] : '+(Ext4.isDefined(this.lookupNullCaption) ? '"' + this.lookupNullCaption + '"' : '"[none]"')+'))]}' +
                 //allow a flag to display both display and value fields
                 (this.showValueInList ? '{[values["' + this.valueField + '"] ? " ("+values["' + this.valueField + '"]+")" : ""]}' : '') +
                 (this.multiSelect ? '<tpl if="xindex < xcount">' + '{[(values["' + this.displayField + '"] ? "'+this.delimiter+'" : "")]}' + '</tpl>' : '') +

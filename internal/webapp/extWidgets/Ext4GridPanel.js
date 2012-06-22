@@ -211,7 +211,8 @@ Ext4.define('LABKEY.ext4.GridPanel', {
 
         var columns = LABKEY.ext.Ext4Helper.getColumnsConfig(this.store, this, config);
 
-        Ext4.each(columns, function(col, idx){
+        for (var idx=0;idx<columns.length;idx++){
+            var col = columns[idx];
             var meta = this.store.findFieldMetadata(col.dataIndex);
 
             //remember the first editable column (used during add record)
@@ -234,7 +235,7 @@ Ext4.define('LABKEY.ext4.GridPanel', {
 
             if(this.hideNonEditableColumns && !col.editable)
                 col.hidden = true;
-        }, this);
+        }
 
         this.inferColumnWidths(columns);
 
@@ -262,20 +263,24 @@ Ext4.define('LABKEY.ext4.GridPanel', {
     ,_maxColWidth: 400
 
     ,inferColumnWidths: function(columns){
-        var colMap = {};
-        var value;
-        var values;
-        var totalRequestedWidth = 0;
-        Ext4.each(columns, function(col){
+        var colMap = {},
+            value,
+            values,
+            totalRequestedWidth = 0;
+
+        for (var i=0;i<columns.length;i++){
+            var col = columns[i];
             var meta = this.store.findFieldMetadata(col.dataIndex);
 
             if(!meta.fixedWidthCol){
                 values = [];
-                this.store.each(function(rec){
+                var records = this.store.getRange();
+                for (var i=0;i<records.length;i++){
+                    var rec = records[i];
                     value = LABKEY.ext.Ext4Helper.getDisplayString(rec.get(meta.name), meta, rec, rec.store);
                     if(!Ext4.isEmpty(value))
                         values.push(value.length);
-                }, this);
+                }
 
                 //TODO: this should probably take into account mean vs max, and somehow account for line wrapping on really long text
                 var avgLen = values.length ? (Ext4.Array.sum(values) / values.length) : 1;
@@ -286,16 +291,17 @@ Ext4.define('LABKEY.ext4.GridPanel', {
 
             if(!col.hidden)
                 totalRequestedWidth += col.width || 0;
-        }, this);
+        }
 
         if(this.constraintColumnWidths){
             console.log('resizing columns to fit');
-            Ext4.each(columns, function(col){
+            for (var i=0;i<columns.length;i++){
+                var col = columns[i];
                 if(!col.hidden){
                     col.flex = (col.width / totalRequestedWidth);
                     col.width = null;
                 }
-            })
+            }
         }
     }
 

@@ -389,13 +389,14 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
     //private
     //NOTE: the intent of this is to allow fields to have an initial value defined through a function.  see getInitialValue in LABKEY.ext.Ext4Helper.getDefaultEditorConfig
     onAdd: function(store, records, idx, opts){
-        var val;
+        var val, record;
         this.getFields().each(function(meta){
             if(meta.getInitialValue){
-                Ext4.each(records, function(record){
+                for (var i=0;i<records.length;i++){
+                    record = records[i];
                     val = meta.getInitialValue(record.get(meta.name), record, meta);
                     record.set(meta.name, val);
-                }, this);
+                }
             }
         }, this);
     },
@@ -421,14 +422,17 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
                 toUpdate.push(f);
         }, this);
         if(toUpdate.length){
-            this.each(function(rec){
-                Ext4.each(toUpdate, function(meta){
+            var allRecords = this.getRange();
+            for (var i=0;i<allRecords.length;i++){
+                var rec = allRecords[i];
+                for (var j=0;j<toUpdate.length;j++){
+                    var meta = toUpdate[j];
                     if(meta.getInitialValue)
                         rec.set(meta.name, meta.getInitialValue(rec.get(meta.name), rec, meta));
                     else if (meta.defaultValue && !rec.get(meta.name))
                         rec.set(meta.name, meta.defaultValue)
-                }, this);
-            });
+                }
+            }
         }
         //this is primarily used for comboboxes
         //create an extra record with a blank id column
@@ -1098,7 +1102,8 @@ Ext4.define('LABKEY.ext4.AjaxProxy', {
             else if (operation.action=='destroy')
                 command.command = "delete";
 
-            Ext4.each(operation.records, function(record){
+            for (var i=0;i<operation.records.length;i++){
+                var record = operation.records[i];
                 var oldKeys = {};
                 oldKeys[this.reader.getIdProperty()] = record.getId();
                 oldKeys['_internalId'] = record.internalId;  //NOTE: also include internalId for records that do not have a server-assigned PK yet
@@ -1112,7 +1117,7 @@ Ext4.define('LABKEY.ext4.AjaxProxy', {
                         oldKeys : oldKeys
                     });
                 }
-            }, this);
+            }
 
             return command;
         }

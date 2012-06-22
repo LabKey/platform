@@ -414,12 +414,13 @@ LABKEY.ext.Ext4Helper = new function(){
                 if(field.shownInGrid === false)
                     return;
 
-                Ext4.each(columns, function(c){
+                for (var i=0;i<columns.length;i++){
+                    var c = columns[i];
                     if(c.dataIndex == field.dataIndex){
                         col = c;
-                        return false;
+                        break;
                     }
-                }, this);
+                }
 
                 if(!col)
                     col = {dataIndex: field.dataIndex};
