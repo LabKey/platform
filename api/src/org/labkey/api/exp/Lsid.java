@@ -73,7 +73,7 @@ public class Lsid
     /** Assumes that the separate parts are not encoded  */
     public Lsid(String namespace, String objectId)
     {
-        this(namespace, objectId, AppProps.getInstance().getDefaultLsidAuthority());
+        this(namespace, objectId, AppProps.getInstance());
     }
 
     private Lsid(String namespace, String objectId, AppProps.Interface appProps)
