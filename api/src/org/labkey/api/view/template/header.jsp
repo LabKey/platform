@@ -46,7 +46,6 @@
     Container c = currentContext.getContainer();
     String contextPath = currentContext.getContextPath();
     ActionURL currentURL = currentContext.getActionURL();
-    AppProps app = AppProps.getInstance();
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(currentContext.getContainer());
 
     boolean hasWarnings = me.getWarningMessages().size() > 0;
@@ -135,7 +134,7 @@ if ("true".equals(request.getParameter("testFont"))) {
 <table id="header">
 <tr>
   <td class="labkey-main-icon"><a href="<%=h(laf.getLogoHref())%>"><img src="<%=h(TemplateResourceHandler.LOGO.getURL(c))%>" alt="<%=h(laf.getShortName())%>"></a></td>
-  <td class="labkey-main-title-area"><span><a id="labkey-main-title" class="labkey-main-title" href="<%= app.getHomePageUrl() %>"><%=h(laf.getShortName())%></a></span></td>
+  <td class="labkey-main-title-area"><span><a id="labkey-main-title" class="labkey-main-title" href="<%= AppProps.getInstance().getHomePageUrl() %>"><%=h(laf.getShortName())%></a></span></td>
   <%if (hasWarnings) {%>
   <td width="16" valign="bottom"><span id="labkey-warning-message-icon" <%=me.isUserHidingWarningMessages() ? "" : "style=display:none;"%>><img src="<%=getViewContext().getContextPath()%>/_images/warning-small.png" alt="!" title="Click to view warning messages." style="cursor: pointer;" onclick="labkeyShowWarningMessages(true);"/></span></td>
   <%}%>

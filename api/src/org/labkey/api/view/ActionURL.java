@@ -115,7 +115,7 @@ public class ActionURL extends URLHelper implements Cloneable
 
     public static String getBaseServerURL()
     {
-        AppProps props = AppProps.getInstance();
+        AppProps.Interface props = AppProps.getInstance();
         return getBaseServerURL(props.getScheme(), props.getServerName(), props.getServerPort());
     }
 

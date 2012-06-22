@@ -43,14 +43,41 @@ public class GWTTabLoader
             return false;
         }
 
-        // Insert the new properties
         List<GWTPropertyDescriptor> properties = new ArrayList<GWTPropertyDescriptor>();
+
+        // Check for fields that are considered mandatory and don't let the user drop/redefine them
+        Set<String> mandatoryFields = new HashSet<String>();
+        for (int i = 0; i < propertiesEditor.getPropertyCount(); i++)
+        {
+            GWTPropertyDescriptor existingPD = propertiesEditor.getPropertyDescriptor(i);
+            if (propertiesEditor.getDomain().isMandatoryField(existingPD))
+            {
+                // We don't have a case insensitive set for GWT, so manually lower case it
+                mandatoryFields.add(existingPD.getName().toLowerCase());
+                // Don't let the user drop a mandatory field
+                properties.add(existingPD);
+            }
+        }
+
+        // Insert the new properties
+        int rowNumber = 1;
         for (Map<String, String> row : data)
         {
             // We can't have spaces in property names
             String name = row.get("property");
+            if (name == null)
+            {
+                Window.alert("Required 'Property' value was not found for row " + rowNumber);
+                return false;
+            }
+            // We don't have a case insensitive set for GWT, so manually lower case it
+            if (mandatoryFields.contains(name.toLowerCase()))
+            {
+                Window.alert("Cannot redefine mandatory field '" + name + "'");
+                return false;
+            }
             String label = row.get("label");
-            if (name != null && !PropertiesEditorUtil.isLegalName(name))
+            if (!PropertiesEditorUtil.isLegalName(name))
             {
                 if (label == null)
                     label = name;
@@ -67,6 +94,7 @@ public class GWTTabLoader
             prop.setMvEnabled(isMvEnabled(row));
             prop.setHidden(isHidden(row));
             properties.add(prop);
+            rowNumber++;
         }
         propertiesEditor.setPropertyDescriptors(properties);
 

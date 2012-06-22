@@ -127,7 +127,7 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
 
         for(String key : _properties.keySet())
         {
-            if(key.equals(AppProps.LOOK_AND_FEEL_REVISION))
+            if(key.equals(AppPropsImpl.LOOK_AND_FEEL_REVISION))
                 continue;
 
             if(!(_properties.get(key).equalsIgnoreCase(oldProps.get(key))))
@@ -137,7 +137,7 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
                 newValue = _properties.get(key);
 
                 //obscure password properties
-                if(AppProps.MASCOT_USERPASSWORD_PROP.equals(key) || AppProps.NETWORK_DRIVE_PASSWORD.equals(key))
+                if(AppPropsImpl.MASCOT_USERPASSWORD_PROP.equals(key) || AppPropsImpl.NETWORK_DRIVE_PASSWORD.equals(key))
                 {
                     oldValue = obscureValue(oldValue);
                     newValue = obscureValue(newValue);

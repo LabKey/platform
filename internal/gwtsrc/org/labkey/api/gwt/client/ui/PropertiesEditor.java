@@ -52,7 +52,7 @@ import java.util.Set;
 public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> implements DomainProvider
 {
     boolean useConceptPicker = true;
-    
+
     public static class PD extends PropertiesEditor<GWTDomain<GWTPropertyDescriptor>,GWTPropertyDescriptor>
     {
         public PD(RootPanel rootPanel, Saveable<GWTDomain> owner, LookupServiceAsync service)
@@ -1609,6 +1609,11 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         {
             return s1.equals(s2);
         }
+    }
+
+    public DomainType getDomain()
+    {
+        return _domain;
     }
 
     public static void _log(String s)

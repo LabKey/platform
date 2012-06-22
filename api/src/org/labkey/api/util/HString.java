@@ -16,10 +16,11 @@
 package org.labkey.api.util;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.view.ViewServlet;
 
@@ -564,11 +565,27 @@ public class HString implements java.io.Serializable, Comparable<HString>, CharS
     public static class TestCase extends Assert
     {
         @Test
+        public void testConverter()
+        {
+            HString t = (HString)new Converter().convert(HString.class, "<script>alert('8(')</script>");
+            assertTrue(t.isTainted());
+            assertFalse(t.toString().contains("<script"));
+            HStringBuilder sb = new HStringBuilder();
+            assertFalse(sb.isTainted());
+            sb.append("hi there");
+            assertFalse(sb.isTainted());
+            sb.append(t);
+            assertTrue(sb.isTainted());
+            assertFalse(sb.toString().contains("<script"));
+            assertFalse(PageFlowUtil.filter(t).isTainted());
+        }
+
+        @Test
         public void test()
         {
             // HString
             
-            HString t = (HString)ConvertUtils.convert("<script>alert('8(')</script>",HString.class);
+            HString t = new HString("<script>alert('8(')</script>", true);
             assertTrue(t.isTainted());
             assertFalse(t.toString().contains("<script"));
             HStringBuilder sb = new HStringBuilder();
@@ -589,9 +606,10 @@ public class HString implements java.io.Serializable, Comparable<HString>, CharS
 
             // GuidString
 
-            GuidString g = new GuidString(JunitUtil.getTestContainer().getId().toLowerCase());
+            Container mockContainer = ContainerManager.createMockContainer();
+            GuidString g = new GuidString(mockContainer.getId().toLowerCase());
             assertFalse(g.isTainted());
-            GuidString G = new GuidString(JunitUtil.getTestContainer().getId().toUpperCase());
+            GuidString G = new GuidString(mockContainer.getId().toUpperCase());
             assertFalse(G.isTainted());
             GuidString gooey = new GuidString("flaksdjfasdf");
             assertTrue(gooey.isTainted());

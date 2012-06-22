@@ -29,7 +29,7 @@ import java.util.Date;
  * User: jeckels
  * Date: Dec 6, 2006
  */
-public class WriteableAppProps extends AppProps
+public class WriteableAppProps extends AppPropsImpl
 {
     public WriteableAppProps(Container c) throws SQLException
     {
@@ -178,7 +178,7 @@ public class WriteableAppProps extends AppProps
 
     public static void incrementLookAndFeelRevisionAndSave() throws SQLException
     {
-        WriteableAppProps app = WriteableAppProps.getWriteableInstance();
+        WriteableAppProps app = AppProps.getWriteableInstance();
         app.incrementLookAndFeelRevision();
         app.save();
     }

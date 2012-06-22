@@ -47,7 +47,7 @@ class ImportSchemaWizard extends DialogBox
                 "<p><b>Paste tab-delimited text with the following column headers and one row for each field</b><br>\n" +
                 "<b>Property</b> - Required. Field name. Must start with a character and include only characters and numbers<br>\n" +
                 "<b>Format</b> - Optional. Format for a date or numeric field<br>\n" +
-                "<b>RangeURI</b> - Required. Values: xsd:int, xsd:string, xsd:double, xsd:boolean, xsd:dateTime<br>\n" +
+                "<b>RangeURI</b> - Optional. Values: xsd:int, xsd:string, xsd:double, xsd:boolean, xsd:dateTime. Defaults to xsd:string<br>\n" +
                 "<b>Label</b> - Optional. Name that users will see for the field<br>\n" +
                 "<b>NotNull</b> - Optional. Set to TRUE if this value is required<br>\n" +
                 "<b>Hidden</b> - Optional. Set to TRUE if this field should not be shown in default grid views<br>\n" +

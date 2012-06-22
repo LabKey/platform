@@ -213,10 +213,10 @@ public class MimeMap implements FileNameMap
         public void testMimeMap()
         {
             MimeMap m = new MimeMap();
-            assertEquals(m.getContentTypeFor("photo.jpg"),"image/jpeg");
-            assertEquals(m.getContentTypeFor("photo.jpeg"),"image/jpeg");
-            assertEquals(m.getContentTypeFor("file.htm"), "text/html");
-            assertEquals(m.getContentTypeFor("file.html"), "text/html");
+            assertEquals("image/jpeg", m.getContentTypeFor("photo.jpg"));
+            assertEquals("image/jpeg", m.getContentTypeFor("photo.jpeg"));
+            assertEquals("text/html", m.getContentTypeFor("file.htm"));
+            assertEquals("text/html", m.getContentTypeFor("file.html"));
             assertTrue(m.isInlineImageFor("photo.jpg"));
             assertTrue(m.isInlineImageFor("photo.svg"));
             assertFalse(m.isInlineImageFor("file.html"));

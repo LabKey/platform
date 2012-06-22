@@ -251,7 +251,7 @@ public class ExcelLoader extends DataLoader
         @Test
         public void testColumnTypes() throws Exception
         {
-            AppProps props = AppProps.getInstance();
+            AppProps.Interface props = AppProps.getInstance();
             if (!props.isDevMode()) // We can only run the excel tests if we're in dev mode and have access to our samples
                 return;
 

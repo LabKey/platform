@@ -373,7 +373,7 @@ public class ViewServlet extends HttpServlet
     {
         MockRequest request = new MockRequest(getViewServletContext(), method, url);
 
-        AppProps props = AppProps.getInstance();
+        AppProps.Interface props = AppProps.getInstance();
         request.setContextPath(props.getContextPath());
         request.setServerPort(props.getServerPort());
         request.setServerName(props.getServerName());

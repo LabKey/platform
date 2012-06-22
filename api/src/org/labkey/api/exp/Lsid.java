@@ -16,7 +16,10 @@
 package org.labkey.api.exp;
 
 import org.jetbrains.annotations.Nullable;
+import org.jmock.Expectations;
+import org.jmock.Mockery;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.settings.AppProps;
 
@@ -70,8 +73,13 @@ public class Lsid
     /** Assumes that the separate parts are not encoded  */
     public Lsid(String namespace, String objectId)
     {
+        this(namespace, objectId, AppProps.getInstance().getDefaultLsidAuthority());
+    }
+
+    private Lsid(String namespace, String objectId, AppProps.Interface appProps)
+    {
         valid = true;
-        this.authority = AppProps.getInstance().getDefaultLsidAuthority();
+        this.authority = appProps.getDefaultLsidAuthority();
         this.namespace = namespace;
         this.objectId = objectId;
         resetPrefix();
@@ -80,8 +88,13 @@ public class Lsid
     /** Assumes that the separate parts are not encoded  */
     public Lsid(String namespacePrefix, String namespaceSuffix, String objectId)
     {
+        this(namespacePrefix, namespaceSuffix, objectId, AppProps.getInstance());
+    }
+
+    private Lsid(String namespacePrefix, String namespaceSuffix, String objectId, AppProps.Interface appProps)
+    {
         valid = true;
-        this.authority = AppProps.getInstance().getDefaultLsidAuthority();
+        this.authority = appProps.getDefaultLsidAuthority();
         this.namespace = namespacePrefix + "." + namespaceSuffix;
         this.objectId = objectId;
         this.prefix = namespacePrefix;
@@ -285,6 +298,21 @@ public class Lsid
 
     public static class TestCase extends Assert
     {
+        private static final String DEFAULT_LSID_AUTHORITY = "server.test";
+
+        private static AppProps.Interface _mockAppProps;
+
+        @BeforeClass
+        public static void setUp()
+        {
+            Mockery context = new Mockery();
+            _mockAppProps = context.mock(AppProps.Interface.class);
+            context.checking(new Expectations() {{
+                allowing(_mockAppProps).getDefaultLsidAuthority();
+                will(returnValue(DEFAULT_LSID_AUTHORITY));
+            }});
+        }
+
         @Test
         public void testSimpleDecode()
         {
@@ -300,9 +328,9 @@ public class Lsid
         @Test
         public void testSimpleEncode()
         {
-            Lsid simpleLsid = new Lsid("SampleSet.Folder-4", "ReproSet");
-            assertEquals("urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":SampleSet.Folder-4:ReproSet", simpleLsid.toString());
-            assertEquals(AppProps.getInstance().getDefaultLsidAuthority(), simpleLsid.getAuthority());
+            Lsid simpleLsid = new Lsid("SampleSet.Folder-4", "ReproSet", _mockAppProps);
+            assertEquals("urn:lsid:" + DEFAULT_LSID_AUTHORITY + ":SampleSet.Folder-4:ReproSet", simpleLsid.toString());
+            assertEquals(DEFAULT_LSID_AUTHORITY, simpleLsid.getAuthority());
             assertEquals("SampleSet", simpleLsid.getNamespacePrefix());
             assertEquals("Folder-4", simpleLsid.getNamespaceSuffix());
             assertEquals("ReproSet", simpleLsid.getObjectId());
@@ -324,9 +352,9 @@ public class Lsid
         @Test
         public void testEncodeWithColon()
         {
-            Lsid lsid = new Lsid("SampleSet.Folder-4", "Repro:Set");
-            assertEquals("urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":SampleSet.Folder-4:Repro%3ASet", lsid.toString());
-            assertEquals(AppProps.getInstance().getDefaultLsidAuthority(), lsid.getAuthority());
+            Lsid lsid = new Lsid("SampleSet.Folder-4", "Repro:Set", _mockAppProps);
+            assertEquals("urn:lsid:" + DEFAULT_LSID_AUTHORITY + ":SampleSet.Folder-4:Repro%3ASet", lsid.toString());
+            assertEquals(_mockAppProps.getDefaultLsidAuthority(), lsid.getAuthority());
             assertEquals("SampleSet", lsid.getNamespacePrefix());
             assertEquals("Folder-4", lsid.getNamespaceSuffix());
             assertEquals("Repro:Set", lsid.getObjectId());
@@ -368,9 +396,9 @@ public class Lsid
         @Test
         public void testEncodeWithSpace()
         {
-            Lsid lsid = new Lsid("SampleSet.Folder-4", "Repro Set");
-            assertEquals("urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":SampleSet.Folder-4:Repro+Set", lsid.toString());
-            assertEquals(AppProps.getInstance().getDefaultLsidAuthority(), lsid.getAuthority());
+            Lsid lsid = new Lsid("SampleSet.Folder-4", "Repro Set", _mockAppProps);
+            assertEquals("urn:lsid:" + DEFAULT_LSID_AUTHORITY + ":SampleSet.Folder-4:Repro+Set", lsid.toString());
+            assertEquals(DEFAULT_LSID_AUTHORITY, lsid.getAuthority());
             assertEquals("SampleSet", lsid.getNamespacePrefix());
             assertEquals("Folder-4", lsid.getNamespaceSuffix());
             assertEquals("Repro Set", lsid.getObjectId());
@@ -392,9 +420,9 @@ public class Lsid
         @Test
         public void testEncodeWithPlus()
         {
-            Lsid lsid = new Lsid("SampleSet.Folder-4", "Repro+Set");
-            assertEquals("urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":SampleSet.Folder-4:Repro%2BSet", lsid.toString());
-            assertEquals(AppProps.getInstance().getDefaultLsidAuthority(), lsid.getAuthority());
+            Lsid lsid = new Lsid("SampleSet.Folder-4", "Repro+Set", _mockAppProps);
+            assertEquals("urn:lsid:" + DEFAULT_LSID_AUTHORITY + ":SampleSet.Folder-4:Repro%2BSet", lsid.toString());
+            assertEquals(DEFAULT_LSID_AUTHORITY, lsid.getAuthority());
             assertEquals("SampleSet", lsid.getNamespacePrefix());
             assertEquals("Folder-4", lsid.getNamespaceSuffix());
             assertEquals("Repro+Set", lsid.getObjectId());

@@ -254,12 +254,6 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
     }
 
 
-    public AppProps getApp()
-    {
-        return AppProps.getInstance();
-    }
-
-
     public ActionURL cloneActionURL()
     {
         return _url.clone();

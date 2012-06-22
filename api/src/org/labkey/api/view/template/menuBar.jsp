@@ -31,7 +31,6 @@
     ViewContext currentContext = HttpView.currentContext();
     Container c = currentContext.getContainer();
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
-    AppProps appProps = AppProps.getInstance();
     NavTree homeLink;
 
     FolderDisplayMode folderMode = LookAndFeelProperties.getInstance(c).getFolderDisplayMode();
@@ -40,7 +39,7 @@
     boolean folderMenu = folderMode.isShowInMenu();
     String menuBarClass = "labkey-main-menu";
     if (null == c || null == c.getProject() || c.getProject().equals(ContainerManager.getHomeContainer()))
-        homeLink = new NavTree(laf.getShortName() + " Home", appProps.getHomePageActionURL());
+        homeLink = new NavTree(laf.getShortName() + " Home", AppProps.getInstance().getHomePageActionURL());
     else
         homeLink = new NavTree(c.getProject().getName(), c.getProject().getFolderType().getStartURL(c.getProject(), currentContext.getUser()));
 %>
