@@ -122,6 +122,7 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.TestDatasetDomainKind;
 import org.labkey.study.model.VisitDatasetDomainKind;
+import org.labkey.study.pipeline.SampleMindedTransformTask;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.plate.PlateManager;
 import org.labkey.study.plate.query.PlateSchema;
@@ -687,6 +688,15 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         set.add(DataSetDefinition.TestCleanupOrphanedDatasetDomains.class);
         set.add(StudyManager.VisitCreationTestCase.class);
 
+        return set;
+    }
+
+    @Override
+    @NotNull
+    public Set<Class> getUnitTests()
+    {
+        Set<Class> set = new HashSet<Class>();
+        set.add(SampleMindedTransformTask.TestCase.class);
         return set;
     }
 

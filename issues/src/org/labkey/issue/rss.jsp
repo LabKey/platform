@@ -32,7 +32,7 @@
     Container c = ctx.getContainer();
     User user = ctx.getUser();
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
-    AppProps app = AppProps.getInstance();
+    AppProps.Interface app = AppProps.getInstance();
 
     ctx.getResponse().setContentType("text/xml");
 

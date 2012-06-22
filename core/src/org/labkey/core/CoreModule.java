@@ -609,9 +609,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 SecurityController.TestCase.class,
                 AttachmentServiceImpl.TestCase.class,
                 WebdavResolverImpl.TestCase.class,
-                Lsid.TestCase.class,
                 MimeMap.TestCase.class,
-                HString.TestCase.class,
                 ModuleStaticResolverImpl.TestCase.class,
                 StorageProvisioner.TestCase.class,
                 RhinoService.TestCase.class,
@@ -621,7 +619,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 ViewCategoryManager.TestCase.class,
                 TableSelectorTestCase.class,
                 NestedGroupsTest.class,
-                Compress.TestCase.class,
                 CoreModule.TestCase.class
                 //,RateLimiter.TestCase.class
         ));
@@ -651,6 +648,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 MemTracker.TestCase.class,
                 StringExpressionFactory.TestCase.class,
                 Path.TestCase.class,
+                Lsid.TestCase.class,
+                HString.TestCase.class,
                 PageFlowUtil.TestCase.class,
                 ResultSetUtil.TestCase.class,
                 ArrayListMap.TestCase.class,
@@ -659,6 +658,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 RemoveDuplicatesDataIterator.DeDuplicateTestCase.class,
                 CachingDataIterator.ScrollTestCase.class,
                 StringUtilsLabKey.TestCase.class,
+                Compress.TestCase.class,
                 ExtUtil.TestCase.class
         ));
     }

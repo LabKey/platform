@@ -26,7 +26,7 @@
 <%=formatMissedErrors("form")%>
 <%
     AdminController.SiteSettingsBean bean = ((JspView<AdminController.SiteSettingsBean>)HttpView.currentView()).getModelBean();
-    AppProps appProps = AppProps.getInstance();
+    AppProps.Interface appProps = AppProps.getInstance();
 %>
 <script type="text/javascript">
 function testNetworkDrive()

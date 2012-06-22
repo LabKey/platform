@@ -16,6 +16,12 @@
 
 package org.labkey.study.pipeline;
 
+import org.jmock.Expectations;
+import org.jmock.Mockery;
+import org.jmock.lib.legacy.ClassImposteriser;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.TSVMapWriter;
 import org.labkey.api.pipeline.PipelineJob;
@@ -34,6 +40,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -126,7 +133,15 @@ public class SampleMindedTransformTask extends PipelineJob.Task<SampleMindedTran
             File labsFile = new File(input.getParent(), "labs.txt");
             if (NetworkDrive.exists(labsFile) && labsFile.isFile())
             {
-                parseLabs(labIds, labsFile);
+                FileInputStream fIn = new FileInputStream(labsFile);
+                try
+                {
+                    parseLabs(labIds, new BufferedReader(new InputStreamReader(fIn)));
+                }
+                finally
+                {
+                    try { fIn.close(); } catch (IOException ignored) {}
+                }
                 getJob().info("Parsed " + labIds.size() + " labs from " + labsFile);
             }
             else
@@ -135,162 +150,8 @@ public class SampleMindedTransformTask extends PipelineJob.Task<SampleMindedTran
             }
 
             ExcelLoader loader = new ExcelLoader(input, true);
-            Set<String> hashes = new HashSet<String>();
             List<Map<String, Object>> inputRows = loader.load();
-            List<Map<String, Object>> outputRows = new ArrayList<Map<String, Object>>();
-
-            int rowIndex = 0;
-            // Crank through all of the input rows
-            for (Iterator<Map<String, Object>> iter = inputRows.iterator(); iter.hasNext(); )
-            {
-                Map<String, Object> inputRow = iter.next();
-                // Remove it from the input list immediately to make it eligible for garbage collection
-                // once we're done processing it
-                iter.remove();
-                rowIndex++;
-                // Check if it's a duplicate row
-                if (!hashes.add(hashRow(inputRow)))
-                {
-                    continue;
-                }
-
-                Object barcode = inputRow.get("barcode");
-                Object collectionDate = inputRow.get("collectiondate");
-                if (barcode == null || barcode.toString().toLowerCase().endsWith("-invalid") || collectionDate == null)
-                {
-                    getJob().warn("Skipping data row with missing or invalid barcode, row number " + rowIndex);
-                    continue;
-                }
-                if (collectionDate == null)
-                {
-                    getJob().warn("Skipping data row missing collection date, row number " + rowIndex);
-                    continue;
-                }
-
-                Map<String, Object> outputRow = new HashMap<String, Object>();
-                
-                String shortName = inputRow.get("siteshortname") == null ? null : inputRow.get("siteshortname").toString();
-                Integer siteId = labIds.get(shortName);
-                if (siteId == null)
-                {
-                    // We don't have an existing ID to use for this site, so find one that's available
-                    siteId = 1;
-                    while (labIds.containsValue(siteId))
-                    {
-                        siteId += 1;
-                    }
-                    labIds.put(shortName, siteId);
-                }
-
-                String derivative = inputRow.get("specimentype") == null ? null : inputRow.get("specimentype").toString();
-                // Check if it has a known primary type
-                String primary = DERIVATIVE_PRIMARY_MAPPINGS.get(derivative);
-                if (primary == null)
-                {
-                    // If not, use the original value as both the primary and derivative
-                    primary = derivative;
-                }
-                Integer primaryId = primaryIds.get(primary);
-                if (primaryId == null)
-                {
-                    // Put it into our mapping so it gets written to primary_types.tsv
-                    primaryId = primaryIds.size() + 1;
-                    primaryIds.put(primary, primaryId);
-                }
-                Integer derivativeId = derivativeIds.get(derivative);
-                if (derivativeId == null)
-                {
-                    // Put it into our mapping so it gets written to derivative.tsv
-                    derivativeId = derivativeIds.size() + 1;
-                    derivativeIds.put(derivative, derivativeId);
-                }
-
-                outputRow.put("record_id", rowIndex);
-                outputRow.put("originating_location", siteId);
-                outputRow.put("global_unique_specimen_id", barcode);
-                String ptid = inputRow.get("participantid") == null ? "" : inputRow.get("participantid").toString();
-                // Prefix the PTID with the studynum value if it isn's already there
-                if (!ptid.startsWith(inputRow.get("studynum").toString()))
-                {
-                    ptid = inputRow.get("studynum").toString() + ptid;
-                }
-                outputRow.put("ptid", ptid);
-                outputRow.put("tube_type", inputRow.get("vesseldomaintype"));
-                // Fix up the visit number
-                String visit = inputRow.get("visitname") == null ? "" : inputRow.get("visitname").toString();
-                if (visit.toLowerCase().startsWith("visit"))
-                {
-                    visit = visit.substring("visit".length()).trim();
-                }
-                if ("SE".equalsIgnoreCase(visit) || "SR".equalsIgnoreCase(visit))
-                {
-                    visit = "999";
-                }
-                outputRow.put("visit_value", visit);
-
-                outputRow.put("primary_specimen_type_id", primaryId);
-                outputRow.put("derivative_type_id", derivativeId);
-                outputRow.put("draw_timestamp", collectionDate);
-                // Sort the date into the appropriate column based on the activity description
-                String activity = inputRow.get("activity") == null ? "" : inputRow.get("activity").toString();
-                Object activitySaveDateTime = inputRow.get("activitysavedatetime");
-                if (activity.contains("Ship"))
-                {
-                    outputRow.put("ship_date", activitySaveDateTime);
-                    outputRow.put("lab_receipt_date", null);
-                    outputRow.put("processing_date", null);
-                }
-                else if (activity.contains("Receiv"))
-                {
-                    outputRow.put("ship_date", null);
-                    outputRow.put("lab_receipt_date", activitySaveDateTime);
-                    outputRow.put("processing_date", null);
-                }
-                else
-                {
-                    outputRow.put("ship_date", null);
-                    outputRow.put("lab_receipt_date", null);
-                    outputRow.put("processing_date", activitySaveDateTime);
-                }
-                outputRow.put("processed_by_initials", inputRow.get("activityuser"));
-                outputRow.put("processed_by_initials", inputRow.get("activityuser"));
-                outputRow.put("comments", activity);
-
-                String destinationSite = inputRow.get("destinationsite") == null ? null : inputRow.get("destinationsite").toString();
-                if ("N/A".equalsIgnoreCase(destinationSite))
-                {
-                    destinationSite = shortName;
-                }
-
-                Integer labId;
-                try
-                {
-                    // Try using the given name as the ID if it's an integer
-                    labId = Integer.parseInt(destinationSite);
-                    if (!labIds.containsKey(labId.toString()))
-                    {
-                        labIds.put(labId.toString(), labId);
-                    }
-                }
-                catch (NumberFormatException e)
-                {
-                    labId = labIds.get(destinationSite);
-                    if (labId == null)
-                    {
-                        // We don't have an existing ID, so find one that's available
-                        labId = 1;
-                        while (labIds.containsValue(labId))
-                        {
-                            labId += 1;
-                        }
-                        labIds.put(destinationSite, labId);
-                    }
-                }
-
-                outputRow.put("lab_id", labId);
-                outputRow.put("ship_batch_number", inputRow.get("airbillnumber"));
-                outputRows.add(outputRow);
-            }
+            List<Map<String, Object>> outputRows = transformRows(labIds, primaryIds, derivativeIds, inputRows);
 
             getJob().info("After removing duplicates, there are " + outputRows.size() + " rows of data");
 
@@ -319,40 +180,205 @@ public class SampleMindedTransformTask extends PipelineJob.Task<SampleMindedTran
         return new RecordedActionSet(action);
     }
 
+    private List<Map<String, Object>> transformRows(Map<String, Integer> labIds, Map<String, Integer> primaryIds, Map<String, Integer> derivativeIds, List<Map<String, Object>> inputRows)
+            throws IOException
+    {
+        List<Map<String, Object>> outputRows = new ArrayList<Map<String, Object>>(inputRows.size());
+        Set<String> hashes = new HashSet<String>();
+        int rowIndex = 0;
+        
+        // Crank through all of the input rows
+        for (Iterator<Map<String, Object>> iter = inputRows.iterator(); iter.hasNext(); )
+        {
+            Map<String, Object> inputRow = iter.next();
+            // Remove it from the input list immediately to make it eligible for garbage collection
+            // once we're done processing it
+            iter.remove();
+            rowIndex++;
+            
+            // Check if it's a duplicate row
+            if (hashes.add(hashRow(inputRow)))
+            {
+                Map<String, Object> outputRow = transformRow(inputRow, rowIndex, labIds, primaryIds, derivativeIds);
+                outputRows.add(outputRow);
+            }
+        }
+
+        return outputRows;
+    }
+
+    private Map<String, Object> transformRow(Map<String, Object> inputRow, int rowIndex, Map<String, Integer> labIds, Map<String, Integer> primaryIds, Map<String, Integer> derivativeIds)
+    {
+        Object barcode = inputRow.get("barcode");
+        Object collectionDate = getNonNullValue(inputRow, "collectiondate");
+        if (barcode == null || barcode.toString().toLowerCase().endsWith("-invalid") || collectionDate == null)
+        {
+            getJob().warn("Skipping data row with missing or invalid barcode, row number " + rowIndex);
+            return null;
+        }
+        if (collectionDate == null || "".equals(collectionDate))
+        {
+            getJob().warn("Skipping data row missing collection date, row number " + rowIndex);
+            return null;
+        }
+
+        Map<String, Object> outputRow = new HashMap<String, Object>();
+
+        String shortName = inputRow.get("siteshortname") == null ? null : inputRow.get("siteshortname").toString();
+        Integer siteId = labIds.get(shortName);
+        if (siteId == null)
+        {
+            // We don't have an existing ID to use for this site, so find one that's available
+            siteId = 1;
+            while (labIds.containsValue(siteId))
+            {
+                siteId += 1;
+            }
+            labIds.put(shortName, siteId);
+        }
+
+        String derivative = getNonNullValue(inputRow, "specimentype");
+        // Check if it has a known primary type
+        String primary = DERIVATIVE_PRIMARY_MAPPINGS.get(derivative);
+        if (primary == null)
+        {
+            // If not, use the original value as both the primary and derivative
+            primary = derivative;
+        }
+        Integer primaryId = primaryIds.get(primary);
+        if (primaryId == null)
+        {
+            // Put it into our mapping so it gets written to primary_types.tsv
+            primaryId = primaryIds.size() + 1;
+            primaryIds.put(primary, primaryId);
+        }
+        Integer derivativeId = derivativeIds.get(derivative);
+        if (derivativeId == null)
+        {
+            // Put it into our mapping so it gets written to derivative.tsv
+            derivativeId = derivativeIds.size() + 1;
+            derivativeIds.put(derivative, derivativeId);
+        }
+
+        outputRow.put("record_id", rowIndex);
+        outputRow.put("originating_location", siteId);
+        outputRow.put("global_unique_specimen_id", barcode);
+        String ptid = getNonNullValue(inputRow, "participantid");
+        // Prefix the PTID with the studynum value if it isn's already there
+        String studyNum = getNonNullValue(inputRow, "studynum");
+        if (!ptid.startsWith(studyNum))
+        {
+            ptid = studyNum.toString() + ptid;
+        }
+        outputRow.put("ptid", ptid);
+        outputRow.put("tube_type", inputRow.get("vesseldomaintype"));
+        // Fix up the visit number
+        String visit = getNonNullValue(inputRow, "visitname");
+        if (visit.toLowerCase().startsWith("visit"))
+        {
+            visit = visit.substring("visit".length()).trim();
+        }
+        if ("SE".equalsIgnoreCase(visit) || "SR".equalsIgnoreCase(visit))
+        {
+            visit = "999";
+        }
+        outputRow.put("visit_value", visit);
+
+        outputRow.put("primary_specimen_type_id", primaryId);
+        outputRow.put("derivative_type_id", derivativeId);
+        outputRow.put("draw_timestamp", collectionDate);
+        // Sort the date into the appropriate column based on the activity description
+        String activity = getNonNullValue(inputRow, "activity");
+        Object activitySaveDateTime = inputRow.get("activitysavedatetime");
+        if (activity.contains("Ship"))
+        {
+            outputRow.put("ship_date", activitySaveDateTime);
+            outputRow.put("lab_receipt_date", null);
+            outputRow.put("processing_date", null);
+        }
+        else if (activity.contains("Receiv"))
+        {
+            outputRow.put("ship_date", null);
+            outputRow.put("lab_receipt_date", activitySaveDateTime);
+            outputRow.put("processing_date", null);
+        }
+        else
+        {
+            outputRow.put("ship_date", null);
+            outputRow.put("lab_receipt_date", null);
+            outputRow.put("processing_date", activitySaveDateTime);
+        }
+        outputRow.put("processed_by_initials", inputRow.get("activityuser"));
+        outputRow.put("processed_by_initials", inputRow.get("activityuser"));
+        outputRow.put("comments", activity);
+
+        String destinationSite = getNonNullValue(inputRow, "destinationsite");
+        if ("N/A".equalsIgnoreCase(destinationSite))
+        {
+            destinationSite = shortName;
+        }
+
+        Integer labId;
+        try
+        {
+            // Try using the given name as the ID if it's an integer
+            labId = Integer.parseInt(destinationSite);
+            if (!labIds.containsKey(labId.toString()))
+            {
+                labIds.put(labId.toString(), labId);
+            }
+        }
+        catch (NumberFormatException e)
+        {
+            labId = labIds.get(destinationSite);
+            if (labId == null)
+            {
+                // We don't have an existing ID, so find one that's available
+                labId = 1;
+                while (labIds.containsValue(labId))
+                {
+                    labId += 1;
+                }
+                labIds.put(destinationSite, labId);
+            }
+        }
+
+        outputRow.put("lab_id", labId);
+        outputRow.put("ship_batch_number", inputRow.get("airbillnumber"));
+
+        return outputRow;
+    }
+
+    private String getNonNullValue(Map<String, Object> inputRow, String name)
+    {
+        return inputRow.get(name) == null ? "" : inputRow.get(name).toString();
+    }
+
     /**
      * Parse a TSV file with lab names and IDs. First column is assumed to be lab ID. Second column is the name.
      * Assume no other columns. 
      */
-    private void parseLabs(Map<String, Integer> labIds, File labsFile) throws IOException
+    private void parseLabs(Map<String, Integer> labIds, BufferedReader reader) throws IOException
     {
-        FileInputStream fIn = new FileInputStream(labsFile);
-        try
+        String line;
+        while ((line = reader.readLine()) != null)
         {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(fIn));
-            String line;
-            while ((line = reader.readLine()) != null)
-            {
-                // Split it into chunks
-                String[] pieces = line.split("\\s");
+            // Split it into chunks
+            String[] pieces = line.split("\\s");
 
-                // If we found multiple chunks
-                if (pieces.length > 1)
+            // If we found multiple chunks
+            if (pieces.length > 1)
+            {
+                String prefix = pieces[0].trim();
+                try
                 {
-                    String prefix = pieces[0].trim();
-                    try
-                    {
-                        // Try parsing the first value as the lab's ID
-                        Integer labId = Integer.parseInt(prefix);
-                        // If it succeeds, use the rest of the line as the lab name
-                        labIds.put(line.substring(prefix.length()).trim(), labId);
-                    }
-                    catch (NumberFormatException ignored) {}
+                    // Try parsing the first value as the lab's ID
+                    Integer labId = Integer.parseInt(prefix);
+                    // If it succeeds, use the rest of the line as the lab name
+                    labIds.put(line.substring(prefix.length()).trim(), labId);
                 }
+                catch (NumberFormatException ignored) {}
             }
-        }
-        finally
-        {
-            try { fIn.close(); } catch (IOException ignored) {}
         }
     }
 
@@ -504,6 +530,84 @@ public class SampleMindedTransformTask extends PipelineJob.Task<SampleMindedTran
         public String getStatusName()
         {
             return "SAMPLEMINDED TRANSFORM";
+        }
+    }
+
+    public static class TestCase extends Assert
+    {
+        private Mockery _context;
+        private PipelineJob _job;
+        private SampleMindedTransformTask _task;
+
+        @Before
+        public void setUp()
+        {
+            _context = new Mockery();
+            _context.setImposteriser(ClassImposteriser.INSTANCE);
+            _job = _context.mock(PipelineJob.class);
+            _task = new SampleMindedTransformTask(null, _job);
+        }
+
+        @Test
+        public void testParseLabsTSV() throws IOException
+        {
+            Map<String, Integer> labs = new HashMap<String, Integer>();
+            _task.parseLabs(labs, new BufferedReader(new StringReader("Site Number\tSite Name\n501\tLab AA\n502\tLab BB\n503\tLab CC")));
+            assertEquals("Wrong number of labs", 3, labs.size());
+            assertEquals("Wrong lab name", 501, labs.get("Lab AA"));
+        }
+
+        @Test
+        public void testDeduplication() throws IOException
+        {
+            List<Map<String, Object>> inputRows = new ArrayList<Map<String, Object>>();
+            Map<String, Object> row1 = new HashMap<String, Object>();
+            row1.put("participant", "ptid1");
+            row1.put("barcode", "barcode-1");
+            row1.put("collectiondate", "May 5, 2012");
+            row1.put("visitname", "Visit 01");
+            inputRows.add(row1);
+            inputRows.add(new HashMap<String, Object>(row1));
+            Map<String, Object> row3 = new HashMap<String, Object>(row1);
+            row3.put("participant", "ptid2");
+            inputRows.add(row3);
+
+            List<Map<String, Object>> outputRows = _task.transformRows(new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>(), inputRows);
+            assertEquals(2, outputRows.size());
+        }
+
+        @Test
+        public void testInvalidBarcodeDetection()
+        {
+            _context.checking(new Expectations()
+            {{
+                oneOf(_job).warn("Skipping data row with missing or invalid barcode, row number 1");
+            }});
+
+            Map<String, Object> row1 = new HashMap<String, Object>();
+            row1.put("participant", "ptid1");
+            row1.put("barcode", "barcode-invalid");
+            row1.put("collectiondate", "May 5, 2012");
+            row1.put("visitname", "Visit 01");
+
+            assertEquals(null, _task.transformRow(row1, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>()));
+        }
+
+        @Test
+        public void testMissingCollectionDate()
+        {
+            _context.checking(new Expectations()
+            {{
+                oneOf(_job).warn("Skipping data row missing collection date, row number 1");
+            }});
+
+            Map<String, Object> row1 = new HashMap<String, Object>();
+            row1.put("participant", "ptid1");
+            row1.put("barcode", "barcode-1");
+            row1.put("collectiondate", "");
+            row1.put("visitname", "Visit 01");
+
+            assertEquals(null, _task.transformRow(row1, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>()));
         }
     }
 }
