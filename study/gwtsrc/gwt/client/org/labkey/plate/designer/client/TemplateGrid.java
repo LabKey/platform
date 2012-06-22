@@ -60,6 +60,9 @@ public class TemplateGrid extends Grid
                     GWTPosition position = new GWTPosition(row - 1, col - 1);
                     Set groups = (Set) view.getPlate().getPositionToGroupsMap().get(position);
                     cellWidget = new TemplateGridCell(view, position, groups, activeType);
+
+                    // add a marker class
+                    DOM.setElementAttribute(cellWidget.getElement(), "class", "Cell-" + ALPHABET[row-1] + col);
                 }
                 if (cellWidget != null)
                 {
