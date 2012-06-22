@@ -188,8 +188,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     public Set<Class> getIntegrationTests()
     {
         return new HashSet<Class>(Arrays.asList(
-            PipelineQueueImpl.TestCase.class,
-            PipelineCommandTestCase.class));
+            PipelineQueueImpl.TestCase.class));
     }
 
     @Override
@@ -199,7 +198,8 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         return new HashSet<Class>(Arrays.asList(
             PathMapperImpl.TestCase.class,
             GlobusClientPropertiesImpl.TestCase.class,
-            GlobusJobWrapper.TestCase.class
+            GlobusJobWrapper.TestCase.class,
+            PipelineCommandTestCase.class
         ));
     }
 
