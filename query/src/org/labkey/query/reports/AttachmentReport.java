@@ -23,28 +23,17 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.query.SimpleValidationError;
-import org.labkey.api.query.ValidationError;
-import org.labkey.api.reports.model.ViewCategory;
-import org.labkey.api.reports.model.ViewCategoryManager;
-import org.labkey.api.reports.report.RedirectReport;
-import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailOutputStream;
 import org.labkey.api.thumbnail.ThumbnailService;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.writer.ContainerUser;
 import org.labkey.query.reports.ReportsController.DownloadAction;
 import org.labkey.query.reports.ReportsController.DownloadReportFileAction;
 
@@ -54,22 +43,18 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.sql.SQLException;
-import java.util.Date;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Map;
 
 /**
  * User: Mark Igra
  * Date: Jul 6, 2006
  * Time: 5:08:19 PM
  */
-public class AttachmentReport extends RedirectReport implements DynamicThumbnailProvider
+public class AttachmentReport extends BaseRedirectReport implements DynamicThumbnailProvider
 {
     public static final String TYPE = "Study.attachmentReport";     // Misnomer (it's no longer part of study), but keep this for backward compatibility
     public static final String FILE_PATH = "filePath";
-    public static final String MODIFIED = "modified";
 
     public String getType()
     {
@@ -79,11 +64,6 @@ public class AttachmentReport extends RedirectReport implements DynamicThumbnail
     public String getTypeDescription()
     {
         return "Attachment Report";
-    }
-
-    protected Container getContainer()
-    {
-        return ContainerManager.getForId(getDescriptor().getContainerId());
     }
 
     @Override
@@ -108,8 +88,7 @@ public class AttachmentReport extends RedirectReport implements DynamicThumbnail
         if (null != latest)
             return latest.getDownloadUrl(DownloadAction.class).getLocalURIString();
 
-        // Link URL attachment report type
-        return super.getUrl(c);
+        return null;
     }
 
     public @Nullable Attachment getLatestVersion()
@@ -136,28 +115,6 @@ public class AttachmentReport extends RedirectReport implements DynamicThumbnail
         return attachments.get(attachments.size() - 1);
     }
 
-    @Override
-    public void beforeDelete(ContainerUser context)
-    {
-        deleteAttachments();
-        super.beforeDelete(context);
-    }
-
-    private void deleteAttachments()
-    {
-        if (null == getEntityId())
-            return;
-
-        try
-        {
-            AttachmentService.get().deleteAttachments(this);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-    }
-
     public void setFilePath(String filePath)
     {
         getDescriptor().setProperty(FILE_PATH, filePath);
@@ -166,21 +123,6 @@ public class AttachmentReport extends RedirectReport implements DynamicThumbnail
     public String getFilePath()
     {
         return getDescriptor().getProperty(FILE_PATH);
-    }
-
-    public void setModified(Date modified)
-    {
-        getDescriptor().setProperty(MODIFIED, DateUtil.formatDate(modified));
-    }
-
-    public void setDescription(String description)
-    {
-        getDescriptor().setReportDescription(description);
-    }
-
-    public String getDescription()
-    {
-        return getDescriptor().getReportDescription();
     }
 
     /*
@@ -192,33 +134,6 @@ public class AttachmentReport extends RedirectReport implements DynamicThumbnail
             addParameter(ReportDescriptor.Prop.reportId, getReportId().toString());
     }
     */
-
-    public void setCategory(Integer id)
-    {
-        if (id != null)
-        {
-            getDescriptor().setCategory(ViewCategoryManager.getInstance().getCategory(id));
-        }
-        else
-        {
-            getDescriptor().setCategory(null);
-        }
-    }
-
-    public ViewCategory getCategory()
-    {
-        return getDescriptor().getCategory();
-    }
-
-    public void setOwner(Integer owner)
-    {
-        getDescriptor().setOwner(owner);
-    }
-
-    public void getOwner()
-    {
-        getDescriptor().getOwner();
-    }
 
     enum Type
     {
@@ -409,7 +324,7 @@ public class AttachmentReport extends RedirectReport implements DynamicThumbnail
     }
 
     @Override
-    public Thumbnail generateDynamicThumbnail(ViewContext context)
+    public Thumbnail generateDynamicThumbnail(@Nullable ViewContext context)
     {
         Type type = Type.getForContentType(getContentType());
 
@@ -480,33 +395,6 @@ public class AttachmentReport extends RedirectReport implements DynamicThumbnail
     public String getDynamicThumbnailCacheKey()
     {
         return "Reports:" + getReportId();
-    }
-
-    public boolean canEdit(User user, Container container, List<ValidationError> errors)
-    {
-        super.canEdit(user, container, errors);
-
-        if (errors.isEmpty() && getDescriptor().getOwner() != null)
-        {
-            if (!container.hasPermission(user, InsertPermission.class))
-                errors.add(new SimpleValidationError("You must be in the Author role to update a private attachment report."));
-        }
-        return errors.isEmpty();
-    }
-
-    public boolean canDelete(User user, Container container, List<ValidationError> errors)
-    {
-        super.canDelete(user, container, errors);
-
-        if (errors.isEmpty())
-        {
-            if (isPrivate())
-            {
-                if (!container.hasPermission(user, InsertPermission.class))
-                    errors.add(new SimpleValidationError("You must be in the Author role to delete a private attachment report."));
-            }
-        }
-        return errors.isEmpty();
     }
 
 }

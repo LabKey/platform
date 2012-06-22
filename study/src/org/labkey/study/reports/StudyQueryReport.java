@@ -131,6 +131,7 @@ public class StudyQueryReport extends QueryReport
             HttpServletRequest request = new MockHttpServletRequest();
             view.delete(context.getUser(), request);
         }
+        super.beforeDelete(context);
     }
 
     public QueryReportDescriptor.QueryViewGenerator getQueryViewGenerator()

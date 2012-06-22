@@ -2119,11 +2119,23 @@ public class AdminController extends SpringActionController
 
 
     @AdminConsoleAction
-    public class CachesAction extends SimpleViewAction
+    public class CachesAction extends SimpleViewAction<MemForm>
     {
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(MemForm form, BindException errors) throws Exception
         {
-            StringBuilder html = new StringBuilder();
+            if (form.isClearCaches())
+            {
+                LOG.info("Clearing Introspector caches");
+                Introspector.flushCaches();
+                LOG.info("Purging all caches");
+                CacheManager.clearAllKnownCaches();
+                SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+                if (null != ss)
+                {
+                    LOG.info("Purging SearchService queues");
+                    ss.purgeQueues();
+                }
+            }
 
             List<TrackingCache> caches = CacheManager.getKnownCaches();
             List<CacheStats> cacheStats = new ArrayList<CacheStats>();
@@ -2135,6 +2147,10 @@ public class AdminController extends SpringActionController
                 transactionStats.add(CacheManager.getTransactionCacheStats(cache));
             }
 
+            StringBuilder html = new StringBuilder();
+            html.append(PageFlowUtil.textLink("Clear Caches and Refresh", AdminController.getCachesURL(true, false)));
+            html.append(PageFlowUtil.textLink("Refresh", AdminController.getCachesURL(false, false)));
+            html.append("<hr size=1>\n");
             html.append("<table>\n");
             appendStats(html, "Caches", cacheStats);
             appendStats(html, "Transaction Caches", transactionStats);
@@ -2282,6 +2298,19 @@ public class AdminController extends SpringActionController
     public static ActionURL getMemTrackerURL(boolean clearCaches, boolean gc)
     {
         ActionURL url = new ActionURL(MemTrackerAction.class, ContainerManager.getRoot());
+
+        if (clearCaches)
+            url.addParameter(MemForm.Params.clearCaches, "1");
+
+        if (gc)
+            url.addParameter(MemForm.Params.gc, "1");
+
+        return url;
+    }
+
+    public static ActionURL getCachesURL(boolean clearCaches, boolean gc)
+    {
+        ActionURL url = new ActionURL(CachesAction.class, ContainerManager.getRoot());
 
         if (clearCaches)
             url.addParameter(MemForm.Params.clearCaches, "1");

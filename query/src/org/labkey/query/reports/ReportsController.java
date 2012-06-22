@@ -140,6 +140,7 @@ import javax.script.ScriptEngineManager;
 import javax.servlet.ServletException;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
@@ -268,6 +269,12 @@ public class ReportsController extends SpringActionController
         public ActionURL urlAttachmentReport(Container c, ActionURL returnURL)
         {
             return getCreateAttachmentReportURL(c, returnURL);
+        }
+
+        @Override
+        public ActionURL urlLinkReport(Container c, ActionURL returnURL)
+        {
+            return getCreateLinkReportURL(c, returnURL);
         }
 
         @Override
@@ -1133,11 +1140,10 @@ public class ReportsController extends SpringActionController
 
     public static class AttachmentReportForm extends DataViewEditForm
     {
-        public enum AttachmentReportType { local, server, url }
+        public enum AttachmentReportType { local, server }
 
         private AttachmentReportType attachmentType;
         private String filePath;
-        private String linkUrl;
 
         public AttachmentReportType getAttachmentType()
         {
@@ -1158,16 +1164,6 @@ public class ReportsController extends SpringActionController
         {
             this.filePath = filePath;
         }
-
-        public String getLinkUrl()
-        {
-            return linkUrl;
-        }
-
-        public void setLinkUrl(String linkUrl)
-        {
-            this.linkUrl = linkUrl;
-        }
     }
 
 
@@ -1175,15 +1171,19 @@ public class ReportsController extends SpringActionController
     {
         ActionURL url = new ActionURL(CreateAttachmentReportAction.class, c);
         url.addReturnURL(returnURL);
-
         return url;
     }
 
-
-    @RequiresPermissionClass(InsertPermission.class)
-    public class CreateAttachmentReportAction extends FormViewAction<AttachmentReportForm>
+    public static ActionURL getCreateLinkReportURL(Container c, ActionURL returnURL)
     {
-        public ModelAndView getView(AttachmentReportForm form, boolean reshow, BindException errors) throws Exception
+        ActionURL url = new ActionURL(CreateLinkReportAction.class, c);
+        url.addReturnURL(returnURL);
+        return url;
+    }
+
+    protected abstract class BaseRedirectReportAction<F extends DataViewEditForm, R extends BaseRedirectReport & DynamicThumbnailProvider> extends FormViewAction<F>
+    {
+        public void initializeForm(F form, boolean reshow, BindException errors) throws Exception
         {
             setHelpTopic(new HelpTopic("staticReports"));
 
@@ -1197,61 +1197,12 @@ public class ReportsController extends SpringActionController
                     form.setReportId(form.getReportId());
                 }
             }
-
-            return new JspView<AttachmentReportForm>("/org/labkey/query/reports/view/createAttachmentReport.jsp", form, errors);
         }
 
-        public void validateCommand(AttachmentReportForm form, Errors errors)
+        public void validateCommand(F form, Errors errors)
         {
-            Map<String, MultipartFile> fileMap = getFileMap();
-            MultipartFile[] formFiles = fileMap.values().toArray(new MultipartFile[fileMap.size()]);
-
             if (null == StringUtils.trimToNull(form.getViewName()))
                 errors.reject("viewName", "You must enter a report name.");
-
-            if (form.getAttachmentType() == AttachmentReportForm.AttachmentReportType.server)
-            {
-                String filePath = StringUtils.trimToNull(form.getFilePath());
-
-                // Only site administrators can specify a path, #14445
-                if (null != filePath)
-                {
-                    if (!getUser().isAdministrator())
-                        throw new UnauthorizedException();
-                }
-
-            }
-            else if (form.getAttachmentType() == AttachmentReportForm.AttachmentReportType.local)
-            {
-                if (0 == formFiles.length || formFiles[0].isEmpty())
-                    errors.reject("filePath", "You must specify a file");
-            }
-            else if (form.getAttachmentType() == AttachmentReportForm.AttachmentReportType.url)
-            {
-                String linkUrl = StringUtils.trimToNull(form.getLinkUrl());
-                if (null == linkUrl)
-                {
-                    errors.reject("linkUrl", "You must specify a link URL");
-                }
-                else
-                {
-                    if (linkUrl.startsWith("/") || linkUrl.startsWith("http://") || linkUrl.startsWith("https://"))
-                    {
-                        try
-                        {
-                            URLHelper url = new URLHelper(linkUrl);
-                        }
-                        catch (URISyntaxException e)
-                        {
-                            errors.reject("linkUrl", "You must specify a valid link URL: " + e.getMessage());
-                        }
-                    }
-                    else
-                    {
-                        errors.reject("linkUrl", "Link URL must be either absolute (starting with http or https) or relative to this server (start with '/')");
-                    }
-                }
-            }
 
 /*
             String dateStr = form.getReportDateString();
@@ -1270,7 +1221,7 @@ public class ReportsController extends SpringActionController
 */
         }
 
-        public boolean handlePost(AttachmentReportForm form, BindException errors) throws Exception
+        public boolean saveReport(F form, BindException errors) throws Exception
         {
             DbScope scope = CoreSchema.getInstance().getSchema().getScope();
 
@@ -1284,35 +1235,15 @@ public class ReportsController extends SpringActionController
                 if (form.getCategory() != null)
                     category = ViewCategoryManager.getInstance().ensureViewCategory(getContainer(), getUser(), form.getCategory());
 
-                // author field
-                User author = UserManager.getUser(form.getAuthor());
-                ViewInfo.Status status = form.getStatus();
-
-                AttachmentReport report = (AttachmentReport)ReportService.get().createReportInstance(AttachmentReport.TYPE);
+                R report = createReport(form);
 
                 report.getDescriptor().setContainer(getContainer().getId());
                 report.getDescriptor().setReportName(form.getViewName());
                 if (form.getModifiedDate() != null)
                     report.setModified(form.getModifiedDate());
 
-                List<AttachmentFile> attachments = null;
-                if (form.getAttachmentType() == AttachmentReportForm.AttachmentReportType.server)
-                {
-                    // Only site administrators can specify a path, #14445
-                    if (getUser().isAdministrator())
-                        report.setFilePath(form.getFilePath());
-                }
-                else if (form.getAttachmentType() == AttachmentReportForm.AttachmentReportType.local)
-                {
-                    attachments = getAttachmentFileList();
-                }
-                else if (form.getAttachmentType() == AttachmentReportForm.AttachmentReportType.url)
-                {
-                    URLHelper url = new URLHelper(form.getLinkUrl());
-                    report.setUrl(url);
-                }
                 report.setDescription(form.getDescription());
-                
+
                 if (category != null)
                     report.getDescriptor().setCategory(category);
 
@@ -1323,21 +1254,9 @@ public class ReportsController extends SpringActionController
 
                 int id = ReportService.get().saveReport(getViewContext(), form.getViewName(), report);
 
-                report = (AttachmentReport)ReportService.get().getReport(id);
+                report = (R)ReportService.get().getReport(id);
 
-                if (attachments != null)
-                {
-                    AttachmentService.get().addAttachments(report, attachments, getViewContext().getUser());
-                }
-
-                // additional properties
-                String entityId = report.getEntityId();
-                if (author != null)
-                    ReportPropsManager.get().setPropertyValue(entityId, getContainer(), "author", author.getUserId());
-                if (status != null)
-                    ReportPropsManager.get().setPropertyValue(entityId, getContainer(), "status", status.name());
-                if (form.getRefreshDate() != null)
-                    ReportPropsManager.get().setPropertyValue(entityId, getContainer(), "refreshDate", form.getRefreshDate());
+                afterReportSave(form, report);
 
                 scope.commitTransaction();
 
@@ -1354,9 +1273,107 @@ public class ReportsController extends SpringActionController
             }
         }
 
-        public ActionURL getSuccessURL(AttachmentReportForm uploadForm)
+        abstract protected R createReport(F form);
+
+        protected void afterReportSave(F form, R report) throws Exception
+        {
+            // author field
+            User author = UserManager.getUser(form.getAuthor());
+            ViewInfo.Status status = form.getStatus();
+
+            // additional properties
+            String entityId = report.getEntityId();
+            if (author != null)
+                ReportPropsManager.get().setPropertyValue(entityId, getContainer(), "author", author.getUserId());
+            if (status != null)
+                ReportPropsManager.get().setPropertyValue(entityId, getContainer(), "status", status.name());
+            if (form.getRefreshDate() != null)
+                ReportPropsManager.get().setPropertyValue(entityId, getContainer(), "refreshDate", form.getRefreshDate());
+        }
+
+        public ActionURL getSuccessURL(F uploadForm)
         {
             return uploadForm.getReturnActionURL();
+        }
+
+    }
+
+    @RequiresPermissionClass(InsertPermission.class)
+    public class CreateAttachmentReportAction extends BaseRedirectReportAction<AttachmentReportForm, AttachmentReport>
+    {
+        @Override
+        public ModelAndView getView(AttachmentReportForm form, boolean reshow, BindException errors) throws Exception
+        {
+            initializeForm(form, reshow, errors);
+            return new JspView<AttachmentReportForm>("/org/labkey/query/reports/view/createAttachmentReport.jsp", form, errors);
+        }
+
+        @Override
+        public void validateCommand(AttachmentReportForm form, Errors errors)
+        {
+            super.validateCommand(form, errors);
+            if (errors.hasErrors())
+                return;
+
+            Map<String, MultipartFile> fileMap = getFileMap();
+            MultipartFile[] formFiles = fileMap.values().toArray(new MultipartFile[fileMap.size()]);
+
+            if (form.getAttachmentType() == AttachmentReportForm.AttachmentReportType.server)
+            {
+                String filePath = StringUtils.trimToNull(form.getFilePath());
+
+                // Only site administrators can specify a path, #14445
+                if (null != filePath)
+                {
+                    if (!getUser().isAdministrator())
+                        throw new UnauthorizedException();
+                }
+
+            }
+            else if (form.getAttachmentType() == AttachmentReportForm.AttachmentReportType.local)
+            {
+                if (0 == formFiles.length || formFiles[0].isEmpty())
+                    errors.reject("filePath", "You must specify a file");
+            }
+            else
+            {
+                errors.reject(ERROR_MSG, "Unknown attachment report type");
+                return;
+            }
+        }
+
+        @Override
+        public boolean handlePost(AttachmentReportForm form, BindException errors) throws Exception
+        {
+            return saveReport(form, errors);
+        }
+
+        @Override
+        protected AttachmentReport createReport(AttachmentReportForm form)
+        {
+            AttachmentReport report = (AttachmentReport)ReportService.get().createReportInstance(AttachmentReport.TYPE);
+
+            if (form.getAttachmentType() == AttachmentReportForm.AttachmentReportType.server)
+            {
+                // Only site administrators can specify a path, #14445
+                if (getUser().isAdministrator())
+                    report.setFilePath(form.getFilePath());
+            }
+
+            return report;
+        }
+
+        @Override
+        protected void afterReportSave(AttachmentReportForm form, AttachmentReport report) throws Exception
+        {
+            if (form.getAttachmentType() == AttachmentReportForm.AttachmentReportType.local)
+            {
+                List<AttachmentFile> attachments = getAttachmentFileList();
+                if (attachments != null && attachments.size() > 0)
+                    AttachmentService.get().addAttachments(report, attachments, getViewContext().getUser());
+            }
+
+            super.afterReportSave(form, report);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1403,6 +1420,91 @@ public class ReportsController extends SpringActionController
         }
     }
 
+
+    public static class LinkReportForm extends DataViewEditForm
+    {
+        private String linkUrl;
+
+        public String getLinkUrl()
+        {
+            return linkUrl;
+        }
+
+        public void setLinkUrl(String linkUrl)
+        {
+            this.linkUrl = linkUrl;
+        }
+    }
+
+    @RequiresPermissionClass(InsertPermission.class)
+    public class CreateLinkReportAction extends BaseRedirectReportAction<LinkReportForm, LinkReport>
+    {
+        public ModelAndView getView(LinkReportForm form, boolean reshow, BindException errors) throws Exception
+        {
+            initializeForm(form, reshow, errors);
+            return new JspView<LinkReportForm>("/org/labkey/query/reports/view/createLinkReport.jsp", form, errors);
+        }
+
+        @Override
+        public void validateCommand(LinkReportForm form, Errors errors)
+        {
+            super.validateCommand(form, errors);
+
+            String linkUrl = StringUtils.trimToNull(form.getLinkUrl());
+            if (null == linkUrl)
+            {
+                errors.reject("linkUrl", "You must specify a link URL");
+            }
+            else
+            {
+                if (linkUrl.startsWith("/") || linkUrl.startsWith("http://") || linkUrl.startsWith("https://"))
+                {
+                    try
+                    {
+                        URLHelper url = new URLHelper(linkUrl);
+                    }
+                    catch (URISyntaxException e)
+                    {
+                        errors.reject("linkUrl", "You must specify a valid link URL: " + e.getMessage());
+                    }
+                }
+                else
+                {
+                    errors.reject("linkUrl", "Link URL must be either absolute (starting with http or https) or relative to this server (start with '/')");
+                }
+            }
+        }
+
+        @Override
+        public boolean handlePost(LinkReportForm form, BindException errors) throws Exception
+        {
+            return saveReport(form, errors);
+        }
+
+        @Override
+        protected LinkReport createReport(LinkReportForm form)
+        {
+            LinkReport report = (LinkReport)ReportService.get().createReportInstance(LinkReport.TYPE);
+
+            try
+            {
+                URLHelper url = new URLHelper(form.getLinkUrl());
+                report.setUrl(url);
+            }
+            catch (URISyntaxException e)
+            {
+                // Shouldn't happen -- we've already checked the URL is not malformed in validateCommand.
+                throw new IllegalArgumentException(e.getMessage());
+            }
+
+            return report;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Create Link Report");
+        }
+    }
 
     @RequiresPermissionClass(ReadPermission.class)
     public class ManageViewsAction extends SimpleViewAction<ViewsSummaryForm>

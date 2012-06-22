@@ -44,6 +44,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewContext;
 import org.labkey.query.reports.AttachmentReport;
+import org.labkey.query.reports.LinkReport;
 import org.labkey.query.reports.ReportsController;
 
 import javax.script.ScriptEngineFactory;
@@ -67,6 +68,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
         _typeToIconMap.put(ChartQueryReport.TYPE, "/reports/chart.gif");
         _typeToIconMap.put(JavaScriptReport.TYPE, "/reports/js.png");
         _typeToIconMap.put(AttachmentReport.TYPE, "/reports/attachment.png");
+        _typeToIconMap.put(LinkReport.TYPE, "/reports/external-link.png");
     }
 
     /**
@@ -91,12 +93,19 @@ public class ReportUIProvider extends DefaultReportUIProvider
             designers.add(di);
         }
 
-        DesignerInfoImpl di = new DesignerInfoImpl(AttachmentReport.TYPE, "Attachment Report",
+        DesignerInfoImpl attachmentDesigner = new DesignerInfoImpl(AttachmentReport.TYPE, "Attachment Report",
                 ReportsController.getCreateAttachmentReportURL(context.getContainer(), context.getActionURL()),
                 _getIconPath(AttachmentReport.TYPE));
-        di.setId("create_attachment_report");
-        di.setDisabled(!context.hasPermission(InsertPermission.class));
-        designers.add(di);
+        attachmentDesigner.setId("create_attachment_report");
+        attachmentDesigner.setDisabled(!context.hasPermission(InsertPermission.class));
+        designers.add(attachmentDesigner);
+
+        DesignerInfoImpl linkDesigner = new DesignerInfoImpl(LinkReport.TYPE, "Link Report",
+                ReportsController.getCreateLinkReportURL(context.getContainer(), context.getActionURL()),
+                _getIconPath(LinkReport.TYPE));
+        linkDesigner.setId("create_link_report");
+        linkDesigner.setDisabled(!context.hasPermission(InsertPermission.class));
+        designers.add(linkDesigner);
 
         return designers;
     }
@@ -202,14 +211,21 @@ public class ReportUIProvider extends DefaultReportUIProvider
                 {
                     return PageFlowUtil.urlProvider(CoreUrls.class).getAttachmentIconURL(c, filename).toString();
                 }
+            }
 
+            if (report instanceof LinkReport)
+            {
+                Container c = ContainerManager.getForId(report.getContainerId());
+                LinkReport linkReport = (LinkReport)report;
                 // external link versus internal link
-                String url = attachmentReport.getUrl(c);
+                String url = linkReport.getUrl(c);
                 if (url != null)
                 {
                     // XXX: Is there a better way to check if a link is local to this server?
-                    if (url.startsWith("/") || url.startsWith(AppProps.getInstance().getBaseServerUrl()))
-                        return AppProps.getInstance().getContextPath() + "/reports/link_data.png";
+                    if (linkReport.isInternalLink())
+                        return AppProps.getInstance().getContextPath() + "/reports/internal-link.png";
+                    else if (linkReport.isLocalLink())
+                        return AppProps.getInstance().getContextPath() + "/reports/local-link.png";
                     else
                         return AppProps.getInstance().getContextPath() + "/reports/external-link.png";
                 }

@@ -2140,6 +2140,8 @@ query/src/org/labkey/query/persist/QueryManager.java -text
 query/src/org/labkey/query/persist/QuerySnapshotDef.java -text
 query/src/org/labkey/query/persist/SchemaReloadMaintenanceTask.java -text
 query/src/org/labkey/query/reports/AttachmentReport.java -text
+query/src/org/labkey/query/reports/BaseRedirectReport.java -text
+query/src/org/labkey/query/reports/LinkReport.java -text
 query/src/org/labkey/query/reports/ReportImporter.java -text
 query/src/org/labkey/query/reports/ReportServiceImpl.java -text
 query/src/org/labkey/query/reports/ReportWebdavProvider.java -text
@@ -2161,10 +2163,12 @@ query/src/org/labkey/query/reports/view/ReportsWebPart.java -text
 query/src/org/labkey/query/reports/view/ReportsWebPartConfig.java -text
 query/src/org/labkey/query/reports/view/configReportsAndScripts.jsp -text
 query/src/org/labkey/query/reports/view/createAttachmentReport.jsp -text
+query/src/org/labkey/query/reports/view/createLinkReport.jsp -text
 query/src/org/labkey/query/reports/view/manageViews.jsp -text
 query/src/org/labkey/query/reports/view/rReportTabHeader.jsp -text
 query/src/org/labkey/query/reports/view/reportDetails.jsp -text
 query/src/org/labkey/query/reports/view/reportsWebPartConfig.jsp -text
+query/src/org/labkey/query/reports/web.png -text
 query/src/org/labkey/query/reports/wordprocessing.png -text
 query/src/org/labkey/query/sql/Builder.java -text
 query/src/org/labkey/query/sql/ConvertType.java -text
@@ -2247,6 +2251,7 @@ query/webapp/reports/chart.gif -text
 query/webapp/reports/crosstab.png -text
 query/webapp/reports/details.png -text
 query/webapp/reports/enrollment.png -text
+query/webapp/reports/external-link.png -text
 query/webapp/reports/grid.gif -text
 query/webapp/reports/grid_shared.gif -text
 query/webapp/reports/icon_draft.png -text
@@ -2254,8 +2259,10 @@ query/webapp/reports/icon_final.png -text
 query/webapp/reports/icon_locked.png -text
 query/webapp/reports/icon_query_view.png -text
 query/webapp/reports/icon_unlocked.png -text
+query/webapp/reports/internal-link.png -text
 query/webapp/reports/js.png -text
 query/webapp/reports/link_data.png -text
+query/webapp/reports/local-link.png -text
 query/webapp/reports/manageViews.js -text
 query/webapp/reports/output_chart.jpg -text
 query/webapp/reports/output_excel.jpg -text

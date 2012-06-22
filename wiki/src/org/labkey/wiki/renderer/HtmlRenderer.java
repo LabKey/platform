@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.HString;
+import org.labkey.api.util.TidyUtil;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.FormattedHtml;
 import org.w3c.dom.Document;
@@ -75,7 +76,7 @@ public class HtmlRenderer implements WikiRenderer
 
         FormattedHtml formattedHtml = handleLabkeySubstitutions(text);
         boolean volatilePage = formattedHtml.isVolatile();
-        Document doc = PageFlowUtil.convertHtmlToDocument("<html><body>" + StringUtils.trimToEmpty(formattedHtml.getHtml()) + "</body></html>", errors);
+        Document doc = TidyUtil.convertHtmlToDocument("<html><body>" + StringUtils.trimToEmpty(formattedHtml.getHtml()) + "</body></html>", false, errors);
 
         // process A and IMG
         NodeList nl = doc.getElementsByTagName("a");

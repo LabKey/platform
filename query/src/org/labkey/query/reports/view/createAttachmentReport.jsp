@@ -65,21 +65,6 @@
             fieldLabel: "Path on server",
             allowBlank: false
         });
-        <% } %>
-
-        var urlTextField = Ext4.create('Ext.form.field.Text', {
-            name: "linkUrl",
-            hidden: true,
-            disabled: true,
-            fieldLabel: "Link URL",
-            allowBlank: false,
-            validator: function (value) {
-                if (!(value.charAt(0) == '/' || value.indexOf("http://") == 0 || value.indexOf("https://") == 0))
-                    return "URL must be absolute (starting with http or https) or relative to this server (start with '/')";
-
-                return true;
-            }
-        });
 
         var fileUploadRadioGroup = {
             xtype: 'radiogroup',
@@ -92,17 +77,10 @@
                 checked: true,
                 inputField: fileUploadField
             },{
-            <% if (canUseDiskFile) { %>
                 boxLabel: 'Full file path on server',
                 name: 'attachmentType',
                 inputValue: '<%=AttachmentReportForm.AttachmentReportType.server.toString()%>',
                 inputField: serverFileTextField
-            },{
-            <% } %>
-                boxLabel: 'Link URL',
-                name: 'attachmentType',
-                inputValue: '<%=AttachmentReportForm.AttachmentReportType.url.toString()%>',
-                inputField: urlTextField
             }],
             listeners: {
                 scope: this,
@@ -120,6 +98,11 @@
                 }
             }
         };
+
+        var extraItems = [ fileUploadRadioGroup, fileUploadField, serverFileTextField ];
+        <% } else { %>
+        var extraItems = [ fileUploadField ];
+        <% } %>
 
         var form = Ext4.create('LABKEY.study.DataViewPropertiesPanel', {
             url : LABKEY.ActionURL.buildURL('reports', 'createAttachmentReport', null, {returnUrl: LABKEY.ActionURL.getParameter('returnUrl')}),
@@ -143,12 +126,7 @@
                 description : true,
                 shared      : true
             },
-            extraItems : [
-                fileUploadRadioGroup,
-                fileUploadField,
-                <%= canUseDiskFile ? "serverFileTextField, " : "" %>
-                urlTextField
-            ],
+            extraItems : extraItems,
             renderTo    : 'attachmentReportForm',
             buttons     : [{
                 text : 'Save',

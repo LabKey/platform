@@ -50,6 +50,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.ShowRows;
+import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -1301,13 +1302,43 @@ public class QueryController extends SpringActionController
         }
     }
 
+    public static class ExportRowsTsvForm extends QueryForm
+    {
+        private TSVWriter.DELIM _delim = TSVWriter.DELIM.TAB;
+        private TSVWriter.QUOTE _quote = TSVWriter.QUOTE.DOUBLE;
+
+        public TSVWriter.DELIM getDelim()
+        {
+            return _delim;
+        }
+
+        public void setDelim(TSVWriter.DELIM delim)
+        {
+            _delim = delim;
+        }
+
+        public TSVWriter.QUOTE getQuote()
+        {
+            return _quote;
+        }
+
+        public void setQuote(TSVWriter.QUOTE quote)
+        {
+            _quote = quote;
+        }
+    }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class ExportRowsTsvAction extends _ExportQuery
+    public class ExportRowsTsvAction extends _ExportQuery<ExportRowsTsvForm>
     {
-        void _export(QueryForm form, QueryView view) throws Exception
+        public ExportRowsTsvAction()
         {
-            view.exportToTsv(getViewContext().getResponse(), form.isExportAsWebPage());
+            setCommandClass(ExportRowsTsvForm.class);
+        }
+
+        void _export(ExportRowsTsvForm form, QueryView view) throws Exception
+        {
+            view.exportToTsv(getViewContext().getResponse(), form.isExportAsWebPage(), form.getDelim(), form.getQuote());
         }
     }
 
@@ -1316,7 +1347,7 @@ public class QueryController extends SpringActionController
     @IgnoresTermsOfUse
     public class ExcelWebQueryAction extends ExportRowsTsvAction
     {
-        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+        public ModelAndView getView(ExportRowsTsvForm form, BindException errors) throws Exception
         {
             if (!getContainer().hasPermission(getUser(), ReadPermission.class))
             {

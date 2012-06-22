@@ -16,6 +16,7 @@
 package org.labkey.visualization.report;
 
 import org.apache.batik.transcoder.TranscoderException;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
@@ -65,7 +66,7 @@ public class TimeChartReportImpl extends TimeChartReport implements DynamicThumb
     }
 
     @Override
-    public Thumbnail generateDynamicThumbnail(ViewContext context)
+    public Thumbnail generateDynamicThumbnail(@Nullable ViewContext context)
     {
         // SVG is provided by the client code at save time and then stashed in the report by the save action. That's
         // the only way thumbnails can be generated from these reports.

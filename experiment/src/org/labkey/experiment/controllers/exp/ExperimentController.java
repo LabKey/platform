@@ -18,7 +18,6 @@ package org.labkey.experiment.controllers.exp;
 
 import au.com.bytecode.opencsv.CSVWriter;
 import org.apache.commons.collections15.iterators.ArrayIterator;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -112,14 +111,10 @@ import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.study.actions.UploadWizardAction;
@@ -132,6 +127,7 @@ import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.TidyUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
@@ -170,7 +166,6 @@ import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.samples.UploadMaterialSetForm;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 import org.labkey.experiment.xar.XarExportSelection;
-import org.springframework.jca.cci.core.support.CommAreaRecord;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -187,10 +182,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -1647,8 +1640,8 @@ public class ExperimentController extends SpringActionController
                     rowsArray = rootObject.getJSONArray("rows");
                 }
 
-                TSVWriter.DELIM_ENUM delimType = (rootObject.getString("delim") != null ? TSVWriter.DELIM_ENUM.valueOf(rootObject.getString("delim")) : TSVWriter.DELIM_ENUM.TAB);
-                TSVWriter.QUOTE_ENUM quoteType = (rootObject.getString("quoteChar") != null ? TSVWriter.QUOTE_ENUM.valueOf(rootObject.getString("quoteChar")) : TSVWriter.QUOTE_ENUM.NONE);
+                TSVWriter.DELIM delimType = (rootObject.getString("delim") != null ? TSVWriter.DELIM.valueOf(rootObject.getString("delim")) : TSVWriter.DELIM.TAB);
+                TSVWriter.QUOTE quoteType = (rootObject.getString("quoteChar") != null ? TSVWriter.QUOTE.valueOf(rootObject.getString("quoteChar")) : TSVWriter.QUOTE.NONE);
                 String filenamePrefix = (rootObject.getString("fileNamePrefix") != null ? rootObject.getString("fileNamePrefix") : "Export" );
                 String filename = filenamePrefix + "." + delimType.extension;
 
@@ -1769,7 +1762,7 @@ public class ExperimentController extends SpringActionController
 
             // UNDONE: strip script
             List<String> tidyErrors = new ArrayList<String>();
-            String tidy = PageFlowUtil.tidy(html, false, tidyErrors);
+            String tidy = TidyUtil.tidyHTML(html, false, tidyErrors);
 
             if (!tidyErrors.isEmpty())
             {

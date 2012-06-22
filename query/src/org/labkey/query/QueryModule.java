@@ -63,6 +63,7 @@ import org.labkey.query.controllers.QueryController;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.persist.SchemaReloadMaintenanceTask;
 import org.labkey.query.reports.AttachmentReport;
+import org.labkey.query.reports.LinkReport;
 import org.labkey.query.reports.ReportImporter;
 import org.labkey.query.reports.ReportServiceImpl;
 import org.labkey.query.reports.ReportWriter;
@@ -128,6 +129,7 @@ public class QueryModule extends DefaultModule
         ReportService.get().registerReport(new InternalScriptEngineReport());
         ReportService.get().registerReport(new JavaScriptReport());
         ReportService.get().registerReport(new AttachmentReport());
+        ReportService.get().registerReport(new LinkReport());
 
         QueryView.register(new RExportScriptFactory());
         QueryView.register(new JavaScriptExportScriptFactory());
