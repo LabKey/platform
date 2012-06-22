@@ -289,10 +289,10 @@ Ext4.onReady(function(){
         getGroupSearchItems: function(){
             return [
                 [studyMetadata.SubjectNounSingular, 'study', studyMetadata.SubjectNounSingular, studyMetadata.SubjectColumnName, studyMetadata.SubjectColumnName, studyMetadata.SubjectColumnName, 'Any ' + studyMetadata.SubjectNounSingular, null],
+                ['Visit', 'study', 'Visit', 'Visit/SequenceNumMin', 'Label', 'SequenceNumMin', 'Any Visit', null, 'DisplayOrder,Label'],
                 ['Primary Type', 'study', 'SpecimenPrimaryType', 'PrimaryType/Description', 'Description', 'Description', 'Any Primary Type', null],
                 ['Derivative Type', 'study', 'SpecimenDerivative', 'DerivativeType/Description', 'Description', 'Description', 'Any Derivative Type', null],
-                ['Additive Type', 'study', 'SpecimenAdditive', 'AdditiveType/Description', 'Description', 'Description', 'Any Additive Type', null],
-                ['Visit', 'study', 'Visit', 'Visit/Label', 'Label', 'SequenceNumMin', 'Any Visit', null, 'DisplayOrder,Label']
+                ['Additive Type', 'study', 'SpecimenAdditive', 'AdditiveType/Description', 'Description', 'Description', 'Any Additive Type', null]
             ]
         },
 
@@ -316,8 +316,8 @@ Ext4.onReady(function(){
                     multiSelect: true,
                     fieldLabel: label,
                     filterParam: filterParam,
-                    displayField: displayColumn,
-                    valueField: displayColumn,
+                    displayField: 'displayValue',
+                    valueField: valueColumn,
                     emptyText: defaultOptionText,
                     value: defaultOptionValue,
                     store: store,
@@ -341,11 +341,26 @@ Ext4.onReady(function(){
                     type: 'labkey-store',
                     storeId: storeId,
                     schemaName: schemaName,
-                    queryName: queryName,
+                    //queryName: queryName,
+                    sql: 'select distinct(' + displayColumn + ') as ' + displayColumn + (displayColumn == valueColumn ? '' : ', ' + valueColumn) + ' from ' + schemaName + '.' + queryName,
                     columns: columns,
                     sort: sort || displayColumn,
                     autoLoad: true,
-                    maxRows: this.MAX_COMBO_ITEMS
+                    maxRows: this.MAX_COMBO_ITEMS,
+                    metadata: {
+                        displayValue: {
+                            createIfDoesNotExist: true,
+                            setValueOnLoad: true,
+                            getInitialValue: function(val, rec, meta){
+                                if(displayColumn == valueColumn)
+                                    return rec.get(displayColumn);
+                                else {
+                                    var val = rec.get(displayColumn) + ' [' + rec.get(valueColumn) + ']';
+                                    return val;
+                                }
+                            }
+                        }
+                    }
                 };
 
                 //special case participant
