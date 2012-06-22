@@ -28,7 +28,7 @@ public class ImageStreamThumbnailProvider implements DynamicThumbnailProvider
 
     @Override
     @Nullable
-    public Thumbnail generateDynamicThumbnail(ViewContext context)
+    public Thumbnail generateDynamicThumbnail(@Nullable ViewContext context)
     {
         try
         {

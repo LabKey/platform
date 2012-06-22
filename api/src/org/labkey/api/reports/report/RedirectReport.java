@@ -15,11 +15,15 @@
  */
 package org.labkey.api.reports.report;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+
+import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  * User: migra
@@ -28,6 +32,8 @@ import org.labkey.api.view.ViewContext;
  */
 public abstract class RedirectReport extends AbstractReport
 {
+    private static final Logger LOG = Logger.getLogger(RedirectReport.class);
+
     public static final String REDIRECT_URL = ReportDescriptor.Prop.redirectUrl.name();
 
     public RedirectReport()
@@ -43,7 +49,7 @@ public abstract class RedirectReport extends AbstractReport
     {
         String redirectUrl = url.getURIString();
 
-        // XXX: Is there a better way to check if a link is local to this server?
+        // If possible, save only local URI.
         if (url.getScheme() == null || url.getHost() == null ||
                 redirectUrl.startsWith(AppProps.getInstance().getBaseServerUrl()))
         {
@@ -56,5 +62,88 @@ public abstract class RedirectReport extends AbstractReport
     public String getUrl(Container c)
     {
         return getDescriptor().getProperty(REDIRECT_URL);
+    }
+
+    public URL getURL()
+    {
+        String urlString = getUrl(null);
+        if (urlString == null)
+            return null;
+
+        // Create server local URL
+        if (urlString.startsWith("/"))
+            urlString = AppProps.getInstance().getBaseServerUrl() + urlString;
+
+        try
+        {
+            return new URL(urlString);
+        }
+        catch (MalformedURLException mue)
+        {
+            LOG.warn("Error getting report URL", mue);
+            return null;
+        }
+    }
+
+    /**
+     * URL is not a LabKey local URL or a host local URL.
+     *
+     */
+    public boolean isExternalLink()
+    {
+        String url = getUrl(null);
+        if (url == null)
+            return false;
+
+        return (url.startsWith("http://") || url.startsWith("https://")) &&
+               !isInternalLink(url) && !isLocalLink(url);
+    }
+
+    /**
+     * URL has same hostname as this LabKey server, but is not under the LabKey webapp.
+     *
+     * /nonContextPath
+     * http://host:port/notContextPath
+     */
+    public boolean isLocalLink()
+    {
+        String url = getUrl(null);
+        if (url == null)
+            return false;
+
+        return isLocalLink(url);
+    }
+
+    private boolean isLocalLink(String url)
+    {
+        String contextPath = AppProps.getInstance().getContextPath();
+        String baseUrl = AppProps.getInstance().getBaseServerUrl();
+
+        return (url.startsWith("/") && !url.startsWith(contextPath)) ||
+               (url.startsWith(baseUrl) && !(url.startsWith(baseUrl + contextPath)));
+    }
+
+    /**
+     * URL is a LabKey local URL.
+     *
+     * /contextPath
+     * http://host:port/contextPath
+     */
+    public boolean isInternalLink()
+    {
+        String url = getUrl(null);
+        if (url == null)
+            return false;
+
+        return isInternalLink(url);
+    }
+
+    public boolean isInternalLink(String url)
+    {
+        String contextPath = AppProps.getInstance().getContextPath();
+        String baseUrl = AppProps.getInstance().getBaseServerUrl();
+
+        return url.startsWith(contextPath) ||
+               url.startsWith(baseUrl + contextPath);
     }
 }

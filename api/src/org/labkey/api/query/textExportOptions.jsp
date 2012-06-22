@@ -18,19 +18,58 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.query.QueryView" %>
+<%@ page import="org.labkey.api.util.GUID" %>
+<%@ page import="org.labkey.api.data.TSVWriter" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.EnumMap" %>
+<%@ page import="java.util.LinkedHashMap" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
+    String delimGUID = GUID.makeGUID();
+    String quoteGUID = GUID.makeGUID();
+
+    Map<String, String> delimiterMap = new LinkedHashMap<String, String>();
+    delimiterMap.put(TSVWriter.DELIM.TAB.name(), TSVWriter.DELIM.TAB.text);
+    delimiterMap.put(TSVWriter.DELIM.COMMA.name(), TSVWriter.DELIM.COMMA.text);
+    delimiterMap.put(TSVWriter.DELIM.COLON.name(), TSVWriter.DELIM.COLON.text);
+    delimiterMap.put(TSVWriter.DELIM.SEMICOLON.name(), TSVWriter.DELIM.SEMICOLON.text);
+
+    Map<String, String> quoteMap = new LinkedHashMap<String, String>();
+    quoteMap.put(TSVWriter.QUOTE.DOUBLE.name(), "Double (" + TSVWriter.QUOTE.DOUBLE.quoteChar + ")");
+    quoteMap.put(TSVWriter.QUOTE.SINGLE.name(), "Single (" + TSVWriter.QUOTE.SINGLE.quoteChar + ")");
+
     ActionURL url = (ActionURL)HttpView.currentModel();
+
+    String onClickScript = "window.location='" + url + "&delim=' + document.getElementById('" + delimGUID + "').value + '&quote=' + document.getElementById('" + quoteGUID + "').value;return false;";
 %>
 <table class="labkey-export-tab-contents">
     <tr>
-        <td>
-            <table class="labkey-export-tab-layout"><tr><td>Export as tab-separated values</td></tr></table>
+        <td colspan=2>
+            <table class="labkey-export-tab-layout"><tr><td>Export as text-delimited values:</td></tr></table>
         </td>
     </tr>
     <tr>
+        <td>&nbsp;&nbsp;Separator:</td>
         <td>
-            <%=PageFlowUtil.generateButton("Export to Text", url, null, "rel=\"nofollow\"") %>
+            <select id="<%=delimGUID%>" name="delim">
+                <labkey:options value="<%=TSVWriter.DELIM.TAB%>" map="<%=delimiterMap%>" />
+            </select>
+        </td>
+    </tr>
+    <tr>
+        <td>&nbsp;&nbsp;Quote:</td>
+        <td>
+            <select id="<%=quoteGUID%>" name="quote">
+                <labkey:options value="<%=TSVWriter.QUOTE.DOUBLE%>" map="<%=quoteMap%>" />
+            </select>
+        </td>
+    </tr>
+    <tr>
+        <td colspan=2>
+            <%=PageFlowUtil.generateButton("Export to Text", "", onClickScript, "rel=\"nofollow\"") %>
         </td>
     </tr>
 </table>

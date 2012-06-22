@@ -17,12 +17,16 @@ package org.labkey.api.util;
 
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailOutputStream;
+import org.w3c.dom.Document;
+import org.xhtmlrenderer.swing.Java2DRenderer;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.awt.*;
 import java.io.OutputStream;
 import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
 
 /**
  * User: jeckels
@@ -89,4 +93,36 @@ public class ImageUtil
 
         return null;
     }
+
+    // Default size for generating the web image.
+    private static final int WEB_IMAGE_WIDTH = 1024;
+    private static final int WEB_IMAGE_HEIGHT = 768;
+
+    public static BufferedImage webImage(URL url) throws IOException
+    {
+        return webImage(url, WEB_IMAGE_WIDTH, WEB_IMAGE_HEIGHT);
+    }
+
+    public static BufferedImage webImage(URL url, int width, int height) throws IOException
+    {
+        ArrayList<String> errors = new ArrayList<String>();
+        Document doc = TidyUtil.convertHtmlToDocument(url, true, errors);
+        if (!errors.isEmpty())
+            throw new RuntimeException("Error converting to XHTML document: " + errors.get(0));
+        return webImage(doc, width, height);
+    }
+
+    private static BufferedImage webImage(Document doc, int width, int height)
+    {
+        Java2DRenderer renderer = new Java2DRenderer(doc, width, height);
+
+        renderer.getSharedContext().getTextRenderer().setSmoothingThreshold(8);
+        return renderer.getImage();
+    }
+
+    public static Thumbnail webThumbnail(URL url) throws IOException
+    {
+        return renderThumbnail(webImage(url));
+    }
+
 }

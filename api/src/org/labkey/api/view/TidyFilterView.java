@@ -18,6 +18,7 @@ package org.labkey.api.view;
 
 import org.labkey.api.util.PageFlowUtil;
 import org.apache.log4j.Logger;
+import org.labkey.api.util.TidyUtil;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
@@ -49,9 +50,9 @@ public class TidyFilterView extends HttpView
         
         String content;
         if (_xml)
-            content = PageFlowUtil.tidyXML(c.content, errors);
+            content = TidyUtil.tidyXML(c.content, errors);
         else
-            content = PageFlowUtil.tidy(c.content, false, errors);
+            content = TidyUtil.tidyHTML(c.content, false, errors);
 
         if (errors.size() > 0)
         {

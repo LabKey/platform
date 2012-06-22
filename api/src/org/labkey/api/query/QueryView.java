@@ -834,6 +834,7 @@ public class QueryView extends WebPartView<Object>
         PanelButton exportButton = new PanelButton("Export", getDataRegionName());
         ExcelExportOptionsBean excelBean = new ExcelExportOptionsBean(urlFor(QueryAction.exportRowsExcel), urlFor(QueryAction.exportRowsXLSX), _allowExportExternalQuery ? urlFor(QueryAction.excelWebQueryDefinition) : null);
         exportButton.addSubPanel("Excel", new JspView<ExcelExportOptionsBean>("/org/labkey/api/query/excelExportOptions.jsp", excelBean));
+
         ActionURL tsvURL = urlFor(QueryAction.exportRowsTsv);
         if (exportAsWebPage)
         {
@@ -1838,10 +1839,10 @@ public class QueryView extends WebPartView<Object>
 
     public void exportToTsv(HttpServletResponse response) throws Exception
     {
-        exportToTsv(response, false);
+        exportToTsv(response, false, TSVWriter.DELIM.TAB, TSVWriter.QUOTE.DOUBLE);
     }
 
-    public void exportToTsv(final HttpServletResponse response, final boolean isExportAsWebPage) throws Exception
+    public void exportToTsv(final HttpServletResponse response, final boolean isExportAsWebPage, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote) throws Exception
     {
         _exportView = true;
         TableInfo table = getTable();
@@ -1855,7 +1856,7 @@ public class QueryView extends WebPartView<Object>
                 @Override
                 public void execute() throws Exception
                 {
-                    doExport(response, isExportAsWebPage);
+                    doExport(response, isExportAsWebPage, delim, quote);
                 }
             });
 
@@ -1864,10 +1865,12 @@ public class QueryView extends WebPartView<Object>
     }
 
 
-    private void doExport(HttpServletResponse response, boolean isExportAsWebPage) throws ServletException, IOException, SQLException
+    private void doExport(HttpServletResponse response, boolean isExportAsWebPage, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote) throws ServletException, IOException, SQLException
     {
         TSVGridWriter tsv = getTsvWriter();
         tsv.setExportAsWebPage(isExportAsWebPage);
+        tsv.setDelimiterCharacter(delim);
+        tsv.setQuoteCharacter(quote);
         tsv.write(response);
     }
 

@@ -21,6 +21,7 @@ import org.junit.Test;
 import org.labkey.api.util.FileUtil;
 
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -37,12 +38,16 @@ public class TSVWriter extends TextWriter
     protected List<String> _fileHeader = null;
     protected boolean _headerRowVisible = true;
 
-    public static enum DELIM_ENUM {
-        COMMA("comma", ',', "csv", "text/csv"),
-        TAB("tab", '\t', "txt", "text/tab-separated-values")
+    public static enum DELIM
+    {
+        COMMA("Comma", ',', "csv", "text/csv"),
+        SEMICOLON("Semicolon", ';', "csv", "text/csv"),
+        COLON("Colon", ':', "csv", "text/csv"),
+        TAB("Tab", '\t', "tsv", "text/tab-separated-values")
         ;
 
-        private DELIM_ENUM(final String text, char delim, String extension, String contentType) {
+        private DELIM(final String text, char delim, String extension, String contentType)
+        {
             this.text = text;
             this.delim = delim;
             this.extension = extension;
@@ -58,15 +63,16 @@ public class TSVWriter extends TextWriter
         public char delim;
         public String extension;
         public String contentType;
-    };
+    }
 
-    public static enum QUOTE_ENUM {
+    public static enum QUOTE
+    {
         DOUBLE('"'),
         SINGLE('\''),
         NONE((char)Character.UNASSIGNED)
         ;
 
-        private QUOTE_ENUM(final char quoteChar) {
+        private QUOTE(final char quoteChar) {
             this.quoteChar = quoteChar;
         }
 
@@ -76,7 +82,7 @@ public class TSVWriter extends TextWriter
         }
 
         public char quoteChar;
-    };
+    }
 
     public TSVWriter()
     {
@@ -103,9 +109,21 @@ public class TSVWriter extends TextWriter
         _chDelimiter = delimiter;
     }
 
+    public void setDelimiterCharacter(DELIM delim)
+    {
+        if (delim != null)
+            _chDelimiter = delim.delim;
+    }
+
     public void setQuoteCharacter(char quote)
     {
         _chQuote = quote;
+    }
+
+    public void setQuoteCharacter(QUOTE quote)
+    {
+        if (quote != null)
+            _chQuote = quote.quoteChar;
     }
 
     public void setRowSeparator(String rowSeparator)
@@ -120,12 +138,13 @@ public class TSVWriter extends TextWriter
     /**
      * Quote the value if necessary.  The quoting rules are:
      * <ul>
-     *   <li>Values containing leading or trailing whitespace, a newline, a carrage return, or the field separator will be quoted.
+     *   <li>Values containing leading or trailing whitespace, a newline, a carrage return, the row separator (usually newline), or the field separator will be quoted.
      *   <li>Values containing the quoting character will also be quoted with the quote character replaced by two quote characters.
      * </ul>
      * <p>
      * The quoting character is also known as a "text qualifier" in Excel and is usually
      * the double quote character but may be the single quote character.
+     * To not perform any quoting, set the quote character to <code>Character.UNASSIGNED</code>.
      * <p>
      * Note: Excel will always quote a field if it includes comma even if it isn't the delimeter, but
      * this algorithm doesn't to avoid unnecessary quoting.
@@ -137,19 +156,12 @@ public class TSVWriter extends TextWriter
     {
         if (value == null)
             return "";
-        
+
+        if (_chQuote == Character.UNASSIGNED)
+            return value;
+
         String escaped = value;
-
-        if (_escapedChars == null)
-        {
-            // NOTE: Excel always includes comma in the list of characters that will be quoted,
-            // but we will only quote comma if it is the delimeter character.
-            _escapedChars = Pattern.compile("[\r\n\\" + _chDelimiter + "\\" + _chQuote + "]");
-        }
-
-        if (_escapedChars.matcher(value).find() ||
-                _leadingWhitespace.matcher(value).matches() ||
-                _trailingWhitespace.matcher(value).matches())
+        if (shouldQuote(value))
         {
             StringBuffer sb = new StringBuffer(value.length() + 10);
             sb.append(_chQuote);
@@ -172,12 +184,32 @@ public class TSVWriter extends TextWriter
         return escaped;
     }
 
+    private boolean shouldQuote(String value)
+    {
+        if (_escapedChars == null)
+        {
+            // NOTE: Excel always includes comma in the list of characters that will be quoted,
+            // but we will only quote comma if it is the delimeter character.
+            _escapedChars = Pattern.compile("[\r\n" + _rowSeparator + "\\" + _chDelimiter + "\\" + _chQuote + "]");
+        }
+
+        return (_escapedChars.matcher(value).find() ||
+                _leadingWhitespace.matcher(value).matches() ||
+                _trailingWhitespace.matcher(value).matches());
+    }
+
     /**
      * Override to return a different content type
      * @return The content type
      */
     protected String getContentType()
     {
+        for (DELIM delim : DELIM.values())
+        {
+            if (_chDelimiter == delim.delim)
+                return delim.contentType;
+        }
+
         return "text/tab-separated-values";
     }
 
@@ -187,7 +219,22 @@ public class TSVWriter extends TextWriter
      */
     protected String getFilename()
     {
-        return FileUtil.makeFileNameWithTimestamp(getFilenamePrefix(), "tsv");
+        return FileUtil.makeFileNameWithTimestamp(getFilenamePrefix(), getFilenameExtension());
+    }
+
+    /**
+     * Return a file extension based on the delimiter.
+     * @return The file extension.
+     */
+    protected String getFilenameExtension()
+    {
+        for (DELIM delim : DELIM.values())
+        {
+            if (_chDelimiter == delim.delim)
+                return delim.extension;
+        }
+
+        return "txt";
     }
 
     public void setFileHeader(List<String> fileHeader)
@@ -328,6 +375,21 @@ public class TSVWriter extends TextWriter
             assertEquals(":bob says:: \"hello\":", w.quoteValue("bob says: \"hello\""));
             //assertEquals(":bob says, \"hello\":", w.quoteValue("bob says, \"hello\"")); // commas should always be quoted
             assertEquals("bob says; \"hello\"", w.quoteValue("bob says; \"hello\""));
+        }
+
+        @Test
+        public void testRowSeparator()
+        {
+            FakeTSVWriter w = new FakeTSVWriter();
+            w.setRowSeparator("@@");
+
+            StringWriter sw = new StringWriter(100);
+            PrintWriter pw = new PrintWriter(sw);
+            w.setPrintWriter(pw);
+
+            w.writeLine(Arrays.asList("one", "es@@caped", "two"));
+            w.writeLine(Arrays.asList("three", "es\"caped", "four"));
+            assertEquals("one\t\"es@@caped\"\ttwo@@three\t\"es\"\"caped\"\tfour@@", sw.getBuffer().toString());
         }
     }
 }

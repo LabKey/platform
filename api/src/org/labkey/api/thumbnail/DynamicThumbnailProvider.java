@@ -37,6 +37,6 @@ public interface DynamicThumbnailProvider extends StaticThumbnailProvider, Attac
     // - Provider is not able to render a thumbnail for the content (e.g., image type not supported, encrypted PDF)
     // - Server simply can't render this content (e.g., timechart). Other mechanisms can be used to generate and
     //   save a thumbnail to the attachments service.
-    @Nullable Thumbnail generateDynamicThumbnail(ViewContext context);
+    @Nullable Thumbnail generateDynamicThumbnail(@Nullable ViewContext context);
     String getDynamicThumbnailCacheKey();
 }

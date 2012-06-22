@@ -119,6 +119,8 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new UserConverter(), User.class);
         _register(new ExpDataFileConverter(), File.class);
         _register(new FacetingBehaviorTypeConverter(), FacetingBehaviorType.class);
+        _register(new EnumConverter(), TSVWriter.DELIM.class);
+        _register(new EnumConverter(), TSVWriter.QUOTE.class);
     }
 
 

@@ -383,18 +383,10 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
      */
     public void beforeDelete(ContainerUser context)
     {
-        try
-        {
-            // clean up any temp files
-            clearCache();
-            deleteReportDir();
-            AttachmentService.get().deleteAttachments(this);
-            super.beforeDelete(context);
-        }
-        catch (SQLException se)
-        {
-            throw new RuntimeException(se);
-        }
+        // clean up any temp files
+        clearCache();
+        deleteReportDir();
+        super.beforeDelete(context);
     }
 
     protected File getCacheDir()

@@ -1167,6 +1167,7 @@ api/src/org/labkey/api/util/StringSubstitution.java -text
 api/src/org/labkey/api/util/StringUtilsLabKey.java -text
 api/src/org/labkey/api/util/SystemMaintenance.java -text
 api/src/org/labkey/api/util/Taintable.java -text
+api/src/org/labkey/api/util/TidyUtil.java -text
 api/src/org/labkey/api/util/TimeOnlyDate.java -text
 api/src/org/labkey/api/util/Tuple.java -text
 api/src/org/labkey/api/util/Tuple3.java -text

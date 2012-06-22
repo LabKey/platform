@@ -17,6 +17,7 @@
 package org.labkey.api.action;
 
 import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.TSVWriter;
 import org.labkey.api.query.ExportScriptModel;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryView;
@@ -58,7 +59,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         }
         else if (QueryAction.exportRowsTsv.name().equals(form.getExportType()))
         {
-            createInitializedQueryView(form, errors, true, form.getExportRegion()).exportToTsv(getViewContext().getResponse(), form.isExportAsWebPage());
+            createInitializedQueryView(form, errors, true, form.getExportRegion()).exportToTsv(getViewContext().getResponse(), form.isExportAsWebPage(), form.getDelim(), form.getQuote());
             return null;
         }
         else if ("excelWebQuery".equals(form.getExportType()))
@@ -105,6 +106,8 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         private String _exportType;
         private boolean _exportAsWebPage;
         private String _exportRegion;
+        private TSVWriter.DELIM _delim;
+        private TSVWriter.QUOTE _quote;
 
         public String getScriptType()
         {
@@ -153,6 +156,26 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         public boolean isExport()
         {
             return null != getExportType();
+        }
+
+        public TSVWriter.DELIM getDelim()
+        {
+            return _delim;
+        }
+
+        public void setDelim(TSVWriter.DELIM delim)
+        {
+            _delim = delim;
+        }
+
+        public TSVWriter.QUOTE getQuote()
+        {
+            return _quote;
+        }
+
+        public void setQuote(TSVWriter.QUOTE quote)
+        {
+            _quote = quote;
         }
     }
 }

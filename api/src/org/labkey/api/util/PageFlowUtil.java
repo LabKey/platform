@@ -66,11 +66,7 @@ import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.WebUtils;
-import org.w3c.dom.CharacterData;
-import org.w3c.dom.Document;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.w3c.tidy.Tidy;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -1552,91 +1548,6 @@ public class PageFlowUtil
     }
 
 
-    /**
-     * helper for script validation
-     */
-    public static String convertHtmlToXml(String html, Collection<String> errors)
-    {
-        return tidy(html, true, errors);
-    }
-
-
-    static Pattern scriptPattern = Pattern.compile("(<script.*?>)(.*?)(</script>)", Pattern.CASE_INSENSITIVE|Pattern.DOTALL);
-
-    public static Document convertHtmlToDocument(final String html, final Collection<String> errors)
-    {
-        Tidy tidy = new Tidy();
-        tidy.setShowWarnings(false);
-        tidy.setIndentContent(false);
-        tidy.setSmartIndent(false);
-        tidy.setInputEncoding("UTF-8");
-        tidy.setOutputEncoding("UTF-8");
-        tidy.setDropEmptyParas(false); // radeox wikis use <p/> -- don't remove them
-        tidy.setTrimEmptyElements(false); // keeps tidy from converting <p/> to <br><br>
-
-        // TIDY does not property parse the contents of script tags!
-        // see bug 5007
-        // CONSIDER: fix jtidy see ParserImpl$ParseScript
-        Map<String,String> scriptMap = new HashMap<String,String>();
-        StringBuffer stripped = new StringBuffer(html.length());
-        Matcher scriptMatcher = scriptPattern.matcher(html);
-        int unique = html.hashCode();
-        int count = 0;
-
-        while (scriptMatcher.find())
-        {
-            count++;
-            String key = "{{{" + unique + ":::" + count + "}}}";
-            String match = scriptMatcher.group(2);
-            scriptMap.put(key,match);
-            scriptMatcher.appendReplacement(stripped, "$1" + key + "$3");
-        }
-        scriptMatcher.appendTail(stripped);
-
-        StringWriter err = new StringWriter();
-        try
-        {
-            // parse wants to use streams
-            tidy.setErrout(new PrintWriter(err));
-            Document doc = tidy.parseDOM(new ByteArrayInputStream(stripped.toString().getBytes("UTF-8")), null);
-
-            // fix up scripts
-            if (null != doc && null != doc.getDocumentElement())
-            {
-                NodeList nl = doc.getDocumentElement().getElementsByTagName("script");
-                for (int i=0 ; i<nl.getLength() ; i++)
-                {
-                    Node script = nl.item(i);
-                    NodeList childNodes = script.getChildNodes();
-                    if (childNodes.getLength() != 1)
-                        continue;
-                    Node child = childNodes.item(0);
-                    if (!(child instanceof CharacterData))
-                        continue;
-                    String contents = ((CharacterData)child).getData();
-                    String replace = scriptMap.get(contents);
-                    if (null == replace)
-                        continue;
-                    doc.createTextNode(replace);
-                    script.removeChild(childNodes.item(0));
-                    script.appendChild(doc.createTextNode(replace));
-                }
-            }
-
-            tidy.getErrout().close();
-            for (String error : err.toString().split("\n"))
-            {
-                if (error.contains("Error:"))
-                    errors.add(error.trim());
-            }
-            return doc;
-        }
-        catch (UnsupportedEncodingException x)
-        {
-            throw new RuntimeException(x);
-        }
-    }
-
     public static String convertNodeToHtml(Node node) throws TransformerException, IOException
     {
         return convertNodeToString(node, TransformFormat.html);
@@ -1665,85 +1576,6 @@ public class PageFlowUtil
             throw new RuntimeException("There was a problem creating the XML transformer factory." +
                     " If you specified a class name in the 'javax.xml.transform.TransformerFactory' system property," +
                     " please ensure that this class is included in the classpath for web application.", e);
-        }
-    }
-
-
-    public static String tidy(final String html, boolean asXML, final Collection<String> errors)
-    {
-        Tidy tidy = new Tidy();
-        if (asXML)
-            tidy.setXHTML(true);
-        tidy.setShowWarnings(false);
-        tidy.setIndentContent(false);
-        tidy.setSmartIndent(false);
-        tidy.setInputEncoding("UTF-8"); // utf8
-        tidy.setOutputEncoding("UTF-8"); // utf8
-        tidy.setDropEmptyParas(false); // allow <p/> in html wiki pages
-
-        StringWriter err = new StringWriter();
-
-        try
-        {
-            // parse wants to use streams
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            tidy.setErrout(new PrintWriter(err));
-            tidy.parse(new ByteArrayInputStream(html.getBytes("UTF-8")), out);
-            tidy.getErrout().close();
-            String errorString = err.toString();
-
-            for (String error : errorString.split("\n"))
-            {
-                if (error.contains("Error:"))
-                    errors.add(error.trim());
-            }
-
-            // Provide a generic error when JTidy flips out and doesn't report the actual error
-            String genericError = "This document has errors that must be fixed";
-
-            if (errors.isEmpty() && errorString.contains(genericError))
-                errors.add(genericError);
-
-            return new String(out.toByteArray(), "UTF-8");
-        }
-        catch (UnsupportedEncodingException x)
-        {
-            throw new RuntimeException(x);
-        }
-    }
-
-    public static String tidyXML(final String xml, final Collection<String> errors)
-    {
-        Tidy tidy = new Tidy();
-        tidy.setXmlOut(true);
-        tidy.setXmlTags(true);
-        tidy.setShowWarnings(false);
-        tidy.setIndentContent(false);
-        tidy.setSmartIndent(false);
-        tidy.setInputEncoding("UTF-8"); // utf8
-        tidy.setOutputEncoding("UTF-8"); // utf8
-
-        StringWriter err = new StringWriter();
-
-        try
-        {
-            // parse wants to use streams
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            tidy.setErrout(new PrintWriter(err));
-            tidy.parse(new ByteArrayInputStream(xml.getBytes("UTF-8")), out);
-            tidy.getErrout().close();
-
-            for (String error : err.toString().split("\n"))
-            {
-                if (error.contains("Error:"))
-                    errors.add(error.trim());
-            }
-
-            return new String(out.toByteArray(), "UTF-8");
-        }
-        catch (UnsupportedEncodingException x)
-        {
-            throw new RuntimeException(x);
         }
     }
 
@@ -1964,7 +1796,7 @@ public class PageFlowUtil
      */
     public static void getJavaScriptPaths(Set<String> scripts, Set<String> included)
     {
-        boolean explodedExt = AppProps.getInstance().isDevMode() && false;
+        boolean explodedExt = AppProps.getInstance().isDevMode(); // && false;
         boolean explodedClient = AppProps.getInstance().isDevMode();
 
         LinkedHashSet<ClientDependency> resources = getDefaultJavaScriptPaths();
@@ -2113,7 +1945,7 @@ public class PageFlowUtil
             return "";
 
         // UNDONE: use convertHtmlToDocument() instead of tidy() to avoid double parsing
-        String xml = tidy(html, true, errors);
+        String xml = TidyUtil.tidyHTML(html, true, errors);
         if (errors.size() > 0)
             return null;
 
@@ -2157,7 +1989,7 @@ public class PageFlowUtil
             return null;
 
         // let's return html not xhtml
-        String tidy = tidy(html, false, errors);
+        String tidy = TidyUtil.tidyHTML(html, false, errors);
         //FIX: 4528: old code searched for "<body>" but the body element can have attributes
         //and Word includes some when saving as HTML (even Filtered HTML).
         int beginOpenBodyIndex = tidy.indexOf("<body");

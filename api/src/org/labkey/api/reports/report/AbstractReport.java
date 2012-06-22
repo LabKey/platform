@@ -15,7 +15,9 @@
  */
 package org.labkey.api.reports.report;
 
+import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
@@ -43,6 +45,7 @@ import org.labkey.api.writer.VirtualFile;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -71,7 +74,28 @@ public abstract class AbstractReport implements Report
     }
 
     public void beforeSave(ContainerUser context){}
-    public void beforeDelete(ContainerUser context){}
+
+    // Delete attachments and thumbnails on delete
+    @Override
+    public void beforeDelete(ContainerUser context)
+    {
+        deleteAttachments();
+    }
+
+    protected void deleteAttachments()
+    {
+        if (null == getEntityId())
+            return;
+
+        try
+        {
+            AttachmentService.get().deleteAttachments(this);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
 
     public ReportDescriptor getDescriptor()
     {

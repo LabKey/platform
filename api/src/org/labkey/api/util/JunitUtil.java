@@ -67,7 +67,7 @@ public class JunitUtil
     public static Document tidyAsDocument(String html) throws Exception
     {
         ArrayList<String> errors = new ArrayList<String>();
-        String tidy = PageFlowUtil.convertHtmlToXml(html, errors);
+        String tidy = TidyUtil.convertHtmlToXml(html, errors);
 
         DocumentBuilderFactory fact = DocumentBuilderFactory.newInstance();
         fact.setValidating(false);
@@ -91,7 +91,7 @@ public class JunitUtil
     {
         String html = "<html><body>\n<form><br><input name=A value=1><input name=B value=2><input type=hidden name=C value=3><img src=fred.png>\n</form></body></html>";
         ArrayList<String> errors = new ArrayList<String>();
-        String tidy = PageFlowUtil.convertHtmlToXml(html, errors);
+        String tidy = TidyUtil.convertHtmlToXml(html, errors);
         System.out.println(tidy);
         Document doc = tidyAsDocument(html);
 
