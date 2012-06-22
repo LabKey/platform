@@ -114,7 +114,6 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         });
 
         this.pointColorPicker = Ext4.create('Ext.picker.Color', {
-            hidden: this.renderType == 'box_plot',
             value: '3366FF',  // initial selected color
             fieldLabel: 'Point Color',
             width: 275,
@@ -126,6 +125,12 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
                 },
                 scope: this
             }
+        });
+
+        this.colorFieldContainer = Ext4.create('Ext.form.FieldContainer', {
+            hidden: this.renderType == 'box_plot',
+            layout: 'hbox',
+            items: [this.colorLabel, this.pointColorPicker]
         });
 
         this.lineWidthSlider = Ext4.create('Ext.slider.Single', {
@@ -152,11 +157,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             this.renderTypeCombo,
             this.opacitySlider,
             this.pointSizeSlider,
-            {
-                xtype: 'fieldcontainer',
-                layout: 'hbox',
-                items: [this.colorLabel, this.pointColorPicker]
-            },
+            this.colorFieldContainer,
             this.lineWidthSlider
         ];
 
@@ -243,7 +244,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         // Scatter
         this.opacitySlider.show();
         this.pointSizeSlider.show();
-        this.pointColorPicker.show();
+        this.colorFieldContainer.show();
         // Box
         this.lineWidthSlider.hide();
     },
@@ -252,7 +253,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         // Scatter
         this.opacitySlider.hide();
         this.pointSizeSlider.hide();
-        this.pointColorPicker.hide();
+        this.colorFieldContainer.hide();
         // Box
         this.lineWidthSlider.show();
     }
