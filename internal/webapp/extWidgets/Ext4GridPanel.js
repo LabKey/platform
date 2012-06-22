@@ -77,7 +77,14 @@ Ext4.define('LABKEY.ext4.GridPanel', {
         });
 
         Ext4.applyIf(this, {
-            columns: []
+            columns: [],
+
+            /*
+             * The intent of these options is to infer column widths based on the data being shown
+             */
+            charWidth  : 6,  //TODO: this should be measured, but measuring is expensive so we only want to do it once
+            colPadding : 10, //TODO: also should be calculated
+            maxColWidth: 400
         });
 
         if(this.showPagingToolbar){
@@ -233,8 +240,9 @@ Ext4.define('LABKEY.ext4.GridPanel', {
                 }
             }
 
-            if(this.hideNonEditableColumns && !col.editable)
+            if (this.hideNonEditableColumns && !col.editable) {
                 col.hidden = true;
+            }
         }
 
         this.inferColumnWidths(columns);
@@ -255,50 +263,47 @@ Ext4.define('LABKEY.ext4.GridPanel', {
         this.getView().refresh();
     }
 
-    /*
-     * The intent of this method is to infer column widths based on the data being shown
-     */
-    ,_charWidth: 6 //TODO: this should be measured, but measuring is expensive so we only want to do it once
-    ,_colPadding: 10 //TODO: also should be calculated
-    ,_maxColWidth: 400
-
     ,inferColumnWidths: function(columns){
-        var colMap = {},
+        var col,
+            meta,
             value,
             values,
             totalRequestedWidth = 0;
 
         for (var i=0;i<columns.length;i++){
-            var col = columns[i];
-            var meta = this.store.findFieldMetadata(col.dataIndex);
+
+            col = columns[i];
+            meta = this.store.findFieldMetadata(col.dataIndex);
 
             if(!meta.fixedWidthCol){
                 values = [];
                 var records = this.store.getRange();
-                for (var i=0;i<records.length;i++){
-                    var rec = records[i];
+                for (var j=0;j<records.length;j++){
+                    var rec = records[j];
                     value = LABKEY.ext.Ext4Helper.getDisplayString(rec.get(meta.name), meta, rec, rec.store);
-                    if(!Ext4.isEmpty(value))
+                    if(!Ext4.isEmpty(value)) {
                         values.push(value.length);
+                    }
                 }
 
                 //TODO: this should probably take into account mean vs max, and somehow account for line wrapping on really long text
                 var avgLen = values.length ? (Ext4.Array.sum(values) / values.length) : 1;
 
-                col.width = Math.max(avgLen, col.header.length) * this._charWidth + this._colPadding;
-                col.width = Math.min(col.width, this._maxColWidth);
+                col.width = Math.max(avgLen, col.header.length) * this.charWidth + this.colPadding;
+                col.width = Math.min(col.width, this.maxColWidth);
             }
 
-            if(!col.hidden)
+            if (!col.hidden) {
                 totalRequestedWidth += col.width || 0;
+            }
         }
 
-        if(this.constraintColumnWidths){
-            console.log('resizing columns to fit');
-            for (var i=0;i<columns.length;i++){
-                var col = columns[i];
-                if(!col.hidden){
-                    col.flex = (col.width / totalRequestedWidth);
+        if (this.constraintColumnWidths) {
+
+            for (i=0;i<columns.length;i++){
+                col = columns[i];
+                if (!col.hidden) {
+                    col.flex  = (col.width / totalRequestedWidth);
                     col.width = null;
                 }
             }
