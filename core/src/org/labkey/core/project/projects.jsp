@@ -166,9 +166,11 @@ Ext4.onReady(function(){
                 Ext4.create('Ext.window.Window', {
                     title: 'Customize Webpart',
                     width: 400,
+                    border: false,
                     layout: 'fit',
                     items: [{
                         xtype: 'form',
+                        border: false,
                         bodyStyle: 'padding: 5px;',
                         items: [{
                             xtype: 'textfield',
