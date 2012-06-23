@@ -150,6 +150,11 @@ $tab-spacing: 3px;
     margin: 0 !important;
 }
 
+/* A margin is being explicitly added to the inner element of buttons in Ext 4.1.0. */
+.x4-reset .x4-tab .x4-tab-inner {
+    margin: 0 !important;
+}
+
 /* The form field triggers are getting widths of 0px in Ext 4.1.0. */
 .x4-reset .x4-form-trigger {
     width: 17px !important;
