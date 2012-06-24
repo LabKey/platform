@@ -147,7 +147,6 @@ public class ListWriter
         if (!def.getAllowDelete()) settings.setAllowDelete(def.getAllowDelete());
         if (!def.getAllowUpload()) settings.setAllowUpload(def.getAllowUpload());
         if (!def.getAllowExport()) settings.setAllowExport(def.getAllowExport());
-        if (!def.getMetaDataIndex()) settings.setMetaDataIndex(def.getMetaDataIndex());
 
         if (def.getEachItemIndex()) settings.setEachItemIndex(def.getEachItemIndex());
         if (def.getEachItemTitleSetting().getValue() != 0) settings.setEachItemTitleSetting(def.getEachItemTitleSetting().getValue());
@@ -156,6 +155,7 @@ public class ListWriter
         if (null != def.getEachItemBodyTemplate()) settings.setEachItemBodyTemplate(def.getEachItemBodyTemplate());
 
         if (def.getEntireListIndex()) settings.setEntireListIndex(def.getEntireListIndex());
+        if (def.getEntireListIndexSetting().getValue() != 0) settings.setEntireListIndexSetting(def.getEntireListIndexSetting().getValue());
         if (def.getEntireListTitleSetting().getValue() != 0) settings.setEntireListTitleSetting(def.getEntireListTitleSetting().getValue());
         if (null != def.getEntireListTitleTemplate()) settings.setEntireListTitleTemplate(def.getEntireListTitleTemplate());
         if (def.getEntireListBodySetting().getValue() != 0) settings.setEntireListBodySetting(def.getEntireListBodySetting().getValue());

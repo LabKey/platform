@@ -21,6 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.Entity;
 import org.labkey.api.exp.list.ListDefinition.BodySetting;
 import org.labkey.api.exp.list.ListDefinition.DiscussionSetting;
+import org.labkey.api.exp.list.ListDefinition.IndexSetting;
 import org.labkey.api.exp.list.ListDefinition.TitleSetting;
 import org.labkey.api.util.UnexpectedException;
 
@@ -56,9 +57,9 @@ public class ListDef extends Entity implements Cloneable
     private boolean _allowDelete = true;
     private boolean _allowUpload = true;
     private boolean _allowExport = true;
-    private boolean _metaDataIndex = true;
 
     private boolean _entireListIndex = false;
+    private IndexSetting _entireListIndexSetting = IndexSetting.MetaData;
     private TitleSetting _entireListTitleSetting = TitleSetting.Standard;
     private String _entireListTitleTemplate = null;
     private BodySetting _entireListBodySetting = BodySetting.TextOnly;
@@ -200,16 +201,6 @@ public class ListDef extends Entity implements Cloneable
         _allowExport = allowExport;
     }
 
-    public boolean getMetaDataIndex()
-    {
-        return _metaDataIndex;
-    }
-
-    public void setMetaDataIndex(boolean metaDataIndex)
-    {
-        _metaDataIndex = metaDataIndex;
-    }
-
     public boolean getEntireListIndex()
     {
         return _entireListIndex;
@@ -218,6 +209,26 @@ public class ListDef extends Entity implements Cloneable
     public void setEntireListIndex(boolean entireListIndex)
     {
         _entireListIndex = entireListIndex;
+    }
+
+    public int getEntireListIndexSetting()
+    {
+        return _entireListIndexSetting.getValue();
+    }
+
+    public void setEntireListIndexSetting(int settingInt)
+    {
+        _entireListIndexSetting = IndexSetting.getForValue(settingInt);
+    }
+
+    public IndexSetting getEntireListIndexSettingEnum()
+    {
+        return _entireListIndexSetting;
+    }
+
+    public void setEntireListIndexSettingEnum(IndexSetting setting)
+    {
+        _entireListIndexSetting = setting;
     }
 
     public int getEntireListTitleSetting()

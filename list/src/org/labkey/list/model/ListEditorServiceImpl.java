@@ -139,9 +139,9 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         gwt.setAllowDelete(def.getAllowDelete());
         gwt.setAllowExport(def.getAllowExport());
         gwt.setAllowUpload(def.getAllowUpload());
-        gwt.setMetaDataIndex(def.getMetaDataIndex());
 
         gwt.setEntireListIndex(def.getEntireListIndex());
+        gwt.setEntireListIndexSetting(def.getEntireListIndexSetting().getValue());
         gwt.setEntireListTitleSetting(def.getEntireListTitleSetting().getValue());
         gwt.setEntireListTitleTemplate(def.getEntireListTitleTemplate());
         gwt.setEntireListBodySetting(def.getEntireListBodySetting().getValue());
@@ -182,9 +182,9 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         def.setAllowDelete(gwt.getAllowDelete());
         def.setAllowExport(gwt.getAllowExport());
         def.setAllowUpload(gwt.getAllowUpload());
-        def.setMetaDataIndex(gwt.getMetaDataIndex());
 
-        def.setEntireListIndex(gwt.getEachItemIndex());
+        def.setEntireListIndex(gwt.getEntireListIndex());
+        def.setEntireListIndexSetting(gwt.getEntireListIndexSetting());
         def.setEntireListTitleSetting(gwt.getEntireListTitleSetting());
         def.setEntireListTitleTemplate(gwt.getEntireListTitleTemplate());
         def.setEntireListBodySetting(gwt.getEntireListBodySetting());
@@ -209,9 +209,9 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         defn.setAllowDelete(gwt.getAllowDelete());
         defn.setAllowExport(gwt.getAllowExport());
         defn.setAllowUpload(gwt.getAllowUpload());
-        defn.setMetaDataIndex(gwt.getMetaDataIndex());
 
         defn.setEntireListIndex(gwt.getEntireListIndex());
+        defn.setEntireListIndexSetting(IndexSetting.getForValue(gwt.getEntireListIndexSetting()));
         defn.setEntireListTitleSetting(TitleSetting.getForValue(gwt.getEntireListTitleSetting()));
         defn.setEntireListTitleTemplate(gwt.getEntireListTitleTemplate());
         defn.setEntireListBodySetting(BodySetting.getForValue(gwt.getEntireListBodySetting()));

@@ -39,9 +39,9 @@ public class GWTList implements IsSerializable
     public BooleanProperty allowDelete = new BooleanProperty(true);
     public BooleanProperty allowUpload = new BooleanProperty(true);
     public BooleanProperty allowExport = new BooleanProperty(true);
-    public BooleanProperty metaDataIndex = new BooleanProperty(true);
 
     public BooleanProperty entireListIndex = new BooleanProperty(false);
+    public IntegerProperty entireListIndexSetting = new IntegerProperty(0);
     public IntegerProperty entireListTitleSetting = new IntegerProperty(0); // TitleSetting.Standard
     public StringProperty entireListTitleTemplate = new StringProperty();
     public IntegerProperty entireListBodySetting = new IntegerProperty(0); // BodySetting.TextOnly
@@ -183,16 +183,6 @@ public class GWTList implements IsSerializable
         this.allowExport.set(allowExport);
     }
 
-    public boolean getMetaDataIndex()
-    {
-        return metaDataIndex.getBool();
-    }
-
-    public void setMetaDataIndex(boolean metaDataIndex)
-    {
-        this.metaDataIndex.set(metaDataIndex);
-    }
-
     public boolean getEntireListIndex()
     {
         return entireListIndex.getBool();
@@ -201,6 +191,16 @@ public class GWTList implements IsSerializable
     public void setEntireListIndex(boolean index)
     {
         this.entireListIndex.set(index);
+    }
+
+    public int getEntireListIndexSetting()
+    {
+        return entireListIndexSetting.intValue();
+    }
+
+    public void setEntireListIndexSetting(int setting)
+    {
+        this.entireListIndexSetting.set(setting);
     }
 
     public int getEntireListTitleSetting()

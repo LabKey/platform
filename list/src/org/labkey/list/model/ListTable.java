@@ -58,7 +58,7 @@ import java.util.Set;
 
 public class ListTable extends FilteredTable implements UpdateableTableInfo
 {
-    static public TableInfo getIndexTable(ListDefinition.KeyType keyType)
+    public static TableInfo getIndexTable(ListDefinition.KeyType keyType)
     {
         switch (keyType)
         {
@@ -152,6 +152,7 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
         // Make EntityId column available so AttachmentDisplayColumn can request it as a dependency
         // Do this late so the column doesn't get selected as title column, etc.
         addColumn("EntityId", true);
+        addColumn("LastIndexed", true);
 
         // Make standard created & modified columns available.
         addColumn("Created", false);

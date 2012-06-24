@@ -202,17 +202,17 @@
           <ns:column columnName="AllowUpload" />
           <ns:column columnName="AllowExport" />
           <ns:column columnName="LastIndexed"/>
-          <ns:column columnName="MetaDataIndex"/>
           <ns:column columnName="EntireListIndex"/>
-          <ns:column columnName="EntireListBodyTemplate"/>
+          <ns:column columnName="EntireListIndexSetting"/>
+          <ns:column columnName="EntireListTitleSetting" />
           <ns:column columnName="EntireListTitleTemplate"/>
           <ns:column columnName="EntireListBodySetting" />
-          <ns:column columnName="EntireListTitleSetting" />
+          <ns:column columnName="EntireListBodyTemplate"/>
           <ns:column columnName="EachItemIndex"/>
-          <ns:column columnName="EachItemBodyTemplate"/>
+          <ns:column columnName="EachItemTitleSetting" />
           <ns:column columnName="EachItemTitleTemplate"/>
           <ns:column columnName="EachItemBodySetting" />
-          <ns:column columnName="EachItemTitleSetting" />
+          <ns:column columnName="EachItemBodyTemplate"/>
       </ns:columns>
   </ns:table>
     <ns:table tableName="IndexInteger" tableDbType="TABLE">
@@ -237,7 +237,10 @@
                     <ns:fkDbSchema>core</ns:fkDbSchema>
                 </ns:fk>
             </ns:column>
-            <ns:column columnName="LastIndexed" />
+            <ns:column columnName="LastIndexed">
+                <ns:isReadOnly>true</ns:isReadOnly>
+                <ns:isUserEditable>false</ns:isUserEditable>
+            </ns:column>
         </ns:columns>
     </ns:table>
     <ns:table tableName="IndexVarchar" tableDbType="TABLE">
@@ -262,7 +265,10 @@
                     <ns:fkDbSchema>core</ns:fkDbSchema>
                 </ns:fk>
             </ns:column>
-            <ns:column columnName="LastIndexed" />
+            <ns:column columnName="LastIndexed">
+                <ns:isReadOnly>true</ns:isReadOnly>
+                <ns:isUserEditable>false</ns:isUserEditable>
+            </ns:column>
         </ns:columns>
     </ns:table>
     <ns:table tableName="Material" tableDbType="TABLE">

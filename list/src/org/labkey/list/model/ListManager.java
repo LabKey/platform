@@ -49,10 +49,12 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.webdav.SimpleDocumentResource;
 
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -60,7 +62,7 @@ import java.util.Map;
 public class ListManager implements SearchService.DocumentProvider
 {
     private static final Logger LOG = Logger.getLogger(ListManager.class);
-    private static ListManager INSTANCE = new ListManager();
+    private static final ListManager INSTANCE = new ListManager();
     public static final String LIST_AUDIT_EVENT = "ListAuditEvent";
 
     public static ListManager get()
@@ -139,7 +141,6 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
 
-    // COMBINE WITH DATASET???
     public static final SearchService.SearchCategory listCategory = new SearchService.SearchCategory("list", "List");
 
     public void enumerateDocuments(@Nullable SearchService.IndexTask t, final @NotNull Container c, @Nullable Date since)   // TODO: Use since?
@@ -163,24 +164,118 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
     
-    private void indexList(SearchService.IndexTask task, ListDefinition list)
+    private void indexList(@NotNull SearchService.IndexTask task, ListDefinition list)
     {
-        String documentId = "list:" + ((ListDefinitionImpl)list).getEntityId();
         Domain domain = list.getDomain();
 
-        // Delete from index if list has just been deleted or admin has chosen not to index it at all
-        if (null == domain || (!list.getMetaDataIndex() && !list.getEntireListIndex()))
+        // Delete from index if list has just been deleted
+        if (null == domain)
         {
             // TODO: Shouldn't be necessary... triggers should delete on delete/change
-            ServiceRegistry.get(SearchService.class).deleteResource(documentId);
+            deleteIndexedList(list);
             return;
         }
 
+        indexEntireList(task, list, domain);
+        indexIndividualItems(task, list);
+    }
+
+
+    private String getDocumentId(ListDefinition list)
+    {
+        return "list:" + ((ListDefinitionImpl)list).getEntityId();
+    }
+
+
+    private String getDocumentId(ListDefinition list, @Nullable Object pk)
+    {
+        return getDocumentId(list) + ":" + (null != pk ?  pk.toString() : "");
+    }
+
+
+    private void indexIndividualItems(@NotNull final SearchService.IndexTask task, final ListDefinition list)
+    {
+        if (!list.getEachItemIndex())
+        {
+            deleteIndexedItems(list);
+            return;
+        }
+
+        final StringExpression titleTemplate = createTitleTemplate(list);
+        final StringExpression bodyTemplate = createBodyTemplate(list, list.getEachItemBodySetting(), list.getEachItemBodyTemplate());
+        TableInfo ti = list.getTable(User.getSearchUser());
+
+        // Index all items that have never been indexed OR where either the list definition or list item itself has changed since last indexed
+        String test = "LastIndexed IS NULL OR LastIndexed < ? OR (Modified IS NOT NULL AND LastIndexed < Modified)";
+        SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause(test, new Object[]{list.getModified()}));
+
+        new TableSelector(ti, filter, null).forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
+        {
+            @Override
+            public void exec(Map<String, Object> map) throws SQLException
+            {
+                // TODO: Hack for SQL Server... need to generalize this.  Table/executor should map aliased columns to
+                // external column names?  I.e., shouldn't have a map with "_key" as key
+                if (null == map.get("Key") && null != map.get("_key"))
+                    map.put("Key", map.get("_key"));
+
+                final Object pk = map.get(list.getKeyName());
+                LOG.info("Indexing " + list.getName() + ": " + pk);
+                String documentId = getDocumentId(list, pk);
+                Map<String, Object> props = new HashMap<String, Object>();
+                props.put(SearchService.PROPERTY.categories.toString(), listCategory.toString());
+                props.put(SearchService.PROPERTY.displayTitle.toString(), titleTemplate.eval(map));
+
+                String body = bodyTemplate.eval(map);
+
+                ActionURL itemURL = list.urlDetails(pk);
+                itemURL.setExtraPath(list.getContainer().getId()); // Use ID to guard against folder moves/renames
+
+                SimpleDocumentResource r = new SimpleDocumentResource(
+                        new Path(documentId),
+                        documentId,
+                        list.getContainer().getId(),
+                        "text/plain",
+                        body.getBytes(),
+                        itemURL,
+                        props) {
+                    @Override
+                    public void setLastIndexed(long ms, long modified)
+                    {
+                        ListManager.get().setLastIndexed(list, pk, ms);
+                    }
+                };
+
+                // Add navtrail that includes link to full list grid
+                ActionURL gridURL = list.urlShowData();
+                gridURL.setExtraPath(list.getContainer().getId()); // Use ID to guard against folder moves/renames
+                NavTree t = new NavTree("list", gridURL);
+                String nav = NavTree.toJS(Collections.singleton(t), null, false).toString();
+                r.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
+
+                task.addResource(r, SearchService.PRIORITY.item);
+            }
+        });
+    }
+
+
+    private void indexEntireList(@NotNull SearchService.IndexTask task, final ListDefinition list, Domain domain)
+    {
+        if (!list.getEntireListIndex())
+        {
+            // TODO: Shouldn't be necessary
+            deleteIndexedEntireListDoc(list);
+            return;
+        }
+
+        ListDefinition.IndexSetting setting = list.getEntireListIndexSetting();
+        String documentId = getDocumentId(list);
+
         // First check if meta data needs to be indexed: if the setting is enabled and the definition has changed
-        boolean needToIndex = (list.getMetaDataIndex() && hasDefinitionChangedSinceLastIndex(list));
+        boolean needToIndex = (setting.indexMetaData() && hasDefinitionChangedSinceLastIndex(list));
 
         // If that didn't hold true then check for entire list data indexing: if the definition has changed or any item has been modified
-        if (!needToIndex && list.getEntireListIndex())
+        if (!needToIndex && setting.indexItemData())
             needToIndex = hasDefinitionChangedSinceLastIndex(list) || hasModifiedItems(list);
 
         if (!needToIndex)
@@ -188,7 +283,9 @@ public class ListManager implements SearchService.DocumentProvider
 
         StringBuilder body = new StringBuilder();
         Map<String, Object> props = new HashMap<String, Object>();
-        String title = list.getEntireListTitleSetting() == ListDefinition.TitleSetting.Standard ? "List " + list.getName() : list.getEntireListTitleTemplate();
+
+        // Use standard title if that setting is chosen or template is null/whitespace
+        String title = list.getEntireListTitleSetting() == ListDefinition.TitleSetting.Standard || StringUtils.isBlank(list.getEntireListTitleTemplate()) ? "List " + list.getName() : list.getEntireListTitleTemplate();
 
         props.put(SearchService.PROPERTY.categories.toString(), listCategory.toString());
         props.put(SearchService.PROPERTY.displayTitle.toString(), title);
@@ -198,7 +295,7 @@ public class ListManager implements SearchService.DocumentProvider
 
         String sep = "";
 
-        if (list.getMetaDataIndex())
+        if (setting.indexMetaData())
         {
             String comma = "";
             for (DomainProperty property : domain.getProperties())
@@ -213,7 +310,7 @@ public class ListManager implements SearchService.DocumentProvider
             }
         }
 
-        if (list.getEntireListIndex())
+        if (setting.indexItemData())
         {
             final StringBuilder data = new StringBuilder();
             final StringExpression template = createBodyTemplate(list, list.getEntireListBodySetting(), list.getEntireListBodyTemplate());
@@ -234,7 +331,6 @@ public class ListManager implements SearchService.DocumentProvider
 
         ActionURL url = list.urlShowData();
         url.setExtraPath(list.getContainer().getId()); // Use ID to guard against folder moves/renames
-        final int listId = list.getListId();
 
         SimpleDocumentResource r = new SimpleDocumentResource(
                 new Path(documentId),
@@ -247,11 +343,45 @@ public class ListManager implements SearchService.DocumentProvider
             @Override
             public void setLastIndexed(long ms, long modified)
             {
-                ListManager.get().setLastIndexed(listId, ms);
+                ListManager.get().setLastIndexed(list, ms);
             }
         };
 
         task.addResource(r, SearchService.PRIORITY.item);
+    }
+
+
+    private void deleteIndexedList(ListDefinition list)
+    {
+        deleteIndexedEntireListDoc(list);
+        deleteIndexedItems(list);
+    }
+
+
+    // Un-index the entire list doc alone, but leave the list items alone
+    private void deleteIndexedEntireListDoc(ListDefinition list)
+    {
+        ServiceRegistry.get(SearchService.class).deleteResource(getDocumentId(list));
+    }
+
+
+    // Un-index all list items, but leave the entire list doc alone
+    private void deleteIndexedItems(ListDefinition list)
+    {
+        ServiceRegistry.get(SearchService.class).deleteResourcesForPrefix(getDocumentId(list, null));
+    }
+
+
+    private StringExpression createTitleTemplate(ListDefinition list)
+    {
+        String template;
+
+        if (list.getEntireListTitleSetting() == ListDefinition.TitleSetting.Standard)
+            template = "List " + list.getName() + " - ${" + list.getKeyName() + "}";
+        else
+            template = list.getEachItemTitleTemplate();
+
+        return StringExpressionFactory.create(template, false);
     }
 
 
@@ -306,16 +436,31 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
 
-    public void setLastIndexed(int listId, long ms)
+    public void setLastIndexed(ListDefinition list, long ms)
     {
-        new SqlExecutor(getSchema(), new SQLFragment("UPDATE " + getTinfoList() +
-                " SET LastIndexed = ? WHERE RowId = ?", new Timestamp(ms), listId)).execute();
+        new SqlExecutor(getSchema(), new SQLFragment("UPDATE " + getTinfoList().getSelectName() +
+                " SET LastIndexed = ? WHERE RowId = ?", new Timestamp(ms), list.getListId())).execute();
+    }
+
+
+    public void setLastIndexed(ListDefinition list, Object pk, long ms)
+    {
+        TableInfo ti = ((ListDefinitionImpl) list).getIndexTable();
+        String keySelectName = ti.getColumn("Key").getSelectName();   // Reserved word on sql server
+        new SqlExecutor(getSchema(), new SQLFragment("UPDATE " + ti.getSelectName() + " SET LastIndexed = ? WHERE ListId = ? AND " +
+                keySelectName + " = ?", new Timestamp(ms), list.getListId(), pk)).execute();
     }
 
 
     public void indexDeleted() throws SQLException
     {
-        new SqlExecutor(getSchema(), new SQLFragment("UPDATE " + getTinfoList() +
-                " SET LastIndexed = NULL")).execute();
+        for (TableInfo ti : new TableInfo[]{
+                getTinfoList(),
+                ListTable.getIndexTable(ListDefinition.KeyType.Integer),
+                ListTable.getIndexTable(ListDefinition.KeyType.Varchar)
+            })
+        {
+            new SqlExecutor(getSchema(), new SQLFragment("UPDATE " + ti.getSelectName() + " SET LastIndexed = NULL")).execute();
+        }
     }
 }

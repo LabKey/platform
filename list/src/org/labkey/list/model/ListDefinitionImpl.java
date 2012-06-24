@@ -212,18 +212,6 @@ public class ListDefinitionImpl implements ListDefinition
     }
 
     @Override
-    public boolean getMetaDataIndex()
-    {
-        return _def.getMetaDataIndex();
-    }
-
-    @Override
-    public void setMetaDataIndex(boolean metaDataIndex)
-    {
-        edit().setMetaDataIndex(metaDataIndex);
-    }
-
-    @Override
     public boolean getEntireListIndex()
     {
         return _def.getEntireListIndex();
@@ -233,6 +221,18 @@ public class ListDefinitionImpl implements ListDefinition
     public void setEntireListIndex(boolean eachItemIndex)
     {
         edit().setEntireListIndex(eachItemIndex);
+    }
+
+    @Override
+    public IndexSetting getEntireListIndexSetting()
+    {
+        return _def.getEntireListIndexSettingEnum();
+    }
+
+    @Override
+    public void setEntireListIndexSetting(IndexSetting setting)
+    {
+        edit().setEntireListIndexSettingEnum(setting);
     }
 
     @Override

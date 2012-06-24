@@ -971,14 +971,21 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                 VerticalPanel indexPanel = new VerticalPanel();
                 table.setWidget(row, 1, indexPanel);
 
-                BoundCheckBox metaDataIndex = new BoundCheckBox("ff_metaDataIndex", _list.metaDataIndex, dirtySetter);
-                metaDataIndex.setText("Index meta data");
-                metaDataIndex.setStyleName(checkboxStyleName);
-                metaDataIndex.setEnabled(!readonly);
-                indexPanel.add(metaDataIndex);
+                VerticalPanel entireListSettings = new VerticalPanel();
+                RadioButton metaData = new BoundRadioButton("ff_entireListSetting", "Meta data only", _list.entireListIndexSetting, 0, dirtySetter);
+                metaData.setEnabled(!readonly);
+                RadioButton data = new BoundRadioButton("ff_entireListSetting", "Item data only", _list.entireListIndexSetting, 1, dirtySetter);
+                data.setEnabled(!readonly);
+                RadioButton both = new BoundRadioButton("ff_entireListSetting", "Meta data and item data", _list.entireListIndexSetting, 2, dirtySetter);
+                both.setEnabled(!readonly);
+                entireListSettings.add(metaData);
+                entireListSettings.add(data);
+                entireListSettings.add(both);
 
-                addIndexSettings(indexPanel, "eachItem", "Index data: each item as a separate document", _list.eachItemIndex, _list.eachItemTitleSetting, _list.eachItemTitleTemplate, _list.eachItemBodySetting, _list.eachItemBodyTemplate, readonly);
-                addIndexSettings(indexPanel, "entireList", "Index data: entire list as a single document", _list.entireListIndex, _list.entireListTitleSetting, _list.entireListTitleTemplate, _list.entireListBodySetting, _list.entireListBodyTemplate, readonly);
+                addIndexSettings(indexPanel, "eachItem", "Index each item as a separate document", _list.eachItemIndex, null,
+                        _list.eachItemTitleSetting, _list.eachItemTitleTemplate, _list.eachItemBodySetting, _list.eachItemBodyTemplate, readonly);
+                addIndexSettings(indexPanel, "entireList", "Index entire list as a single document", _list.entireListIndex, entireListSettings, _list.entireListTitleSetting,
+                        _list.entireListTitleTemplate, _list.entireListBodySetting, _list.entireListBodyTemplate, readonly);
 
                 row++;
             }
@@ -986,7 +993,8 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
 
         private void addIndexSettings(VerticalPanel panel, String type, String description, BooleanProperty indexProperty,
-              IntegerProperty titleSetting, StringProperty titleTemplate, IntegerProperty bodySetting, StringProperty bodyTemplate, boolean readonly)
+              Panel additionalOptions, IntegerProperty titleSetting, StringProperty titleTemplate, IntegerProperty bodySetting,
+              StringProperty bodyTemplate, boolean readonly)
         {
             final BoundCheckBox indexCheckBox = new BoundCheckBox("ff_" + type + "Index", indexProperty, dirtySetter);
             indexCheckBox.setText(description);
@@ -1003,6 +1011,12 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
             hPanel.add(new Spacer());
             VerticalPanel vPanel = new VerticalPanel();
             hPanel.add(vPanel);
+
+            if (null != additionalOptions)
+            {
+                vPanel.add(additionalOptions);
+                vPanel.add(new Spacer());
+            }
 
             vPanel.add(createOptionsAndTemplatePanel(new String[]{"Standard title", "Custom title"}, "ff_" + type + "TitleSetting", titleSetting, "ff_" + type + "TitleTemplate", titleTemplate, readonly));
             vPanel.add(new Spacer());

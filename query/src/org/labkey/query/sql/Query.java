@@ -845,9 +845,9 @@ public class Query
     }
 
 
-    static int Rcolumns = TestDataLoader.COLUMNS.length + 6; // rowid, entityid, created, createdby, modified, modifiedby
-	static int Rsize = 84;
-	static int Ssize = 84;
+    private static final int Rcolumns = TestDataLoader.COLUMNS.length + 7; // rowid, entityid, created, createdby, modified, modifiedby, lastindexed
+	private static final int Rsize = 84;
+	private static final int Ssize = 84;
 
     static SqlTest[] tests = new SqlTest[]
     {

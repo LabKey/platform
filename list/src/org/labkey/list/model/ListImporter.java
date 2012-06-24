@@ -188,8 +188,6 @@ public class ListImporter
             list.setAllowUpload(listSettingsXml.getAllowUpload());
             list.setAllowExport(listSettingsXml.getAllowExport());
 
-            list.setMetaDataIndex(listSettingsXml.getMetaDataIndex());
-
             list.setEachItemIndex(listSettingsXml.getEachItemIndex());
             list.setEachItemTitleSetting(ListDefinition.TitleSetting.getForValue(listSettingsXml.getEachItemTitleSetting()));
             list.setEachItemTitleTemplate(listSettingsXml.getEachItemTitleTemplate());
@@ -197,6 +195,7 @@ public class ListImporter
             list.setEachItemBodyTemplate(listSettingsXml.getEachItemBodyTemplate());
 
             list.setEntireListIndex(listSettingsXml.getEntireListIndex());
+            list.setEntireListIndexSetting(ListDefinition.IndexSetting.getForValue(listSettingsXml.getEntireListIndexSetting()));
             list.setEntireListTitleSetting(ListDefinition.TitleSetting.getForValue(listSettingsXml.getEntireListTitleSetting()));
             list.setEntireListTitleTemplate(listSettingsXml.getEntireListTitleTemplate());
             list.setEntireListBodySetting(ListDefinition.BodySetting.getForValue(listSettingsXml.getEntireListBodySetting()));
