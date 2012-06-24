@@ -26,17 +26,21 @@ import org.labkey.api.util.StringExpressionFactory;
  */
 public class DimensionColumnInfo extends ColumnInfo
 {
-    private CrosstabTableInfo _table = null;
     private CrosstabDimension _dimension = null;
 
     public DimensionColumnInfo(CrosstabTableInfo table, CrosstabDimension dimension)
     {
         super(dimension.getSourceColumn(), table);
-        _table = table;
         _dimension = dimension;
         setName(_dimension.getSourceColumn().getAlias());
         setLabel(_dimension.getSourceColumn().getLabel());
         setURL(StringExpressionFactory.createURL(dimension.getUrl()));
+    }
+
+    @Override
+    public CrosstabTableInfo getParentTable()
+    {
+        return (CrosstabTableInfo)super.getParentTable();
     }
 
     public FieldKey getSourceFieldKey()

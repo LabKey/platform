@@ -327,6 +327,9 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         setRawValueColumn(col.isRawValueColumn());
         setMvIndicatorColumn(col.isMvIndicatorColumn());
         setFacetingBehaviorType(col.getFacetingBehaviorType());
+
+        setCrosstabColumnDimension(col.getCrosstabColumnDimension());
+        setCrosstabColumnMember(col.getCrosstabColumnMember());
     }
 
 

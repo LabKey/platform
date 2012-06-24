@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpression;
 
 import java.io.File;
@@ -65,6 +66,9 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     protected DefaultValueType _defaultValueType = null;
     protected FacetingBehaviorType facetingBehaviorType = FacetingBehaviorType.AUTOMATIC;
 
+    protected FieldKey crosstabColumnDimension;
+    protected CrosstabMember crosstabColumnMember;
+
     public void copyTo(ColumnRenderProperties to)
     {
         to.sortDirection = sortDirection;
@@ -85,7 +89,9 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         to.dimension = dimension;
         to.url = url;
         to.importAliases = new LinkedHashSet<String>(importAliases);
-        to.facetingBehaviorType = facetingBehaviorType;                          }
+        to.facetingBehaviorType = facetingBehaviorType;
+        to.crosstabColumnMember = crosstabColumnMember;
+    }
 
     public Sort.SortDirection getSortDirection()
     {
@@ -586,5 +592,25 @@ public abstract class ColumnRenderProperties implements ImportAliasable
     public FacetingBehaviorType getFacetingBehaviorType()
     {
         return facetingBehaviorType;
+    }
+
+    public FieldKey getCrosstabColumnDimension()
+    {
+        return crosstabColumnDimension;
+    }
+
+    public void setCrosstabColumnDimension(FieldKey crosstabColumnDimension)
+    {
+        this.crosstabColumnDimension = crosstabColumnDimension;
+    }
+
+    public CrosstabMember getCrosstabColumnMember()
+    {
+        return crosstabColumnMember;
+    }
+
+    public void setCrosstabColumnMember(CrosstabMember member)
+    {
+        this.crosstabColumnMember = member;
     }
 }

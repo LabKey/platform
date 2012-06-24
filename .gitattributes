@@ -204,6 +204,7 @@ api/src/org/labkey/api/data/CrosstabDimension.java -text
 api/src/org/labkey/api/data/CrosstabMeasure.java -text
 api/src/org/labkey/api/data/CrosstabMember.java -text
 api/src/org/labkey/api/data/CrosstabSettings.java -text
+api/src/org/labkey/api/data/CrosstabTable.java -text
 api/src/org/labkey/api/data/CrosstabTableInfo.java -text
 api/src/org/labkey/api/data/DataRegionSelection.java -text
 api/src/org/labkey/api/data/DatabaseCache.java -text

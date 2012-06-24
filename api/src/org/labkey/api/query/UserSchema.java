@@ -23,6 +23,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.CrosstabTableInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.MultiValuedForeignKey;
@@ -405,6 +406,15 @@ abstract public class UserSchema extends AbstractSchema
     /** Override this method to return a schema specific QueryView for the given QuerySettings. */
     public QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
     {
+        // HACK: until I figure out a better way to create QueryView subclasses based upon TableInfo type
+        QueryDefinition qdef = settings.getQueryDef(this);
+        if (qdef != null)
+        {
+            TableInfo tableInfo = qdef.getTable(this, new ArrayList<QueryException>(), false);
+            if (tableInfo instanceof CrosstabTableInfo)
+                return new CrosstabView(this, settings, errors);
+        }
+
         return new QueryView(this, settings, errors);
     }
 

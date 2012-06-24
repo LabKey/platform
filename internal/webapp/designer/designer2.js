@@ -2182,7 +2182,9 @@ LABKEY.ext.FieldMetaRecord = Ext.data.Record.create([
     'excelFormat',
     'inputType',
     'caption',
-    'lookup'
+    'lookup',
+    'crosstabColumnDimension',
+    'crosstabColumnMember'
 ]);
 LABKEY.ext.FieldMetaRecord.getToolTipHtml = function (fieldMetaRecord) {
     var field = fieldMetaRecord.data;
@@ -2506,16 +2508,39 @@ LABKEY.ext.FieldTreeLoader = Ext.extend(Ext.tree.TreeLoader, {
         return node;
     },
 
+    createCrosstabMemberNode : function (crosstabColumnMember) {
+        var attr = {
+            value: crosstabColumnMember.value,
+            text: crosstabColumnMember.caption,
+            dimensionFieldKey: crosstabColumnMember.dimensionFieldKey,
+            leaf: false,
+            disabled: true,
+            expanded: true,
+            crosstabMember: true,
+            iconCls: "x-hide-display"
+        };
+        var node = LABKEY.ext.FieldTreeLoader.superclass.createNode.call(this, attr);
+        // Mark the crosstab member value node as loaded so the TreeLoader won't try to ajax request children
+        node.loaded = true;
+        return node;
+    },
+
     processResponse: function(response, node, callback, scope) {
         var fieldMetaRecords = response.records;
         try {
             node.beginUpdate();
-            for (var i = 0, len = fieldMetaRecords.length; i < len; i++) {
-                var n = this.createNode(fieldMetaRecords[i]);
-                if(n) {
-                    node.appendChild(n);
-                }
+            // UNDONE: Don't bother trying to group by column members if query is not a crosstab table
+            var groupedByMember = this.columnsByMember(fieldMetaRecords);
+            var rowDimCols = groupedByMember[null];
+            this.processMemberColumns(rowDimCols);
+
+            for (var groupedByMemberKey in groupedByMember) {
+                if (groupedByMemberKey === null)
+                    continue;
+
+                this.processMemberColumns(node, groupedByMember[groupedByMemberKey]);
             }
+
             node.endUpdate();
             this.runCallback(callback, scope || node, [node]);
         } catch(e) {
@@ -2523,7 +2548,46 @@ LABKEY.ext.FieldTreeLoader = Ext.extend(Ext.tree.TreeLoader, {
             throw e;
             this.handleFailure(response);
         }
-    }
+    },
 
+    processMemberColumns: function (node, columns) {
+        if (!columns || columns.length == 0)
+            return;
+
+        var crosstabColumnMember = columns[0].get('crosstabColumnMember');
+        if (crosstabColumnMember) {
+            var n = this.createCrosstabMemberNode(crosstabColumnMember);
+            node.appendChild(n);
+            node = n;
+        }
+
+        for (var i = 0, len = columns.length; i < len; i++) {
+            var n = this.createNode(columns[i]);
+            if(n) {
+                node.appendChild(n);
+            }
+        }
+    },
+
+    // Group the columns by member
+    columnsByMember: function (fieldMetaRecords) {
+        var groupedByMember = {};
+
+        for (var i = 0; i < fieldMetaRecords.length; i++) {
+            var fieldMetaRecord = fieldMetaRecords[i];
+            var groupedByMemberKey = null;
+            var crosstabColumnMember = fieldMetaRecord.get('crosstabColumnMember');
+            if (crosstabColumnMember) {
+                groupedByMemberKey = crosstabColumnMember.dimensionFieldKey + "~" + crosstabColumnMember.value + "~" + crosstabColumnMember.caption;
+            }
+
+            var groupedByMemberColumns = groupedByMember[groupedByMemberKey];
+            if (groupedByMemberColumns === undefined)
+                groupedByMember[groupedByMemberKey] = groupedByMemberColumns = [];
+            groupedByMemberColumns.push(fieldMetaRecord);
+        }
+
+        return groupedByMember;
+    }
 });
 

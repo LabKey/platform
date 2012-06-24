@@ -60,6 +60,16 @@ public class CrosstabAxis
         return dim;
     }
 
+    public CrosstabDimension getDimension(FieldKey fieldKey)
+    {
+        for (CrosstabDimension dimension : _dimensions)
+        {
+            if (dimension.getFieldKey().equals(fieldKey))
+                return dimension;
+        }
+        return null;
+    }
+
     public List<ColumnInfo> getSourceColumns()
     {
         List<CrosstabDimension> dims = getDimensions();

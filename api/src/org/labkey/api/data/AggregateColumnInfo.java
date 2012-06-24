@@ -15,6 +15,8 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.util.StringExpressionFactory;
 
@@ -31,20 +33,23 @@ public class AggregateColumnInfo extends ColumnInfo
     public static final String NAME_PREFIX = "CTAGG_";
     public static final String PIVOTED_NAME_PREFIX = "PCTAGG_";
 
-    private TableInfo _table = null;
-    private CrosstabMember _member = null;
-    private CrosstabMeasure _measure = null;
+    private @Nullable CrosstabMember _member = null;
+    private @NotNull CrosstabMeasure _measure = null;
 
-    public AggregateColumnInfo(TableInfo table, CrosstabMember member, CrosstabMeasure measure)
+    public AggregateColumnInfo(TableInfo table, @Nullable CrosstabMember member, @NotNull CrosstabMeasure measure)
     {
         super(measure.getSourceColumn(), table);
 
-        _table = table;
         _member = member;
         _measure = measure;
 
         setName(getColumnName(_member, _measure));
         setLabel(_measure.getCaption());
+        if (member != null)
+        {
+            setCrosstabColumnDimension(member.getDimensionFieldKey());
+            setCrosstabColumnMember(member);
+        }
 
         if (null != measure.getUrl() && null != member)
             setURL(StringExpressionFactory.createURL(measure.getUrl(member).getActionURL()));
@@ -70,7 +75,11 @@ public class AggregateColumnInfo extends ColumnInfo
         return _measure.getAggregateSqlType();
     }
 
-    public CrosstabMember getMember()
+    /**
+     * Get the CrosstabMember for this AggregateColumnInfo.  May be null for customize view scenatio.
+     * @return CrosstabMember or null for customize view scenario.
+     */
+    public @Nullable CrosstabMember getMember()
     {
         return _member;
     }
@@ -85,7 +94,7 @@ public class AggregateColumnInfo extends ColumnInfo
         if(null == member)
             return NAME_PREFIX + measure.getAggregateFunction().name() + "_" + measure.getSourceColumn().getAlias();
         else
-            return PIVOTED_NAME_PREFIX + member.getValueSQLAlias() + "_"
+            return PIVOTED_NAME_PREFIX + member.getValueSQLAlias(measure.getSourceColumn().getSqlDialect()) + "_"
                     + measure.getAggregateFunction().name() + "_" + measure.getSourceColumn().getAlias();
     }
 }

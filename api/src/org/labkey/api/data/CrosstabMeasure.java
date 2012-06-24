@@ -23,7 +23,8 @@ import org.labkey.api.query.QueryService;
 import java.util.Arrays;
 
 /**
- * Represents a measure for the CrosstabTableInfo. A measure contains a
+ * Represents a measure for the CrosstabTableInfo.
+ * A measure is the pivoted aggregate column and contains a
  * source ColumnInfo and an aggregate function.
  */
 public class CrosstabMeasure
@@ -55,6 +56,14 @@ public class CrosstabMeasure
             public String getSqlFunction(SqlDialect dialect)
             {
                 return dialect.getStdDevFunction();
+            }
+        },
+        STDERR
+        {
+            @Override
+            public String getSqlFunction(SqlDialect dialect)
+            {
+                return null;
             }
         },
         GROUP_CONCAT

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 LabKey Corporation
+ * Copyright (c) 2008-2012 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -172,7 +172,7 @@ public class CrosstabSettings
 
     /**
      * Returns the distinct set of ColumnInfo objects referred to by
-     * the column dimension, row dimensions, and measures. Used by the {@link CrosstabTableInfo} object.
+     * the column dimension, row dimensions, and measures. Used by the {@link CrosstabTable} object.
      *
      * @return Distinct set of ColumnInfo objects
      */

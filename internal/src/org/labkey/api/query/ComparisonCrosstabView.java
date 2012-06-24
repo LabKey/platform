@@ -92,6 +92,7 @@ public abstract class ComparisonCrosstabView extends CrosstabView
 
     protected GWTComparisonResult createComparisonResult(boolean[][] hits, CrosstabTableInfo table)
     {
+        CrosstabAxis colAxis = table.getSettings().getColumnAxis();
         List<CrosstabMember> members = table.getColMembers();
         GWTComparisonMember[] gwtMembers = new GWTComparisonMember[members.size()];
         for (int index = 0; index < members.size(); index++)
@@ -99,9 +100,11 @@ public abstract class ComparisonCrosstabView extends CrosstabView
             CrosstabMember member = members.get(index);
             GWTComparisonMember gwtMember = new GWTComparisonMember(member.getCaption(), hits[index]);
             gwtMembers[index] = gwtMember;
-            if (member.getDimension().getUrl() != null)
+
+            CrosstabDimension dim = colAxis.getDimension(member.getDimensionFieldKey());
+            if (dim != null && dim.getUrl() != null)
             {
-                gwtMembers[index].setUrl(member.getDimension().getMemberUrl(member));
+                gwtMembers[index].setUrl(dim.getMemberUrl(member));
             }
         }
 

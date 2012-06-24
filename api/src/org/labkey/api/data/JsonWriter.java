@@ -203,6 +203,18 @@ public class JsonWriter
 
             if (cinfo.getFacetingBehaviorType() != null)
                 props.put("facetingBehaviorType", cinfo.getFacetingBehaviorType().name());
+
+            if (cinfo.getCrosstabColumnMember() != null)
+            {
+                CrosstabMember member = cinfo.getCrosstabColumnMember();
+                Map<String, Object> jsonMember = new HashMap<String, Object>();
+                jsonMember.put("value", String.valueOf(member.getValue()));
+                jsonMember.put("caption", member.getCaption());
+                jsonMember.put("dimensionFieldKey", new JSONArray(member.getDimensionFieldKey().getParts()));
+                props.put("crosstabColumnMember", jsonMember);
+
+                props.put("crosstabColumnDimension", cinfo.getCrosstabColumnDimension());
+            }
         }
         else
         {

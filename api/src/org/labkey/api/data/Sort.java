@@ -170,6 +170,16 @@ public class Sort
     /**
      * Insert a sort column to the head of the sort list.
      *
+     * @param sortField Name of column to sort on. Use -columnName to indicate a descending sort.
+     */
+    public void insertSortColumn(SortField sortField)
+    {
+        insertSortColumn(sortField.toUrlString(), sortField.isUrlClause());
+    }
+
+    /**
+     * Insert a sort column to the head of the sort list.
+     *
      * @param columnName Name of column to sort on. Use -columnName to indicate a descending sort.
      */
     public void insertSortColumn(String columnName)
@@ -200,6 +210,16 @@ public class Sort
         SortField sfToInsert = new SortField(columnName);
         sfToInsert._urlClause = urlClause;
         replaceSortColumn(sfToInsert, insertionIndex);
+    }
+
+    /**
+     * Append a sort column to the end of the sort list.
+     *
+     * @param sortField Name of column to sort on. Use -columnName to indicate a descending sort.
+     */
+    public void appendSortColumn(SortField sortField)
+    {
+        appendSortColumn(sortField.toUrlString(), sortField.isUrlClause());
     }
 
     /**

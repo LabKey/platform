@@ -18,13 +18,16 @@ package org.labkey.api.data;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.util.Pair;
 
 import java.util.Collections;
 
 /**
- * Represents a member of a dimension. Mostly this is used for the Column axis members.
+ * Represents a member of a dimension -- the pivot values of the dimension.
+ * Mostly this is used for the Column axis members.
+ * CrosstabMembers are considered equal if the dimension, value, and caption are equal.
  *
  * Created by IntelliJ IDEA.
  * User: Dave
@@ -40,19 +43,19 @@ public class CrosstabMember
 
     private Object _value = null;
     private String _caption = null;
-    private CrosstabDimension _dimension = null;
-
-    public CrosstabMember(Object value, CrosstabDimension dimension)
-    {
-        this(value, dimension, null);
-    }
+    private FieldKey _dimensionFieldKey = null;
 
     public CrosstabMember(Object value, CrosstabDimension dimension, String caption)
     {
-        assert null != value && null != dimension;
+        this(value, dimension.getFieldKey(), caption);
+    }
+
+    public CrosstabMember(Object value, FieldKey dimensionFieldKey, String caption)
+    {
+        assert null != value && null != dimensionFieldKey;
         _value = value;
         _caption = caption;
-        _dimension = dimension;
+        _dimensionFieldKey = dimensionFieldKey;
     }
 
     public Object getValue()
@@ -60,9 +63,8 @@ public class CrosstabMember
         return _value;
     }
 
-    public String getValueSQLAlias()
+    public String getValueSQLAlias(SqlDialect dialect)
     {
-        SqlDialect dialect = getDimension().getSourceColumn().getSqlDialect();
         // Prefix the value with an underscore to allow us to filter on integer values.  (Otherwise
         // the first digit will be replaced by an underscore, creating collisions between 10 and 20, for example.
         return AliasManager.makeLegalName("_" + getValue().toString(), dialect);
@@ -83,14 +85,14 @@ public class CrosstabMember
         _caption = caption;
     }
 
-    public CrosstabDimension getDimension()
+    public FieldKey getDimensionFieldKey()
     {
-        return _dimension;
+        return _dimensionFieldKey;
     }
 
-    public void setDimension(CrosstabDimension dimension)
+    public void setDimensionFieldKey(FieldKey dimensionFieldKey)
     {
-        _dimension = dimension;
+        _dimensionFieldKey = dimensionFieldKey;
     }
 
     public DetailsURL replaceTokens(DetailsURL url)
@@ -110,11 +112,37 @@ public class CrosstabMember
         return new DetailsURL(rewrittenURL, Collections.<String, Object>emptyMap());
     }
 
+    // XXX: Use DetailsURL instead
     public String replaceTokens(String template)
     {
         if(null == template)
             return null;
         String ret = template.replace(VALUE_TOKEN, getValue().toString());
         return ret.replace(CAPTION_TOKEN, getCaption());
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        CrosstabMember member = (CrosstabMember) o;
+
+        if (_caption != null ? !_caption.equals(member._caption) : member._caption != null) return false;
+        if (_dimensionFieldKey != null ? !_dimensionFieldKey.equals(member._dimensionFieldKey) : member._dimensionFieldKey != null)
+            return false;
+        if (_value != null ? !_value.equals(member._value) : member._value != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = _value != null ? _value.hashCode() : 0;
+        result = 31 * result + (_caption != null ? _caption.hashCode() : 0);
+        result = 31 * result + (_dimensionFieldKey != null ? _dimensionFieldKey.hashCode() : 0);
+        return result;
     }
 }

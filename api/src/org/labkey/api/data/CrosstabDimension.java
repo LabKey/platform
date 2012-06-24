@@ -41,7 +41,12 @@ public class CrosstabDimension
 
     public CrosstabDimension(TableInfo table, FieldKey sourceKey)
     {
-        _sourceColumn = QueryService.get().getColumns(table, Arrays.asList(sourceKey)).get(sourceKey);
+        this(QueryService.get().getColumns(table, Arrays.asList(sourceKey)).get(sourceKey), sourceKey);
+    }
+
+    public CrosstabDimension(ColumnInfo sourceColumn, FieldKey sourceKey)
+    {
+        _sourceColumn = sourceColumn;
         _fieldKey = sourceKey;
     }
 
@@ -70,11 +75,13 @@ public class CrosstabDimension
         _sourceColumn = sourceColumn;
     }
 
+    // XXX: Change to DetailsURL
     public String getUrl()
     {
         return _url;
     }
 
+    // XXX: Change to DetailsURL
     public void setUrl(String url)
     {
         _url = url;
@@ -83,6 +90,11 @@ public class CrosstabDimension
     public String getMemberUrl(CrosstabMember member)
     {
         return member.replaceTokens(_url);
+    }
+
+    public String getMemberUrl(DisplayColumn member)
+    {
+        return member.getCaption(null);
     }
 
     /**
@@ -96,6 +108,7 @@ public class CrosstabDimension
      * @param captionCol Optional caption column (may be null)
      * @return A list of CrosstabMembers suitable for use with the CrosstabTableInfo
      */
+    /*
     public List<CrosstabMember> fetchMembers(ColumnInfo captionCol)
     {
         ArrayList<CrosstabMember> members = new ArrayList<CrosstabMember>();
@@ -132,4 +145,5 @@ public class CrosstabDimension
 
         return members;
     } //fetchMembers()
+    */
 }

@@ -16,10 +16,13 @@
 package org.labkey.api.data;
 
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -37,12 +40,14 @@ public class CrosstabDataRegion extends DataRegion
     private CrosstabTableInfo _table = null;
     private int _numRowAxisCols = 0;
     private int _numMeasures = 0;
+    private int _numMemberMeasures = 0;
 
-    public CrosstabDataRegion(CrosstabTableInfo table, int numRowAxisCols, int numMeasures)
+    public CrosstabDataRegion(CrosstabTableInfo table, int numRowAxisCols, int numMeasures, int numMemberMeasures)
     {
         _settings = table.getSettings();
         _table = table;
         _numMeasures = numMeasures;
+        _numMemberMeasures = numMemberMeasures;
         _numRowAxisCols = numRowAxisCols;
     }
 
@@ -52,7 +57,7 @@ public class CrosstabDataRegion extends DataRegion
     {
         //add a row for the column axis label if there is one
         out.write("<tr>\n");
-        renderColumnGroupHeader(_numRowAxisCols + (showRecordSelectors ? 1 : 0), _settings.getRowAxis().getCaption(), out, 2);
+        renderColumnGroupHeader(_numRowAxisCols + (showRecordSelectors ? 1 : 0), _settings.getRowAxis().getCaption(), out, 2, false);
         renderColumnGroupHeader(renderers.size() - _numRowAxisCols - (showRecordSelectors ? 1 : 0),
                 _settings.getColumnAxis().getCaption(), out);
         out.write("</tr>\n");
@@ -64,25 +69,32 @@ public class CrosstabDataRegion extends DataRegion
         if (showRecordSelectors)
             out.write("<td></td>\n");
 
-        //for each col dimension member, add a group header
-        CrosstabDimension colDim = _settings.getColumnAxis().getDimensions().get(0);
-        List<CrosstabMember> colMembers = _table.getColMembers();
-        for(int idxColMember = 0; idxColMember < colMembers.size(); ++idxColMember)
-        {
-            renderColumnGroupHeader(_numMeasures,
-                    getMemberCaptionWithUrl(colDim, colMembers.get(idxColMember)), out, 1);
+        List<Pair<CrosstabMember, List<DisplayColumn>>> groupedByMember = columnsByMember(renderers);
 
-            if(idxColMember % 2 == 0)
+        // Output a group header for each column's crosstab member.
+        CrosstabDimension colDim = _settings.getColumnAxis().getDimensions().get(0);
+        boolean alternate = true;
+        for (Pair<CrosstabMember, List<DisplayColumn>> group : groupedByMember)
+        {
+            CrosstabMember currentMember = group.first;
+            List<DisplayColumn> memberColumns = group.second;
+            if (memberColumns.isEmpty())
+                continue;
+
+            alternate = !alternate;
+
+            if (currentMember != null)
             {
-                //set background color on renderers for measure columns
-                int idxStart = _numRowAxisCols + (idxColMember * _numMeasures);
-                for (int idxMeasureCol = idxStart;
-                    idxMeasureCol < idxStart + _numMeasures; ++idxMeasureCol)
-                {
-                    renderers.get(idxMeasureCol).addDisplayClass("labkey-alternate-row");
-                }
-            } //every other col dimension member
-        } //for each col dimension member
+                renderColumnGroupHeader(memberColumns.size(),
+                        getMemberCaptionWithUrl(colDim, currentMember), out, 1, alternate);
+            }
+
+            for (DisplayColumn renderer : memberColumns)
+            {
+                if (alternate)
+                    renderer.addDisplayClass("labkey-alternate-row");
+            }
+        }
 
         //end the col dimension member header row
         out.write("</tr>\n");
@@ -91,28 +103,63 @@ public class CrosstabDataRegion extends DataRegion
         super.renderGridHeaderColumns(ctx, out, showRecordSelectors, renderers);
     } //renderGridHeaders()
 
+    // Collect the DisplayColumns by column member while keeping the column order the same.
+    private List<Pair<CrosstabMember, List<DisplayColumn>>> columnsByMember(Collection<DisplayColumn> renderers)
+    {
+        List<Pair<CrosstabMember, List<DisplayColumn>>> groupedByMember = new ArrayList<Pair<CrosstabMember, List<DisplayColumn>>>();
+
+        CrosstabMember currentMember = null;
+        List<DisplayColumn> currentMemberColumns = new ArrayList<DisplayColumn>();
+        groupedByMember.add(Pair.of(currentMember, currentMemberColumns));
+
+        for (DisplayColumn renderer : renderers)
+        {
+            ColumnInfo col = renderer.getColumnInfo();
+            if (col.getCrosstabColumnMember() != null && !col.getCrosstabColumnMember().equals(currentMember))
+            {
+                currentMember = col.getCrosstabColumnMember();
+                currentMemberColumns = new ArrayList<DisplayColumn>();
+                groupedByMember.add(Pair.of(currentMember, currentMemberColumns));
+            }
+
+            currentMemberColumns.add(renderer);
+        }
+        return groupedByMember;
+    }
+
     protected String getMemberCaptionWithUrl(CrosstabDimension dimension, CrosstabMember member)
     {
-        if(null != dimension.getUrl())
+        String url = null;
+        if (null != dimension.getUrl())
+            url = dimension.getMemberUrl(member);
+
+        return getMemberCaptionWithUrl(member.getCaption(), url);
+    }
+
+    protected String getMemberCaptionWithUrl(String caption, String url)
+    {
+        if (url != null)
         {
             StringBuilder ret = new StringBuilder();
             ret.append("<a href=\"");
-            ret.append(dimension.getMemberUrl(member));
+            ret.append(url);
             ret.append("\">");
-            ret.append(PageFlowUtil.filter(member.getCaption()));
+            ret.append(caption);
             ret.append("</a>");
             return ret.toString();
         }
         else
-            return PageFlowUtil.filter(member.getCaption());
+        {
+            return PageFlowUtil.filter(caption);
+        }
     }
 
     protected void renderColumnGroupHeader(int groupWidth, String caption, Writer out) throws IOException
     {
-        renderColumnGroupHeader(groupWidth, caption, out, 1);
+        renderColumnGroupHeader(groupWidth, caption, out, 1, false);
     }
 
-    protected void renderColumnGroupHeader(int groupWidth, String caption, Writer out, int groupHeight) throws IOException
+    protected void renderColumnGroupHeader(int groupWidth, String caption, Writer out, int groupHeight, boolean alternate) throws IOException
     {
         if(groupWidth <= 0)
             return;
@@ -122,10 +169,10 @@ public class CrosstabDataRegion extends DataRegion
         out.write("\" rowspan=\"");
         out.write(String.valueOf(groupHeight));
         out.write("\" class=\"labkey-data-region");
+        if (alternate)
+            out.write(" labkey-alternate-row");
         if (isShowBorders())
-        {
             out.write(" labkey-show-borders");
-        }
         out.write("\">\n");
         out.write(caption == null ? "" : caption);
         out.write("</td>\n");

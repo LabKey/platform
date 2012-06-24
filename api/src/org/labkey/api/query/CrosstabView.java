@@ -15,9 +15,11 @@
  */
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.view.DataView;
+import org.springframework.validation.Errors;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,11 +36,19 @@ public class CrosstabView extends QueryView
 {
     private int _numRowAxisCols = 0;
     private int _numMeasures = 0;
+    private int _numMemberMeasures = 0;
     protected List<FieldKey> _columns;
 
+    /** Must call setSettings before using the view */
     public CrosstabView(UserSchema schema)
     {
         super(schema);
+        setViewItemFilter(ReportService.EMPTY_ITEM_LIST);
+    }
+
+    public CrosstabView(UserSchema schema, QuerySettings settings, @Nullable Errors errors)
+    {
+        super(schema, settings, errors);
         setViewItemFilter(ReportService.EMPTY_ITEM_LIST);
     }
 
@@ -53,10 +63,8 @@ public class CrosstabView extends QueryView
             //the selected display columns
             List<DisplayColumn> displayCols = getDisplayColumns();
 
-            CrosstabDataRegion rgn = new CrosstabDataRegion(table, _numRowAxisCols, _numMeasures);
+            CrosstabDataRegion rgn = new CrosstabDataRegion(table, _numRowAxisCols, _numMeasures, _numMemberMeasures);
             configureDataRegion(rgn);
-            rgn.setShadeAlternatingRows(true);
-            rgn.setShowBorders(true);
 
             return rgn;
         }
@@ -68,10 +76,6 @@ public class CrosstabView extends QueryView
     {
         assert getTable() instanceof CrosstabTableInfo;
         CrosstabTableInfo table = (CrosstabTableInfo)getTable();
-
-        //initialize _numRowAxisCols and _numMeasures to their defaults
-        _numMeasures = table.getSettings().getMeasures().size();
-        _numRowAxisCols = table.getSettings().getRowAxis().getDimensions().size() + 1; //instance count column
 
         List<FieldKey> selectedCols;
 
@@ -92,31 +96,44 @@ public class CrosstabView extends QueryView
         //separate the row dimension columns from the measure columns
         ArrayList<FieldKey> rowDimCols = new ArrayList<FieldKey>(selectedCols.size());
         ArrayList<FieldKey> measureCols = new ArrayList<FieldKey>(selectedCols.size());
-        for(FieldKey col : selectedCols)
+        ArrayList<FieldKey> measureMemberCols = new ArrayList<FieldKey>(selectedCols.size());
+        for (FieldKey col : selectedCols)
         {
-            if(col.getParts().get(0).startsWith(AggregateColumnInfo.NAME_PREFIX))
+            ColumnInfo column = table.getColumn(col);
+            if (col.getParts().get(0).startsWith(AggregateColumnInfo.NAME_PREFIX))
                 measureCols.add(col);
+            else if (column != null && column.getCrosstabColumnMember() != null)
+                measureMemberCols.add(col);
             else
                 rowDimCols.add(col);
         }
 
-        //set the number of selected measures and row dimensions
-        _numMeasures = measureCols.size();
-        _numRowAxisCols = rowDimCols.size();
-
         //add the row dimensions to the complete list of columns
         ArrayList<FieldKey> completeCols = new ArrayList<FieldKey>(rowDimCols);
 
-        //now add the set of measure columns for each column member in the table
-        for(CrosstabMember member : table.getColMembers())
+        // For each of the table's column members (pivot values), expand the
+        // selected measureCols that start with magic AggregateColumnInfo.NAME_PREFIX into
+        // the set of member+measure columns.
+        // NOTE: QueryPivot.PivotTable doesn't use the AggregateColumnInfo.NAME_PREFIX magic so will have no measureCols.
+        if (!measureCols.isEmpty())
         {
-            for(FieldKey col : measureCols)
+            for (CrosstabMember member : table.getColMembers())
             {
-                List<String> parts = new ArrayList<String>(col.getParts());
-                parts.set(0, AggregateColumnInfo.getColumnName(member, table.getMeasureFromKey(col.getParts().get(0))));
-                completeCols.add(FieldKey.fromParts(parts));
+                for (FieldKey col : measureCols)
+                {
+                    List<String> parts = new ArrayList<String>(col.getParts());
+                    parts.set(0, AggregateColumnInfo.getColumnName(member, table.getMeasureFromKey(col.getParts().get(0))));
+                    measureMemberCols.add(FieldKey.fromParts(parts));
+                }
             }
         }
+
+        completeCols.addAll(measureMemberCols);
+
+        //set the number of selected measures and row dimensions
+        _numMeasures = measureCols.size();
+        _numMemberMeasures = measureMemberCols.size();
+        _numRowAxisCols = rowDimCols.size();
 
         //put together the complete list of display columns by getting the
         //renderers from the ColumnInfos for the complete list of columns
@@ -134,8 +151,12 @@ public class CrosstabView extends QueryView
         assert getTable() instanceof CrosstabTableInfo;
         CrosstabTableInfo table = (CrosstabTableInfo)getTable();
 
-        //set the default base sort
-        view.getRenderContext().setBaseSort(CrosstabTableInfo.getDefaultSort());
+        //set the default base sort (remove non-existant sort columns)
+        Sort sort = new Sort();
+        for (Sort.SortField sortField : CrosstabTable.getDefaultSort().getSortList())
+            if (getTable().getColumn(sortField.getColumnName()) != null)
+                sort.appendSortColumn(sortField);
+        view.getRenderContext().setBaseSort(sort);
 
         if(null != view.getRenderContext().getBaseFilter())
         {
