@@ -587,7 +587,7 @@ X.define('LABKEY.TemplateReport',
                 {
                     if (field.getCaptionHtml)
                         return field.getCaptionHtml();
-                    return field.shortCaption || field.name;
+                    return field.caption || field.name;
                 },
                 getGridCellHtml : function(d, asHeader)
                 {
