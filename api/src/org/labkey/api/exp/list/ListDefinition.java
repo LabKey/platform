@@ -170,6 +170,48 @@ public interface ListDefinition extends Comparable<ListDefinition>
         }
     }
 
+    enum IndexSetting
+    {
+        MetaData(0, true, false),
+        ItemData(1, false, true),
+        Both(2, true, true);
+
+        private final int _value;
+        private final boolean _metaData;
+        private final boolean _itemData;
+
+        IndexSetting(int value, boolean metaData, boolean itemData)
+        {
+            _value = value;
+            _metaData = metaData;
+            _itemData = itemData;
+        }
+
+        public int getValue()
+        {
+            return _value;
+        }
+
+        public boolean indexMetaData()
+        {
+            return _metaData;
+        }
+
+        public boolean indexItemData()
+        {
+            return _itemData;
+        }
+
+        public static IndexSetting getForValue(int value)
+        {
+            for (IndexSetting s : IndexSetting.values())
+                if (s.getValue() == value)
+                    return s;
+
+            return null;
+        }
+    }
+
     enum BodySetting
     {
         TextOnly(0)
@@ -299,11 +341,11 @@ public interface ListDefinition extends Comparable<ListDefinition>
     boolean getAllowExport();
     void setAllowExport(boolean allowExport);
 
-    boolean getMetaDataIndex();
-    void setMetaDataIndex(boolean index);
-
     boolean getEntireListIndex();
     void setEntireListIndex(boolean index);
+
+    IndexSetting getEntireListIndexSetting();
+    void setEntireListIndexSetting(IndexSetting setting);
 
     TitleSetting getEntireListTitleSetting();
     void setEntireListTitleSetting(TitleSetting setting);
