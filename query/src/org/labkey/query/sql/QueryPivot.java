@@ -21,11 +21,18 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.AbstractTableInfo;
+import org.labkey.api.data.AggregateColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.CrosstabMeasure;
+import org.labkey.api.data.CrosstabMember;
+import org.labkey.api.data.CrosstabSettings;
+import org.labkey.api.data.CrosstabTableInfo;
+import org.labkey.api.data.Filter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NullColumnInfo;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -65,13 +72,13 @@ public class QueryPivot extends QueryRelation
     // all columns in the select except the pivot column, in original order
     LinkedHashMap<String,RelationColumn> _select = new LinkedHashMap<String,RelationColumn>();
 
-    // the grouping keys (except the pivot column)
+    // the grouping keys (except the pivot column) (aka. row axis CrosstabDimension)
     final HashMap<String,RelationColumn> _grouping = new HashMap<String,RelationColumn>();
 
-    // pivoted aggregate columms
+    // pivoted aggregate columms (aka. CrosstabMeasure)
     final Map<String,QAggregate.Type> _aggregates = new HashMap<String,QAggregate.Type>();
 
-    // the pivot column
+    // the pivot column (aka. column axis CrosstabDimension)
     RelationColumn _pivotColumn;
     Map<String,IConstant> _pivotValues;
 
@@ -133,6 +140,8 @@ public class QueryPivot extends QueryRelation
                 switch (((QAggregate) source).getType())
                 {
                     case COUNT:
+                        rollupType = QAggregate.Type.COUNT;
+                        break;
                     case SUM:
                         rollupType = QAggregate.Type.SUM;
                         break;
@@ -143,7 +152,12 @@ public class QueryPivot extends QueryRelation
                         rollupType = QAggregate.Type.MAX;
                         break;
                     case AVG:
+                        rollupType = QAggregate.Type.AVG;
+                        break;
                     case STDDEV:
+                        rollupType = QAggregate.Type.STDDEV;
+                        break;
+                    case STDERR:
                     case GROUP_CONCAT:
                         // nyi;
                         break;
@@ -424,6 +438,7 @@ public class QueryPivot extends QueryRelation
             }
 
             _columns = new CaseInsensitiveMapWrapper<RelationColumn>(new LinkedHashMap<String, RelationColumn>(_select.size()*2));
+            List<Map.Entry<String,RelationColumn>> aggs = new ArrayList<Map.Entry<String,RelationColumn>>(_aggregates.size());
             for (Map.Entry<String,RelationColumn> entry : _select.entrySet())
             {
                 String name = entry.getKey();
@@ -433,8 +448,20 @@ public class QueryPivot extends QueryRelation
 
                 if (!usePivotForeignKey && _aggregates.containsKey(name))
                 {
-                    for (String pivotValue : pivotValues.keySet())
+                    aggs.add(entry);
+                }
+            }
+
+            // Add the pivoted aggregate columns grouped by pivot value
+            if (!aggs.isEmpty())
+            {
+                for (String pivotValue : pivotValues.keySet())
+                {
+                    for (Map.Entry<String, RelationColumn> entry : aggs)
                     {
+                        String name = entry.getKey();
+                        RelationColumn s = entry.getValue();
+
                         String pivotName = makePivotAggName(name, pivotValue);
                         RelationColumn pvt = _makePivotedAggColumn(s, new FieldKey(null, pivotName), pivotValue);
                         _columns.put(pivotName, pvt);
@@ -447,7 +474,8 @@ public class QueryPivot extends QueryRelation
 
 
     final static String PIVOT_SEPARATOR = "::";
-    
+
+    // NOTE: See AggregateColumnInfo.getColumnName(pivotValue, aggName) for magic column names used by CrosstabView.
     String makePivotAggName(String aggName, String pivotValue)
     {
         return pivotValue + PIVOT_SEPARATOR + aggName;
@@ -500,6 +528,8 @@ public class QueryPivot extends QueryRelation
         final IConstant c = pivotValues.get(name);
         final String alias = makePivotColumnAlias(agg.getAlias(), name);
 
+        final CrosstabMember member = new CrosstabMember(c.getValue(), _pivotColumn.getFieldKey(), name);
+
         return new RelationColumn()
         {
             @Override
@@ -531,8 +561,13 @@ public class QueryPivot extends QueryRelation
             void copyColumnAttributesTo(ColumnInfo to)
             {
                 agg.copyColumnAttributesTo(to);
+
+                to.setCrosstabColumnDimension(agg.getFieldKey());
+                to.setCrosstabColumnMember(member);
+
                 if (usePivotForeignKey)
                     to.setLabel(null);
+                /*
                 else if (_aggregates.size() == 1)
                     to.setLabel(name);
                 else
@@ -540,6 +575,7 @@ public class QueryPivot extends QueryRelation
                     String aggLabel = to.getLabel();
                     to.setLabel(name + " " + aggLabel);
                 }
+                */
             }
 
             @Override
@@ -677,7 +713,7 @@ public class QueryPivot extends QueryRelation
     }
 
 
-    class PivotTableInfo extends QueryTableInfo
+    class PivotTableInfo extends QueryTableInfo implements CrosstabTableInfo
     {
         PivotTableInfo()
         {
@@ -747,8 +783,106 @@ public class QueryPivot extends QueryRelation
             }
             return list;
         }
+
+        //
+        // CrosstabTableInfo
+        //
+
+        // XXX: make immutable ?
+        CrosstabSettings _settings;
+        List<CrosstabMember> _members;
+
+        @Override
+        public CrosstabSettings getSettings()
+        {
+            if (_settings == null)
+            {
+                // XXX: Should source table be the from clause or the PivotTable?
+                _settings = new CrosstabSettings(this);
+
+                // row axis dimensions are the group by columns
+                for (RelationColumn col : _grouping.values())
+                {
+                    _settings.getRowAxis().addDimension(col.getFieldKey());
+                }
+                //_settings.getRowAxis().setCaption("grouping cols description");
+
+                // column axis dimension is the pivot column
+                _settings.getColumnAxis().addDimension(_pivotColumn.getFieldKey());
+                _settings.getColumnAxis().setCaption(_pivotColumn.getAlias());
+
+                // aggregates are the crosstab measure
+                for (Map.Entry<String, QAggregate.Type> agg : _aggregates.entrySet())
+                {
+                    String name = agg.getKey();
+                    CrosstabMeasure.AggregateFunction aggFn = toAggFn(agg.getValue());
+                    _settings.addMeasure(FieldKey.fromParts(name), aggFn, name);
+                }
+            }
+            return _settings;
+        }
+
+        @Override
+        public List<CrosstabMember> getColMembers()
+        {
+            if (_members == null)
+            {
+                Map<String, IConstant> pivotValues;
+                try
+                {
+                    pivotValues = getPivotValues();
+                }
+                catch (SQLException x)
+                {
+                    // UNDONE: need better error handling -- see other usages of getPivotValues()
+                    throw new RuntimeSQLException(x);
+                }
+
+                _members = new ArrayList<CrosstabMember>(pivotValues.size());
+                for (Map.Entry<String, IConstant> pivotValue : pivotValues.entrySet())
+                {
+                    Object value = pivotValue.getValue().getValue();
+                    String caption = pivotValue.getKey();
+                    _members.add(new CrosstabMember(value, _pivotColumn.getFieldKey(), caption));
+                }
+            }
+            return _members;
+        }
+
+        @Override
+        public CrosstabMeasure getMeasureFromKey(String fieldKey)
+        {
+            for (CrosstabMeasure measure : getSettings().getMeasures())
+            {
+                if (AggregateColumnInfo.getColumnName(null, measure).equals(fieldKey))
+                    return measure;
+            }
+            return null;
+        }
+
+        @Override
+        public void setAggregateFilter(Filter filter)
+        {
+            // UNDONE
+        }
     }
 
+    private CrosstabMeasure.AggregateFunction toAggFn(QAggregate.Type aggType)
+    {
+        switch (aggType)
+        {
+            case AVG:           return CrosstabMeasure.AggregateFunction.AVG;
+            case COUNT:         return CrosstabMeasure.AggregateFunction.COUNT;
+            case GROUP_CONCAT:  return CrosstabMeasure.AggregateFunction.GROUP_CONCAT;
+            case MAX:           return CrosstabMeasure.AggregateFunction.MAX;
+            case MIN:           return CrosstabMeasure.AggregateFunction.MIN;
+            case STDDEV:        return CrosstabMeasure.AggregateFunction.STDDEV;
+            case STDERR:        return CrosstabMeasure.AggregateFunction.STDERR;
+            case SUM:           return CrosstabMeasure.AggregateFunction.SUM;
+            default:
+                throw new IllegalArgumentException(aggType.toString());
+        }
+    }
 
 
     SqlDialect _dialect;
