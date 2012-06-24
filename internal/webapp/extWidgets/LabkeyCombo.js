@@ -40,6 +40,9 @@ Ext4.define('LABKEY.ext4.ComboBox', {
         });
 
         this.callParent();
+
+        //this is necessary to clear invalid fields, assuming the initial value is set asynchronously on store load
+        this.mon(this.store, 'load', this.isValid, this, {single: true});
     },
 
     onLoad: function(){
@@ -75,15 +78,16 @@ Ext4.define('LABKEY.ext4.ComboBox', {
             this.matchFieldWidth = fieldWidth >= w;
             picker.setWidth(w);
         }
-    },
+    }
 
     //allows value to be set if store has not yet loaded
-    setValue: function(val){
-        if(!this.store || !this.store.model || !this.store.model.prototype.fields.getCount()){
-            this.value = val;
-            this.mon(this.store, 'load', function(){this.setValue(val);this.validate();}, this, {single: true});
-        }
-        else
-            this.callParent(arguments);
-    }
+    //undone: In ext4.1, if the store has loading=true when trying to set the value, it should handle asyc loading properly
+//    setValue: function(val){
+//        if(!this.store || !this.store.model || !this.store.model.prototype.fields.getCount()){
+//            this.value = val;
+//            this.mon(this.store, 'load', function(){this.setValue(val);this.validate();}, this, {single: true});
+//        }
+//        else
+//            this.callParent(arguments);
+//    }
 });

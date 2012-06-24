@@ -139,6 +139,7 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
         var autoLoad = config.autoLoad;
         config.autoLoad = false;
         this.autoLoad = false;
+        this.loading = autoLoad; //allows combos to properly set initial value w/ asyc store load
 
         // call the superclass's constructor
         this.callParent([config]);
@@ -301,7 +302,6 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
     //private
     load: function(){
         this.generateBaseParams();
-
         this.proxy.on('exception', this.onProxyException, this, {single: true});
         return this.callParent(arguments);
     },
