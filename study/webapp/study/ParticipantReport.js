@@ -503,7 +503,8 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     {name : 'isDemographic',    type : 'boolean'},
                     {name : 'queryName'},
                     {name : 'schemaName'},
-                    {name : 'type'}
+                    {name : 'type'},
+                    {name : 'alias'}
                 ],
                 proxy : {
                     type : 'memory',
@@ -805,7 +806,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         if (this.pageFieldStore.getCount() > 0) {
 
             for (var i=0; i < this.pageFieldStore.getCount(); i++) {
-                var mappedColName = this.response.measureToColumn[this.pageFieldStore.getAt(i).data.name];
+                var mappedColName = this.getColumnFromMeasure(this.pageFieldsStore.getAt(i).data, this.response.measureToColumn);
                 if (mappedColName) {
                     if (i==0)
                         config.pageBreakInfo.push({name : mappedColName, rowspan: false});
@@ -833,8 +834,9 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 config.gridFields.push(this.response.measureToColumn[this.subjectVisitColumn + '/VisitDate']);
 
             for (i=0; i < this.gridFieldStore.getCount(); i++) {
+
                 var item = this.gridFieldStore.getAt(i);
-                var mappedColName = this.response.measureToColumn[item.data.name];
+                mappedColName = this.getColumnFromMeasure(item.data, this.response.measureToColumn);
                 if (mappedColName) {
 
                     // map any demographic data to the pagefields else push them into the grid fields
@@ -845,27 +847,11 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 }
             }
 
-            // finally fix up the column names so that they don't display the long made-up names, the label
-            // for the corresponding measure is probably the friendliest
-            var columnToMeasure = {};
-
-            for (var m in this.response.measureToColumn) {
-                if (this.response.measureToColumn.hasOwnProperty(m)) {
-
-                    // special case visit label and date
-                    if (this.subjectVisitColumn + '/Visit/Label' == m)
-                        columnToMeasure[this.response.measureToColumn[m]] = 'Visit'
-                    else if (this.subjectVisitColumn + '/VisitDate' == m)
-                        columnToMeasure[this.response.measureToColumn[m]] = 'Visit Date'
-                    else
-                        columnToMeasure[this.response.measureToColumn[m]] = m;
-                }
-            }
-
+            // add the tooltip for the grid fields
             for (i=0; i < this.response.metaData.fields.length; i++) {
                 var field = this.response.metaData.fields[i];
 
-                var rec = this.gridFieldStore.findRecord('name', columnToMeasure[field.name], 0, false, true, true);
+                var rec = this.gridFieldStore.findRecord('alias', field.fieldKeyPath, 0, false, true, true);
                 if (rec)
                 {
                     field.shortCaption = rec.data.label;
@@ -877,10 +863,6 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     if (rec.data.description)
                         qtip += "<br>" + $h(rec.data.description);
                     field.qtip = qtip;
-                }
-                else if (columnToMeasure[field.name])
-                {
-                    field.shortCaption = columnToMeasure[field.name];
                 }
             }
 
@@ -910,6 +892,23 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 this.showFilter(this.filterSet ? this.filterSet : []);
             }
         }
+    },
+
+    /**
+     * Get the column name in the returned query result from the specified measure. Takes into account
+     * scenarios where duplicate column names from different tables can be specified. In this case
+     * getData will return entries in the map which use the unique column aliases.
+     */
+    getColumnFromMeasure : function(measure, measureToColMap) {
+
+        // try the more specific alias, else fall back to the less granular name mapping
+        var alias = LABKEY.MeasureUtil.getAlias(measure);
+
+        var mappedColName = measureToColMap[alias];
+        if (!mappedColName)
+            mappedColName = measureToColMap[measure.name];
+
+        return mappedColName;
     },
 
     fitToReport : function() {

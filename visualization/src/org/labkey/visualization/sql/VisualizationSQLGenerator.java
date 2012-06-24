@@ -334,7 +334,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         IVisualizationSourceQuery nestedOuterJoinQuery = null;
         if (outerJoinQueries.size() > 1)
         {
-            nestedOuterJoinQuery = new OuterJoinSourceQuery(outerJoinQueries, _limit != null);
+            nestedOuterJoinQuery = new OuterJoinSourceQuery(this, outerJoinQueries, _limit != null);
             queries.add(nestedOuterJoinQuery);
         }
         else
@@ -485,7 +485,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         return null;
     }
 
-    public static String getSQL(IVisualizationSourceQuery parentQuery, VisualizationSourceColumn.Factory factory,
+    public String getSQL(IVisualizationSourceQuery parentQuery, VisualizationSourceColumn.Factory factory,
                                 Collection<IVisualizationSourceQuery> queries, List<VisualizationIntervalColumn> intervals,
                                 String joinOperator, boolean includeOrderBys, boolean hasRowLimit) throws VisualizationSQLGenerator.GenerationException
     {
@@ -506,7 +506,36 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         queries = reorderedQueries;
 
         // Now that we have the full list of columns we want to select, we can generate our select list
-        Map<String, Set<VisualizationSourceColumn>> allAliases = getColumnMapping(factory, queries);
+        Map<String, Set<VisualizationSourceColumn>> allAliases = new LinkedHashMap<String, Set<VisualizationSourceColumn>>();
+        for (Map.Entry<String, Set<VisualizationSourceColumn>> entry : getColumnMapping(factory, queries).entrySet())
+        {
+            if (entry.getValue().size() > 1)
+            {
+                boolean isJoinColumn = true;
+                for (VisualizationSourceColumn select : entry.getValue())
+                {
+                    VisualizationProvider provider = getVisualizationProvider(select.getSchemaName());
+                    if (!provider.isJoinColumn(select, getViewContext().getContainer()))
+                    {
+                        isJoinColumn = false;
+                        break;
+                    }
+                }
+                
+                if (isJoinColumn)
+                    allAliases.put(entry.getKey(), entry.getValue());
+                else
+                {
+                    // if the select is not a join column, we key the column map by the alias so
+                    // that the columns don't get coalesced in the outer select 
+                    for (VisualizationSourceColumn select : entry.getValue())
+                        allAliases.put(select.getAlias(), Collections.singleton(select));
+                }
+            }
+            else
+                allAliases.put(entry.getKey(), entry.getValue());
+        }
+
         StringBuilder masterSelectList = new StringBuilder();
         String sep = "";
         for (Map.Entry<String,Set<VisualizationSourceColumn>> entry : allAliases.entrySet())
@@ -630,7 +659,19 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         Map<String, String> colMap = new LinkedHashMap<String, String>();
         // The default column mapping references the first available valid alias:
         for (Map.Entry<String, Set<VisualizationSourceColumn>> entry : allAliases.entrySet())
+        {
             colMap.put(entry.getKey(), entry.getValue().iterator().next().getAlias());
+
+            if (entry.getValue().size() > 1)
+            {
+                for (VisualizationSourceColumn select : entry.getValue())
+                {
+                    VisualizationProvider provider = getVisualizationProvider(select.getSchemaName());
+                    if (!provider.isJoinColumn(select, getViewContext().getContainer()))
+                        colMap.put(select.getAlias(), select.getAlias());
+                }
+            }
+        }
 
         /*
         // Now that we have the full set of columns, we can take a pass through to eliminate the columns on the right

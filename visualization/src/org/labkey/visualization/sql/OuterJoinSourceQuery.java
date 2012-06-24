@@ -29,9 +29,11 @@ public class OuterJoinSourceQuery implements IVisualizationSourceQuery
 {
     private Collection<IVisualizationSourceQuery> _queries;
     private boolean _hasRowLimit;
+    private VisualizationSQLGenerator _generator;
 
-    public OuterJoinSourceQuery(Collection<IVisualizationSourceQuery> queries, boolean hasRowLimit)
+    public OuterJoinSourceQuery(VisualizationSQLGenerator generator, Collection<IVisualizationSourceQuery> queries, boolean hasRowLimit)
     {
+        _generator = generator;
         _queries = queries;
     }
 
@@ -53,7 +55,7 @@ public class OuterJoinSourceQuery implements IVisualizationSourceQuery
     @Override
     public String getSQL(VisualizationSourceColumn.Factory factory) throws VisualizationSQLGenerator.GenerationException
     {
-        return VisualizationSQLGenerator.getSQL(this, factory, _queries, Collections.<VisualizationIntervalColumn>emptyList(), "FULL OUTER JOIN", false, _hasRowLimit);
+        return _generator.getSQL(this, factory, _queries, Collections.<VisualizationIntervalColumn>emptyList(), "FULL OUTER JOIN", false, _hasRowLimit);
     }
 
     @Override

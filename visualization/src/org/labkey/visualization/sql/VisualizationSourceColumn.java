@@ -301,9 +301,14 @@ public class VisualizationSourceColumn
     {
         if (null == _alias)
         {
-            _alias = (getSchemaName() + "_" + _queryName + "_" + _name).replaceAll("/","_");
+            _alias = getAlias(getSchemaName(), _queryName, _name);
         }
         return _alias;
+    }
+
+    public static String getAlias(String schemaName, String queryName, String name)
+    {
+        return (schemaName + "_" + queryName + "_" + name).replaceAll("/","_");
     }
 
     @Override

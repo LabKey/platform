@@ -57,6 +57,20 @@ public class StudyVisualizationProvider extends VisualizationProvider
     }
 
     @Override
+    public boolean isJoinColumn(VisualizationSourceColumn column, Container container)
+    {
+        String subjectColName = StudyService.get().getSubjectColumnName(container).toLowerCase();
+        String subjectVisitName = StudyService.get().getSubjectVisitColumnName(container).toLowerCase() + "/";
+
+        String name = column.getOriginalName().toLowerCase();
+
+        if (subjectColName.equals(name) || name.startsWith(subjectVisitName))
+            return true;
+
+        return false;
+    }
+
+    @Override
     public void appendAggregates(StringBuilder sql, Map<String, Set<VisualizationSourceColumn>> columnAliases, Map<String, VisualizationIntervalColumn> intervals, String queryAlias, IVisualizationSourceQuery joinQuery)
     {
         for (Map.Entry<String, VisualizationIntervalColumn> entry : intervals.entrySet())

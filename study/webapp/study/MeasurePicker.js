@@ -993,7 +993,8 @@ Ext4.define('LABKEY.ext4.MeasuresStore', {
                 {name   : 'queryName'},
                 {name   : 'schemaName'},
                 {name   : 'type'},
-                {name   : 'selected'}
+                {name   : 'selected'},
+                {name   : 'alias'}
             ]
         });
 
@@ -1024,5 +1025,20 @@ Ext4.define('LABKEY.ext4.MeasuresStore', {
     initComponent : function() {
 
         this.callParent();
+    }
+});
+
+Ext4.define('LABKEY.MeasureUtil', {
+
+    singleton : true,
+    getAlias : function(measure) {
+
+        if (measure.alias)
+            return measure.alias;
+        else
+        {
+            var alias = measure.schemaName + '_' + measure.queryName + '_' + measure.name;
+            return alias.replace('/', '_');
+        }
     }
 });

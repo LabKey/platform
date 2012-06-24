@@ -40,6 +40,8 @@ public abstract class VisualizationProvider
 
     public abstract void appendAggregates(StringBuilder sql, Map<String, Set<VisualizationSourceColumn>> columnAliases, Map<String, VisualizationIntervalColumn> intervals, String queryAlias, IVisualizationSourceQuery joinQuery);
 
+    public abstract boolean isJoinColumn(VisualizationSourceColumn column, Container container);
+    
     protected static enum ColumnMatchType
     {
         DATETIME_COLS()

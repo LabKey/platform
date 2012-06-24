@@ -95,6 +95,7 @@ import org.labkey.visualization.report.TimeChartReportImpl;
 import org.labkey.visualization.sql.StudyVisualizationProvider;
 import org.labkey.visualization.sql.VisualizationProvider;
 import org.labkey.visualization.sql.VisualizationSQLGenerator;
+import org.labkey.visualization.sql.VisualizationSourceColumn;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -542,6 +543,7 @@ public class VisualizationController extends SpringActionController
             props.put("longlabel", col.getLabel() + " (" + queryName + ")");
             props.put("type", col.getJdbcType().name());
             props.put("description", StringUtils.trimToEmpty(col.getDescription()));
+            props.put("alias", VisualizationSourceColumn.getAlias(query.getSchemaName(), query.getName(), col.getName()));
 
             return props;
         }
