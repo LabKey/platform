@@ -125,6 +125,13 @@ LABKEY.vis.Geom.Point.prototype.render = function(paper, grid, scales, data, lay
         if(hoverText){
             point.attr('title', hoverText.value(data[i]));
         }
+
+        point.data = data[i];
+        if (layerAes.pointClickFn) {
+            point.click(function(clickEvent) {
+                layerAes.pointClickFn.value(clickEvent, this.data);
+            });
+        }
     }
 
     return true;
