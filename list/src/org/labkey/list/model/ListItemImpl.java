@@ -121,6 +121,7 @@ public class ListItemImpl implements ListItem
     {
         if (isNew())
             return;
+
         try
         {
             ExperimentService.get().ensureTransaction();
@@ -135,6 +136,7 @@ public class ListItemImpl implements ListItem
             filter.addCondition("ListId", _itm.getListId());
             Table.delete(_list.getIndexTable(), filter);
             deleteListItemContents(_itm, c, user);
+            ListManager.get().deleteItem(_list, this);
 
             ExperimentService.get().commitTransaction();
         }
@@ -151,7 +153,7 @@ public class ListItemImpl implements ListItem
     }
 
     // Used by single item delete as well as entire list delete
-    static void deleteListItemContents(ListItm itm, Container c, User user) throws SQLException
+    private static void deleteListItemContents(ListItm itm, Container c, User user) throws SQLException
     {
         DiscussionService.get().deleteDiscussions(c, user, itm.getEntityId());
         AttachmentService.get().deleteAttachments(new ListItemAttachmentParent(itm, c));
@@ -163,7 +165,6 @@ public class ListItemImpl implements ListItem
                 OntologyManager.deleteOntologyObjects(c, object.getObjectURI());
             }
         }
-
     }
 
     private OntologyObject getOntologyObject()
@@ -354,6 +355,7 @@ public class ListItemImpl implements ListItem
         finally
         {
             ExperimentService.get().closeTransaction();
+            ListManager.get().indexItem(_list, this);
         }
     }
 

@@ -298,7 +298,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         }
 
         // schedules a scan (doesn't touch db)
-        ListManager.get().enumerateDocuments(null, getContainer(), null);
+        ListManager.get().indexList(def);
         return new ArrayList<String>(); // GWT error Collections.emptyList();
     }
 

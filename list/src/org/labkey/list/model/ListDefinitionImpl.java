@@ -379,7 +379,7 @@ public class ListDefinitionImpl implements ListDefinition
         {
             ExperimentService.get().closeTransaction();
         }
-        ListManager.get().enumerateDocuments(null, getContainer(), null);
+        ListManager.get().indexList(_def);
     }
 
     private void processSqlException(SQLException e) throws Exception

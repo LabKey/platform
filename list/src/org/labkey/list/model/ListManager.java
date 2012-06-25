@@ -37,6 +37,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
+import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -58,6 +59,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ListManager implements SearchService.DocumentProvider
 {
@@ -102,17 +104,14 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
     
+    // Note: callers must invoke indexer (can't invoke here since we may be in a transaction)
     public ListDef insert(User user, ListDef def) throws SQLException
     {
-        ListDef ret = Table.insert(user, getTinfoList(), def);
-        Container c = ContainerManager.getForId(def.getContainerId());
-        if (null != c)
-            enumerateDocuments(null, c, null);
-        return ret;
+        return Table.insert(user, getTinfoList(), def);
     }
 
 
-    // Note: caller must invoke indexer (can't invoke here since we may already be in a transaction)
+    // Note: callers must invoke indexer (can't invoke here since we may already be in a transaction)
     ListDef update(User user, ListDef def) throws SQLException
     {
         Container c = ContainerManager.getForId(def.getContainerId());
@@ -143,10 +142,11 @@ public class ListManager implements SearchService.DocumentProvider
 
     public static final SearchService.SearchCategory listCategory = new SearchService.SearchCategory("list", "List");
 
+    // Index all lists in this container
     public void enumerateDocuments(@Nullable SearchService.IndexTask t, final @NotNull Container c, @Nullable Date since)   // TODO: Use since?
     {
-        final SearchService.IndexTask task = null==t ? ServiceRegistry.get(SearchService.class).defaultTask() : t;
-        
+        final SearchService.IndexTask task = null == t ? ServiceRegistry.get(SearchService.class).defaultTask() : t;
+
         Runnable r = new Runnable()
         {
             public void run()
@@ -164,6 +164,24 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
     
+    // Index a single list
+    public void indexList(final ListDef def)
+    {
+        final SearchService.IndexTask task = ServiceRegistry.get(SearchService.class).defaultTask();
+
+        Runnable r = new Runnable()
+        {
+            public void run()
+            {
+                ListDefinition list = ListDefinitionImpl.of(def);
+                indexList(task, list);
+            }
+        };
+
+        task.addRunnable(r, SearchService.PRIORITY.item);
+    }
+
+
     private void indexList(@NotNull SearchService.IndexTask task, ListDefinition list)
     {
         Domain domain = list.getDomain();
@@ -177,7 +195,51 @@ public class ListManager implements SearchService.DocumentProvider
         }
 
         indexEntireList(task, list, domain);
-        indexIndividualItems(task, list);
+        indexAllItems(task, list);
+    }
+
+
+    // Index (or delete) a single list item after item save or delete
+    public void indexItem(final ListDefinition list, final ListItem item)
+    {
+        if (!list.getEntireListIndex() && !list.getEachItemIndex())
+            return;
+
+        final SearchService.IndexTask task = ServiceRegistry.get(SearchService.class).defaultTask();
+
+        Runnable r = new Runnable()
+        {
+            public void run()
+            {
+                SimpleFilter filter = new SimpleFilter(list.getKeyName(), item.getKey());
+                int count = indexItems(task, list, filter);
+
+                if (0 == count)
+                    LOG.info("I should be deleting!");
+            }
+        };
+
+        task.addRunnable(r, SearchService.PRIORITY.item);
+    }
+
+
+    // Delete a single list item from the index after item delete
+    public void deleteItem(final ListDefinition list, final ListItem item)
+    {
+        if (!list.getEntireListIndex() && !list.getEachItemIndex())
+            return;
+
+        final SearchService.IndexTask task = ServiceRegistry.get(SearchService.class).defaultTask();
+
+        Runnable r = new Runnable()
+        {
+            public void run()
+            {
+                ServiceRegistry.get(SearchService.class).deleteResource(getDocumentId(list, item.getKey()));
+            }
+        };
+
+        task.addRunnable(r, SearchService.PRIORITY.delete);
     }
 
 
@@ -193,7 +255,8 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
 
-    private void indexIndividualItems(@NotNull final SearchService.IndexTask task, final ListDefinition list)
+    // Reindex all items in this list
+    private void indexAllItems(@NotNull final SearchService.IndexTask task, final ListDefinition list)
     {
         if (!list.getEachItemIndex())
         {
@@ -201,13 +264,21 @@ public class ListManager implements SearchService.DocumentProvider
             return;
         }
 
-        final StringExpression titleTemplate = createTitleTemplate(list);
-        final StringExpression bodyTemplate = createBodyTemplate(list, list.getEachItemBodySetting(), list.getEachItemBodyTemplate());
-        TableInfo ti = list.getTable(User.getSearchUser());
-
         // Index all items that have never been indexed OR where either the list definition or list item itself has changed since last indexed
         String test = "LastIndexed IS NULL OR LastIndexed < ? OR (Modified IS NOT NULL AND LastIndexed < Modified)";
         SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause(test, new Object[]{list.getModified()}));
+
+        indexItems(task, list, filter);
+    }
+
+
+    // Reindex items specified by filter
+    private int indexItems(@NotNull final SearchService.IndexTask task, final ListDefinition list, SimpleFilter filter)
+    {
+        final StringExpression titleTemplate = createTitleTemplate(list);
+        final StringExpression bodyTemplate = createBodyTemplate(list, list.getEachItemBodySetting(), list.getEachItemBodyTemplate());
+        final AtomicInteger count = new AtomicInteger();
+        TableInfo ti = list.getTable(User.getSearchUser());
 
         new TableSelector(ti, filter, null).forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
         {
@@ -254,8 +325,11 @@ public class ListManager implements SearchService.DocumentProvider
                 r.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
 
                 task.addResource(r, SearchService.PRIORITY.item);
+                count.incrementAndGet();
             }
         });
+
+        return count.intValue();
     }
 
 
