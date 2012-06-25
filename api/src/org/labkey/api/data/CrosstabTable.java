@@ -300,7 +300,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
             ColumnInfo col = entry.getValue();
             String measureName;
             if (col instanceof AggregateColumnInfo)
-                measureName = ((AggregateColumnInfo) col).getMember().getValue().toString();
+                measureName = String.valueOf(((AggregateColumnInfo) col).getMember().getValue());
             else if (col instanceof DimensionColumnInfo)
                 measureName = ((DimensionColumnInfo) col).getSourceFieldKey().toString();
             else

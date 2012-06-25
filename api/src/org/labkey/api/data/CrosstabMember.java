@@ -15,6 +15,8 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DetailsURL;
@@ -41,24 +43,24 @@ public class CrosstabMember
     public static final String CAPTION_NAME = "**caption**";
     public static final String CAPTION_TOKEN = "${" + CAPTION_NAME + "}";
 
-    private Object _value = null;
-    private String _caption = null;
-    private FieldKey _dimensionFieldKey = null;
+    private @Nullable Object _value = null;
+    private @Nullable String _caption = null;
+    private @NotNull FieldKey _dimensionFieldKey = null;
 
-    public CrosstabMember(Object value, CrosstabDimension dimension, String caption)
+    public CrosstabMember(@Nullable Object value, @NotNull CrosstabDimension dimension, @Nullable String caption)
     {
         this(value, dimension.getFieldKey(), caption);
     }
 
-    public CrosstabMember(Object value, FieldKey dimensionFieldKey, String caption)
+    public CrosstabMember(@Nullable Object value, @NotNull FieldKey dimensionFieldKey, @Nullable String caption)
     {
-        assert null != value && null != dimensionFieldKey;
+        assert null != dimensionFieldKey;
         _value = value;
         _caption = caption;
         _dimensionFieldKey = dimensionFieldKey;
     }
 
-    public Object getValue()
+    public @Nullable Object getValue()
     {
         return _value;
     }
@@ -67,7 +69,7 @@ public class CrosstabMember
     {
         // Prefix the value with an underscore to allow us to filter on integer values.  (Otherwise
         // the first digit will be replaced by an underscore, creating collisions between 10 and 20, for example.
-        return AliasManager.makeLegalName("_" + getValue().toString(), dialect);
+        return AliasManager.makeLegalName("_" + String.valueOf(getValue()), dialect);
     }
 
     public void setValue(Object value)
@@ -77,7 +79,7 @@ public class CrosstabMember
 
     public String getCaption()
     {
-        return (null == _caption ? _value.toString() : _caption);
+        return (null == _caption ? String.valueOf(getValue()) : _caption);
     }
 
     public void setCaption(String caption)
@@ -102,7 +104,7 @@ public class CrosstabMember
         {
             if (VALUE_TOKEN.equals(param.getValue()))
             {
-                rewrittenURL.replaceParameter(param.getKey(), getValue().toString());
+                rewrittenURL.replaceParameter(param.getKey(), String.valueOf(getValue()));
             }
             if (CAPTION_TOKEN.equals(param.getValue()))
             {
@@ -117,7 +119,7 @@ public class CrosstabMember
     {
         if(null == template)
             return null;
-        String ret = template.replace(VALUE_TOKEN, getValue().toString());
+        String ret = template.replace(VALUE_TOKEN, String.valueOf(getValue()));
         return ret.replace(CAPTION_TOKEN, getCaption());
     }
 
