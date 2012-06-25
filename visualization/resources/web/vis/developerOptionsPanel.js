@@ -169,14 +169,21 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
         // verify the pointClickFn for JS errors
         if (!this.pointClickFnTextArea.isDisabled())
         {
+            var fnText = this.pointClickFnTextArea.getValue().trim();
+            if (fnText == null || fnText.length == 0 || fnText.indexOf("function") != 0)
+            {
+                Ext4.getDom(this.fnErrorDiv).innerHTML = '<span class="labkey-error">Error: the value provided does not begin with a function declaration.</span>';
+                return;
+            }
+
             try
             {
-                var verifyFn = new Function("", "return " + this.pointClickFnTextArea.getValue());
+                var verifyFn = new Function("", "return " + fnText);
             }
             catch(err)
             {
                 console.error(err.message);
-                Ext4.getDom(this.fnErrorDiv).innerHTML = '<span class="labkey-error">There was an error parsing the function: ' + err.message + '</span>';
+                Ext4.getDom(this.fnErrorDiv).innerHTML = '<span class="labkey-error">Error parsing the function: ' + err.message + '</span>';
                 return;
             }
             Ext4.getDom(this.fnErrorDiv).innerHTML = '&nbsp;';
