@@ -277,7 +277,9 @@ public class ExcelFactory
             else if (isCellNumeric(cell) && DateUtil.isCellDateFormatted(cell) && cell.getDateCellValue() != null)
                 return formatter.format(cell.getDateCellValue());
             else
-                return CellFormat.getInstance(cell.getCellStyle().getDataFormatString()).apply(cell).text;
+                // This seems to be the best way to get the value that's shown in Excel
+                // http://stackoverflow.com/questions/1072561/how-can-i-read-numeric-strings-in-excel-cells-as-string-not-numbers-with-apach
+                return new DataFormatter().formatCellValue(cell);
         }
         return "";
     }
