@@ -277,6 +277,9 @@ public class AssaySchemaImpl extends AssaySchema
             {
                 // Will be null if the domain doesn't have any properties
                 propsCol.setFk(new AssayPropertyForeignKey(batchDomain));
+                propsCol.setUserEditable(false);
+                propsCol.setShownInInsertView(false);
+                propsCol.setShownInUpdateView(false);
             }
             result.setDomain(batchDomain);
         }
@@ -304,6 +307,9 @@ public class AssaySchemaImpl extends AssaySchema
             {
                 // Will be null if the domain doesn't have any properties
                 propsCol.setFk(new AssayPropertyForeignKey(runDomain));
+                propsCol.setUserEditable(false);
+                propsCol.setShownInInsertView(false);
+                propsCol.setShownInUpdateView(false);
             }
             runTable.setDomain(runDomain);
         }

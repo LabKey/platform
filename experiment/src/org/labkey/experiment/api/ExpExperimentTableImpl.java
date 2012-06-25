@@ -65,7 +65,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
             case Hypothesis:
                 return wrapColumn(alias, _rootTable.getColumn("Hypothesis"));
             case LSID:
-                return wrapColumn(alias, _rootTable.getColumn("LSID"));
+                return setupNonEditableCol(wrapColumn(alias, _rootTable.getColumn("LSID")));
             case Name:
                 return wrapColumn(alias, _rootTable.getColumn("Name"));
             case RowId:
