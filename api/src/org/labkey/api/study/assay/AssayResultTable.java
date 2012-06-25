@@ -193,6 +193,8 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
         dataColumn.setLabel("Data");
         dataColumn.setFk(new ExpSchema(_schema.getUser(), _schema.getContainer()).getDataIdForeignKey());
         dataColumn.setUserEditable(false);
+        dataColumn.setShownInUpdateView(false);
+        dataColumn.setShownInUpdateView(false);
 
         getColumn("RowId").setShownInUpdateView(false);
 
