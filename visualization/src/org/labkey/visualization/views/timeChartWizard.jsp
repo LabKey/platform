@@ -31,6 +31,7 @@
     VisualizationController.GetVisualizationForm form = me.getModelBean();
     boolean canEdit = false;
     boolean canShare = ctx.hasPermission(ShareReportPermission.class);
+    boolean isDeveloper = ctx.getUser().isDeveloper();
     ReportIdentifier id = form.getReportId();
     Report report = null;
 
@@ -146,7 +147,8 @@
                     chartInfo: chartInfo,
                     saveReportInfo: saveReportInfo,
                     canEdit: <%=canEdit%>,
-                    canShare: <%=canShare%>
+                    canShare: <%=canShare%>,
+                    isDeveloper: <%=isDeveloper%>
                 })
             ]
         });

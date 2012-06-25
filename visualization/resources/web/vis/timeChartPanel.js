@@ -14,6 +14,7 @@ LABKEY.requiresScript("vis/yAxisOptionsPanel.js");
 LABKEY.requiresScript("vis/xAxisOptionsPanel.js");
 LABKEY.requiresScript("vis/groupingOptionsPanel.js");
 LABKEY.requiresScript("vis/aestheticOptionsPanel.js");
+LABKEY.requiresScript("vis/developerOptionsPanel.js");
 LABKEY.requiresScript("vis/mainTitleOptionsPanel.js");
 LABKEY.requiresScript("vis/participantSelector.js");
 LABKEY.requiresScript("vis/groupSelector.js");
@@ -357,16 +358,27 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             }
         });
 
+        this.editorDeveloperPanel = Ext4.create('LABKEY.vis.DeveloperOptionsPanel', {
+            isDeveloper: this.isDeveloper,
+            pointClickFn: this.chartInfo.pointClickFn || null,
+            bubbleEvents: ['closeOptionsWindow'],
+            listeners: {
+                scope: this,
+                'chartDefinitionChanged': this.chartDefinitionChanged
+            }
+        });
+
         // put the options panels in an array for easier access
         this.optionPanelsArray = [
-                this.editorMeasurePanel,
-                this.editorGroupingPanel,
-                this.editorAestheticsPanel,
-                this.editorMainTitlePanel,
-                this.editorXAxisPanel,
-                this.editorYAxisLeftPanel,
-                this.editorYAxisRightPanel,
-                this.editorSavePanel
+            this.editorMeasurePanel,
+            this.editorGroupingPanel,
+            this.editorAestheticsPanel,
+            this.editorDeveloperPanel,
+            this.editorMainTitlePanel,
+            this.editorXAxisPanel,
+            this.editorYAxisLeftPanel,
+            this.editorYAxisRightPanel,
+            this.editorSavePanel
         ];
 
         this.loaderFn = this.renderLineChart;  // default is to show the chart
@@ -402,6 +414,9 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         this.aestheticsButton = Ext4.create('Ext.button.Button', {text: 'Options',
                                 handler: function(btn){this.optionsButtonClicked(btn, this.editorAestheticsPanel, 300, 125, 'center');}, scope: this});
+
+        this.developerButton = Ext4.create('Ext.button.Button', {text: 'Developer', hidden: !this.isDeveloper,
+                                handler: function(btn){this.optionsButtonClicked(btn, this.editorDeveloperPanel, 800, 500, 'center');}, scope: this});
 
         this.saveButton = Ext4.create('Ext.button.Button', {text: 'Save', hidden: !this.canEdit,
                         handler: function(btn){
@@ -469,6 +484,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     this.measuresButton,
                     this.groupingButton,
                     this.aestheticsButton,
+                    this.developerButton,
                     '->',
                     this.saveButton,
                     this.saveAsButton
@@ -517,7 +533,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         else if (align == 'right')
             pLeft = pLeft - width + button.getWidth();
 
-        this.showOptionsWindow(button, panel, width, height, pLeft, pTop);
+        this.showOptionsWindow(button, panel, width, pLeft, pTop);
     },
 
     chartElementClicked : function(panel, clickXY, width, height, align) {
@@ -546,10 +562,10 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         }
 
         // no good animation target for the chart elements
-        this.showOptionsWindow(null, panel, width, height, pLeft, pTop);
+        this.showOptionsWindow(null, panel, width, pLeft, pTop);
     },
 
-    showOptionsWindow : function(animateTarget, panel, width, height, positionLeft, positionTop) {
+    showOptionsWindow : function(animateTarget, panel, width, positionLeft, positionTop) {
         if (!this.optionWindow)
         {
             this.optionWindow = Ext4.create('Ext.window.Window', {
@@ -562,7 +578,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 closable: false,
                 shadow: false,
                 width: 860,
-                height: 250,
+                autoHeight: true,
                 modal: true,
                 closeAction: 'hide',
                 layout: 'card',
@@ -576,7 +592,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             });
         }
 
-        this.optionWindow.setSize(width, height);
+        this.optionWindow.setWidth(width);
         this.optionWindow.setPosition(positionLeft, positionTop, false);
 
         this.optionWindow.show(animateTarget);
@@ -649,6 +665,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.measuresButton.setDisabled(disable);
         this.groupingButton.setDisabled(disable);
         this.aestheticsButton.setDisabled(disable);
+        this.developerButton.setDisabled(disable);
         this.saveButton.setDisabled(disable);
         this.saveAsButton.setDisabled(disable);
     },
@@ -656,6 +673,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
     disableNonMeasureOptionButtons: function(){
         this.groupingButton.disable();
         this.aestheticsButton.disable();
+        this.developerButton.disable();
 
         this.disablePdfExportButtons();
 
@@ -669,11 +687,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
     },
 
     disableOptionElements: function(){
-        this.measuresButton.disable();
-        this.groupingButton.disable();
-        this.aestheticsButton.disable();
-        this.saveButton.disable();
-        this.saveAsButton.disable();
+        this.toggleOptionButtons(true);
         this.filtersPanel.disable();
         this.clearChartPanel("There are no demographic date options available in this study.<br/>"
                             + "Please contact an administrator to have them configure the study to work with the Time Chart wizard.");
@@ -860,6 +874,9 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         simplified.hideDataPoints = config.hideDataPoints;
         simplified.lineWidth = config.lineWidth;
         simplified.title = config.title;
+
+        if (config.pointClickFn != null)
+            simplified.pointClickFn = config.pointClickFn;
 
         // compare subject groups by labels and participantIds (not id and created date)
         simplified.subject = Ext4.clone(config.subject);
@@ -1371,6 +1388,21 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             }
         };
 
+        // create a new function from the pointClickFn string provided by the developer
+        if (chartInfo.pointClickFn)
+        {
+            // the developer is expected to return a function, so we encapalate it within the anonymous function
+            // (note: the function should have already be validated in a try/catch when applied via the developerOptionsPanel)
+            var devPointClickFn = new Function("", "return " + chartInfo.pointClickFn);
+        }
+
+        var pointClickFn = function(columnMap, measureInfo) {
+            return function(clickEvent, data) {
+                // call the developers function, within the anonymous function, with the params as defined for the developer                 
+                devPointClickFn().call(this, data, columnMap, measureInfo, clickEvent);
+            }
+        };
+
         var layers = [];
         var xTitle = '', yLeftTitle = '', yRightTitle = '';
         var yLeftMin = null, yLeftMax = null, yLeftTrans = null;
@@ -1452,6 +1484,15 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     } else {
                         pointLayerConfig.aes.hoverText = hoverTextFn(individualSubjectColumn, intervalKey, chartSeries.name, columnName, visitMap, null, null);
                     }
+
+                    if (chartInfo.pointClickFn)
+                    {
+                        pointLayerConfig.aes.pointClickFn = pointClickFn(
+                            {participant: individualSubjectColumn, interval: intervalKey, measure: columnName},
+                            {schemaName: chartSeries.schemaName, queryName: chartSeries.queryName, name: chartSeries.name}
+                        );
+                    }
+
                     layers.push(new LABKEY.vis.Layer(pointLayerConfig));
                 }
             }
@@ -1627,6 +1668,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             if(md.dimension && md.dimension.values) {
                 Ext4.each(md.dimension.values, function(val) {
                     arr.push({
+                        schemaName: md.dimension.schemaName,
+                        queryName: md.dimension.queryName,
                         name: val,
                         measureIndex: i,
                         yAxisSide: md.measure.yAxis
@@ -1635,6 +1678,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             }
             else {
                 arr.push({
+                    schemaName: md.measure.schemaName,
+                    queryName: md.measure.queryName,
                     name: md.measure.name,
                     measureIndex: i,
                     yAxisSide: md.measure.yAxis
@@ -1756,6 +1801,9 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         // get the chart aesthetic options information
         Ext4.apply(config, this.editorAestheticsPanel.getPanelOptionValues());
+
+        // get the developer options information
+        Ext4.apply(config, this.editorDeveloperPanel.getPanelOptionValues());
 
         // get the main title from the option panel
         Ext4.apply(config, this.editorMainTitlePanel.getPanelOptionValues());
