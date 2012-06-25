@@ -559,7 +559,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             VisualizationIntervalColumn interval = intervals.get(i);
             // if the end date has multiple aliases, set it to be the first
             Set<VisualizationSourceColumn> intervalAliases = allAliases.get(interval.getEndDate().getOriginalName());
-            if (intervalAliases.size() > 1)
+            if (intervalAliases != null && intervalAliases.size() > 1)
             {
                 interval.getEndDate().setOtherAlias(factory.getByAlias(intervalAliases.iterator().next().getAlias()).getAlias());
             }
@@ -575,7 +575,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                 Set<VisualizationSourceColumn> orderByAliases = allAliases.get(orderBy.getOriginalName());
                 
                 VisualizationSourceColumn column;
-                if (orderByAliases.size() > 1)
+                if (orderByAliases != null && orderByAliases.size() > 1)
                 {
                     column = factory.getByAlias(orderByAliases.iterator().next().getAlias());
                 }
