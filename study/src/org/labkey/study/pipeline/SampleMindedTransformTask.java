@@ -268,7 +268,7 @@ public class SampleMindedTransformTask extends PipelineJob.Task<SampleMindedTran
         String studyNum = getNonNullValue(inputRow, "studynum");
         if (!ptid.startsWith(studyNum))
         {
-            ptid = studyNum.toString() + ptid;
+            ptid = studyNum + ptid;
         }
         outputRow.put("ptid", ptid);
         outputRow.put("tube_type", inputRow.get("vesseldomaintype"));
@@ -594,6 +594,46 @@ public class SampleMindedTransformTask extends PipelineJob.Task<SampleMindedTran
         }
 
         @Test
+        public void testEmptyRow()
+        {
+            _context.checking(new Expectations()
+            {{
+                oneOf(_job).warn("Skipping data row with missing or invalid barcode, row number 1");
+            }});
+
+            Map<String, Object> row1 = new HashMap<String, Object>();
+            assertEquals(null, _task.transformRow(row1, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>()));
+        }
+
+        @Test
+        public void testCollectionDateBucketing()
+        {
+            Map<String, Object> row = new HashMap<String, Object>();
+            row.put("participant", "ptid1");
+            row.put("barcode", "barcode");
+            String date = "May 5, 2012";
+            row.put("collectiondate", "May 6, 2012");
+            row.put("activitysavedatetime", date);
+            row.put("activity", "Some Lab Receiving");
+            Map<String, Object> outputRow = _task.transformRow(row, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>());
+            assertEquals("Bad receiving handling", date, outputRow.get("lab_receipt_date"));
+            assertEquals("Bad receiving handling", null, outputRow.get("ship_date"));
+            assertEquals("Bad receiving handling", null, outputRow.get("processing_date"));
+
+            row.put("activity", "Ship Specimens from Clinical Site");
+            outputRow = _task.transformRow(row, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>());
+            assertEquals("Bad receiving handling", null, outputRow.get("lab_receipt_date"));
+            assertEquals("Bad receiving handling", date, outputRow.get("ship_date"));
+            assertEquals("Bad receiving handling", null, outputRow.get("processing_date"));
+
+            row.put("activity", "Aliquoting");
+            outputRow = _task.transformRow(row, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>());
+            assertEquals("Bad receiving handling", null, outputRow.get("lab_receipt_date"));
+            assertEquals("Bad receiving handling", null, outputRow.get("ship_date"));
+            assertEquals("Bad receiving handling", date, outputRow.get("processing_date"));
+        }
+
+        @Test
         public void testMissingCollectionDate()
         {
             _context.checking(new Expectations()
@@ -608,6 +648,43 @@ public class SampleMindedTransformTask extends PipelineJob.Task<SampleMindedTran
             row1.put("visitname", "Visit 01");
 
             assertEquals(null, _task.transformRow(row1, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>()));
+        }
+
+        @Test
+        public void testPrimaryAndDerivatives() throws IOException
+        {
+            Map<String, Object> row1 = new HashMap<String, Object>();
+            row1.put("participant", "ptid1");
+            row1.put("barcode", "barcode-1");
+            row1.put("collectiondate", "May 5 2001");
+            row1.put("visitname", "Visit 01");
+            row1.put("specimentype", "PBMC");
+
+            List<Map<String, Object>> inputRows = new ArrayList<Map<String, Object>>();
+            inputRows.add(row1);
+            Map<String, Object> row2 = new HashMap<String, Object>(row1);
+            row2.put("specimentype", "Blood");
+            inputRows.add(row2);
+            Map<String, Object> row3 = new HashMap<String, Object>(row1);
+            row3.put("specimentype", "NewType!");
+            inputRows.add(row3);
+            Map<String, Object> row4 = new HashMap<String, Object>(row3);
+            row4.put("participant", "ptid2");
+            inputRows.add(row4);
+            
+            Map<String, Integer> primaryIds = new LinkedHashMap<String, Integer>(STANDARD_PRIMARY_TYPE_IDS);
+            Map<String, Integer> derivativeIds = new LinkedHashMap<String, Integer>(STANDARD_DERIVATIVE_TYPE_IDS);
+
+            List<Map<String, Object>> outputRows = _task.transformRows(new HashMap<String, Integer>(), primaryIds, derivativeIds, inputRows);
+            assertEquals(4, outputRows.size());
+            assertEquals(primaryIds.get("Blood"), outputRows.get(0).get("primary_specimen_type_id"));
+            assertEquals(derivativeIds.get("PBMC"), outputRows.get(0).get("derivative_type_id"));
+            assertEquals(primaryIds.get("Blood"), outputRows.get(1).get("primary_specimen_type_id"));
+            assertEquals(derivativeIds.get("Blood"), outputRows.get(1).get("derivative_type_id"));
+            assertEquals(primaryIds.get("NewType!"), outputRows.get(2).get("primary_specimen_type_id"));
+            assertEquals(derivativeIds.get("NewType!"), outputRows.get(2).get("derivative_type_id"));
+            assertEquals(primaryIds.get("NewType!"), outputRows.get(3).get("primary_specimen_type_id"));
+            assertEquals(derivativeIds.get("NewType!"), outputRows.get(3).get("derivative_type_id"));
         }
     }
 }

@@ -21,8 +21,6 @@ import org.jmock.Mockery;
 import org.jmock.lib.legacy.ClassImposteriser;
 import org.junit.Before;
 import org.junit.Test;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.cmd.BooleanToSwitch;
 import org.labkey.api.pipeline.cmd.ListToCommandArgs;
@@ -156,9 +154,6 @@ public class PipelineCommandTestCase extends Assert
         commandList.addConverter(test4);
         commandList.addConverter(test5);
 
-        Container root = ContainerManager.createFakeContainer(null, null);
-        Container c = ContainerManager.createFakeContainer("test", root);
-
         // expected param args to be : -a 100 -b -c testing -d testing2 100 -999
         final PipelineJob j = _context.mock(PipelineJob.class);
         _context.checking(new Expectations() {{
@@ -170,10 +165,6 @@ public class PipelineCommandTestCase extends Assert
             will(returnValue(params));
         }});
         
-//        TestJob j = new TestJob(c);
-//        j.addParameter("test, boolean to switch", "yes");
-//        j.addParameter("test, value with switch", "testing");
-//        j.addParameter("test, value to switch with multi args", "testing2 100 -999");
         String[] args = commandList.toArgs(new CommandTaskImpl(j, new CommandTaskImpl.Factory()), new HashSet<TaskToCommandArgs>());
         assertEquals("Unexpected length for args", 9, args.length);
         assertEquals("Unexpected arg for RequiredSwitch", "-a", args[0]);
