@@ -76,6 +76,18 @@ public class ReportViewProvider implements DataViewProvider
     }
 
     @Override
+    public void initialize(ViewContext context) throws Exception
+    {
+        Container c = context.getContainer();
+        User user = context.getUser();
+
+        ReportPropsManager.get().ensureProperty(c, user, "status", "Status", PropertyType.STRING);
+        ReportPropsManager.get().ensureProperty(c, user, "author", "Author", PropertyType.INTEGER);
+        ReportPropsManager.get().ensureProperty(c, user, "refreshDate", "RefreshDate", PropertyType.DATE_TIME);
+        ReportPropsManager.get().ensureProperty(c, user, "thumbnailType", "ThumbnailType", PropertyType.STRING);
+    }
+
+    @Override
     public List<DataViewInfo> getViews(ViewContext context) throws Exception
     {
         Container container = context.getContainer();
@@ -111,11 +123,6 @@ public class ReportViewProvider implements DataViewProvider
 
         try
         {
-            ReportPropsManager.get().ensureProperty(c, user, "status", "Status", PropertyType.STRING);
-            ReportPropsManager.get().ensureProperty(c, user, "author", "Author", PropertyType.INTEGER);
-            ReportPropsManager.get().ensureProperty(c, user, "refreshDate", "RefreshDate", PropertyType.DATE_TIME);
-            ReportPropsManager.get().ensureProperty(c, user, "thumbnailType", "ThumbnailType", PropertyType.STRING);
-
             for (Report r : ReportUtil.getReports(c, user, reportKey, true))
             {
                 if (!filter.accept(r, c, user))

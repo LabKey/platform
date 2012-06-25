@@ -511,16 +511,18 @@ public class TemplateView extends HorizontalPanel
 
     public void createWellGroup(String groupName, String type)
     {
-        setDirty(true);
         Map<String, Object> properties = getPropertiesForType(type);
         properties.put("Type", type);
         properties.put("Name", groupName);
         GWTWellGroup group = new GWTWellGroup(type, groupName, new ArrayList<GWTPosition>(), properties);
-        _plate.addGroup(group);
-        List<GroupChangeListener> listenersCopy = new ArrayList<GroupChangeListener>(_groupListeners);
-        for (GroupChangeListener listener : listenersCopy)
-            listener.groupAdded(group);
-        setActiveGroup(group);
+        if (_plate.addGroup(group))
+        {
+            setDirty(true);
+            List<GroupChangeListener> listenersCopy = new ArrayList<GroupChangeListener>(_groupListeners);
+            for (GroupChangeListener listener : listenersCopy)
+                listener.groupAdded(group);
+            setActiveGroup(group);
+        }
     }
 
     public void setActiveType(String activeType)
@@ -568,9 +570,9 @@ public class TemplateView extends HorizontalPanel
 
     private Map<String, Object> getPropertiesForType(String type)
     {
-        List<GWTWellGroup> groups = _plate.getTypeToGroupsMap().get(type);
-        if (groups != null && groups.size() > 0)
-            return groups.get(0).getProperties();
+        Set<GWTWellGroup> groups = _plate.getTypeToGroupsMap().get(type);
+        if (groups != null && !groups.isEmpty())
+            return groups.iterator().next().getProperties();
         else
             return new HashMap<String, Object>();
     }

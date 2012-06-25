@@ -54,6 +54,11 @@ public class QueryDataViewProvider implements DataViewProvider
     {
         return _type;
     }
+
+    @Override
+    public void initialize(ViewContext context)
+    {
+    }
     
     @Override
     public List<DataViewInfo> getViews(ViewContext context) throws Exception

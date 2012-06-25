@@ -42,6 +42,7 @@ import org.labkey.api.gwt.client.util.StringProperty;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: brittp
@@ -69,16 +70,16 @@ public class GroupTypePanel extends ScrollPanel implements GroupChangeListener
     public void redraw()
     {
         clear();
-        List wellgroups = _view.getPlate().getTypeToGroupsMap().get(_type);
+        Set<GWTWellGroup> wellgroups = _view.getPlate().getTypeToGroupsMap().get(_type);
         FlexTable groupList = new FlexTable();
         groupList.setCellPadding(5);
         if (wellgroups != null)
         {
-            for (int i = 0; i < wellgroups.size(); i++)
+            int i=0;
+            for (GWTWellGroup group : wellgroups)
             {
-                GWTWellGroup group = (GWTWellGroup) wellgroups.get(i);
                 GroupTypePanelRow row = new GroupTypePanelRow(_view, group);
-                row.attach(groupList, i);
+                row.attach(groupList, i++);
             }
         }
         else

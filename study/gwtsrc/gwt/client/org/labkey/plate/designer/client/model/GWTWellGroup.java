@@ -90,4 +90,24 @@ public class GWTWellGroup implements IsSerializable
     {
         _properties = properties;
     }
+
+    @Override
+    public int hashCode()
+    {
+        return _name.hashCode() + (_type.hashCode() * 31);
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        GWTWellGroup that = (GWTWellGroup) o;
+
+        if (!_name.equals(that._name)) return false;
+        if (!_type.equals(that._type)) return false;
+
+        return true;
+    }
 }

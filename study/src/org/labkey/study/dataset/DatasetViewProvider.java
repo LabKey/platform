@@ -23,6 +23,7 @@ import org.labkey.api.data.views.DataViewInfo;
 import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.data.views.DefaultViewInfo;
 import org.labkey.api.data.views.ProviderType;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
@@ -67,6 +68,17 @@ public class DatasetViewProvider implements DataViewProvider
         Study study = StudyService.get().getStudy(container);
 
         return study != null;
+    }
+
+    @Override
+    public void initialize(ViewContext context) throws Exception
+    {
+        Container c = context.getContainer();
+        User user = context.getUser();
+
+        ReportPropsManager.get().ensureProperty(c, user, "status", "Status", PropertyType.STRING);
+        ReportPropsManager.get().ensureProperty(c, user, "author", "Author", PropertyType.INTEGER);
+        ReportPropsManager.get().ensureProperty(c, user, "refreshDate", "RefreshDate", PropertyType.DATE_TIME);
     }
 
     @Override
