@@ -46,7 +46,7 @@ public class DataViewService
 
     private static final Logger _log = Logger.getLogger(DataViewService.class);
     private static final DataViewService _instance = new DataViewService();
-    private static final Map<DataViewProvider.Type, Boolean> _providerInitialized = new HashMap<DataViewProvider.Type, Boolean>();
+    private static final Map<String, Boolean> _providerInitialized = new HashMap<String, Boolean>();
 
     public static DataViewService get()
     {
@@ -106,11 +106,12 @@ public class DataViewService
             if (_providers.containsKey(type))
             {
                 DataViewProvider provider = _providers.get(type);
+                String key = getCacheKey(context.getContainer(), type);
 
-                if (!_providerInitialized.containsKey(type))
+                if (!_providerInitialized.containsKey(key))
                 {
                     provider.initialize(context);
-                    _providerInitialized.put(type, true);
+                    _providerInitialized.put(key, true);
                 }
 
                 if (provider.isVisible(context.getContainer(), context.getUser()))
@@ -120,6 +121,11 @@ public class DataViewService
                 throw new IllegalStateException("Provider type: " + type.getName() + " not found.");
         }
         return views;
+    }
+
+    private String getCacheKey(Container c, DataViewProvider.Type type)
+    {
+        return c.getId() + "-" + type.getName();
     }
 
     public DataViewProvider getProvider(DataViewProvider.Type type)
