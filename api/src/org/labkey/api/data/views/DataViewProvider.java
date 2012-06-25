@@ -53,6 +53,14 @@ public interface DataViewProvider
 
     boolean isVisible(Container container, User user);      // specifies whether this data type is visible
 
+    /**
+     * Perform any first time initialization of the provider before a request to return views, this
+     * is generally called once per provider to perform any first time initialization.
+     *
+     * @param context
+     */
+    void initialize(ViewContext context) throws Exception;
+
     public interface EditInfo
     {
         // a list of standard properties

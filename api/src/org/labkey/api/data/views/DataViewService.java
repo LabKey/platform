@@ -30,6 +30,7 @@ import org.labkey.api.view.ViewContext;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,6 +46,7 @@ public class DataViewService
 
     private static final Logger _log = Logger.getLogger(DataViewService.class);
     private static final DataViewService _instance = new DataViewService();
+    private static final Map<DataViewProvider.Type, Boolean> _providerInitialized = new HashMap<DataViewProvider.Type, Boolean>();
 
     public static DataViewService get()
     {
@@ -104,6 +106,13 @@ public class DataViewService
             if (_providers.containsKey(type))
             {
                 DataViewProvider provider = _providers.get(type);
+
+                if (!_providerInitialized.containsKey(type))
+                {
+                    provider.initialize(context);
+                    _providerInitialized.put(type, true);
+                }
+
                 if (provider.isVisible(context.getContainer(), context.getUser()))
                     views.addAll(provider.getViews(context));
             }
