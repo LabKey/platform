@@ -86,23 +86,29 @@
                 urlTextField
             ],
             renderTo    : 'linkReportForm',
-            buttons     : [{
-                text : 'Save',
-                handler : function(btn) {
-                    var form = btn.up('form').getForm();
-                    if (form.isValid())
-                        form.submit();
-                },
-                scope   : this
-            },{
-                text: 'Cancel',
-                handler: function(){
-                    if(LABKEY.ActionURL.getParameter('returnUrl')){
-                        window.location = LABKEY.ActionURL.getParameter('returnUrl');
-                    } else {
-                        window.location = LABKEY.ActionURL.buildURL('reports', 'manageViews');
+            dockedItems: [{
+                xtype: 'toolbar',
+                dock: 'bottom',
+                ui: 'footer',
+                style: 'background-color: transparent;',
+                items: [{
+                    text : 'Save',
+                    handler : function(btn) {
+                        var form = btn.up('form').getForm();
+                        if (form.isValid())
+                            form.submit();
+                    },
+                    scope   : this
+                },{
+                    text: 'Cancel',
+                    handler: function(){
+                        if(LABKEY.ActionURL.getParameter('returnUrl')){
+                            window.location = LABKEY.ActionURL.getParameter('returnUrl');
+                        } else {
+                            window.location = LABKEY.ActionURL.buildURL('reports', 'manageViews');
+                        }
                     }
-                }
+                }]
             }]
         });
     });
