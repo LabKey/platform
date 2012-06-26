@@ -92,7 +92,7 @@ public class CrosstabDataRegion extends DataRegion
             for (DisplayColumn renderer : memberColumns)
             {
                 if (alternate)
-                    renderer.addDisplayClass("labkey-alternate-row");
+                    renderer.addDisplayClass("labkey-alternate-col");
             }
         }
 
@@ -170,7 +170,7 @@ public class CrosstabDataRegion extends DataRegion
         out.write(String.valueOf(groupHeight));
         out.write("\" class=\"labkey-data-region");
         if (alternate)
-            out.write(" labkey-alternate-row");
+            out.write(" labkey-alternate-col");
         if (isShowBorders())
             out.write(" labkey-show-borders");
         out.write("\">\n");

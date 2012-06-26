@@ -77,7 +77,7 @@ public class CrosstabView extends QueryView
         assert getTable() instanceof CrosstabTableInfo;
         CrosstabTableInfo table = (CrosstabTableInfo)getTable();
 
-        List<FieldKey> selectedCols;
+        List<FieldKey> selectedCols = null;
 
         // First check if something has explictly overridden the columns
         if (_columns != null)
@@ -88,7 +88,8 @@ public class CrosstabView extends QueryView
         {
             selectedCols = getCustomView().getColumns();
         }
-        else
+
+        if (selectedCols == null || selectedCols.isEmpty())
         {
             selectedCols = table.getDefaultVisibleColumns();
         }
