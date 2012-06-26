@@ -23,6 +23,20 @@
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+
+  public LinkedHashSet<ClientDependency> getClientDependencies()
+  {
+      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+      resources.add(ClientDependency.fromString("Ext4ClientApi"));
+      resources.add(ClientDependency.fromString("/extWidgets/IconPanel.js"));
+      resources.add(ClientDependency.fromString("extWidgets/IconPanel.css"));
+      return resources;
+  }
+%>
 <%
     JspView<Portal.WebPart> me = (JspView) HttpView.currentView();
     int webPartId = me.getModelBean().getRowId();
@@ -43,15 +57,7 @@
         hasPermission = target.hasPermission(ctx.getUser(), ReadPermission.class);
     }
 %>
-<div>
-    <div id='<%=renderTarget%>'></div>
-</div>
-<script type="text/javascript">
-
-    LABKEY.requiresExt4ClientAPI(true);
-    LABKEY.requiresScript("extWidgets/IconPanel.js");
-
-</script>
+<div id='<%=renderTarget%>'></div>
 <script type="text/javascript">
 
 Ext4.onReady(function(){
@@ -350,6 +356,5 @@ Ext4.onReady(function(){
             }
         });
     }
-
 
 </script>

@@ -68,11 +68,13 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.HomeTemplate;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -1140,8 +1142,33 @@ public class ProjectController extends SpringActionController
             if (null != titleHref && titleHref.length() > 0)
                 view.setTitleHref(titleHref);
 
-            view.render(request, getViewContext().getResponse());
-            return null;
+            ApiResponse resp = new ApiSimpleResponse();
+            LinkedHashSet<ClientDependency> dependencies = view.getClientDependencies();
+            LinkedHashSet<String> includes = new LinkedHashSet<String>();
+            LinkedHashSet<String> implicitIncludes = new LinkedHashSet<String>();
+            PageFlowUtil.getJavaScriptFiles(dependencies, includes, implicitIncludes);
+
+            LinkedHashSet<String> cssScripts = new LinkedHashSet<String>();
+            LinkedHashSet<String> implicitCssScripts = new LinkedHashSet<String>();
+            for (ClientDependency d : dependencies)
+            {
+                cssScripts.addAll(d.getCssPaths(AppProps.getInstance().isDevMode()));
+                implicitCssScripts.addAll(d.getCssPaths(AppProps.getInstance().isDevMode()));
+
+                implicitCssScripts.addAll(d.getCssPaths(!AppProps.getInstance().isDevMode()));
+            }
+
+            MockHttpServletResponse mr = new MockHttpServletResponse();
+            view.render(request, mr);
+
+            resp.getProperties().put("html", mr.getContentAsString());
+            resp.getProperties().put("requiredJsScripts", includes);
+            resp.getProperties().put("implicitJsIncludes", implicitIncludes);
+            resp.getProperties().put("requiredCssScripts", cssScripts);
+            resp.getProperties().put("implicitCssIncludes", implicitCssScripts);
+            resp.getProperties().put("moduleContext", PageFlowUtil.getModuleClientContext(getContainer(), getUser(), dependencies));
+
+            return resp;
         }
     }
 
