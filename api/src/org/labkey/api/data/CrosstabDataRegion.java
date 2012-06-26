@@ -54,49 +54,52 @@ public class CrosstabDataRegion extends DataRegion
     protected void renderGridHeaderColumns(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers)
             throws IOException, SQLException
     {
-        //add a row for the column axis label if there is one
-        out.write("<tr>\n");
-        renderColumnGroupHeader(_numRowAxisCols + (showRecordSelectors ? 1 : 0), _settings.getRowAxis().getCaption(), out, 2, false);
-        renderColumnGroupHeader(renderers.size() - _numRowAxisCols - (showRecordSelectors ? 1 : 0),
-                _settings.getColumnAxis().getCaption(), out);
-        out.write("</tr>\n");
-
-        //add an extra row for the column dimension members
-        out.write("<tr>\n");
-
-        //if record selectors are enabled, add a blank column
-        if (showRecordSelectors)
-            out.write("<td></td>\n");
-
-        List<Pair<CrosstabMember, List<DisplayColumn>>> groupedByMember = CrosstabView.columnsByMember(renderers);
-
-        // Output a group header for each column's crosstab member.
-        CrosstabDimension colDim = _settings.getColumnAxis().getDimensions().get(0);
-        boolean alternate = true;
-        for (Pair<CrosstabMember, List<DisplayColumn>> group : groupedByMember)
+        if (_numMemberMeasures > 0)
         {
-            CrosstabMember currentMember = group.first;
-            List<DisplayColumn> memberColumns = group.second;
-            if (memberColumns.isEmpty())
-                continue;
+            //add a row for the column axis label if there is one
+            out.write("<tr>\n");
+            renderColumnGroupHeader(_numRowAxisCols + (showRecordSelectors ? 1 : 0), _settings.getRowAxis().getCaption(), out, 2, false);
+            renderColumnGroupHeader(renderers.size() - _numRowAxisCols - (showRecordSelectors ? 1 : 0),
+                    _settings.getColumnAxis().getCaption(), out);
+            out.write("</tr>\n");
 
-            alternate = !alternate;
+            //add an extra row for the column dimension members
+            out.write("<tr>\n");
 
-            if (currentMember != null)
+            //if record selectors are enabled, add a blank column
+            if (showRecordSelectors)
+                out.write("<td></td>\n");
+
+            List<Pair<CrosstabMember, List<DisplayColumn>>> groupedByMember = CrosstabView.columnsByMember(renderers);
+
+            // Output a group header for each column's crosstab member.
+            CrosstabDimension colDim = _settings.getColumnAxis().getDimensions().get(0);
+            boolean alternate = true;
+            for (Pair<CrosstabMember, List<DisplayColumn>> group : groupedByMember)
             {
-                renderColumnGroupHeader(memberColumns.size(),
-                        getMemberCaptionWithUrl(colDim, currentMember), out, 1, alternate);
+                CrosstabMember currentMember = group.first;
+                List<DisplayColumn> memberColumns = group.second;
+                if (memberColumns.isEmpty())
+                    continue;
+
+                alternate = !alternate;
+
+                if (currentMember != null)
+                {
+                    renderColumnGroupHeader(memberColumns.size(),
+                            getMemberCaptionWithUrl(colDim, currentMember), out, 1, alternate);
+                }
+
+                for (DisplayColumn renderer : memberColumns)
+                {
+                    if (alternate)
+                        renderer.addDisplayClass("labkey-alternate-col");
+                }
             }
 
-            for (DisplayColumn renderer : memberColumns)
-            {
-                if (alternate)
-                    renderer.addDisplayClass("labkey-alternate-col");
-            }
+            //end the col dimension member header row
+            out.write("</tr>\n");
         }
-
-        //end the col dimension member header row
-        out.write("</tr>\n");
 
         //call the base class to finish rendering the headers
         super.renderGridHeaderColumns(ctx, out, showRecordSelectors, renderers);
