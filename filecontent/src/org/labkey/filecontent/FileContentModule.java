@@ -78,7 +78,7 @@ public class FileContentModule extends DefaultModule
         return Collections.emptyList();
     }
 
-    public void startup(ModuleContext moduleContext)
+    public void doStartup(ModuleContext moduleContext)
     {
         WebdavService.get().addProvider(new FileWebdavProvider());
         ServiceRegistry.get().registerService(FileContentService.class, new FileContentServiceImpl());

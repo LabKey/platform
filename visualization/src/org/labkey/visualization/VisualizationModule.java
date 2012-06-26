@@ -67,7 +67,7 @@ public class VisualizationModule extends DefaultModule
         ReportService.get().addUIProvider(new VisualizationUIProvider());
     }
 
-    public void startup(ModuleContext moduleContext)
+    public void doStartup(ModuleContext moduleContext)
     {
     }
 }

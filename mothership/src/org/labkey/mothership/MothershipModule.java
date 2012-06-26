@@ -138,7 +138,7 @@ public class MothershipModule extends DefaultModule
         return PageFlowUtil.<Class>set(ExceptionStackTrace.TestCase.class);
     }
 
-    public void startup(ModuleContext moduleContext)
+    public void doStartup(ModuleContext moduleContext)
     {
         ContainerManager.addContainerListener(new ContainerManager.ContainerListener()
         {

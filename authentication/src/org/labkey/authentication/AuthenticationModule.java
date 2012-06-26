@@ -62,7 +62,7 @@ public class AuthenticationModule extends DefaultModule
         AuthenticationManager.registerProvider(new LdapAuthenticationProvider(), Priority.High);
     }
 
-    public void startup(ModuleContext moduleContext)
+    public void doStartup(ModuleContext moduleContext)
     {
     }
 

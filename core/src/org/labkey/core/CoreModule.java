@@ -879,7 +879,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         private class TestModule extends DefaultModule {
             @Override
-            public void startup(ModuleContext c)
+            public void doStartup(ModuleContext c)
             {
             }
 

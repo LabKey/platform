@@ -45,7 +45,7 @@ public class TimelineModule extends DefaultModule
         addController("timeline", TimelineController.class);
     }
 
-    public void startup(ModuleContext moduleContext)
+    public void doStartup(ModuleContext moduleContext)
     {
     }
 

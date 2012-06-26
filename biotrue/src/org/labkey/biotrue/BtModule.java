@@ -74,7 +74,7 @@ public class BtModule extends DefaultModule
         return PageFlowUtil.set(BtManager.get().getSchema());
     }
 
-    public void startup(ModuleContext moduleContext)
+    public void doStartup(ModuleContext moduleContext)
     {
         BtThreadPool.get();
         ScheduledTask.getInstance().startTimer();

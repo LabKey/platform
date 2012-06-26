@@ -82,7 +82,7 @@ public class PortalModule extends DefaultModule
     }
 
 
-    public void startup(ModuleContext context)
+    public void doStartup(ModuleContext context)
     {
         ContainerManager.addContainerListener(new ContainerManager.ContainerListener()
         {

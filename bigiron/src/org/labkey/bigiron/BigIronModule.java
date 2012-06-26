@@ -62,7 +62,7 @@ public class BigIronModule extends DefaultModule
         QueryView.register(new SasExportScriptFactory());
     }
 
-    public void startup(ModuleContext moduleContext)
+    public void doStartup(ModuleContext moduleContext)
     {
     }
 

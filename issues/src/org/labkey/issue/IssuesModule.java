@@ -106,7 +106,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
     }
 
 
-    public void startup(ModuleContext moduleContext)
+    public void doStartup(ModuleContext moduleContext)
     {
         ContainerManager.addContainerListener(new IssueContainerListener());
         SecurityManager.addGroupListener(new IssueGroupListener());

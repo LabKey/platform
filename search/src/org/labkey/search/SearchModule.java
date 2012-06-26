@@ -127,7 +127,7 @@ public class SearchModule extends DefaultModule
     }
 
 
-    public void startup(ModuleContext moduleContext)
+    public void doStartup(ModuleContext moduleContext)
     {
         final SearchService ss = ServiceRegistry.get().getService(SearchService.class);
 

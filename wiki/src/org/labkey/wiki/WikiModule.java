@@ -103,7 +103,7 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
         return false;
     }
 
-    public void startup(ModuleContext moduleContext)
+    public void doStartup(ModuleContext moduleContext)
     {
         RoleManager.registerPermission(new IncludeScriptPermission(), false);
         RoleManager.getRole(DeveloperRole.class).addPermission(IncludeScriptPermission.class);

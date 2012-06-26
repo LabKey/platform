@@ -150,7 +150,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     }
 
 
-    public void startup(ModuleContext moduleContext)
+    public void doStartup(ModuleContext moduleContext)
     {
         AnnouncementListener listener = new AnnouncementListener();
         ContainerManager.addContainerListener(listener);

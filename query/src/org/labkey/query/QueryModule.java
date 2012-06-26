@@ -151,7 +151,7 @@ public class QueryModule extends DefaultModule
         return true;
     }
 
-    public void startup(ModuleContext moduleContext)
+    public void doStartup(ModuleContext moduleContext)
     {
         PipelineService.get().registerPipelineProvider(new ReportsPipelineProvider(this));
         ReportsController.registerAdminConsoleLinks();

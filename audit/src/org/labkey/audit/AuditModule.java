@@ -69,7 +69,7 @@ public class AuditModule extends DefaultModule
         return TabDisplayMode.DISPLAY_NEVER;
     }
 
-    public void startup(ModuleContext moduleContext)
+    public void doStartup(ModuleContext moduleContext)
     {
         AuditQuerySchema.register();
         AuditLogService.get().addAuditViewFactory(new SiteSettingsAuditViewFactory());

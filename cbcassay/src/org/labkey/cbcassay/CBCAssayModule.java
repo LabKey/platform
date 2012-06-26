@@ -71,7 +71,7 @@ public class CBCAssayModule extends DefaultModule
         return Collections.emptyList();
     }
 
-    public void startup(ModuleContext moduleContext)
+    public void doStartup(ModuleContext moduleContext)
     {
         ExperimentService.get().registerExperimentDataHandler(new CBCDataHandler());
         AssayService.get().registerAssayProvider(new CBCAssayProvider());
