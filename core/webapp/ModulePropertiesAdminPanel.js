@@ -63,21 +63,24 @@ Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
 
     renderForm: function(){
         var toAdd = [{
-            html: 'This page allows you to view and set module properties.  Below are the properties that can be set.  For each property, you will see value set on the current folder and parent folders.  If you do not have permission to edit this property in any of those folders, the property will appear read-only.  To see more detail about each property, hover over the question mark next to the property name.',
+            html: 'This page allows you to view and set module properties.  Below are the properties that can be set.  If the property can have a separate value per folder, there will be a field for the current folder and each parent folder.  If the property can only be set side-wide, there will only be a single field.  If you do not have permission to edit this property in any of those folders, the property will appear read-only.  To see more detail about each property, hover over the question mark next to the property name.',
             border: false,
             style: 'padding-bottom: 10px;'
         }];
 
         for(var module in this.propertyMap){
-            toAdd.push({
-                html: '<h3>Module: ' + module + '</h3>',
-                border: false,
-                style: 'padding-top: 10px;padding-bottom: 10px;'
-            });
-
+            var childItems = []
             for(var p in this.propertyMap[module].properties){
-                toAdd.push(this.getEditorForProperty(module, p));
+                childItems.push(this.getEditorForProperty(module, p));
             }
+
+            toAdd.push({
+                title: '<h3>Module: ' + module + '</h3>',
+                border: true,
+                bodyStyle: 'padding: 5px;',
+                style: 'padding-bottom: 10px;',
+                items: childItems
+            });
         }
         this.removeAll();
         this.add(toAdd);
@@ -89,31 +92,36 @@ Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
 
         var tooltip = [
             'Module: ' + pd.module,
-            'Required: ' + pd.required,
-            'Default Value: ' + (Ext4.isEmpty(pd.defaultValue) ? '' : pd.defaultValue),
-            'Description: ' + (pd.description || ''),
-            'Can Set Per Folder: ' + pd.canSetPerContainer,
-            //'Can Set Per User: ' + pd.canSetPerUser,
-            'Required: ' + pd.required
-        ].join(',<br>');
+            'Can Set Per Folder: ' + pd.canSetPerContainer
+        ];
+
+        if(!Ext4.isEmpty(pd.defaultValue))
+            tooltip.push('Default Value: ' + pd.defaultValue);
+
+        if(!Ext4.isEmpty(pd.description))
+            tooltip.push('Description: ' + pd.description);
+
+        tooltip = tooltip.join('<br>');
 
         var cfg = {
             border: false,
             items: [{
                 name: pd.name,
-                html: '<i>Property: ' + pd.name + '</i><a href="#" data-qtip="' + tooltip + '"><span class="labkey-help-pop-up">?</span></a>',
+                html: '<b>Property: ' + pd.name + '</b><a href="#" data-qtip="' + tooltip + '"><span class="labkey-help-pop-up">?</span></a>',
                 border: false,
-                bodyStyle: 'padding-left: 5px; padding-bottom: 10px;'
+                bodyStyle: 'padding-bottom: 10px;'
             },{
                 xtype: 'container',
-                style: 'padding-left: 10px;',
-                items: []
-//                items: [{
-//                    xtype: 'displayfield',
-//                    fieldLabel: 'Effective Value',
-//                    value: values.effectiveValue,
-//                    style: 'margin-bottom: 5px;'
-//                }]
+                style: 'padding-left: 5px;padding-bottom: 10px;',
+                items: [{
+                    xtype: 'displayfield',
+                    fieldLabel: '<b>Folder</b>',
+                    value: '<b>Value</b>'
+                },{
+                    width: '90%',
+                    style: 'border-top: solid 1px;padding-bottom: 5px;',
+                    border: false
+                }]
             }]
         };
 
@@ -157,8 +165,14 @@ Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
             scope: this,
             success: function(response){
                 var response = Ext4.decode(response.responseText);
-                if(response.success)
+                if(response.success){
                     Ext4.Msg.alert('Success', 'Properties saved');
+
+                    this.getForm().getFields().each(function(item){
+                        item.resetOriginalValue(item.getValue());
+                    }, this);
+
+                }
                 else
                     Ext4.Msg.alert('Error', 'There was an error saving the properties');
             },
