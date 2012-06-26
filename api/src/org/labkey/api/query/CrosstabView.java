@@ -18,10 +18,12 @@ package org.labkey.api.query;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.DataView;
 import org.springframework.validation.Errors;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -50,6 +52,30 @@ public class CrosstabView extends QueryView
     {
         super(schema, settings, errors);
         setViewItemFilter(ReportService.EMPTY_ITEM_LIST);
+    }
+
+    // Collect the DisplayColumns by column member while keeping the column order the same.
+    public static List<Pair<CrosstabMember, List<DisplayColumn>>> columnsByMember(Collection<DisplayColumn> renderers)
+    {
+        List<Pair<CrosstabMember, List<DisplayColumn>>> groupedByMember = new ArrayList<Pair<CrosstabMember, List<DisplayColumn>>>();
+
+        CrosstabMember currentMember = null;
+        List<DisplayColumn> currentMemberColumns = new ArrayList<DisplayColumn>();
+        groupedByMember.add(Pair.of(currentMember, currentMemberColumns));
+
+        for (DisplayColumn renderer : renderers)
+        {
+            ColumnInfo col = renderer.getColumnInfo();
+            if (col.getCrosstabColumnMember() != null && !col.getCrosstabColumnMember().equals(currentMember))
+            {
+                currentMember = col.getCrosstabColumnMember();
+                currentMemberColumns = new ArrayList<DisplayColumn>();
+                groupedByMember.add(Pair.of(currentMember, currentMemberColumns));
+            }
+
+            currentMemberColumns.add(renderer);
+        }
+        return groupedByMember;
     }
 
     protected DataRegion createDataRegion()
@@ -197,6 +223,6 @@ public class CrosstabView extends QueryView
         CrosstabTableInfo table = (CrosstabTableInfo)getTable();
         List<DisplayColumn> displayColumns = rgn.getDisplayColumns();
 
-        return new CrosstabExcelWriter(rs, getExportColumns(displayColumns), table.getColMembers(), _numRowAxisCols, _numMeasures, docType);
+        return new CrosstabExcelWriter(table, rs, getExportColumns(displayColumns), _numRowAxisCols, _numMeasures, _numMemberMeasures, docType);
     }
 }

@@ -15,14 +15,13 @@
  */
 package org.labkey.api.data;
 
+import org.labkey.api.query.CrosstabView;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -69,7 +68,7 @@ public class CrosstabDataRegion extends DataRegion
         if (showRecordSelectors)
             out.write("<td></td>\n");
 
-        List<Pair<CrosstabMember, List<DisplayColumn>>> groupedByMember = columnsByMember(renderers);
+        List<Pair<CrosstabMember, List<DisplayColumn>>> groupedByMember = CrosstabView.columnsByMember(renderers);
 
         // Output a group header for each column's crosstab member.
         CrosstabDimension colDim = _settings.getColumnAxis().getDimensions().get(0);
@@ -102,30 +101,6 @@ public class CrosstabDataRegion extends DataRegion
         //call the base class to finish rendering the headers
         super.renderGridHeaderColumns(ctx, out, showRecordSelectors, renderers);
     } //renderGridHeaders()
-
-    // Collect the DisplayColumns by column member while keeping the column order the same.
-    private List<Pair<CrosstabMember, List<DisplayColumn>>> columnsByMember(Collection<DisplayColumn> renderers)
-    {
-        List<Pair<CrosstabMember, List<DisplayColumn>>> groupedByMember = new ArrayList<Pair<CrosstabMember, List<DisplayColumn>>>();
-
-        CrosstabMember currentMember = null;
-        List<DisplayColumn> currentMemberColumns = new ArrayList<DisplayColumn>();
-        groupedByMember.add(Pair.of(currentMember, currentMemberColumns));
-
-        for (DisplayColumn renderer : renderers)
-        {
-            ColumnInfo col = renderer.getColumnInfo();
-            if (col.getCrosstabColumnMember() != null && !col.getCrosstabColumnMember().equals(currentMember))
-            {
-                currentMember = col.getCrosstabColumnMember();
-                currentMemberColumns = new ArrayList<DisplayColumn>();
-                groupedByMember.add(Pair.of(currentMember, currentMemberColumns));
-            }
-
-            currentMemberColumns.add(renderer);
-        }
-        return groupedByMember;
-    }
 
     protected String getMemberCaptionWithUrl(CrosstabDimension dimension, CrosstabMember member)
     {

@@ -18,11 +18,13 @@ package org.labkey.api.query;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.labkey.api.data.CrosstabTableInfo;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.ExcelColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.CrosstabMember;
 import org.labkey.api.data.Results;
+import org.labkey.api.util.Pair;
 
 import java.util.List;
 
@@ -36,39 +38,63 @@ import java.util.List;
  */
 public class CrosstabExcelWriter extends ExcelWriter
 {
-    private List<CrosstabMember> _colMembers = null;
+    private CrosstabTableInfo _table;
     private int _numRowAxisCols = 0;
     private int _numMeasures = 0;
+    private int _numMemberMeasures = 0;
+    private List<Pair<CrosstabMember, List<DisplayColumn>>> _groupedByMember;
 
-    public CrosstabExcelWriter(Results rs, List<DisplayColumn> displayColumns, List<CrosstabMember> colMembers, int numRowAxisCols, int numMeasures, ExcelDocumentType docType)
+    public CrosstabExcelWriter(CrosstabTableInfo table, Results rs, List<DisplayColumn> displayColumns, int numRowAxisCols, int numMeasures, int numMembmerMeasures, ExcelDocumentType docType)
     {
         super(rs, displayColumns, docType);
-        _colMembers = colMembers;
+        _table = table;
         _numRowAxisCols = numRowAxisCols;
         _numMeasures = numMeasures;
+        _numMemberMeasures = numMembmerMeasures;
+
+        _groupedByMember = CrosstabView.columnsByMember(displayColumns);
     }
 
     @Override
     public void renderColumnCaptions(Sheet sheet, List<ExcelColumn> visibleColumns) throws MaxRowsExceededException
     {
-        //add the column members above the normal captions
         int column = _numRowAxisCols;
 
-        for(CrosstabMember member : _colMembers)
+        // Add a row for the column dimension
+        Row dimensionRow = sheet.createRow(getCurrentRow());
+        Cell dimensionCell = dimensionRow.getCell(column, Row.CREATE_NULL_AS_BLANK);
+        dimensionCell.setCellStyle(getBoldFormat());
+        dimensionCell.setCellValue(_table.getSettings().getColumnAxis().getCaption());
+
+        incrementRow();
+
+        // Add the column members above the normal captions
+        for (Pair<CrosstabMember, List<DisplayColumn>> group : _groupedByMember)
         {
+            CrosstabMember currentMember = group.first;
+            List<DisplayColumn> memberColumns = group.second;
+            if (memberColumns.isEmpty())
+                continue;
+
             Row row = sheet.getRow(getCurrentRow());
             if (row == null)
             {
                 row = sheet.createRow(getCurrentRow());
             }
-            Cell cell = row.getCell(column, Row.CREATE_NULL_AS_BLANK);
-            cell.setCellStyle(getBoldFormat());
-            cell.setCellValue(member.getCaption());
-            column += _numMeasures;
+
+            if (currentMember != null)
+            {
+                Cell cell = row.getCell(column, Row.CREATE_NULL_AS_BLANK);
+                cell.setCellStyle(getBoldFormat());
+                cell.setCellValue(currentMember.getCaption());
+                column += memberColumns.size();
+            }
+
         }
 
         incrementRow();
 
         super.renderColumnCaptions(sheet, visibleColumns);
     }
+
 }
