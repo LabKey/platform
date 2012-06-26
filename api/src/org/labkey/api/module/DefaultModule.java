@@ -840,8 +840,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                             mp.setDefaultValue(pt.getDefaultValue());
                         if (pt.isSetDescription())
                             mp.setDescription(pt.getDescription());
-                        if (pt.isSetRequired())
-                            mp.setRequired(pt.getRequired());
                         if (pt.isSetEditPermissions() && pt.getEditPermissions() != null && pt.getEditPermissions().getPermissionArray() != null)
                         {
                             List<Class<? extends Permission>> editPermissions = new ArrayList<Class<? extends Permission>>();

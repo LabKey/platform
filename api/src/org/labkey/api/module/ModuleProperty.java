@@ -26,7 +26,7 @@ public class ModuleProperty
 {
     private Module _module;
     private String _name;
-    private boolean _required = false;
+    //private boolean _required = false;
     private boolean _canSetPerContainer = false;
     private boolean _canSetPerUser = false;
     private boolean _excludeFromClientContext = false;
@@ -60,15 +60,15 @@ public class ModuleProperty
         return _name;
     }
 
-    public boolean isRequired()
-    {
-        return _required;
-    }
-
-    public void setRequired(boolean required)
-    {
-        _required = required;
-    }
+//    public boolean isRequired()
+//    {
+//        return _required;
+//    }
+//
+//    public void setRequired(boolean required)
+//    {
+//        _required = required;
+//    }
 
     public boolean isCanSetPerContainer()
     {
@@ -137,7 +137,7 @@ public class ModuleProperty
 
         ret.put("name", getName());
         ret.put("module", getModule().getName());
-        ret.put("required", isRequired());
+        //ret.put("required", isRequired());
         ret.put("canSetPerContainer", isCanSetPerContainer());
         //ret.put("canSetPerUser", isCanSetPerUser());
         ret.put("defaultValue", getDefaultValue());
