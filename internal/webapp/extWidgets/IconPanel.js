@@ -89,7 +89,7 @@ Ext4.define('LABKEY.ext.IconPanel', {
                     return item;
                 },
                 calculateColumnNumber: function(thumbWidth){
-                    var totalWidth = this.getWidth();
+                    var totalWidth = this.ownerCt.container.getWidth();
                     return parseInt(totalWidth / (thumbWidth + 10)); //padding
                 },
                 renderData: {

@@ -1611,8 +1611,8 @@ public class PageFlowUtil
     public static String getStandardIncludes(Container c, @Nullable String userAgent, LinkedHashSet<ClientDependency> resources)
     {
         StringBuilder sb = getFaviconIncludes(c);
-        sb.append(getStylesheetIncludes(c, userAgent, resources));
         sb.append(getLabkeyJS(resources));
+        sb.append(getStylesheetIncludes(c, userAgent, resources));
         sb.append(getJavaScriptIncludes(resources));
         return sb.toString();
     }
@@ -1654,6 +1654,7 @@ public class PageFlowUtil
 
         CoreUrls coreUrls = urlProvider(CoreUrls.class);
         StringBuilder sb = new StringBuilder();
+        Set<String> cssFiles = new HashSet<String>();
 
         Formatter F = new Formatter(sb);
         String link = useLESS ? "    <link href=\"%s\" type=\"text/x-less\" rel=\"stylesheet\">\n" : "    <link href=\"%s\" type=\"text/css\" rel=\"stylesheet\">\n";
@@ -1712,21 +1713,28 @@ public class PageFlowUtil
                     sb.append(AppProps.getInstance().getContextPath() + "/");
                     sb.append(filter(script));
                     sb.append("\" type=\"text/css\" rel=\"stylesheet\">");
+
+                    cssFiles.add((script));
                 }
             }
         }
+
+        //cache list of CSS files to prevent double-loading
+        sb.append("    <script type=\"text/javascript\">\n        LABKEY.requestedCssFiles(");
+        String comma = "";
+        for (String s : cssFiles)
+        {
+            sb.append(comma).append(jsString(s));
+            comma = ",";
+        }
+        sb.append(");\n");
+        sb.append("    </script>\n");
+
         return sb.toString();
     }
 
     static final String extJsRoot = "ext-3.4.0";
-    static final String extDebug = extJsRoot + "/ext-all-debug.js";
-    static final String extMin = extJsRoot + "/ext-all.js";
-    static final String extBaseDebug = extJsRoot + "/adapter/ext/ext-base-debug.js";
-    static final String extBase = extJsRoot + "/adapter/ext/ext-base.js";
     static final String ext4ThemeRoot = "labkey-ext-theme";
-
-    static String clientDebug = "clientapi/clientapi.js";
-    static String clientMin = "clientapi/clientapi.min.js";
 
     public static String extJsRoot()
     {
@@ -1787,7 +1795,7 @@ public class PageFlowUtil
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
         resources.add(ClientDependency.fromString("Ext3.lib.xml"));
         resources.add(ClientDependency.fromString("clientapi.lib.xml"));
-        resources.add(ClientDependency.fromString("util.js"));
+        resources.add(ClientDependency.fromString("internal.lib.xml"));
         return resources;
     }
 
@@ -1820,21 +1828,6 @@ public class PageFlowUtil
 
     }
 
-//    private static String[] getClientExploded()
-//    {
-//        List<String> files = new ArrayList<String>();
-//        WebdavResource dir = WebdavService.get().getRootResolver().lookup(Path.parse("/clientapi"));
-//
-//        FileType js = new FileType(".js", FileType.gzSupportLevel.NO_GZ);
-//        for (WebdavResource r : dir.list())
-//        {
-//            File f = r.getFile();
-//            if(js.isType(f) && !f.getName().startsWith("clientapi"))
-//                files.add("clientapi/" + f.getName());
-//        }
-//        return files.toArray(new String[files.size()]);
-//    }
-
     public static String getLabkeyJS()
     {
         return getLabkeyJS(new LinkedHashSet<ClientDependency>());
@@ -1865,6 +1858,11 @@ public class PageFlowUtil
 
     public static String getJavaScriptIncludes(LinkedHashSet<ClientDependency> extraResources)
     {
+        return getJavaScriptIncludes(extraResources, true);
+    }
+
+    public static String getJavaScriptIncludes(LinkedHashSet<ClientDependency> extraResources, boolean includeDefaultResources)
+    {
         String contextPath = AppProps.getInstance().getContextPath();
         String serverHash = getServerSessionHash();
 
@@ -1872,35 +1870,25 @@ public class PageFlowUtil
           * scripts: the scripts that should be explicitly included
           * included: the scripts that are implicitly included, which will include the component scripts on a minified library.
           */
-        LinkedHashSet<String> scripts = new LinkedHashSet<String>();
         LinkedHashSet<String> includes = new LinkedHashSet<String>();
+        LinkedHashSet<String> implicitIncludes = new LinkedHashSet<String>();
 
-        LinkedHashSet<ClientDependency> resources = getDefaultJavaScriptPaths();
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+        if (includeDefaultResources)
+            resources.addAll(getDefaultJavaScriptPaths());
+
         if (extraResources != null)
             resources.addAll(extraResources);
 
         if (resources != null)
         {
-            for (ClientDependency r : resources) {
-                if(AppProps.getInstance().isDevMode())
-                {
-                    scripts.addAll(r.getJsPaths(true));
-                    includes.addAll(r.getJsPaths(true));
-                }
-                else
-                {
-                    scripts.addAll(r.getJsPaths(false));
-                    //include both production and devmode scripts for requiresScript()
-                    includes.addAll(r.getJsPaths(true));
-                    includes.addAll(r.getJsPaths(false));
-                }
-            }
+            getJavaScriptFiles(resources, includes, implicitIncludes);
         }
         StringBuilder sb = new StringBuilder();
 
         sb.append("    <script type=\"text/javascript\">\n        LABKEY.loadedScripts(");
         String comma = "";
-        for (String s : includes)
+        for (String s : implicitIncludes)
         {
             sb.append(comma).append(jsString(s));
             comma = ",";
@@ -1908,7 +1896,7 @@ public class PageFlowUtil
         sb.append(");\n");
         sb.append("    </script>\n");
 
-        for (String s : scripts)
+        for (String s : includes)
             sb.append("    <script src=\"").append(contextPath).append("/").append(filter(s)).append("?").append(serverHash).append("\" type=\"text/javascript\"></script>\n");
 
         sb.append("    <script type=\"text/javascript\">\n");
@@ -2524,5 +2512,23 @@ public class PageFlowUtil
             }
         }
         return ret;
+    }
+
+    public static void getJavaScriptFiles(LinkedHashSet<ClientDependency> dependencies, LinkedHashSet<String> includes, LinkedHashSet<String> implicitIncludes)
+    {
+        for (ClientDependency r : dependencies) {
+            if(AppProps.getInstance().isDevMode())
+            {
+                includes.addAll(r.getJsPaths(true));
+                implicitIncludes.addAll(r.getJsPaths(true));
+            }
+            else
+            {
+                includes.addAll(r.getJsPaths(false));
+                //include both production and devmode scripts for requiresScript()
+                implicitIncludes.addAll(r.getJsPaths(true));
+                implicitIncludes.addAll(r.getJsPaths(false));
+            }
+        }
     }
 }

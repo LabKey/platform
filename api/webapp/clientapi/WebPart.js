@@ -165,9 +165,7 @@ LABKEY.WebPart = function(config)
             var targetElem = Ext.get(_renderTo);
             if(targetElem)
             {
-                targetElem.update(response.responseText, true); //execute scripts
-                if(_success)
-                    _success.call(_scope);
+                LABKEY.Utils.loadAjaxContent(response, targetElem, _success, _scope);
             }
             else
                 Ext.Msg.alert("Rendering Error", "The element '" + _renderTo + "' does not exist in the document!");

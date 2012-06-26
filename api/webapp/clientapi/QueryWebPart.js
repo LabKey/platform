@@ -504,7 +504,8 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
                     this.unmask();
                     if (dr)
                         dr.destroy();
-                    targetElem.update(response.responseText, true); //execute scripts
+
+                    LABKEY.Utils.loadAjaxContent(response, targetElem);
 
                     //get the data region and subscribe to events
                     Ext.onReady(function(){

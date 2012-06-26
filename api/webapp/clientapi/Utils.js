@@ -1098,6 +1098,41 @@ LABKEY.Utils.convertToTable(
             {
                 Ext.onReady(callback, scope);
             }
+        },
+
+        //private
+        loadAjaxContent: function(response, targetElem, success, scope){
+            var json = Ext.util.JSON.decode(response.responseText);
+            if (!json)
+                return;
+
+            if(json.moduleContext)
+                LABKEY.applyModuleContext(json.moduleContext);
+
+            if (json.requiredCssScripts)
+                LABKEY.requiresCss(json.requiredCssScripts);
+
+            if (json.implicitCssIncludes){
+                for (var i=0;i<json.implicitCssIncludes.length;i++)
+                    LABKEY.requestedCssFiles(json.implicitCssIncludes[i]);
+            }
+
+            if (json.requiredJsScripts && json.requiredJsScripts.length){
+                LABKEY.requiresScript(json.requiredJsScripts, true, onLoaded, this, true);
+            }
+            else {
+                onLoaded();
+            }
+
+            if (json.implicitJsIncludes)
+                LABKEY.loadedScripts(json.implicitJsIncludes);
+
+            function onLoaded(){
+                if(json.html)
+                    targetElem.update(json.html, true); //execute scripts
+                if(success)
+                    success.call(scope || window);
+            }
         }
 
     };

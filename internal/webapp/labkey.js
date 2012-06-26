@@ -254,6 +254,13 @@ LABKEY.loadScripts = function()
  */
 LABKEY.requiresCss = function(file)
 {
+    if (Object.prototype.toString.call(file) == "[object Array]")
+    {
+        for (var i=0;i<file.length;i++)
+            LABKEY.requiresCss(file[i]);
+        return;
+    }
+
     if (file.indexOf('/') == 0)
         file = file.substring(1);
 
@@ -518,7 +525,6 @@ LABKEY.getModuleContext = function(moduleName){
 
 //private.  used to append additional module context objects for AJAXd views
 LABKEY.applyModuleContext = function(ctx){
-    console.log('applying context')
     for (var mn in ctx){
         LABKEY.moduleContext[mn.toLowerCase()] = ctx[mn];
     }
