@@ -133,6 +133,7 @@
         var panel = Ext4.create('Ext.panel.Panel', {
             renderTo: config.elementId,
             height: 650,
+            minWidth: 875,
             resizable: false,
             layout: 'border',
             frame: false,
@@ -155,4 +156,4 @@
     }
 </script>
 
-<div id="<%=elementId%>" class="extContainer" style="width:100%"></div>
+<div id="<%=elementId%>" class="extContainer"></div>

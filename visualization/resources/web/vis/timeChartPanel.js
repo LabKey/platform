@@ -200,7 +200,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         });
 
         this.filtersPanel = Ext4.create('Ext.panel.Panel', {
-            region: 'west',
+            region: 'east',
             layout: 'accordion',
             fill: false,
             width: 220,
@@ -407,10 +407,10 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         // setup buttons for the charting options panels (items to be added to the toolbar)
         this.measuresButton = Ext4.create('Ext.button.Button', {text: 'Measures',
-                                handler: function(btn){this.optionsButtonClicked(btn, this.editorMeasurePanel, 860, 225, 'center');}, scope: this});
+                                handler: function(btn){this.optionsButtonClicked(btn, this.editorMeasurePanel, 860, 225, 'left');}, scope: this});
 
         this.groupingButton = Ext4.create('Ext.button.Button', {text: 'Grouping',
-                                handler: function(btn){this.optionsButtonClicked(btn, this.editorGroupingPanel, 600, 210, 'center');}, scope: this});
+                                handler: function(btn){this.optionsButtonClicked(btn, this.editorGroupingPanel, 600, 210, 'left');}, scope: this});
 
         this.aestheticsButton = Ext4.create('Ext.button.Button', {text: 'Options',
                                 handler: function(btn){this.optionsButtonClicked(btn, this.editorAestheticsPanel, 300, 125, 'center');}, scope: this});
@@ -532,6 +532,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             pLeft = pLeft - width/2 + button.getWidth()/2;
         else if (align == 'right')
             pLeft = pLeft - width + button.getWidth();
+        else if (align == 'left')
+            pLeft = pLeft - button.getWidth();        
 
         this.showOptionsWindow(button, panel, width, pLeft, pTop);
     },
@@ -624,10 +626,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         var padding = [20,0];
         var xy = this.el.getXY();
-        var size = {
-            width : Math.max(800,w-xy[0]-padding[0])
-        };
-        this.setWidth(size);
+        var width = Math.max(875,w-xy[0]-padding[0]);
+        this.setWidth(width);
     },
 
     getFilterQuery :  function()
