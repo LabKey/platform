@@ -211,6 +211,8 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         Resource xml = _resolver.lookup(Path.parse(XML_FILENAME));
         if(xml != null)
             loadXmlFile(xml);
+
+        doStartup(moduleContext);
     }
 
     protected abstract void doStartup(ModuleContext moduleContext);
