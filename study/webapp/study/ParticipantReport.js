@@ -23,11 +23,13 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 '<tr><td class="break-spacer">&nbsp;<br>&nbsp;</td></tr>',
                 '<tr><td colspan="{[this.data.fields.length]}">',
                     '<div style="padding-left:5px; padding-bottom:15px;">',
-                    '<table>',
+                    '<table width="100%">',
+//
                         '<tr><td colspan=2 style="padding-bottom:10px; font-weight:bold; font-size:1.3em; text-align:left;">{[ this.getHtml(values.headerValue) ]}</td></tr>',
-                        '<tr style="border-top: solid 1px #DDDDDD;"><td align=left style="padding: 10px 0px 10px 0px;">Cohort:&nbsp;</td><td align=left style="{parent.style}">{[this.getCohortHtml(values.headerValue)]}</td></tr>',
-                        '<tr style="border-bottom: solid 1px #DDDDDD;"><td align=left style="padding: 10px 0px 10px 0px;">Groups:&nbsp;</td><td align=left style="{parent.style}">{[this.getGroupsHtml(values.headerValue)]}</td></tr>',
-                        '<tr style="padding-bottom: 10px;"><td>&nbsp;</td></tr>',
+                        '<tr style="border-top: solid 1px #DDDDDD;"><td align=left style="padding: 10px 0px 10px 0px;">Cohort:&nbsp;</td><td align=left style="{parent.style}" width="100%;">{[this.getCohortHtml(values.headerValue)]}</td></tr>',
+                        '<tr style="border-top: solid 1px #DDDDDD;vertical-align:text-top;"><td align=left style="padding: 10px 0px 10px 0px;">Groups:&nbsp;</td><td align=left style="{parent.style}" width="100%;">{[this.getGroupsHtml(values.headerValue)]}</td></tr>',
+                        '<tr style="padding-bottom: 10px;"><td colspan=2>&nbsp;</td></tr>',
+                        '<tr style="border-top: solid 1px #DDDDDD;padding-bottom: 10px;"><td colspan=2>&nbsp;</td></tr>',
         // note nested <tpl>, this will make values==datavalue and parent==field
                         '<tpl for="this.data.pageFields">' +
                             '<tpl for="this.data.pages[this.data.pageIndex].first.asArray[values.index]">',
