@@ -1222,6 +1222,18 @@ in the table tag.  They are necessary so that the borders take precedence correc
     background: #F4F4F4;
 }
 
+/* Used for the shaded alternate columns (for pivot queries) */
+.labkey-alternate-col td, .labkey-alternate-col th, tr.labkey-alternate-col, td.labkey-alternate-col, th.labkey-alternate-col
+{
+    background: #FAFAFA;
+}
+
+/* Used for the shaded alternate rows and alternate columns (for pivot queries) */
+.labkey-alternate-row .labkey-alternate-col td, .labkey-alternate-row .labkey-alternate-col th, tr.labkey-alternate-row .labkey-alternate-col, td.labkey-alternate-row .labkey-alternate-col, th.labkey-alternate-row .labkey-alternate-col
+{
+    background: #F0F0F0;
+}
+
 /* Used for the normal rows in data regions, sometimes these rows are not given a class */
 .labkey-error-row td, .labkey-error-row th, tr.labkey-error-row, td.labkey-error-row
 {

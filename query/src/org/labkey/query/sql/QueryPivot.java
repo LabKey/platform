@@ -24,6 +24,7 @@ import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.AggregateColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.CrosstabDimension;
 import org.labkey.api.data.CrosstabMeasure;
 import org.labkey.api.data.CrosstabMember;
 import org.labkey.api.data.CrosstabSettings;
@@ -453,7 +454,7 @@ public class QueryPivot extends QueryRelation
             }
 
             // Add the pivoted aggregate columns grouped by pivot value
-            if (!aggs.isEmpty())
+            if (!usePivotForeignKey && !aggs.isEmpty())
             {
                 for (String pivotValue : pivotValues.keySet())
                 {
@@ -528,7 +529,7 @@ public class QueryPivot extends QueryRelation
         final IConstant c = pivotValues.get(name);
         final String alias = makePivotColumnAlias(agg.getAlias(), name);
 
-        final CrosstabMember member = new CrosstabMember(c.getValue(), _pivotColumn.getFieldKey(), name);
+        final CrosstabMember member = createCrosstabMember(c.getValue(), name);
 
         return new RelationColumn()
         {
@@ -709,6 +710,8 @@ public class QueryPivot extends QueryRelation
     @Override
     public Set<RelationColumn> getSuggestedColumns(Set<RelationColumn> selected)
     {
+        // resolveFields() ?
+        // _from.getSuggestedColumns() ?
         return Collections.emptySet();
     }
 
@@ -798,7 +801,8 @@ public class QueryPivot extends QueryRelation
             if (_settings == null)
             {
                 // XXX: Should source table be the from clause or the PivotTable?
-                _settings = new CrosstabSettings(this);
+                TableInfo fromTable = _from.getTableInfo();
+                _settings = new CrosstabSettings(fromTable);
 
                 // row axis dimensions are the group by columns
                 for (RelationColumn col : _grouping.values())
@@ -808,8 +812,22 @@ public class QueryPivot extends QueryRelation
                 //_settings.getRowAxis().setCaption("grouping cols description");
 
                 // column axis dimension is the pivot column
-                _settings.getColumnAxis().addDimension(_pivotColumn.getFieldKey());
-                _settings.getColumnAxis().setCaption(_pivotColumn.getAlias());
+                // XXX: Is it safe to get the pivot ColumnInfo here so we can copy label and URL metadata to CrosstabDimension?
+                ColumnInfo pivotColumnInfo = fromTable.getColumn(_pivotColumn.getFieldKey());
+                String pivotURL = null;
+                String pivotLabel = _pivotColumn.getAlias();
+                if (pivotColumnInfo != null)
+                {
+                    if (pivotColumnInfo.getURL() != null)
+                        pivotURL = pivotColumnInfo.getURL().toString();
+                    if (pivotColumnInfo.getLabel() != null)
+                        pivotLabel = pivotColumnInfo.getLabel();
+                }
+                CrosstabDimension dim = _settings.getColumnAxis().addDimension(_pivotColumn.getFieldKey());
+                if (pivotURL != null)
+                    dim.setUrl(pivotURL);
+                _settings.getColumnAxis().setCaption(pivotLabel);
+
 
                 // aggregates are the crosstab measure
                 for (Map.Entry<String, QAggregate.Type> agg : _aggregates.entrySet())
@@ -843,7 +861,8 @@ public class QueryPivot extends QueryRelation
                 {
                     Object value = pivotValue.getValue().getValue();
                     String caption = pivotValue.getKey();
-                    _members.add(new CrosstabMember(value, _pivotColumn.getFieldKey(), caption));
+                    CrosstabMember member = createCrosstabMember(value, caption);
+                    _members.add(member);
                 }
             }
             return _members;
@@ -869,6 +888,9 @@ public class QueryPivot extends QueryRelation
 
     private CrosstabMeasure.AggregateFunction toAggFn(QAggregate.Type aggType)
     {
+        if (aggType == null)
+            return null;
+
         switch (aggType)
         {
             case AVG:           return CrosstabMeasure.AggregateFunction.AVG;
@@ -882,6 +904,11 @@ public class QueryPivot extends QueryRelation
             default:
                 throw new IllegalArgumentException(aggType.toString());
         }
+    }
+
+    private CrosstabMember createCrosstabMember(Object value, String caption)
+    {
+        return new CrosstabMember(value, _pivotColumn.getFieldKey(), caption);
     }
 
 
