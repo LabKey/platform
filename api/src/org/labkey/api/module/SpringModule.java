@@ -113,7 +113,7 @@ public abstract class SpringModule extends DefaultModule
 
     /** Do not override this method, instead implement startupAfterSpringConfig(), which will be invoked for you */
     @Override
-    public final void startup(ModuleContext moduleContext)
+    public final void doStartup(ModuleContext moduleContext)
     {
         initWebApplicationContext();
         startupAfterSpringConfig(moduleContext);

@@ -48,6 +48,8 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
@@ -56,11 +58,11 @@ import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.data.xml.PermissionType;
-import org.labkey.data.xml.view.DependencyType;
-import org.labkey.data.xml.view.RequiredModuleType;
+import org.labkey.moduleProperties.xml.DependencyType;
 import org.labkey.moduleProperties.xml.ModuleDocument;
 import org.labkey.moduleProperties.xml.ModuleType;
 import org.labkey.moduleProperties.xml.PropertyType;
+import org.labkey.moduleProperties.xml.RequiredModuleType;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -186,10 +188,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
         _resolver = new ModuleResourceResolver(this, getResourceDirectories(), getResourceClasses());
 
-        Resource xml = _resolver.lookup(Path.parse(XML_FILENAME));
-        if(xml != null)
-            loadXmlFile(xml);
-
         init();
 
         Collection<WebPartFactory> wpFactories = getWebPartFactories();
@@ -207,6 +205,15 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     protected abstract Collection<WebPartFactory> createWebPartFactories();
     public boolean isWebPartFactorySetStale() {return false;}
     public abstract boolean hasScripts();
+
+    final public void startup(ModuleContext moduleContext)
+    {
+        Resource xml = _resolver.lookup(Path.parse(XML_FILENAME));
+        if(xml != null)
+            loadXmlFile(xml);
+    }
+
+    protected abstract void doStartup(ModuleContext moduleContext);
 
     protected String getResourcePath()
     {
@@ -802,6 +809,18 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                 xmlOptions.setLoadSubstituteNamespaces(namespaceMap);
 
                 ModuleDocument moduleDoc = ModuleDocument.Factory.parse(r.getInputStream(), xmlOptions);
+                if (AppProps.getInstance().isDevMode())
+                {
+                    try
+                    {
+                        XmlBeansUtil.validateXmlDocument(moduleDoc);
+                    }
+                    catch (XmlValidationException e)
+                    {
+                        _log.error("Module XML file failed validation for module: " + getName() + ". Error: " + e.getDetails());
+                    }
+                }
+
                 ModuleType mt = moduleDoc.getModule();
                 if (null != mt && mt.getProperties() != null)
                 {
@@ -860,9 +879,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                     {
                         if (rmt.getName() != null)
                         {
-                            Module m = ModuleLoader.getInstance().getModule(rmt.getName());
-                            if (m != null)
-                                _clientDependencies.add(ClientDependency.fromModule(m));
+                            _clientDependencies.add(ClientDependency.fromModuleName(rmt.getName()));
                         }
                     }
                 }

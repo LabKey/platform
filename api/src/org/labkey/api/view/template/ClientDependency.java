@@ -11,7 +11,6 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.module.ModuleResourceResolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileType;
@@ -119,11 +118,8 @@ public class ClientDependency
         else
         {
             WebdavResource r = WebdavService.get().getRootResolver().lookup(_filePath);
-            Resource r2 = ModuleLoader.getInstance().getResource(new Path("web").append(filePath));
-            if(r2 != null && r2.getResolver() instanceof  ModuleResourceResolver)
-            {
-                Module m = ((ModuleResourceResolver)r2.getResolver()).getModule();
-            }
+            //TODO: can we connect this resource back to a module, and load that module's context by default?--
+
             if(r == null || !r.exists())
             {
                 //TODO: throw exception??
@@ -178,18 +174,25 @@ public class ClientDependency
 
         Path filePath = Path.parse(path).normalize();
 
-        //TODO: Test this.
-//        String key = ClientDependency.class.getName() + "|" + filePath.toString().toLowerCase() + "|" + mode.toString();
-//        Object cached = CacheManager.getSharedCache().get(key);
-//        if(!AppProps.getInstance().isDevMode() && cached != null)
-//            return (ClientDependency)cached;
+        String key = getCacheKey(filePath, mode);
+
+        //TODO: test this
+        if (!AppProps.getInstance().isDevMode())
+        {
+            ClientDependency cached = (ClientDependency)CacheManager.getSharedCache().get(key);
+            if (cached != null)
+                return cached;
+        }
 
         ClientDependency cr = new ClientDependency(filePath, mode);
-//        CacheManager.getSharedCache().put(key, cr);
+        CacheManager.getSharedCache().put(key, cr);
         return cr;
     }
 
-    //override equals and hascode
+    private static String getCacheKey(Path filePath, ModeTypeEnum.Enum mode)
+    {
+        return ClientDependency.class.getName() + "|" + filePath.toString().toLowerCase() + "|" + mode.toString();
+    }
 
     private void processScript(Path filePath)
     {

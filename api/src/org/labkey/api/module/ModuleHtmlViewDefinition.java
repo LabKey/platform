@@ -21,8 +21,11 @@ import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceRef;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.XmlBeansUtil;
+import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
@@ -115,6 +118,17 @@ public class ModuleHtmlViewDefinition extends ResourceRef
                 xmlOptions.setLoadSubstituteNamespaces(namespaceMap);
 
                 ViewDocument viewDoc = ViewDocument.Factory.parse(r.getInputStream(), xmlOptions);
+                if (AppProps.getInstance().isDevMode())
+                {
+                    try
+                    {
+                        XmlBeansUtil.validateXmlDocument(viewDoc);
+                    }
+                    catch (XmlValidationException e)
+                    {
+                        _log.error("View XML file failed validation: " + r.getPath() + ". " + e.getDetails());
+                    }
+                }
                 _viewDef = viewDoc.getView();
                 if (null != _viewDef)
                 {
