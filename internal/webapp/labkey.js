@@ -205,6 +205,13 @@ LABKEY.loadedScripts = function()
     return ret;
 };
 
+LABKEY.requestedCssFiles = function()
+{
+    var ret = (arguments.length > 0 && this._requestedCssFiles[arguments[0]]) ? true : false
+    for (var i = 0 ; i < arguments.length ; i++)
+        this._requestedCssFiles[arguments[i]] = true;
+    return ret;
+};
 
 LABKEY.addElemToHead = function(elemName, attributes)
 {
@@ -247,6 +254,9 @@ LABKEY.loadScripts = function()
  */
 LABKEY.requiresCss = function(file)
 {
+    if (file.indexOf('/') == 0)
+        file = file.substring(1);
+
     var fullPath = LABKEY.contextPath + "/" + file;
     if (this._requestedCssFiles[fullPath])
         return;
@@ -330,7 +340,7 @@ LABKEY.requiresClientAPI = function(immediate)
         LABKEY.requiresScript("clientapi/Visualization.js", immediate);
     }
     else
-        LABKEY.requiresScript('clientapi/clientapi' + (LABKEY.devMode ? '.js' : '.min.js'), immediate);
+        LABKEY.requiresScript('clientapi.min.js', immediate);
 };
 
 
@@ -473,14 +483,14 @@ LABKEY.requiresVisualization = function ()
         LABKEY.requiresScript('vis/src/plot.js');
         LABKEY.requiresScript("vis/SVGConverter.js");
 
-        // NOTE: If adding a required file you must add to visualization_jsmin ant target for proper packaging
+        // NOTE: If adding a required file you must add to vis.lib.xml for proper packaging
     }
     else
     {
         LABKEY.requiresScript('vis/lib/raphael-min-2.1.0.js');
         LABKEY.requiresScript('vis/lib/d3-2.0.4.min.js');
-
-        LABKEY.requiresScript('vis/visual.min.js');
+        LABKEY.requiresScript("vis/SVGConverter.js");
+        LABKEY.requiresScript('vis/vis.min.js');
     }
 };
 
@@ -504,4 +514,12 @@ LABKEY.id = function(id)
  */
 LABKEY.getModuleContext = function(moduleName){
     return LABKEY.moduleContext[moduleName.toLowerCase()];
+}
+
+//private.  used to append additional module context objects for AJAXd views
+LABKEY.applyModuleContext = function(ctx){
+    console.log('applying context')
+    for (var mn in ctx){
+        LABKEY.moduleContext[mn.toLowerCase()] = ctx[mn];
+    }
 }

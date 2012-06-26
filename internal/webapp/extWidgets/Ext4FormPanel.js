@@ -136,7 +136,7 @@ Ext4.define('LABKEY.ext4.FormPanel', {
 
         /**
          * @memberOf LABKEY.ext4.FormPanel#
-         * @name fieldconfiguration
+         * @name formconfiguration
          * @event
          * @description Fired after the query metadata has been processed to produce an array of fields.  Provides an opportunity to edit the fields or change the layout.
          * @param {Array} fields The array of fields that will be added to the form panel.
@@ -153,7 +153,7 @@ Ext4.define('LABKEY.ext4.FormPanel', {
          * @event
          * @description Fired when the record bound to this panel changes
          */
-        this.addEvents('fieldconfiguration', 'fieldvaluechange', 'recordchange');
+        this.addEvents('formconfiguration', 'fieldvaluechange', 'recordchange');
         this.on('recordchange', this.markInvalid, this, {buffer: 50});
     },
 
@@ -210,7 +210,6 @@ Ext4.define('LABKEY.ext4.FormPanel', {
             });
         }
 
-        this.fireEvent('fieldconfiguration', this, toAdd);
         this.add(toAdd);
     },
     //NOTE: can be overridden for custom layouts
