@@ -1034,9 +1034,9 @@ Ext4.define('LABKEY.ext4.MeasuresStore', {
 Ext4.define('LABKEY.MeasureUtil', {
 
     singleton : true,
-    getAlias : function(measure) {
+    getAlias : function(measure, override) {
 
-        if (measure.alias)
+        if (measure.alias && !override)
             return measure.alias;
         else
         {
