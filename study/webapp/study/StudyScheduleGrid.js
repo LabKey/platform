@@ -725,6 +725,8 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
     },
 
     needsSaving : function(){
+        if (!this.scheduleStore)
+            return false;
         return this.scheduleStore.getUpdatedRecords().length > 0 || this.scheduleStore.getNewRecords().length > 0 || this.scheduleStore.getRemovedRecords.length > 0;
     },
 
