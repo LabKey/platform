@@ -65,8 +65,10 @@ Ext4.define('LABKEY.ext4.MeasuresDialog', {
             bubbleEvents: ['beforeMeasuresStoreLoad', 'measuresStoreLoaded'],
             listeners: {
                 scope: this,
-                'measureChanged': function (axisId, data) {
-                    this.down('#selectButton').enable();
+                'selectionchange' : function(cmp, recs) {
+                    var btn = this.down('#selectButton');
+                    if (btn)
+                        btn.setDisabled(!recs.length);
                 }
             }
         });
@@ -159,7 +161,7 @@ Ext4.define('LABKEY.ext4.MeasuresPanel', {
                 canShowHidden : this.canShowHidden,
                 multiSelect : this.multiSelect,
                 forceQuery  : this.forceQuery,
-                bubbleEvents: ['beforeMeasuresStoreLoad', 'measuresStoreLoaded', 'measureChanged', 'measuresSelected']
+                bubbleEvents: ['beforeMeasuresStoreLoad', 'measuresStoreLoaded', 'measureChanged', 'measuresSelected', 'selectionchange']
             });
         }
 
@@ -360,7 +362,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
                 stripeRows : true,
                 selModel : Ext4.create('Ext.selection.CheckboxModel'),
                 multiSelect: true,
-                bubbleEvents : ['viewready'],
+                bubbleEvents : ['viewready', 'selectionchange'],
                 columns: [
                     {header:'Dataset', dataIndex:'queryName', flex: 2},
                     {header:'Measure', dataIndex:'label', flex: 2},
@@ -376,6 +378,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
                 ui: this.ui,
                 border: false,
                 multiSelect: false,
+                bubbleEvents : ['selectionchange'],
                 columns: [
                     {header:'Dataset', dataIndex:'queryName', flex: 2},
                     {header:'Measure', dataIndex:'label', flex: 2},

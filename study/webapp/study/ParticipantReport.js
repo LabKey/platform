@@ -24,16 +24,15 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 '<tr><td colspan="{[this.data.fields.length]}">',
                     '<div style="padding-left:5px; padding-bottom:15px;">',
                     '<table width="100%">',
-//
-                        '<tr><td colspan=2 style="padding-bottom:10px; font-weight:bold; font-size:1.3em; text-align:left;">{[ this.getHtml(values.headerValue) ]}</td></tr>',
-                        '<tr style="border-top: solid 1px #DDDDDD;"><td align=left style="padding: 10px 0px 10px 0px;">Cohort:&nbsp;</td><td align=left style="{parent.style}" width="100%;">{[this.getCohortHtml(values.headerValue)]}</td></tr>',
-                        '<tr style="border-top: solid 1px #DDDDDD;vertical-align:text-top;"><td align=left style="padding: 10px 0px 10px 0px;">Groups:&nbsp;</td><td align=left style="{parent.style}" width="100%;">{[this.getGroupsHtml(values.headerValue)]}</td></tr>',
+                        '<tr><td colspan=2 class="lk-report-subjectid">{[ this.getHtml(values.headerValue) ]}</td></tr>',
+                        '<tr style="border-top: solid 1px #DDDDDD;"><td class="lk-report-column-header" align=left style="padding: 10px 0px 10px 0px;">Cohort:&nbsp;</td><td class="lk-report-cell" align=left style="{parent.style}" width="100%;">{[this.getCohortHtml(values.headerValue)]}</td></tr>',
+                        '<tr style="border-top: solid 1px #DDDDDD;vertical-align:text-top;"><td class="lk-report-column-header" align=left style="padding: 10px 0px 10px 0px;">Groups:&nbsp;</td><td class="lk-report-cell" align=left style="{parent.style}" width="100%;">{[this.getGroupsHtml(values.headerValue)]}</td></tr>',
                         '<tr style="padding-bottom: 10px;"><td colspan=2>&nbsp;</td></tr>',
                         '<tr style="border-top: solid 1px #DDDDDD;padding-bottom: 10px;"><td colspan=2>&nbsp;</td></tr>',
         // note nested <tpl>, this will make values==datavalue and parent==field
                         '<tpl for="this.data.pageFields">' +
                             '<tpl for="this.data.pages[this.data.pageIndex].first.asArray[values.index]">',
-                            '   <tr><td align=left data-qtip="{[parent.qtip]}">{[this.getPageField(parent)]}:&nbsp;</td><td align=left style="{parent.style}">{[this.getPageFieldHtml(values)]}</td></tr>',
+                            '   <tr><td align=left class="lk-report-column-header" data-qtip="{[parent.qtip]}">{[this.getPageField(parent)]}:&nbsp;</td><td class="lk-report-cell" "align=left style="{parent.style}">{[this.getPageFieldHtml(values)]}</td></tr>',
                             '</tpl>',
                         '</tpl>',
                     '</table>',
@@ -44,7 +43,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         originalGrid : [
                 '<tr>',
                     '<tpl for="this.data.gridFields">',
-                        '<th style="border: solid 1px #DDDDDD; padding: 4px;" class="labkey-column-header" data-qtip="{qtip}">{[this.getCaptionHtml(values)]}</th>',
+                        '<th style="border:solid 1px #DDDDDD;padding: 4px;vertical-align:top;" class="lk-report-column-header" data-qtip="{qtip}">{[this.getCaptionHtml(values)]}</th>',
                     '</tpl>',
                 '</tr>',
                 '<tpl for="rows">',
@@ -61,7 +60,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                     // use the first gridField for the header row (likely visit label)
                     '<tpl if="values.rowIndex == 0">',
                         '<tr>',
-                            '<th class="labkey-column-header">&nbsp;</th>',
+                            '<th class="lk-report-column-header" style="vertical-align:top">&nbsp;</th>',
                             '<tpl for="this.data.pages[this.data.pageIndex].rows">',
                                 '{[ this.getGridCellHtml(values.asArray[parent.index], true) ]}',
                             '</tpl>',
@@ -146,6 +145,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 Ext4.each(data.gridFields, function(field){
                     field.rowIndex = idx++;
                     field.style = "border: solid 1px #DDDDDD";
+                    field.className = "lk-report-cell";
                 });
 
                 // we don't want the subject id showing in the page break list (since it's already on the header)
@@ -226,6 +226,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                             text    : 'To Excel',
                             handler : function(){this.exportToXls();},
                             scope   : this}]
+/*
                     },{
                         text    : 'Print',
                         handler : function(b) {
@@ -235,23 +236,8 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                             window.print();
                         },
                         scope   : this
-                    },{
-/*
-                        text    : this.fitted ? 'Collapse' : 'Expand',
-                        handler : function(btn) {
-                            if (this.fitted) {
-                                btn.setText('Expand');
-                                this.fitted = false;
-                                this.setHeight(600);
-                            }
-                            else {
-                                btn.setText('Collapse');
-                                this.fitToReport();
-                            }
-                        },
-                        scope   : this
-                    },{
 */
+                    },{
                         text    : 'Transpose',
                         tooltip : 'Tranpose the data grids so that the rows become columns (i.e. visits vs. measures as columns)',
                         handler : function(btn) {
@@ -334,6 +320,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 hidden   : true,
                 preventHeader : true,
                 frame : false,
+                cls   : 'report-config-panel',
                 region   : 'north',
                 layout   : 'hbox',
                 buttons  : [{

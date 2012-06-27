@@ -47,15 +47,39 @@
     #discussionMenuToggle,
     .labkey-wp-title-left,
     .labkey-wp-title-right,
+    .report-filter-window-outer,
+    .report-config-panel,
     .report-toolbar
     {
         display: none;
     }
 
-    table.labkey-wp {
-        border: none !important;
+    td.lk-report-subjectid {
+        padding-bottom  : 5px;
+        font-weight     : bold;
+        font-size       : 13pt;
+        text-align      : left;
+    }
+
+    td.report-cell {font-size: 11pt;}
+    td.lk-report-cell {font-size: 11pt;}
+    td.lk-report-column-header, th.lk-report-column-header {font-size: 12pt;}
+
+    table.labkey-wp {border: none !important;}
+    .x4-reset .x4-panel-body-default {border:none !important;}
+
+</style>
+
+<style type="text/css" media="screen">
+
+    td.lk-report-subjectid {
+        padding-bottom  : 10px;
+        font-weight     : bold;
+        font-size       : 1.3em;
+        text-align      : left;
     }
 </style>
+
 <script type="text/javascript">
     LABKEY.requiresClientAPI(); // required for LABKEY.Visualization
     LABKEY.requiresExt4Sandbox(true);
@@ -105,6 +129,6 @@
 
 </script>
 
-<div id="<%=filterRenderId%>" style="position:<%=bean.isAllowOverflow() ? "absolute" : "absolute"%>;"></div>
-<div id="<%= renderId%>" class="data-views-container" style="width:100%;"></div>
+<div id="<%=filterRenderId%>" class="report-filter-window-outer" style="position:<%=bean.isAllowOverflow() ? "absolute" : "absolute"%>;"></div>
+<div id="<%= renderId%>" class="data-views-container" style="width:100%"></div>
 
