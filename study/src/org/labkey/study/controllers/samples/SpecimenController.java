@@ -5286,30 +5286,41 @@ public class SpecimenController extends BaseStudyController
 
             if (errorList.size() == 0)
             {
-                // Get all the specimen objects. If it throws IOException then there was an error and we'll
+                // Get all the specimen objects. If it throws an exception then there was an error and we'll
                 // root around to figure out what to report
-                DbScope scope = StudySchema.getInstance().getSchema().getScope();
+                SampleManager sampleManager = SampleManager.getInstance();
                 try
                 {
-                    scope.ensureTransaction();
-                    Specimen[] specimens = SampleManager.getInstance().getSpecimens(getContainer(), globalIds);
+                    SampleRequest request = sampleManager.getRequest(getContainer(), _requestId);
+                    Specimen[] specimens = sampleManager.getSpecimens(getContainer(), globalIds);
 
                     if (specimens != null && specimens.length == globalIds.length)
                     {
-                        // All the specimens exist; add them to the request.
+                        // All the specimens exist;
+                        // Check for Availability and then add them to the request.
                         // There still may be errors (like someone already has requested that specimen) which will be
                         // caught by createRequestSampleMapping
 
-                        ArrayList<Specimen> specimenList = new ArrayList<Specimen>(specimens.length);
-                        Collections.addAll(specimenList, specimens);
-                        SampleRequest request = SampleManager.getInstance().getRequest(getContainer(), _requestId);
-                        SampleManager.getInstance().createRequestSampleMapping(getUser(), request, specimenList, true, true);
+                        for (Specimen s : specimens)
+                        {
+                            if (!s.isAvailable()) // || s.isLockedInRequest())
+                            {
+                                errorList.add(String.format("Specimen %s not available%s",
+                                        s.getGlobalUniqueId(),
+                                        s.getAvailabilityReason() != null ? s.getAvailabilityReason().replaceFirst("This vial is unavailable", "") : ""));
+                            }
+                        }
 
-                        scope.commitTransaction();
+                        if (errorList.size() == 0)
+                        {
+                            ArrayList<Specimen> specimenList = new ArrayList<Specimen>(specimens.length);
+                            Collections.addAll(specimenList, specimens);
+                            sampleManager.createRequestSampleMapping(getUser(), request, specimenList, true, true);
+                        }
                     }
                     else
                     {
-                        errors.addRowError(new ValidationException("Duplicate Ids found."));
+                        errorList.add("Duplicate Ids found.");
                     }
                 }
                 catch (SQLException e)
@@ -5327,26 +5338,22 @@ public class SpecimenController extends BaseStudyController
                     boolean hasSpecimenError = false;
                     for (String id : globalIds)
                     {
-                        Specimen specimen = SampleManager.getInstance().getSpecimen(getContainer(), id);
+                        Specimen specimen = sampleManager.getSpecimen(getContainer(), id);
                         if (specimen == null)
                         {
-                            errors.addRowError(new ValidationException("Global Unique Id " + id + " not found."));
+                            errorList.add("Specimen " + id + " not found.");
                             hasSpecimenError = true;
                         }
                     }
 
                     if (!hasSpecimenError)
                     {   // Expected one of them to not be found, so this is unusual
-                        errors.addRowError(new ValidationException("Error adding all of the specimens together."));
+                        errorList.add("Error adding all of the specimens together.");
                     }
-                }
-                finally
-                {
-                    scope.closeConnection();
                 }
             }
 
-            if (null != errorList && !errorList.isEmpty())
+            if (!errorList.isEmpty())
             {
                 for (String error : errorList)
                     errors.addRowError(new ValidationException(error));

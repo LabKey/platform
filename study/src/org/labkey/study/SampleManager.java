@@ -457,28 +457,6 @@ public class SampleManager
         }
     }
 
-    public boolean isAvailable(Boolean requestable, boolean atRepository, boolean lockedInRequest)
-    {
-        boolean available;
-        if (requestable != null)
-        {
-            // the import has explicitly overridden the requestable state- this value is respected,
-            // unless the vial is locked in a request:
-            available = requestable.booleanValue() && !lockedInRequest;
-        }
-        else
-        {
-            // no override, so the vial must be at a repository and not locked in another request:
-            available = !lockedInRequest && atRepository;
-        }
-        return available;
-    }
-
-    public boolean isAvailable(Specimen specimen)
-    {
-        return isAvailable(specimen.isRequestable(), specimen.isAtRepository(), specimen.isLockedInRequest());
-    }
-
     /**
      * Update the lockedInRequest and available field states for the set of specimens.
      */
@@ -490,6 +468,8 @@ public class SampleManager
             Table.update(user, StudySchema.getInstance().getTableInfoVial(), specimen, specimen.getRowId());
         }
         updateRequestabilityAndCounts(specimens, user);
+        if (specimens.length > 0)
+            clearCaches(getContainer(specimens));
     }
 
     private Container getContainer(Specimen[] specimens)
