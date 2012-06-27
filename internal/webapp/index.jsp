@@ -18,7 +18,8 @@
 <%
 if ("GET".equals(request.getMethod()))
 {
-    %><html>
+    %><!DOCTYPE html>
+    <html>
     <head>
     <title>Redirect Page</title>
     <meta http-equiv="Refresh" content="0; URL=./project/home/begin.view">

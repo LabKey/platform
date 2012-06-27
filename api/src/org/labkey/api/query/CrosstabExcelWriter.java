@@ -38,6 +38,7 @@ import java.util.List;
  */
 public class CrosstabExcelWriter extends ExcelWriter
 {
+    private boolean _includeDimensionHeader = false;
     private CrosstabTableInfo _table;
     private int _numRowAxisCols = 0;
     private int _numMeasures = 0;
@@ -61,12 +62,15 @@ public class CrosstabExcelWriter extends ExcelWriter
         int column = _numRowAxisCols;
 
         // Add a row for the column dimension
-        Row dimensionRow = sheet.createRow(getCurrentRow());
-        Cell dimensionCell = dimensionRow.getCell(column, Row.CREATE_NULL_AS_BLANK);
-        dimensionCell.setCellStyle(getBoldFormat());
-        dimensionCell.setCellValue(_table.getSettings().getColumnAxis().getCaption());
+        if (_includeDimensionHeader)
+        {
+            Row dimensionRow = sheet.createRow(getCurrentRow());
+            Cell dimensionCell = dimensionRow.getCell(column, Row.CREATE_NULL_AS_BLANK);
+            dimensionCell.setCellStyle(getBoldFormat());
+            dimensionCell.setCellValue(_table.getSettings().getColumnAxis().getCaption());
 
-        incrementRow();
+            incrementRow();
+        }
 
         // Add the column members above the normal captions
         for (Pair<CrosstabMember, List<DisplayColumn>> group : _groupedByMember)

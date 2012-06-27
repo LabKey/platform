@@ -127,9 +127,12 @@ public class CrosstabView extends QueryView
         for (FieldKey col : selectedCols)
         {
             ColumnInfo column = table.getColumn(col);
+            if (column == null)
+                continue;
+
             if (col.getParts().get(0).startsWith(AggregateColumnInfo.NAME_PREFIX))
                 measureCols.add(col);
-            else if (column != null && column.getCrosstabColumnMember() != null)
+            else if (column.getCrosstabColumnMember() != null)
                 measureMemberCols.add(col);
             else
                 rowDimCols.add(col);

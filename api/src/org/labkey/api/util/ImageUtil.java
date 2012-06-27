@@ -15,18 +15,30 @@
  */
 package org.labkey.api.util;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.Priority;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailOutputStream;
 import org.w3c.dom.Document;
+import org.xhtmlrenderer.resource.XMLResource;
 import org.xhtmlrenderer.swing.Java2DRenderer;
+import org.xhtmlrenderer.swing.NaiveUserAgent;
+import org.xhtmlrenderer.util.XRLog;
+import org.xhtmlrenderer.util.XRLogger;
 
 import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.OutputStream;
 import java.io.IOException;
+import java.io.StringReader;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.List;
 import java.util.ArrayList;
+import java.util.logging.Level;
 
 /**
  * User: jeckels
@@ -34,6 +46,56 @@ import java.util.ArrayList;
  */
 public class ImageUtil
 {
+    private static Logger LOG = Logger.getLogger(ImageUtil.class);
+
+    static
+    {
+        XRLog.setLoggerImpl(new XRLogger()
+        {
+            Priority toPriority(Level level)
+            {
+                int l = level.intValue();
+                if (l == Level.SEVERE.intValue())
+                    return org.apache.log4j.Level.ERROR;
+                if (l == Level.WARNING.intValue())
+                    return org.apache.log4j.Level.WARN;
+                if (l == Level.INFO.intValue())
+                    return org.apache.log4j.Level.INFO;
+                if (l == Level.CONFIG.intValue())
+                    return org.apache.log4j.Level.INFO;
+                if (l == Level.FINE.intValue())
+                    return org.apache.log4j.Level.DEBUG;
+                if (l == Level.FINER.intValue())
+                    return org.apache.log4j.Level.DEBUG;
+                if (l == Level.FINEST.intValue())
+                    return org.apache.log4j.Level.TRACE;
+                if (l == Level.ALL.intValue())
+                    return org.apache.log4j.Level.ALL;
+                if (l == Level.OFF.intValue())
+                    return org.apache.log4j.Level.OFF;
+                return org.apache.log4j.Level.DEBUG;
+            }
+
+            @Override
+            public void log(String where, Level level, String msg)
+            {
+                LOG.log(where, toPriority(level), msg, null);
+
+            }
+
+            @Override
+            public void log(String where, Level level, String msg, Throwable t)
+            {
+                LOG.log(where, toPriority(level), msg, t);
+            }
+
+            @Override
+            public void setLevel(String s, Level level)
+            {
+            }
+        });
+    }
+
     /** Rewrite the output files so that they look nice and antialiased */
     public static double resizeImage(BufferedImage originalImage, OutputStream outputStream, double incrementalScale, int iterations) throws IOException
     {
@@ -94,6 +156,11 @@ public class ImageUtil
         return null;
     }
 
+    public static Thumbnail webThumbnail(URL url) throws IOException
+    {
+        return renderThumbnail(webImage(url));
+    }
+
     // Default size for generating the web image.
     private static final int WEB_IMAGE_WIDTH = 1024;
     private static final int WEB_IMAGE_HEIGHT = 768;
@@ -103,26 +170,128 @@ public class ImageUtil
         return webImage(url, WEB_IMAGE_WIDTH, WEB_IMAGE_HEIGHT);
     }
 
-    public static BufferedImage webImage(URL url, int width, int height) throws IOException
+    public static BufferedImage _webImage(URL url, int width, int height) throws IOException
     {
-        ArrayList<String> errors = new ArrayList<String>();
-        Document doc = TidyUtil.convertHtmlToDocument(url, true, errors);
+        URI uri;
+        try
+        {
+            uri = url.toURI();
+        }
+        catch (URISyntaxException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        Pair<String, URI> content = HttpUtil.getHTML(uri);
+        List<String> errors = new ArrayList<String>();
+        String xhtml = TidyUtil.tidyHTML(content.first, true, errors);
         if (!errors.isEmpty())
-            throw new RuntimeException("Error converting to XHTML document: " + errors.get(0));
-        return webImage(doc, width, height);
+            throw new RuntimeException(errors.get(0));
+
+        return _webImage(xhtml, content.second, width, height);
     }
 
-    private static BufferedImage webImage(Document doc, int width, int height)
+    private static BufferedImage _webImage(String xhtml, URI baseURI, int width, int height)
     {
-        Java2DRenderer renderer = new Java2DRenderer(doc, width, height);
-
+        String uri = baseURI.toString();
+        Java2DRenderer renderer = new Java2DRenderer(uri, width, height);
+        renderer.getSharedContext().setUserAgentCallback(new TidyUserAgent(xhtml, uri));
         renderer.getSharedContext().getTextRenderer().setSmoothingThreshold(8);
         return renderer.getImage();
     }
 
-    public static Thumbnail webThumbnail(URL url) throws IOException
+    // Tidying the HTML content as a string doesn't work very well -- the Xerces parser will balk.
+    // I'd like to just subclass XMLResource and hand back a Tidy DOM Document, but the XMLResource
+    // constructors are private.
+    private static class TidyUserAgent extends NaiveUserAgent
     {
-        return renderThumbnail(webImage(url));
+        String _xhtml;
+        String _baseURI;
+
+        private TidyUserAgent(String xhtml, String baseURI)
+        {
+            _xhtml = xhtml;
+            _baseURI = baseURI;
+        }
+
+        @Override
+        public XMLResource getXMLResource(String uri)
+        {
+            if (uri.equals(_baseURI))
+                return XMLResource.load(new StringReader(_xhtml));
+
+            Pair<String, URI> content = null;
+            try
+            {
+                content = HttpUtil.getHTML(new URI(uri));
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
+            catch (URISyntaxException e)
+            {
+                throw new RuntimeException(e);
+            }
+
+            ArrayList<String> errors = new ArrayList<String>();
+            String xhtml = TidyUtil.tidyHTML(content.first, true, errors);
+            if (!errors.isEmpty())
+                throw new RuntimeException("Error converting to XHTML document: " + errors.get(0));
+
+            return XMLResource.load(new StringReader(xhtml));
+        }
     }
 
+    public static BufferedImage webImage(URL url, int width, int height) throws IOException
+    {
+        URI uri;
+        try
+        {
+            uri = url.toURI();
+        }
+        catch (URISyntaxException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        Pair<Document, URI> content = HttpUtil.getXHTML(uri);
+        return webImage(content.first, content.second, width, height);
+    }
+
+    private static BufferedImage webImage(Document document, URI baseURI, int width, int height)
+    {
+        String uri = baseURI.toString();
+        Java2DRenderer renderer = new Java2DRenderer(document, width, height);
+        renderer.getSharedContext().setUserAgentCallback(new DumbUserAgent(uri));
+        renderer.getSharedContext().getTextRenderer().setSmoothingThreshold(8);
+        return renderer.getImage();
+    }
+
+    // DumbUserAgent is intended to be used by a Java2DRenderer that has been constructed with a Document.
+    // Java2DRenderer.getImage() tries to set the baseURL to null which breaks finding relative resouces.
+    // No tidying of HTML content is needed.
+    private static class DumbUserAgent extends NaiveUserAgent
+    {
+        private DumbUserAgent(String baseURL)
+        {
+            super.setBaseURL(baseURL);
+        }
+
+        @Override
+        public void setBaseURL(String url)
+        {
+            // no-op.  Java2DRenderer.getImage() tries to set the baseURL to null when using the overloaded Java2DRenderer(Document, ...) constructor.
+        }
+    }
+
+    public static void main(String[] args) throws Exception
+    {
+        // enable logging
+        System.setProperty("xr.util-logging.loggingEnabled", "true");
+
+        URL url = new URL(args[0]);
+        BufferedImage img = webImage(url);
+        ImageIO.write(img, "png", new File("out.png"));
+    }
 }

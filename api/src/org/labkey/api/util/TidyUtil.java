@@ -1,16 +1,15 @@
 package org.labkey.api.util;
 
-import org.apache.commons.io.IOUtils;
 import org.w3c.dom.*;
 import org.w3c.tidy.Tidy;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
-import java.net.URL;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,13 +23,6 @@ import java.util.regex.Pattern;
 public class TidyUtil
 {
     static Pattern scriptPattern = Pattern.compile("(<script.*?>)(.*?)(</script>)", Pattern.CASE_INSENSITIVE| Pattern.DOTALL);
-
-    public static Document convertHtmlToDocument(URL url, final boolean asXML, final Collection<String> errors) throws IOException
-    {
-        // UNDONE: Looks like IOUtils doesn't follow redirects
-        String html = IOUtils.toString(url);
-        return convertHtmlToDocument(html, asXML, errors);
-    }
 
     public static Document convertHtmlToDocument(final String html, final boolean asXML, final Collection<String> errors)
     {
@@ -88,19 +80,24 @@ public class TidyUtil
         return tidy;
     }
 
-    private static String tidyParse(final Tidy tidy, final String content, final Collection<String> errors)
+    private static void tidyParse(final Tidy tidy, final InputStream is, final OutputStream os, final Collection<String> errors)
     {
         StringWriter err = new StringWriter();
 
+        tidy.setErrout(new PrintWriter(err));
+        tidy.parse(is, os);
+        tidy.getErrout().close();
+
+        collectErrors(err, errors);
+    }
+
+    private static String tidyParse(final Tidy tidy, final String content, final Collection<String> errors)
+    {
         try
         {
             // parse wants to use streams
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            tidy.setErrout(new PrintWriter(err));
-            tidy.parse(new ByteArrayInputStream(content.getBytes("UTF-8")), out);
-            tidy.getErrout().close();
-
-            collectErrors(err, errors);
+            tidyParse(tidy, new ByteArrayInputStream(content.getBytes("UTF-8")), out, errors);
 
             return new String(out.toByteArray(), "UTF-8");
         }
