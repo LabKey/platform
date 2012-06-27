@@ -123,7 +123,8 @@ public class ClientDependency
             if(r == null || !r.exists())
             {
                 //TODO: throw exception??
-                _log.error("Script file not found, skipping: " + filePath);
+                if (!AppProps.getInstance().isDevMode())
+                    _log.error("Script file not found, skipping: " + filePath);
             }
             else
             {
