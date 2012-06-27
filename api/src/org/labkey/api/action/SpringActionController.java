@@ -442,6 +442,9 @@ public abstract class SpringActionController implements Controller, HasViewConte
         View view = resolveView(mv);
         mv.setView(view);
 
+        if (mv instanceof HttpView)
+            page.addClientDependencies(((HttpView)mv).getClientDependencies());
+
         ModelAndView template = getTemplate(context, mv, action, page);
 
         ModelAndView render = template == null ? mv : template;

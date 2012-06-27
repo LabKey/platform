@@ -562,8 +562,6 @@ abstract public class JspBase extends JspContext implements HasViewContext
     public void setClientDependencies(LinkedHashSet<ClientDependency> scripts)
     {
         _clientDependencies = scripts;
-        if( getModelBean() instanceof PageConfig)
-            ((PageConfig)getModelBean()).addClientDependencies(scripts);
     }
 
     public void addClientDependency(String scriptPath)

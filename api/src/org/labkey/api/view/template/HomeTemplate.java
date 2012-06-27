@@ -191,8 +191,6 @@ public class HomeTemplate extends PrintTemplate
                 page.setTitle(page.getTitle() + ": " + getRootContext().getActionURL().getExtraPath());
         }
 
-        page.addClientDependencies((Set)getClientDependencies());
-
         if (null == getView("header"))
             setView("header", getHeaderView(page));
     }

@@ -730,11 +730,6 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     public void setClientDependencies(LinkedHashSet<ClientDependency> scripts)
     {
         _clientDependencies = scripts;
-        if( getModelBean() instanceof PageConfig)
-            ((PageConfig)getModelBean()).addClientDependencies(scripts);
-
-        if(_view instanceof HtmlView)
-            ((HtmlView)_view).addClientDependencies(scripts);
     }
 
     public void addClientDependencies(Set<ClientDependency> resources)
