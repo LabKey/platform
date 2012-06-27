@@ -159,6 +159,15 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
             {
                 // If this is an OORIndicator and there's a matching value column in the same table, don't add this column
             }
+            else if (baseColumn.getName().equalsIgnoreCase("Created") || baseColumn.getName().equalsIgnoreCase("Modified") ||
+                baseColumn.getName().equalsIgnoreCase("CreatedBy") || baseColumn.getName().equalsIgnoreCase("ModifiedBy")
+            )
+            {
+                ColumnInfo c = addWrapColumn(baseColumn);
+                c.setUserEditable(false);
+                c.setShownInInsertView(false);
+                c.setShownInUpdateView(false);
+            }
             else if (baseColumn.getName().equalsIgnoreCase("SequenceNum") && _schema.getStudy().getTimepointType() != TimepointType.VISIT)
             {
                 // wrap the sequencenum column and set a format to prevent scientific notation, since the sequencenum values
@@ -211,6 +220,9 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
                     }
                 });
                 pvColumn.setIsUnselectable(true);
+                pvColumn.setUserEditable(false);
+                pvColumn.setShownInInsertView(false);
+                pvColumn.setShownInUpdateView(false);
                 pvColumn.setDimension(false);
                 addColumn(pvColumn);
             }
@@ -250,6 +262,8 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
         ColumnInfo lsidColumn = getColumn("LSID");
         lsidColumn.setHidden(true);
         lsidColumn.setKeyField(true);
+        lsidColumn.setShownInInsertView(false);
+        lsidColumn.setShownInUpdateView(false);
         getColumn("SourceLSID").setHidden(true);
 
         ColumnInfo autoJoinColumn = new AliasedColumn(this, "DataSets", _rootTable.getColumn("ParticipantId"));
@@ -316,6 +330,8 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
         visitRowId.setName("VisitRowId");
         visitRowId.setHidden(true);
         visitRowId.setUserEditable(false);
+        visitRowId.setShownInInsertView(false);
+        visitRowId.setShownInUpdateView(false);
         visitRowId.setMeasure(false);
         addColumn(visitRowId);
 

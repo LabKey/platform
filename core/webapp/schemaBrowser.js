@@ -853,13 +853,13 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel,
                 {
                     id: 'lk-vq-validatemetadata',
                     tag: 'input',
-                    hidden: true,
+                    //hidden: true,
                     type: 'checkbox'
                 },
                 {
                     tag: 'span',
                     html: ' Validate metadata and views',
-                    hidden: true,
+                    //hidden: true,
                     cls: 'lk-sb-instructions'
                 }
             ]
@@ -1134,6 +1134,7 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel,
 
         if(errorInfo.errors){
             var messages = [];
+            var hasErrors = false;
             Ext.each(errorInfo.errors, function(e){
                 messages.push(e.msg);
             }, this);
@@ -1147,12 +1148,21 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel,
                 if(msg.match(/^WARNING:/))
                     cls = 'lk-vq-warn-message';
 
+                if(cls == 'lk-vq-error-message'){
+                    hasErrors = true;
+                }
+
                 config.children.push({
                     tag: 'div',
                     cls: cls,
                     html: Ext.util.Format.htmlEncode(msg)
                 })
             }, this);
+
+            if(!hasErrors){
+                --this.numErrors;
+                ++this.numValid;
+            }
         }
         else {
             config.children.push({

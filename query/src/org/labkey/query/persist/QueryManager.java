@@ -550,11 +550,11 @@ public class QueryManager
         if(specialCols.contains(col.getName()))
         {
             if(col.isUserEditable())
-                queryErrors.add("INFO: " + errorBase + " column is user editable, which may not be correct");
+                queryErrors.add("INFO: " + errorBase + " column is user editable, which is not expected based on its name");
             if(col.isShownInInsertView())
-                queryErrors.add("INFO: " + errorBase + " column has shownInInsertView set to true, which may not be correct");
+                queryErrors.add("INFO: " + errorBase + " column has shownInInsertView set to true, which is not expected based on its name");
             if(col.isShownInUpdateView())
-                queryErrors.add("INFO: " + errorBase + " column has shownInUpdateView set to true, which may not be correct");
+                queryErrors.add("INFO: " + errorBase + " column has shownInUpdateView set to true, which is not expected based on its name");
         }
 
         if(col.isAutoIncrement() && col.isUserEditable())
@@ -612,7 +612,7 @@ public class QueryManager
         {
             String schema = lookupTable.getPublicSchemaName() != null ? lookupTable.getPublicSchemaName() : lookupTable.getSchema().getName();
             String query = lookupTable.getPublicName() != null ? lookupTable.getPublicName() : lookupTable.getName();
-            queryErrors.add("WARNING: " + errorBase + " has a lookup to a non-public table: " + schema + "." + query);
+            queryErrors.add("INFO: " + errorBase + " has a lookup to a non-public table: " + schema + "." + query);
             return queryErrors;
         }
 
@@ -772,7 +772,7 @@ public class QueryManager
                 queryErrors.add("WARNING: In the saved view '" + (v.getName() == null ? "default" : v.getName()) + "', in the " + identifier + " section, the column '" + f.toString() + "' in " + v.getSchemaName() + "." + v.getQueryName() + "' did not match the expected case, which was '" + fk + "'");
             }
 
-            queryErrors.addAll(validateColumn(c, user, container));
+            //queryErrors.addAll(validateColumn(c, user, container));
         }
     }
 }
