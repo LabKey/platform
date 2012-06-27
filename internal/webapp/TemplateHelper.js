@@ -157,7 +157,7 @@
         if (value.rowspan == -1)
             return "";
         var innerHtml = this.getDisplayValueHtml(value, withUrls);
-        var td = !asHeader ? "<td valign=top" : "<th style=\"border: solid 1px #DDDDDD; padding: 4px;\" class=\"labkey-column-header\"";
+        var td = !asHeader ? "<td valign=top" : "<th style=\"border: solid 1px #DDDDDD; padding: 4px;\"";
 
         // align (for transposed, align all values to the right)
         if (!asHeader && !transposed && this.align)
@@ -178,7 +178,7 @@
 
         // className
         var className = value.className || this.className;
-        if (!asHeader && className)
+        if (className)
             td += " class=\"" + className + "\"";
 
         // style
