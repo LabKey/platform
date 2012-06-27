@@ -282,6 +282,8 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
         chartSVGStr = chartSVGStr.replace(/width="\d+"/, 'width="100%"');
         chartSVGStr = chartSVGStr.replace(/height="\d+"/, 'height="100%"');
         chartSVGStr = chartSVGStr.replace(/<svg /, '<svg viewBox="0 0 ' + size.width + ' ' + size.height + '"');
+        // remove the id reference so that updates to the original aren't confused
+        chartSVGStr = chartSVGStr.replace(/id="[\w\-]+"/, '');
 
         // update the html contents of the thumbnail preview div
         this.down('#autoGenerate').thumbnailPreview = chartSVGStr;

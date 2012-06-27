@@ -1536,6 +1536,13 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     } else {
                         aggregatePointLayerConfig.aes.hoverText = hoverTextFn(aggregateSubjectColumn, intervalKey, chartSeries.name, columnName, visitMap, errorColumnName, chartInfo.errorBars);
                     }
+                    if (chartInfo.pointClickFn)
+                    {
+                        aggregatePointLayerConfig.aes.pointClickFn = pointClickFn(
+                            {group: aggregateSubjectColumn, interval: intervalKey, measure: columnName},
+                            {schemaName: chartSeries.schemaName, queryName: chartSeries.queryName, name: chartSeries.name}
+                        );
+                    }
                     layers.push(new LABKEY.vis.Layer(aggregatePointLayerConfig));
                 }
             }

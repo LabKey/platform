@@ -8,6 +8,8 @@ Ext4.namespace("LABKEY.vis");
 
 Ext4.tip.QuickTipManager.init();
 
+LABKEY.requiresScript("/editarea/edit_area_full.js");
+
 Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
 
     extend : 'LABKEY.vis.GenericOptionsPanel',
@@ -23,6 +25,8 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
     },
 
     initComponent : function(){
+        this.id = 'developerPanel-' + Ext4.id();
+
         // track if the panel has changed
         this.hasChanges = false;
 
@@ -43,18 +47,26 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
             scope: this
         });
 
-        // TODO: change to use JS text editor similar to JS Report Source tab
-        this.pointClickFnTextArea = Ext4.create('Ext.form.field.TextArea', {
-            name: 'point-click-fn-textarea', // for selenium testing
-            hideLabel: true,
-            disabled: this.pointClickFn == null, 
-            value: this.pointClickFn ? this.pointClickFn : this.getDefaultPointClickFn(),
-            height: 375,
+        this.pointClickTextAreaId = 'textarea-' + Ext4.id();
+        this.pointClickTextAreaHtml = Ext4.create('Ext.Panel', {
+            border: false,
+            disabled: this.pointClickFn == null,                    // name is for selenium testing
+            html: '<textarea id="' + this.pointClickTextAreaId + '" name="point-click-fn-textarea" onchange="Ext4.ComponentManager.get(\'' + this.getId() + '\').hasChanges = true;"'
+                    + 'cols="123" wrap="on" rows="23"></textarea>',
             listeners: {
-                scope: this,
-                'change': function() {
-                    this.hasChanges = true;
-                }
+                afterrender: function() {
+                    editAreaLoader.init({
+                        id: this.pointClickTextAreaId,
+                        toolbar: "search, go_to_line, |, undo, redo, |, select_font,|, highlight, reset_highlight, word_wrap, |, help",
+                        syntax: "js",
+                        start_highlight: true,
+                        allow_resize: "no",
+                        change_callback: "Ext4.ComponentManager.get('" + this.getId() + "').hasChanges = true;" // JavaScript string to eval, NOT a function
+                    });
+
+                    editAreaLoader.setValue(this.pointClickTextAreaId, this.pointClickFn ? this.pointClickFn : null);
+                },
+                scope: this
             }
         });
 
@@ -65,7 +77,7 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
                     title: 'Source',
                     width: 600,
                     layout: 'fit',
-                    items: this.pointClickFnTextArea
+                    items: this.pointClickTextAreaHtml
                 }),
                 Ext4.create('Ext.Panel', {
                     title: 'Help',
@@ -118,9 +130,10 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
     },
 
     togglePointClickFn: function() {
-        if (this.pointClickFnTextArea.isDisabled())
+        if (this.pointClickTextAreaHtml.isDisabled())
         {
-            this.pointClickFnTextArea.enable();
+            this.pointClickTextAreaHtml.enable();
+            editAreaLoader.setValue(this.pointClickTextAreaId, this.getDefaultPointClickFn());
             this.pointClickFnBtn.setText('Disable');
         }
         else
@@ -132,8 +145,9 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
                 fn: function(btnId, text, opt){
                     if(btnId == 'yes'){
                         Ext4.getDom(this.fnErrorDiv).innerHTML = '&nbsp;';
-                        this.pointClickFnTextArea.disable();
-                        this.pointClickFnTextArea.setValue(this.getDefaultPointClickFn());
+                        this.pointClickFn = null;
+                        editAreaLoader.setValue(this.pointClickTextAreaId, null);
+                        this.pointClickTextAreaHtml.disable();
                         this.pointClickFnBtn.setText('Enable');
                     }
                 },
@@ -167,9 +181,9 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
 
     applyButtonClicked: function() {
         // verify the pointClickFn for JS errors
-        if (!this.pointClickFnTextArea.isDisabled())
+        if (!this.pointClickTextAreaHtml.isDisabled())
         {
-            var fnText = this.pointClickFnTextArea.getValue().trim();
+            var fnText = editAreaLoader.getValue(this.pointClickTextAreaId).trim();
             if (fnText == null || fnText.length == 0 || fnText.indexOf("function") != 0)
             {
                 Ext4.getDom(this.fnErrorDiv).innerHTML = '<span class="labkey-error">Error: the value provided does not begin with a function declaration.</span>';
@@ -187,6 +201,7 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
                 return;
             }
             Ext4.getDom(this.fnErrorDiv).innerHTML = '&nbsp;';
+            this.pointClickFn = editAreaLoader.getValue(this.pointClickTextAreaId);
         }
 
         this.fireEvent('closeOptionsWindow');
@@ -194,7 +209,7 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
     },
 
     getPanelOptionValues : function() {
-        return {pointClickFn: !this.pointClickFnTextArea.isDisabled() ? this.pointClickFnTextArea.getValue() : null};
+        return {pointClickFn: !this.pointClickTextAreaHtml.isDisabled() ? this.pointClickFn : null};
     },
 
     checkForChangesAndFireEvents : function() {
