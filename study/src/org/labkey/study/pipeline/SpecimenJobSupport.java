@@ -16,6 +16,8 @@
 
 package org.labkey.study.pipeline;
 
+import org.labkey.api.admin.ImportException;
+
 import java.io.File;
 
 /*
@@ -25,9 +27,7 @@ import java.io.File;
 */
 public interface SpecimenJobSupport
 {
-    /** The original input file, without any transformation */
-    File getInputFile();
-    /** A specimen archive in our expected format, possibly the created by a transform step */
-    File getSpecimenArchive();
+    /** A specimen archive as original delivered. Might be transformed before import */
+    File getSpecimenArchive() throws ImportException;
     boolean isMerge();
 }

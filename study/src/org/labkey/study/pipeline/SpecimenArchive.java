@@ -48,7 +48,7 @@ public class SpecimenArchive
     public List<EntryDescription> getEntryDescriptions() throws IOException
     {
         List<SpecimenArchive.EntryDescription> entryList = new ArrayList<EntryDescription>();
-        if (SpecimenBatch.SAMPLE_MINDED_FILE_TYPE.isType(_definitionFile))
+        if (SampleMindedTransformTask.SAMPLE_MINDED_FILE_TYPE.isType(_definitionFile))
         {
             entryList.add(new EntryDescription(_definitionFile.getName(), _definitionFile.length(), new Date(_definitionFile.lastModified())));
         }

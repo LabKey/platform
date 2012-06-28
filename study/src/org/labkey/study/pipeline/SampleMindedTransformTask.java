@@ -26,9 +26,8 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.TSVMapWriter;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
-import org.labkey.api.pipeline.RecordedAction;
-import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.reader.ExcelLoader;
+import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
@@ -55,18 +54,20 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 /*
-* This task is used to transform SampleMinded specimen files (.xlsx) into our standard specimen import format, a
+* This is used to transform SampleMinded specimen files (.xlsx) into our standard specimen import format, a
 * a file with extension ".specimens" which is a ZIP file.
 * User: jeckels
 */
 
-public class SampleMindedTransformTask extends PipelineJob.Task<SampleMindedTransformTask.Factory>
+public class SampleMindedTransformTask
 {
-    private static final String TRANSFORM_PROTOCOL_ACTION_NAME = "SampleMindedTransform";
+    public static final FileType SAMPLE_MINDED_FILE_TYPE = new FileType(".xlsx");
 
-    private SampleMindedTransformTask(Factory factory, PipelineJob job)
+    private final PipelineJob _job;
+
+    public SampleMindedTransformTask(PipelineJob job)
     {
-        super(factory, job);
+        _job = job;
     }
 
     private static final Map<String, Integer> STANDARD_PRIMARY_TYPE_IDS;
@@ -113,16 +114,13 @@ public class SampleMindedTransformTask extends PipelineJob.Task<SampleMindedTran
         STANDARD_DERIVATIVE_TYPE_IDS = Collections.unmodifiableMap(derivativeTypes);
     }
 
-
-    @Override
-    public RecordedActionSet run() throws PipelineJobException
+    private PipelineJob getJob()
     {
-        RecordedAction action = new RecordedAction(TRANSFORM_PROTOCOL_ACTION_NAME);
-        File input = getJob().getJobSupport(SpecimenJobSupport.class).getInputFile();
-        action.addInput(input, "SampleMindedExport");
-        File output = getJob().getJobSupport(SpecimenJobSupport.class).getSpecimenArchive();
-        action.addOutput(output, "SpecimenArchive", false);
+        return _job;
+    }
 
+    public void transform(File input, File output) throws PipelineJobException
+    {
         Map<String, Integer> labIds = new LinkedHashMap<String, Integer>();
 
         Map<String, Integer> primaryIds = new LinkedHashMap<String, Integer>(STANDARD_PRIMARY_TYPE_IDS);
@@ -176,8 +174,6 @@ public class SampleMindedTransformTask extends PipelineJob.Task<SampleMindedTran
         {
             throw new PipelineJobException(e);
         }
-
-        return new RecordedActionSet(action);
     }
 
     private List<Map<String, Object>> transformRows(Map<String, Integer> labIds, Map<String, Integer> primaryIds, Map<String, Integer> derivativeIds, List<Map<String, Object>> inputRows)
@@ -315,8 +311,12 @@ public class SampleMindedTransformTask extends PipelineJob.Task<SampleMindedTran
         outputRow.put("processed_by_initials", inputRow.get("activityuser"));
         outputRow.put("comments", activity);
 
-        String destinationSite = getNonNullValue(inputRow, "destinationsite");
-        if ("N/A".equalsIgnoreCase(destinationSite))
+        String destinationSite = getNonNullValue(inputRow, "destination_site");
+        if ("".equals(destinationSite))
+        {
+            destinationSite = getNonNullValue(inputRow, "destinationsite");
+        }
+        if (destinationSite.trim().length() == 0 || "N/A".equalsIgnoreCase(destinationSite))
         {
             destinationSite = shortName;
         }
@@ -503,39 +503,6 @@ public class SampleMindedTransformTask extends PipelineJob.Task<SampleMindedTran
         writeTSV(file, rows, "labs");
     }
 
-    public static class Factory extends AbstractSpecimenTaskFactory<Factory>
-    {
-        public Factory()
-        {
-            super(SampleMindedTransformTask.class);
-        }
-
-        public PipelineJob.Task createTask(PipelineJob job)
-        {
-            return new SampleMindedTransformTask(this, job);
-        }
-
-        @Override
-        public List<String> getProtocolActionNames()
-        {
-            return Collections.singletonList(TRANSFORM_PROTOCOL_ACTION_NAME);
-        }
-
-        @Override
-        public boolean isParticipant(PipelineJob job) throws IOException
-        {
-            // Only run this task if the input is a SampleMinded export
-            File input = job.getJobSupport(SpecimenJobSupport.class).getInputFile();
-            return SpecimenBatch.SAMPLE_MINDED_FILE_TYPE.isType(input);
-        }
-
-        @Override
-        public String getStatusName()
-        {
-            return "SAMPLEMINDED TRANSFORM";
-        }
-    }
-
     public static class TestCase extends Assert
     {
         private Mockery _context;
@@ -548,7 +515,7 @@ public class SampleMindedTransformTask extends PipelineJob.Task<SampleMindedTran
             _context = new Mockery();
             _context.setImposteriser(ClassImposteriser.INSTANCE);
             _job = _context.mock(PipelineJob.class);
-            _task = new SampleMindedTransformTask(null, _job);
+            _task = new SampleMindedTransformTask(_job);
         }
 
         @Test

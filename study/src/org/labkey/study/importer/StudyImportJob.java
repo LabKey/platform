@@ -16,6 +16,7 @@
 package org.labkey.study.importer;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -28,9 +29,14 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.controllers.BaseStudyController;
+import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.pipeline.SpecimenBatch;
+import org.labkey.study.pipeline.SpecimenJobSupport;
 import org.labkey.study.pipeline.StudyPipeline;
+import org.labkey.study.xml.RepositoryType;
+import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
 import java.io.File;
@@ -116,5 +122,35 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport
     public String getDescription()
     {
         return "Study " + (_reload ? "reload" : "import");
+    }
+
+    @Override
+    public File getSpecimenArchive() throws ImportException
+    {
+        StudyDocument.Study.Specimens specimens = _ctx.getXml().getSpecimens();
+
+        if (null != specimens)
+        {
+            Container c = _ctx.getContainer();
+
+            // TODO: support specimen archives that are not zipped
+            RepositoryType.Enum repositoryType = specimens.getRepositoryType();
+            StudyController.updateRepositorySettings(c, RepositoryType.STANDARD == repositoryType);
+
+            if (null != specimens.getDir())
+            {
+                VirtualFile specimenDir = _root.getDir(specimens.getDir());
+
+                if (null != specimenDir && null != specimens.getFile())
+                    return _ctx.getStudyFile(_root, specimenDir, specimens.getFile());
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public boolean isMerge()
+    {
+        return false;
     }
 }

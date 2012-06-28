@@ -12,7 +12,6 @@
                 <bean class="org.labkey.study.importer.StudyImportFinalTask$Factory"/>
 
                 <bean class="org.labkey.study.pipeline.StandaloneDatasetTask$Factory"/>
-                <bean class="org.labkey.study.pipeline.SampleMindedTransformTask$Factory"/>
                 <bean class="org.labkey.study.pipeline.StandaloneSpecimenTask$Factory"/>
             </list>
         </property>
@@ -45,9 +44,6 @@
                     <constructor-arg type="java.lang.Class" value="org.labkey.study.pipeline.SpecimenBatch"/>
                     <property name="taskProgressionSpec">
                         <list>
-                            <bean id="sampleMindedTransformTask" class="org.labkey.api.pipeline.TaskId">
-                                <constructor-arg><value type="java.lang.Class">org.labkey.study.pipeline.SampleMindedTransformTask</value></constructor-arg>
-                            </bean>
                             <bean id="standaloneSpecimenTask" class="org.labkey.api.pipeline.TaskId">
                                 <constructor-arg><value type="java.lang.Class">org.labkey.study.pipeline.StandaloneSpecimenTask</value></constructor-arg>
                             </bean>

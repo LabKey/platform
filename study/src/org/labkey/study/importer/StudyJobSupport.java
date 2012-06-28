@@ -18,6 +18,7 @@ package org.labkey.study.importer;
 
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.pipeline.SpecimenJobSupport;
 import org.springframework.validation.BindException;
 
 /*
@@ -25,7 +26,7 @@ import org.springframework.validation.BindException;
 * Date: Aug 31, 2009
 * Time: 2:02:54 PM
 */
-public interface StudyJobSupport
+public interface StudyJobSupport extends SpecimenJobSupport
 {
     StudyImpl getStudy();
 

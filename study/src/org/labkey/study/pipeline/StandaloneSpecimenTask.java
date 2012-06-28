@@ -26,22 +26,12 @@ import java.io.File;
 * Time: 4:37:31 PM
 */
 
-// This task is used to import specimen archives directly via the pipeline ui.  SpecimenBatch is the associcated pipeline job.
+// This task is used to import specimen archives directly via the pipeline ui.  SpecimenBatch is the associated pipeline job.
 public class StandaloneSpecimenTask extends AbstractSpecimenTask<StandaloneSpecimenTask.Factory>
 {
     private StandaloneSpecimenTask(Factory factory, PipelineJob job)
     {
         super(factory, job);
-    }
-
-    protected File getSpecimenArchive() throws Exception
-    {
-        return getJob().getJobSupport(SpecimenJobSupport.class).getSpecimenArchive();
-    }
-
-    protected boolean isMerge()
-    {
-        return getJob().getJobSupport(SpecimenJobSupport.class).isMerge();
     }
 
     public static class Factory extends AbstractSpecimenTaskFactory<Factory>

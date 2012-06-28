@@ -16,6 +16,7 @@
 
 package org.labkey.study.pipeline;
 
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.writer.ZipUtil;
@@ -41,29 +42,36 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
         super(factory, job);
     }
 
-    protected abstract File getSpecimenArchive() throws Exception;
-
     public RecordedActionSet run() throws PipelineJobException
     {
-        PipelineJob job = getJob();
-        File specimenArchive;
-
         try
         {
-            specimenArchive = getSpecimenArchive();
+            doImport(getJob().getJobSupport(SpecimenJobSupport.class).getSpecimenArchive(), getJob(), isMerge());
         }
         catch (Exception e)
         {
             throw new PipelineJobException("Error attempting to load specimen archive", e);
         }
 
-        doImport(specimenArchive, job, isMerge());
-
         return new RecordedActionSet();
     }
 
-    public static void doImport(File specimenArchive, PipelineJob job, boolean merge) throws PipelineJobException
+    public static void doImport(File inputFile, PipelineJob job, boolean merge) throws PipelineJobException
     {
+        // Might need to transform to a file type that we know how to import
+        File specimenArchive;
+        if (inputFile != null && SampleMindedTransformTask.SAMPLE_MINDED_FILE_TYPE.isType(inputFile))
+        {
+            job.setStatus("TRANSFORMING SAMPLEMINDED DATA");
+            specimenArchive = SpecimenBatch.ARCHIVE_FILE_TYPE.getFile(inputFile.getParentFile(), SampleMindedTransformTask.SAMPLE_MINDED_FILE_TYPE.getBaseName(inputFile));
+            SampleMindedTransformTask transformer = new SampleMindedTransformTask(job);
+            transformer.transform(inputFile, specimenArchive);
+        }
+        else
+        {
+            specimenArchive = inputFile;
+        }
+
 
         if (null == specimenArchive)
         {
@@ -106,7 +114,10 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
         }
     }
 
-    protected abstract boolean isMerge();
+    protected boolean isMerge()
+    {
+        return getJob().getJobSupport(SpecimenJobSupport.class).isMerge();
+    }
 
     private static void delete(File file, PipelineJob job)
     {

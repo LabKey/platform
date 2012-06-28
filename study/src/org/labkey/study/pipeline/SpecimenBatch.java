@@ -38,7 +38,6 @@ public class SpecimenBatch extends StudyBatch implements Serializable, SpecimenJ
 {
     private boolean _isMerge;
 
-    public static final FileType SAMPLE_MINDED_FILE_TYPE = new FileType(".xlsx");
     public static final FileType ARCHIVE_FILE_TYPE = new FileType(".specimens");
 
     public SpecimenBatch(ViewBackgroundInfo info, File definitionFile, PipeRoot root, boolean merge) throws SQLException
@@ -55,18 +54,8 @@ public class SpecimenBatch extends StudyBatch implements Serializable, SpecimenJ
         return description;
     }
 
-    @Override
-    public File getInputFile()
-    {
-        return _definitionFile;
-    }
-
     public File getSpecimenArchive()
     {
-        if (SAMPLE_MINDED_FILE_TYPE.isType(_definitionFile))
-        {
-            return ARCHIVE_FILE_TYPE.getFile(_definitionFile.getParentFile(), SAMPLE_MINDED_FILE_TYPE.getBaseName(_definitionFile));
-        }
         return _definitionFile;
     }
 

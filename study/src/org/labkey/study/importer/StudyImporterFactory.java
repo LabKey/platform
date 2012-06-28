@@ -25,19 +25,19 @@ import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.security.User;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
-import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
+import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.pipeline.StudyImportDatasetTask;
 import org.labkey.study.pipeline.StudyImportSpecimenTask;
-import org.labkey.study.writer.StudyWriterFactory;
+import org.labkey.study.xml.RepositoryType;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
 import java.io.File;
-import java.io.InputStream;
+import java.sql.SQLException;
 import java.util.Collection;
 
 /**
@@ -109,10 +109,10 @@ public class StudyImporterFactory implements FolderImporterFactory
                 StudyImportDatasetTask.doImport(datasetsFile, job, study);
 
                 // specimen import task
-                File specimenFile = StudyImportSpecimenTask.getSpecimenArchive(studyImportContext, studyDir);
+                File specimenFile = getSpecimenArchive(studyImportContext, studyDir);
                 StudyImportSpecimenTask.doImport(specimenFile, job, false);
 
-                // the final study import task handles registered study importers like: cohorts, participant comments, categories, etc. 
+                // the final study import task handles registered study importers like: cohorts, participant comments, categories, etc.
                 StudyImportFinalTask.doImport(job, studyImportContext, errors);
 
                 ctx.getLogger().info("Done importing " + getDescription());
@@ -122,6 +122,30 @@ public class StudyImporterFactory implements FolderImporterFactory
         @Override
         public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
+            return null;
+        }
+
+        public File getSpecimenArchive(StudyImportContext ctx, VirtualFile root) throws ImportException, SQLException
+        {
+            StudyDocument.Study.Specimens specimens = ctx.getXml().getSpecimens();
+
+            if (null != specimens)
+            {
+                Container c = ctx.getContainer();
+
+                // TODO: support specimen archives that are not zipped
+                RepositoryType.Enum repositoryType = specimens.getRepositoryType();
+                StudyController.updateRepositorySettings(c, RepositoryType.STANDARD == repositoryType);
+
+                if (null != specimens.getDir())
+                {
+                    VirtualFile specimenDir = root.getDir(specimens.getDir());
+
+                    if (null != specimenDir && null != specimens.getFile())
+                        return ctx.getStudyFile(root, specimenDir, specimens.getFile());
+                }
+            }
+
             return null;
         }
 
