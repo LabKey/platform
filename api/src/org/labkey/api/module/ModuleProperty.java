@@ -10,10 +10,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.view.UnauthorizedException;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -156,12 +155,12 @@ public class ModuleProperty
 
         //properties provide their edit permissions, so we only enforce read on the container
         if (!c.hasPermission(u, ReadPermission.class))
-            throw new SecurityException("The user does not have read permission on this container");
+            throw new UnauthorizedException("The user does not have read permission on this container");
 
         for (Class<? extends Permission> p : getEditPermissions())
         {
             if (!c.hasPermission(u, p))
-                throw new SecurityException("The user does not have " + p.getName() + " permission on this container");
+                throw new UnauthorizedException("The user does not have " + p.getName() + " permission on this container");
         }
 
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(userIdToSave, c.getId(), getCategory(), true);
