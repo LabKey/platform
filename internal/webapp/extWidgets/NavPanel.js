@@ -69,7 +69,7 @@ Ext4.define('LABKEY.ext.NavPanel', {
             frame: false,
             frameHeader: false,
             style: 'background-color: transparent;',
-            bodyStyle: 'background-color: transparent;',
+            bodyStyle: 'padding:5px;background-color: transparent;',
             width: this.width || '80%',
             defaults: {
                 border: false,
