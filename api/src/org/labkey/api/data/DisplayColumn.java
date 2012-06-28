@@ -615,7 +615,7 @@ public abstract class DisplayColumn extends RenderColumn
                 navtree.addChild(clearFilterItem);
             }
 
-            NavTree chartItem = GenericChartReport.getQuickChartItem(ctx.getContainer(), ctx.getViewContext().getUser(), 
+            NavTree chartItem = GenericChartReport.getQuickChartItem(rgn.getName(), ctx.getViewContext(), 
                     rgn.getDisplayColumns(), getColumnInfo(), rgn.getSettings());
 
             if (chartItem != null)

@@ -559,6 +559,7 @@ public class SimpleFilter implements Filter
                 in.append(sep).append(escapeLabKeySqlValue(param, col.getJdbcType()));
                 sep = ", ";
             }
+            in.append(")");
 
             if(isIncludeNull())
             {

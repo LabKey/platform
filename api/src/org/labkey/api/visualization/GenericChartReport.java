@@ -15,6 +15,7 @@
  */
 package org.labkey.api.visualization;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
@@ -26,6 +27,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ViewContext;
 
 import java.util.List;
 
@@ -138,35 +140,38 @@ public abstract class GenericChartReport extends AbstractReport
      * Create a menu item for the auto chart option based on the specified column type
      * @return
      */
-    public static NavTree getQuickChartItem(Container container, User user, List<DisplayColumn> columns, ColumnInfo col, QuerySettings settings)
+    public static NavTree getQuickChartItem(String rgnName, ViewContext context, List<DisplayColumn> columns, ColumnInfo col, QuerySettings settings)
     {
         if (settings != null && settings.getSchemaName() != null && settings.getQueryName() != null)
         {
-            Class cls = col.getJavaClass();
-            RenderType type = null;
+            boolean quickChartDisabled = BooleanUtils.toBoolean(context.getActionURL().getParameter(rgnName + ".param.quickChartDisabled"));
 
-//            if (Integer.class.equals(cls))
-//            {
-//                type = RenderType.BOX_PLOT;
-//            }
-//            else if (Double.class.equals(cls))
-//            {
-//                type = RenderType.SCATTER_PLOT;
-//            }
-
-            type = RenderType.BOX_PLOT;
-
-            if (type != null)
+            if (!quickChartDisabled)
             {
-                VisualizationUrls urlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
-                ActionURL plotURL = urlProvider.getGenericChartDesignerURL(container, user, settings, type).addParameter("autoColumnYName", col.getName());
+                Class cls = col.getJavaClass();
+                RenderType type = null;
 
-                NavTree navItem = new NavTree("Quick Chart");
+                if (Integer.class.equals(cls) || String.class.equals(cls))
+                {
+                    type = RenderType.BOX_PLOT;
+                }
+                else if (Double.class.equals(cls))
+                {
+                    type = RenderType.SCATTER_PLOT;
+                }
 
-                navItem.setImageSrc(type.getIconPath());
-                navItem.setHref(plotURL.getLocalURIString());
+                if (type != null)
+                {
+                    VisualizationUrls urlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
+                    ActionURL plotURL = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), settings, type).addParameter("autoColumnYName", col.getName());
 
-                return navItem;
+                    NavTree navItem = new NavTree("Quick Chart");
+
+                    navItem.setImageSrc(type.getIconPath());
+                    navItem.setHref(plotURL.getLocalURIString());
+
+                    return navItem;
+                }
             }
         }
         return null;
