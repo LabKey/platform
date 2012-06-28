@@ -1051,6 +1051,10 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         this.headerSpacer       = Ext.get('dataregion_header_row_spacer_' + this.name);
         this.colHeaderRow       = Ext.get('dataregion_column_header_row_' + this.name);
         this.colHeaderRowSpacer = Ext.get('dataregion_column_header_row_spacer_' + this.name);
+        this.paginationEl       = Ext.get('dataregion_header_' + this.name);
+
+        Ext.EventManager.on(window,   'resize', this._resizeContainer, this);
+        this.ensurePaginationVisible();
 
         // check if the header row is being used
         this.includeHeader = this.headerRow.isDisplayed();
@@ -1086,9 +1090,8 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             return;
         }
 
-        // initialize listeners
+        // initialize additional listeners
         Ext.EventManager.on(window,   'load',            this._resizeContainer, this, {single: true});
-        Ext.EventManager.on(window,   'resize',          this._resizeContainer, this);
         Ext.EventManager.on(window,   'scroll',          this._scrollContainer, this);
         Ext.EventManager.on(document, 'DOMNodeInserted', this._resizeContainer, this); // Issue #13121
 
@@ -1110,9 +1113,28 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         this.resizeTask = new Ext.util.DelayedTask(function(){
             this._resetHeader();
             this._calculateHeader(true);
+            this.ensurePaginationVisible();
         }, this);
 
         this._calculateHeader(true);
+    },
+
+    ensurePaginationVisible : function() {
+
+        if (this.paginationEl)
+        {
+            // in case header locking is not on
+            if (!this.headerLock() || !this.hdrCoord || this.hdrCoord.length == 0)
+            {
+                this.hdrCoord = this._findPos();
+            }
+
+            var measure = Ext.getBody().getBox().width-this.hdrCoord[0];
+            if (measure < (this.headerRow.getWidth()))
+            {
+                this.paginationEl.applyStyles('width: ' +  measure + 'px;');
+            }
+        }
     },
 
     _calculateHeader : function(recalcPosition) {
@@ -1237,6 +1259,9 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
 
         if (this.headerLock()) {
             if (this.resizeTask) this.resizeTask.delay(110);
+        }
+        else {
+            this.ensurePaginationVisible();
         }
     },
 
