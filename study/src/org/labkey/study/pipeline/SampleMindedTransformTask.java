@@ -200,7 +200,10 @@ public class SampleMindedTransformTask extends PipelineJob.Task<SampleMindedTran
             if (hashes.add(hashRow(inputRow)))
             {
                 Map<String, Object> outputRow = transformRow(inputRow, rowIndex, labIds, primaryIds, derivativeIds);
-                outputRows.add(outputRow);
+                if (outputRow != null)
+                {
+                    outputRows.add(outputRow);
+                }
             }
         }
 
