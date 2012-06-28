@@ -1,157 +1,132 @@
 /**
  * Adapted from:
  * http://www.sencha.com/forum/showthread.php?198862-Ext.ux.CheckCombo
+ *
+ * however, it has been substantially changed
  */
 
 (function(Ext){
+
+Ext.define('LABKEY.layout.component.BoundList', {
+    extend: 'Ext.layout.component.BoundList',
+    alias: 'layout.boundlist-checkbox',
+    beginLayout: function(ownerContext){
+        this.callParent(arguments);
+        ownerContext.listContext = ownerContext.getEl('outerEl');
+    },
+    measureContentHeight: function(ownerContext) {
+        return this.owner.outerEl.getHeight();
+    }
+});
 
 Ext.define('Ext.ux.CheckCombo',
 {
     extend: 'Ext.form.field.ComboBox',
     alias: 'widget.checkcombo',
     multiSelect: true,
-    allSelector: false,
     addAllSelector: false,
     allText: 'All',
     delim: ';',
-    createPicker: function() {
-        var me = this,
-            picker,
-            menuCls = Ext.baseCSSPrefix + 'menu',
-            opts = Ext.apply({
-                pickerField: me,
-                selModel: {
-                    mode: me.multiSelect ? 'SIMPLE' : 'SINGLE'
-                },
-                floating: true,
-                hidden: true,
-                ownerCt: me.ownerCt,
-                cls: me.el.up('.' + menuCls) ? menuCls : '',
-                store: me.store,
-                displayField: me.displayField,
-                focusOnToFront: false,
-                pageSize: me.pageSize,
-                tpl:
-            [
+
+    initComponent: function()
+    {
+        this.listConfig = this.listConfig || {};
+        var me = this;
+        Ext.apply(this.listConfig, {
+            tpl:[
                 '<ul><tpl for=".">',
-                    '<li role="option" class="' + Ext.baseCSSPrefix + 'boundlist-item"><span class="x4-combo-checker">&nbsp;</span> {' + me.displayField + '}</li>',
+                    '<li role="option" class="' + Ext.baseCSSPrefix + 'boundlist-item"><span class="' + Ext.baseCSSPrefix + 'combo-checker">&nbsp;</span> {' + this.displayField + '}</li>',
                 '</tpl></ul>'
-            ]
-            }, me.listConfig, me.defaultListConfig);
-
-        picker = me.picker = Ext.create('Ext.view.BoundList', opts);
-        if (me.pageSize) {
-            picker.pagingToolbar.on('beforechange', me.onPageChange, me);
-        }
-
-        me.mon(picker, {
-            itemclick: me.onItemClick,
-            refresh: me.onListRefresh,
-            scope: me
-        });
-
-        me.mon(picker.getSelectionModel(), {
-            'beforeselect': me.onBeforeSelect,
-            'beforedeselect': me.onBeforeDeselect,
-            'selectionchange': me.onListSelectionChange,
-            scope: me
-        });
-
-        return picker;
-    },
-    getValue: function()
-    {
-        //modified by bbimber
-        return this.value.join(this.delim);
-    },
-    getValueAsArray: function(){
-        return this.value;
-    },
-    getSubmitValue: function()
-    {
-        return this.getValue();
-    },
-    expand: function()
-    {
-        var me = this,
-            bodyEl, picker, collapseIf;
-
-        if (me.rendered && !me.isExpanded && !me.isDestroyed) {
-            bodyEl = me.bodyEl;
-            picker = me.getPicker();
-            collapseIf = me.collapseIf;
-
-            // show the picker and set isExpanded flag
-            picker.show();
-            me.isExpanded = true;
-            me.alignPicker();
-            bodyEl.addCls(me.openCls);
-
-            if(me.addAllSelector == true && me.allSelector == false)
-            {
-               me.allSelector = picker.getEl().insertHtml('afterBegin', '<div class="x4-boundlist-item" role="option"><span class="x4-combo-checker">&nbsp;</span> '+me.allText+'</div>', true);
-                me.allSelector.on('click', function(e)
+            ],
+            childEls: [
+                'listEl',
+                'outerEl',
+                'checkAllEl'
+            ],
+            renderTpl: [
+                '<div id="{id}-outerEl" style="overflow:auto" width=auto;>',
+                (this.addAllSelector ? '<div id="{id}-checkAllEl" class="' + Ext.baseCSSPrefix + 'boundlist-item" role="option"><span class="' + Ext.baseCSSPrefix + 'combo-checker">&nbsp;</span> '+this.allText+'</div>' : ''),
+                '<div id="{id}-listEl" class="{baseCls}-list-ct"></div>',
+                '{%',
+                    'var me=values.$comp, pagingToolbar=me.pagingToolbar;',
+                    'if (pagingToolbar) {',
+                        'pagingToolbar.ownerLayout = me.componentLayout;',
+                        'Ext.DomHelper.generateMarkup(pagingToolbar.getRenderTree(), out);',
+                    '}',
+                '%}',
+                '</div>',
                 {
-                    if(me.allSelector.hasCls('x4-boundlist-selected'))
+                    disableFormats: true
+                }
+            ],
+            componentLayout: 'boundlist-checkbox',
+            onDestroy: function() {
+                Ext.destroyMembers(this, 'pagingToolbar', 'outerEl', 'listEl');
+                this.callParent();
+            }
+        });
+
+        this.callParent(arguments);
+    },
+
+    createPicker: function()
+    {
+        var picker = this.callParent(arguments);
+        picker.on('render', function(picker){
+            if (picker.checkAllEl)
+            {
+                picker.checkAllEl.addClsOnOver(Ext.baseCSSPrefix + 'boundlist-item-over');
+
+                picker.checkAllEl.on('click', function(e)
+                {
+                    if(picker.checkAllEl.hasCls(Ext.baseCSSPrefix + 'boundlist-selected'))
                     {
-                        me.allSelector.removeCls('x4-boundlist-selected');
-                        me.setValue('');
-                        me.fireEvent('select', me, []);
+                        picker.checkAllEl.removeCls(Ext.baseCSSPrefix + 'boundlist-selected');
+                        this.setValue('');
+                        this.fireEvent('select', this, []);
                     }
                     else
                     {
                         var records = [];
-                        me.store.each(function(record)
+                        this.store.each(function(record)
                         {
                             records.push(record);
                         });
-                        me.allSelector.addCls('x4-boundlist-selected');
-                        me.select(records);
-                        me.fireEvent('select', me, records);
+                        picker.checkAllEl.addCls(Ext.baseCSSPrefix + 'boundlist-selected');
+                        this.select(records);
+                        this.fireEvent('select', this, records);
                     }
-                });
+                }, this);
             }
-            // monitor clicking and mousewheel
-            me.mon(Ext.getDoc(), {
-                mousewheel: collapseIf,
-                mousedown: collapseIf,
-                scope: me
-            });
-            Ext.EventManager.onWindowResize(me.alignPicker, me);
-            me.fireEvent('expand', me);
-            me.onExpand();
-        }
+        }, this, {single: true});
+        return picker;
     },
+
+    getValue: function()
+    {
+        return this.value.join(this.delim);
+    },
+
+    getValueAsArray: function(){
+        return this.value;
+    },
+
+    getSubmitValue: function()
+    {
+        return this.getValue();
+    },
+
     onListSelectionChange: function(list, selectedRecords)
     {
-        var me = this,
-            isMulti = me.multiSelect,
-            hasRecords = selectedRecords.length > 0;
-        // Only react to selection if it is not called from setValue, and if our list is
-        // expanded (ignores changes to the selection model triggered elsewhere)
-        if (me.isExpanded) {
-            if (!isMulti) {
-                Ext.defer(me.collapse, 1, me);
-            }
-            /*
-             * Only set the value here if we're in multi selection mode or we have
-             * a selection. Otherwise setValue will be called with an empty value
-             * which will cause the change event to fire twice.
-             */
+        this.callParent(arguments);
 
-            if (isMulti || hasRecords) {
-                me.setValue(selectedRecords, false);
-            }
-            if (hasRecords) {
-                me.fireEvent('select', me, selectedRecords);
-            }
-            me.inputEl.focus();
-        }
-
-        if(me.addAllSelector == true && me.allSelector != false)
+        var checker = this.getPicker().checkAllEl;
+        if(checker)
         {
-            if(selectedRecords.length == me.store.getTotalCount()) me.allSelector.addCls('x4-boundlist-selected');
-            else me.allSelector.removeCls('x4-boundlist-selected');
+            if(selectedRecords.length == this.store.getTotalCount())
+                checker.addCls(Ext.baseCSSPrefix + 'boundlist-selected');
+            else
+                checker.removeCls(Ext.baseCSSPrefix + 'boundlist-selected');
         }
     }
 });
