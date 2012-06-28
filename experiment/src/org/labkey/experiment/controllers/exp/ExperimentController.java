@@ -1653,8 +1653,8 @@ public class ExperimentController extends SpringActionController
                 else
                 {
                     PageFlowUtil.prepareResponseForFile(response, Collections.<String, String>emptyMap(), filename, true);
+                    response.setContentType(delimType.contentType);
                 }
-                response.setContentType(delimType.contentType);
 
                 //NOTE: we could also have used TSVWriter; however, this is in use elsewhere and we dont need a custom subclass
                 CSVWriter writer = new CSVWriter(response.getWriter(), delimType.delim, quoteType.quoteChar);
