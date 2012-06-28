@@ -35,7 +35,7 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
             width: 675,
             autoEl: {
                 tag: 'span',
-                html: 'A developer can provde a JavaScript function that will be called when a data point in the chart is clicked. '
+                html: 'A developer can provide a JavaScript function that will be called when a data point in the chart is clicked. '
                     + 'See the "Help" tab for more information on the parameters available to the function.'
                     + '<br/><div id="' + this.fnErrorDiv + '">&nbsp;</div>'
             }
