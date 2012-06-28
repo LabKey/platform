@@ -113,6 +113,9 @@ Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
             },{
                 xtype: 'container',
                 style: 'padding-left: 5px;padding-bottom: 10px;',
+                defaults: {
+                    labelWidth: 150
+                },
                 items: [{
                     xtype: 'displayfield',
                     fieldLabel: '<b>Folder</b>',
