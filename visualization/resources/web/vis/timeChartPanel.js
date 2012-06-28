@@ -760,7 +760,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 success: function(data){
                     // store the data in an object by subject for use later when it comes time to render the line chart
                     this.individualData = data;
-                    this.markDirty(!this.editorSavePanel.isSavedReport()); // only mark when editing unsaved report
                     var gridSortCols = [];
 
                     // make sure each measure/dimension has at least some data, and get a list of which visits are in the data response
@@ -900,52 +899,83 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
     getSimplifiedConfig: function(config)
     {
+        var defaultConfig = this.getInitializedChartInfo();
+
         // Here we generate a config that is similar, but strips out info that isnt neccessary.
         // We use this to compare two configs to see if the user made any changes to the chart.
         var simplified = {};
-        simplified.axis = config.axis;
         simplified.chartLayout = config.chartLayout;
         simplified.chartSubjectSelection = config.chartSubjectSelection;
         simplified.displayAggregate = config.displayAggregate;
         simplified.displayIndividual = config.displayIndividual;
+        simplified.errorBars = config.errorBars ? config.errorBars : defaultConfig.errorBars;
+        simplified.aggregateType = config.aggregateType ? config.aggregateType : defaultConfig.aggregateType;
         simplified.filterUrl = config.filterUrl;
-        simplified.hideDataPoints = config.hideDataPoints;
-        simplified.lineWidth = config.lineWidth;
         simplified.title = config.title;
+        simplified.hideDataPoints = config.hideDataPoints ? config.hideDataPoints : defaultConfig.hideDataPoints;
+        simplified.lineWidth = config.lineWidth ? config.lineWidth : defaultConfig.lineWidth;
+        simplified.pointClickFn = config.pointClickFn ? config.pointClickFn : defaultConfig.pointClickFn;
 
-        if (config.pointClickFn != null)
-            simplified.pointClickFn = config.pointClickFn;
-
-        // compare subject groups by labels and participantIds (not id and created date)
-        simplified.subject = Ext4.clone(config.subject);
-        if (simplified.subject.groups)
+        // compare the relevant axis information
+        simplified.axis = [];
+        for (var i = 0; i < config.axis.length; i++)
         {
-            for(var i = 0; i < simplified.subject.groups.length; i++)
+            var currentAxis = config.axis[i];
+            var tempAxis = {label: currentAxis.label, name: currentAxis.name};
+            tempAxis.range = {type: currentAxis.range.type};
+            if (currentAxis.range.type == "manual")
             {
-                delete simplified.subject.groups[i].id;
-                delete simplified.subject.groups[i].categoryId;
-                delete simplified.subject.groups[i].created;
-                delete simplified.subject.groups[i].order;
+                tempAxis.range.min = currentAxis.range.min;
+                tempAxis.range.max = currentAxis.range.max;
             }
+            if (currentAxis.scale) tempAxis.scale = currentAxis.scale;
+            if (currentAxis.side) tempAxis.side = currentAxis.side;
+            simplified.axis.push(tempAxis);
+        }
+
+        // compare subject information (this is the standard set for both participant and group selections)
+        simplified.subject = this.getSchemaQueryInfo(config.subject);
+        simplified.subject.values = config.subject.values;
+        // compare groups by labels and participantIds (not id and created date)
+        if (config.subject.groups)
+        {
+            simplified.subject.groups = [];
+            for(var i = 0; i < config.subject.groups.length; i++)
+                simplified.subject.groups.push({label: config.subject.groups[i].label, participantIds: config.subject.groups[i].participantIds});
         }
 
         simplified.measures = [];
         for (var i = 0; i < config.measures.length; i++)
         {
-            var measure = {};
-            measure = config.measures[i]
-            //Delete id's, they're just for the Ext components ordering.
-            if(measure.dateOptions){
-                delete measure.dateOptions.zeroDateCol.id;
-                delete measure.dateOptions.dateCol.id;
-                delete measure.dateOptions.dateCol.longlabel;
-                delete measure.dateOptions.dateCol.description;
-                delete measure.dateOptions.dateCol.isUserDefined;
+            var currentMeasure = config.measures[i];
+            var tempMeasure = {time: currentMeasure.time ? currentMeasure.time : "date"};
+
+            tempMeasure.measure = this.getSchemaQueryInfo(currentMeasure.measure);
+            if (currentMeasure.measure.aggregate) tempMeasure.measure.aggregate = currentMeasure.measure.aggregate;
+            if (currentMeasure.measure.yAxis) tempMeasure.measure.yAxis = currentMeasure.measure.yAxis;
+
+            if (currentMeasure.dimension)
+            {
+                tempMeasure.dimension = this.getSchemaQueryInfo(currentMeasure.dimension);
+                tempMeasure.dimension.values = currentMeasure.dimension.values; 
             }
-            simplified.measures.push(measure);
+
+            if (currentMeasure.dateOptions)
+            {
+                tempMeasure.dateOptions = {interval: currentMeasure.dateOptions.interval};
+                tempMeasure.dateOptions.dateCol = this.getSchemaQueryInfo(currentMeasure.dateOptions.dateCol);
+                tempMeasure.dateOptions.zeroDateCol = this.getSchemaQueryInfo(currentMeasure.dateOptions.zeroDateCol);
+            }
+
+            simplified.measures.push(tempMeasure);
         }
 
         return Ext4.encode(simplified);
+    },
+
+    getSchemaQueryInfo: function(obj)
+    {
+        return {name: obj.name, queryName: obj.queryName, schemaName: obj.schemaName};
     },
 
     renderLineChart: function(force)
@@ -1832,6 +1862,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             lineWidth: 3,
             hideDataPoints: false,
             pointClickFn: null,
+            errorBars: "None",
+            aggregateType: "Mean",
             subject: {},
             title: '',
             filterUrl: LABKEY.Visualization.getDataFilterFromURL(),
