@@ -21,8 +21,22 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.query.controllers.SourceForm" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+
+<%!
+  public LinkedHashSet<ClientDependency> getClientDependencies()
+  {
+      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+      resources.add(ClientDependency.fromFilePath("editarea/edit_area_full.js"));
+      resources.add(ClientDependency.fromFilePath("_images/icons.css"));
+      resources.add(ClientDependency.fromFilePath("query/QueryEditorPanel.js"));
+      return resources;
+  }
+%>
+
 <%
     SourceForm form = (SourceForm)HttpView.currentModel();
     boolean builtIn = form.getQueryDef().isTableQueryDefinition();
@@ -93,13 +107,9 @@
     }
 
 </style>
-<script type="text/javascript">
-    LABKEY.requiresScript("query/QueryEditorPanel.js", true);
-</script>
 <div id="status" class="labkey-status-info" style="visibility: hidden;" width="99%">(status)</div>
 <div id="query-editor-panel" class="extContainer"></div>
 <script type="text/javascript">
-
     // CONSIDER : These events are used by both this window and the iFrame of the editAreaLoader.
     // If you are adding another event please be aware of both instances. 
     function saveEvent(e) {
