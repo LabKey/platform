@@ -758,6 +758,10 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             //Get data for individual lines.
             LABKEY.Visualization.getData({
                 success: function(data){
+                    // set the dirty state for non-saved time chart once data is requested
+                    if (!this.editorSavePanel.isSavedReport())
+                        this.markDirty(true);
+
                     // store the data in an object by subject for use later when it comes time to render the line chart
                     this.individualData = data;
                     var gridSortCols = [];
