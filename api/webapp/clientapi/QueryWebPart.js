@@ -91,6 +91,7 @@
  *  If 'showDeleteButton' is true, the checkboxes will be  included regardless of the 'showRecordSelectors' config option.
  * @param {boolean} [config.showPagination] Show the pagination links and count (default true).
  * @param {boolean} [config.shadeAlternatingRows] Shade every other row with a light gray background color (default true).
+ * @param {boolean} [config.suppressRenderErrors] If true, no alert will appear if there is a problem rendering the QueryWebpart. This is most often encountered if page configuration changes between the time when a request was made and the content loads. Defaults to false.
  * @param {Object} [config.buttonBar] Button bar configuration. This object may contain any of the following properties:
  * <ul>
  *  <li><b>position</b>: Configures where the button bar will appear with respect to the data grid: legal values are 'top', 'bottom', 'none', or 'both'. Default is 'both'.</li>
@@ -548,7 +549,8 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
                 }
                 else
                 {
-                    Ext.Msg.alert("Rendering Error", "The element '" + this.renderTo + "' does not exist in the document!");
+                    if(!this.suppressRenderErrors)
+                        Ext.Msg.alert("Rendering Error", "The element '" + this.renderTo + "' does not exist in the document!");
                 }
             },
             failure: LABKEY.Utils.getCallbackWrapper(function (json, response, options) {
@@ -568,7 +570,8 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
                 }
                 else
                 {
-                    Ext.Msg.alert("Rendering Error", "The element '" + this.renderTo + "' does not exist in the document!");
+                    if(!this.suppressRenderErrors)
+                        Ext.Msg.alert("Rendering Error", "The element '" + this.renderTo + "' does not exist in the document!");
                 }
             }, this, true),
             method: 'POST',

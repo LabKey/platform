@@ -59,6 +59,7 @@
  *               	parameters for the web part. Each web part defines its own set of config parameters. See the 
  * 					<a href= https://www.labkey.org/wiki/home/Documentation/page.view?name=webPartConfig>
 					Web Part Configuration Properties</a> page for further information on these name/value pairs.
+ * @param {boolean} [config.suppressRenderErrors] If true, no alert will appear if there is a problem rendering the QueryWebpart. This is most often encountered if page configuration changes between the time when a request was made and the content loads. Defaults to false.
  * @param {Function} [config.success] Callback function that will be executed after the web part content as been inserted into the page.
  * @param {Function} [config.failure] Callback function that will be executed if an error occurs. This function
  *                  should have two parameters: response and partConfig. The response parameter is the XMLHttpResponse
@@ -117,6 +118,7 @@ LABKEY.WebPart = function(config)
     var _success = LABKEY.Utils.getOnSuccess(config);
     var _containerPath = config.containerPath;
     var _scope = config.scope || this;
+    var _suppressRenderErrors = config.supressRenderErrors;
 
     //validate config
     if(!_partName)
@@ -168,10 +170,16 @@ LABKEY.WebPart = function(config)
                 LABKEY.Utils.loadAjaxContent(response, targetElem, _success, _scope);
             }
             else
-                Ext.Msg.alert("Rendering Error", "The element '" + _renderTo + "' does not exist in the document!");
+            {
+                if(!_suppressRenderErrors)
+                    Ext.Msg.alert("Rendering Error", "The element '" + _renderTo + "' does not exist in the document!");
+            }
         }
         else
-            Ext.Msg.alert("Rendering Error", "The target element name was not set!");
+        {
+            if(!_suppressRenderErrors)
+                Ext.Msg.alert("Rendering Error", "The target element name was not set!");
+        }
     };
 
     // public methods:
