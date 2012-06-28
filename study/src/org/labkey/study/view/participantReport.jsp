@@ -38,10 +38,12 @@
     User user = me.getViewContext().getUser();
     Study s = StudyManager.getInstance().getStudy(c);
 
+    // for testing
+    boolean isPrint = me.getViewContext().getActionURL().getParameter("print") != null;
     String renderId = "participant-report-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
     String filterRenderId = "participant-filter-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
-<style type="text/css" media="print">
+<style type="text/css" media="<%=isPrint ? "screen" : "print"%>">
     #headerpanel,
     div.labkey-app-bar,
     #discussionMenuToggle,
@@ -61,7 +63,6 @@
         text-align      : left;
     }
 
-    td.report-cell {font-size: 11pt;}
     td.lk-report-cell {font-size: 11pt;}
     td.lk-report-column-header, th.lk-report-column-header {font-size: 12pt;}
 

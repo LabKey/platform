@@ -561,6 +561,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             showDetailsColumn       : false,
             showUpdateColumn        : false,
             showRecordSelectors     : false,
+            parameters  : {
+                quickChartDisabled : true
+            },
             buttonBar   : {
                 position : 'none'
             }
