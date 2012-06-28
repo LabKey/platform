@@ -90,9 +90,9 @@ public class CrosstabDataRegion extends DataRegion
                             getMemberCaptionWithUrl(colDim, currentMember), out, 1, alternate);
                 }
 
-                for (DisplayColumn renderer : memberColumns)
+                if (alternate)
                 {
-                    if (alternate)
+                    for (DisplayColumn renderer : memberColumns)
                         renderer.addDisplayClass("labkey-alternate-col");
                 }
             }

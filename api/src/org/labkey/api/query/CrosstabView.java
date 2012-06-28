@@ -24,7 +24,9 @@ import org.springframework.validation.Errors;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * View class for rendering CrosstabTableInfos.
@@ -103,73 +105,84 @@ public class CrosstabView extends QueryView
         assert getTable() instanceof CrosstabTableInfo;
         CrosstabTableInfo table = (CrosstabTableInfo)getTable();
 
-        List<FieldKey> selectedCols = null;
+        List<FieldKey> selectedFieldKeys = null;
 
         // First check if something has explictly overridden the columns
         if (_columns != null)
         {
-            selectedCols = _columns;
+            selectedFieldKeys = _columns;
         }
         else if (null != getCustomView())
         {
-            selectedCols = getCustomView().getColumns();
+            selectedFieldKeys = getCustomView().getColumns();
         }
 
-        if (selectedCols == null || selectedCols.isEmpty())
+        if (selectedFieldKeys == null || selectedFieldKeys.isEmpty())
         {
-            selectedCols = table.getDefaultVisibleColumns();
+            selectedFieldKeys = table.getDefaultVisibleColumns();
         }
 
         //separate the row dimension columns from the measure columns
-        ArrayList<FieldKey> rowDimCols = new ArrayList<FieldKey>(selectedCols.size());
-        ArrayList<FieldKey> measureCols = new ArrayList<FieldKey>(selectedCols.size());
-        ArrayList<FieldKey> measureMemberCols = new ArrayList<FieldKey>(selectedCols.size());
-        for (FieldKey col : selectedCols)
+        ArrayList<FieldKey> rowDimFieldKeys = new ArrayList<FieldKey>(selectedFieldKeys.size());
+        ArrayList<FieldKey> measureFieldKeys = new ArrayList<FieldKey>(selectedFieldKeys.size());
+        Map<CrosstabMember, List<FieldKey>> measureFieldKeysByMember = new LinkedHashMap<CrosstabMember, List<FieldKey>>();
+        for (FieldKey col : selectedFieldKeys)
         {
             ColumnInfo column = table.getColumn(col);
-            if (column == null)
-                continue;
-
             if (col.getParts().get(0).startsWith(AggregateColumnInfo.NAME_PREFIX))
-                measureCols.add(col);
-            else if (column.getCrosstabColumnMember() != null)
-                measureMemberCols.add(col);
+                measureFieldKeys.add(col);
+            else if (column != null && column.getCrosstabColumnMember() != null)
+            {
+                List<FieldKey> fieldKeys = measureFieldKeysByMember.get(column.getCrosstabColumnMember());
+                if (fieldKeys == null)
+                    measureFieldKeysByMember.put(column.getCrosstabColumnMember(), fieldKeys = new ArrayList<FieldKey>());
+                fieldKeys.add(col);
+            }
             else
-                rowDimCols.add(col);
+                rowDimFieldKeys.add(col);
         }
-
-        //add the row dimensions to the complete list of columns
-        ArrayList<FieldKey> completeCols = new ArrayList<FieldKey>(rowDimCols);
 
         // For each of the table's column members (pivot values), expand the
         // selected measureCols that start with magic AggregateColumnInfo.NAME_PREFIX into
         // the set of member+measure columns.
         // NOTE: QueryPivot.PivotTable doesn't use the AggregateColumnInfo.NAME_PREFIX magic so will have no measureCols.
-        if (!measureCols.isEmpty())
+        if (!measureFieldKeys.isEmpty())
         {
             for (CrosstabMember member : table.getColMembers())
             {
-                for (FieldKey col : measureCols)
+                for (FieldKey col : measureFieldKeys)
                 {
                     List<String> parts = new ArrayList<String>(col.getParts());
                     parts.set(0, AggregateColumnInfo.getColumnName(member, table.getMeasureFromKey(col.getParts().get(0))));
-                    measureMemberCols.add(FieldKey.fromParts(parts));
+
+                    FieldKey measureMemberFieldKey = FieldKey.fromParts(parts);
+                    List<FieldKey> fieldKeys = measureFieldKeysByMember.get(member);
+                    if (fieldKeys == null)
+                        measureFieldKeysByMember.put(member, fieldKeys = new ArrayList<FieldKey>());
+                    fieldKeys.add(measureMemberFieldKey);
                 }
             }
         }
 
-        completeCols.addAll(measureMemberCols);
-
-        //set the number of selected measures and row dimensions
-        _numMeasures = measureCols.size();
-        _numMemberMeasures = measureMemberCols.size();
+        // Create and count the selected ColumnInfos
+        Map<FieldKey, ColumnInfo> rowDimCols = QueryService.get().getColumns(table, rowDimFieldKeys);
         _numRowAxisCols = rowDimCols.size();
+        _numMeasures = measureFieldKeysByMember.size();
 
         //put together the complete list of display columns by getting the
         //renderers from the ColumnInfos for the complete list of columns
         List<DisplayColumn> displayColumns = new ArrayList<DisplayColumn>();
-        for(ColumnInfo cinfo : QueryService.get().getColumns(table, completeCols).values())
+        for (ColumnInfo cinfo : rowDimCols.values())
             displayColumns.add(cinfo.getRenderer());
+
+        for (Map.Entry<CrosstabMember, List<FieldKey>> entry : measureFieldKeysByMember.entrySet())
+        {
+            Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(table, entry.getValue());
+            _numMemberMeasures += columns.size();
+
+            for (ColumnInfo cinfo : columns.values())
+                displayColumns.add(cinfo.getRenderer());
+        }
 
         return displayColumns;
     }
