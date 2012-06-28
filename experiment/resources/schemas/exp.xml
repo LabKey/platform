@@ -144,6 +144,9 @@
       <ns:column columnName="ProtocolLSID">
           <ns:description>Contains the protocol that this run follows</ns:description>
       </ns:column>
+      <ns:column columnName="JobId">
+          <ns:description>Contains the Id of the pipeline job that created this run, if applicable</ns:description>
+      </ns:column>
       <ns:column columnName="Comments">
           <ns:inputRows>2</ns:inputRows>
           <ns:description>Contains comments about this run</ns:description>
