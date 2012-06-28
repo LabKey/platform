@@ -763,21 +763,30 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     this.markDirty(!this.editorSavePanel.isSavedReport()); // only mark when editing unsaved report
                     var gridSortCols = [];
 
-                    // make sure each measure/dimension has at least some data
+                    // make sure each measure/dimension has at least some data, and get a list of which visits are in the data response
+                    var visitsInData = [];
                     var seriesList = this.getSeriesList();
                     this.individualHasData = {};
                     Ext4.each(seriesList, function(s) {
                         this.individualHasData[s.name] = false;
                         for (var i = 0; i < this.individualData.rows.length; i++)
                         {
-                            // break when we find a non-null data value
-                            if (this.individualData.rows[i][this.individualData.measureToColumn[s.name]].value != null)
-                            {
+                            var row = this.individualData.rows[i];
+                            if (row[this.individualData.measureToColumn[s.name]].value != null)
                                 this.individualHasData[s.name] = true;
-                                break;
+
+                            var visitMappedName = this.individualData.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit"];
+                            if (row[visitMappedName])
+                            {
+                                var visitVal = row[visitMappedName].value;
+                                if (visitsInData.indexOf(visitVal) == -1)
+                                    visitsInData.push(visitVal.toString());
                             }
                         }
                     }, this);
+
+                    // trim the visit map domain to just those visits in the response data
+                    this.individualData.visitMap = this.trimVisitMapDomain(this.individualData.visitMap, visitsInData);
 
                     // store the temp schema name, query name, etc. for the data grid
                     this.tempGridInfo = {schema: this.individualData.schemaName, query: data.queryName,
@@ -822,21 +831,30 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 success: function(data){
                     this.aggregateData = data;
 
-                    // make sure each measure/dimension has at least some data
+                    // make sure each measure/dimension has at least some data, and get a list of which visits are in the data response
+                    var visitsInData = [];
                     var seriesList = this.getSeriesList();
                     this.aggregateHasData = {};
                     Ext4.each(seriesList, function(s) {
                         this.aggregateHasData[s.name] = false;
                         for (var i = 0; i < this.aggregateData.rows.length; i++)
                         {
-                            // break when we find a non-null data value
-                            if (this.aggregateData.rows[i][this.aggregateData.measureToColumn[s.name]].value != null)
-                            {
+                            var row = this.aggregateData.rows[i];
+                            if (row[this.aggregateData.measureToColumn[s.name]].value != null)
                                 this.aggregateHasData[s.name] = true;
-                                break;
+
+                            var visitMappedName = this.aggregateData.measureToColumn[this.viewInfo.subjectNounSingular + "Visit/Visit"];
+                            if (row[visitMappedName])
+                            {
+                                var visitVal = row[visitMappedName].value;
+                                if (visitsInData.indexOf(visitVal) == -1)
+                                    visitsInData.push(visitVal.toString());
                             }
                         }
                     }, this);
+
+                    // trim the visit map domain to just those visits in the response data
+                    this.aggregateData.visitMap = this.trimVisitMapDomain(this.aggregateData.visitMap, visitsInData);
 
                     // ready to render the chart or grid
                     this.loaderCount--;
@@ -858,6 +876,26 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 scope: this
             });
         }
+    },
+
+    trimVisitMapDomain: function(origVisitMap, visitsInDataArr) {
+        // get the visit map info for those visits in the response data
+        var trimmedVisits = [];
+        for (var v in origVisitMap)
+        {
+            if (visitsInDataArr.indexOf(v) != -1)
+                trimmedVisits.push(Ext4.apply({id: v}, origVisitMap[v]));
+        }
+        // sort the trimmed visit list by displayOrder and then reset displayOrder starting at 1
+        trimmedVisits.sort(function(a,b){return a.displayOrder - b.displayOrder});
+        var newVisitMap = {};
+        for (var i = 0; i < trimmedVisits.length; i++)
+        {
+            trimmedVisits[i].displayOrder = i + 1;
+            newVisitMap[trimmedVisits[i].id] = trimmedVisits[i];
+        }
+
+        return newVisitMap;
     },
 
     getSimplifiedConfig: function(config)
@@ -1429,7 +1467,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 return visitMap[row[intervalKey].value].displayOrder;
             };
             xTickFormat = function(value){
-                return tickMap[value];
+                return tickMap[value] ? tickMap[value] : "";
             }
         }
 
@@ -1793,6 +1831,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             chartSubjectSelection: 'subjects',
             lineWidth: 3,
             hideDataPoints: false,
+            pointClickFn: null,
             subject: {},
             title: '',
             filterUrl: LABKEY.Visualization.getDataFilterFromURL(),

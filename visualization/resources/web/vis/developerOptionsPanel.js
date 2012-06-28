@@ -61,6 +61,8 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
                         syntax: "js",
                         start_highlight: true,
                         allow_resize: "no",
+                        min_width: 755,
+                        min_height: 340,
                         change_callback: "Ext4.ComponentManager.get('" + this.getId() + "').hasChanges = true;" // JavaScript string to eval, NOT a function
                     });
 
