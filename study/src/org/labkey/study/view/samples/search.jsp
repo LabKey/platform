@@ -355,8 +355,7 @@ Ext4.onReady(function(){
                                 if(displayColumn == valueColumn)
                                     return rec.get(displayColumn);
                                 else {
-                                    var val = rec.get(displayColumn) + ' [' + rec.get(valueColumn) + ']';
-                                    return val;
+                                    return rec.get(displayColumn) + ' (' + rec.get(valueColumn) + ')';
                                 }
                             }
                         }
