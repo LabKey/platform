@@ -122,8 +122,8 @@ public class ClientDependency
 
             if(r == null || !r.exists())
             {
-                //TODO: throw exception??
-                if (!AppProps.getInstance().isDevMode())
+                // Allows you to run in dev mode without having the concatenated scripts built
+                if (!AppProps.getInstance().isDevMode() || !_mode.equals(ModeTypeEnum.PRODUCTION))
                     _log.error("Script file not found, skipping: " + filePath);
             }
             else
