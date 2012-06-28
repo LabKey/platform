@@ -187,7 +187,7 @@ public class ModuleHtmlViewDefinition extends ResourceRef
 
         for (DependencyType r : resources)
         {
-            ClientDependency cr = ClientDependency.fromString(r.getPath());
+            ClientDependency cr = ClientDependency.fromFilePath(r.getPath());
 
             if (cr != null)
                 _clientDependencies.add(cr);

@@ -866,7 +866,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                     {
                         if (rt.getPath() != null)
                         {
-                            ClientDependency cd = ClientDependency.fromString(rt.getPath());
+                            ClientDependency cd = ClientDependency.fromFilePath(rt.getPath());
                             if (cd != null)
                                 _clientDependencies.add(cd);
                         }

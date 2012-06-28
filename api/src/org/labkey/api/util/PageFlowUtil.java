@@ -1793,9 +1793,9 @@ public class PageFlowUtil
     public static LinkedHashSet<ClientDependency> getDefaultJavaScriptPaths()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
-        resources.add(ClientDependency.fromString("Ext3.lib.xml"));
-        resources.add(ClientDependency.fromString("clientapi.lib.xml"));
-        resources.add(ClientDependency.fromString("internal.lib.xml"));
+        resources.add(ClientDependency.fromFilePath("Ext3.lib.xml"));
+        resources.add(ClientDependency.fromFilePath("clientapi.lib.xml"));
+        resources.add(ClientDependency.fromFilePath("internal.lib.xml"));
         return resources;
     }
 

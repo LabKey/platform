@@ -160,12 +160,12 @@ public class ClientDependency
         return cd;
     }
 
-    public static ClientDependency fromString(String path)
+    public static ClientDependency fromFilePath(String path)
     {
-        return ClientDependency.fromString(path, ModeTypeEnum.BOTH);
+        return ClientDependency.fromFilePath(path, ModeTypeEnum.BOTH);
     }
 
-    public static ClientDependency fromString(String path, ModeTypeEnum.Enum mode)
+    public static ClientDependency fromFilePath(String path, ModeTypeEnum.Enum mode)
     {
         path = path.replaceAll("^/", "");
 
@@ -253,7 +253,7 @@ public class ClientDependency
                     for (ScriptType s : dependencies.getDependencyArray())
                     {
                         ModeTypeEnum.Enum mode = s.isSetMode() ? s.getMode() : ModeTypeEnum.BOTH;
-                        ClientDependency cr = ClientDependency.fromString(s.getPath(), mode);
+                        ClientDependency cr = ClientDependency.fromFilePath(s.getPath(), mode);
                         _children.add(cr);
                     }
                 }
@@ -275,7 +275,7 @@ public class ClientDependency
                 {
                     ModeTypeEnum.Enum mode = s.isSetMode() ? s.getMode() :
                         _compileInProductionMode ? ModeTypeEnum.DEV : ModeTypeEnum.BOTH;
-                    ClientDependency cr = ClientDependency.fromString(s.getPath(), mode);
+                    ClientDependency cr = ClientDependency.fromFilePath(s.getPath(), mode);
 
                     if(!TYPE.lib.equals(cr.getPrimaryType()))
                         _children.add(cr);
@@ -295,12 +295,12 @@ public class ClientDependency
                 //add paths to the compiled scripts we expect to have created in the build.  these are production mode only
                 if (hasJsToCompile)
                 {
-                    ClientDependency c = ClientDependency.fromString(filePath.toString().replaceAll(TYPE.lib.getExtension() + "$", ".min" + TYPE.js.getExtension()), ModeTypeEnum.PRODUCTION);
+                    ClientDependency c = ClientDependency.fromFilePath(filePath.toString().replaceAll(TYPE.lib.getExtension() + "$", ".min" + TYPE.js.getExtension()), ModeTypeEnum.PRODUCTION);
                     _children.add(c);
                 }
                 if (hasCssToCompile)
                 {
-                    ClientDependency c = ClientDependency.fromString(filePath.toString().replaceAll(TYPE.lib.getExtension() + "$", ".min" + TYPE.css.getExtension()), ModeTypeEnum.PRODUCTION);
+                    ClientDependency c = ClientDependency.fromFilePath(filePath.toString().replaceAll(TYPE.lib.getExtension() + "$", ".min" + TYPE.css.getExtension()), ModeTypeEnum.PRODUCTION);
                     _children.add(c);
                 }
             }
@@ -335,7 +335,7 @@ public class ClientDependency
                             File script = new File(jsonFile.getParentFile(), fileInfo.getString("path") + fileInfo.getString("text"));
                             if (script.exists())
                             {
-                                ClientDependency d = ClientDependency.fromString(script.getPath(), ModeTypeEnum.DEV);
+                                ClientDependency d = ClientDependency.fromFilePath(script.getPath(), ModeTypeEnum.DEV);
                                 _children.add(d);
                             }
                         }
