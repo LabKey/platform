@@ -342,7 +342,7 @@ Ext4.onReady(function(){
                     storeId: storeId,
                     schemaName: schemaName,
                     //queryName: queryName,
-                    sql: 'select distinct(' + displayColumn + ') as ' + displayColumn + (displayColumn == valueColumn ? '' : ', ' + valueColumn) + ' from ' + schemaName + '.' + queryName,
+                    sql: 'select distinct(' + displayColumn + ') as ' + displayColumn + (displayColumn == valueColumn ? '' : ', ' + valueColumn) + ' from ' + schemaName + '.' + queryName + ' WHERE ' + displayColumn + ' IS NOT NULL AND ' + displayColumn + ' != \'\'',
                     columns: columns,
                     sort: sort || displayColumn,
                     autoLoad: true,
