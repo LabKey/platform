@@ -140,7 +140,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         return _fieldKeys;
     }
 
-    public void initialize(DataRegion dataRegion, TableInfo table, List<DisplayColumn> displayColumns)
+    public void initialize(RenderContext ctx, DataRegion dataRegion, TableInfo table, List<DisplayColumn> displayColumns)
     {
         _dataRegion = dataRegion;
         _tinfo = table;
@@ -148,7 +148,7 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
         if (null != dataRegion.getTotalRows())
             _rowCount = dataRegion.getTotalRows();
 
-        _ctx = new RenderContext(_viewContext);
+        _ctx = ctx;
         _ctx.setCache(false);
     }
 
