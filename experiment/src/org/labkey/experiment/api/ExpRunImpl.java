@@ -244,6 +244,16 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         _object.setContainer(container);
     }
 
+    public void setJobId(int jobId)
+    {
+        _object.setJobId(jobId);
+    }
+
+    public int getJobId()
+    {
+        return _object.getJobId();
+    }
+
     public void setProtocolApplications(ExpProtocolApplicationImpl[] protocolSteps)
     {
         _protocolSteps = protocolSteps;

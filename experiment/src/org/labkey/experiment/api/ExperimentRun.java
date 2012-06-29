@@ -27,6 +27,7 @@ public class ExperimentRun extends IdentifiableEntity
     private String protocolLSID;
     private String filePathRoot;
     private String comments;
+    private Integer jobId;
 
     public String getProtocolLSID()
     {
@@ -56,6 +57,16 @@ public class ExperimentRun extends IdentifiableEntity
     public void setComments(String comments)
     {
         this.comments = comments;
+    }
+
+    public Integer getJobId()
+    {
+        return jobId;
+    }
+
+    public void setJobId(Integer jobId)
+    {
+        this.jobId = jobId;
     }
 
     public void setName(String name)

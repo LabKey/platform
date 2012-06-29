@@ -340,6 +340,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
         ExpRunImpl run = ExperimentServiceImpl.get().createExperimentRun(getJob().getContainer(), getJob().getDescription());
         run.setProtocol(parentProtocol);
         run.setFilePathRoot(source.getRoot());
+        run.setJobId(PipelineService.get().getJobId(getJob().getUser(), getJob().getContainer(), getJob().getJobGUID()));
         run.save(getJob().getUser());
 
         Map<String, ExpProtocolAction> expActionMap = new HashMap<String, ExpProtocolAction>();

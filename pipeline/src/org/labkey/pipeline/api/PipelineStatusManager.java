@@ -19,6 +19,7 @@ package org.labkey.pipeline.api;
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -573,6 +574,12 @@ public class PipelineStatusManager
             sql.append("DELETE FROM ").append(_schema.getTableInfoStatusFiles())
                     .append(" ").append("WHERE RowId IN (");
 
+            //also null any ExpRuns referencing these Jobs
+            StringBuffer expSql = new StringBuffer();
+            expSql.append("UPDATE ").append(ExperimentService.get().getTinfoExperimentRun())
+                    .append(" SET JobId = NULL ")
+                    .append("WHERE JobId IN (");
+
             String separator = "";
             List<Object> params = new ArrayList<Object>();
             for (PipelineStatusFile pipelineStatusFile : deleteable)
@@ -583,27 +590,40 @@ public class PipelineStatusManager
                     provider.preDeleteStatusFile(pipelineStatusFile);
 
                 sql.append(separator);
+                expSql.append(separator);
+
                 separator = ", ";
                 sql.append("?");
+                expSql.append("?");
+
                 _log.info("Job " + pipelineStatusFile.getFilePath() + " was deleted by " + info.getUser());
                 params.add(pipelineStatusFile.getRowId());
             }
             sql.append(")");
+            expSql.append(")");
+
             // Remember that we deleted these rows
             rowIds.removeAll(params);
 
             if (!c.isRoot())
             {
                 sql.append(" AND Container = ?");
+                expSql.append(" AND Container = ?");
                 params.add(c.getId());
             }
             try
             {
+                ExperimentService.get().ensureTransaction();
+                Table.execute(ExperimentService.get().getSchema(), expSql.toString(), params.toArray());
                 Table.execute(_schema.getSchema(), sql.toString(), params.toArray());
+                ExperimentService.get().commitTransaction();
             }
             catch (SQLException e)
             {
                 throw new RuntimeSQLException(e);
+            }
+            finally {
+                ExperimentService.get().closeTransaction();
             }
 
             // If we deleted anything, try recursing since we may have deleted all the child jobs which would

@@ -23,6 +23,9 @@ import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.pipeline.*;
@@ -30,6 +33,7 @@ import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.*;
 import org.labkey.pipeline.PipelineController;
 import org.labkey.pipeline.mule.EPipelineQueueImpl;
@@ -515,5 +519,29 @@ public class PipelineServiceImpl extends PipelineService
     public boolean importFolder(ViewContext context, BindException errors, File folderFile, String originalFilename) throws Exception
     {
         return PipelineController.importFolder(context, errors, folderFile, originalFilename);
+    }
+
+    public TableInfo getJobsTable(User user, Container container)
+    {
+        return new PipelineQuerySchema(user, container).createTable(PipelineQuerySchema.JOB_TABLE_NAME);
+    }
+
+    public int getJobId(User u, Container c, String jobGUID)
+    {
+        try
+        {
+            SimpleFilter filter = new SimpleFilter("job", jobGUID);
+            Map[] selectResults = Table.select(PipelineService.get().getJobsTable(u, c), Collections.singleton("RowId"), filter, null, Map.class);
+            int rowId = 0;
+            for (Map<String, Integer> m : selectResults)
+            {
+                rowId = m.get("RowId");
+            }
+            return rowId;
+        }
+        catch (SQLException e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
     }
 }

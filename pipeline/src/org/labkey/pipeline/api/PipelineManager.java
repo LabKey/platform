@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.*;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.GlobusKeyPair;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.search.SearchService;
@@ -165,8 +166,32 @@ public class PipelineManager
     {
         try
         {
-            DbCache.clear(pipeline.getTableInfoPipelineRoots());
-            ContainerUtil.purgeTable(pipeline.getTableInfoStatusFiles(), container, "Container");
+            StringBuffer sql = new StringBuffer();
+            List<Object> params = new ArrayList<Object>();
+            sql.append("UPDATE ").append(ExperimentService.get().getTinfoExperimentRun())
+                .append(" SET JobId = NULL ")
+                .append("WHERE JobId IN (SELECT RowId FROM " + pipeline.getTableInfoStatusFiles() + " p ")
+                .append(" WHERE container = ? ) ");
+                params.add(container.getId());
+
+            sql.append(" AND Container = ?");
+            params.add(container.getId());
+
+            ExperimentService.get().ensureTransaction();
+            try
+            {
+                DbCache.clear(ExperimentService.get().getTinfoExperimentRun());
+                Table.execute(PipelineSchema.getInstance().getSchema(), sql.toString(), params.toArray());
+
+                DbCache.clear(pipeline.getTableInfoPipelineRoots());
+                ContainerUtil.purgeTable(pipeline.getTableInfoStatusFiles(), container, "Container");
+
+                ExperimentService.get().commitTransaction();
+            }
+            finally
+            {
+                ExperimentService.get().closeTransaction();
+            }
         }
         catch (SQLException e)
         {

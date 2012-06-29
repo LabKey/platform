@@ -63,9 +63,12 @@ public class PipelineQuerySchema extends UserSchema
             FilteredTable table = new FilteredTable(PipelineSchema.getInstance().getTableInfoStatusFiles(), getContainer());
             table.wrapAllColumns(true);
             table.removeColumn(table.getColumn("Container"));
+            table.setName(JOB_TABLE_NAME);
             ColumnInfo folderColumn = table.wrapColumn("Folder", table.getRealTable().getColumn("Container"));
             folderColumn.setFk(new ContainerForeignKey(this));
             table.addColumn(folderColumn);
+            String urlExp = "/pipeline-status/details.view?rowId=${rowId}";
+            table.setDetailsURL(DetailsURL.fromString(urlExp));
             table.setDescription("Contains one row per pipeline job");
 
             if (getContainer().isRoot())
@@ -73,6 +76,7 @@ public class PipelineQuerySchema extends UserSchema
                 table.setContainerFilter(new ContainerFilter.AllFolders(getUser()));
             }
 
+            table.getColumn("RowId").setURL(DetailsURL.fromString(urlExp));
             table.getColumn("Status").setDisplayColumnFactory(new DisplayColumnFactory()
             {
                 public DisplayColumn createRenderer(ColumnInfo colInfo)

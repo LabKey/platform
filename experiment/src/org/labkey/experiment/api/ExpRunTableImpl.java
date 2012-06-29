@@ -232,21 +232,35 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             case Folder:
                 ColumnInfo containerColumn = wrapColumn(alias, _rootTable.getColumn("Container"));
                 containerColumn.setUserEditable(false);
+                containerColumn.setShownInInsertView(false);
+                containerColumn.setShownInUpdateView(false);
                 return containerColumn;
             case Created:
-                return wrapColumn(alias, _rootTable.getColumn("Created"));
+                ColumnInfo createdCol = wrapColumn(alias, _rootTable.getColumn("Created"));
+                createdCol.setUserEditable(false);
+                createdCol.setShownInInsertView(false);
+                createdCol.setShownInUpdateView(false);
+                return createdCol;
             case CreatedBy:
                 return createUserColumn(alias, _rootTable.getColumn("CreatedBy"));
             case FilePathRoot:
                 ColumnInfo filePathRootColumn = wrapColumn(alias, _rootTable.getColumn("FilePathRoot"));
                 filePathRootColumn.setUserEditable(false);
+                filePathRootColumn.setShownInInsertView(false);
+                filePathRootColumn.setShownInUpdateView(false);
                 return filePathRootColumn;
             case LSID:
                 ColumnInfo lsidColumn = wrapColumn(alias, _rootTable.getColumn("LSID"));
+                lsidColumn.setShownInInsertView(false);
+                lsidColumn.setShownInUpdateView(false);
                 lsidColumn.setUserEditable(false);
                 return lsidColumn;
             case Modified:
-                return wrapColumn(alias, _rootTable.getColumn("Modified"));
+                ColumnInfo modifiedCol = wrapColumn(alias, _rootTable.getColumn("Modified"));
+                modifiedCol.setUserEditable(false);
+                modifiedCol.setShownInInsertView(false);
+                modifiedCol.setShownInUpdateView(false);
+                return modifiedCol;
             case ModifiedBy:
                 return createUserColumn(alias, _rootTable.getColumn("ModifiedBy"));
             case Name:
@@ -254,6 +268,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             case Protocol:
                 ColumnInfo protocolColumn = wrapColumn(alias, _rootTable.getColumn("ProtocolLSID"));
                 protocolColumn.setUserEditable(false);
+                protocolColumn.setShownInInsertView(false);
+                protocolColumn.setShownInUpdateView(false);
                 return protocolColumn;
             case ProtocolStep:
             {
@@ -346,7 +362,13 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     }
                 }, "DataId"));
                 return dataOutputsCol;
-
+            case JobId:
+                ColumnInfo ret = wrapColumn(alias, _rootTable.getColumn("JobId"));
+                ret.setLabel("Job");
+                ret.setUserEditable(false);
+                ret.setShownInInsertView(false);
+                ret.setShownInUpdateView(false);
+                return ret;
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -429,6 +451,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         addColumn(Column.CreatedBy);
         addContainerColumn(Column.Folder, null);
         addColumn(Column.FilePathRoot).setHidden(true);
+        addColumn(Column.JobId).setFk(schema.getJobForeignKey());
         addColumn(Column.LSID).setHidden(true);
         addColumn(Column.Protocol).setFk(schema.getProtocolForeignKey("LSID"));
         addColumn(Column.RunGroups);
