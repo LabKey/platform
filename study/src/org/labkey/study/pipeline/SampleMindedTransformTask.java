@@ -83,7 +83,7 @@ public class SampleMindedTransformTask
         primaryTypes.put("Blood", primaryTypes.size() + 1);
         primaryTypes.put("Nasal Swab", primaryTypes.size() + 1);
         primaryTypes.put("Tissue", primaryTypes.size() + 1);
-        primaryTypes.put("Tissue Slide", primaryTypes.size() + 1);
+        primaryTypes.put("Urine", primaryTypes.size() + 1);
         primaryTypes.put("unknown", primaryTypes.size() + 1);
         STANDARD_PRIMARY_TYPE_IDS = Collections.unmodifiableMap(primaryTypes);
 
@@ -97,7 +97,10 @@ public class SampleMindedTransformTask
         mappings.put("Serum", "Blood");
         mappings.put("Nasal Swab", "Nasal Swab");
         mappings.put("Tissue", "Tissue");
-        mappings.put("Tissue Slide", "Tissue Slide");
+        mappings.put("Tissue Slide", "Tissue");
+        mappings.put("Urine", "Urine");
+        mappings.put("Urine Pellet", "Urine");
+        mappings.put("Urine Supernatant", "Urine");
         DERIVATIVE_PRIMARY_MAPPINGS = Collections.unmodifiableMap(mappings);
 
         Map<String, Integer> derivativeTypes = new LinkedHashMap<String, Integer>();
@@ -111,6 +114,9 @@ public class SampleMindedTransformTask
         derivativeTypes.put("Serum", derivativeTypes.size() + 1);
         derivativeTypes.put("Tissue", derivativeTypes.size() + 1);
         derivativeTypes.put("Tissue Slide", derivativeTypes.size() + 1);
+        derivativeTypes.put("Urine", derivativeTypes.size() + 1);
+        derivativeTypes.put("Urine Pellet", derivativeTypes.size() + 1);
+        derivativeTypes.put("Urine Supernatant", derivativeTypes.size() + 1);
         STANDARD_DERIVATIVE_TYPE_IDS = Collections.unmodifiableMap(derivativeTypes);
     }
 
@@ -326,7 +332,7 @@ public class SampleMindedTransformTask
         {
             // Try using the given name as the ID if it's an integer
             labId = Integer.parseInt(destinationSite);
-            if (!labIds.containsKey(labId.toString()))
+            if (!labIds.containsValue(labId))
             {
                 labIds.put(labId.toString(), labId);
             }
@@ -528,6 +534,56 @@ public class SampleMindedTransformTask
         }
 
         @Test
+        public void testLabLookup() throws IOException
+        {
+            Map<String, Integer> labs = new HashMap<String, Integer>();
+            labs.put("TestLabA", 501);
+            labs.put("TestLabB", 502);
+
+            // Try a row that uses the lab's ID
+            Map<String, Object> row1 = new HashMap<String, Object>();
+            row1.put("participant", "ptid1");
+            row1.put("barcode", "barcode-1");
+            row1.put("collectiondate", "May 5, 2012");
+            row1.put("visitname", "Visit 01");
+            row1.put("destinationsite", "502");
+            row1.put("siteshortname", "TestLabA");
+
+            Map<String, Object> outputRow1 = _task.transformRow(row1, 1, labs, new HashMap<String, Integer>(), new HashMap<String, Integer>());
+            assertEquals("Wrong number of labs", 2, labs.size());
+            assertEquals(502, outputRow1.get("lab_id"));
+
+            // Try another row that uses the lab's name
+            Map<String, Object> row2 = new HashMap<String, Object>();
+            row2.put("participant", "ptid1");
+            row2.put("barcode", "barcode-1");
+            row2.put("collectiondate", "May 5, 2012");
+            row2.put("visitname", "Visit 01");
+            row2.put("destinationsite", "TestLabB");
+            row2.put("siteshortname", "TestLabA");
+
+            Map<String, Object> outputRow2 = _task.transformRow(row2, 1, labs, new HashMap<String, Integer>(), new HashMap<String, Integer>());
+            assertEquals("Wrong number of labs", 2, labs.size());
+            assertEquals(502, outputRow2.get("lab_id"));
+        }
+
+        @Test
+        public void testParseWideLabsTSV() throws IOException
+        {
+            Map<String, Integer> labs = new HashMap<String, Integer>();
+            _task.parseLabs(labs, new BufferedReader(new StringReader("# labs\t\t\t\t\t\t\t\t\n" +
+                    "lab_id\tldms_lab_code\tlabware_lab_code\tlab_name\tlab_upload_code\tis_sal\tis_repository\tis_clinic\tis_endpoint\n" +
+                    "23\t\t\tFAKE (12)\t\t\t\t\t\n" +
+                    "4\t\t\tFDSJ (10)\t\t\t\t\t\n" +
+                    "15\t\t\tMFDS (17)\t\t\t\t\t\n" +
+                    "1\t\t\tPWER (11)\t\t\t\t\t\n" +
+                    "5\t\t\tOTJD (02)\t\t\t\t\t\n" +
+                    "21\t\t\tVCXF (19)\t\t\t\t\t")));
+            assertEquals("Wrong number of labs", 6, labs.size());
+            assertEquals("Wrong lab name", 23, labs.get("FAKE (12)"));
+        }
+
+        @Test
         public void testDeduplication() throws IOException
         {
             List<Map<String, Object>> inputRows = new ArrayList<Map<String, Object>>();
@@ -641,12 +697,21 @@ public class SampleMindedTransformTask
             Map<String, Object> row4 = new HashMap<String, Object>(row3);
             row4.put("participant", "ptid2");
             inputRows.add(row4);
-            
+            Map<String, Object> row5 = new HashMap<String, Object>(row3);
+            row5.put("specimentype", "Tissue Slide");
+            inputRows.add(row5);
+            Map<String, Object> row6 = new HashMap<String, Object>(row3);
+            row6.put("specimentype", "Urine Supernatant");
+            inputRows.add(row6);
+            Map<String, Object> row7 = new HashMap<String, Object>(row3);
+            row7.put("specimentype", "Urine Pellet");
+            inputRows.add(row7);
+
             Map<String, Integer> primaryIds = new LinkedHashMap<String, Integer>(STANDARD_PRIMARY_TYPE_IDS);
             Map<String, Integer> derivativeIds = new LinkedHashMap<String, Integer>(STANDARD_DERIVATIVE_TYPE_IDS);
 
             List<Map<String, Object>> outputRows = _task.transformRows(new HashMap<String, Integer>(), primaryIds, derivativeIds, inputRows);
-            assertEquals(4, outputRows.size());
+            assertEquals(7, outputRows.size());
             assertEquals(primaryIds.get("Blood"), outputRows.get(0).get("primary_specimen_type_id"));
             assertEquals(derivativeIds.get("PBMC"), outputRows.get(0).get("derivative_type_id"));
             assertEquals(primaryIds.get("Blood"), outputRows.get(1).get("primary_specimen_type_id"));
@@ -655,6 +720,12 @@ public class SampleMindedTransformTask
             assertEquals(derivativeIds.get("NewType!"), outputRows.get(2).get("derivative_type_id"));
             assertEquals(primaryIds.get("NewType!"), outputRows.get(3).get("primary_specimen_type_id"));
             assertEquals(derivativeIds.get("NewType!"), outputRows.get(3).get("derivative_type_id"));
+            assertEquals(primaryIds.get("Tissue"), outputRows.get(4).get("primary_specimen_type_id"));
+            assertEquals(derivativeIds.get("Tissue Slide"), outputRows.get(4).get("derivative_type_id"));
+            assertEquals(primaryIds.get("Urine"), outputRows.get(5).get("primary_specimen_type_id"));
+            assertEquals(derivativeIds.get("Urine Supernatant"), outputRows.get(5).get("derivative_type_id"));
+            assertEquals(primaryIds.get("Urine"), outputRows.get(6).get("primary_specimen_type_id"));
+            assertEquals(derivativeIds.get("Urine Pellet"), outputRows.get(6).get("derivative_type_id"));
         }
     }
 }
