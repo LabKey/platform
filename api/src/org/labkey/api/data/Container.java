@@ -86,7 +86,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
     private String _description;
 
     private transient Module _defaultModule;
-    private transient Set<Module> _activeModules;
 
     private transient WeakReference<Container> _parent;
 
@@ -760,7 +759,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
         PropertyManager.saveProperties(props);
         ContainerManager.notifyContainerChange(getId());
-        _activeModules = null;
     }
 
     public void appendWorkbookModulesToParent()
@@ -817,132 +815,129 @@ public class Container implements Serializable, Comparable<Container>, Securable
             return getParent().getActiveModules(init, includeDepencendies);
         }
 
-        if (_activeModules == null)
+        //Short-circuit for root module
+        if (isRoot())
         {
-            //Short-circuit for root module
-            if (isRoot())
-            {
-                //get active modules from database
-                Set<Module> modules = new HashSet<Module>();
-               _activeModules = Collections.unmodifiableSet(modules);
-               return _activeModules;
-            }
-
-            Map<String, String> props = PropertyManager.getProperties(getId(), "activeModules");
-            //get set of all modules
-            List<Module> allModules = ModuleLoader.getInstance().getModules();
-            //get active web parts for this container
-            List<Portal.WebPart> activeWebparts = Portal.getParts(this);
-
-            // store active modules, checking first that the container still exists -- junit test creates and deletes
-            // containers quickly and this check helps keep the search indexer from creating orphaned property sets.
-            if (props.isEmpty() && init && null != ContainerManager.getForId(getId()))
-            {
-                //initialize properties cache
-                PropertyManager.PropertyMap propsWritable = PropertyManager.getWritableProperties(getId(), "activeModules", true);
-                props = propsWritable;
-
-                if (isProject())
-                {
-                    // first time in this project: initialize active modules now, based on the active webparts
-                    Map<String, Module> mapWebPartModule = new HashMap<String, Module>();
-                    //get set of all web parts for all modules
-                    for (Module module : allModules)
-                    {
-                        Collection<WebPartFactory> factories = module.getWebPartFactories();
-                        if (factories != null)
-                        {
-                            for (WebPartFactory desc : factories)
-                                mapWebPartModule.put(desc.getName(), module);
-                        }
-                    }
-
-                    //get active modules based on which web parts are active
-                    for (Portal.WebPart activeWebPart : activeWebparts)
-                    {
-                        if (!"forward".equals(activeWebPart.getLocation()))
-                        {
-                            //get module associated with this web part & add to props
-                            Module activeModule = mapWebPartModule.get(activeWebPart.getName());
-                            if (activeModule != null)
-                                propsWritable.put(activeModule.getName(), Boolean.TRUE.toString());
-                        }
-                    }
-
-                    // enable 'default' tabs:
-                    for (Module module : allModules)
-                    {
-                        if (module.getTabDisplayMode() == Module.TabDisplayMode.DISPLAY_USER_PREFERENCE_DEFAULT)
-                            propsWritable.put(module.getName(), Boolean.TRUE.toString());
-                    }
-                }
-                else
-                {
-                    //if this is a subfolder, set active modules to inherit from parent
-                    Set<Module> parentModules = getParent().getActiveModules(false, false);
-                    for (Module module : parentModules)
-                    {
-                        //set the default module for the subfolder to be the default module of the parent.
-                        Module parentDefault = getParent().getDefaultModule();
-
-                        if (module.equals(parentDefault))
-                            setDefaultModule(module);
-
-                        propsWritable.put(module.getName(), Boolean.TRUE.toString());
-                    }
-                }
-                PropertyManager.saveProperties(propsWritable);
-            }
-
+            //get active modules from database
             Set<Module> modules = new HashSet<Module>();
-            // add all modules found in user preferences:
-            if (null != props)
-            {
-                for (String moduleName : props.keySet())
-                {
-                    Module module = ModuleLoader.getInstance().getModule(moduleName);
-                    if (module != null)
-                        modules.add(module);
-                }
-            }
+            return Collections.unmodifiableSet(modules);
+        }
 
-           // ensure all modules for folder type are added (may have been added after save
-            if (!getFolderType().equals(FolderType.NONE))
-            {
-                for (Module module : getFolderType().getActiveModules())
-                {
-                    // check for null, since there's no guarantee that a third-party folder type has all its
-                    // active modules installed on this system (so nulls may end up in the list- bug 6757):
-                    if (module != null)
-                        modules.add(module);
-                }
-            }
+        Map<String, String> props = PropertyManager.getProperties(getId(), "activeModules");
+        //get set of all modules
+        List<Module> allModules = ModuleLoader.getInstance().getModules();
+        //get active web parts for this container
+        List<Portal.WebPart> activeWebparts = Portal.getParts(this);
 
-            // add all 'always display' modules, remove all 'never display' modules:
-            for (Module module : allModules)
-            {
-                if (module.getTabDisplayMode() == Module.TabDisplayMode.DISPLAY_NEVER)
-                    modules.remove(module);
-            }
+        // store active modules, checking first that the container still exists -- junit test creates and deletes
+        // containers quickly and this check helps keep the search indexer from creating orphaned property sets.
+        if (props.isEmpty() && init && null != ContainerManager.getForId(getId()))
+        {
+            //initialize properties cache
+            PropertyManager.PropertyMap propsWritable = PropertyManager.getWritableProperties(getId(), "activeModules", true);
+            props = propsWritable;
 
-            if(includeDepencendies)
+            if (isProject())
             {
-                Set<Module> withDependencies = new HashSet<Module>();
-                for (Module m : modules)
+                // first time in this project: initialize active modules now, based on the active webparts
+                Map<String, Module> mapWebPartModule = new HashMap<String, Module>();
+                //get set of all web parts for all modules
+                for (Module module : allModules)
                 {
-                    withDependencies.add(m);
-                    withDependencies.addAll(m.getResolvedModuleDependencies());
+                    Collection<WebPartFactory> factories = module.getWebPartFactories();
+                    if (factories != null)
+                    {
+                        for (WebPartFactory desc : factories)
+                            mapWebPartModule.put(desc.getName(), module);
+                    }
                 }
 
-                _activeModules = Collections.unmodifiableSet(withDependencies);
+                //get active modules based on which web parts are active
+                for (Portal.WebPart activeWebPart : activeWebparts)
+                {
+                    if (!"forward".equals(activeWebPart.getLocation()))
+                    {
+                        //get module associated with this web part & add to props
+                        Module activeModule = mapWebPartModule.get(activeWebPart.getName());
+                        if (activeModule != null)
+                            propsWritable.put(activeModule.getName(), Boolean.TRUE.toString());
+                    }
+                }
+
+                // enable 'default' tabs:
+                for (Module module : allModules)
+                {
+                    if (module.getTabDisplayMode() == Module.TabDisplayMode.DISPLAY_USER_PREFERENCE_DEFAULT)
+                        propsWritable.put(module.getName(), Boolean.TRUE.toString());
+                }
             }
             else
             {
-                _activeModules = Collections.unmodifiableSet(modules);
+                //if this is a subfolder, set active modules to inherit from parent
+                Set<Module> parentModules = getParent().getActiveModules(false, false);
+                for (Module module : parentModules)
+                {
+                    //set the default module for the subfolder to be the default module of the parent.
+                    Module parentDefault = getParent().getDefaultModule();
+
+                    if (module.equals(parentDefault))
+                        setDefaultModule(module);
+
+                    propsWritable.put(module.getName(), Boolean.TRUE.toString());
+                }
+            }
+            PropertyManager.saveProperties(propsWritable);
+        }
+
+        Set<Module> modules = new HashSet<Module>();
+        // add all modules found in user preferences:
+        if (null != props)
+        {
+            for (String moduleName : props.keySet())
+            {
+                Module module = ModuleLoader.getInstance().getModule(moduleName);
+                if (module != null)
+                    modules.add(module);
             }
         }
 
-        return _activeModules;
+       // ensure all modules for folder type are added (may have been added after save
+        if (!getFolderType().equals(FolderType.NONE))
+        {
+            for (Module module : getFolderType().getActiveModules())
+            {
+                // check for null, since there's no guarantee that a third-party folder type has all its
+                // active modules installed on this system (so nulls may end up in the list- bug 6757):
+                if (module != null)
+                    modules.add(module);
+            }
+        }
+
+        // add all 'always display' modules, remove all 'never display' modules:
+        for (Module module : allModules)
+        {
+            if (module.getTabDisplayMode() == Module.TabDisplayMode.DISPLAY_NEVER)
+                modules.remove(module);
+        }
+
+        Set<Module> activeModules;
+        if(includeDepencendies)
+        {
+            Set<Module> withDependencies = new HashSet<Module>();
+            for (Module m : modules)
+            {
+                withDependencies.add(m);
+                withDependencies.addAll(m.getResolvedModuleDependencies());
+            }
+
+            activeModules = Collections.unmodifiableSet(withDependencies);
+        }
+        else
+        {
+            activeModules = Collections.unmodifiableSet(modules);
+        }
+
+        return activeModules;
     }
 
     public boolean isDescendant(Container container)
