@@ -129,7 +129,16 @@ Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
             }]
         };
 
-        Ext4.each(values.siteValues, function(v){
+        //sort on containerPath
+        var valueArray = values.siteValues;
+        valueArray = valueArray.sort(function(o1, o2){
+            var a = o1.container.path, b = o2.container.path;
+            return a < b ? -1 :
+                    a == b ? 0 :
+                    1;
+        });
+
+        Ext4.each(valueArray, function(v){
             cfg.items[1].items.push({
                 fieldLabel: v.container.name || "Site Default",
                 moduleName: module,
