@@ -386,13 +386,15 @@ public class ExceptionUtil
             {
                 return true;
             }
-            if (ex.getCause() != ex)
-            {
-                return isClientAbortException(ex.getCause());
-            }
             if (ex.getClass().equals(SocketException.class) && "Connection reset".equalsIgnoreCase(ex.getMessage()))
             {
                 return true;
+            }
+
+            // Recurse to see if the root exception is a client abort exception
+            if (ex.getCause() != ex)
+            {
+                return isClientAbortException(ex.getCause());
             }
         }
         return false;
