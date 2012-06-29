@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.query;
 
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.*;
 import org.labkey.api.data.*;
 import org.labkey.api.security.User;
@@ -250,6 +251,22 @@ public class ExpSchema extends AbstractExpSchema
                 ExpProtocolTable protocolTable = (ExpProtocolTable)TableType.Protocols.createTable(ExpSchema.this, TableType.Protocols.toString());
                 protocolTable.setContainerFilter(ContainerFilter.EVERYTHING);
                 return protocolTable;
+            }
+        };
+    }
+
+    public ForeignKey getJobForeignKey()
+    {
+        return new LookupForeignKey("RowId", "RowId")
+        {
+            public TableInfo getLookupTableInfo()
+            {
+                return PipelineService.get().getJobsTable(getUser(), getContainer());
+            }
+
+            public StringExpression getURL(ColumnInfo parent)
+            {
+                return getURL(parent, true);
             }
         };
     }

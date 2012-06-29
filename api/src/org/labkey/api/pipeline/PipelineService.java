@@ -18,6 +18,7 @@ package org.labkey.api.pipeline;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
@@ -117,4 +118,8 @@ abstract public class PipelineService
     abstract public boolean hasSiteDefaultRoot(Container container);
 
     abstract public boolean importFolder(ViewContext context, BindException errors, File folderFile, String originalFilename) throws Exception;
+
+    abstract public TableInfo getJobsTable(User user, Container container);
+
+    abstract public int getJobId(User u, Container c, String jobGUID);
 }

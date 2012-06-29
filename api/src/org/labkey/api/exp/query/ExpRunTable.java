@@ -30,6 +30,7 @@ public interface ExpRunTable extends ExpTable<ExpRunTable.Column>
         ProtocolStep,
         LSID,
         Name,
+        JobId,
         Protocol,
         Comments,
         Created,
