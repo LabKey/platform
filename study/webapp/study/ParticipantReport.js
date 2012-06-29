@@ -862,7 +862,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             this.templateReport.on('afterdatatransform', function(th, reportData) {
 
                 if (this._inCustomMode())
-                    this.lengthReportField.setValue('<i>Showing a Maximum of 50 Results (results are limited while a report is being customized)</i>');
+                    this.lengthReportField.setValue('<i>Showing partial results while in edit mode. Close the edit panel above to see all results.</i>');
                 else
                     this.lengthReportField.setValue('<i>Showing ' + reportData.pages.length + ' Results</i>');
             }, this);
@@ -1023,7 +1023,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         else {
             this.filterWindow = Ext4.create('LABKEY.ext4.ReportFilterWindow', {
                 title    : 'Filter Report',
-                layout   : 'fit',
+                layout   : 'form',              // strange workaround to make sure content renders after expand
                 items    : [panel],
                 bodyStyle: 'overflow-y: auto; overflow-x: hidden;',
                 relative : this.centerPanel,
