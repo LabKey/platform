@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Event field documentation:
@@ -128,6 +129,16 @@ public class QueryAuditViewFactory extends SimpleAuditViewFactory
         }
 
         @Override
+        public void addQueryFieldKeys(Set<FieldKey> keys)
+        {
+            super.addQueryFieldKeys(keys);
+            keys.add(_containerCol.getFieldKey());
+            keys.add(_schemaCol.getFieldKey());
+            keys.add(_queryCol.getFieldKey());
+            keys.add(_sortFilterCol.getFieldKey());
+        }
+
+        @Override
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             String containerId = (String)ctx.get("ContainerId");
@@ -146,6 +157,11 @@ public class QueryAuditViewFactory extends SimpleAuditViewFactory
         @Override
         public String renderURL(RenderContext ctx)
         {
+            // NOTE: Not all grid work well with executeQuery yet (ms2, specimen).
+            // Ideally we would use the URL returned from queryDef.urlFor(QueryAction.executeQuery)
+            // but constructing the table for each row is too expensive.
+            // Until we can cheaply get table URLs, the QueryController.ExecuteQuery will have to do.
+
             String containerId = (String)ctx.get("ContainerId");
             Container c = ContainerManager.getForId(containerId);
             if (c == null)
@@ -156,7 +172,6 @@ public class QueryAuditViewFactory extends SimpleAuditViewFactory
             if (schemaName == null || queryName == null)
                 return null;
 
-            // XXX: Not all grid work well with executeQuery yet (ms2, specimen)
             ActionURL url = new ActionURL(QueryController.ExecuteQueryAction.class, c);
 
             // Apply the sorts and filters
@@ -169,7 +184,7 @@ public class QueryAuditViewFactory extends SimpleAuditViewFactory
 
             if (url.getParameter(QueryParam.schemaName) == null)
                 url.addParameter(QueryParam.schemaName, schemaName);
-            if (url.getParameter(QueryParam.queryName) == null)
+            if (url.getParameter(QueryParam.queryName) == null && url.getParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName) == null)
                 url.addParameter(QueryParam.queryName, queryName);
 
             return url.toString();

@@ -1515,12 +1515,12 @@ public class QueryServiceImpl extends QueryService
     @Override
     public void addAuditEvent(QueryView queryView, String comment)
     {
-        TableInfo table = queryView.getTable();
-        if (table == null)
+        QueryDefinition query = queryView.getQueryDef();
+        if (query == null)
             return;
 
-        String schemaName = table.getPublicSchemaName();
-        String queryName = table.getPublicName();
+        String schemaName = query.getSchemaName();
+        String queryName = query.getName();
         ActionURL sortFilter = queryView.getSettings().getSortFilterURL();
         addAuditEvent(queryView.getUser(), queryView.getContainer(), schemaName, queryName, sortFilter, comment);
     }
