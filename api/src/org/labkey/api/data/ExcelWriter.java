@@ -593,6 +593,7 @@ public class ExcelWriter
 
     public void renderNewSheet()
     {
+        _currentRow = 0;
         _currentSheet++;
         renderSheet(_currentSheet);
     }
