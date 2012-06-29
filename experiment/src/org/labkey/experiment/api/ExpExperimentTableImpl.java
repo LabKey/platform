@@ -73,12 +73,14 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
             case RunCount:
                 ExprColumn runCountColumnInfo = new ExprColumn(this, "RunCount", new SQLFragment("(SELECT COUNT(*) FROM " + ExperimentServiceImpl.get().getTinfoRunList() + " WHERE ExperimentId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId)"), JdbcType.INTEGER);
                 runCountColumnInfo.setDescription("Contains the number of runs associated with this run group");
+                setupNonEditableCol(runCountColumnInfo);
                 return runCountColumnInfo;
             case BatchProtocolId:
             {
                 ColumnInfo batchProtocolCol = wrapColumn(alias, _rootTable.getColumn("BatchProtocolId"));
                 batchProtocolCol.setLabel("Batch Protocol");
                 batchProtocolCol.setFk(getExpSchema().getProtocolForeignKey("RowId"));
+                setupNonEditableCol(batchProtocolCol);
                 return batchProtocolCol;
             }
             default:
