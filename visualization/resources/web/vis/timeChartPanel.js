@@ -670,6 +670,12 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.saveAsButton.setDisabled(disable);
     },
 
+    toggleSaveButtons: function(disable)
+    {
+        this.saveButton.setDisabled(disable);
+        this.saveAsButton.setDisabled(disable);
+    },
+
     disableNonMeasureOptionButtons: function(){
         this.groupingButton.disable();
         this.aestheticsButton.disable();
@@ -1016,7 +1022,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         if (this.individualData && this.individualData.filterDescription)
             this.editorMeasurePanel.setFilterWarningText(this.individualData.filterDescription);
 
-        if(this.chartInfo.measures.length == 0){
+        if (this.chartInfo.measures.length == 0)
+        {
            this.clearChartPanel("No measure selected. Please click the \"Measures\" button to add a measure.");
            return;
         }
@@ -1064,8 +1071,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             }
         }
 
-        // TODO: Use the same max/min for every chart if displaying more than one chart.
-
+        // Use the same max/min for every chart if displaying more than one chart.
         if (this.chartInfo.chartLayout != "single")
         {
             //ISSUE In multi-chart case, we need to precompute the default axis ranges so that all charts share them.
@@ -1084,7 +1090,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
             var xName;
             var xFunc;
-            if(this.viewInfo.TimepointType === "date"){
+            if(this.editorXAxisPanel.getTime() == "date"){
                 xName = this.chartInfo.measures[0].dateOptions.interval;
                 xFunc = function(row){
                     return row[xName].value;
@@ -1183,15 +1189,28 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             }
         };
 
-        // four options: all series on one chart, one chart per subject, one chart per group, or one chart per measure/dimension
-        if (this.chartInfo.chartLayout == "per_subject")
+        // warn if user doesn't have an subjects, groups, or series selected
+        if (this.chartInfo.chartSubjectSelection == "subjects" && this.chartInfo.subject.values.length == 0)
         {
-            // warn if user doesn't have an subjects selected
-            if (this.chartInfo.subject.values.length == 0)
-            {
-                this.clearChartPanel("Please select at least one " + this.viewInfo.subjectNounSingular.toLowerCase() + ".");
-            }
-            else
+            this.clearChartPanel("Please select at least one " + this.viewInfo.subjectNounSingular.toLowerCase() + '.');
+            this.toggleSaveButtons(true);
+        }
+        else if (this.chartInfo.chartSubjectSelection == "groups" && this.chartInfo.subject.groups.length < 1)
+        {
+            this.clearChartPanel("Please select at least one group.");
+            this.toggleSaveButtons(true);
+        }
+        else if (seriesList.length == 0)
+        {
+            this.clearChartPanel("Please select at least one series/dimension value.");
+            this.toggleSaveButtons(true);
+        }
+        // four options: all series on one chart, one chart per subject, one chart per group, or one chart per measure/dimension
+        else
+        {
+            this.toggleSaveButtons(false);
+
+            if (this.chartInfo.chartLayout == "per_subject")
             {
                 // warn if the max number of charts has been exceeded
                 if (this.chartInfo.subject.values.length > this.maxCharts)
@@ -1235,15 +1254,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     }
                 }
             }
-        }
-        else if (this.chartInfo.chartLayout == "per_group")
-        {
-            // warn if use doesn't have any groups selected
-            if (this.chartInfo.subject.groups.length == 0)
-            {
-                this.clearChartPanel("Please select at least one group.");
-            }
-            else
+            else if (this.chartInfo.chartLayout == "per_group")
             {
                 // warn if the max number of charts has been exceeded
                 if (this.chartInfo.subject.groups.length > this.maxCharts)
@@ -1299,21 +1310,10 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     }
                 }
             }
-        }
-        else if (this.chartInfo.chartLayout == "per_dimension")
-        {
-            if (this.chartInfo.chartSubjectSelection == "subjects" && this.chartInfo.subject.values.length == 0)
+            else if (this.chartInfo.chartLayout == "per_dimension")
             {
-                this.clearChartPanel("Please select at least one " + this.viewInfo.subjectNounSingular.toLowerCase() + '.');
-            } else if(this.chartInfo.chartSubjectSelection == "groups" && this.chartInfo.subject.groups.length < 1){
-                this.clearChartPanel("Please select at least one group.");
-            } else {
-                // warn if user doesn't have an dimension values selected or if the max number has been exceeded
-                if (seriesList.length == 0)
-                {
-                    this.clearChartPanel("Please select at least one dimension value.");
-                }
-                else if (seriesList.length > this.maxCharts)
+                // warn if the max number of charts has been exceeded
+                if (seriesList.length > this.maxCharts)
                 {
                     this.addWarningText("Only showing the first " + this.maxCharts + " charts");
                 }
@@ -1353,14 +1353,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     }
                 }
             }
-        }
-        else if (this.chartInfo.chartLayout == "single")
-        {
-            if (this.chartInfo.chartSubjectSelection == "subjects" && this.chartInfo.subject.values.length == 0){
-                this.clearChartPanel("Please select at least one " + this.viewInfo.subjectNounSingular.toLowerCase() + '.');
-            } else if(this.chartInfo.chartSubjectSelection == "groups" && this.chartInfo.subject.groups.length < 1){
-                this.clearChartPanel("Please select at least one group.");
-            } else {
+            else if (this.chartInfo.chartLayout == "single")
+            {
                 //Single Line Chart, with all participants or groups.
                 var newChart = this.generatePlot(
                         this.chart,

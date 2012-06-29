@@ -271,9 +271,17 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
     },
 
     setThumbnailPreview: function() {
+        // if the thumbnail preview element hasn't rendered, return without doing anything
+        if (!Ext4.getDom(this.thumbnailPreviewId))
+            return;
+
         var checkedRadio = this.down('#reportThumbnailType').getChecked();
-        if (Ext4.getDom(this.thumbnailPreviewId) && checkedRadio.length > 0 && checkedRadio[0].thumbnailPreview)
+        if (checkedRadio.length > 0 && checkedRadio[0].thumbnailPreview)
             Ext4.getDom(this.thumbnailPreviewId).innerHTML = checkedRadio[0].thumbnailPreview;
+        else
+            Ext4.getDom(this.thumbnailPreviewId).innerHTML = "";
+
+        this.doLayout();
     },
 
     updateCurrentChartThumbnail: function(chartSVGStr, size)
