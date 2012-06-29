@@ -64,6 +64,7 @@ public class SampleMindedTransformTask
     public static final FileType SAMPLE_MINDED_FILE_TYPE = new FileType(".xlsx");
 
     private final PipelineJob _job;
+    private static final String INVALID_SUFFIX = "-invalid";
 
     public SampleMindedTransformTask(PipelineJob job)
     {
@@ -214,16 +215,23 @@ public class SampleMindedTransformTask
 
     private Map<String, Object> transformRow(Map<String, Object> inputRow, int rowIndex, Map<String, Integer> labIds, Map<String, Integer> primaryIds, Map<String, Integer> derivativeIds)
     {
-        Object barcode = inputRow.get("barcode");
-        Object collectionDate = getNonNullValue(inputRow, "collectiondate");
-        if (barcode == null || barcode.toString().toLowerCase().endsWith("-invalid") || collectionDate == null)
+        // Get the barcode and strip off the "-INVALID" suffix, if present
+        String barcode = inputRow.get("barcode") == null ? null : inputRow.get("barcode").toString();
+        if (barcode != null && barcode.toLowerCase().endsWith(INVALID_SUFFIX))
         {
-            getJob().warn("Skipping data row with missing or invalid barcode, row number " + rowIndex);
+            barcode = barcode.substring(0, barcode.length() - INVALID_SUFFIX.length());
+        }
+        barcode = barcode == null ? null : barcode.trim();
+        if (barcode == null || barcode.length() == 0)
+        {
+            getJob().warn("Skipping data row missing 'barcode' value, row number " + rowIndex);
             return null;
         }
+
+        Object collectionDate = getNonNullValue(inputRow, "collectiondate");
         if (collectionDate == null || "".equals(collectionDate))
         {
-            getJob().warn("Skipping data row missing collection date, row number " + rowIndex);
+            getJob().warn("Skipping data row missing 'collectiondate' value, row number " + rowIndex);
             return null;
         }
 
@@ -605,18 +613,34 @@ public class SampleMindedTransformTask
         @Test
         public void testInvalidBarcodeDetection()
         {
-            _context.checking(new Expectations()
-            {{
-                oneOf(_job).warn("Skipping data row with missing or invalid barcode, row number 1");
-            }});
-
             Map<String, Object> row1 = new HashMap<String, Object>();
             row1.put("participant", "ptid1");
-            row1.put("barcode", "barcode-invalid");
             row1.put("collectiondate", "May 5, 2012");
             row1.put("visitname", "Visit 01");
 
+            _context.checking(new Expectations()
+            {{
+                oneOf(_job).warn("Skipping data row missing 'barcode' value, row number 1");
+            }});
             assertEquals(null, _task.transformRow(row1, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>()));
+
+            row1.put("barcode", "");
+            _context.checking(new Expectations()
+            {{
+                oneOf(_job).warn("Skipping data row missing 'barcode' value, row number 1");
+            }});
+            assertEquals(null, _task.transformRow(row1, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>()));
+
+            row1.put("barcode", INVALID_SUFFIX);
+            _context.checking(new Expectations()
+            {{
+                oneOf(_job).warn("Skipping data row missing 'barcode' value, row number 1");
+            }});
+            assertEquals(null, _task.transformRow(row1, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>()));
+
+            row1.put("barcode", "4324329-invalid");
+            Map<String, Object> outputRow = _task.transformRow(row1, 1, new HashMap<String, Integer>(), new HashMap<String, Integer>(), new HashMap<String, Integer>());
+            assertEquals("4324329", outputRow.get("global_unique_specimen_id"));
         }
 
         @Test
@@ -624,7 +648,7 @@ public class SampleMindedTransformTask
         {
             _context.checking(new Expectations()
             {{
-                oneOf(_job).warn("Skipping data row with missing or invalid barcode, row number 1");
+                oneOf(_job).warn("Skipping data row missing 'barcode' value, row number 1");
             }});
 
             Map<String, Object> row1 = new HashMap<String, Object>();
@@ -664,7 +688,7 @@ public class SampleMindedTransformTask
         {
             _context.checking(new Expectations()
             {{
-                oneOf(_job).warn("Skipping data row missing collection date, row number 1");
+                oneOf(_job).warn("Skipping data row missing 'collectiondate' value, row number 1");
             }});
 
             Map<String, Object> row1 = new HashMap<String, Object>();
