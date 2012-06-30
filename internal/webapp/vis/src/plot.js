@@ -380,7 +380,7 @@ LABKEY.vis.Plot = function(config){
                 if(y1 == -this.grid.bottomEdge + .5) continue; // Dont draw a line on top of the x-axis line.
 
 				tick = this.paper.path(LABKEY.vis.makeLine(x1, y1, x2, y2)).transform("t0," + this.grid.height);
-                tickText = this.scales.yRight.tickFormat ? this.scales.yRight.tickFormat(leftTicks[i]) : rightTicks[i];
+                tickText = this.scales.yRight.tickFormat ? this.scales.yRight.tickFormat(rightTicks[i]) : rightTicks[i];
 				gridLine = this.paper.path(LABKEY.vis.makeLine(this.grid.leftEdge + 1, y1, x1, y2)).attr('stroke', '#DDD').transform("t0," + this.grid.height);
                 if(this.gridLineColor){
                     gridLine.attr('stroke', this.gridLineColor);
