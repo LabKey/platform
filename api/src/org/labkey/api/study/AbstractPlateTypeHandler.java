@@ -25,4 +25,10 @@ public abstract class AbstractPlateTypeHandler implements PlateTypeHandler
     {
         return Collections.emptyMap();
     }
+
+    @Override
+    public boolean showEditorWarningPanel()
+    {
+        return true;
+    }
 }

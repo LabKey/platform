@@ -52,4 +52,6 @@ public interface PlateTypeHandler
     public void validate(Container container, User user, PlateTemplate template) throws ValidationException;
 
     public Map<String, List<String>> getDefaultGroupsForTypes();
+
+    public boolean showEditorWarningPanel();
 }
