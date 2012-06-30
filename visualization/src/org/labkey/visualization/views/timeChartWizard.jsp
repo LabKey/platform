@@ -39,12 +39,8 @@
     if(numberFormat == null)
     {
         numberFormat = "";
-        numberFormatFn = ExtUtil.toExtNumberFormatFn(numberFormat);;
     }
-    else
-    {
-        numberFormatFn = ExtUtil.toExtNumberFormatFn(numberFormat);
-    }
+    numberFormatFn = ExtUtil.toExtNumberFormatFn(numberFormat);
 
     ReportIdentifier id = form.getReportId();
     Report report = null;
