@@ -62,6 +62,7 @@ public class TemplateView extends HorizontalPanel
     private boolean _copyMode;
     private Map<String, List<String>> _cellWarnings = new HashMap<String, List<String>>();
     private TabPanel _propertyTabPanel;
+    private boolean _showWarningPanel;
     private WarningPanel _warningPanel;
     private WellGroupPropertyPanel _wellGroupPropertyPanel;
     private PlatePropertyPanel _platePropertyPanel;
@@ -147,6 +148,7 @@ public class TemplateView extends HorizontalPanel
         VerticalPanel mainPanel = new VerticalPanel();
         List groupTypes = _plate.getGroupTypes();
         _originalTemplateName = _plate.getName();
+        _showWarningPanel = _plate.isShowWarningPanel();
 
         // status bar
         _statusBar = new StatusBar(this, PropertyUtil.getRelativeURL("begin"));
@@ -233,9 +235,11 @@ public class TemplateView extends HorizontalPanel
         _wellGroupPropertyPanel = new WellGroupPropertyPanel(this);
         _propertyTabPanel.add(_wellGroupPropertyPanel, "Well Group Properties");
 
-        _warningPanel = new WarningPanel();
-        _propertyTabPanel.add(_warningPanel, "Warnings");
-
+        if (_showWarningPanel)
+        {
+            _warningPanel = new WarningPanel();
+            _propertyTabPanel.add(_warningPanel, "Warnings");
+        }
         _propertyTabPanel.selectTab(0);
 
         SimplePanel spacer2 = new SimplePanel();
@@ -477,7 +481,7 @@ public class TemplateView extends HorizontalPanel
                 warningsChanged = true;
             }
         }
-        if (warningsChanged)
+        if (warningsChanged && _showWarningPanel)
         {
             _warningPanel.update(_cellWarnings);
             int currentTab = _propertyTabPanel.getTabBar().getSelectedTab();

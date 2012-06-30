@@ -91,7 +91,7 @@ public class PlateDataServiceImpl extends BaseRemoteService implements PlateData
                 translated.add(new GWTWellGroup(group.getType().name(), group.getName(), positions, groupProperties));
             }
             GWTPlate plate = new GWTPlate(template.getName(), template.getType(), template.getRows(),
-                    template.getColumns(), getTypeList(template));
+                    template.getColumns(), getTypeList(template), handler.showEditorWarningPanel());
             plate.setGroups(translated);
             plate.setTypesToDefaultGroups(handler.getDefaultGroupsForTypes());
             

@@ -33,6 +33,7 @@ public class GWTPlate implements IsSerializable
     private int _rows;
     private int _cols;
     private Map<String, Set<GWTWellGroup>> _groups = new HashMap<String, Set<GWTWellGroup>>();
+    private boolean _showWarningPanel;
 
     private List<String> _groupTypes;
     private Map<String, Object> _plateProperties = new HashMap<String, Object>();
@@ -43,13 +44,14 @@ public class GWTPlate implements IsSerializable
     {
     }
 
-    public GWTPlate(String name, String type, int rows, int cols, List<String> groupTypes)
+    public GWTPlate(String name, String type, int rows, int cols, List<String> groupTypes, boolean showWarningPanel)
     {
         _name = name;
         _type = type;
         _rows = rows;
         _cols = cols;
         _groupTypes = groupTypes;
+        _showWarningPanel = showWarningPanel;
     }
 
     public Map getPositionToGroupsMap()
@@ -175,5 +177,15 @@ public class GWTPlate implements IsSerializable
     public void setTypesToDefaultGroups(Map<String, List<String>> typesToDefaultGroups)
     {
         _typesToDefaultGroups = typesToDefaultGroups;
+    }
+
+    public boolean isShowWarningPanel()
+    {
+        return _showWarningPanel;
+    }
+
+    public void setShowWarningPanel(boolean showWarningPanel)
+    {
+        _showWarningPanel = showWarningPanel;
     }
 }
