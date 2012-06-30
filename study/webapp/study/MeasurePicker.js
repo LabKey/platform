@@ -408,7 +408,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
         });
         var taskFilterMeasures = new Ext.util.DelayedTask(function(){this.filterMeasures(this.searchBox.getValue());}, this);
 //        this.searchBox.on('keyup', function(cmp,e){console.log('keyup');taskFilterMeasures.delay(333);});
-        this.searchBox.on('change', function(cmp,e){console.log('change');taskFilterMeasures.delay(333);});
+        this.searchBox.on('change', function(cmp,e){taskFilterMeasures.delay(333);});
         tbarItems.push(this.searchBox);
 
         this.errorField = Ext4.create('Ext.form.DisplayField', {

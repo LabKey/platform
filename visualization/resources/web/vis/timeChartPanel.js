@@ -739,6 +739,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         // get the updated chart information from the various options panels
         this.chartInfo = this.getChartInfoFromOptionPanels();
+        this.numberFormats = {};
 
         this.loaderCount = 0; //Used to prevent the loader from running until we have recieved all necessary callbacks.
         if (this.chartInfo.displayIndividual)
@@ -793,6 +794,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                             }
                         }
                     }, this);
+
+                    this.getNumberFormats(this.individualData.metaData.fields);
 
                     // trim the visit map domain to just those visits in the response data
                     this.individualData.visitMap = this.trimVisitMapDomain(this.individualData.visitMap, visitsInData);
@@ -862,6 +865,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                         }
                     }, this);
 
+                    this.getNumberFormats(this.aggregateData.metaData.fields);
+
                     // trim the visit map domain to just those visits in the response data
                     this.aggregateData.visitMap = this.trimVisitMapDomain(this.aggregateData.visitMap, visitsInData);
 
@@ -884,6 +889,40 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 filterQuery: this.chartInfo.filterQuery,
                 scope: this
             });
+        }
+    },
+
+    getNumberFormats: function(fields) {
+        for(var i = 0; i < this.chartInfo.axis.length; i++){
+            var axis = this.chartInfo.axis[i];
+            if(axis.side){
+                // Find the first measure with the matching side that has a numberFormat.
+                for(var j = 0; j < this.chartInfo.measures.length; j++){
+                    var measure = this.chartInfo.measures[j].measure;
+
+                    if(this.numberFormats[axis.side]){
+                        break;
+                    }
+
+                    if(measure.yAxis == axis.side){
+                        var metaDataName = measure.alias;
+                        for(var k = 0; k < fields.length; k++){
+                            var field = fields[k];
+                            if(field.name == metaDataName){
+                                if(field.extFormatFn){
+                                    this.numberFormats[axis.side] = eval(field.extFormatFn);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if(!this.numberFormats[axis.side]){
+                    // If after all the searching we still don't have a numberformat use the default number format.
+                    this.numberFormats[axis.side] = this.defaultNumberFormat;
+                }
+            }
         }
     },
 
@@ -1471,8 +1510,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         var layers = [];
         var xTitle = '', yLeftTitle = '', yRightTitle = '';
-        var yLeftMin = null, yLeftMax = null, yLeftTrans = null;
-        var yRightMin = null, yRightMax = null, yRightTrans = null;
+        var yLeftMin = null, yLeftMax = null, yLeftTrans = null, yLeftTickFormat;
+        var yRightMin = null, yRightMax = null, yRightTrans = null, yRightTickFormat;
         var xMin = null, xMax = null, xTrans = null;
         var intervalKey = null;
         var individualSubjectColumn = individualMeasureToColumn ? individualMeasureToColumn[viewInfo.subjectColumn] : null;
@@ -1514,11 +1553,13 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     yLeftMin = typeof axis.range.min == "number" ? axis.range.min : null;
                     yLeftMax = typeof axis.range.max == "number" ? axis.range.max : null;
                     yLeftTrans = axis.scale ? axis.scale : "linear";
+                    yLeftTickFormat = chartInfo.numberFormats.left ? chartInfo.numberFormats.left : null;
                 } else {
                     yRightTitle = axis.label;
                     yRightMin = typeof axis.range.min == "number" ? axis.range.min : null;
                     yRightMax = typeof axis.range.max == "number" ? axis.range.max : null;
                     yRightTrans = axis.scale ? axis.scale : "linear";
+                    yRightTickFormat = chartInfo.numberFormats.right ? chartInfo.numberFormats.right : null;
                 }
             } else {
                 xTitle = axis.label;
@@ -1689,13 +1730,15 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 yLeft: {scaleType: 'continuous',
                     trans: yLeftTrans,
                     min: yLeftMin,
-                    max: yLeftMax
+                    max: yLeftMax,
+                    tickFormat: yLeftTickFormat ? yLeftTickFormat : null
                 },
                 yRight: {
                     scaleType: 'continuous',
                     trans: yRightTrans,
                     min: yRightMin,
-                    max: yRightMax
+                    max: yRightMax,
+                    tickFormat: yRightTickFormat ? yRightTickFormat : null
                 },
                 shape: {
                     scaleType: 'discrete'
@@ -1945,6 +1988,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 queryName: config.measures[0].measure.queryName
             });
         }
+
+        config.numberFormats = this.numberFormats;
 
         return config;
     },

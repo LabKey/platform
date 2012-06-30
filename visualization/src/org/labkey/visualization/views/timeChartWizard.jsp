@@ -24,6 +24,8 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.visualization.VisualizationController" %>
 <%@ page import="org.labkey.api.reports.permissions.ShareReportPermission" %>
+<%@ page import="org.labkey.api.data.PropertyManager" %>
+<%@ page import="org.labkey.api.util.ExtUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<VisualizationController.GetVisualizationForm> me = (JspView<VisualizationController.GetVisualizationForm>) HttpView.currentView();
@@ -32,6 +34,18 @@
     boolean canEdit = false;
     boolean canShare = ctx.hasPermission(ShareReportPermission.class);
     boolean isDeveloper = ctx.getUser().isDeveloper();
+    String numberFormat = PropertyManager.getProperties(ctx.getContainer().getId(), "DefaultStudyFormatStrings").get("NumberFormatString");
+    String numberFormatFn;
+    if(numberFormat == null)
+    {
+        numberFormat = "";
+        numberFormatFn = ExtUtil.toExtNumberFormatFn(numberFormat);;
+    }
+    else
+    {
+        numberFormatFn = ExtUtil.toExtNumberFormatFn(numberFormat);
+    }
+
     ReportIdentifier id = form.getReportId();
     Report report = null;
 
@@ -149,7 +163,8 @@
                     saveReportInfo: saveReportInfo,
                     canEdit: <%=canEdit%>,
                     canShare: <%=canShare%>,
-                    isDeveloper: <%=isDeveloper%>
+                    isDeveloper: <%=isDeveloper%>,
+                    defaultNumberFormat: eval("<%=numberFormatFn%>")
                 })
             ]
         });
