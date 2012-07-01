@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.api.reports.permissions.ShareReportPermission" %>
 <%@ page import="org.labkey.api.data.PropertyManager" %>
 <%@ page import="org.labkey.api.util.ExtUtil" %>
+<%@ page import="org.labkey.api.util.Formats" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<VisualizationController.GetVisualizationForm> me = (JspView<VisualizationController.GetVisualizationForm>) HttpView.currentView();
@@ -38,7 +39,7 @@
     String numberFormatFn;
     if(numberFormat == null)
     {
-        numberFormat = "";
+        numberFormat = Formats.f1.toPattern();
     }
     numberFormatFn = ExtUtil.toExtNumberFormatFn(numberFormat);
 
