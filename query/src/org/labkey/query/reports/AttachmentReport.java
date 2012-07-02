@@ -17,6 +17,7 @@
 package org.labkey.query.reports;
 
 import org.apache.batik.transcoder.TranscoderException;
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
@@ -152,10 +153,19 @@ public class AttachmentReport extends BaseRedirectReport implements DynamicThumb
 
                 if (null != svc)
                 {
-                    InputStream pdfStream = report.getInputStream();
-                    BufferedImage image = svc.pdfToImage(pdfStream, 0);
+                    InputStream pdfStream = null;
 
-                    return ImageUtil.renderThumbnail(image);
+                    try
+                    {
+                        pdfStream = report.getInputStream();
+                        BufferedImage image = svc.pdfToImage(pdfStream, 0);
+
+                        return ImageUtil.renderThumbnail(image);
+                    }
+                    finally
+                    {
+                        IOUtils.closeQuietly(pdfStream);
+                    }
                 }
 
                 return null;
@@ -173,10 +183,19 @@ public class AttachmentReport extends BaseRedirectReport implements DynamicThumb
             @Override
             Thumbnail getDynamicThumbnail(AttachmentReport report) throws IOException
             {
-                InputStream imageSteam = report.getInputStream();
-                BufferedImage image = ImageIO.read(imageSteam);
+                InputStream imageStream = null;
 
-                return ImageUtil.renderThumbnail(image);
+                try
+                {
+                    imageStream = report.getInputStream();
+                    BufferedImage image = ImageIO.read(imageStream);
+
+                    return ImageUtil.renderThumbnail(image);
+                }
+                finally
+                {
+                    IOUtils.closeQuietly(imageStream);
+                }
             }
         },
 
