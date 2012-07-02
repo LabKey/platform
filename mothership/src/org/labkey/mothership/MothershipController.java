@@ -45,6 +45,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -665,7 +666,15 @@ public class MothershipController extends SpringActionController
 
                 ServerInstallation installation = new ServerInstallation();
                 installation.setServerIP(getViewContext().getRequest().getRemoteAddr());
-                installation.setServerInstallationGUID(form.getServerGUID());
+                if (form.getServerGUID() == null)
+                {
+                    logger.warn("No serverGUID specified in exception report from " + installation.getServerIP() + ", making one up so we don't lose the exception");
+                    installation.setServerInstallationGUID(GUID.makeGUID());
+                }
+                else
+                {
+                    installation.setServerInstallationGUID(form.getServerGUID());
+                }
 
                 session = MothershipManager.get().updateServerSession(session, installation, getContainer());
                 if (form.getSvnRevision() != null && form.getSvnURL() != null)
