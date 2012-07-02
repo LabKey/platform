@@ -515,7 +515,7 @@ LABKEY.id = function(id)
 };
 
 /**
- * @param {String} The name of the module
+ * @param {String} moduleName The name of the module
  * @returns {Object} The context object for this module.  The current view must have specifically requested
  * the context for this module in its view XML
  */
