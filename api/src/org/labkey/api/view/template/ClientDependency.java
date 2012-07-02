@@ -79,7 +79,7 @@ public class ClientDependency
     };
 
     private LinkedHashSet<ClientDependency> _children = new LinkedHashSet<ClientDependency>();
-    private HashSet<Module> _moduleContexts = new HashSet<Module>();
+    private Module _module;
     private String _prodModePath;
     private String _devModePath;
     private boolean _compileInProductionMode = true;
@@ -113,7 +113,7 @@ public class ClientDependency
                 _log.error("Module not found, skipping: " + moduleName);
             }
             else
-                _moduleContexts.add(m);
+                _module = m;
         }
         else
         {
@@ -137,7 +137,7 @@ public class ClientDependency
 
     private ClientDependency(Module m)
     {
-        _moduleContexts.add(m);
+        _module = m;
         _primaryType = TYPE.context;
     }
 
@@ -155,8 +155,16 @@ public class ClientDependency
 
     public static ClientDependency fromModule(Module m)
     {
+        String key = getCacheKey("moduleContext|" + m.getName(), ModeTypeEnum.BOTH);
+        if (!AppProps.getInstance().isDevMode())
+        {
+            ClientDependency cached = (ClientDependency)CacheManager.getSharedCache().get(key);
+            if (cached != null)
+                return cached;
+        }
+
         ClientDependency cd = new ClientDependency(m);
-        cd._children.addAll(m.getClientDependencies());
+        CacheManager.getSharedCache().put(key, cd);
         return cd;
     }
 
@@ -175,9 +183,7 @@ public class ClientDependency
 
         Path filePath = Path.parse(path).normalize();
 
-        String key = getCacheKey(filePath, mode);
-
-        //TODO: test this
+        String key = getCacheKey(filePath.toString(), mode);
         if (!AppProps.getInstance().isDevMode())
         {
             ClientDependency cached = (ClientDependency)CacheManager.getSharedCache().get(key);
@@ -190,9 +196,17 @@ public class ClientDependency
         return cr;
     }
 
-    private static String getCacheKey(Path filePath, ModeTypeEnum.Enum mode)
+    private static String getCacheKey(String identifier, ModeTypeEnum.Enum mode)
     {
-        return ClientDependency.class.getName() + "|" + filePath.toString().toLowerCase() + "|" + mode.toString();
+        return ClientDependency.class.getName() + "|" + identifier.toLowerCase() + "|" + mode.toString();
+    }
+
+    private String getUniqueKey()
+    {
+        if (TYPE.context.equals(_primaryType))
+            return getCacheKey("moduleContext|" + _module.toString(), _mode);
+        else
+            return getCacheKey(_filePath.toString(), _mode);
     }
 
     private void processScript(Path filePath)
@@ -267,7 +281,7 @@ public class ClientDependency
                         if (m == null)
                             _log.error("Unable to find module: '" + mt.getName() + "' in library " + _filePath.getName());
                         else
-                            _moduleContexts.add(m);
+                            _children.add(ClientDependency.fromModule(m));
                     }
                 }
 
@@ -354,13 +368,30 @@ public class ClientDependency
         return _primaryType;
     }
 
+    private LinkedHashSet<ClientDependency> getUniqueDependencySet()
+    {
+        LinkedHashSet<ClientDependency> cd = new LinkedHashSet<ClientDependency>();
+
+        if (_children != null)
+            cd.addAll(_children);
+
+        if(TYPE.context.equals(_primaryType))
+        {
+            cd.addAll(_module.getClientDependencies());
+        }
+
+        return cd;
+    }
+
     private LinkedHashSet<String> getProductionScripts(TYPE type)
     {
+        LinkedHashSet<ClientDependency> cd = getUniqueDependencySet();
+
         LinkedHashSet<String> scripts = new LinkedHashSet<String>();
         if (_primaryType.equals(type) && _prodModePath != null)
             scripts.add(_prodModePath);
 
-        for (ClientDependency r : _children)
+        for (ClientDependency r : cd)
             scripts.addAll(r.getProductionScripts(type));
 
         return scripts;
@@ -368,11 +399,13 @@ public class ClientDependency
 
     private LinkedHashSet<String> getDevModeScripts(TYPE type)
     {
+        LinkedHashSet<ClientDependency> cd = getUniqueDependencySet();
+
         LinkedHashSet<String> scripts = new LinkedHashSet<String>();
         if (_primaryType.equals(type) && _devModePath != null)
             scripts.add(_devModePath);
 
-        for (ClientDependency r : _children)
+        for (ClientDependency r : cd)
             scripts.addAll(r.getDevModeScripts(type));
 
         return scripts;
@@ -397,9 +430,10 @@ public class ClientDependency
     public Set<Module> getRequiredModuleContexts()
     {
         HashSet<Module> modules = new HashSet<Module>();
-        modules.addAll(_moduleContexts);
+        if(_module != null)
+            modules.add(_module);
 
-        for (ClientDependency r : _children)
+        for (ClientDependency r : getUniqueDependencySet())
             modules.addAll(r.getRequiredModuleContexts());
 
         return modules;

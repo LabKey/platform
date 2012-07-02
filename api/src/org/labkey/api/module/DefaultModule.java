@@ -879,7 +879,10 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                     {
                         if (rmt.getName() != null)
                         {
-                            _clientDependencies.add(ClientDependency.fromModuleName(rmt.getName()));
+                            if(rmt.getName().equalsIgnoreCase(getName()))
+                                _log.error("Module " + getName() + " lists itself as a dependency in module.xml");
+                            else
+                                _clientDependencies.add(ClientDependency.fromModuleName(rmt.getName()));
                         }
                     }
                 }
