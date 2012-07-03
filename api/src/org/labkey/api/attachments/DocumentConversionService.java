@@ -30,11 +30,11 @@ import java.io.OutputStream;
 // Expose some interesting conversion methods via this service.
 public interface DocumentConversionService
 {
-    // Returns null if requested page doesn't exist
+    // Closes the passed in pdfStream. Returns null if requested page doesn't exist.
     @Nullable BufferedImage pdfToImage(InputStream pdfStream, int page);
-    // Returns null if requested page doesn't exist
+    // Closes the passed in pdfStream. Returns null if requested page doesn't exist.
     @Nullable BufferedImage pdfToImage(InputStream pdfStream, int page, int bufferedImageType, int resolution);
 
     public void svgToPng(String svg, OutputStream os) throws TranscoderException;
-    public void svgToPng(String svg, OutputStream os, @Nullable Float height) throws TranscoderException;
+    public void svgToPng(String svg, OutputStream os, @Nullable Double height) throws TranscoderException;
 }

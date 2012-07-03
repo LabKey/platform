@@ -139,7 +139,7 @@ public class ImageUtil
 
 
     // Standard thumbnail height in pixels.
-    private static final double THUMBNAIL_HEIGHT = 256.0;
+    public static final double THUMBNAIL_HEIGHT = 256.0;
 
     public static Thumbnail renderThumbnail(BufferedImage image) throws IOException
     {

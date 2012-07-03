@@ -1,11 +1,13 @@
 package org.labkey.api.thumbnail;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.CheckedInputStream;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.view.ViewContext;
 
 import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -23,7 +25,7 @@ public class ImageStreamThumbnailProvider implements DynamicThumbnailProvider
     public ImageStreamThumbnailProvider(DynamicThumbnailProvider provider, InputStream is)
     {
         _provider = provider;
-        _is = is;
+        _is = new CheckedInputStream(is);
     }
 
     @Override
@@ -32,7 +34,18 @@ public class ImageStreamThumbnailProvider implements DynamicThumbnailProvider
     {
         try
         {
-            return ImageUtil.renderThumbnail(ImageIO.read(_is));
+            BufferedImage image;
+
+            try
+            {
+                image = ImageIO.read(_is);
+            }
+            finally
+            {
+                _is.close();
+            }
+
+            return ImageUtil.renderThumbnail(image);
         }
         catch (IOException e)
         {
