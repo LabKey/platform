@@ -117,7 +117,7 @@ public class ListQueryUpdateService extends AbstractBeanQueryUpdateService<ListI
     public static Map<String, Object> toMap(ListDefinition listdef, ListItem bean)
     {
         //since ListItems are not really 'beans' we need to convert to a map ourselves
-        Map<String,Object> map = new CaseInsensitiveHashMap<Object>();
+        Map<String, Object> map = new CaseInsensitiveHashMap<Object>();
 
         //key
         map.put(listdef.getKeyName(), bean.getKey());
