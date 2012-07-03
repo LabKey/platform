@@ -87,7 +87,7 @@ public class AttachmentService
         public WebdavResource getDocumentResource(Path path, ActionURL downloadURL, String displayTitle, AttachmentParent parent, String name, SearchService.SearchCategory cat);
         public @Nullable Attachment getAttachment(AttachmentParent parent, String name);
         public void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, boolean asAttachment) throws ServletException, IOException;
-        public InputStream getInputStream(AttachmentParent parent, String name) throws FileNotFoundException;
+        public @NotNull InputStream getInputStream(AttachmentParent parent, String name) throws FileNotFoundException;
 
         public void addAuditEvent(User user, AttachmentParent parent, String filename, String comment);
     }
