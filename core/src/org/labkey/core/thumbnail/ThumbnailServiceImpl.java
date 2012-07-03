@@ -90,12 +90,12 @@ public class ThumbnailServiceImpl implements ThumbnailService
             return;
 
         Thumbnail thumbnail = provider.generateDynamicThumbnail(context);
-        deleteThumbnail(provider);
 
         if (null != thumbnail)
         {
             AttachmentService.Service svc = AttachmentService.get();
             AttachmentFile thumbnailFile = new InputStreamAttachmentFile(thumbnail.getInputStream(), THUMBNAIL_FILENAME, thumbnail.getContentType());
+            deleteThumbnail(provider);
             svc.addAttachments(provider, Collections.singletonList(thumbnailFile), User.guest);
             ThumbnailCache.remove(provider);   // Just in case (delete already cleared the old thumbnail from the cache)
         }

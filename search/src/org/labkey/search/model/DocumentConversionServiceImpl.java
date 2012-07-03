@@ -23,6 +23,7 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.DocumentConversionService;
+import org.labkey.api.util.CheckedInputStream;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -46,9 +47,9 @@ public class DocumentConversionServiceImpl implements DocumentConversionService
         svgToPng(svg, os, null);
     }
 
-    // If height is provided, we'll auto-size keeping the aspect ratio; if null we'll use the dimensions in the SVG
+    // If height is provided, auto-size keeping the aspect ratio; if null, use the dimensions in the SVG
     @Override
-    public void svgToPng(String svg, OutputStream os, @Nullable Float height) throws TranscoderException
+    public void svgToPng(String svg, OutputStream os, @Nullable Double height) throws TranscoderException
     {
         TranscoderInput xIn = new TranscoderInput(new StringReader(svg));
         TranscoderOutput xOut = new TranscoderOutput(os);
@@ -72,20 +73,32 @@ public class DocumentConversionServiceImpl implements DocumentConversionService
     @Override
     public BufferedImage pdfToImage(InputStream pdfStream, int page, int bufferedImageType, int resolution)
     {
+        PDDocument document = null;
+
         try
         {
-            PDDocument document = PDDocument.load(pdfStream);
-
-            // PDFBox extracts blank images from secure PDF; detect and use static thumbnail instead
-            if (document.isEncrypted())
-                return null;
-
-            List<PDPage> pages = document.getDocumentCatalog().getAllPages();
-
-            if (pages.size() >= page)
+            try
             {
-                PDPage pdPage = pages.get(page);
-                return pdPage.convertToImage(bufferedImageType, resolution);
+                // Use a CheckedInputStream to ensure that PDFBox closes the InputStream
+                InputStream is = new CheckedInputStream(pdfStream);
+                document = PDDocument.load(is);
+
+                // PDFBox extracts secure PDFs as blank images; detect and use static thumbnail instead
+                if (document.isEncrypted())
+                    return null;
+
+                List<PDPage> pages = document.getDocumentCatalog().getAllPages();
+
+                if (pages.size() >= page)
+                {
+                    PDPage pdPage = pages.get(page);
+                    return pdPage.convertToImage(bufferedImageType, resolution);
+                }
+            }
+            finally
+            {
+                if (null != document)
+                    document.close();
             }
         }
         catch (IOException e)

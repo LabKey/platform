@@ -153,19 +153,10 @@ public class AttachmentReport extends BaseRedirectReport implements DynamicThumb
 
                 if (null != svc)
                 {
-                    InputStream pdfStream = null;
+                    InputStream pdfStream = report.getInputStream();
+                    BufferedImage image = svc.pdfToImage(pdfStream, 0);
 
-                    try
-                    {
-                        pdfStream = report.getInputStream();
-                        BufferedImage image = svc.pdfToImage(pdfStream, 0);
-
-                        return ImageUtil.renderThumbnail(image);
-                    }
-                    finally
-                    {
-                        IOUtils.closeQuietly(pdfStream);
-                    }
+                    return ImageUtil.renderThumbnail(image);
                 }
 
                 return null;
@@ -263,7 +254,7 @@ public class AttachmentReport extends BaseRedirectReport implements DynamicThumb
 
                     try
                     {
-                        svc.svgToPng(PageFlowUtil.getStreamContentsAsString(report.getInputStream()), os, 256.0f);
+                        svc.svgToPng(PageFlowUtil.getStreamContentsAsString(report.getInputStream()), os, ImageUtil.THUMBNAIL_HEIGHT);
 
                         return os.getThumbnail("image/png");
                     }

@@ -22,6 +22,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailOutputStream;
+import org.labkey.api.util.ImageUtil;
 import org.labkey.api.view.HBox;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -79,7 +80,7 @@ public class TimeChartReportImpl extends TimeChartReport implements DynamicThumb
                 if (null != svc)
                 {
                     ThumbnailOutputStream os = new ThumbnailOutputStream();
-                    svc.svgToPng(_svg, os, 256.0f);
+                    svc.svgToPng(_svg, os, ImageUtil.THUMBNAIL_HEIGHT);
 
                     return os.getThumbnail("image/png");
                 }
