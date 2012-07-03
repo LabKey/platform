@@ -804,6 +804,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     }
 
 
+    @NotNull
     public InputStream getInputStream(AttachmentParent parent, String name) throws FileNotFoundException
     {
         Connection conn = null;

@@ -449,6 +449,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         addColumn(Column.Comments);
         addColumn(Column.Created);
         addColumn(Column.CreatedBy);
+        addColumn(Column.Modified);
+        addColumn(Column.ModifiedBy);
         addContainerColumn(Column.Folder, null);
         addColumn(Column.FilePathRoot).setHidden(true);
         addColumn(Column.JobId).setFk(schema.getJobForeignKey());
@@ -467,6 +469,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.Comments));
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.Folder));
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.DataOutputs));
+        defaultVisibleColumns.remove(FieldKey.fromParts(Column.Modified));
+        defaultVisibleColumns.remove(FieldKey.fromParts(Column.ModifiedBy));
         setDefaultVisibleColumns(defaultVisibleColumns);
     }
 
