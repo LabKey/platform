@@ -69,7 +69,7 @@ public interface SearchService
 
         bulk,       // all wikis
         group,      // one container
-        item,        // one page/attachment
+        item,       // one page/attachment
         delete
     }
 

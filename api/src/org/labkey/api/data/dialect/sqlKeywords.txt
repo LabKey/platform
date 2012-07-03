@@ -283,7 +283,7 @@ explain
 extend
 external
 extract
-FALSE
+false
 family
 fetch
 file
@@ -413,6 +413,7 @@ lc_collate
 lc_ctype
 lead
 leading
+leakproof
 least
 leave
 left
@@ -746,6 +747,7 @@ simple
 size
 slow
 smallint
+snapshot
 some
 source
 space
@@ -846,11 +848,12 @@ trigger_name
 trigger_schema
 trim
 trim_array
-TRUE
+true
 truncate
 trusted
 tsequal
 type
+types
 uescape
 uid
 unbounded
