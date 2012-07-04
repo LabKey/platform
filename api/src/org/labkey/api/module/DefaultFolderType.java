@@ -22,6 +22,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.security.User;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.HelpTopic;
@@ -367,7 +368,9 @@ public class DefaultFolderType implements FolderType
         }
         if (null != ModuleLoader.getInstance().getModule("List"))
             adminNavTree.addChild(new NavTree("Manage Lists", ListService.get().getManageListsURL(container)));
-        if (hasStudyModule)
+
+        // for now study has a slightly different version of manage views
+        if (StudyService.get().getStudy(container) == null)
             adminNavTree.addChild(new NavTree("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(container)));
     }
 
