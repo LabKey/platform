@@ -86,9 +86,7 @@ public class QueryDataViewProvider implements DataViewProvider
             info.setAccess(view.isShared() ? "public" : "private");
 
             // run url and details url are the same for now
-            ActionURL runUrl = QueryService.get().urlFor(context.getUser(), context.getContainer(),
-                    QueryAction.executeQuery, view.getSchemaName(), view.getQueryName()).
-                    addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.viewName.name(), view.getName());
+            ActionURL runUrl = getViewRunURL(context.getUser(), context.getContainer(), view);
 
             info.setRunUrl(runUrl);
             info.setDetailsUrl(runUrl);
@@ -101,6 +99,19 @@ public class QueryDataViewProvider implements DataViewProvider
             dataViews.add(info);
         }
         return dataViews;
+    }
+
+    private ActionURL getViewRunURL(User user, Container c, CustomViewInfo view)
+    {
+        String dataregionName = QueryView.DATAREGIONNAME_DEFAULT;
+
+        if (StudyService.get().getStudy(c) != null)
+        {
+            dataregionName = "Dataset";
+        }
+        return QueryService.get().urlFor(user, c,
+                QueryAction.executeQuery, view.getSchemaName(), view.getQueryName()).
+                addParameter(dataregionName + "." + QueryParam.viewName.name(), view.getName());
     }
 
     @Override

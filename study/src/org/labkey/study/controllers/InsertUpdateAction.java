@@ -38,6 +38,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
@@ -190,7 +191,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         }
         DataRegion dataRegion = view.getDataRegion();
 
-        ReturnURLString referer = form.getReturnUrl();
+        ReturnURLString referer = form.getSrcURL();
         if (referer == null || referer.isEmpty())
             referer =  new ReturnURLString(HttpView.currentRequest().getHeader("Referer"));
 
@@ -204,7 +205,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         else
         {
             cancelURL = new URLHelper(referer);
-            dataRegion.addHiddenFormField(ActionURL.Param.returnUrl, referer);
+            dataRegion.addHiddenFormField(QueryParam.srcURL, referer);
         }
 
         ButtonBar buttonBar = new ButtonBar();
@@ -359,11 +360,11 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
 
     public ActionURL getSuccessURL(Form form)
     {
-        ActionURL url = form.getReturnActionURL();
-        if (null != url)
-            return url;
+        ReturnURLString srcURL = form.getSrcURL();
+        if (null != srcURL)
+            return new ActionURL(srcURL);
 
-        url = new ActionURL(StudyController.DatasetAction.class, getViewContext().getContainer());
+        ActionURL url = new ActionURL(StudyController.DatasetAction.class, getViewContext().getContainer());
         url.addParameter(DataSetDefinition.DATASETKEY, form.getDatasetId());
         if (StudyManager.getInstance().showQCStates(getViewContext().getContainer()))
         {

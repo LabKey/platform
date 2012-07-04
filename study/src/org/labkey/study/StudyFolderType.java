@@ -17,15 +17,21 @@
 package org.labkey.study;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.MultiPortalFolderType;
+import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyFolderTabs;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
+import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.StudyManager;
 
 import java.util.Arrays;
@@ -91,6 +97,13 @@ public class StudyFolderType extends MultiPortalFolderType
     public List<FolderTab> getDefaultTabs()
     {
         return PAGES;
+    }
+
+    @Override
+    public void addManageLinks(NavTree adminNavTree, Container container)
+    {
+        super.addManageLinks(adminNavTree, container);
+        adminNavTree.addChild(new NavTree("Manage Views", new ActionURL(ReportsController.ManageReportsAction.class, container)));
     }
 
     private static Set<Module> _activeModulesForOwnedFolder = null;

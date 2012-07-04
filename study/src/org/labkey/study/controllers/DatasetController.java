@@ -662,16 +662,26 @@ public class DatasetController extends BaseStudyController
         }
     }
 
-    public static class EditDatasetRowForm extends ReturnUrlForm
+    public static class EditDatasetRowForm
     {
         private String lsid;
         private int datasetId;
-        private ReturnURLString returnURL;
+        private ReturnURLString srcURL;
 
         public String getLsid() {return lsid;}
         public void setLsid(String lsid) {this.lsid = lsid;}
         public int getDatasetId() {return datasetId;}
         public void setDatasetId(int datasetId) {this.datasetId = datasetId;}
+
+        public ReturnURLString getSrcURL()
+        {
+            return srcURL;
+        }
+
+        public void setSrcURL(ReturnURLString srcURL)
+        {
+            this.srcURL = srcURL;
+        }
     }
 
     public static class DatasetAuditHistoryForm
