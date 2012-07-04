@@ -175,6 +175,7 @@ public class CrosstabView extends QueryView
         for (ColumnInfo cinfo : rowDimCols.values())
             displayColumns.add(cinfo.getRenderer());
 
+        // CONSIDER: Make a single call to QueryService.get().getColumns() so AliasManager can ensure aliases won't collide.
         for (Map.Entry<CrosstabMember, List<FieldKey>> entry : measureFieldKeysByMember.entrySet())
         {
             Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(table, entry.getValue());
