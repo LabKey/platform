@@ -27,14 +27,11 @@ import org.labkey.api.data.TableInfo;
  */
 public class IssuesSchema
 {
-    private static IssuesSchema instance = null;
+    private static final IssuesSchema instance = new IssuesSchema();
     private static final String SCHEMA_NAME = "issues";
 
     public static IssuesSchema getInstance()
     {
-        if (null == instance)
-            instance = new IssuesSchema();
-
         return instance;
     }
 

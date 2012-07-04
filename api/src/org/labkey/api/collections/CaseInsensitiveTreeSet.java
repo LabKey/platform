@@ -16,7 +16,6 @@
 
 package org.labkey.api.collections;
 
-import java.util.TreeMap;
 import java.util.TreeSet;
 
 /*

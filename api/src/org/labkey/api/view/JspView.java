@@ -74,11 +74,11 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
         _path = page;
         _page = JspLoader.createPage((String)null, page);
 
-        if(_page instanceof JspBase)
-            addClientDependencies((Set)((JspBase)_page).getClientDependencies());
+        if (_page instanceof JspBase)
+            addClientDependencies(((JspBase)_page).getClientDependencies());
     }
 
-    public JspView(String page, ModelClass model, BindException errors)
+    public JspView(String page, @Nullable ModelClass model, BindException errors)
     {
         this(page, model);
         _errors = errors;
@@ -92,7 +92,7 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
         _page = JspLoader.createPage(packageClass, jspName);
 
         if(_page instanceof JspBase)
-            addClientDependencies((Set)((JspBase)_page).getClientDependencies());
+            addClientDependencies(((JspBase)_page).getClientDependencies());
     }
 
 

@@ -16,6 +16,7 @@
 
 package org.labkey.api.jsp;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
@@ -217,7 +218,7 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return PageFlowUtil.textLink(text, url, onClickScript, id);
     }
 
-    public String textLink(String text, String href, String onClickScript, String id, Map<String, String> props)
+    public String textLink(String text, String href, String onClickScript, @Nullable String id, Map<String, String> props)
     {
         return PageFlowUtil.textLink(text, href, onClickScript, id, props);
     }
