@@ -2262,7 +2262,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             ResultSet materialInputRS = null;
             try
             {
-                materialInputRS = Table.executeQuery(getExpSchema(), dataSQL, new Object[]{new Integer(runId)});
+                materialInputRS = Table.executeQuery(getExpSchema(), dataSQL, new Object[]{runId});
                 while (materialInputRS.next())
                 {
                     Integer appId = materialInputRS.getInt("TargetApplicationId");
@@ -2378,29 +2378,35 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             if (outputDataMap.keySet().size() > 0)
             {
-                String inClause = StringUtils.join(outputDataMap.keySet().iterator(), ", ");
-                dataSQL = "SELECT TargetApplicationId, DataId, PA.RunId "
-                        + " FROM " + getTinfoDataInput().getSelectName() + " D  "
-                        + " INNER JOIN " + getTinfoProtocolApplication().getSelectName() + " PA "
-                        + " ON D.TargetApplicationId = PA.RowId "
-                        + " WHERE DataId IN ( " + inClause + " ) "
-                        + " AND PA.RunId <> ? "
-                        + " ORDER BY TargetApplicationId, DataId ;";
-                ResultSet dataOutputRS = null;
-                try
+                List<Integer> dataIds = new ArrayList<Integer>(outputDataMap.keySet());
+                int batchSize = 200;
+                for (int i = 0; i < dataIds.size(); i += batchSize)
                 {
-                    dataOutputRS = Table.executeQuery(getExpSchema(), dataSQL, new Object[]{runId});
-                    while (dataOutputRS.next())
+                    List<Integer> subset = dataIds.subList(i, Math.min(dataIds.size(), i + batchSize));
+                    String inClause = StringUtils.join(subset, ", ");
+                    dataSQL = "SELECT TargetApplicationId, DataId, PA.RunId "
+                            + " FROM " + getTinfoDataInput().getSelectName() + " D  "
+                            + " INNER JOIN " + getTinfoProtocolApplication().getSelectName() + " PA "
+                            + " ON D.TargetApplicationId = PA.RowId "
+                            + " WHERE DataId IN ( " + inClause + " ) "
+                            + " AND PA.RunId <> ? "
+                            + " ORDER BY TargetApplicationId, DataId ;";
+                    ResultSet dataOutputRS = null;
+                    try
                     {
-                        int successorRunId = dataOutputRS.getInt("RunId");
-                        Integer datId = dataOutputRS.getInt("DataId");
-                        ExpDataImpl dat = outputDataMap.get(datId);
-                        dat.addSuccessorRunId(successorRunId);
+                        dataOutputRS = Table.executeQuery(getExpSchema(), dataSQL, new Object[]{runId});
+                        while (dataOutputRS.next())
+                        {
+                            int successorRunId = dataOutputRS.getInt("RunId");
+                            Integer datId = dataOutputRS.getInt("DataId");
+                            ExpDataImpl dat = outputDataMap.get(datId);
+                            dat.addSuccessorRunId(successorRunId);
+                        }
                     }
-                }
-                finally
-                {
-                    if (dataOutputRS != null) { try { dataOutputRS.close(); } catch (SQLException ignored) {} }
+                    finally
+                    {
+                        if (dataOutputRS != null) { try { dataOutputRS.close(); } catch (SQLException ignored) {} }
+                    }
                 }
             }
 
