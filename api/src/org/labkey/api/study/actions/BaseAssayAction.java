@@ -24,6 +24,7 @@ import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -94,7 +95,16 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
         if (idStrings == null)
             return ids;
         for (String rowIdStr : idStrings)
-            ids.add(Integer.parseInt(rowIdStr));
+        {
+            try
+            {
+                ids.add(Integer.parseInt(rowIdStr));
+            }
+            catch (NumberFormatException e)
+            {
+                throw new NotFoundException("Unable to parse selected RowId value: " + rowIdStr);
+            }
+        }
         return ids;
     }
 }

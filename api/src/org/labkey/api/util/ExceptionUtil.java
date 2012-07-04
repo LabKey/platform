@@ -390,6 +390,11 @@ public class ExceptionUtil
             {
                 return true;
             }
+            // Bug 15371
+            if (ex.getClass().equals(IOException.class) && ex.getMessage() != null && ex.getMessage().contains("disconnected client"))
+            {
+                return true;
+            }
 
             // Recurse to see if the root exception is a client abort exception
             if (ex.getCause() != ex)

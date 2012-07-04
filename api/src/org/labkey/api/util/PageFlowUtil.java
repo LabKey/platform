@@ -1432,7 +1432,7 @@ public class PageFlowUtil
         return textLink(text, href, onClickScript, id, Collections.<String, String>emptyMap());
     }
 
-    public static String textLink(String text, ActionURL url, String onClickScript, String id)
+    public static String textLink(String text, ActionURL url, @Nullable String onClickScript, @Nullable String id)
     {
         return textLink(text, url, onClickScript, id, Collections.<String, String>emptyMap());
     }
@@ -1453,7 +1453,7 @@ public class PageFlowUtil
                 ">" + filter(text) + "</a>";
     }
 
-    public static String textLink(String text, ActionURL url, String onClickScript, String id, Map<String, String> properties)
+    public static String textLink(String text, ActionURL url, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
     {
         String additions = "";
 
