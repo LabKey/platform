@@ -40,6 +40,8 @@ public interface ExpDataTable extends ExpTable<ExpDataTable.Column>
         ContentLink,
         ViewFileLink,
         Thumbnail,
+        FileSize,
+        FileExists
     }
 
     void setExperiment(ExpExperiment experiment);
