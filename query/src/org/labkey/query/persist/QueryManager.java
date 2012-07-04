@@ -524,7 +524,7 @@ public class QueryManager
 
         for (ColumnInfo col : columns)
         {
-            queryErrors.addAll(validateColumn(col, user, container));
+            queryErrors.addAll(validateColumn(col, user, container, table));
         }
 
         return queryErrors;
@@ -533,12 +533,17 @@ public class QueryManager
     /**
      * Experimental.  See validateQueryMetadata()
      */
-    public Set<String> validateColumn(ColumnInfo col, User user, Container container)
+    public Set<String> validateColumn(ColumnInfo col, User user, Container container, @Nullable TableInfo parentTable)
     {
         Set<String> queryErrors = new HashSet<String>();
-        String errorBase = "for column '" + col.getName() + "' in " + col.getParentTable().getSchema() + "." + col.getParentTable().getName() + ": ";
+        if(parentTable == null)
+            parentTable = col.getParentTable();
 
-        queryErrors.addAll(validateFk(col, user, container));
+        String publicSchema = col.getParentTable().getPublicSchemaName() != null ? col.getParentTable().getPublicSchemaName() : col.getParentTable().getSchema().toString();
+        String publicQuery = col.getParentTable().getPublicName() != null ? col.getParentTable().getPublicName() : col.getParentTable().getName();
+        String errorBase = "for column '" + col.getFieldKey() + "' in " + publicSchema + "." + publicQuery + ": ";
+
+        queryErrors.addAll(validateFk(col, user, container, parentTable));
 
         List<String> specialCols = new ArrayList<String>();
         specialCols.add("container");
@@ -592,10 +597,12 @@ public class QueryManager
     /**
      * Experimental.  See validateQueryMetadata()
      */
-    public Set<String> validateFk(ColumnInfo col, User user, Container container)
+    public Set<String> validateFk(ColumnInfo col, User user, Container container, TableInfo parentTable)
     {
         Set<String> queryErrors = new HashSet<String>();
-        String errorBase = "for column '" + col.getName() + "' in " + col.getParentTable().getSchema() + "." + col.getParentTable().getName() + ": ";
+        String publicSchema = col.getParentTable().getPublicSchemaName() != null ? col.getParentTable().getPublicSchemaName() : col.getParentTable().getSchema().toString();
+        String publicQuery = col.getParentTable().getPublicName() != null ? col.getParentTable().getPublicName() : col.getParentTable().getName();
+        String errorBase = "for column '" + col.getName() + "' in " + publicSchema + "." + publicQuery + ": ";
         if (col.getFk() == null)
             return queryErrors;
 
