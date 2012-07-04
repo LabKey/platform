@@ -1225,7 +1225,7 @@ in the table tag.  They are necessary so that the borders take precedence correc
 /* Used for the shaded alternate columns (for pivot queries) */
 .labkey-alternate-col td, .labkey-alternate-col th, tr.labkey-alternate-col, td.labkey-alternate-col, th.labkey-alternate-col
 {
-    background: #FAFAFA;
+    background: #F6F6F6;
 }
 
 /* Used for the shaded alternate rows and alternate columns (for pivot queries) */

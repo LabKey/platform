@@ -830,7 +830,7 @@ public class QueryServiceImpl extends QueryService
                     ret.setURL(url);
             }
 
-            if (ret != null && !AliasManager.isLegalName(ret.getName()))
+            if (ret != null && !AliasManager.isLegalName(ret.getName()) && !ret.isAliasSet())
                 ret = new QAliasedColumn(ret.getName(), manager.decideAlias(key.toString()), ret);
 
             return ret;

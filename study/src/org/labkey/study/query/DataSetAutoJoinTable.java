@@ -197,7 +197,7 @@ public class DataSetAutoJoinTable extends VirtualTable
 
     private DataSetForeignKey createParticipantSequenceNumFK(DataSetDefinition dsd)
     {
-        assert !dsd.isDemographicData() && dsd.getKeyPropertyName() == null;
+        assert !dsd.isDemographicData() && (dsd.getKeyPropertyName() == null || dsd.isAssayData());
         assert !_source.isDemographicData();
 
         DataSetForeignKey fk = new DataSetForeignKey(dsd);
