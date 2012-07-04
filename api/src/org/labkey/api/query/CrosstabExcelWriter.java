@@ -92,8 +92,11 @@ public class CrosstabExcelWriter extends ExcelWriter
                 cell.setCellStyle(getBoldFormat());
                 cell.setCellValue(currentMember.getCaption());
                 column += memberColumns.size();
+                if (column >= _docType.getMaxColumns())
+                {
+                    break;
+                }
             }
-
         }
 
         incrementRow();

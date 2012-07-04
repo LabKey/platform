@@ -16,8 +16,10 @@
 
 package org.labkey.api.data;
 
+import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JRuntimeException;
+import org.apache.poi.ss.SpreadsheetVersion;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
@@ -29,6 +31,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.streaming.SXSSFRow;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.query.FieldKey;
@@ -101,6 +104,12 @@ public class ExcelWriter
                 // Return one less than the Excel max since we'll generally be including at least one header row
                 return 65535;
             }
+
+            @Override
+            public int getMaxColumns()
+            {
+                return HSSFCell.LAST_COLUMN_NUMBER + 1;
+            }
         },
         xlsx
         {
@@ -124,19 +133,26 @@ public class ExcelWriter
                 // Return one less than the Excel max since we'll generally be including at least one header row
                 return 1048575;
             }
+
+            @Override
+            public int getMaxColumns()
+            {
+                return SpreadsheetVersion.EXCEL2007.getLastColumnIndex() + 1;
+            }
         };
 
         public abstract Workbook createWorkbook();
         public abstract String getMimeType();
         /** @return the maximum number of rows to SELECT, which is one less than the document's maximum */
         public abstract int getMaxRows();
+        public abstract int getMaxColumns();
     }
 
     public static final int MAX_ROWS = 65535;
 
     protected Results _rs;
 
-    private final ExcelDocumentType _docType;
+    protected final ExcelDocumentType _docType;
 
     private String _sheetName;
     private String _footer;
@@ -453,6 +469,11 @@ public class ExcelWriter
         {
             if (column.isVisible(ctx))
                 visibleColumns.add(column);
+
+            if (visibleColumns.size() >= _docType.getMaxColumns())
+            {
+                return visibleColumns;
+            }
         }
 
         return visibleColumns;
