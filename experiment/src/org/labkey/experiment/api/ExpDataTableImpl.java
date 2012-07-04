@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.apache.commons.io.FileUtils;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -85,6 +86,8 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         addColumn(Column.SourceProtocolApplication).setHidden(true);
         addColumn(Column.Protocol).setHidden(true);
         addContainerColumn(Column.Folder, null);
+        addColumn(Column.FileExists);
+        addColumn(Column.FileSize);
 
         List<FieldKey> defaultCols = new ArrayList<FieldKey>();
         defaultCols.add(FieldKey.fromParts(Column.Name));
@@ -216,6 +219,74 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
                     }
                 });
                 result.setDescription("A popup thumbnail of the file if it is an image");
+                return result;
+            }
+            case FileSize:
+            {
+                ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                result.setDisplayColumnFactory(new DisplayColumnFactory()
+                {
+                    public DisplayColumn createRenderer(ColumnInfo colInfo)
+                    {
+                        return new ExpDataFileColumn(colInfo)
+                        {
+                            @Override
+                            protected void renderData(Writer out, ExpData data) throws IOException
+                            {
+                                String val = ((String)getJsonValue(data));
+                                if (val != null)
+                                    out.write(val);
+                            }
+
+                            @Override
+                            public Object getJsonValue(ExpData data)
+                            {
+                                if (data == null || data.getFile() == null)
+                                    return "";
+                                else if (!data.getFile().exists())
+                                    return "File Not Found";
+                                else
+                                {
+                                    long size = data.getFile().length();
+                                    return FileUtils.byteCountToDisplaySize(size);
+                                }
+                            }
+                        };
+                    }
+                });
+                result.setUserEditable(false);
+                result.setShownInUpdateView(false);
+                result.setShownInInsertView(false);
+
+                return result;
+            }
+            case FileExists:
+            {
+                ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                result.setDisplayColumnFactory(new DisplayColumnFactory()
+                {
+                    public DisplayColumn createRenderer(ColumnInfo colInfo)
+                    {
+                        return new ExpDataFileColumn(colInfo)
+                        {
+                            @Override
+                            protected void renderData(Writer out, ExpData data) throws IOException
+                            {
+                                Boolean val = (Boolean)getJsonValue(data);
+                                out.write(val.toString());
+                            }
+
+                            @Override
+                            protected Object getJsonValue(ExpData data)
+                            {
+                                return !(data == null || data.getFile() == null || !data.getFile().exists());
+                            }
+                        };
+                    }
+                });
+                result.setUserEditable(false);
+                result.setShownInUpdateView(false);
+                result.setShownInInsertView(false);
                 return result;
             }
             default:

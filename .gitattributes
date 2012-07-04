@@ -1047,6 +1047,7 @@ experiment/src/org/labkey/experiment/ConfirmDeleteView.java -text
 experiment/src/org/labkey/experiment/CustomProperties.jsp -text
 experiment/src/org/labkey/experiment/CustomPropertiesView.java -text
 experiment/src/org/labkey/experiment/CustomPropertyRenderer.java -text
+experiment/src/org/labkey/experiment/DataFileSizeDisplayColumn.java -text
 experiment/src/org/labkey/experiment/DataFileURLDisplayColumn.java -text
 experiment/src/org/labkey/experiment/DataURLRelativizer.java -text
 experiment/src/org/labkey/experiment/DefaultCustomPropertyRenderer.java -text
@@ -1090,6 +1091,7 @@ experiment/src/org/labkey/experiment/api/Data.java -text
 experiment/src/org/labkey/experiment/api/DataInput.java -text
 experiment/src/org/labkey/experiment/api/DataLinkColumn.java -text
 experiment/src/org/labkey/experiment/api/ExpChildObjectImpl.java -text
+experiment/src/org/labkey/experiment/api/ExpDataFileColumn.java -text
 experiment/src/org/labkey/experiment/api/ExpDataImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpDataInputTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpDataRunInputImpl.java -text

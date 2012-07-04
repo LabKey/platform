@@ -1353,6 +1353,7 @@ public class ExperimentController extends SpringActionController
             dr.addColumns(ExperimentServiceImpl.get().getTinfoData().getUserEditableColumns());
             dr.removeColumns("DataFileUrl", "RowId", "RunId", "LSID", "CpasType", "SourceApplicationId");
             dr.addDisplayColumn(new DataFileURLDisplayColumn(_data));
+            dr.addDisplayColumn(new DataFileSizeDisplayColumn(_data, "File Size"));
             dr.addDisplayColumn(new ExperimentRunDisplayColumn(run, "Source Experiment Run"));
             dr.addDisplayColumn(new ProtocolDisplayColumn(sourceProtocol, "Source Protocol"));
             dr.addDisplayColumn(new ProtocolApplicationDisplayColumn(sourceProtocolApplication, "Source Protocol Application"));
