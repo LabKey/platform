@@ -692,8 +692,6 @@ public class Query
                 row[c++] = "" + TestContext.get().getUser().getUserId();
                 row[c++] = now;
             }
-
-//            for (String[] row : data) System.err.println(StringUtils.join(row,"\t")); System.err.flush();
         }
 
         public String[][] getFirstNLines(int n) throws IOException

@@ -26,8 +26,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.junit.Assert;
-import org.junit.Test;
 import org.labkey.api.action.AjaxCompletionAction;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
@@ -117,6 +115,8 @@ import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
+import org.labkey.issue.model.KeywordManager;
+import org.labkey.issue.model.KeywordManager.Keyword;
 import org.labkey.issue.query.IssuesQuerySchema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -148,33 +148,7 @@ import java.util.StringTokenizer;
 public class IssuesController extends SpringActionController
 {
     private static final Logger _log = Logger.getLogger(IssuesController.class);
-
     private static final String helpTopic = "issues";
-
-    // keywords enum
-    public static final int ISSUE_NONE = 0;
-    public static final int ISSUE_AREA = 1;
-    public static final int ISSUE_TYPE = 2;
-    public static final int ISSUE_MILESTONE = 3;
-    public static final int ISSUE_STRING1 = 4;
-    public static final int ISSUE_STRING2 = 5;
-    public static final int ISSUE_PRIORITY = 6;
-    public static final int ISSUE_RESOLUTION = 7;
-    public static final int ISSUE_STRING3 = 8;
-    public static final int ISSUE_STRING4 = 9;
-    public static final int ISSUE_STRING5 = 10;
-
-    public static final String TYPE_STRING = "type";
-    public static final String AREA_STRING = "area";
-    public static final String PRIORITY_STRING = "priority";
-    public static final String MILESTONE_STRING = "milestone";
-    public static final String RESOLUTION_STRING = "resolution";
-    public static final String STRING_1_STRING = "string1";
-    public static final String STRING_2_STRING = "string2";
-    public static final String STRING_3_STRING = "string3";
-    public static final String STRING_4_STRING = "string4";
-    public static final String STRING_5_STRING = "string5";
-
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(IssuesController.class);
 
     public IssuesController() throws Exception
@@ -396,13 +370,13 @@ public class IssuesController extends SpringActionController
             int issueId = form.getIssueId();
             _issue = getIssue(issueId, true);
 
-            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getViewContext().getContainer());
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
             if (null == _issue)
             {
                 throw new NotFoundException("Unable to find " + names.singularName + " " + form.getIssueId());
             }
 
-            IssuePage page = new IssuePage();
+            IssuePage page = new IssuePage(getContainer(), getUser());
             page.setPrint(isPrint());
             page.setIssue(_issue);
             page.setCustomColumnConfiguration(getCustomColumnConfiguration());
@@ -469,7 +443,7 @@ public class IssuesController extends SpringActionController
                 }
             }
 
-            IssuePage page = new IssuePage();
+            IssuePage page = new IssuePage(getContainer(), getUser());
             JspView v = new JspView<IssuePage>(IssuesController.class, "detailList.jsp", page);
 
             page.setIssueIds(issueIds);
@@ -530,7 +504,7 @@ public class IssuesController extends SpringActionController
                 setNewIssueDefaults(_issue);
             }
 
-            IssuePage page = new IssuePage();
+            IssuePage page = new IssuePage(getContainer(), getUser());
             JspView v = new JspView<IssuePage>(IssuesController.class, "updateView.jsp", page);
 
             IssueManager.CustomColumnConfiguration ccc = getCustomColumnConfiguration();
@@ -634,37 +608,24 @@ public class IssuesController extends SpringActionController
 
     private Issue setNewIssueDefaults(Issue issue) throws SQLException, ServletException
     {
-        Map<Integer, HString> defaults = IssueManager.getAllDefaults(getContainer());
+        Map<ColumnType, HString> defaults = IssueManager.getAllDefaults(getContainer());
 
-        issue.setArea(defaults.get(ISSUE_AREA));
-        issue.setType(defaults.get(ISSUE_TYPE));
-        issue.setMilestone(defaults.get(ISSUE_MILESTONE));
+        ColumnType.AREA.setDefaultValue(issue, defaults);
+        ColumnType.TYPE.setDefaultValue(issue, defaults);
+        ColumnType.MILESTONE.setDefaultValue(issue, defaults);
+        ColumnType.PRIORITY.setDefaultValue(issue, defaults);
+
         IssueManager.CustomColumnConfiguration config = IssueManager.getCustomColumnConfiguration(getContainer());
+
         // For each of the string configurable columns,
         // only set the default if the column is currently configured as a pick list
-        if (config.getPickListColumns().contains("string1"))
+        for (ColumnType stringColumn : ColumnType.getCustomStringColumns())
         {
-            issue.setString1(defaults.get(ISSUE_STRING1));
+            if (config.getPickListColumns().contains(stringColumn.getColumnName()))
+            {
+                stringColumn.setDefaultValue(issue, defaults);
+            }
         }
-        if (config.getPickListColumns().contains("string2"))
-        {
-            issue.setString2(defaults.get(ISSUE_STRING2));
-        }
-        if (config.getPickListColumns().contains("string3"))
-        {
-            issue.setString3(defaults.get(ISSUE_STRING3));
-        }
-        if (config.getPickListColumns().contains("string4"))
-        {
-            issue.setString4(defaults.get(ISSUE_STRING4));
-        }
-        if (config.getPickListColumns().contains("string5"))
-        {
-            issue.setString5(defaults.get(ISSUE_STRING5));
-        }
-
-        HString priority = defaults.get(ISSUE_PRIORITY);
-        issue.setPriority(null != priority ? priority.parseInt() : 3);
 
         return issue;
     }
@@ -863,7 +824,7 @@ public class IssuesController extends SpringActionController
             User user = getUser();
             requiresUpdatePermission(user, _issue);
 
-            IssuePage page = new IssuePage();
+            IssuePage page = new IssuePage(getContainer(), user);
             JspView v = new JspView<IssuePage>("/org/labkey/issue/updateView.jsp", page);
 
             IssueManager.CustomColumnConfiguration ccc = getCustomColumnConfiguration();
@@ -904,7 +865,6 @@ public class IssuesController extends SpringActionController
         for (String columnName : ccc.getColumnCaptions().keySet())
             editable.add(columnName);
 
-        //if (!"insert".equals(action))
         editable.add("notifyList");
 
         if (ResolveAction.class.equals(action))
@@ -937,9 +897,9 @@ public class IssuesController extends SpringActionController
 
             if (_issue.getResolution().isEmpty())
             {
-                Map<Integer, HString> defaults = IssueManager.getAllDefaults(getContainer());
+                Map<ColumnType, HString> defaults = IssueManager.getAllDefaults(getContainer());
 
-                HString resolution = defaults.get(ISSUE_RESOLUTION);
+                HString resolution = defaults.get(ColumnType.RESOLUTION);
 
                 if (resolution != null && !resolution.isEmpty() && form.get("resolution") == null)
                 {
@@ -951,7 +911,7 @@ public class IssuesController extends SpringActionController
                 }
             }
 
-            IssuePage page = new IssuePage();
+            IssuePage page = new IssuePage(getContainer(), user);
             JspView v = new JspView<IssuePage>(IssuesController.class, "updateView.jsp", page);
 
             IssueManager.CustomColumnConfiguration ccc = getCustomColumnConfiguration();
@@ -994,7 +954,7 @@ public class IssuesController extends SpringActionController
 
             _issue.close(user);
 
-            IssuePage page = new IssuePage();
+            IssuePage page = new IssuePage(getContainer(), user);
             JspView v = new JspView<IssuePage>(IssuesController.class, "updateView.jsp",page);
 
             IssueManager.CustomColumnConfiguration ccc = getCustomColumnConfiguration();
@@ -1039,7 +999,7 @@ public class IssuesController extends SpringActionController
             _issue.beforeReOpen(true);
             _issue.open(getContainer(), user);
 
-            IssuePage page = new IssuePage();
+            IssuePage page = new IssuePage(getContainer(), user);
             JspView v = new JspView<IssuePage>(IssuesController.class, "updateView.jsp",page);
 
             IssueManager.CustomColumnConfiguration ccc = getCustomColumnConfiguration();
@@ -1339,7 +1299,7 @@ public class IssuesController extends SpringActionController
     }
 
 
-    public static final String REQUIRED_FIELDS_COLUMNS = "Title,AssignedTo,Type,Area,Priority,Milestone,NotifyList";
+    public static final String REQUIRED_FIELDS_COLUMNS = "title,assignedto,type,area,priority,milestone,notifylist";
     public static final String DEFAULT_REQUIRED_FIELDS = "title;assignedto";
 
 
@@ -1349,15 +1309,15 @@ public class IssuesController extends SpringActionController
         public ModelAndView getView(AdminForm form, boolean reshow, BindException errors) throws Exception
         {
             // TODO: This hack ensures that priority & resolution option defaults get populated if first reference is the admin page.  Fix this.
-            IssuePage page = new IssuePage()
-            {
-                public void _jspService(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws ServletException, IOException
-                {
-                }
-            };
-            page.getPriorityOptions(getContainer());
-            page.getResolutionOptions(getContainer());
-            // </HACK>
+//            IssuePage page = new IssuePage(getContainer(), getUser())
+//            {
+//                public void _jspService(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws ServletException, IOException
+//                {
+//                }
+//            };
+//            page.getPriorityOptions();
+//            page.getResolutionOptions();
+//            // </HACK>
 
             return new AdminView(getContainer(), getCustomColumnConfiguration(), errors);
         }
@@ -1409,18 +1369,25 @@ public class IssuesController extends SpringActionController
     @RequiresPermissionClass(AdminPermission.class)
     public class AddKeywordAction extends AdminAction
     {
+        private ColumnType _type;
+
         @Override
         public void validateCommand(AdminForm form, Errors errors)
         {
-            int type = form.getType();
+            _type = ColumnType.forOrdinal(form.getType());
             HString keyword = form.getKeyword();
+
+            if (null == _type)
+            {
+                errors.reject(ERROR_MSG, "Unknown keyword type");
+            }
             if (null == keyword || StringUtils.isBlank(keyword.getSource()))
             {
                 errors.reject(ERROR_MSG, "Enter a value in the text box before clicking any of the \"Add <Keyword>\" buttons");
             }
             else
             {
-                if (ISSUE_PRIORITY == type)
+                if (ColumnType.PRIORITY == _type)
                 {
                     try
                     {
@@ -1433,11 +1400,12 @@ public class IssuesController extends SpringActionController
                 }
                 else
                 {
-                    if(keyword.length() > 200)
-                            errors.reject(ERROR_MSG, "The keyword is too long, it must be under 200 characters.");
+                    if (keyword.length() > 200)
+                        errors.reject(ERROR_MSG, "The keyword is too long, it must be under 200 characters.");
 
-                    IssueManager.Keyword[] keywords = IssueManager.getKeywords(getContainer().getId(), type);
-                    for (IssueManager.Keyword word : keywords)
+                    Collection<Keyword> keywords = KeywordManager.getKeywords(getContainer(), _type);
+
+                    for (Keyword word : keywords)
                     {
                         if (word.getKeyword().compareToIgnoreCase(keyword)== 0)
                             errors.reject(ERROR_MSG, "\"" + word.getKeyword() + "\" already exists");
@@ -1450,11 +1418,11 @@ public class IssuesController extends SpringActionController
         {
             try
             {
-                IssueManager.addKeyword(getContainer(), form.getType(), form.getKeyword());
+                KeywordManager.addKeyword(getContainer(), _type, form.getKeyword());
             }
-            catch (SQLException e)
+            catch (Exception e)
             {
-                if (SqlDialect.isConstraintException(e))
+                if (SqlDialect.isConstraintException(null))
                 {
                     errors.reject(ERROR_MSG, "\"" + form.getKeyword() + "\" already exists");
                     return false;
@@ -1472,7 +1440,7 @@ public class IssuesController extends SpringActionController
     {
         public boolean handlePost(AdminForm form, BindException errors) throws Exception
         {
-            IssueManager.deleteKeyword(getContainer(), form.getType(), form.getKeyword());
+            KeywordManager.deleteKeyword(getContainer(), ColumnType.forOrdinal(form.getType()), form.getKeyword());
             return true;
         }
     }
@@ -1482,7 +1450,7 @@ public class IssuesController extends SpringActionController
     {
         public boolean handlePost(AdminForm form, BindException errors) throws Exception
         {
-            IssueManager.setKeywordDefault(getContainer(), form.getType(), form.getKeyword());
+            KeywordManager.setKeywordDefault(getContainer(), ColumnType.forOrdinal(form.getType()), form.getKeyword());
             return true;
         }
     }
@@ -1492,7 +1460,7 @@ public class IssuesController extends SpringActionController
     {
         public boolean handlePost(AdminForm form, BindException errors) throws Exception
         {
-            IssueManager.clearKeywordDefault(getContainer(), form.getType());
+            KeywordManager.clearKeywordDefault(getContainer(), ColumnType.forOrdinal(form.getType()));
             return true;
         }
     }
@@ -1656,29 +1624,18 @@ public class IssuesController extends SpringActionController
                  * selected (in the new picklist, but not old), then we remove it from the required fields. This way you
                  * don't have a required field with no keywords.
                  */
-               if (required.toString().equalsIgnoreCase(STRING_1_STRING) && IssueManager.getKeywords(getContainer().getId(), ISSUE_STRING1).length < 1 && newPickLists.contains(STRING_1_STRING) && !oldPickLists.contains(STRING_1_STRING))
+                ColumnType type = ColumnType.forName(required.toString());
+
+                if (null != type && type.isCustomString() && KeywordManager.getKeywords(getContainer(), type).isEmpty())
                 {
-                        newRequiredFields.remove(new HString(STRING_1_STRING));
-                }
-                else if (required.toString().equalsIgnoreCase(STRING_2_STRING) && IssueManager.getKeywords(getContainer().getId(), ISSUE_STRING2).length < 1 && newPickLists.contains(STRING_2_STRING)&& !oldPickLists.contains(STRING_2_STRING))
-                {
-                        newRequiredFields.remove(new HString(STRING_2_STRING));
-                }
-                else if (required.toString().equalsIgnoreCase(STRING_3_STRING) && IssueManager.getKeywords(getContainer().getId(), ISSUE_STRING3).length < 1 && newPickLists.contains(STRING_3_STRING) && !oldPickLists.contains(STRING_3_STRING))
-                {
-                        newRequiredFields.remove(new HString(STRING_3_STRING));
-                }
-                else if (required.toString().equalsIgnoreCase(STRING_4_STRING) && IssueManager.getKeywords(getContainer().getId(), ISSUE_STRING4).length < 1 && newPickLists.contains(STRING_4_STRING) && !oldPickLists.contains(STRING_4_STRING))
-                {
-                        newRequiredFields.remove(new HString(STRING_4_STRING));
-                }
-                else if (required.toString().equalsIgnoreCase(STRING_5_STRING) && IssueManager.getKeywords(getContainer().getId(), ISSUE_STRING5).length < 1 && newPickLists.contains(STRING_5_STRING) && !oldPickLists.contains(STRING_5_STRING))
-                {
-                        newRequiredFields.remove(new HString(STRING_5_STRING));
+                    String name = type.getColumnName();
+
+                    if (newPickLists.contains(name) && !oldPickLists.contains(name))
+                        newRequiredFields.remove(new HString(name));
                 }
             }
 
-            form.setRequiredFields((HString[])newRequiredFields.toArray(new HString[newRequiredFields.size()]));
+            form.setRequiredFields(newRequiredFields.toArray(new HString[newRequiredFields.size()]));
         }
 
         public boolean handlePost(ConfigureIssuesForm form, BindException errors) throws Exception
@@ -2234,18 +2191,18 @@ public class IssuesController extends SpringActionController
             super("/org/labkey/issue/admin.jsp", null, errors);
 
             KeywordAdminView keywordView = new KeywordAdminView(c, ccc);
-            keywordView.addKeyword("Type", ISSUE_TYPE);
-            keywordView.addKeyword("Area", ISSUE_AREA);
-            keywordView.addKeyword("Priority", ISSUE_PRIORITY);
-            keywordView.addKeyword("Milestone", ISSUE_MILESTONE);
-            keywordView.addKeyword("Resolution", ISSUE_RESOLUTION);
-            keywordView.addCustomColumn("string1", ISSUE_STRING1);
-            keywordView.addCustomColumn("string2", ISSUE_STRING2);
-            keywordView.addCustomColumn("string3", ISSUE_STRING3);
-            keywordView.addCustomColumn("string4", ISSUE_STRING4);
-            keywordView.addCustomColumn("string5", ISSUE_STRING5);
+            keywordView.addKeyword(ColumnType.TYPE);
+            keywordView.addKeyword(ColumnType.AREA);
+            keywordView.addKeyword(ColumnType.PRIORITY);
+            keywordView.addKeyword(ColumnType.MILESTONE);
+            keywordView.addKeyword(ColumnType.RESOLUTION);
+            keywordView.addKeyword(ColumnType.STRING1);
+            keywordView.addKeyword(ColumnType.STRING2);
+            keywordView.addKeyword(ColumnType.STRING3);
+            keywordView.addKeyword(ColumnType.STRING4);
+            keywordView.addKeyword(ColumnType.STRING5);
 
-            List<String> columnNames = new ArrayList<String>();
+            Set<String> columnNames = new LinkedHashSet<String>();
             columnNames.addAll(Arrays.asList(REQUIRED_FIELDS_COLUMNS.split(",")));
             columnNames.addAll(IssueManager.getCustomColumnConfiguration(c).getColumnCaptions().keySet());
             List<ColumnInfo> cols = IssuesSchema.getInstance().getTableInfoIssues().getColumns(columnNames.toArray(new String[columnNames.size()]));
@@ -2303,23 +2260,18 @@ public class IssuesController extends SpringActionController
             _ccc = ccc;
         }
 
-        // Add keyword admin for custom columns with column picker enabled
-        private void addCustomColumn(String tableColumn, int type)
+        private void addKeyword(ColumnType type)
         {
-            if (_ccc.getPickListColumns().contains(tableColumn))
-            {
-                String caption = _ccc.getColumnCaptions().get(tableColumn);
-                _keywordPickers.add(new KeywordPicker(_c, caption, type));
-            }
-        }
+            String columnName = type.getColumnName();
 
-        private void addKeyword(String name, int type)
-        {
-            String caption = _ccc.getColumnCaptions().get(name);
+            if (type.isCustomString() && !_ccc.getPickListColumns().contains(columnName))
+                return;
+
+            String caption = _ccc.getColumnCaptions().get(type.getColumnName());
+
             if (caption == null)
-            {
-                caption = name;
-            }
+                caption = StringUtils.capitalize(type.getColumnName());
+
             _keywordPickers.add(new KeywordPicker(_c, caption, type));
         }
     }
@@ -2329,15 +2281,15 @@ public class IssuesController extends SpringActionController
     {
         public String name;
         public String plural;
-        public int type;
-        public IssueManager.Keyword[] keywords;
+        public ColumnType type;
+        public Collection<Keyword> keywords;
 
-        KeywordPicker(Container c, String name, int type)
+        KeywordPicker(Container c, String name, ColumnType type)
         {
             this.name = name;
             this.plural = name.endsWith("y") ? name.substring(0, name.length() - 1) + "ies" : name + "s";
             this.type = type;
-            this.keywords = IssueManager.getKeywords(c.getId(), type);
+            this.keywords = KeywordManager.getKeywords(c, type);
         }
     }
 

@@ -291,7 +291,6 @@ public class ListManager implements SearchService.DocumentProvider
                     map.put("Key", map.get("_key"));
 
                 final Object pk = map.get(list.getKeyName());
-                LOG.info("Indexing " + list.getName() + ": " + pk);
                 String documentId = getDocumentId(list, pk);
                 Map<String, Object> props = new HashMap<String, Object>();
                 props.put(SearchService.PROPERTY.categories.toString(), listCategory.toString());

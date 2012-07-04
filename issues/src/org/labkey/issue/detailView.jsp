@@ -25,13 +25,14 @@
 <%@ page import="org.labkey.api.view.ViewContext"%>
 <%@ page import="org.labkey.issue.IssuePage" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
+<%@ page import="org.labkey.issue.IssuesController.*" %>
 <%@ page import="org.labkey.issue.model.Issue" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
+<%@ page import="org.labkey.issue.ColumnType" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<IssuePage> me = (JspView<IssuePage>) HttpView.currentView();
     ViewContext context = me.getViewContext();
-    String contextPath = context.getContextPath();
     IssuePage bean = me.getModelBean();
     final Issue issue = bean.getIssue();
     final Container c = context.getContainer();
@@ -107,11 +108,11 @@
             }
             if (!issue.getDuplicates().isEmpty())
             {
-                %><tr><td class="labkey-form-label">Duplicates</td><td><%=bean.renderDuplicates(context, issue.getDuplicates())%></td></tr><%
+                %><tr><td class="labkey-form-label">Duplicates</td><td><%=bean.renderDuplicates(issue.getDuplicates())%></td></tr><%
             }
 %>
-            <%=bean.writeCustomColumn(c, new HString("int1"), HString.valueOf(issue.getInt1()), IssuesController.ISSUE_NONE, 10)%>
-            <%=bean.writeCustomColumn(c, new HString("int2"), HString.valueOf(issue.getInt2()), IssuesController.ISSUE_NONE, 10)%>
+            <%=bean.writeCustomColumn(ColumnType.INT1, 10)%>
+            <%=bean.writeCustomColumn(ColumnType.INT2, 10)%>
         </table></td>
         <td valign="top" width="33%"><table>
             <tr><td class="labkey-form-label">Closed</td><td nowrap="true"><%=bean.writeDate(issue.getClosed())%><%= issue.getClosedBy() != null ? " by " : "" %><%=h(issue.getClosedByName(user))%></td></tr>
@@ -119,13 +120,13 @@
             <%
                 if (hasUpdatePerms)
                 {
-                    %><tr><td class="labkey-form-label">Notify</td><td><%=bean.getNotifyList(c, issue)%></td></tr><%
+                    %><tr><td class="labkey-form-label">Notify</td><td><%=bean.getNotifyList()%></td></tr><%
             }
-            %><%=bean.writeCustomColumn(c, new HString("string1",false), issue.getString1(), IssuesController.ISSUE_STRING1, 30)%>
-            <%=bean.writeCustomColumn(c, new HString("string2",false), issue.getString2(), IssuesController.ISSUE_STRING2, 30)%>
-            <%=bean.writeCustomColumn(c, new HString("string3",false), issue.getString3(), IssuesController.ISSUE_STRING3, 30)%>
-            <%=bean.writeCustomColumn(c, new HString("string4",false), issue.getString4(), IssuesController.ISSUE_STRING4, 30)%>
-            <%=bean.writeCustomColumn(c, new HString("string5",false), issue.getString5(), IssuesController.ISSUE_STRING5, 30)%>
+            %><%=bean.writeCustomColumn(ColumnType.STRING1, 30)%>
+            <%=bean.writeCustomColumn(ColumnType.STRING2, 30)%>
+            <%=bean.writeCustomColumn(ColumnType.STRING3, 30)%>
+            <%=bean.writeCustomColumn(ColumnType.STRING4, 30)%>
+            <%=bean.writeCustomColumn(ColumnType.STRING5, 30)%>
         </table></td>
     </tr>
 </table>

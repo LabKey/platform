@@ -16,22 +16,25 @@
  */
 %>
 <%@ page import="org.labkey.api.admin.AdminUrls"%>
+<%@ page import="org.labkey.api.data.ColumnInfo" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.DataRegion" %>
+<%@ page import="org.labkey.api.data.Sort" %>
 <%@ page import="org.labkey.api.security.Group" %>
 <%@ page import="org.labkey.api.security.SecurityManager" %>
+<%@ page import="org.labkey.api.util.HString" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.issue.IssueUpdateEmailTemplate" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
+<%@ page import="static org.labkey.issue.IssuesController.*" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
+<%@ page import="org.labkey.issue.model.KeywordManager" %>
+<%@ page import="java.util.Arrays" %>
+<%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="java.util.Arrays" %>
-<%@ page import="org.labkey.api.data.ColumnInfo" %>
-<%@ page import="org.labkey.api.data.Sort" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.util.HString" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.data.DataRegion" %>
+<%@ page import="org.labkey.issue.ColumnType" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<IssuesController.AdminBean> me = (HttpView<IssuesController.AdminBean>) HttpView.currentView();
@@ -57,8 +60,8 @@
             <tr><td colspan=2 align=center><div class="labkey-form-label"><b>Required Fields</b></div></td></tr>
             <tr><td colspan=2>Select fields to be required when entering or updating <%=bean.getEntryTypeNames().getIndefiniteSingularArticle()%> <%=bean.getEntryTypeNames().singularName%>:</td></tr>
             <tr><td colspan=2>&nbsp;</td></tr>
-            <tr><td><input type="checkbox" name="requiredFields" <%=isRequired("comment", bean.getRequiredFields()) ? "checked " : ""%> value="comment">Comments (new issues only)</td>
-        <%
+            <tr>
+                <td><input type="checkbox" name="requiredFields" <%=isRequired("comment", bean.getRequiredFields()) ? "checked " : ""%>value="comment">Comments (new issues only)</td><%
             List<ColumnInfo> columns = bean.getColumns();
             for (int i = 0; i < columns.size(); i++)
             {
@@ -67,17 +70,17 @@
                 if (startNewRow)
                 {
         %>
-            <tr>
-        <%
+            <tr><%
+
                 }
         %>
-                <td><input type="checkbox" name="requiredFields" <%=isRequired(info.getName(), bean.getRequiredFields()) ? "checked " : ""%> <%=isPickList(info) && !hasKeywords(info) ? "disabled" : "" %> value="<%=info.getName()%>"><%=getCaption(info)%></td>
-        <%
+                <td><input type="checkbox" name="requiredFields" <%=isRequired(info.getName(), bean.getRequiredFields()) ? "checked " : ""%><%=isPickList(info) && !hasKeywords(info) ? "disabled " : "" %>value="<%=info.getName()%>"><%=h(getCaption(info))%></td><%
+
                 if (!startNewRow)
                 {
         %>
-            </tr>
-        <%
+            </tr><%
+
                 }
             }
         %>
@@ -171,7 +174,8 @@
 </form>
 
 <%!
-    public boolean isRequired(String name, HString requiredFields) {
+    public boolean isRequired(String name, HString requiredFields)
+    {
         if (requiredFields != null) {
             return requiredFields.indexOf(name.toLowerCase()) != -1;
         }
@@ -188,69 +192,30 @@
         return col.getLabel();
     }
 
-    public boolean hasKeywords(ColumnInfo col){
-        //IssueManager.getKeywords(getContainer().getId(), ISSUE_AREA).length < 1
+    public boolean hasKeywords(ColumnInfo col)
+    {
         Container c = HttpView.getRootContext().getContainer();
-        if (col.getColumnName().equalsIgnoreCase(IssuesController.STRING_1_STRING) && IssueManager.getKeywords(c.getId(), IssuesController.ISSUE_STRING1).length < 1)
-        {
-                return false;
-        }
-        else if (col.getColumnName().equalsIgnoreCase(IssuesController.STRING_2_STRING) && IssueManager.getKeywords(c.getId(), IssuesController.ISSUE_STRING2).length < 1)
-        {
-                return false;
-        }
-        else if (col.getColumnName().equalsIgnoreCase(IssuesController.STRING_3_STRING)&& IssueManager.getKeywords(c.getId(), IssuesController.ISSUE_STRING3).length < 1)
-        {
-                return false;
-        }
-        else if (col.getColumnName().equalsIgnoreCase(IssuesController.STRING_4_STRING)&& IssueManager.getKeywords(c.getId(), IssuesController.ISSUE_STRING4).length < 1)
-        {
-                return false;
-        }
-        else if (col.getColumnName().equalsIgnoreCase(IssuesController.STRING_5_STRING)&& IssueManager.getKeywords(c.getId(), IssuesController.ISSUE_STRING5).length < 1)
-        {
-                return false;
-        }
-        else if (col.getColumnName().equalsIgnoreCase(IssuesController.TYPE_STRING)&& IssueManager.getKeywords(c.getId(), IssuesController.ISSUE_TYPE).length < 1)
-        {
-                return false;
-        }
-        else if (col.getColumnName().equalsIgnoreCase(IssuesController.AREA_STRING)&& IssueManager.getKeywords(c.getId(), IssuesController.ISSUE_AREA).length < 1)
-        {
-                return false;
-        }
-        else if (col.getColumnName().equalsIgnoreCase(IssuesController.PRIORITY_STRING)&& IssueManager.getKeywords(c.getId(), IssuesController.ISSUE_PRIORITY).length < 1)
-        {
-                return false;
-        }
-        else if (col.getColumnName().equalsIgnoreCase(IssuesController.MILESTONE_STRING)&& IssueManager.getKeywords(c.getId(), IssuesController.ISSUE_MILESTONE).length < 1)
-        {
-                return false;
-        }
+        ColumnType type = ColumnType.forName(col.getColumnName());
 
-        return true;
+        return (null == type || KeywordManager.getKeywords(c, type).size() > 0);
     }
 
-    public boolean isPickList(ColumnInfo col){
+    public boolean isPickList(ColumnInfo col)
+    {
         final IssueManager.CustomColumnConfiguration ccc = IssueManager.getCustomColumnConfiguration(HttpView.getRootContext().getContainer());
         String name = col.getColumnName();
-        if (ccc.getPickListColumns().contains(col.getColumnName().toLowerCase()))
+
+        if (ccc.getPickListColumns().contains(name.toLowerCase()))
         {
             //If the column actually is a pick list return true.
             return true;
         }
-        else if(col.getColumnName().equalsIgnoreCase(IssuesController.TYPE_STRING) || col.getColumnName().equalsIgnoreCase(IssuesController.AREA_STRING)
-                || col.getColumnName().equalsIgnoreCase(IssuesController.PRIORITY_STRING) || col.getColumnName().equalsIgnoreCase(IssuesController.MILESTONE_STRING))
-        {
-            //If the column is Type, Area, Priority, or Milestone also return true
-            // this way if they don't have keywords they are also greyed out.
-            return true;
-        }
-        else
-        {
-            return false;
-        }
 
+        ColumnType type = ColumnType.forName(name);
+
+        // If the column is Type, Area, Priority, or Milestone also return true
+        // this way if they don't have keywords they are also greyed out.
+        return (null != type && type.isStandard());
     }
 %>
 <br>

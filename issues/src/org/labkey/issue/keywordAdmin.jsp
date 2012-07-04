@@ -17,12 +17,12 @@
 %>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.issue.IssuesController.KeywordPicker"%>
-<%@ page import="org.labkey.issue.model.IssueManager" %>
+<%@ page import="org.labkey.issue.IssuesController"%>
+<%@ page import="org.labkey.issue.IssuesController.KeywordPicker" %>
+<%@ page import="org.labkey.issue.model.KeywordManager.Keyword" %>
+<%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="java.util.HashMap" %>
-<%@ page import="org.labkey.issue.IssuesController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<List<KeywordPicker>> me = (HttpView<List<KeywordPicker>>) HttpView.currentView();
@@ -38,13 +38,14 @@
 <tr><%
     for (KeywordPicker kwp : keywordPickers)
     {
+        String formId = "form" + kwp.type.getColumnName();
 %>
-    <!--<%=kwp.plural%>-->
+    <!--<%=h(kwp.name)%>-->
     <td style="vertical-align:top">
-    <div class="labkey-form-label"><b><%=kwp.plural%></b></div>
-    <form id="form<%=kwp.plural%>" method="POST" action="<%=h(buildURL(IssuesController.DeleteKeywordAction.class))%>">
+    <div class="labkey-form-label"><b><%=h(kwp.plural)%></b></div>
+    <form id="<%=formId%>" method="POST" action="<%=h(buildURL(IssuesController.DeleteKeywordAction.class))%>">
 <%
-    if (kwp.keywords.length == 0)
+    if (kwp.keywords.isEmpty())
     {
         out.println("    <i>none set</i><br>");
     }
@@ -52,24 +53,24 @@
     {
         out.print("    <table>");
 
-        for (IssueManager.Keyword keyword : kwp.keywords)
+        for (Keyword keyword : kwp.keywords)
         {
             boolean selected = keyword.isDefault();
 %>
-        <tr><td><%=selected ? "<b>" + h(keyword.getKeyword()) + "</b>" : h(keyword.getKeyword())%></td><td><%=textLink("delete", "javascript:callAction('deleteKeyword', 'form" + kwp.plural + "', " + PageFlowUtil.jsString(keyword.getKeyword()) + ")","","",delete)%>&nbsp;<%
+        <tr><td><%=selected ? "<b>" + h(keyword.getKeyword()) + "</b>" : h(keyword.getKeyword())%></td><td><%=textLink("delete", "javascript:callAction('deleteKeyword', '" + formId + "', " + PageFlowUtil.jsString(keyword.getKeyword()) + ")", "", null, delete)%>&nbsp;<%
             if (selected)
             {
-                %><%=textLink("clear", "javascript:callAction('clearKeywordDefault','form" + kwp.plural + "', " + PageFlowUtil.jsString(keyword.getKeyword()) + ")", "", "", clear)%><%
+                %><%=textLink("clear", "javascript:callAction('clearKeywordDefault', '" + formId + "', " + PageFlowUtil.jsString(keyword.getKeyword()) + ")", "", null, clear)%><%
             }
             else
             {
-                %><%=textLink("set", "javascript:callAction('setKeywordDefault','form" + kwp.plural + "', " + PageFlowUtil.jsString(keyword.getKeyword()) + ")", "", "", set)%><%
+                %><%=textLink("set", "javascript:callAction('setKeywordDefault', '" + formId + "', " + PageFlowUtil.jsString(keyword.getKeyword()) + ")", "", null, set)%><%
             }%></td></tr><%
         }
 
         out.println("\n    </table>");
     }
-%>    <input type="hidden" name="keyword" value=""><input type="hidden" name="type" value="<%=kwp.type%>">
+%>    <input type="hidden" name="keyword" value=""><input type="hidden" name="type" value="<%=kwp.type.getOrdinal()%>">
     </form>
     </td>
 <%
@@ -82,10 +83,10 @@
     {
 %>
 <td align="center">
-    <form method="POST" name="add<%=kwp.name%>" action="<%=h(buildURL(IssuesController.AddKeywordAction.class))%>">
+    <form method="POST" name="add<%=kwp.type.getColumnName()%>" action="<%=h(buildURL(IssuesController.AddKeywordAction.class))%>">
     <input name="keyword" value=""><br>
         <%=generateSubmitButton("Add " + kwp.name)%><br>
-    <input type="hidden" name="type" value="<%=kwp.type%>">
+    <input type="hidden" name="type" value="<%=kwp.type.getOrdinal()%>">
     </form>
 </td><%
     }

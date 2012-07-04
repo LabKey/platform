@@ -16,22 +16,23 @@
  */
 %>
 
-<%@ page import="java.util.*"%>
 <%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.data.ContainerManager"%>
 <%@ page import="org.labkey.api.data.DataRegion"%>
-<%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.ViewContext"%>
+<%@ page import="org.labkey.api.data.DataRegionSelection"%>
+<%@ page import="org.labkey.api.security.User"%>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission"%>
+<%@ page import="org.labkey.api.util.HString"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
-<%@ page import="org.labkey.issue.IssuesController"%>
-<%@ page import="org.labkey.issue.model.Issue"%>
-<%@ page import="org.labkey.issue.IssuePage" %>
+<%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.data.DataRegionSelection" %>
-<%@ page import="org.labkey.api.util.HString" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.issue.IssuePage" %>
+<%@ page import="org.labkey.issue.IssuesController" %>
+<%@ page import="org.labkey.issue.ColumnType" %>
+<%@ page import="org.labkey.issue.model.Issue" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
-<%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<IssuePage> me = (JspView<IssuePage>) HttpView.currentView();
@@ -93,9 +94,9 @@
 <%
             }
 %>
-            <%=bean.writeCustomColumn(c, new HString("int1"), HString.valueOf(issue.getInt1()), IssuesController.ISSUE_NONE, 10)%>
-            <%=bean.writeCustomColumn(c, new HString("int2"), HString.valueOf(issue.getInt2()), IssuesController.ISSUE_NONE, 10)%>
-            <%=bean.writeCustomColumn(c, new HString("string1"), issue.getString1(), IssuesController.ISSUE_STRING1, 10)%>
+            <%=bean.writeCustomColumn(ColumnType.INT1, 10)%>
+            <%=bean.writeCustomColumn(ColumnType.INT2, 10)%>
+            <%=bean.writeCustomColumn(ColumnType.STRING1, 10)%>
         </table></td>
         <td valign="top" width="33%"><table>
             <tr><td class="labkey-form-label">Changed&nbsp;By</td><td><%=h(issue.getModifiedByName(user))%></td></tr>
@@ -103,10 +104,10 @@
             <tr><td class="labkey-form-label">Closed&nbsp;By</td><td><%=h(issue.getClosedByName(user))%></td></tr>
             <tr><td class="labkey-form-label">Closed</td><td><%=bean.writeDate(issue.getClosed())%></td></tr>
 
-            <%=bean.writeCustomColumn(c, new HString("string2"), issue.getString2(), IssuesController.ISSUE_STRING2, 20)%>
-            <%=bean.writeCustomColumn(c, new HString("string3"), issue.getString3(), IssuesController.ISSUE_STRING3, 20)%>
-            <%=bean.writeCustomColumn(c, new HString("string4"), issue.getString4(), IssuesController.ISSUE_STRING4, 20)%>
-            <%=bean.writeCustomColumn(c, new HString("string5"), issue.getString5(), IssuesController.ISSUE_STRING5, 20)%>
+            <%=bean.writeCustomColumn(ColumnType.STRING2, 20)%>
+            <%=bean.writeCustomColumn(ColumnType.STRING3, 20)%>
+            <%=bean.writeCustomColumn(ColumnType.STRING4, 20)%>
+            <%=bean.writeCustomColumn(ColumnType.STRING5, 20)%>
         </table></td>
     </tr>
 </table>

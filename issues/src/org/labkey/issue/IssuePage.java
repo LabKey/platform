@@ -19,8 +19,6 @@ package org.labkey.issue;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegionSelection;
@@ -34,7 +32,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.issue.IssuesController.DownloadAction;
 import org.labkey.issue.model.Issue;
 import org.labkey.issue.model.IssueManager;
-import org.labkey.issue.model.IssueManager.Keyword;
+import org.labkey.issue.model.KeywordManager;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -57,6 +55,8 @@ import static org.labkey.api.util.PageFlowUtil.filter;
  */
 public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 {
+    private final Container _c;
+    private final User _user;
     private Issue _issue;
     private Issue _prevIssue;
     private List<Issue> _issueList = Collections.emptyList();
@@ -71,6 +71,12 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     private HString _requiredFields;
     private String _dataRegionSelectionKey;
     private boolean _print = false;
+
+    public IssuePage(Container c, User user)
+    {
+        _c = c;
+        _user = user;
+    }
 
     public Issue getIssue()
     {
@@ -212,22 +218,14 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         _dataRegionSelectionKey = dataRegionSelectionKey;
     }
 
-    public String getColumnName(String tableColumnName)
-    {
-        String caption = _ccc.getColumnCaptions().get(tableColumnName);
-        if (caption != null)
-        {
-            return caption;
-        }
-        return tableColumnName;
-    }
 
-    public String writeCustomColumn(Container container, HString tableColumnName, HString value, int keywordType, int tabIndex) throws IOException
+    public String writeCustomColumn(ColumnType type, int tabIndex) throws IOException
     {
-        final String caption = _ccc.getColumnCaptions().get(tableColumnName.getSource());
+        final String caption = _ccc.getColumnCaptions().get(type.getColumnName());
 
         if (null != caption)
         {
+            HString tableColumnName = new HString(type.getColumnName());
             final StringBuilder sb = new StringBuilder();
 
             sb.append("<tr><td class=\"labkey-form-label\">");
@@ -235,12 +233,12 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
             sb.append("</td><td>");
 
             // If custom column has pick list, then show select with keywords, otherwise input box
-            if (_ccc.getPickListColumns().contains(tableColumnName.getSource()))
-                sb.append(writeSelect(tableColumnName, value, getKeywordOptions(container, keywordType, true), tabIndex));
+            if (_ccc.getPickListColumns().contains(type.getColumnName()))
+                sb.append(writeSelect(type, tabIndex));
             else if (tableColumnName.startsWith("int"))
-                sb.append(writeIntegerInput(tableColumnName, value, tabIndex));
+                sb.append(writeIntegerInput(type, tabIndex));
             else
-                sb.append(writeInput(tableColumnName, value, tabIndex));
+                sb.append(writeInput(tableColumnName, type.getValue(getIssue()), tabIndex));
 
             sb.append("</td></tr>");
 
@@ -274,14 +272,14 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     }
 
     // Limit number of characters in an integer field
-    public HString writeIntegerInput(HString field, HString value, int tabIndex)
+    public HString writeIntegerInput(ColumnType type, int tabIndex)
     {
-        return writeInput(field, value, new HString("maxlength=\"10\" tabIndex=\"" + tabIndex + "\" size=\"8\"",false));
+        return writeInput(new HString(type.getColumnName(), false), type.getValue(getIssue()), new HString("maxlength=\"10\" tabIndex=\"" + tabIndex + "\" size=\"8\"", false));
     }
 
     public HString writeInput(HString field, HString value, int tabIndex)
     {
-        return writeInput(field, value, new HString("tabIndex=\"" + tabIndex + "\"",false));
+        return writeInput(field, value, new HString("tabIndex=\"" + tabIndex + "\"", false));
     }
 
     public HString writeSelect(HString field, HString value, HString display, HString options, int tabIndex)
@@ -312,9 +310,15 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return sb.toHString();
     }
 
-    public HString writeSelect(HString field, HString value, HString options, int tabIndex) throws IOException
+    public HString writeSelect(ColumnType type, int tabIndex) throws IOException
     {
-        return writeSelect(field, value, value, options, tabIndex);
+        return writeSelect(type, type.getValue(getIssue()), tabIndex);
+    }
+
+    @Deprecated
+    public HString writeSelect(ColumnType type, HString value, int tabIndex) throws IOException
+    {
+        return writeSelect(new HString(type.getColumnName(), false), value, value, KeywordManager.getKeywordOptions(_c, type), tabIndex);
     }
 
     public boolean isEditable(String field)
@@ -322,88 +326,16 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return _editable.contains(field);
     }
 
-    protected HString getKeywordOptions(Container container, int type, boolean allowBlank)
+    public HString getUserOptions()
     {
-        assert type != IssuesController.ISSUE_NONE;
-
-        synchronized (IssueManager.KEYWORD_LOCK)
-        {
-            String cacheKey = container + "/" + type;
-            String s = (String) DbCache.get(IssuesSchema.getInstance().getTableInfoIssueKeywords(), cacheKey);
-
-            if (null != s)
-                return new HString(s);
-
-            Keyword[] keywords = IssueManager.getKeywords(container.getId(), type);
-            StringBuilder sb = new StringBuilder(keywords.length * 30);
-            if (allowBlank)
-                sb.append("<option></option>\n");
-            for (Keyword keyword : keywords)
-            {
-                sb.append("<option>");
-                sb.append(PageFlowUtil.filter(keyword.getKeyword()));
-                sb.append("</option>\n");
-            }
-            s = sb.toString();
-            DbCache.put(IssuesSchema.getInstance().getTableInfoIssueKeywords(), cacheKey, s, 10 * CacheManager.MINUTE);
-            return new HString(s);
-        }
-    }
-
-    protected HString getKeywordOptionsWithDefault(Container c, int type, HString[] standardValues, HString def) throws SQLException
-    {
-        synchronized (IssueManager.KEYWORD_LOCK)
-        {
-            HString options = getKeywordOptions(c, type, false);
-
-            if (0 == options.length())
-            {
-                // First reference in this container... save away standard values
-                IssueManager.addKeyword(c, type, standardValues);
-                IssueManager.setKeywordDefault(c, type, def);
-
-                options = getKeywordOptions(c, type, false);
-            }
-
-            return options;
-        }
-    }
-
-    public HString getTypeOptions(Container container)
-    {
-        return getKeywordOptions(container, IssuesController.ISSUE_TYPE, true);
-    }
-
-    public HString getAreaOptions(Container container)
-    {
-        return getKeywordOptions(container, IssuesController.ISSUE_AREA, true);
-    }
-
-    public HString getMilestoneOptions(Container container)
-    {
-        return getKeywordOptions(container, IssuesController.ISSUE_MILESTONE, true);
-    }
-
-    public HString getResolutionOptions(Container c) throws SQLException
-    {
-        return getKeywordOptionsWithDefault(c, IssuesController.ISSUE_RESOLUTION, HString.array(false, "Fixed", "Duplicate", "Won't Fix", "Not Repro", "By Design"), new HString("Fixed",false));
-    }
-
-    public HString getPriorityOptions(Container c) throws SQLException
-    {
-        return getKeywordOptionsWithDefault(c, IssuesController.ISSUE_PRIORITY, HString.array(false,"0", "1", "2", "3", "4"), new HString("3",false));
-    }
-
-    public HString getUserOptions(Container c, Issue issue, User currentUser)
-    {
-        Collection<User> members = IssueManager.getAssignedToList(c, issue);
+        Collection<User> members = IssueManager.getAssignedToList(_c, getIssue());
         HStringBuilder select = new HStringBuilder();
         select.append("<option value=\"\"></option>");
 
         for (User member : members)
         {
             select.append("<option value=").append(member.getUserId()).append(">");
-            select.append(member.getDisplayName(currentUser));
+            select.append(member.getDisplayName(_user));
             select.append("</option>\n");
         }
 
@@ -418,7 +350,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return HString.EMPTY;
     }
 
-    public HString getNotifyList(Container c, Issue issue)
+    public HString getNotifyList()
     {
         if (!isEditable("notifyList"))
         {
@@ -478,7 +410,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
     public String renderAttachments(ViewContext context, AttachmentParent parent)
     {
-        List<Attachment> attachments = new ArrayList(AttachmentService.get().getAttachments(parent));
+        List<Attachment> attachments = new ArrayList<Attachment>(AttachmentService.get().getAttachments(parent));
 
         StringBuilder sb = new StringBuilder();
         boolean canEdit = isEditable("attachments");
@@ -518,11 +450,11 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return sb.toString();
     }
 
-    public String renderDuplicates(ViewContext context, Collection<Integer> dups)
+    public String renderDuplicates(Collection<Integer> dups)
     {
         StringBuilder sb = new StringBuilder();
         for (Integer dup : dups)
-            sb.append("<a href='").append(IssuesController.getDetailsURL(context.getContainer(), dup, false)).append("'>").append(dup).append("</a>, ");
+            sb.append("<a href='").append(IssuesController.getDetailsURL(_c, dup, false)).append("'>").append(dup).append("</a>, ");
         if (dups.size() > 0)
             sb.setLength(sb.length() - 2);
         return sb.toString();

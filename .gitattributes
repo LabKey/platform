@@ -1308,6 +1308,7 @@ issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-8.10-8.11.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-8.10-8.20.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-9.30-10.10.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/issues-9.30-9.31.sql -text
+issues/src/org/labkey/issue/ColumnType.java -text
 issues/src/org/labkey/issue/IssueContainerListener.java -text
 issues/src/org/labkey/issue/IssueGroupListener.java -text
 issues/src/org/labkey/issue/IssuePage.java -text
@@ -1328,6 +1329,7 @@ issues/src/org/labkey/issue/keywordAdmin.jsp -text
 issues/src/org/labkey/issue/list.jsp -text
 issues/src/org/labkey/issue/model/Issue.java -text
 issues/src/org/labkey/issue/model/IssueManager.java -text
+issues/src/org/labkey/issue/model/KeywordManager.java -text
 issues/src/org/labkey/issue/query/IssuesQuerySchema.java -text
 issues/src/org/labkey/issue/query/IssuesQueryView.java -text
 issues/src/org/labkey/issue/query/IssuesTable.java -text

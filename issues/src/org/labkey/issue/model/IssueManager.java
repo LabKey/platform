@@ -23,22 +23,23 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.DbCache;
+import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.search.SearchService;
@@ -61,6 +62,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.webdav.AbstractDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
+import org.labkey.issue.ColumnType;
 import org.labkey.issue.IssuesController;
 
 import javax.servlet.ServletException;
@@ -73,6 +75,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -99,8 +102,6 @@ public class IssueManager
 
     private static IssuesSchema _issuesSchema = IssuesSchema.getInstance();
     
-    private static Logger _log = Logger.getLogger(IssueManager.class);
-
     public static final int NOTIFY_ASSIGNEDTO_OPEN = 1;     // if a bug is assigned to me
     public static final int NOTIFY_ASSIGNEDTO_UPDATE = 2;   // if a bug assigned to me is modified
     public static final int NOTIFY_CREATED_UPDATE = 4;      // if a bug I created is modified
@@ -198,213 +199,29 @@ public class IssueManager
         issue._added = null;
     }
 
-    public static final Object KEYWORD_LOCK = new Object();
 
-    public static void addKeyword(Container c, int type, HString... keywords) throws SQLException
+    public static Map<ColumnType, HString> getAllDefaults(Container container) throws SQLException
     {
-        synchronized (KEYWORD_LOCK)
-        {
-            for (HString keyword : keywords)
+        final Map<ColumnType, HString> defaults = new HashMap<ColumnType, HString>();
+        SimpleFilter filter = new SimpleFilter("container", container.getId()).addCondition("Default", true);
+        Selector selector = new TableSelector(_issuesSchema.getTableInfoIssueKeywords(), PageFlowUtil.set("Type", "Keyword", "Container", "Default"), filter, null);
+
+        selector.forEach(new Selector.ForEachBlock<ResultSet>() {
+            @Override
+            public void exec(ResultSet rs) throws SQLException
             {
-                Table.execute(_issuesSchema.getSchema(),
-                        "INSERT INTO " + _issuesSchema.getTableInfoIssueKeywords() + " (Container, Type, Keyword) VALUES (?, ?, ?)",
-                        c.getId(), type, keyword);
+                ColumnType type = ColumnType.forOrdinal(rs.getInt("Type"));
+
+                assert null != type;
+
+                if (null != type)
+                    defaults.put(type, new HString(rs.getString("Keyword")));
             }
-            DbCache.clear(_issuesSchema.getTableInfoIssueKeywords());
-        }
+        });
+
+        return defaults;
     }
 
-
-    public static class Keyword
-    {
-        private HString _keyword;
-        private boolean _default = false;
-
-        public boolean isDefault()
-        {
-            return _default;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setDefault(boolean def)
-        {
-            _default = def;
-        }
-
-        public HString getKeyword()
-        {
-            return _keyword;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setKeyword(HString keyword)
-        {
-            _keyword = keyword;
-        }
-    }
-
-
-    public static Keyword[] getKeywords(String container, int type)
-    {
-        SimpleFilter filter = new SimpleFilter("Container", container).addCondition("Type", type);
-        Sort sort = new Sort("Keyword");
-
-        return new TableSelector(_issuesSchema.getTableInfoIssueKeywords(), PageFlowUtil.set("Keyword", "Default", "Container", "Type"), filter, sort).getArray(Keyword.class);
-    }
-
-
-    public static Map<Integer, HString> getAllDefaults(Container container) throws SQLException
-    {
-        ResultSet rs = null;
-
-        try
-        {
-            SimpleFilter filter = new SimpleFilter("container", container.getId()).addCondition("Default", true);
-            rs = Table.select(_issuesSchema.getTableInfoIssueKeywords(), PageFlowUtil.set("Type", "Keyword", "Container", "Default"), filter, null);
-
-            Map<Integer, HString> defaults = new HashMap<Integer, HString>();
-
-            while (rs.next())
-                defaults.put(rs.getInt("Type"), new HString(rs.getString("Keyword")));
-
-            return defaults;
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
-        }
-    }
-
-
-    // Clear old default value and set new one
-    public static void setKeywordDefault(Container c, int type, HString keyword)
-    {
-        clearKeywordDefault(c, type);
-
-        String selectName = _issuesSchema.getTableInfoIssueKeywords().getColumn("Default").getSelectName();
-
-        try
-        {
-            Table.execute(_issuesSchema.getSchema(),
-                    "UPDATE " + _issuesSchema.getTableInfoIssueKeywords() + " SET " + selectName + "=? WHERE Container=? AND Type=? AND Keyword=?",
-                    Boolean.TRUE, c.getId(), type, keyword);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-    }
-
-
-    // Clear existing default value
-    public static void clearKeywordDefault(Container c, int type)
-    {
-        String selectName = _issuesSchema.getTableInfoIssueKeywords().getColumn("Default").getSelectName();
-
-        try
-        {
-            Table.execute(_issuesSchema.getSchema(),
-                    "UPDATE " + _issuesSchema.getTableInfoIssueKeywords() + " SET " + selectName + "=? WHERE Container=? AND Type=?",
-                    Boolean.FALSE, c.getId(), type);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
-    }
-
-
-    public static void deleteKeyword(Container c, int type, HString keyword)
-    {
-        Keyword[] keywords = null;
-        synchronized (KEYWORD_LOCK)
-        {
-            try
-            {
-                Table.execute(_issuesSchema.getSchema(),
-                        "DELETE FROM " + _issuesSchema.getTableInfoIssueKeywords() + " WHERE Container=? AND Type=? AND Keyword=?",
-                        c.getId(), type, keyword);
-                DbCache.clear(_issuesSchema.getTableInfoIssueKeywords());
-                keywords = getKeywords(c.getId(), type);
-            }
-            catch (SQLException x)
-            {
-                _log.error("deleteKeyword", x);
-            }
-        }
-
-        //Check to see if the last keyword of a required field was deleted, if so no longer make the field required.
-        if (keywords == null || keywords.length == 0)
-        {
-            String stringType ="";
-            if (type == IssuesController.ISSUE_AREA)
-            {
-                stringType = IssuesController.AREA_STRING;
-            }
-            else if (type == IssuesController.ISSUE_TYPE)
-            {
-                stringType = IssuesController.TYPE_STRING;
-            }
-            else if (type == IssuesController.ISSUE_MILESTONE)
-            {
-                stringType = IssuesController.MILESTONE_STRING;
-            }
-            else if (type == IssuesController.ISSUE_PRIORITY)
-            {
-                stringType = IssuesController.PRIORITY_STRING;
-            }
-            else if (type == IssuesController.ISSUE_STRING1)
-            {
-                stringType = IssuesController.STRING_1_STRING;
-            }
-            else if (type == IssuesController.ISSUE_STRING2)
-            {
-                stringType = IssuesController.STRING_2_STRING;
-            }
-            else if (type == IssuesController.ISSUE_STRING3)
-            {
-                stringType = IssuesController.STRING_3_STRING;
-            }
-            else if (type == IssuesController.ISSUE_STRING4)
-            {
-                stringType = IssuesController.STRING_4_STRING;
-            }
-            else if (type == IssuesController.ISSUE_STRING5)
-            {
-                stringType = IssuesController.STRING_5_STRING;
-            }
-
-            HString requiredFields = getRequiredIssueFields(c);
-            if (requiredFields.contains(stringType) && !stringType.equals(""))
-            {
-                //Here we want to remove the type from the required fields.
-                requiredFields = requiredFields.replace(stringType, "");
-                if (requiredFields.length() > 0)
-                {
-                    if (requiredFields.charAt(0) == ';')
-                    {
-                       requiredFields = requiredFields.substring(1);
-                    }
-                    else if (requiredFields.charAt(requiredFields.length()-1) == ';')
-                    {
-                       requiredFields = requiredFields.substring(0, requiredFields.length()-1);
-                    }
-                    else
-                    {
-                       requiredFields = requiredFields.replace(";;", ";");
-                    }
-                }
-                try
-                {
-                    setRequiredIssueFields(c, requiredFields.toString());
-                }
-                catch (SQLException x)
-                {
-                    _log.error("deleteKeyword", x);
-                }
-            }
-        }
-    }
 
     private static final String CUSTOM_COLUMN_CONFIGURATION = "IssuesCaptions";
 
@@ -464,12 +281,12 @@ public class IssueManager
             if (null == pickListColumnNames)
                 return;
 
-            String[] columns;
+            List<String> columns;
 
-            if (pickListColumnNames.getClass().equals(String.class))
-                columns = ((String)pickListColumnNames).split(",");
+            if (pickListColumnNames instanceof String)
+                columns = Arrays.asList(((String) pickListColumnNames).split(","));
             else
-                columns = ((List<String>)pickListColumnNames).toArray(new String[((List<String>)pickListColumnNames).size()]);
+                columns = (List<String>)pickListColumnNames;
 
             for (String column : columns)
                 if (null != _columnCaptions.get(column))
@@ -522,23 +339,19 @@ public class IssueManager
     }
 
 
-    private static final Object ASSIGNED_TO_CACHE_LOCK = new Object();
+    private static final StringKeyCache<Set<User>> ASSIGNED_TO_CACHE = new DatabaseCache<Set<User>>(IssuesSchema.getInstance().getSchema().getScope(), 1000, "AssignedTo");
 
     // Returns the assigned to list that is used for every new issue in this container.  We can cache it and share it
     // across requests.  The collection is unmodifiable.
-    private static Collection<User> getInitialAssignedToList(Container c)
+    private static Collection<User> getInitialAssignedToList(final Container c)
     {
-        final TableInfo table = CoreSchema.getInstance().getTableInfoActiveUsers();
-        final String cacheKey = getCacheKey(c);
-        Set<User> initialAssignedTo;
+        String cacheKey = getCacheKey(c);
 
-        synchronized (ASSIGNED_TO_CACHE_LOCK)
-        {
-            initialAssignedTo = (Set<User>) DbCache.get(table, cacheKey);
-
-            if (initialAssignedTo == null)
+        return ASSIGNED_TO_CACHE.get(cacheKey, null, new CacheLoader<String, Set<User>>() {
+            @Override
+            public Set<User> load(String key, @Nullable Object argument)
             {
-                initialAssignedTo = new TreeSet<User>(USER_COMPARATOR);
+                Set<User> initialAssignedTo = new TreeSet<User>(USER_COMPARATOR);
                 Group group = getAssignedToGroup(c);
 
                 if (null != group)
@@ -551,17 +364,13 @@ public class IssueManager
                 }
 
                 // Cache an unmodifiable version
-                initialAssignedTo = Collections.unmodifiableSet(initialAssignedTo);
-
-                DbCache.put(table, cacheKey, initialAssignedTo, CacheManager.HOUR);
+                return Collections.unmodifiableSet(initialAssignedTo);
             }
-        }
-
-        return initialAssignedTo;
+        });
     }
 
 
-    public static String getCacheKey(Container c)
+    public static String getCacheKey(@Nullable Container c)
     {
         String key = "AssignedTo";
         return null != c ? key + c.getId() : key;
@@ -604,9 +413,10 @@ public class IssueManager
     {
         public HString singularName = new HString("Issue", false);
         public HString pluralName = new HString("Issues", false);
+
         public String getIndefiniteSingularArticle()
         {
-            if(singularName.length() == 0)
+            if (singularName.length() == 0)
                 return "";
             char first = singularName.toLowerCase().charAt(0);
             if (first == 'a' || first == 'e' || first == 'i' || first == 'o' || first == 'u')
@@ -721,12 +531,12 @@ public class IssueManager
         }
     }
 
-    public static void uncache(Container c)
+    public static void uncache(@Nullable Container c)
     {
         if (c != null)
-            DbCache.remove(CoreSchema.getInstance().getTableInfoActiveUsers(), getCacheKey(c));
+            ASSIGNED_TO_CACHE.remove(getCacheKey(c));
         else
-            DbCache.removeUsingPrefix(CoreSchema.getInstance().getTableInfoActiveUsers(), getCacheKey(null));
+            ASSIGNED_TO_CACHE.removeUsingPrefix(getCacheKey(null));
     }
 
     public static void purgeContainer(Container c)
