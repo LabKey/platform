@@ -140,6 +140,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -254,6 +255,7 @@ public class IssuesController extends SpringActionController
     }
 
 
+    @Deprecated
     private Map<String, String> getColumnCaptions() throws SQLException, ServletException
     {
         return getCustomColumnConfiguration().getColumnCaptions();
@@ -862,7 +864,7 @@ public class IssuesController extends SpringActionController
         editable.add("comments");
         editable.add("attachments");
 
-        for (String columnName : ccc.getColumnCaptions().keySet())
+        for (String columnName : ccc.getColumnHCaptions().keySet())
             editable.add(columnName);
 
         editable.add("notifyList");
@@ -1086,8 +1088,8 @@ public class IssuesController extends SpringActionController
                 {
                     final IssueManager.CustomColumnConfiguration ccc = IssueManager.getCustomColumnConfiguration(getContainer());
                     String name = null;
-                    if (ccc.getColumnCaptions().containsKey(columnName))
-                        name = ccc.getColumnCaptions().get(columnName);
+                    if (ccc.getColumnHCaptions().containsKey(columnName))
+                        name = ccc.getColumnHCaptions().get(columnName).getSource();
                     else
                     {
                         ColumnInfo column = IssuesSchema.getInstance().getTableInfoIssues().getColumn(columnName);
@@ -1308,17 +1310,6 @@ public class IssuesController extends SpringActionController
     {
         public ModelAndView getView(AdminForm form, boolean reshow, BindException errors) throws Exception
         {
-            // TODO: This hack ensures that priority & resolution option defaults get populated if first reference is the admin page.  Fix this.
-//            IssuePage page = new IssuePage(getContainer(), getUser())
-//            {
-//                public void _jspService(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws ServletException, IOException
-//                {
-//                }
-//            };
-//            page.getPriorityOptions();
-//            page.getResolutionOptions();
-//            // </HACK>
-
             return new AdminView(getContainer(), getCustomColumnConfiguration(), errors);
         }
 
@@ -2191,20 +2182,20 @@ public class IssuesController extends SpringActionController
             super("/org/labkey/issue/admin.jsp", null, errors);
 
             KeywordAdminView keywordView = new KeywordAdminView(c, ccc);
-            keywordView.addKeyword(ColumnType.TYPE);
-            keywordView.addKeyword(ColumnType.AREA);
-            keywordView.addKeyword(ColumnType.PRIORITY);
-            keywordView.addKeyword(ColumnType.MILESTONE);
-            keywordView.addKeyword(ColumnType.RESOLUTION);
-            keywordView.addKeyword(ColumnType.STRING1);
-            keywordView.addKeyword(ColumnType.STRING2);
-            keywordView.addKeyword(ColumnType.STRING3);
-            keywordView.addKeyword(ColumnType.STRING4);
-            keywordView.addKeyword(ColumnType.STRING5);
+            keywordView.addKeywordPicker(ColumnType.TYPE);
+            keywordView.addKeywordPicker(ColumnType.AREA);
+            keywordView.addKeywordPicker(ColumnType.PRIORITY);
+            keywordView.addKeywordPicker(ColumnType.MILESTONE);
+            keywordView.addKeywordPicker(ColumnType.RESOLUTION);
+            keywordView.addKeywordPicker(ColumnType.STRING1);
+            keywordView.addKeywordPicker(ColumnType.STRING2);
+            keywordView.addKeywordPicker(ColumnType.STRING3);
+            keywordView.addKeywordPicker(ColumnType.STRING4);
+            keywordView.addKeywordPicker(ColumnType.STRING5);
 
             Set<String> columnNames = new LinkedHashSet<String>();
             columnNames.addAll(Arrays.asList(REQUIRED_FIELDS_COLUMNS.split(",")));
-            columnNames.addAll(IssueManager.getCustomColumnConfiguration(c).getColumnCaptions().keySet());
+            columnNames.addAll(IssueManager.getCustomColumnConfiguration(c).getColumnHCaptions().keySet());
             List<ColumnInfo> cols = IssuesSchema.getInstance().getTableInfoIssues().getColumns(columnNames.toArray(new String[columnNames.size()]));
 
             AdminBean bean = new AdminBean(cols, IssueManager.getRequiredIssueFields(c), IssueManager.getEntryTypeNames(c));
@@ -2249,7 +2240,7 @@ public class IssuesController extends SpringActionController
     public static class KeywordAdminView extends JspView<List<KeywordPicker>>
     {
         private Container _c;
-        private List<KeywordPicker> _keywordPickers = new ArrayList<KeywordPicker>(5);
+        private List<KeywordPicker> _keywordPickers = new LinkedList<KeywordPicker>();
         public IssueManager.CustomColumnConfiguration _ccc;
 
         public KeywordAdminView(Container c, IssueManager.CustomColumnConfiguration ccc)
@@ -2260,17 +2251,17 @@ public class IssuesController extends SpringActionController
             _ccc = ccc;
         }
 
-        private void addKeyword(ColumnType type)
+        private void addKeywordPicker(ColumnType type)
         {
             String columnName = type.getColumnName();
 
             if (type.isCustomString() && !_ccc.getPickListColumns().contains(columnName))
                 return;
 
-            String caption = _ccc.getColumnCaptions().get(type.getColumnName());
+            HString caption = _ccc.getColumnHCaptions().get(type.getColumnName());
 
             if (caption == null)
-                caption = StringUtils.capitalize(type.getColumnName());
+                caption = new HString(StringUtils.capitalize(type.getColumnName()), false);
 
             _keywordPickers.add(new KeywordPicker(_c, caption, type));
         }
@@ -2279,15 +2270,13 @@ public class IssuesController extends SpringActionController
 
     public static class KeywordPicker
     {
-        public String name;
-        public String plural;
+        public HString name;
         public ColumnType type;
         public Collection<Keyword> keywords;
 
-        KeywordPicker(Container c, String name, ColumnType type)
+        KeywordPicker(Container c, HString name, ColumnType type)
         {
             this.name = name;
-            this.plural = name.endsWith("y") ? name.substring(0, name.length() - 1) + "ies" : name + "s";
             this.type = type;
             this.keywords = KeywordManager.getKeywords(c, type);
         }

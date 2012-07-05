@@ -215,7 +215,7 @@ public class IssueManager
                 assert null != type;
 
                 if (null != type)
-                    defaults.put(type, new HString(rs.getString("Keyword")));
+                    defaults.put(type, new HString(rs.getString("Keyword"), true));
             }
         });
 
@@ -250,6 +250,7 @@ public class IssueManager
         public static final String PICK_LIST_NAME = "pickListColumns";
         private static String[] _tableColumns = {"type", "area", "priority", "milestone", "resolution", "int1", "int2", "string1", "string2", "string3", "string4", "string5"};
         private Map<String, String> _columnCaptions = new CaseInsensitiveHashMap<String>();
+        private Map<String, HString> _columnHCaptions = new CaseInsensitiveHashMap<HString>();
         private Set<String> _pickListColumns = new HashSet<String>();
 
         public CustomColumnConfiguration(@NotNull Map<String, ?> map)
@@ -265,13 +266,22 @@ public class IssueManager
                 String caption = (String)map.get(tableColumn);
 
                 if (!StringUtils.isEmpty(caption))
+                {
                     _columnCaptions.put(tableColumn, caption);
+                    _columnHCaptions.put(tableColumn, new HString(caption, true));
+                }
             }
         }
 
+        @Deprecated
         public Map<String, String> getColumnCaptions()
         {
             return _columnCaptions;
+        }
+
+        public Map<String, HString> getColumnHCaptions()
+        {
+            return _columnHCaptions;
         }
 
         private void setPickListColumns(Map<String, ?> map)
@@ -286,14 +296,14 @@ public class IssueManager
             if (pickListColumnNames instanceof String)
                 columns = Arrays.asList(((String) pickListColumnNames).split(","));
             else
-                columns = (List<String>)pickListColumnNames;
+                columns = (List<String>)pickListColumnNames;  // This is the "post values from admin page" case
 
             for (String column : columns)
                 if (null != _columnCaptions.get(column))
                     _pickListColumns.add(column);
         }
 
-        public Set<String> getPickListColumns()
+        public Set<String> getPickListColumns()  // TODO: Set<ColumnType>?
         {
             return _pickListColumns;
         }
@@ -431,9 +441,9 @@ public class IssueManager
         Map<String,String> props = PropertyManager.getProperties(container.getId(), CAT_ENTRY_TYPE_NAMES);
         EntryTypeNames ret = new EntryTypeNames();
         if (props.containsKey(PROP_ENTRY_TYPE_NAME_SINGULAR))
-            ret.singularName = new HString(props.get(PROP_ENTRY_TYPE_NAME_SINGULAR));
+            ret.singularName = new HString(props.get(PROP_ENTRY_TYPE_NAME_SINGULAR), true);
         if (props.containsKey(PROP_ENTRY_TYPE_NAME_PLURAL))
-            ret.pluralName = new HString(props.get(PROP_ENTRY_TYPE_NAME_PLURAL));
+            ret.pluralName = new HString(props.get(PROP_ENTRY_TYPE_NAME_PLURAL), true);
         return ret;
     }
 

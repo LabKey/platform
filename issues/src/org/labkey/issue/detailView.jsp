@@ -23,12 +23,18 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.api.view.ViewContext"%>
+<%@ page import="org.labkey.issue.ColumnType" %>
 <%@ page import="org.labkey.issue.IssuePage" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
-<%@ page import="org.labkey.issue.IssuesController.*" %>
+<%@ page import="org.labkey.issue.IssuesController.CloseAction" %>
+<%@ page import="org.labkey.issue.IssuesController.EmailPrefsAction" %>
+<%@ page import="org.labkey.issue.IssuesController.InsertAction" %>
+<%@ page import="org.labkey.issue.IssuesController.ListAction" %>
+<%@ page import="org.labkey.issue.IssuesController.ReopenAction" %>
+<%@ page import="org.labkey.issue.IssuesController.ResolveAction" %>
+<%@ page import="org.labkey.issue.IssuesController.UpdateAction" %>
 <%@ page import="org.labkey.issue.model.Issue" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
-<%@ page import="org.labkey.issue.ColumnType" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<IssuePage> me = (JspView<IssuePage>) HttpView.currentView();
@@ -50,31 +56,31 @@
 
     if (bean.getHasUpdatePermissions())
     {
-        %><td><%= textLink("new " + names.singularName.toLowerCase(), PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), IssuesController.InsertAction.class)))%></td><%
+        %><td><%= textLink("new " + names.singularName.toLowerCase(), PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), InsertAction.class)))%></td><%
     }%>
 
-    <td><%= textLink("return to grid", PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), IssuesController.ListAction.class)).deleteParameter("error"))%></td><%
+    <td><%= textLink("return to grid", PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), ListAction.class)).deleteParameter("error"))%></td><%
 
     if (bean.getHasUpdatePermissions())
     {
-        %><td><%= textLink("update", IssuesController.issueURL(context.getContainer(), IssuesController.UpdateAction.class).addParameter("issueId", issueId))%></td><%
+        %><td><%= textLink("update", IssuesController.issueURL(context.getContainer(), UpdateAction.class).addParameter("issueId", issueId))%></td><%
     }
 
     if (issue.getStatus().equals(Issue.statusOPEN) && bean.getHasUpdatePermissions())
     {
-        %><td><%= textLink("resolve", IssuesController.issueURL(context.getContainer(), IssuesController.ResolveAction.class).addParameter("issueId", issueId))%></td><%
+        %><td><%= textLink("resolve", IssuesController.issueURL(context.getContainer(), ResolveAction.class).addParameter("issueId", issueId))%></td><%
     }
     else if (issue.getStatus().equals(Issue.statusRESOLVED) && bean.getHasUpdatePermissions())
     {
-        %><td><%= textLink("close", IssuesController.issueURL(context.getContainer(), IssuesController.CloseAction.class).addParameter("issueId", issueId))%></td>
-        <td><%= textLink("reopen", IssuesController.issueURL(context.getContainer(), IssuesController.ReopenAction.class).addParameter("issueId", issueId))%></td><%
+        %><td><%= textLink("close", IssuesController.issueURL(context.getContainer(), CloseAction.class).addParameter("issueId", issueId))%></td>
+        <td><%= textLink("reopen", IssuesController.issueURL(context.getContainer(), ReopenAction.class).addParameter("issueId", issueId))%></td><%
     }
     else if (issue.getStatus().equals(Issue.statusCLOSED) && bean.getHasUpdatePermissions())
     {
-        %><td><%= textLink("reopen", IssuesController.issueURL(context.getContainer(), IssuesController.ReopenAction.class).addParameter("issueId", issueId))%></td><%
+        %><td><%= textLink("reopen", IssuesController.issueURL(context.getContainer(), ReopenAction.class).addParameter("issueId", issueId))%></td><%
     }
     %><td><%= textLink("print", context.cloneActionURL().replaceParameter("_print", "1"))%></td>
-    <td><%= textLink("email prefs", IssuesController.issueURL(context.getContainer(), IssuesController.EmailPrefsAction.class).addParameter("issueId", issueId))%></td>
+    <td><%= textLink("email prefs", IssuesController.issueURL(context.getContainer(), EmailPrefsAction.class).addParameter("issueId", issueId))%></td>
     <td>&nbsp;&nbsp;&nbsp;Jump to <%=names.singularName%>: <input type="text" size="5" name="issueId"/></td>
     </tr></table>
 </form><%
@@ -86,21 +92,21 @@
         <td valign="top"><table>
             <tr><td class="labkey-form-label">Status</td><td><%=h(issue.getStatus())%></td></tr>
             <tr><td class="labkey-form-label">Assigned&nbsp;To</td><td><%=h(issue.getAssignedToName(user))%></td></tr>
-            <tr><td class="labkey-form-label"><%=bean.getLabel("Type")%></td><td><%=h(issue.getType())%></td></tr>
-            <tr><td class="labkey-form-label"><%=bean.getLabel("Area")%></td><td><%=h(issue.getArea())%></td></tr>
-            <tr><td class="labkey-form-label"><%=bean.getLabel("Priority")%></td><td><%=bean._toString(issue.getPriority())%></td></tr>
-            <tr><td class="labkey-form-label"><%=bean.getLabel("Milestone")%></td><td><%=h(issue.getMilestone())%></td></tr>
+            <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.TYPE)%></td><td><%=h(issue.getType())%></td></tr>
+            <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.AREA)%></td><td><%=h(issue.getArea())%></td></tr>
+            <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.PRIORITY)%></td><td><%=bean._toString(issue.getPriority())%></td></tr>
+            <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.MILESTONE)%></td><td><%=h(issue.getMilestone())%></td></tr>
         </table></td>
         <td valign="top"><table>
             <tr><td class="labkey-form-label"><%=bean.getLabel("Opened")%></td><td nowrap="true"><%=bean.writeDate(issue.getCreated())%> by <%=h(issue.getCreatedByName(user))%></td></tr>
             <tr><td class="labkey-form-label">Changed</td><td nowrap="true"><%=bean.writeDate(issue.getModified())%> by <%=h(issue.getModifiedByName(user))%></td></tr>
             <tr><td class="labkey-form-label"><%=bean.getLabel("Resolved")%></td><td nowrap="true"><%=bean.writeDate(issue.getResolved())%><%= issue.getResolvedBy() != null ? " by " : ""%> <%=h(issue.getResolvedByName(user))%></td></tr>
-            <tr><td class="labkey-form-label"><%=bean.getLabel("Resolution")%></td><td><%=h(issue.getResolution())%></td></tr><%
+            <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.RESOLUTION)%></td><td><%=h(issue.getResolution())%></td></tr><%
             if (bean.isEditable("resolution") || !"open".equals(issue.getStatus()) && null != issue.getDuplicate())
             {
                 %><tr><td class="labkey-form-label">Duplicate</td><td>
                 <% if (bean.isEditable("duplicate")) { %>
-                    <%=bean.writeInput(new HString("duplicate"), HString.valueOf(issue.getDuplicate()), 10)%>
+                    <%=bean.writeInput("duplicate", HString.valueOf(issue.getDuplicate()), 10)%>
                 <% } else { %>
                     <a href="<%=IssuesController.getDetailsURL(context.getContainer(), issue.getDuplicate(), false)%>"><%=issue.getDuplicate()%></a>
                 <% } %>

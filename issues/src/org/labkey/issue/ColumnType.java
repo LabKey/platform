@@ -228,7 +228,7 @@ public enum ColumnType
     };
 
     private final int _ordinal;           // Ordinal used for storing/retrieving associated keywords in database (same as old int fake enum)
-    private final String _columnName;     // Standard database column name (same as old static final string)
+    private final String _columnName;     // Standard database column name (same as old static final string)... these names never need HTML encoding
     private final boolean _standard;      // Is this one of the four "standard" columns? (Type, Area, Priority, or Milestone)
     private final boolean _customString;  // Is this a custom string column?
 

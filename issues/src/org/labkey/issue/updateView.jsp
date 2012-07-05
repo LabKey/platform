@@ -110,7 +110,7 @@
             }
 %>
                 <td colspan="3">
-                <%=bean.writeInput(new HString("title", false), issue.getTitle(), new HString("id=title tabindex=0 style=\"width:100%;\"", false))%>
+                <%=bean.writeInput("title", issue.getTitle(), new HString("id=title tabindex=0 style=\"width:100%;\"", false))%>
                 </td></tr>
             <tr>
                 <td class="labkey-form-label"><%=bean.getLabel("Status")%></td><td><%=h(issue.getStatus())%></td>
@@ -119,7 +119,7 @@
                         <tr><td class="labkey-form-label"><%=bean.getLabel("Opened")%></td><td nowrap="true"><%=bean.writeDate(issue.getCreated())%> by <%=h(issue.getCreatedByName(user))%></td></tr>
                         <tr><td class="labkey-form-label">Changed</td><td nowrap="true"><%=bean.writeDate(issue.getModified())%> by <%=h(issue.getModifiedByName(user))%></td></tr>
                         <tr><td class="labkey-form-label"><%=bean.getLabel("Resolved")%></td><td nowrap="true"><%=bean.writeDate(issue.getResolved())%><%= issue.getResolvedBy() != null ? " by " : ""%> <%=h(issue.getResolvedByName(user))%></td></tr>
-                        <tr><td class="labkey-form-label"><%=bean.getLabel("Resolution")%></td><td><%=bean.writeSelect(ColumnType.RESOLUTION, 10)%></td></tr>
+                        <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.RESOLUTION)%></td><td><%=bean.writeSelect(ColumnType.RESOLUTION, 10)%></td></tr>
         <% if (bean.isEditable("resolution") || !"open".equals(issue.getStatus().getSource())) { %>
                         <tr><td class="labkey-form-label">Duplicate</td><td>
                         <% if (bean.isEditable("duplicate")) {
@@ -127,14 +127,14 @@
                                 {
                                     //Enabled duplicate field.
                         %>
-                                    <%=bean.writeInput(new HString("duplicate"), HString.valueOf(issue.getDuplicate()), new HString("tabindex=\"10\""))%>
+                                    <%=bean.writeInput("duplicate", HString.valueOf(issue.getDuplicate()), new HString("tabindex=\"10\""))%>
                         <%
                                 }
                                 else
                                 {
                                     //Disabled duplicate field.
                         %>
-                                    <%=bean.writeInput(new HString("duplicate"), HString.valueOf(issue.getDuplicate()), new HString("tabindex=\"10\" disabled"))%>
+                                    <%=bean.writeInput("duplicate", HString.valueOf(issue.getDuplicate()), new HString("tabindex=\"10\" disabled"))%>
                         <%
                                 }
                         %>
@@ -220,10 +220,10 @@
                 </table></td>
             </tr>
             <tr><td class="labkey-form-label"><%=bean.getLabel("AssignedTo")%></td><td><%=bean.writeSelect(new HString("assignedTo", false), HString.valueOf(issue.getAssignedTo()), issue.getAssignedToName(user), bean.getUserOptions(), 0)%></td></tr>
-            <tr><td class="labkey-form-label"><%=bean.getLabel("Type")%></td><td><%=bean.writeSelect(ColumnType.TYPE, 0)%></td></tr>
-            <tr><td class="labkey-form-label"><%=bean.getLabel("Area")%></td><td><%=bean.writeSelect(ColumnType.AREA, 0)%></td></tr>
-            <tr><td class="labkey-form-label"><%=bean.getLabel("Priority")%></td><td><%=bean.writeSelect(ColumnType.PRIORITY, 0)%></td></tr>
-            <tr><td class="labkey-form-label"><%=bean.getLabel("Milestone")%></td><td><%=bean.writeSelect(ColumnType.MILESTONE, 0)%></td></tr>
+            <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.TYPE)%></td><td><%=bean.writeSelect(ColumnType.TYPE, 0)%></td></tr>
+            <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.AREA)%></td><td><%=bean.writeSelect(ColumnType.AREA, 0)%></td></tr>
+            <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.PRIORITY)%></td><td><%=bean.writeSelect(ColumnType.PRIORITY, 0)%></td></tr>
+            <tr><td class="labkey-form-label"><%=bean.getLabel(ColumnType.MILESTONE)%></td><td><%=bean.writeSelect(ColumnType.MILESTONE, 0)%></td></tr>
             <tr><td class="labkey-form-label">Comment</td>
                 <td colspan="3">
 <%

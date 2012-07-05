@@ -35,8 +35,8 @@ public class CoreUpgradeCode implements UpgradeCode
     private static final Logger _log = Logger.getLogger(CoreUpgradeCode.class);
 
     // We don't call ContainerManager.getRoot() during upgrade code since the container table may not yet match
-    //  ContainerManager's assumptions. For example, older installations don't have a description column until
-    //  the 10.1 scripts run (see #9927).
+    // ContainerManager's assumptions. For example, older installations don't have a description column until
+    // the 10.1 scripts run (see #9927).
     private String getRootId()
     {
         try

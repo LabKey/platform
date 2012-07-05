@@ -89,7 +89,7 @@
             {
 %>
                 <tr><td class="labkey-form-label">Duplicate</td><td>
-                <%=bean.writeInput(new HString("duplicate"), HString.valueOf(issue.getDuplicate()), 10)%>
+                <%=bean.writeInput("duplicate", HString.valueOf(issue.getDuplicate()), 10)%>
                 </td></tr>
 <%
             }

@@ -37,7 +37,6 @@ import org.springframework.validation.BindException;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -108,9 +107,9 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return _print;
     }
     
-    public List<Issue> getIssueList()
+    public Set<String> getIssueIds()
     {
-        return _issueList;
+        return _issueIds;
     }
 
     public void setIssueIds(Set<String> issueIds)
@@ -118,9 +117,9 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         _issueIds = issueIds;
     }
 
-    public Set<String> getIssueIds()
+    public List<Issue> getIssueList()
     {
-        return _issueIds;
+        return _issueList;
     }
 
     public void setIssueList(List<Issue> issueList)
@@ -221,15 +220,13 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
     public String writeCustomColumn(ColumnType type, int tabIndex) throws IOException
     {
-        final String caption = _ccc.getColumnCaptions().get(type.getColumnName());
-
-        if (null != caption)
+        if (_ccc.getColumnHCaptions().get(type.getColumnName()) != null)
         {
-            HString tableColumnName = new HString(type.getColumnName());
+            String tableColumnName = type.getColumnName();
             final StringBuilder sb = new StringBuilder();
 
             sb.append("<tr><td class=\"labkey-form-label\">");
-            sb.append(getLabel(tableColumnName));
+            sb.append(getLabel(type));
             sb.append("</td><td>");
 
             // If custom column has pick list, then show select with keywords, otherwise input box
@@ -249,9 +246,10 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     }
 
 
-    public HString writeInput(HString field, HString value, HString extra)
+    // Field is always standard column name, which is HTML safe
+    public HString writeInput(String field, HString value, HString extra)
     {
-        if (!isEditable(field.getSource()))
+        if (!isEditable(field))
             return new HString(filter(value.getSource(), false, true));
         final HStringBuilder sb = new HStringBuilder();
 
@@ -274,10 +272,10 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     // Limit number of characters in an integer field
     public HString writeIntegerInput(ColumnType type, int tabIndex)
     {
-        return writeInput(new HString(type.getColumnName(), false), type.getValue(getIssue()), new HString("maxlength=\"10\" tabIndex=\"" + tabIndex + "\" size=\"8\"", false));
+        return writeInput(type.getColumnName(), type.getValue(getIssue()), new HString("maxlength=\"10\" tabIndex=\"" + tabIndex + "\" size=\"8\"", false));
     }
 
-    public HString writeInput(HString field, HString value, int tabIndex)
+    public HString writeInput(String field, HString value, int tabIndex)
     {
         return writeInput(field, value, new HString("tabIndex=\"" + tabIndex + "\"", false));
     }
@@ -312,12 +310,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
     public HString writeSelect(ColumnType type, int tabIndex) throws IOException
     {
-        return writeSelect(type, type.getValue(getIssue()), tabIndex);
-    }
-
-    @Deprecated
-    public HString writeSelect(ColumnType type, HString value, int tabIndex) throws IOException
-    {
+        HString value = type.getValue(getIssue());
         return writeSelect(new HString(type.getColumnName(), false), value, value, KeywordManager.getKeywordOptions(_c, type), tabIndex);
     }
 
@@ -374,27 +367,30 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return sb.toHString();
     }
 
-    public HString getLabel(String columnName)
+    public HString getLabel(ColumnType type)
     {
-        return getLabel(new HString(columnName));
+        return getLabel(type.getColumnName());
     }
 
-    public HString getLabel(HString columnName)
+    public HString getLabel(String columnName)
     {
-        ColumnInfo col = IssuesSchema.getInstance().getTableInfoIssues().getColumn(columnName.getSource());
+        ColumnInfo col = IssuesSchema.getInstance().getTableInfoIssues().getColumn(columnName);
         String name = null;
-        if (_ccc.getColumnCaptions().containsKey(columnName.getSource()))
-            name = _ccc.getColumnCaptions().get(columnName.getSource());
+
+        if (_ccc.getColumnHCaptions().containsKey(columnName))
+            name = _ccc.getColumnHCaptions().get(columnName).getSource();
         else if (col != null)
             name = col.getLabel();
+
         if (name != null && name.length() > 0)
         {
             String label = PageFlowUtil.filter(name).replaceAll(" ", "&nbsp;");
-            if (_requiredFields != null && _requiredFields.indexOf(columnName.toLowerCase().getSource()) != -1)
+            if (_requiredFields != null && _requiredFields.indexOf(columnName.toLowerCase()) != -1)
                 return new HString(label + "<span class=\"labkey-error\">*</span>", false);
-            return new HString(label,false);
+            return new HString(label, false);
         }
-        return columnName;
+
+        return new HString(columnName, false);
     }
 
     public String _toString(Object a)

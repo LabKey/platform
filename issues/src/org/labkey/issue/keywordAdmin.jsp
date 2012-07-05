@@ -40,9 +40,9 @@
     {
         String formId = "form" + kwp.type.getColumnName();
 %>
-    <!--<%=h(kwp.name)%>-->
+    <!-- <%=kwp.type.getColumnName()%> -->
     <td style="vertical-align:top">
-    <div class="labkey-form-label"><b><%=h(kwp.plural)%></b></div>
+    <div class="labkey-form-label"><b><%=kwp.name%> Options</b></div>
     <form id="<%=formId%>" method="POST" action="<%=h(buildURL(IssuesController.DeleteKeywordAction.class))%>">
 <%
     if (kwp.keywords.isEmpty())

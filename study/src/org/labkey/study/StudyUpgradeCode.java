@@ -15,7 +15,6 @@
  */
 package org.labkey.study;
 
-import com.sun.org.apache.xpath.internal.operations.Mod;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;

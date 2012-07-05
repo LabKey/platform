@@ -25,34 +25,37 @@
 <%@ page import="org.labkey.api.util.HString" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.issue.ColumnType" %>
 <%@ page import="org.labkey.issue.IssueUpdateEmailTemplate" %>
-<%@ page import="org.labkey.issue.IssuesController" %>
-<%@ page import="static org.labkey.issue.IssuesController.*" %>
-<%@ page import="org.labkey.issue.model.IssueManager" %>
+<%@ page import="org.labkey.issue.IssuesController.AdminBean" %>
+<%@ page import="org.labkey.issue.IssuesController.ConfigureIssuesAction" %>
+<%@ page import="org.labkey.issue.IssuesController.ConfigureIssuesForm" %>
+<%@ page import="org.labkey.issue.IssuesController.ListAction" %>
+<%@ page import="org.labkey.issue.model.IssueManager.CustomColumnConfiguration" %>
 <%@ page import="org.labkey.issue.model.KeywordManager" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.issue.ColumnType" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    HttpView<IssuesController.AdminBean> me = (HttpView<IssuesController.AdminBean>) HttpView.currentView();
-    IssuesController.AdminBean bean = me.getModelBean();
-    Set<String> pickListColumns = bean.ccc.getPickListColumns();
-    Map<String, String> captions = bean.ccc.getColumnCaptions();
+    HttpView<AdminBean> me = (HttpView<AdminBean>) HttpView.currentView();
+    AdminBean bean = me.getModelBean();
+    CustomColumnConfiguration ccc = bean.ccc;
+    Set<String> pickListColumns = ccc.getPickListColumns();
+    Map<String, HString> captions = ccc.getColumnHCaptions();
     Container c = me.getViewContext().getContainer();
 %>
 <br>
 <table>
 <tr><td>
-    <%=generateButton("Back to " + bean.entryTypeNames.pluralName, buildURL(IssuesController.ListAction.class) + DataRegion.LAST_FILTER_PARAM + "=true")%>
+    <%=generateButton("Back to " + bean.entryTypeNames.pluralName, buildURL(ListAction.class) + DataRegion.LAST_FILTER_PARAM + "=true")%>
     <%=generateButton("Customize Email Template", urlProvider(AdminUrls.class).getCustomizeEmailURL(c, IssueUpdateEmailTemplate.class, me.getViewContext().getActionURL()))%>
 </td></tr>
 <tr><td>&nbsp;</td></tr>
 <%=formatMissedErrorsInTable("form", 1)%>
 </table>
-<form name="entryTypeNames" action="<%=h(buildURL(IssuesController.ConfigureIssuesAction.class))%>" method="POST">
+<form name="entryTypeNames" action="<%=h(buildURL(ConfigureIssuesAction.class))%>" method="POST">
 
 <table><tr>
     <td valign=top>
@@ -74,7 +77,7 @@
 
                 }
         %>
-                <td><input type="checkbox" name="requiredFields" <%=isRequired(info.getName(), bean.getRequiredFields()) ? "checked " : ""%><%=isPickList(info) && !hasKeywords(info) ? "disabled " : "" %>value="<%=info.getName()%>"><%=h(getCaption(info))%></td><%
+                <td><input type="checkbox" name="requiredFields" <%=isRequired(info.getName(), bean.getRequiredFields()) ? "checked " : ""%><%=isPickList(ccc, info) && !hasKeywords(c, info) ? "disabled " : "" %>value="<%=info.getName()%>"><%=getCaption(ccc, info)%></td><%
 
                 if (!startNewRow)
                 {
@@ -98,11 +101,11 @@
         <tr><td>Resolution</td><td><input name="resolution" value="<%=h(captions.get("resolution"))%>" size=20></td></tr>
         <tr><td>Integer1</td><td><input name="int1" value="<%=h(captions.get("int1"))%>" size=20></td></tr>
         <tr><td>Integer2</td><td><input name="int2" value="<%=h(captions.get("int2"))%>" size=20></td></tr>
-        <tr><td>String1</td><td><input name="string1" value="<%=h(captions.get("string1"))%>" size=20><input type="checkbox" name="<%=IssueManager.CustomColumnConfiguration.PICK_LIST_NAME%>" value="string1" <%=pickListColumns.contains("string1") ? "checked" : ""%>>Use pick list for this field</td></tr>
-        <tr><td>String2</td><td><input name="string2" value="<%=h(captions.get("string2"))%>" size=20><input type="checkbox" name="<%=IssueManager.CustomColumnConfiguration.PICK_LIST_NAME%>" value="string2" <%=pickListColumns.contains("string2") ? "checked" : ""%>>Use pick list for this field</td></tr>
-        <tr><td>String3</td><td><input name="string3" value="<%=h(captions.get("string3"))%>" size=20><input type="checkbox" name="<%=IssueManager.CustomColumnConfiguration.PICK_LIST_NAME%>" value="string3" <%=pickListColumns.contains("string3") ? "checked" : ""%>>Use pick list for this field</td></tr>
-        <tr><td>String4</td><td><input name="string4" value="<%=h(captions.get("string4"))%>" size=20><input type="checkbox" name="<%=IssueManager.CustomColumnConfiguration.PICK_LIST_NAME%>" value="string4" <%=pickListColumns.contains("string4") ? "checked" : ""%>>Use pick list for this field</td></tr>
-        <tr><td>String5</td><td><input name="string5" value="<%=h(captions.get("string5"))%>" size=20><input type="checkbox" name="<%=IssueManager.CustomColumnConfiguration.PICK_LIST_NAME%>" value="string5" <%=pickListColumns.contains("string5") ? "checked" : ""%>>Use pick list for this field</td></tr>
+        <tr><td>String1</td><td><input name="string1" value="<%=h(captions.get("string1"))%>" size=20><input type="checkbox" name="<%=CustomColumnConfiguration.PICK_LIST_NAME%>" value="string1" <%=pickListColumns.contains("string1") ? "checked" : ""%>>Use pick list for this field</td></tr>
+        <tr><td>String2</td><td><input name="string2" value="<%=h(captions.get("string2"))%>" size=20><input type="checkbox" name="<%=CustomColumnConfiguration.PICK_LIST_NAME%>" value="string2" <%=pickListColumns.contains("string2") ? "checked" : ""%>>Use pick list for this field</td></tr>
+        <tr><td>String3</td><td><input name="string3" value="<%=h(captions.get("string3"))%>" size=20><input type="checkbox" name="<%=CustomColumnConfiguration.PICK_LIST_NAME%>" value="string3" <%=pickListColumns.contains("string3") ? "checked" : ""%>>Use pick list for this field</td></tr>
+        <tr><td>String4</td><td><input name="string4" value="<%=h(captions.get("string4"))%>" size=20><input type="checkbox" name="<%=CustomColumnConfiguration.PICK_LIST_NAME%>" value="string4" <%=pickListColumns.contains("string4") ? "checked" : ""%>>Use pick list for this field</td></tr>
+        <tr><td>String5</td><td><input name="string5" value="<%=h(captions.get("string5"))%>" size=20><input type="checkbox" name="<%=CustomColumnConfiguration.PICK_LIST_NAME%>" value="string5" <%=pickListColumns.contains("string5") ? "checked" : ""%>>Use pick list for this field</td></tr>
         <tr><td colspan=2>&nbsp;</td></tr>
         </table>
     </td>
@@ -116,18 +119,18 @@
                     <table>
                         <tr>
                             <td>Singular item name</td>
-                            <td><input type="text" name="<%=IssuesController.ConfigureIssuesForm.ParamNames.entrySingularName.name()%>"
-                                       value="<%=h(bean.entryTypeNames.singularName)%>" size="20"/></td>
+                            <td><input type="text" name="<%=ConfigureIssuesForm.ParamNames.entrySingularName.name()%>"
+                                       value="<%=bean.entryTypeNames.singularName%>" size="20"/></td>
                         </tr>
                         <tr>
                             <td>Plural items name</td>
-                            <td><input type="text" name="<%=IssuesController.ConfigureIssuesForm.ParamNames.entryPluralName.name()%>"
-                                       value="<%=h(bean.entryTypeNames.pluralName)%>" size="20"/></td>
+                            <td><input type="text" name="<%=ConfigureIssuesForm.ParamNames.entryPluralName.name()%>"
+                                       value="<%=bean.entryTypeNames.pluralName%>" size="20"/></td>
                         </tr>
                         <tr>
                             <td>Comment sort direction</td>
                             <td>
-                                <%=PageFlowUtil.strSelect(IssuesController.ConfigureIssuesForm.ParamNames.direction.name(), Arrays.asList(Sort.SortDirection.values()), java.util.Arrays.asList("Oldest first", "Newest first"), bean.commentSort) %>
+                                <%=PageFlowUtil.strSelect(ConfigureIssuesForm.ParamNames.direction.name(), Arrays.asList(Sort.SortDirection.values()), java.util.Arrays.asList("Oldest first", "Newest first"), bean.commentSort) %>
                             </td>
                         </tr>
                     </table>
@@ -148,7 +151,7 @@
                                 <input onchange="assignedToGroup.disabled=false;" type="radio" name="assignedToMethod" value="Group" <%=null != bean.assignedToGroup ? " checked" : ""%> />
                             </td>
                             <td>Specific Group
-                                <select<%=Boolean.valueOf(null == bean.assignedToGroup) ? " disabled=\"true\"" : ""%> name="assignedToGroup"><%
+                                <select<%=Boolean.valueOf(null == bean.assignedToGroup) ? " disabled=\"disabled\"" : ""%> name="assignedToGroup"><%
                                     for (Group group : SecurityManager.getGroups(c.getProject(), true))
                                     {
                                         if (!group.isGuests())
@@ -176,33 +179,31 @@
 <%!
     public boolean isRequired(String name, HString requiredFields)
     {
-        if (requiredFields != null) {
+        if (requiredFields != null)
+        {
             return requiredFields.indexOf(name.toLowerCase()) != -1;
         }
         return false;
     }
 
-    public String getCaption(ColumnInfo col) throws java.sql.SQLException
+    public HString getCaption(CustomColumnConfiguration ccc, ColumnInfo col) throws java.sql.SQLException
     {
-        final IssueManager.CustomColumnConfiguration ccc = IssueManager.getCustomColumnConfiguration(HttpView.getRootContext().getContainer());
-        if (ccc.getColumnCaptions().containsKey(col.getName()))
+        if (ccc.getColumnHCaptions().containsKey(col.getName()))
         {
-            return ccc.getColumnCaptions().get(col.getName());
+            return ccc.getColumnHCaptions().get(col.getName());
         }
-        return col.getLabel();
+        return new HString(col.getLabel(), true);
     }
 
-    public boolean hasKeywords(ColumnInfo col)
+    public boolean hasKeywords(Container c, ColumnInfo col)
     {
-        Container c = HttpView.getRootContext().getContainer();
         ColumnType type = ColumnType.forName(col.getColumnName());
 
         return (null == type || KeywordManager.getKeywords(c, type).size() > 0);
     }
 
-    public boolean isPickList(ColumnInfo col)
+    public boolean isPickList(CustomColumnConfiguration ccc, ColumnInfo col)
     {
-        final IssueManager.CustomColumnConfiguration ccc = IssueManager.getCustomColumnConfiguration(HttpView.getRootContext().getContainer());
         String name = col.getColumnName();
 
         if (ccc.getPickListColumns().contains(name.toLowerCase()))
