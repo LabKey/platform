@@ -353,7 +353,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
 
         if (this.multiSelect)
         {
-            this.view = Ext4.create('Ext.grid.GridPanel', {
+            this.view = Ext4.create('Ext.grid.Panel', {
                 cls: 'measuresGridPanel iScroll', // for selenium test usage
                 store: this.measuresStore,
                 flex: 1,
@@ -407,7 +407,6 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
             name : 'filterSearch'
         });
         var taskFilterMeasures = new Ext.util.DelayedTask(function(){this.filterMeasures(this.searchBox.getValue());}, this);
-//        this.searchBox.on('keyup', function(cmp,e){console.log('keyup');taskFilterMeasures.delay(333);});
         this.searchBox.on('change', function(cmp,e){taskFilterMeasures.delay(333);});
         tbarItems.push(this.searchBox);
 
@@ -648,7 +647,8 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.FullGrid', {
  * Constructs a new LabKey MeasuresDataView to display a grid of all measures with columns for dataset, label, and description using the supplied configuration.
  * @constructor
  * @augments Ext.panel.Panel
- * @param {object} [filter] LABKEY.Visualization.Filter object to allow filtering of the measures returned by the LABKEY.Visualization.getMeasures method. 
+ * @param {object} [filter] LABKEY.Visualization.Filter object to allow filtering of the measures returned by the LABKEY.Visualization.getMeasures method.
+ * @param {boolean} [multiSelect] True to allow multiple measures to be selected at once
  * @param {boolean} [allColumns] passed to LABKEY.Visualization.getMeasures method
  * @param {boolean} [showHidden] passed to LABKEY.Visualization.getMeasures method
 **/
@@ -707,7 +707,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
         // Using a new MeasureStore, but we will only load data for the list of queryNames (i.e. Sources)
         this.sourcesStore = Ext4.create('LABKEY.ext4.MeasuresStore', {});
 
-        this.sourcesGrid = Ext4.create('Ext.grid.GridPanel', {
+        this.sourcesGrid = Ext4.create('Ext.grid.Panel', {
             store: this.sourcesStore,
             selModel: Ext4.create('Ext.selection.RowModel', {
                 singleSelect: true,
@@ -716,13 +716,15 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                     scope: this
                 }
             }),
-            cls : 'iScroll',
+            cls : 'sourcegrid iScroll',
             flex: 1,
             ui: this.ui,
             hideHeaders: true,
             enableColumnHide: false,
             enableColumnResize: false,
-            stripeRows: false,
+            viewConfig : {
+                stripeRows : false
+            },
             border: false,
             forceFit: true,
             columns: [{header: 'Source', dataIndex: 'queryName', cls: '', renderer: this.formatSourcesWithSelections}]
@@ -781,27 +783,29 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
             }
         });
 
-        this.measuresGrid = Ext4.create('Ext.grid.GridPanel', {
+        this.measuresGrid = Ext4.create('Ext.grid.Panel', {
             store: this.measuresStore,
-            stripeRows : true,
+            viewConfig : {
+                stripeRows : false
+            },
             border: false,
-            selModel : Ext4.create('Ext.selection.CheckboxModel', {
-                listeners: {
-                    select: this.onMeasureSelect,
-                    deselect: this.onMeasureDeselect,
-                    scope: this
-                }
-            }),
-            cls : 'iScroll',
+            selModel : Ext4.create(this.multiSelect ? 'Ext.selection.CheckboxModel' : 'Ext.selection.RowModel'),
+            cls : 'measuresgrid iScroll',
             flex: 1,
             ui: this.ui,
             hidden: true, // starts hidden until a source query is chosen
             hideHeaders: true,
             enableColumnHide: false,
             enableColumnResize: false,
-            multiSelect: true,
+            multiSelect: this.multiSelect,
+            singleSelect : !this.multiSelect,
             bubbleEvents : ['viewready'],
-            columns: [{header: 'Measure', dataIndex: 'label', flex: 1}]
+            columns: [{header: 'Measure', dataIndex: 'label', flex: 1}],
+            listeners : {
+                select : this.onMeasureSelect,
+                deselect : this.onMeasureDeselect,
+                scope : this
+            }
         });
 
         this.measuresGrid.getSelectionModel().on('selectionchange', function(selModel) {
@@ -854,15 +858,15 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 this.measuresStoreData = Ext4.JSON.decode(response.responseText);
 
                 this.sourcesStoreKeys = [];
-                // initialize the sources grid with the first item as a way to view the selected measures
-                this.sourcesStoreData = [{id: 'SELECTED', schemaName: '_first', queryName: 'Selected Measures (0)', label: null}];
+                this.sourcesStoreData = [];
+
                 Ext4.each(this.measuresStoreData.measures, function(measure) {
                     var key = measure.schemaName + "|" + measure.queryName;
-                    var query = {schemaName: measure.schemaName, queryName: measure.queryName};
+
                     if (this.sourcesStoreKeys.indexOf(key) == -1)
                     {
                         this.sourcesStoreKeys.push(key);
-                        this.sourcesStoreData.push(query);
+                        this.sourcesStoreData.push(measure);
                     }
                 }, this);
 
@@ -888,16 +892,8 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
         this.measuresStore.clearFilter();
         this.measuresStore.filter([{
             filterFn: function(measureRecord) {
-                // if the selected source record is the "Selected Measures (0)", then only show the selected records
-                if (sourceRecord.get("id") == "SELECTED")
-                {
-                    return measureRecord.get("selected");
-                }
-                else
-                {
-                    return (sourceRecord.get("schemaName") == measureRecord.get("schemaName")
-                            && sourceRecord.get("queryName") == measureRecord.get("queryName"));
-                }
+                return (sourceRecord.get("schemaName") == measureRecord.get("schemaName")
+                        && sourceRecord.get("queryName") == measureRecord.get("queryName"));
             },
             scope: this
         }]);
@@ -918,6 +914,9 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
         var index = this.getSelectedRecordIndex(record);
         if (index == -1 && ix != -1)
         {
+            if (!this.multiSelect && this.selectedMeasures.length > 0) {
+                this.selectedMeasures = [];
+            }
             record.set("selected", true);
             record.commit(); // to remove the dirty state
             this.selectedMeasures.push(record);
@@ -939,11 +938,6 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
     },
 
     updateSourcesSelectionEntry : function(record, sourceCountUpdate) {
-        // update entry in the sources grid which indicates how many selected measures there are
-        var selectionEntry = this.sourcesStore.getById('SELECTED');
-        selectionEntry.set('queryName', this.selectedMeasures.length == 1 ? 'Selected Measures (1)' : 'Selected Measures (' + this.selectedMeasures.length + ')');
-        selectionEntry.set('numSelected', this.selectedMeasures.length);
-        selectionEntry.commit(); // to remove the dirty state
 
         // update the numSelected value for the source entry
         var sourceEntryIndex = this.sourcesStore.findExact('queryName', record.get('queryName'));
@@ -951,7 +945,9 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
         {
             var sourceEntry = this.sourcesStore.getAt(sourceEntryIndex);
             if (!sourceEntry.get('numSelected'))
+            {
                 sourceEntry.set('numSelected', 0);
+            }
 
             sourceEntry.set('numSelected', sourceEntry.get('numSelected') + sourceCountUpdate);
             sourceEntry.commit(); // to remove the dirty state
