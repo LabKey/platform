@@ -106,6 +106,13 @@ Ext4.define('LABKEY.vis.MainTitleOptionsPanel', {
         return {title: this.chartTitleTextField.getValue()};
     },
 
+    restoreValues : function(initValues) {
+        if (initValues.hasOwnProperty("title"))
+            this.chartTitleTextField.setValue(initValues.title);
+
+        this.hasChanges = false;
+    },
+
     checkForChangesAndFireEvents : function() {
         if (this.hasChanges)
             this.fireEvent('chartDefinitionChanged', false);

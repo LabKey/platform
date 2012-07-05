@@ -170,7 +170,12 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 }
             },
             listeners : {
-                load : {fn : this.onViewLoad, scope: this}
+                beforeload : function(){
+                    if (this.gridPanel)
+                        this.gridPanel.setLoading(true);
+                },
+                load : {fn : this.onViewLoad, scope: this},
+                scope: this
             },
             scope : this
         };
@@ -489,7 +494,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                         this.onEditClick(view, record);
                 },
                 afterlayout : function(p) {
-                    p.setLoading(false);
                     /* Apply selector for tests */
                     var el = Ext4.query("*[class=x4-grid-table x4-grid-table-resizer]");
                     if (el && el.length == 1) {
@@ -744,6 +748,9 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
     },
 
     onViewLoad : function(s, recs, success, operation, ops) {
+        if (this.gridPanel)
+            this.gridPanel.setLoading(false);
+
         this.hiddenFilter();
         // sorting 'groups' as opposed to the rows in a group on a grouping feature is not immediately present
         // TODO: Possible option (from Ext 3.4) : http://www.sencha.com/forum/showthread.php?109047-Grid-grouping-and-sorting&p=515917#post515917
@@ -1132,7 +1139,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                             url : LABKEY.ActionURL.buildURL('study', 'editView'),
                             method : 'POST',
                             success : function(){
-                                this.onEditSave(record, form.getValues());                        
                                 this.onEditSave();
                                 editWindow.getEl().unmask();
                                 editWindow.close();

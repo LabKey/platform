@@ -259,6 +259,28 @@ Ext4.define('LABKEY.vis.YAxisOptionsPanel', {
         return values;
     },
 
+    restoreValues : function(initValues) {
+        if (initValues.hasOwnProperty("label"))
+            this.labelTextField.setValue(initValues.label);
+        if (initValues.hasOwnProperty("scale"))
+            this.scaleCombo.setValue(initValues.scale);
+        if (initValues.hasOwnProperty("range") && initValues.range.hasOwnProperty("type"))
+        {
+            if (initValues.range.type == 'automatic')
+                this.rangeAutomaticRadio.setValue(true);
+            else if (initValues.range.type == 'manual')
+            {
+                this.rangeManualRadio.setValue(true);
+                if (initValues.range.hasOwnProperty("min"))
+                    this.rangeMinNumberField.setValue(initValues.range.min);
+                if (initValues.range.hasOwnProperty("max"))
+                    this.rangeMaxNumberField.setValue(initValues.range.max);                
+            }
+        }
+
+        this.hasChanges = false;
+    },
+
     checkForChangesAndFireEvents : function(){
         if (this.hasChanges)
             this.fireEvent('chartDefinitionChanged', false);

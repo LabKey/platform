@@ -82,6 +82,16 @@ Ext4.define('LABKEY.vis.AestheticOptionsPanel', {
         };
     },
 
+    restoreValues : function(initValues) {
+        if (initValues.hasOwnProperty("lineWidth"))
+            this.lineWidthSlider.setValue(initValues.lineWidth);
+
+        if (initValues.hasOwnProperty("hideDataPoints"))
+            this.hideDataPointCheckbox.setValue(initValues.hideDataPoints);
+
+        this.hasChanges = false;
+    },
+
     checkForChangesAndFireEvents : function() {
         if (this.hasChanges)
             this.fireEvent('chartDefinitionChanged', false);

@@ -134,9 +134,7 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
     togglePointClickFn: function() {
         if (this.pointClickTextAreaHtml.isDisabled())
         {
-            this.pointClickTextAreaHtml.enable();
-            editAreaLoader.setValue(this.pointClickTextAreaId, this.getDefaultPointClickFn());
-            this.pointClickFnBtn.setText('Disable');
+            this.setEditorEnabled(this.getDefaultPointClickFn());
         }
         else
         {
@@ -146,11 +144,7 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
                 buttons: Ext4.Msg.YESNO,
                 fn: function(btnId, text, opt){
                     if(btnId == 'yes'){
-                        Ext4.getDom(this.fnErrorDiv).innerHTML = '&nbsp;';
-                        this.pointClickFn = null;
-                        editAreaLoader.setValue(this.pointClickTextAreaId, null);
-                        this.pointClickTextAreaHtml.disable();
-                        this.pointClickFnBtn.setText('Enable');
+                        this.setEditorDisabled();
                     }
                 },
                 icon: Ext4.MessageBox.QUESTION,
@@ -158,6 +152,21 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
             });
         }
         this.hasChanges = true;
+    },
+
+    setEditorEnabled: function(editorValue) {
+        this.pointClickFn = editorValue;
+        this.pointClickTextAreaHtml.enable();
+        editAreaLoader.setValue(this.pointClickTextAreaId, editorValue);
+        this.pointClickFnBtn.setText('Disable');
+    },
+
+    setEditorDisabled: function() {
+        Ext4.getDom(this.fnErrorDiv).innerHTML = '&nbsp;';
+        this.pointClickFn = null;
+        editAreaLoader.setValue(this.pointClickTextAreaId, null);
+        this.pointClickTextAreaHtml.disable();
+        this.pointClickFnBtn.setText('Enable');
     },
 
     getDefaultPointClickFn: function() {
@@ -212,6 +221,18 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
 
     getPanelOptionValues : function() {
         return {pointClickFn: !this.pointClickTextAreaHtml.isDisabled() ? this.pointClickFn : null};
+    },
+
+    restoreValues : function(initValues) {
+        if (initValues.hasOwnProperty("pointClickFn"))
+        {
+            if (initValues.pointClickFn != null)
+                this.setEditorEnabled(initValues.pointClickFn);
+            else
+                this.setEditorDisabled();
+        }
+
+        this.hasChanges = false;
     },
 
     checkForChangesAndFireEvents : function() {

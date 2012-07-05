@@ -74,6 +74,7 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
         this.groupsRadio =  Ext4.create('Ext.form.field.Radio', {
             name: 'subject_selection',
             inputValue: 'groups',
+            width: 200,
             boxLabel: this.subjectNounSingular + ' Groups',
             checked: this.chartSubjectSelection == 'groups',
             listeners: {
@@ -113,6 +114,7 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
         this.displayIndividualCheckbox = Ext4.create('Ext.form.field.Checkbox', {
             boxLabel  : 'Show Individual Lines',
             name      : 'Show Individual Lines',
+            width     : 200,
             checked   : this.displayIndividual,
             value     : this.displayIndividual,
             style     : {marginLeft: '20px'}, // show indented
@@ -208,9 +210,9 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
 
         this.oneChartRadio = Ext4.create('Ext.form.field.Radio', {
             name: 'number_of_charts',
+            width: 250,
             labelAlign: 'top',
             fieldLabel: 'Number of Charts',
-            labelWidth: 160,
             boxLabel: 'One Chart',
             inputValue: 'single',
             checked: this.chartLayout == 'single',
@@ -227,6 +229,7 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
 
         this.oneChartPerGroupRadio = Ext4.create('Ext.form.field.Radio', {
             name: 'number_of_charts',
+            width: 250,
             checked: this.chartLayout == 'per_group',
             inputValue: 'per_group',
             hidden: this.chartSubjectSelection == 'subjects',
@@ -244,6 +247,7 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
 
         this.oneChartPerSubjectRadio = Ext4.create('Ext.form.field.Radio', {
             name: 'number_of_charts',
+            width: 250,
             checked: this.chartLayout == 'per_subject',
             inputValue: 'per_subject',
             boxLabel: 'One Chart Per ' + this.subjectNounSingular,
@@ -261,6 +265,7 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
 
         this.oneChartPerDimensionRadio = Ext4.create('Ext.form.field.Radio', {
             name: 'number_of_charts',
+            width: 250,
             boxLabel: 'One Chart Per Measure/Dimension',
             checked: this.chartLayout == 'per_dimension',
             inputValue: 'per_dimension',
@@ -334,6 +339,33 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
             aggregateType : this.displayAggregateComboBox.getValue(),
             errorBars : this.displayErrorComboBox.getValue()
         };
+    },
+
+    restoreValues : function(initValues) {
+        var radioComp;
+        if (initValues.hasOwnProperty("chartSubjectSelection"))
+        {
+            radioComp = Ext4.ComponentQuery.query('radio[inputValue="' + initValues.chartSubjectSelection + '"]');
+            if (radioComp.length > 0)
+                radioComp[0].setValue(true);
+        }
+        if (initValues.hasOwnProperty("chartLayout"))
+        {
+            radioComp = Ext4.ComponentQuery.query('radio[inputValue="' + initValues.chartLayout + '"]');
+            if (radioComp.length > 0)
+                radioComp[0].setValue(true);
+        }
+        if (initValues.hasOwnProperty("displayIndividual"))
+            this.displayIndividualCheckbox.setValue(initValues.displayIndividual);
+        if (initValues.hasOwnProperty("displayAggregate"))
+            this.displayAggregateCheckbox.setValue(initValues.displayAggregate);
+        if (initValues.hasOwnProperty("aggregateType"))
+            this.displayAggregateComboBox.setValue(initValues.aggregateType);
+        if (initValues.hasOwnProperty("errorBars"))
+            this.displayErrorComboBox.setValue(initValues.errorBars);        
+
+        this.hasChanges = false;
+        this.requireDataRefresh = false;
     },
 
     checkForChangesAndFireEvents : function() {

@@ -86,8 +86,8 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
                 labelWidth: 125,
                 width: 350,
                 items : [
-                        { itemId: 'allReaders', name: 'reportShared', boxLabel: 'All readers', inputValue: 'true', disabled: !this.canSaveSharedCharts(), checked: this.currentlyShared },
-                        { itemId: 'onlyMe', name: 'reportShared', boxLabel: 'Only me', inputValue: 'false', disabled: !this.canSaveSharedCharts(), checked: !this.currentlyShared }
+                        { itemId: 'allReaders', name: 'reportShared', boxLabel: 'All readers', inputValue: 'true', disabled: !this.canSaveSharedCharts(), checked: this.currentlyShared, width: 140 },
+                        { itemId: 'onlyMe', name: 'reportShared', boxLabel: 'Only me', inputValue: 'false', disabled: !this.canSaveSharedCharts(), checked: !this.currentlyShared, width: 140 }
                     ]
             }),
             Ext4.create('Ext.form.RadioGroup', {
@@ -195,8 +195,7 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
                 },
                 scope: this,
                 formBind: true
-            },
-            {text: 'Cancel', handler: function(){this.fireEvent('closeOptionsWindow');}, scope: this}
+            }
         ];
 
         this.callParent();

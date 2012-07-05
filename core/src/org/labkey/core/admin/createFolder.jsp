@@ -107,11 +107,6 @@
                 moduleTypes = data;
             }
         });
-        request.add(LABKEY.Security.getContainers, {
-            containerPath: '/',
-            includeSubfolders: true,
-            success: getTemplateFolders
-        });
 
         request.send(onSuccess);
 
@@ -400,6 +395,19 @@
                             }()
                         }
                     ]);
+
+                    if (templateFolders.length == 0)
+                    {
+                        // mask the combo while loading the container list
+                        var combo = this.down('#sourceFolderCombo');
+                        combo.setLoading(true);
+
+                        LABKEY.Security.getContainers({
+                            containerPath: '/',
+                            includeSubfolders: true,
+                            success: initTemplateFolders(combo)
+                        });
+                    }
                 }
             }).render('createFormDiv');
 
@@ -414,6 +422,15 @@
                     }
                 }
             });
+        }
+
+        function initTemplateFolders(combo)
+        {
+            return function(data)
+            {
+                getTemplateFolders(data);
+                combo.setLoading(false);
+            }
         }
 
         function getTemplateFolders(data)

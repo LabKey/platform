@@ -70,6 +70,7 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
             fieldLabel: 'Chart Type',
             labelAlign: 'top',
             inputValue: 'date',
+            width: 175,
             boxLabel: 'Date Based Chart',
             checked: this.time == "date", //|| !this.time, //For old charts we default to date based chart.
             flex: 1,
@@ -98,6 +99,7 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
         this.visitChartRadio = Ext4.create('Ext.form.field.Radio', {
             name: 'chartType',
             inputValue: 'visit',
+            width: 175,
             boxLabel: 'Visit Based Chart',
             checked: this.time == "visit",
             disabled: this.timepointType == "date",
@@ -205,7 +207,6 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
                     {
                         // change the axis label if it has not been customized by the user
                         this.resetLabel();
-
                         Ext4.apply(this.zeroDateCol, records[0].data);
                         this.hasChanges = true;
                         this.requireDataRefresh = true;
@@ -282,6 +283,7 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
                 }
             }
         });
+        columnTwoItems.push({xtype: 'container', height: 10}); // vertical separator
         columnTwoItems.push(this.rangeAutomaticRadio);
 
         this.rangeManualRadio = Ext4.create('Ext.form.field.Radio', {
@@ -455,10 +457,8 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
                         index = store.find('name', 'Date');
                     }
 
-                    if(store.getAt(index)){
-                        this.zeroDateCombo.setValue(store.getAt(index).get('longlabel'));
-                        Ext4.apply(this.zeroDateCol, store.getAt(index).data);
-                    }
+                    if(store.getAt(index))
+                        this.setZeroDateByLabel(store.getAt(index).get('longlabel'));
 
                     // if the interval value has loaded, check if this is a saved chart or if we need to reset the label to the default
                     if (this.axis.label && this.intervalCombo && this.intervalCombo.getValue())
@@ -506,6 +506,12 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
             if (newLabel != null)
                 this.labelTextField.setValue(newLabel);
         }
+    },
+
+    setZeroDateByLabel : function(label) {
+        this.zeroDateCombo.setValue(label);
+        if (this.zeroDateCombo.findRecord('longlabel', label))
+            Ext4.apply(this.zeroDateCol, this.zeroDateCombo.findRecord('longlabel', label).data);
     },
 
     getDefaultLabel : function () {
@@ -557,11 +563,45 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
 
         return {
             time: this.dateChartRadio.checked ? this.dateChartRadio.inputValue : this.visitChartRadio.inputValue,
-            zeroDateCol: this.zeroDateCol,
+            zeroDateCol: Ext4.clone(this.zeroDateCol),
             interval: this.intervalCombo.getValue(),
             axis: axisValues
         };
     },
+
+    restoreValues : function(initValues) {
+        if (initValues.hasOwnProperty("time") && initValues.time == 'date')
+            this.dateChartRadio.setValue(true);
+        else if (initValues.hasOwnProperty("time") && initValues.time == 'visit')
+            this.visitChartRadio.setValue(true);
+
+        if (initValues.hasOwnProperty("interval"))
+            this.intervalCombo.setValue(initValues.interval);
+
+        if (initValues.hasOwnProperty('zeroDateCol') && initValues.zeroDateCol.hasOwnProperty('longlabel'))
+            this.setZeroDateByLabel(initValues.zeroDateCol.longlabel);
+
+        if (initValues.hasOwnProperty("axis"))
+        {
+            if (initValues.axis.hasOwnProperty("label"))
+                this.labelTextField.setValue(initValues.axis.label);
+            if (initValues.axis.hasOwnProperty("range") && initValues.axis.range.hasOwnProperty("type"))
+            {
+                if (initValues.axis.range.type == 'automatic')
+                    this.rangeAutomaticRadio.setValue(true);
+                else if (initValues.axis.range.type == 'manual')
+                {
+                    this.rangeManualRadio.setValue(true);
+                    if (initValues.axis.range.hasOwnProperty("min"))
+                        this.rangeMinNumberField.setValue(initValues.axis.range.min);
+                    if (initValues.axis.range.hasOwnProperty("max"))
+                        this.rangeMaxNumberField.setValue(initValues.axis.range.max);
+                }
+            }
+        }
+
+        this.hasChanges = false;
+    },    
 
     checkForChangesAndFireEvents : function(){
         if (this.hasChanges)

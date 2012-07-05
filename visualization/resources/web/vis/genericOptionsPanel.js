@@ -42,5 +42,10 @@ Ext4.define('LABKEY.vis.GenericOptionsPanel', {
     },
 
     checkForChangesAndFireEvents : function()
+    {},
+
+    // called to reset the panel components based on the values in the parameter object,
+    // this will likely be called on window cancel, ESC key, or when the close X is clicked 
+    restoreValues : function(initValues) 
     {}
 });

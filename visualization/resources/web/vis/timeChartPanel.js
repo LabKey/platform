@@ -251,6 +251,25 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 'measureMetadataRequestComplete': this.measureMetadataRequestComplete
             }
         });
+        // the measure panel will be handled separately because of issue 15410
+        // once that issue is fixed, we can possibly merge this panel back with the others
+        this.editorMeasureWindow = Ext4.create('Ext.window.Window', {
+            cls: 'data-window',
+            draggable : false,
+            width: 860,
+            autoHeight: true,
+            modal: true,
+            closable: false,
+            closeAction: 'hide',
+            layout: 'fit',
+            items: this.editorMeasurePanel,
+            listeners: {
+                'closeOptionsWindow': function() {
+                    this.editorMeasureWindow.hide();
+                },
+                scope: this
+            }
+        });
 
         this.editorXAxisPanel = Ext4.create('LABKEY.vis.XAxisOptionsPanel', {
             axis: this.chartInfo.axis[xAxisIndex] ? this.chartInfo.axis[xAxisIndex] : {},
@@ -370,7 +389,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         // put the options panels in an array for easier access
         this.optionPanelsArray = [
-            this.editorMeasurePanel,
             this.editorGroupingPanel,
             this.editorAestheticsPanel,
             this.editorDeveloperPanel,
@@ -405,18 +423,26 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             scope: this
         });
 
-        // setup buttons for the charting options panels (items to be added to the toolbar)
         this.measuresButton = Ext4.create('Ext.button.Button', {text: 'Measures',
-                                handler: function(btn){this.optionsButtonClicked(btn, this.editorMeasurePanel, 860, 225, 'left');}, scope: this});
+                                handler: function(btn){
+                                    var pLeft = btn.getEl().getX() - btn.getWidth();
+                                    var pTop = btn.getEl().getY() + 20;
+                                    this.editorMeasureWindow.setPosition(pLeft, pTop, false);
+                                    this.editorMeasureWindow.show();
+                                }, scope: this});
 
+        // setup buttons for the charting options panels (items to be added to the toolbar)
         this.groupingButton = Ext4.create('Ext.button.Button', {text: 'Grouping',
                                 handler: function(btn){this.optionsButtonClicked(btn, this.editorGroupingPanel, 600, 210, 'left');}, scope: this});
 
         this.aestheticsButton = Ext4.create('Ext.button.Button', {text: 'Options',
                                 handler: function(btn){this.optionsButtonClicked(btn, this.editorAestheticsPanel, 300, 125, 'center');}, scope: this});
 
+        this.supportsDeveloper = !(Ext4.isIE6 || Ext4.isIE7 || Ext4.isIE8); // issue 15372
         this.developerButton = Ext4.create('Ext.button.Button', {text: 'Developer', hidden: !this.isDeveloper,
-                                handler: function(btn){this.optionsButtonClicked(btn, this.editorDeveloperPanel, 800, 500, 'center');}, scope: this});
+                                handler: function(btn){this.optionsButtonClicked(btn, this.editorDeveloperPanel, 800, 500, 'center');}, scope: this,
+                                disabled: !this.supportsDeveloper});
+        if (!this.supportsDeveloper) this.developerButton.setTooltip("Developer options not supported for IE6, IE7, or IE8."); 
 
         this.saveButton = Ext4.create('Ext.button.Button', {text: 'Save', hidden: !this.canEdit,
                         handler: function(btn){
@@ -526,7 +552,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
     optionsButtonClicked : function(button, panel, width, height, align) {
         var pos = button.getEl().getXY();
         var pLeft = pos[0];
-        var pTop = pos[1] + 13;
+        var pTop = pos[1] + 20;
 
         if (align == 'center')
             pLeft = pLeft - width/2 + button.getWidth()/2;
@@ -535,7 +561,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         else if (align == 'left')
             pLeft = pLeft - button.getWidth();        
 
-        this.showOptionsWindow(button, panel, width, pLeft, pTop);
+        this.showOptionsWindow(panel, width, pLeft, pTop);
     },
 
     chartElementClicked : function(panel, clickXY, width, height, align) {
@@ -550,7 +576,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         else if (align == 'below')
         {
             pLeft = pLeft - width/2;
-            pTop = pTop + 5;
+            pTop = pTop + 12;
         }
         else if (align == 'right')
         {
@@ -563,42 +589,55 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             pTop = pTop - height/2;
         }
 
-        // no good animation target for the chart elements
-        this.showOptionsWindow(null, panel, width, pLeft, pTop);
+        this.showOptionsWindow(panel, width, pLeft, pTop);
     },
 
-    showOptionsWindow : function(animateTarget, panel, width, positionLeft, positionTop) {
+    showOptionsWindow : function(panel, width, positionLeft, positionTop) {
         if (!this.optionWindow)
         {
             this.optionWindow = Ext4.create('Ext.window.Window', {
                 floating: true,
-                cls: 'extContainer',
-                bodyStyle: 'background-color: white; border: solid black 1px;',
-                padding: 10,
-                header: false,
-                frame: true,
-                closable: false,
-                shadow: false,
+                cls: 'data-window',
+                draggable : false,
                 width: 860,
                 autoHeight: true,
                 modal: true,
                 closeAction: 'hide',
                 layout: 'card',
                 items: this.optionPanelsArray,
+                onEsc: function(){
+                    this.fireEvent('beforeclose');
+                    this.hide();
+                },
                 listeners: {
                     'closeOptionsWindow': function() {     
-                        this.optionWindow.close();
+                        this.optionWindow.hide();
                     },
                     scope: this
                 }
             });
         }
 
-        this.optionWindow.setWidth(width);
-        this.optionWindow.setPosition(positionLeft, positionTop, false);
+        this.optionWindowPanel = panel;
+        this.initialPanelValues = panel.getPanelOptionValues();
 
-        this.optionWindow.show(animateTarget);
-        this.optionWindow.getLayout().setActiveItem(panel);
+        // TODO: currently not supported for measures panel (issue 15410)
+        this.optionWindow.un('beforeclose', this.restorePanelValues, this);
+        if (!this.optionWindowPanel.hasOwnProperty("origMeasures"))
+            this.optionWindow.on('beforeclose', this.restorePanelValues, this);
+
+        this.optionWindow.setWidth(width);
+        if (positionLeft && positionTop)
+            this.optionWindow.setPosition(positionLeft, positionTop, false);
+
+        this.optionWindow.getLayout().setActiveItem(this.optionWindowPanel);
+        this.optionWindow.show();
+    },
+
+    restorePanelValues : function()
+    {
+        // on close, we don't apply changes and let the panel restore its state
+        this.optionWindowPanel.restoreValues(this.initialPanelValues);
     },
 
     setOptionsForGroupLayout : function(groupLayoutSelected){
@@ -665,7 +704,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.measuresButton.setDisabled(disable);
         this.groupingButton.setDisabled(disable);
         this.aestheticsButton.setDisabled(disable);
-        this.developerButton.setDisabled(disable);
+        this.developerButton.setDisabled(!this.supportsDeveloper || disable);
         this.saveButton.setDisabled(disable);
         this.saveAsButton.setDisabled(disable);
     },
