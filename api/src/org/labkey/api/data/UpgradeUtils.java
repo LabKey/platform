@@ -42,7 +42,7 @@ public class UpgradeUtils
 
     /**
      * Uniquifies values in a column, making it possible to add a UNIQUE CONSTRAINT/INDEX OR change a case-sensitive
-     * UNIQUE CONSTRAINT/INDEX to case-insensitive.  This is designed to be called from UpdateCode that's invoked by an
+     * UNIQUE CONSTRAINT/INDEX to case-insensitive. This is designed to be called from UpdateCode that's invoked by an
      * upgrade script. Column is uniquified by adding _2, _3, etc. to any values that duplicate previous values in that
      * container.
      *
