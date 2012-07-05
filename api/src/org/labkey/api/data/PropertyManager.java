@@ -659,7 +659,23 @@ public class PropertyManager
 
                 Long count = Table.executeSingleton(getSchema(), sql, new Object[]{}, Long.class);
 
-                assertEquals(count.intValue() + " orphaned property sets detected", 0, count.intValue());
+                // We found orphaned property sets... log them
+                if (count != 0)
+                {
+                    sql = "SELECT * FROM " +  prop.getTableInfoPropertySets() + " WHERE ObjectId NOT IN (SELECT EntityId FROM " + CoreSchema.getInstance().getTableInfoContainers() + ")";
+                    Selector selector = new SqlSelector(prop.getSchema(), sql);
+                    String topMessage = count + " orphaned property sets detected";
+                    final StringBuilder sb = new StringBuilder(topMessage + ":\ncategory\tset\tobjectid\n");
+                    selector.forEachMap(new Selector.ForEachBlock<Map<String, Object>>() {
+                        @Override
+                        public void exec(Map map) throws SQLException
+                        {
+                            sb.append(map.get("category") + "\t" + map.get("set") + "\t" + map.get("objectid") + "\n");
+                        }
+                    });
+                    _log.error(topMessage + ":\n" + sb);
+                    fail(topMessage + "; see log for more details");
+                }
             }
             catch (SQLException x)
             {
