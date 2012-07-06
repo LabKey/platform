@@ -1072,16 +1072,23 @@ public class AdminController extends SpringActionController
                 }
             }
 
-            if (form.getDefaultLsidAuthority() == null || "".equals(form.getDefaultLsidAuthority().trim()))
+            String lsidAuthority = form.getDefaultLsidAuthority();
+            lsidAuthority = lsidAuthority == null ? null : lsidAuthority.trim();
+            if (lsidAuthority == null || "".equals(lsidAuthority))
             {
                 errors.reject(ERROR_MSG, "Default LSID Authority may not be blank");
+                return false;
+            }
+            if (lsidAuthority.indexOf(":") != -1)
+            {
+                errors.reject(ERROR_MSG, "Default LSID Authority may not contain ':'. It should be a domain name, like 'labkey.com'.");
                 return false;
             }
 
             WriteableAppProps props = AppProps.getWriteableInstance();
 
             props.setDefaultDomain(form.getDefaultDomain());
-            props.setDefaultLsidAuthority(form.getDefaultLsidAuthority());
+            props.setDefaultLsidAuthority(lsidAuthority);
             props.setPipelineToolsDir(form.getPipelineToolsDirectory());
             props.setSSLRequired(form.isSslRequired());
             props.setSSLPort(form.getSslPort());
