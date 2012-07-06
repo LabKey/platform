@@ -123,6 +123,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.ext.FileBrowser, {
             text: 'Admin',
             iconCls: 'iconConfigure',
             disabledClass:'x-button-disabled',
+            disabled : true,
             tooltip: 'Configure the buttons shown on the toolbar',
             listeners: {click:function(button, event) {this.onAdmin(button);}, scope:this}
         });
@@ -253,6 +254,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.ext.FileBrowser, {
 
         // check whether the import data button is enabled
         this.importDataEnabled = config.importDataEnabled ? config.importDataEnabled : false;
+        this.enableAdmin(false);
 
         var newActions = [];
         if ('object' == typeof config.actions)
@@ -325,6 +327,26 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.ext.FileBrowser, {
         }
     },
 
+    /**
+     * Helper to enable and disable the import data action, marker classes
+     * are used to help with automated tests.
+     */
+    enableAdmin : function(enabled) {
+
+        var el = this.getTopToolbar().getEl();
+
+        if (enabled)
+        {
+            el.addClass('labkey-admin-enabled');
+            this.actions.customize.enable();
+        }
+        else
+        {
+            el.removeClass('labkey-import-enabled');
+            this.actions.customize.disable();
+        }
+    },
+
     updatePipelineActions : function(response, e)
     {
         var o = Ext.decode(response.responseText);
@@ -389,6 +411,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.ext.FileBrowser, {
 
     updateToolbarButtons : function()
     {
+        this.enableAdmin(false);
         var toolbar = this.getTopToolbar();
         if (toolbar && toolbar.items)
         {
@@ -441,6 +464,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.ext.FileBrowser, {
             // force a relayout on this component
             toolbar.doLayout();
         }
+        this.enableAdmin(true);
     },
 
     createButtonAction : function(cfg)
