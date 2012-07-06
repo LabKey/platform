@@ -193,6 +193,13 @@ public class MemTracker
 
         public void run()
         {
+            try
+            {
+                // Wait a little while so that we're less likely to cause a slowdown for the HTTP thread that initiated
+                // this memory logging/GC event
+                Thread.sleep(5000);
+            }
+            catch (InterruptedException ignored) {}
             if (_showHeader)
             {
                 _log.debug("\t******************************************************");
@@ -215,7 +222,6 @@ public class MemTracker
                 _log.debug(sb.toString());
             }
 
-            System.gc();
             System.gc();
             StringBuilder sb = new StringBuilder();
             sb.append("\t");

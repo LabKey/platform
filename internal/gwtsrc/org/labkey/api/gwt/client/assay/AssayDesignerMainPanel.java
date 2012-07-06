@@ -106,6 +106,8 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
     private boolean _allowSpacesInPath;
     private String _designerURL;
 
+    private boolean _saveInProgress = false;
+
     private static final int TRANSFORM_SCRIPT_PATH_COLUMN_INDEX = 0;
     private static final int TRANSFORM_SCRIPT_DRAG_LABEL_COLUMN_INDEX = 2;
     private static final int TRANSFORM_SCRIPT_REMOVE_BUTTON_COLUMN_INDEX = 1;
@@ -742,11 +744,20 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
 
     private void setAllowSave(boolean dirty)
     {
-        if (saveBarTop != null)
-            saveBarTop.setAllowSave(dirty);
-
-        if (saveBarBottom != null)
-            saveBarBottom.setAllowSave(dirty);
+        if (_saveInProgress)
+        {
+            if (saveBarTop != null)
+                saveBarTop.disableAll();
+            if (saveBarBottom != null)
+                saveBarBottom.disableAll();
+        }
+        else
+        {
+            if (saveBarTop != null)
+                saveBarTop.setAllowSave(dirty);
+            if (saveBarBottom != null)
+                saveBarBottom.setAllowSave(dirty);
+        }
     }
 
     private boolean validate()
@@ -823,11 +834,13 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
             @Override
             protected void handleFailure(String message, Throwable caught)
             {
+                _saveInProgress = false;
                 setDirty(true);
             }
 
             public void onSuccess(GWTProtocol result)
             {
+                _saveInProgress = false;
                 setDirty(false);
                 _statusLabel.setHTML(STATUS_SUCCESSFUL);
                 _assay = result;
@@ -878,6 +891,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
             _assay.setEditableRuns(_editableRuns.booleanValue());
             _assay.setEditableResults(_editableResults.booleanValue());
             _assay.setBackgroundUpload(_backgroundUpload.booleanValue());
+            _saveInProgress = true;
             getService().saveChanges(_assay, true, callback);
         }
     }
