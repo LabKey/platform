@@ -314,6 +314,12 @@ public class StudyController extends BaseStudyController
         {
             return new ActionURL(StudyController.DatasetsAction.class, container);
         }
+
+        @Override
+        public ActionURL getManageReports(Container container)
+        {
+            return new ActionURL(ReportsController.ManageReportsAction.class, container);
+        }
     }
 
     public StudyController()
