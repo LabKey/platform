@@ -234,6 +234,10 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                             {
                                 gwtColumnInfo.setRangeURI(PropertyType.getFromClass(tableColumn.getJavaObjectClass()).getTypeUri());
                             }
+                            else
+                            {
+                                injectedColumnNames.add(column.getColumnName());
+                            }
                         }
                     }
                 }
@@ -361,6 +365,10 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                         continue;
                     }
                     rawColumnInfo.setJdbcType(columnToBeWrapped.getJdbcType());
+                }
+                else
+                {
+                    throw new MetadataUnavailableException("No such column: " + gwtColumnInfo.getName());
                 }
             }
 

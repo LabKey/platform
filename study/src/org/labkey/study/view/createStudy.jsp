@@ -58,13 +58,18 @@
         <tr>
             <th style="text-align:left;width:18em">Timepoint Style<%=helpPopup("Timepoint Styles", "<p>Timepoints in the study may be defined using dates, or using pre-determined Visits assigned by the study administrator.</p><p>When using visits, administrators assign a label and a range of numerical \"Sequence Numbers\" that are grouped into visits.</p><p>If using dates, data can be grouped by day or week.</p>", true)%></th>
             <td align="left">
-                <input type="radio" name="timepointType" value="<%=TimepointType.DATE%>" <%=form.getTimepointType() == TimepointType.DATE ? "CHECKED" : ""%>> Dates &nbsp;&nbsp;
-                <input type="radio" name="timepointType" value="<%=TimepointType.VISIT%>" <%=form.getTimepointType() == TimepointType.VISIT || form.getTimepointType() == null ? "CHECKED" : ""%>> Assigned Visits
+                <input type="radio" name="timepointType" id="dateTimepointType" value="<%=TimepointType.DATE%>" <%=form.getTimepointType() == TimepointType.DATE ? "CHECKED" : ""%> onchange="document.getElementById('defaultDurationRow').style.display = document.getElementById('dateTimepointType').checked ? 'table-row' : 'none';"> Dates &nbsp;&nbsp;
+                <input type="radio" name="timepointType" value="<%=TimepointType.VISIT%>" <%=form.getTimepointType() == TimepointType.VISIT || form.getTimepointType() == null ? "CHECKED" : ""%> onchange="document.getElementById('defaultDurationRow').style.display = document.getElementById('dateTimepointType').checked ? 'table-row' : 'none';"> Assigned Visits
             </td>
         </tr>
         <tr>
             <th style="text-align:left;width:18em">Start Date<%=helpPopup("Start Date", "A start date is required for studies that are date based.")%></th>
             <td align="left"><input type="text" name="startDate" value="<%=h(DateUtil.formatDate(form.getStartDate()))%>">
+            </td>
+        </tr>
+        <tr id="defaultDurationRow" style="display: <%= form.getTimepointType() != null && !form.getTimepointType().isVisitBased() ? "table-row" : "none" %>">
+            <th style="text-align:left;width:18em">Default Timepoint Duration<%=helpPopup("Default Timepoint Duration", "The default timepoint duration will determine the number of days included in automatically created timepoints.")%></th>
+            <td align="left"><input type="text" name="defaultTimepointDuration" value="<%=form.getDefaultTimepointDuration()%>">
             </td>
         </tr>
         <tr>
