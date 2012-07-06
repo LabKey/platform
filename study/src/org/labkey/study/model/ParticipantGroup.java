@@ -16,6 +16,7 @@
 package org.labkey.study.model;
 
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONObject;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Entity;
@@ -227,5 +228,21 @@ public class ParticipantGroup extends Entity
     public int hashCode()
     {
         return _rowId;
+    }
+
+    public JSONObject toJSON()
+    {
+        JSONObject json = new JSONObject();
+
+        json.put("rowId", getRowId());
+        json.put("label", getLabel());
+        json.put("description", getDescription());
+        json.put("categoryId", getCategoryId());
+        json.put("categoryLabel", getCategoryLabel());
+        json.put("participantIds", getParticipantIds());
+        json.put("createdBy", getCreatedBy());
+        json.put("modifiedBy", getModifiedBy());
+
+        return json;
     }
 }

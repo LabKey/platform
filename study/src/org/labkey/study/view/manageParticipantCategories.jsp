@@ -47,28 +47,42 @@
     function renderParticipantCategoriesGrid()
     {
         Ext.QuickTips.init();
-        
-        var store = new Ext.data.JsonStore({
+
+       this.groupStore = new Ext.data.JsonStore({
             proxy: new Ext.data.HttpProxy({
-                url : LABKEY.ActionURL.buildURL("participant-group", "getParticipantCategories"),
+                url : LABKEY.ActionURL.buildURL("participant-group", "browseParticipantGroups"),
                 method : 'POST'
             }),
-            root: 'categories',
-            idProperty: 'rowId',
+            baseParams: { type : 'participantGroup', includeParticipantIds: true},
+            root: 'groups',
             fields: [
-                {name: 'rowId', type: 'integer'},
+                {name: 'rowId', type: 'integer', mapping: 'id'},
                 {name: 'label', type: 'string'},
                 {name: 'type', type: 'string'},
                 {name: 'createdBy', type: 'string', convert: function(v, record){return (v.displayValue ? v.displayValue : v.value)}},
                 {name: 'modifiedBy', type: 'string', convert: function(v, record){return (v.displayValue ? v.displayValue : v.value)}},
-                {name: 'shared', type: 'string'},
-                {name: 'participantIds', type: 'string', convert: function(v, record){return v.toString().replace(/,/g,", ");}},
-                {name: 'canEdit', type: 'boolean'},
-                {name: 'canDelete', type: 'boolean'}
+                {name: 'shared', type: 'boolean', mapping: 'category.shared'},
+                {name: 'participantIds', type: 'string', convert: function(v, record){return v.join(', ');}},
+                {name: 'canEdit', type: 'boolean', mapping: 'category.canEdit'},
+                {name: 'canDelete', type: 'boolean', mapping: 'category.canDelete'},
+                {name: 'categoryLabel', type: 'string', mapping: 'category.label'},
+                {name: 'category', type: 'object'}
             ],
+            sortInfo: {
+                field: 'categoryLabel',
+                direction: 'ASC'
+            },
             autoLoad: true
         });
-        store.on('load', toggleEditDeleteButtons);
+        this.groupStore.on('load', toggleEditDeleteButtons);
+
+        var categoryRenderer = function(value){
+            if(value.type == "list"){
+                return '';
+            } else {
+                return value.label;
+            }
+        };
 
         var columnModel = new Ext.grid.ColumnModel({
             defaults: {
@@ -77,7 +91,7 @@
             },
             columns: [
                 {header:'Label', dataIndex:'label', width: 300, renderer: $h},
-                {header:'Type', dataIndex:'type', width: 100},
+                {header:'Category', dataIndex:'category', width: 300, renderer: categoryRenderer},
                 {header:'Shared', dataIndex:'shared'},
                 {header:'Created By', dataIndex:'createdBy'},
                 {header:'Modified By', dataIndex:'modifiedBy'}
@@ -122,7 +136,7 @@
             autoHeight:true,
             width:800,
             loadMask:{msg:"Loading, please wait..."},
-            store: store,
+            store: this.groupStore,
             colModel: columnModel,
             selModel: new Ext.grid.RowSelectionModel({singleSelect:true}),
             viewConfig: {forceFit: true},
@@ -172,17 +186,18 @@
 
     function editParticipantGroup(row){
         var dialog = new LABKEY.study.ParticipantGroupDialog({
-                subject: {
-                    nounSingular: <%=q(subjectNounSingular)%>,
-                    nounPlural: <%=q(subjectNounPlural)%>,
-                    nounColumnName: <%=q(subjectNounColName)%>
-                },
-                isAdmin: <%=isAdmin%>,
-                categoryRowId: (row ? row.get("rowId") : null),
-                categoryLabel: (row ? row.get("label") : null),
-                categoryParticipantIds: (row ? row.get("participantIds") : null),
-                categoryShared : (row ? row.get("shared") : false),
-                canEdit : (row ? row.get("canEdit") :  true) // TODO: Modify this to adhere to API to check (participant) group permission
+            subject: {
+                nounSingular: <%=q(subjectNounSingular)%>,
+                nounPlural: <%=q(subjectNounPlural)%>,
+                nounColumnName: <%=q(subjectNounColName)%>
+            },
+            isAdmin: <%=isAdmin%>,
+            category: (row ? row.get("category") : null),
+            groupRowId: (row ? row.get("rowId") : null),
+            groupLabel: (row ? row.get("label") : null),
+            categoryParticipantIds: (row ? row.get("participantIds") : null),
+            categoryShared : (row ? row.get("shared") : false),
+            canEdit : (row ? row.get("canEdit") :  true) // TODO: Modify this to adhere to API to check (participant) group permission
         });
         dialog.show(this);
 
@@ -200,7 +215,7 @@
                 if (btn == 'yes')
                 {
                     Ext.Ajax.request({
-                        url: LABKEY.ActionURL.buildURL("participant-group", "deleteParticipantCategory"),
+                        url: LABKEY.ActionURL.buildURL("participant-group", "deleteParticipantGroup"),
                         method: "POST",
                         success: function(){
                             _grid.getStore().reload();

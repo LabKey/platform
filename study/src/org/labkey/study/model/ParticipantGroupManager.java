@@ -90,6 +90,11 @@ public class ParticipantGroupManager
         return StudySchema.getInstance().getSchema().getTable("ParticipantGroupMap");
     }
 
+    public TableInfo getTableInfoParticipantCategory()
+    {
+        return StudySchema.getInstance().getTableInfoParticipantCategory();
+    }
+
     public ParticipantCategory getParticipantCategory(Container c, User user, String label)
     {
         SimpleFilter filter = new SimpleFilter("Label", label);
@@ -393,6 +398,66 @@ public class ParticipantGroupManager
         }
     }
 
+    public ParticipantCategory setParticipantCategory(Container c, User user, ParticipantCategory def) throws ValidationException
+    {
+        DbScope scope = StudySchema.getInstance().getSchema().getScope();
+
+        try
+        {
+            scope.ensureTransaction();
+            ParticipantCategory ret;
+            List<Throwable> errors;
+
+            if (!def.canEdit(c, user))
+                throw new ValidationException("You don't have permission to create or edit this participant category");
+
+            if (def.isNew())
+            {
+                ParticipantCategory previous = getParticipantCategory(c, user, def.getLabel());
+                if (!previous.isNew())
+                    throw new ValidationException("There is aready a category named: " + def.getLabel() + " within this study. Please choose a unique category name.");
+                ret = Table.insert(user, StudySchema.getInstance().getTableInfoParticipantCategory(), def);
+            }
+            else
+            {
+                ret = Table.update(user, StudySchema.getInstance().getTableInfoParticipantCategory(), def, def.getRowId());
+            }
+
+            switch (ParticipantCategory.Type.valueOf(ret.getType()))
+            {
+                case query:
+                    throw new UnsupportedOperationException("Participant category type: query not yet supported");
+                case cohort:
+                    throw new UnsupportedOperationException("Participant category type: cohort not yet supported");
+            }
+
+            scope.commitTransaction();
+
+            if (def.isNew())
+                errors = fireCreatedCategory(user, ret);
+            else
+                errors = fireUpdateCategory(user, ret);
+
+            if (errors.size() != 0)
+            {
+                Throwable first = errors.get(0);
+                if (first instanceof RuntimeException)
+                    throw (RuntimeException)first;
+                else
+                    throw new RuntimeException(first);
+            }
+            return ret;
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            scope.closeConnection();
+        }
+    }
+
     private ParticipantGroup setParticipantGroup(User user, ParticipantGroup group) throws ValidationException
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
@@ -434,6 +499,42 @@ public class ParticipantGroupManager
         {
             scope.closeConnection();
         }
+    }
+
+    public ParticipantGroup setParticipantGroup(Container c, User user, ParticipantGroup group) throws SQLException, ValidationException
+    {
+        ParticipantCategory cat = getParticipantCategory(c, user, group.getCategoryId());
+
+        if (cat == null)
+        {
+            throw new ValidationException("The specified category was not found.");
+        }
+
+        if (!cat.canEdit(c, user))
+        {
+            throw new ValidationException("You don't have permission to create or edit participant groups in this category");
+        }
+
+        DbScope scope = StudySchema.getInstance().getSchema().getScope();
+        ParticipantGroup ret;
+
+        try
+        {
+            scope.ensureTransaction();
+            if (!group.isNew())
+            {
+                ParticipantGroup savedGroup = getParticipantGroupFromGroupRowId(c, user, group.getRowId());
+                deleteGroupParticipants(c, user, savedGroup);
+            }
+            ret = setParticipantGroup(user, group);
+            scope.commitTransaction();
+        }
+        finally
+        {
+            scope.closeConnection();
+        }
+        
+        return ret;
     }
 
     public ParticipantCategory addCategoryParticipants(Container c, User user, ParticipantCategory def, String[] participants) throws ValidationException
@@ -634,6 +735,37 @@ public class ParticipantGroupManager
         return null;
     }
 
+    public ParticipantGroup getParticipantGroupFromGroupRowId(Container container, User user, int rowId)
+    {
+        ParticipantGroup[] groups;
+        ResultSet rs = null;
+        SimpleFilter filter = new SimpleFilter("Container", container);
+        filter.addCondition("RowId", rowId);
+        
+        try
+        {
+            groups = Table.select(getTableInfoParticipantGroup(), Table.ALL_COLUMNS, filter, null, ParticipantGroup.class);
+        }
+        catch(SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+        finally
+        {
+            if (rs != null)
+                try { rs.close(); } catch (SQLException e) { /* fall through */ }
+        }
+
+        if(groups.length == 1)
+        {
+            return groups[0];
+        }
+        else
+        {
+            return null;
+        }
+    }
+
     public String[] getAllGroupedParticipants(Container container)
     {
         SQLFragment sql = new SQLFragment("SELECT DISTINCT ParticipantId FROM ");
@@ -819,6 +951,49 @@ public class ParticipantGroupManager
         {
             scope.closeConnection();
         }
+    }
+
+    public void deleteParticipantGroup(Container c, User user, ParticipantGroup group) throws ValidationException
+    {
+        ParticipantCategory cat = getParticipantCategory(c, user, group.getCategoryId());
+
+        if (!cat.canDelete(c, user))
+            throw new ValidationException("You must either be an administrator, editor or the owner to delete a participant group");
+
+        DbScope scope = StudySchema.getInstance().getSchema().getScope();
+
+        try
+        {
+            scope.ensureTransaction();
+
+            // remove any participant group mappings from the junction table
+            SQLFragment sqlMapping = new SQLFragment("DELETE FROM ").append(getTableInfoParticipantGroupMap(), "").append(" WHERE GroupId = ? ");
+            Table.execute(StudySchema.getInstance().getSchema(), sqlMapping.getSQL(), group.getRowId());
+
+            // delete the participant group
+            SQLFragment sqlGroup = new SQLFragment("DELETE FROM ").append(getTableInfoParticipantGroup(), "").append(" WHERE RowId = ? ");
+            Table.execute(StudySchema.getInstance().getSchema(), sqlGroup.getSQL(), group.getRowId());
+
+            if(cat.getType().equals("list"))
+            {
+                // delete the participant category
+                SQLFragment sqlCat = new SQLFragment("DELETE FROM ").append(getTableInfoParticipantCategory(), "").append(" WHERE RowId = ? ");
+                Table.execute(StudySchema.getInstance().getSchema(), sqlCat.getSQL(), cat.getRowId());
+            }
+
+            DbCache.remove(StudySchema.getInstance().getTableInfoParticipantCategory(), getCacheKey(cat));
+
+            scope.commitTransaction();
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            scope.closeConnection();
+        }
+
     }
 
     public List<String> getParticipantsFromSelection(Container container, QueryView view, Collection<String> lsids) throws SQLException

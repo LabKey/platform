@@ -44,7 +44,9 @@ LABKEY.study.ParticipantGroupDialog = Ext.extend(Ext.Window, {
 /**
  * Panel to take user input for the label and list of participant ids for a classfication to be created or edited
  * @cfg {Integer} categoryRowId the rowId of the category to be edited (null if create new)
- * @cfg {String} categoryLabel the current label of the category to be edited (null if create new)
+ * @cfg {Integer} groupRowId the rowId of the group to be edited (null if create new)
+ * @cfg {String} groupLabel the current label of the group to be edited (null if create new)
+ * @cfg {String} categoryLabel the current label of the category to be edited (null if "list" type)
  * @cfg {Array} categoryParticipantIds the string representation of the ptid ids array of the category to be edited (null if create new)
  */
 LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
@@ -76,15 +78,69 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
             buttons.push({text:'Save', handler: this.saveCategory, disabled : !this.canEdit, scope: this});
             buttons.push({text:'Cancel', handler: function(){this.fireEvent('closeWindow');}, scope: this});
         }
+        this.categoryStore = new Ext.data.JsonStore({
+            proxy: new Ext.data.HttpProxy({
+                url : LABKEY.ActionURL.buildURL("participant-group", "getParticipantCategories"),
+                method : 'POST'
+            }),
+            root: 'categories',
+            idProperty: 'rowId',
+            baseParams: {
+                categoryType: 'manual'
+            },
+            fields: [
+                {name: 'rowId', type: 'integer'},
+                {name: 'label', type: 'string'},
+                {name: 'type', type: 'string'},
+                {name: 'createdBy', type: 'string', convert: function(v, record){return (v.displayValue ? v.displayValue : v.value)}},
+                {name: 'modifiedBy', type: 'string', convert: function(v, record){return (v.displayValue ? v.displayValue : v.value)}},
+                {name: 'shared', type: 'string'},
+                {name: 'participantIds', type: 'string', convert: function(v, record){return v.toString().replace(/,/g,", ");}},
+                {name: 'canEdit', type: 'boolean'},
+                {name: 'canDelete', type: 'boolean'}
+            ],
+            listeners:{
+                load: function(){
+                    if(this.categoryStore.find('rowId', this.category.rowId) > -1){
+                        this.categoryCombo.setValue(this.category.rowId);
+                    }
+                },
+                scope: this
+            },
+            autoLoad: true
+        });
+
+        this.categoryCombo = new Ext.form.ComboBox({
+            id: 'participantCategory',
+            xtype: 'combo',
+            editable: true,
+            mode: 'local',
+            anchor: '100%',
+            fieldLabel: this.subject.nounSingular + " Category",
+            emptyText: this.subject.nounSingular + " Category",
+            store: this.categoryStore,
+            valueField: 'rowId',
+            displayField: 'label',
+            triggerAction: 'all',
+            listeners: {
+                scope:this,
+                specialkey: function(f, e){
+                    if(e.getKey() == e.ENTER){
+                        this.saveCategory();
+                    }
+                }
+            }
+        });
+
 
         this.categoryPanel = new Ext.form.FormPanel({
             border: false,
             defaults : {disabled : !this.canEdit},
             labelAlign: 'top',
             items: [{
-                id: 'categoryLabel',
+                id: 'groupLabel',
                 xtype: 'textfield',
-                value: this.categoryLabel,
+                value: this.groupLabel,
                 fieldLabel: this.subject.nounSingular + ' Group Label',
                 emptyText: this.subject.nounSingular + ' Group Label',
                 allowBlank: false,
@@ -109,7 +165,8 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
                 preventMark: true,
                 height: 100,
                 anchor: '100%'
-            }],
+            },
+            this.categoryCombo],
             buttons: buttons
         });
 
@@ -216,7 +273,7 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
 
         // get the label and ids from the form
         var fieldValues = this.categoryPanel.getForm().getFieldValues();
-        var label = fieldValues["categoryLabel"];
+        var label = fieldValues["groupLabel"];
         var idStr = fieldValues["categoryIdentifiers"];
 
         // make sure the label and idStr are not null
@@ -240,20 +297,11 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
     {
          if (!this.validate())
             return;
-        var categoryData = this.getCategoryData();
+        var groupData = this.getGroupData();
 
-        if (this.categoryRowId)
-        {
-            categoryData.rowId = this.categoryRowId;
-        }
-
-        // save the participant category ("create" if no prior rowId, "update" if rowId exists)
         Ext.Ajax.request(
         {
-            url : (this.categoryRowId
-                    ? LABKEY.ActionURL.buildURL("participant-group", "updateParticipantCategory")
-                    : LABKEY.ActionURL.buildURL("participant-group", "createParticipantCategory")
-                  ),
+            url : (LABKEY.ActionURL.buildURL("participant-group", "saveParticipantGroup")),
             method : 'POST',
             success: function(){
                 this.getEl().unmask();
@@ -264,37 +312,55 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
                 this.getEl().unmask();
                 LABKEY.Utils.displayAjaxErrorResponse(response, options, false, 'An error occurred:<br>');
             },
-            jsonData : categoryData,
+            jsonData : groupData,
             headers : {'Content-Type' : 'application/json'},
             scope: this
         });
     },
 
-    getCategoryData: function(){
-         // get the label and ids from the form
+    getGroupData: function(){
         var fieldValues = this.categoryPanel.getForm().getFieldValues();
-        var label = fieldValues["categoryLabel"];
-        var idStr = fieldValues["categoryIdentifiers"];
+        var ptids = fieldValues["categoryIdentifiers"].split(',');
+        var categoryLabel;
+        var categoryId;
+        var categoryType;
 
-        // mask the panel
-        this.getEl().mask("Saving category...", "x-mask-loading");
+        if(typeof this.categoryCombo.getValue() == 'number'){
+            categoryId = this.categoryCombo.getValue();
+            categoryLabel = this.categoryStore.getAt(this.categoryStore.find("rowId", categoryId)).data.label;
+            categoryType = 'manual';
+        } else {
+            categoryLabel = this.categoryCombo.getRawValue(); //Have to get the raw value so new categories will be seen.
+            categoryType = categoryLabel == '' ? 'list' : 'manual';
 
-        // split the ptid list into an array of strings
-        var ids = idStr.split(",");
-        for (var i = 0; i < ids.length; i++)
-        {
-            ids[i] = ids[i].trim();
+            if(categoryType == 'list' && (this.category && this.category.type == 'list')){
+                categoryId = this.category.rowId;
+            }
         }
 
-        // setup the data to be stored for the category
-        var categoryData = {
-            label: label,
-            type: 'list',
-            participantIds: ids,
-            shared : this.sharedfield.getValue()
+        for(var i = 0; i < ptids.length; i++)
+        {
+            ptids[i] = ptids[i].trim();
+        }
+
+        var groupData = {
+            label: fieldValues["groupLabel"],
+            participantIds: ptids,
+            categoryLabel: categoryLabel,
+            categoryType: categoryType,
+            categoryShared : this.sharedfield.getValue()
         };
-        
-        return categoryData;
+
+        if(categoryId !== null && categoryId != undefined){
+            groupData.categoryId = categoryId;
+        }
+
+        if(this.groupRowId !== null && this.groupRowId != undefined){
+            groupData.rowId = this.groupRowId;
+        }
+
+        return groupData;
+
     },
 
     getDemoQueryWebPart: function(queryName)

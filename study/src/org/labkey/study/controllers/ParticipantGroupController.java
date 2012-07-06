@@ -22,6 +22,7 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.query.DefaultSchema;
@@ -31,7 +32,10 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.study.StudySchema;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.ParticipantCategory;
 import org.labkey.study.model.ParticipantGroup;
@@ -262,14 +266,24 @@ public class ParticipantGroupController extends BaseStudyController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class GetParticipantCategories extends ApiAction<Object>
+    public class GetParticipantCategories extends ApiAction<GetParticipantCategoriesForm>
     {
         @Override
-        public ApiResponse execute(Object form, BindException errors) throws Exception
+        public ApiResponse execute(GetParticipantCategoriesForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
+            ParticipantCategory[] categories;
+            if (form.getCategoryType() != null && form.getCategoryType().equals("manual"))
+            {
+                SimpleFilter filter = new SimpleFilter();
+                filter.addCondition("type", form.getCategoryType());
+                categories = ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser(), filter);
+            }
+            else
+            {
+                categories = ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser());
+            }
 
-            ParticipantCategory[] categories = ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser());
             JSONArray defs = new JSONArray();
 
             for (ParticipantCategory pc : categories)
@@ -280,6 +294,21 @@ public class ParticipantGroupController extends BaseStudyController
             resp.put("categories", defs);
 
             return resp;
+        }
+    }
+
+    public static class GetParticipantCategoriesForm
+    {
+        private String _categoryType;
+
+        public String getCategoryType()
+        {
+            return _categoryType;
+        }
+
+        public void setCategoryType(String categoryType)
+        {
+            _categoryType = categoryType;
         }
     }
 
@@ -424,25 +453,27 @@ public class ParticipantGroupController extends BaseStudyController
                     case participantGroup:
                         for (ParticipantCategory category : ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser()))
                         {
+                            JSONObject jsonCategory = category.toJSON();
+
                             for (ParticipantGroup group : category.getGroups())
                             {
                                 if (form.includeParticipantIds())
-                                    groups.add(createGroup(group.getRowId(), category.getLabel(), groupType, category.getRowId(), group.getFilters(), group.getDescription(), group.getParticipantSet()));
+                                    groups.add(createGroup(jsonCategory, group.getRowId(), group.getLabel(), groupType, group.getRowId(), group.getFilters(), group.getDescription(), group.getCreatedBy(), group.getModifiedBy(), group.getParticipantSet()));
                                 else
-                                    groups.add(createGroup(group.getRowId(), category.getLabel(), groupType, category.getRowId(), group.getFilters(), group.getDescription()));
+                                    groups.add(createGroup(jsonCategory, group.getRowId(), group.getLabel(), groupType, group.getRowId(), group.getFilters(), group.getDescription(), group.getCreatedBy(), group.getModifiedBy()));
                             }
                         }
 
                         if (!form.includeParticipantIds())
-                            groups.add(createGroup(-1, "Not in any group", groupType));
+                            groups.add(createGroup(null, -1, "Not in any group", groupType));
 
                         break;
                     case cohort:
                         for (CohortImpl cohort : StudyManager.getInstance().getCohorts(getContainer(), getUser()))
                         {
-                            groups.add(createGroup(cohort.getRowId(), cohort.getLabel(), groupType));
+                            groups.add(createGroup(null, cohort.getRowId(), cohort.getLabel(), groupType));
                         }
-                        groups.add(createGroup(-1, "Not in any cohort", groupType));
+                        groups.add(createGroup(null, -1, "Not in any cohort", groupType));
                         break;
                 }
             }
@@ -452,17 +483,17 @@ public class ParticipantGroupController extends BaseStudyController
             return resp;
         }
 
-        private Map<String, Object> createGroup(int id, String label, GroupType type)
+        private Map<String, Object> createGroup(JSONObject category, int id, String label, GroupType type)
         {
-            return createGroup(id, label, type, 0, "", "", Collections.<String>emptySet());
+            return createGroup(category, id, label, type, 0, "", "", 0, 0, Collections.<String>emptySet());
         }
 
-        private Map<String, Object> createGroup(int id, String label, GroupType type, int categoryId, String filters, String description)
+        private Map<String, Object> createGroup(JSONObject category, int id, String label, GroupType type, int categoryId, String filters, String description, int createdBy, int modifiedBy)
         {
-            return createGroup(id, label, type, categoryId, filters, description, Collections.<String>emptySet());
+            return createGroup(category, id, label, type, categoryId, filters, description, createdBy, modifiedBy, Collections.<String>emptySet());
         }
 
-        private Map<String, Object> createGroup(int id, String label, GroupType type, int categoryId, String filters, String description, Set<String> participantIds)
+        private Map<String, Object> createGroup(JSONObject category, int id, String label, GroupType type, int categoryId, String filters, String description, int createdBy, int modifiedBy, Set<String> participantIds)
         {
             Map<String, Object> group = new HashMap<String, Object>();
 
@@ -473,8 +504,22 @@ public class ParticipantGroupController extends BaseStudyController
             group.put("filters", filters);
             group.put("description", description);
             group.put("participantIds", participantIds);
+            group.put("category", category);
+            group.put("createdBy", getUserJSON(createdBy));
+            group.put("modifiedBy", getUserJSON(modifiedBy));
 
             return group;
+        }
+
+        private JSONObject getUserJSON(int id)
+        {
+            JSONObject json = new JSONObject();
+            User currentUser = getViewContext().getUser();
+            User user = UserManager.getUser(id);
+            json.put("value", id);
+            json.put("displayValue", user != null ? user.getDisplayName(currentUser) : null);
+
+            return json;
         }
     }
 
@@ -613,6 +658,198 @@ public class ParticipantGroupController extends BaseStudyController
             resp.put("subjects", subjects);
 
             return resp;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class SaveParticipantGroup extends MutatingApiAction<ParticipantGroupSpecification>
+    {
+        @Override
+        public void validateForm(ParticipantGroupSpecification form, Errors errors)
+        {
+            form.setContainerId(getContainer().getId());
+            if(!form.getParticipantCategorySpecification().isNew())
+            {
+                ParticipantGroup[] participantGroups  = ParticipantGroupManager.getInstance().getParticipantGroups(getContainer(), getUser(), form.getParticipantCategorySpecification());
+                Set<String> formParticipants = new HashSet<String>(Arrays.asList(form.getParticipantIds()));
+                
+                for(ParticipantGroup group : participantGroups)
+                {
+                    if (group.getRowId() != form.getRowId())
+                    {
+                        String[] participants = group.getParticipantIds();
+                        for(String ptid : participants)
+                        {
+                            if (formParticipants.contains(ptid))
+                            {
+                               errors.reject(ERROR_MSG, "The group " + group.getLabel() + " already contains " + ptid + ". Participants can only be in one group within a category.");
+                            }
+                        }
+                    }
+
+                }
+            }
+        }
+
+        @Override
+        public ApiResponse execute(ParticipantGroupSpecification form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+
+            form.setContainer(getContainer().getId());
+
+            ParticipantCategory category;
+            ParticipantGroup group;
+
+            if (form.getCategoryId() == 0)
+            {
+                if (form.getCategoryType().equals("list"))
+                {
+                    // No category selected, create new category with type 'list' and create new participant group.
+                    category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form.getParticipantCategorySpecification(), form.getParticipantIds(), form.getFilters(), form.getDescription());
+                    group = category.getGroups()[0];
+                }
+                else
+                {
+                    // New category specified. Create category with type 'manual' and create new participant group.
+                    DbScope scope = StudySchema.getInstance().getSchema().getScope();
+
+                    scope.ensureTransaction();
+
+                    category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form.getParticipantCategorySpecification());
+                    form.setCategoryId(category.getRowId());
+                    group = ParticipantGroupManager.getInstance().setParticipantGroup(getContainer(), getUser(), form);
+
+                    scope.commitTransaction();
+                }
+            }
+            else
+            {
+                group = ParticipantGroupManager.getInstance().setParticipantGroup(getContainer(), getUser(), form);
+                category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), group.getCategoryId());
+            }
+            
+            resp.put("success", true);
+            resp.put("group", group.toJSON());
+            resp.put("category", category.toJSON());
+
+            return resp;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class DeleteParticipantGroup extends MutatingApiAction<ParticipantGroup>
+    {
+        @Override
+        public ApiResponse execute(ParticipantGroup form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            ParticipantGroup group = ParticipantGroupManager.getInstance().getParticipantGroupFromGroupRowId(getContainer(), getUser(), form.getRowId());
+            ParticipantGroupManager.getInstance().deleteParticipantGroup(getContainer(), getUser(), group);
+            return resp;
+        }
+    }
+
+    public static class ParticipantGroupSpecification extends ParticipantGroup
+    {
+        private String[] _participantIds = new String[0];
+        private String _filters;
+        private String _description;
+        private int _categoryId;
+        private String _categoryLabel;
+        private String _categoryType;
+        private Boolean _categoryShared;
+
+        public Boolean getCategoryShared()
+        {
+            return _categoryShared;
+        }
+
+        public void setCategoryShared(Boolean shared)
+        {
+            _categoryShared = shared;
+        }
+
+        public String getCategoryType()
+        {
+            return _categoryType;
+        }
+
+        public void setCategoryType(String categoryType)
+        {
+            _categoryType = categoryType;
+        }
+
+        public String getCategoryLabel()
+        {
+            return _categoryLabel;
+        }
+
+        public void setCategoryLabel(String categoryLabel)
+        {
+            _categoryLabel = categoryLabel;
+        }
+
+        public String[] getParticipantIds()
+        {
+            return _participantIds;
+        }
+
+        public void setParticipantIds(String[] participantIds)
+        {
+            _participantIds = participantIds;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public void setDescription(String description)
+        {
+            _description = description;
+        }
+
+        public String getFilters()
+        {
+            return _filters;
+        }
+
+        public void setFilters(String filters)
+        {
+            _filters = filters;
+        }
+
+        public void setCategoryId(int id)
+        {
+            _categoryId = id;
+        }
+
+        public int getCategoryId(){
+            return _categoryId;
+        }
+
+        public ParticipantCategorySpecification getParticipantCategorySpecification()
+        {
+            ParticipantCategorySpecification category = new ParticipantCategorySpecification();
+
+            category.setRowId(getCategoryId());
+            category.setParticipantIds(getParticipantIds());
+            category.setFilters(getFilters());
+            if (getCategoryLabel() == null)
+            {
+                category.setLabel(getLabel());
+            }
+            else
+            {
+                category.setLabel(getCategoryLabel());
+            }
+            category.setType(getCategoryType());
+            category.setShared(getCategoryShared());
+            category.setDescription(getDescription());
+            category.setContainerId(getContainerId());
+
+            return category;
         }
     }
 }

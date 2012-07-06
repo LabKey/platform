@@ -56,6 +56,7 @@ public class ParticipantCategory extends Entity
     private ParticipantGroup[] _groups = new ParticipantGroup[0];
 
     public enum Type {
+        manual,
         list,
         query,
         cohort,
