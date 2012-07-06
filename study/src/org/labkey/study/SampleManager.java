@@ -841,7 +841,7 @@ public class SampleManager
     public RepositorySettings getRepositorySettings(Container container) throws SQLException
     {
         Map<String,String> settingsMap = PropertyManager.getProperties(UserManager.getGuestUser().getUserId(),
-                container.getId(), "SpecimenRepositorySettings");
+                container, "SpecimenRepositorySettings");
         if (settingsMap.isEmpty())
         {
             RepositorySettings defaults = RepositorySettings.getDefaultSettings(container);
@@ -855,7 +855,7 @@ public class SampleManager
     public void saveRepositorySettings(Container container, RepositorySettings settings) throws SQLException
     {
         Map<String, String> settingsMap = PropertyManager.getWritableProperties(UserManager.getGuestUser().getUserId(),
-                container.getId(), "SpecimenRepositorySettings", true);
+                container, "SpecimenRepositorySettings", true);
         settings.populateMap(settingsMap);
         PropertyManager.saveProperties(settingsMap);
     }
@@ -864,7 +864,7 @@ public class SampleManager
     public RequestNotificationSettings getRequestNotificationSettings(Container container) throws SQLException
     {
         Map<String,String> settingsMap = PropertyManager.getProperties(UserManager.getGuestUser().getUserId(),
-                container.getId(), "SpecimenRequestNotifications");
+                container, "SpecimenRequestNotifications");
         if (settingsMap.get("ReplyTo") == null)
         {
             RequestNotificationSettings defaults = RequestNotificationSettings.getDefaultSettings(container);
@@ -878,7 +878,7 @@ public class SampleManager
     public void saveRequestNotificationSettings(Container container, RequestNotificationSettings settings) throws SQLException
     {
         Map<String, String> settingsMap = PropertyManager.getWritableProperties(UserManager.getGuestUser().getUserId(),
-                container.getId(), "SpecimenRequestNotifications", true);
+                container, "SpecimenRequestNotifications", true);
         settings.populateMap(settingsMap);
         PropertyManager.saveProperties(settingsMap);
     }
@@ -887,7 +887,7 @@ public class SampleManager
     public DisplaySettings getDisplaySettings(Container container) throws SQLException
     {
         Map<String, String> settingsMap = PropertyManager.getProperties(UserManager.getGuestUser().getUserId(),
-                container.getId(), "SpecimenRequestDisplay");
+                container, "SpecimenRequestDisplay");
         if (settingsMap.get("OneAvailableVial") == null)
         {
             DisplaySettings defaults = DisplaySettings.getDefaultSettings();
@@ -901,7 +901,7 @@ public class SampleManager
     public void saveDisplaySettings(Container container, DisplaySettings settings) throws SQLException
     {
         Map<String, String> settingsMap = PropertyManager.getWritableProperties(UserManager.getGuestUser().getUserId(),
-                container.getId(), "SpecimenRequestDisplay", true);
+                container, "SpecimenRequestDisplay", true);
         settings.populateMap(settingsMap);
         PropertyManager.saveProperties(settingsMap);
     }
@@ -909,7 +909,7 @@ public class SampleManager
     public StatusSettings getStatusSettings(Container container) throws SQLException
     {
         Map<String, String> settingsMap = PropertyManager.getProperties(UserManager.getGuestUser().getUserId(),
-                container.getId(), "SpecimenRequestStatus");
+                container, "SpecimenRequestStatus");
         if (settingsMap.get(StatusSettings.KEY_USE_SHOPPING_CART) == null)
         {
             StatusSettings defaults = StatusSettings.getDefaultSettings();
@@ -923,7 +923,7 @@ public class SampleManager
     public void saveStatusSettings(Container container, StatusSettings settings) throws SQLException
     {
         Map<String, String> settingsMap = PropertyManager.getWritableProperties(UserManager.getGuestUser().getUserId(),
-                container.getId(), "SpecimenRequestStatus", true);
+                container, "SpecimenRequestStatus", true);
         settings.populateMap(settingsMap);
         PropertyManager.saveProperties(settingsMap);
     }

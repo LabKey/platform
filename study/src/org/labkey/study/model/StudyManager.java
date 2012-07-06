@@ -2765,12 +2765,12 @@ public class StudyManager
 
     private  Map<String, String> getFormatStrings(Container c)
     {
-        return PropertyManager.getProperties(c.getId(), STUDY_FORMAT_STRINGS);
+        return PropertyManager.getProperties(c, STUDY_FORMAT_STRINGS);
     }
 
     public void setDefaultDateFormatString(Container c, String format)
     {
-        Map<String, String> props = PropertyManager.getWritableProperties(c.getId(), STUDY_FORMAT_STRINGS, true);
+        Map<String, String> props = PropertyManager.getWritableProperties(c, STUDY_FORMAT_STRINGS, true);
 
         if (!StringUtils.isEmpty(format))
             props.put(DATE_FORMAT_STRING, format);
@@ -2781,7 +2781,7 @@ public class StudyManager
 
     public void setDefaultNumberFormatString(Container c, String format)
     {
-        Map<String, String> props = PropertyManager.getWritableProperties(c.getId(), STUDY_FORMAT_STRINGS, true);
+        Map<String, String> props = PropertyManager.getWritableProperties(c, STUDY_FORMAT_STRINGS, true);
         if (!StringUtils.isEmpty(format))
             props.put(NUMBER_FORMAT_STRING, format);
         else if (props.containsKey(NUMBER_FORMAT_STRING))

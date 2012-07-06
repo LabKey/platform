@@ -363,12 +363,12 @@ public class MothershipManager
 
     private PropertyManager.PropertyMap getWritableProperties(Container c)
     {
-        return PropertyManager.getWritableProperties(c.getId(), UPGRADE_MESSAGE_PROPERTY_CATEGORY, true);
+        return PropertyManager.getWritableProperties(c, UPGRADE_MESSAGE_PROPERTY_CATEGORY, true);
     }
 
     private @NotNull Map<String, String> getProperties(Container c)
     {
-        return PropertyManager.getProperties(c.getId(), UPGRADE_MESSAGE_PROPERTY_CATEGORY);
+        return PropertyManager.getProperties(c, UPGRADE_MESSAGE_PROPERTY_CATEGORY);
     }
 
     public int getCurrentRevision(Container c)

@@ -35,7 +35,7 @@
     boolean canEdit = false;
     boolean canShare = ctx.hasPermission(ShareReportPermission.class);
     boolean isDeveloper = ctx.getUser().isDeveloper();
-    String numberFormat = PropertyManager.getProperties(ctx.getContainer().getId(), "DefaultStudyFormatStrings").get("NumberFormatString");
+    String numberFormat = PropertyManager.getProperties(ctx.getContainer(), "DefaultStudyFormatStrings").get("NumberFormatString");
     String numberFormatFn;
     if(numberFormat == null)
     {

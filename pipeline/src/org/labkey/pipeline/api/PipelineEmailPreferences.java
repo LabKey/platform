@@ -63,7 +63,7 @@ public class PipelineEmailPreferences
 
     public void startNotificationTasks()
     {
-        Map<String, String> taskMap = PropertyManager.getProperties(0, ContainerManager.getRoot().getId(), PIPELINE_NOTIFICATION_TASKS);
+        Map<String, String> taskMap = PropertyManager.getProperties(0, ContainerManager.getRoot(), PIPELINE_NOTIFICATION_TASKS);
 
         for (Map.Entry<String, String> entry : taskMap.entrySet())
         {

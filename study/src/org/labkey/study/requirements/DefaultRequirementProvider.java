@@ -69,7 +69,7 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
 
     private synchronized String getDefaultRequirementPlaceholder(final Container container, RequirementType type, boolean createIfMissing)
     {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(container.getId(),
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(container,
                 "DefaultRequirement: " + getClass().getSimpleName(), true);
         String ownerEntityId = props.get(type.name());
         if (ownerEntityId == null && createIfMissing)

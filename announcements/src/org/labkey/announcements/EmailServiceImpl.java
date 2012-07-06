@@ -91,7 +91,7 @@ public class EmailServiceImpl implements EmailService.I
     @Override
     public void setEmailPref(User user, Container container, EmailPref pref, String value)
     {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(user.getUserId(), container.getId(), EmailService.EMAIL_PREF_CATEGORY, true);
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(user.getUserId(), container, EmailService.EMAIL_PREF_CATEGORY, true);
         props.put(pref.getId(), value);
 
         PropertyManager.saveProperties(props);
@@ -104,14 +104,14 @@ public class EmailServiceImpl implements EmailService.I
 
         if (defaultPref != null)
         {
-            Map<String, String> defaultProps = PropertyManager.getProperties(container.getId(), EmailService.EMAIL_PREF_CATEGORY);
+            Map<String, String> defaultProps = PropertyManager.getProperties(container, EmailService.EMAIL_PREF_CATEGORY);
             if (defaultProps.containsKey(defaultPref.getId()))
                 defaultValue = defaultProps.get(defaultPref.getId());
             else
                 defaultValue = defaultPref.getDefaultValue();
         }
 
-        Map<String, String> props = PropertyManager.getProperties(user.getUserId(), container.getId(), EmailService.EMAIL_PREF_CATEGORY);
+        Map<String, String> props = PropertyManager.getProperties(user.getUserId(), container, EmailService.EMAIL_PREF_CATEGORY);
         String value = defaultValue;
 
         if (props.containsKey(pref.getId()))
@@ -130,7 +130,7 @@ public class EmailServiceImpl implements EmailService.I
     @Override
     public String getDefaultEmailPref(Container container, EmailPref pref)
     {
-        Map<String, String> props = PropertyManager.getProperties(container.getId(), EmailService.EMAIL_PREF_CATEGORY);
+        Map<String, String> props = PropertyManager.getProperties(container, EmailService.EMAIL_PREF_CATEGORY);
         String value = pref.getDefaultValue();
 
         if (props.containsKey(pref.getId()))
@@ -142,7 +142,7 @@ public class EmailServiceImpl implements EmailService.I
     @Override
     public void setDefaultEmailPref(Container container, EmailPref pref, String value)
     {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(container.getId(), EmailService.EMAIL_PREF_CATEGORY, true);
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(container, EmailService.EMAIL_PREF_CATEGORY, true);
         props.put(pref.getId(), value);
 
         PropertyManager.saveProperties(props);

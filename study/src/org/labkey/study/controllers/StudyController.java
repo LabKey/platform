@@ -5705,7 +5705,7 @@ public class StudyController extends BaseStudyController
     public static String getDefaultView(ViewContext context, int datasetId)
     {
         Map<String, String> viewMap = PropertyManager.getProperties(context.getUser().getUserId(),
-                context.getContainer().getId(), DEFAULT_DATASET_VIEW);
+                context.getContainer(), DEFAULT_DATASET_VIEW);
 
         final String key = Integer.toString(datasetId);
         if (viewMap.containsKey(key))
@@ -5718,7 +5718,7 @@ public class StudyController extends BaseStudyController
     private void setDefaultView(ViewContext context, int datasetId, String view)
     {
         Map<String, String> viewMap = PropertyManager.getWritableProperties(context.getUser().getUserId(),
-                context.getContainer().getId(), DEFAULT_DATASET_VIEW, true);
+                context.getContainer(), DEFAULT_DATASET_VIEW, true);
 
         viewMap.put(Integer.toString(datasetId), view);
         PropertyManager.saveProperties(viewMap);

@@ -578,14 +578,14 @@ public class AnnouncementManager
 
     public static void saveDefaultEmailOption(Container c, int emailOption)
     {
-        Map<String, String> props = PropertyManager.getWritableProperties(c.getId(), "defaultEmailSettings", true);
+        Map<String, String> props = PropertyManager.getWritableProperties(c, "defaultEmailSettings", true);
         props.put("defaultEmailOption", Integer.toString(emailOption));
         PropertyManager.saveProperties(props);
     }
 
     public static int getDefaultEmailOption(Container c)
     {
-        Map<String, String> props = PropertyManager.getProperties(c.getId(), "defaultEmailSettings");
+        Map<String, String> props = PropertyManager.getProperties(c, "defaultEmailSettings");
 
         if (props.isEmpty())
         {
@@ -606,7 +606,7 @@ public class AnnouncementManager
 
     public static void saveMessageBoardSettings(Container c, DiscussionService.Settings settings) throws SQLException, IllegalAccessException, InvocationTargetException
     {
-        Map<String, String> props = PropertyManager.getWritableProperties(c.getId(), MESSAGE_BOARD_SETTINGS, true);
+        Map<String, String> props = PropertyManager.getWritableProperties(c, MESSAGE_BOARD_SETTINGS, true);
         props.clear();  // Get rid of old props (e.g., userList, see #13882)
         props.put("boardName", settings.getBoardName());
         props.put("conversationName", settings.getConversationName());
@@ -625,7 +625,7 @@ public class AnnouncementManager
 
     public static DiscussionService.Settings getMessageBoardSettings(Container c) throws SQLException, IllegalAccessException, InvocationTargetException
     {
-        Map<String, String> props = PropertyManager.getProperties(0, c.getId(), MESSAGE_BOARD_SETTINGS);
+        Map<String, String> props = PropertyManager.getProperties(0, c, MESSAGE_BOARD_SETTINGS);
         DiscussionService.Settings settings = new DiscussionService.Settings();
         settings.setDefaults();
         BeanUtils.populate(settings, props);

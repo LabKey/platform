@@ -209,7 +209,7 @@ public class PipelineManager
 
     static void setPipelineProperty(Container container, String name, String value) throws SQLException
     {
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(container.getId(), "pipelineRoots", true);
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(container, "pipelineRoots", true);
         if (value == null)
             props.remove(name);
         else
@@ -219,7 +219,7 @@ public class PipelineManager
 
     static String getPipelineProperty(Container container, String name) throws SQLException
     {
-        Map<String, String> props = PropertyManager.getProperties(container.getId(), "pipelineRoots");
+        Map<String, String> props = PropertyManager.getProperties(container, "pipelineRoots");
         return props.get(name);
     }
 
