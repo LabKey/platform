@@ -58,7 +58,7 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
 
     protected PropertyManager.PropertyMap getWriteableProperties(Container c) throws SQLException
     {
-        return PropertyManager.getWritableProperties(SITE_CONFIG_USER_ID, c.getId(), getGroupName(), true);
+        return PropertyManager.getWritableProperties(SITE_CONFIG_USER_ID, c, getGroupName(), true);
     }
 
     protected Map<String, String> getProperties()

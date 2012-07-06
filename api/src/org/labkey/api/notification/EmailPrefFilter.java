@@ -62,7 +62,7 @@ public abstract class EmailPrefFilter
 
         if (defaultPref != null)
         {
-            Map<String, String> defaultProps = PropertyManager.getProperties(c.getId(), EmailService.EMAIL_PREF_CATEGORY);
+            Map<String, String> defaultProps = PropertyManager.getProperties(c, EmailService.EMAIL_PREF_CATEGORY);
             if (defaultProps.containsKey(defaultPref.getId()))
                 defaultValue = defaultProps.get(defaultPref.getId());
             else
@@ -71,7 +71,7 @@ public abstract class EmailPrefFilter
 
         for (User user : getUsers(c))
         {
-            Map<String, String> props = PropertyManager.getProperties(user.getUserId(), c.getId(), EmailService.EMAIL_PREF_CATEGORY);
+            Map<String, String> props = PropertyManager.getProperties(user.getUserId(), c, EmailService.EMAIL_PREF_CATEGORY);
             String value = defaultValue;
             
             if (props.containsKey(pref.getId()))

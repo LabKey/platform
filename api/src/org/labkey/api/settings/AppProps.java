@@ -110,6 +110,6 @@ public class AppProps
     // For Customisable web colour theme
     public static PropertyManager.PropertyMap getWebThemeConfigProperties() throws SQLException
     {
-        return PropertyManager.getWritableProperties(AppPropsImpl.SITE_CONFIG_USER_ID, ContainerManager.getRoot().getId(), WEB_THEME_CONFIG_NAME, true);
+        return PropertyManager.getWritableProperties(AppPropsImpl.SITE_CONFIG_USER_ID, ContainerManager.getRoot(), WEB_THEME_CONFIG_NAME, true);
     }
 }

@@ -163,7 +163,7 @@ public class ModuleProperty
                 throw new UnauthorizedException("The user does not have " + p.getName() + " permission on this container");
         }
 
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(userIdToSave, c.getId(), getCategory(), true);
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(userIdToSave, c, getCategory(), true);
         if(!StringUtils.isEmpty(value))
             props.put(getName(), value);
         else

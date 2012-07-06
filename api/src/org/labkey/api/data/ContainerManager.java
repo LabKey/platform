@@ -293,7 +293,7 @@ public class ContainerManager
 
         oldType.unconfigureContainer(c, user);
         folderType.configureContainer(c, user);
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c.getId(), FOLDER_TYPE_PROPERTY_SET_NAME, true);
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, FOLDER_TYPE_PROPERTY_SET_NAME, true);
         props.put(FOLDER_TYPE_PROPERTY_NAME, folderType.getName());
         PropertyManager.saveProperties(props);
 
@@ -307,7 +307,7 @@ public class ContainerManager
     @NotNull
     public static FolderType getFolderType(Container c)
     {
-        Map props = PropertyManager.getProperties(0, c.getId(), ContainerManager.FOLDER_TYPE_PROPERTY_SET_NAME);
+        Map props = PropertyManager.getProperties(0, c, ContainerManager.FOLDER_TYPE_PROPERTY_SET_NAME);
         String name = (String) props.get(ContainerManager.FOLDER_TYPE_PROPERTY_NAME);
         FolderType folderType;
 

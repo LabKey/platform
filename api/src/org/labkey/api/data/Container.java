@@ -648,7 +648,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
         if (_defaultModule == null)
         {
-            Map props = PropertyManager.getProperties(getId(), "defaultModules");
+            Map props = PropertyManager.getProperties(this, "defaultModules");
             String defaultModuleName = (String) props.get("name");
 
             boolean initRequired = false;
@@ -726,7 +726,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     {
         if (module == null)
             return;
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(getId(), "defaultModules", true);
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(this, "defaultModules", true);
         props.put("name", module.getName());
 
         PropertyManager.saveProperties(props);
@@ -743,7 +743,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
             return;
         }
 
-        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(getId(), "activeModules", true);
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(this, "activeModules", true);
         props.clear();
         for (Module module : modules)
         {
@@ -823,7 +823,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
             return Collections.unmodifiableSet(modules);
         }
 
-        Map<String, String> props = PropertyManager.getProperties(getId(), "activeModules");
+        Map<String, String> props = PropertyManager.getProperties(this, "activeModules");
         //get set of all modules
         List<Module> allModules = ModuleLoader.getInstance().getModules();
         //get active web parts for this container
@@ -834,7 +834,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         if (props.isEmpty() && init && null != ContainerManager.getForId(getId()))
         {
             //initialize properties cache
-            PropertyManager.PropertyMap propsWritable = PropertyManager.getWritableProperties(getId(), "activeModules", true);
+            PropertyManager.PropertyMap propsWritable = PropertyManager.getWritableProperties(this, "activeModules", true);
             props = propsWritable;
 
             if (isProject())

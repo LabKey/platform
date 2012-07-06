@@ -112,9 +112,9 @@ public class EmailTemplateService
     private Map<String, String> getProperties(Container c, boolean writable)
     {
         if (writable)
-            return PropertyManager.getWritableProperties(c.getId(), EMAIL_TEMPLATE_PROPERTIES_MAP_NAME, true);
+            return PropertyManager.getWritableProperties(c, EMAIL_TEMPLATE_PROPERTIES_MAP_NAME, true);
         else
-            return PropertyManager.getProperties(c.getId(), EMAIL_TEMPLATE_PROPERTIES_MAP_NAME);
+            return PropertyManager.getProperties(c, EMAIL_TEMPLATE_PROPERTIES_MAP_NAME);
     }
 
     private Map<Class<? extends EmailTemplate>, EmailTemplate> _getEmailTemplates(Container c)

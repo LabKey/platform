@@ -105,19 +105,19 @@ public class PropertyManager
     // Returns an empty map if property set hasn't been created
     public static @NotNull Map<String, String> getProperties(String category)
     {
-        return getProperties(0, ContainerManager.getRoot().getId(), category);
+        return getProperties(0, ContainerManager.getRoot(), category);
     }
 
 
-    public static @NotNull Map<String, String> getProperties(String objectId, String category)
+    public static @NotNull Map<String, String> getProperties(Container container, String category)
     {
-        return getProperties(0, objectId, category);
+        return getProperties(0, container, category);
     }
 
 
-    public static @NotNull Map<String, String> getProperties(int userId, String objectId, String category)
+    public static @NotNull Map<String, String> getProperties(int userId, Container container, String category)
     {
-        Object[] parameters = new Object[]{userId, objectId, category};
+        Object[] parameters = new Object[]{userId, container.getId(), category};
         TableInfo tinfo;
         String cacheKey;
 
@@ -130,7 +130,7 @@ public class PropertyManager
             return (PropertyMap) o;
 
         // Not found in the cache,
-        PropertyMap m = getWritableProperties(userId, objectId, category, false);
+        PropertyMap m = getWritableProperties(userId, container, category, false);
 
         if (null == m)
             m = NULL_MAP;
@@ -172,7 +172,7 @@ public class PropertyManager
         String value;
         while (curContainer != null)
         {
-            value = getProperty(userId, curContainer.getId(), category, name);
+            value = getProperty(userId, curContainer, category, name);
             if(value != null)
                 return value;
 
@@ -191,7 +191,7 @@ public class PropertyManager
         Container curContainer = c;
         while (curContainer != null)
         {
-            String value = getProperty(userId, curContainer.getId(), category, name);
+            String value = getProperty(userId, curContainer, category, name);
             Map<Integer, String> containerMap = new HashMap<Integer, String>();
 
             if(value != null)
@@ -208,32 +208,33 @@ public class PropertyManager
         return map;
     }
 
-    private static String getProperty(int userId, String objectId, String category, String name)
+    private static String getProperty(int userId, Container container, String category, String name)
     {
-        Map<String, String> props = PropertyManager.getProperties(userId, objectId, category);
+        Map<String, String> props = PropertyManager.getProperties(userId, container, category);
         return props.get(name);
     }
 
     // For global system properties that get attached to the root container
     public static PropertyMap getWritableProperties(String category, boolean create)
     {
-        return getWritableProperties(0, ContainerManager.getRoot().getId(), category, create);
+        return getWritableProperties(0, ContainerManager.getRoot(), category, create);
     }
 
 
-    public static PropertyMap getWritableProperties(String objectId, String category, boolean create)
+    public static PropertyMap getWritableProperties(Container container, String category, boolean create)
     {
-        return getWritableProperties(0, objectId, category, create);
+        return getWritableProperties(0, container, category, create);
     }
 
 
-    public static PropertyMap getWritableProperties(int userId, String objectId, String category, boolean create)
+    public static PropertyMap getWritableProperties(int userId, Container container, String category, boolean create)
     {
+        String objectId = container.getId().intern();
         try
         {
             prop.getSchema().getScope().ensureTransaction();
 
-            synchronized (objectId.intern())
+            synchronized (objectId)
             {
                 String setSelectName = prop.getTableInfoProperties().getColumn("Set").getSelectName();   // Keyword in some dialects
 
@@ -593,7 +594,6 @@ public class PropertyManager
         public void test() throws SQLException
         {
             Container child = null;
-            String objectId = null;
             TestContext context = TestContext.get();
             User user = context.getUser();
             Container parent = JunitUtil.getTestContainer();
@@ -601,7 +601,6 @@ public class PropertyManager
             try
             {
                 child = ContainerManager.createContainer(parent, "Properties");
-                objectId = child.getId();
 
                 // Do it twice to ensure multiple categories for same user and container works
                 testProperties(user, child, "junit");
@@ -615,27 +614,27 @@ public class PropertyManager
                     ContainerManager.delete(child, TestContext.get().getUser());
                 }
             }
-            Map m = PropertyManager.getProperties(user.getUserId(), objectId, "junit");
+            Map m = PropertyManager.getProperties(user.getUserId(), child, "junit");
             assertTrue(m == NULL_MAP);
-            m = PropertyManager.getProperties(user.getUserId(), objectId, "junit2");
+            m = PropertyManager.getProperties(user.getUserId(), child, "junit2");
             assertTrue(m == NULL_MAP);
         }
 
 
         private void testProperties(User user, Container test, String category) throws SQLException
         {
-            PropertyMap m = PropertyManager.getWritableProperties(user.getUserId(), test.getId(), category, true);
+            PropertyMap m = PropertyManager.getWritableProperties(user.getUserId(), test, category, true);
             assertNotNull(m);
             m.clear();
             PropertyManager.saveProperties(m);
 
-            m = PropertyManager.getWritableProperties(user.getUserId(), test.getId(), category, false);
+            m = PropertyManager.getWritableProperties(user.getUserId(), test, category, false);
             m.put("foo", "bar");
             m.put("this", "that");
             m.put("zoo", null);
             PropertyManager.saveProperties(m);
 
-            m = PropertyManager.getWritableProperties(user.getUserId(), test.getId(), category, false);
+            m = PropertyManager.getWritableProperties(user.getUserId(), test, category, false);
             assertEquals(m.get("foo"), "bar");
             assertEquals(m.get("this"), "that");
             assertFalse(m.containsKey("zoo"));
@@ -643,7 +642,7 @@ public class PropertyManager
             m.remove("this");
             PropertyManager.saveProperties(m);
 
-            m = PropertyManager.getWritableProperties(user.getUserId(), test.getId(), category, false);
+            m = PropertyManager.getWritableProperties(user.getUserId(), test, category, false);
             assertEquals(m.get("foo"), "bar");
             assertFalse(m.containsKey("this"));
             assertFalse(m.containsKey("zoo"));
