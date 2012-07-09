@@ -16,7 +16,6 @@ Ext4.namespace('LABKEY.ext');
  * @cfg {string} titleField
  * @cfg {string} titlePrefix Defaults to 'Details'
  * @cfg {Ext4.data.Record / Integer} boundRecord Either a record object
- * @cfg {boolean} showViewGridBtn
  */
 Ext4.define('LABKEY.ext.DetailsPanel', {
     extend: 'Ext.form.Panel',
@@ -126,17 +125,12 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
         if(bbar)
             bbar.removeAll();
 
-        if(this.showViewGridBtn){
-            var keyField = this.store.model.prototype.idProperty;
-            var params = {
-                schemaName: this.store.schemaName,
-                'query.queryName': this.store.queryName
-            };
-            params[('query.' + keyField + '~eq')] = rec.get(keyField);
-            var url = LABKEY.ActionURL.buildURL('query', 'executeQuery', null, params);
+        var url = LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.getParameter('returnURL');
+        if(url){
             bbar.add({
                 xtype: 'button',
-                text: 'Show Grid',
+                text: 'Back',
+                hrefTarget: '_self',
                 url: url
             });
         }
@@ -176,7 +170,6 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
  * @cfg store
  * @cfg {string} titleField
  * @cfg {string} titlePrefix Defaults to 'Details'
- * @cfg {boolean} showViewGridBtn
  * @cfg {object} qwpConfig
  * @cfg {boolean} multiToGrid
  */
@@ -264,8 +257,7 @@ Ext4.define('LABKEY.ext.MultiRecordDetailsPanel', {
             store: this.store,
             boundRecord: rec,
             title: Ext4.isDefined(this.titlePrefix) ?  this.titlePrefix : 'Details',
-            style: 'margin-bottom: 10px',
-            showViewGridBtn: this.showViewGridBtn
+            style: 'margin-bottom: 10px'
         };
     }
 });

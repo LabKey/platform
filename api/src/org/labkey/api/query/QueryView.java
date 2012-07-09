@@ -2044,7 +2044,7 @@ public class QueryView extends WebPartView<Object>
             return Collections.emptyList();
         if (_showDetailsColumn && !isPrintView() && !isExportView() && table.hasDetailsURL())
         {
-            StringExpression urlDetails = table.getDetailsURL(Table.createFieldKeyMap(table).keySet(), getContainer());
+            StringExpression urlDetails = urlExpr(QueryAction.detailsQueryRow);
 
             if (urlDetails != AbstractTableInfo.LINK_DISABLER)
             {

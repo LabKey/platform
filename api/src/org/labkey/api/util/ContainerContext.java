@@ -50,6 +50,9 @@ public interface ContainerContext
         @Override
         public Container getContainer(Map context)
         {
+            if (context == null)
+                return null;
+
             Object o = context.get(_key);
             if (null == o && null == _key.getParent())
                 o = context.get(_key.getName());
