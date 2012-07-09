@@ -22,15 +22,16 @@
 <%@ page import="org.labkey.api.security.permissions.ReadSomePermission"%>
 <%@ page import="org.labkey.api.security.roles.EditorRole"%>
 <%@ page import="org.labkey.api.security.roles.ReaderRole"%>
-<%@ page import="org.labkey.api.security.roles.Role"%>
+<%@ page import="org.labkey.api.security.roles.Role" %>
 <%@ page import="org.labkey.api.security.roles.RoleManager" %>
 <%@ page import="org.labkey.api.study.DataSet" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.study.controllers.security.SecurityController" %>
 <%@ page import="org.labkey.study.model.SecurityType" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.study.controllers.security.SecurityController" %>
+<%@ page import="org.labkey.api.security.SecurityPolicyManager" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
     String groupName(Group g)
@@ -44,7 +45,7 @@
 <%
     HttpView<StudyImpl> me = (HttpView<StudyImpl>) HttpView.currentView();
     StudyImpl study = me.getModelBean();
-    SecurityPolicy studyPolicy = SecurityManager.getPolicy(study);
+    SecurityPolicy studyPolicy = SecurityPolicyManager.getPolicy(study);
 
     Group[] groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
 
@@ -153,7 +154,7 @@ else
     if (!datasets.isEmpty())
     {
         org.labkey.study.model.DataSetDefinition ds = datasets.get(0);
-        SecurityPolicy dsPolicy = SecurityManager.getPolicy(ds);
+        SecurityPolicy dsPolicy = SecurityPolicyManager.getPolicy(ds);
         for (Role role : RoleManager.getAllRoles())
         {
             if (role.isApplicable(dsPolicy, ds) && role.getClass() != ReaderRole.class && role.getClass() != EditorRole.class)
@@ -186,7 +187,7 @@ else
     %></tr><%
     for (DataSet ds : study.getDataSets())
     {
-        SecurityPolicy dsPolicy = SecurityManager.getPolicy(ds);
+        SecurityPolicy dsPolicy = SecurityPolicyManager.getPolicy(ds);
 
         String inputName = "dataset." + ds.getDataSetId();
         %><tr class="<%=row++%2==0?"labkey-alternate-row":"labkey-row"%>"><td><%=h(ds.getLabel())%></td><%

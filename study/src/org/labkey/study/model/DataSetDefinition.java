@@ -63,8 +63,8 @@ import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -624,13 +624,13 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         //to switch back to them in the future
         SecurityType securityType = getStudy().getSecurityType();
         SecurityPolicy studyPolicy = (securityType == SecurityType.BASIC_READ || securityType == SecurityType.BASIC_WRITE) ?
-                SecurityManager.getPolicy(getContainer()) : SecurityManager.getPolicy(getStudy());
+                SecurityPolicyManager.getPolicy(getContainer()) : SecurityPolicyManager.getPolicy(getStudy());
 
         //need to check both the study's policy and the dataset's policy
         //users that have read permission on the study can read all datasets
         //users that have read-some permission on the study must also have read permission on this dataset
         if (studyPolicy.hasPermission(user, ReadPermission.class) ||
-            (studyPolicy.hasPermission(user, ReadSomePermission.class) && SecurityManager.getPolicy(this).hasPermission(user, ReadPermission.class)))
+            (studyPolicy.hasPermission(user, ReadSomePermission.class) && SecurityPolicyManager.getPolicy(this).hasPermission(user, ReadPermission.class)))
         {
             result.add(ReadPermission.class);
 
@@ -665,7 +665,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 else if (studyPolicy.hasPermission(user, ReadSomePermission.class))
                 {
                     // Advanced write grants dataset permissions based on the policy stored directly on the dataset
-                    result.addAll(SecurityManager.getPolicy(this).getPermissions(user));
+                    result.addAll(SecurityPolicyManager.getPolicy(this).getPermissions(user));
                 }
             }
         }

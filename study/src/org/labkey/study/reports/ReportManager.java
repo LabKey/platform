@@ -26,7 +26,7 @@ import org.labkey.api.reports.model.ViewInfo;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.reports.report.view.ReportUtil;
-import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -390,7 +390,7 @@ public class ReportManager implements StudyManager.DataSetListener
      */
     public boolean canReadReport(User user, Container c, Report report)
     {
-        SecurityPolicy policy = SecurityManager.getPolicy(report.getDescriptor(), false);
+        SecurityPolicy policy = SecurityPolicyManager.getPolicy(report.getDescriptor(), false);
 
         if (policy.isEmpty())
         {

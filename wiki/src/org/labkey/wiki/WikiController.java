@@ -55,8 +55,8 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -2300,7 +2300,7 @@ public class WikiController extends SpringActionController
                     errors.rejectValue("name", ERROR_MSG, "Page '" + name + "' already exists within this folder.");
             }
 
-            SecurityPolicy policy = SecurityManager.getPolicy(getContainer());
+            SecurityPolicy policy = SecurityPolicyManager.getPolicy(getContainer());
             Set<Role> contextualRoles = new HashSet<Role>();
 
             //if HTML body, must be valid according to tidy
@@ -2324,7 +2324,7 @@ public class WikiController extends SpringActionController
         {
             Container c = getViewContext().getContainer();
             User user = getViewContext().getUser();
-            SecurityPolicy policy = SecurityManager.getPolicy(c);
+            SecurityPolicy policy = SecurityPolicyManager.getPolicy(c);
             if (!policy.hasPermission(user, InsertPermission.class))
                 throw new UnauthorizedException("You do not have permissions to create a new wiki page in this folder!");
 
@@ -2410,7 +2410,7 @@ public class WikiController extends SpringActionController
 
             LOG.debug("Updating wiki " + wikiUpdate.getName());
 
-            SecurityPolicy policy = SecurityManager.getPolicy(getViewContext().getContainer());
+            SecurityPolicy policy = SecurityPolicyManager.getPolicy(getViewContext().getContainer());
             Set<Role> contextualRoles = new HashSet<Role>();
             if (wikiUpdate.getCreatedBy() == user.getUserId())
                 contextualRoles.add(RoleManager.getRole(OwnerRole.class));

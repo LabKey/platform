@@ -31,7 +31,7 @@ import org.labkey.api.etl.DataIteratorUtil;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
@@ -648,7 +648,7 @@ public class StudyServiceImpl implements StudyService.Service
     {
         Study study = StudyManager.getInstance().getStudy(container);
 
-        if(null == study || !SecurityManager.getPolicy(container).hasPermission(user, ReadPermission.class))
+        if(null == study || !SecurityPolicyManager.getPolicy(container).hasPermission(user, ReadPermission.class))
             return Collections.emptyList();
         else
             return Collections.singletonList((SecurableResource)study);

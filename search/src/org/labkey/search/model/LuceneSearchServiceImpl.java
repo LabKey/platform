@@ -56,8 +56,8 @@ import org.labkey.api.search.SearchUtils;
 import org.labkey.api.search.SearchUtils.HtmlParseException;
 import org.labkey.api.search.SearchUtils.LuceneMessageParser;
 import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -1133,7 +1133,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         if (null == _externalIndexManager)
             return false;
 
-        SecurityPolicy policy = SecurityManager.getPolicy(_externalIndexManager);
+        SecurityPolicy policy = SecurityPolicyManager.getPolicy(_externalIndexManager);
 
         return policy.hasPermission(user, ReadPermission.class);
     }
@@ -1260,7 +1260,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         if (null != _externalIndexManager)
         {
-            SecurityPolicy policy = SecurityManager.getPolicy(_externalIndexManager);
+            SecurityPolicy policy = SecurityPolicyManager.getPolicy(_externalIndexManager);
             if (policy.hasPermission(user, AdminPermission.class))
                 return Collections.singletonList((SecurableResource) _externalIndexManager);
         }

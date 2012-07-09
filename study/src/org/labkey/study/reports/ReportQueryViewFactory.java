@@ -30,8 +30,8 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ReportQueryView;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -110,7 +110,7 @@ public class ReportQueryViewFactory
      */
     private static boolean mustCheckDatasetPermissions(User user, ReportDescriptor descriptor) throws ServletException
     {
-        SecurityPolicy policy = SecurityManager.getPolicy(descriptor, false);
+        SecurityPolicy policy = SecurityPolicyManager.getPolicy(descriptor, false);
         if (policy.isEmpty())
             return true;    // normal permission checking
 

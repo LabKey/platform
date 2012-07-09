@@ -35,6 +35,7 @@ import org.labkey.api.reports.report.ModuleRReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
@@ -187,7 +188,7 @@ public class ReportViewProvider implements DataViewProvider
                         access = "private";
                         info.setShared(false);
                     }
-                    else if (!(descriptor instanceof ModuleRReportDescriptor) && !org.labkey.api.security.SecurityManager.getPolicy(descriptor, false).isEmpty())
+                    else if (!(descriptor instanceof ModuleRReportDescriptor) && !SecurityPolicyManager.getPolicy(descriptor, false).isEmpty())
                     {
                         // FIXME: see 10473: ModuleRReportDescriptor extends securable resource, but doesn't properly implement it.  File-based resources don't have a Container or Owner.
                         access = "custom"; // 13571: Explicit is a bad name for custom permissions

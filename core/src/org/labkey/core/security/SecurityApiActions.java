@@ -502,7 +502,7 @@ public class SecurityApiActions
                 }
                 else
                 {
-                    SecurityPolicy policy = SecurityManager.getPolicy(resource);
+                    SecurityPolicy policy = SecurityPolicyManager.getPolicy(resource);
                     permissions = policy.getPermissions(user);
                 }
                 
@@ -561,7 +561,7 @@ public class SecurityApiActions
                 throw new IllegalArgumentException("The requested resource does not exist within this container!");
 
             //get the policy
-            SecurityPolicy policy = SecurityManager.getPolicy(resource);
+            SecurityPolicy policy = SecurityPolicyManager.getPolicy(resource);
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
             //FIX: 8077 - if this is a subfolder and the policy is inherited from the project
@@ -651,11 +651,11 @@ public class SecurityApiActions
                 throw new IllegalArgumentException("No resource with the id '" + resourceId + "' was found in this container!");
 
             //ensure that user has admin permission on resource
-            if (!SecurityManager.getPolicy(resource).hasPermission(user, AdminPermission.class))
+            if (!SecurityPolicyManager.getPolicy(resource).hasPermission(user, AdminPermission.class))
                 throw new IllegalArgumentException("You do not have permission to modify the security policy for this resource!");
 
             //get the existing policy so we can audit how it's changed
-            SecurityPolicy oldPolicy = SecurityManager.getPolicy(resource);
+            SecurityPolicy oldPolicy = SecurityPolicyManager.getPolicy(resource);
 
             //create the policy from the props (will throw if invalid)
             MutableSecurityPolicy policy = MutableSecurityPolicy.fromMap(form.getProps(), resource);
@@ -663,7 +663,7 @@ public class SecurityApiActions
             //save it
             try
             {
-                SecurityManager.savePolicy(policy);    
+                SecurityPolicyManager.savePolicy(policy);
             }
             catch (Exception e)
             {
@@ -801,10 +801,10 @@ public class SecurityApiActions
                 throw new IllegalArgumentException("No resource with the id '" + resourceId + "' was found in this container!");
 
             //ensure that user has admin permission on resource
-            if (!SecurityManager.getPolicy(resource).hasPermission(user, AdminPermission.class))
+            if (!SecurityPolicyManager.getPolicy(resource).hasPermission(user, AdminPermission.class))
                 throw new IllegalArgumentException("You do not have permission to delete the security policy for this resource!");
 
-            SecurityManager.deletePolicy(resource);
+            SecurityPolicyManager.deletePolicy(resource);
 
             //audit log
             writeToAuditLog(resource);

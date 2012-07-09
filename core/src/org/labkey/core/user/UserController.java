@@ -1010,7 +1010,7 @@ public class UserController extends SpringActionController
         {
             Map<String, List<Group>> childAccessGroups = new TreeMap<String, List<Group>>();
 
-            SecurityPolicy policy = SecurityManager.getPolicy(child);
+            SecurityPolicy policy = SecurityPolicyManager.getPolicy(child);
             Set<Role> effectiveRoles = policy.getEffectiveRoles(requestedUser);
             effectiveRoles.remove(RoleManager.getRole(NoPermissionsRole.class)); //ignore no perms
             for (Role role : effectiveRoles)

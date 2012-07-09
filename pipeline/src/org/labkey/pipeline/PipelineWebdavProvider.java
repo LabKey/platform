@@ -21,7 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.webdav.FileSystemResource;
@@ -94,7 +94,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
             this.c = c;
             _containerId = c.getId();
             _shouldIndex = root.isSearchable();
-            setPolicy(SecurityManager.getPolicy(root));
+            setPolicy(SecurityPolicyManager.getPolicy(root));
 
             _files = new ArrayList<FileInfo>();
             for (File file : root.getRootPaths())

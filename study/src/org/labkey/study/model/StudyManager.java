@@ -84,6 +84,7 @@ import org.labkey.api.security.RoleAssignment;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
@@ -1417,7 +1418,7 @@ public class StudyManager
         {
             // If we're not reading from a dataset for cohort definition,
             // we use the container's permission
-            return SecurityManager.getPolicy(container).hasPermission(user, ReadPermission.class);
+            return SecurityPolicyManager.getPolicy(container).hasPermission(user, ReadPermission.class);
         }
 
         // Automatic cohort assignment -- can the user read the source dataset?
@@ -1442,7 +1443,7 @@ public class StudyManager
 
             if (study.isManualCohortAssignment())
             {
-                if (!SecurityManager.getPolicy(container).hasPermission(user, ReadPermission.class))
+                if (!SecurityPolicyManager.getPolicy(container).hasPermission(user, ReadPermission.class))
                     throw new UnauthorizedException("User does not have permission to view cohort information");
             }
             else
@@ -2008,7 +2009,7 @@ public class StudyManager
                 "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDataSetId());
         _dataSetHelper.clearCache(study.getContainer());
 
-        SecurityManager.deletePolicy(ds);
+        SecurityPolicyManager.deletePolicy(ds);
 
         if (safeIntegersEqual(ds.getDataSetId(), study.getParticipantCohortDataSetId()))
             CohortManager.getInstance().setManualCohortAssignment(study, user, Collections.<String, Integer>emptyMap());
@@ -2338,7 +2339,7 @@ public class StudyManager
                 principals.add(SecurityManager.getPrincipal(ra.getUserId()));
         }
 
-        SecurityManager.clearRoleAssignments(resources, principals);
+        SecurityPolicyManager.clearRoleAssignments(resources, principals);
     }
 
 

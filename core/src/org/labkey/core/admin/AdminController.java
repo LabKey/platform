@@ -46,7 +46,6 @@ import org.labkey.api.action.StatusReportingRunnableAction;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporterImpl;
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentService;
@@ -81,7 +80,6 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.view.SetupForm;
-import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
@@ -96,6 +94,7 @@ import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.RoleAssignment;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
@@ -114,7 +113,6 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.PreferenceService;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
@@ -163,7 +161,6 @@ import org.labkey.data.xml.TablesDocument;
 import org.labkey.folder.xml.FolderDocument;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
-import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -4104,7 +4101,7 @@ public class AdminController extends SpringActionController
                 Role role = RoleManager.getRole(c.isProject() ? ProjectAdminRole.class : FolderAdminRole.class);
 
                 policy.addRoleAssignment(this.getViewContext().getUser(), role);
-                SecurityManager.savePolicy(policy);
+                SecurityPolicyManager.savePolicy(policy);
             }
             else if (permissionType.equals("Inherit"))
             {
@@ -4123,7 +4120,7 @@ public class AdminController extends SpringActionController
                 HashMap<UserPrincipal, UserPrincipal> groupMap = GroupManager.copyGroupsToContainer(source, c);
 
                 //copy role assignments
-                SecurityPolicy op = SecurityManager.getPolicy(source);
+                SecurityPolicy op = SecurityPolicyManager.getPolicy(source);
                 MutableSecurityPolicy np = new MutableSecurityPolicy(c);
                 for (RoleAssignment assignment : op.getAssignments()){
                     Integer userId = assignment.getUserId();
@@ -4144,7 +4141,7 @@ public class AdminController extends SpringActionController
                     }
                 }
 
-                SecurityManager.savePolicy(np);
+                SecurityPolicyManager.savePolicy(np);
             }
             else {
                 throw new UnsupportedOperationException("An Unknown permission type was supplied: " + permissionType);

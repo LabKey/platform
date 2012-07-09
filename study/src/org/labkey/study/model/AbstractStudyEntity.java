@@ -23,8 +23,8 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.RoleManager;
@@ -142,11 +142,11 @@ public abstract class AbstractStudyEntity<T>
             (study.getSecurityType() == SecurityType.ADVANCED_READ ||
              study.getSecurityType() == SecurityType.ADVANCED_WRITE))
         {
-            return SecurityManager.getPolicy(this);
+            return SecurityPolicyManager.getPolicy(this);
         }
         else
         {
-            return SecurityManager.getPolicy(getContainer());
+            return SecurityPolicyManager.getPolicy(getContainer());
         }
     }
 
@@ -154,7 +154,7 @@ public abstract class AbstractStudyEntity<T>
     {
         if (!supportsPolicyUpdate())
             throw new IllegalArgumentException("unexpected class " + this.getClass().getName());
-        SecurityManager.savePolicy(policy);
+        SecurityPolicyManager.savePolicy(policy);
     }
 
     protected boolean supportsPolicyUpdate()

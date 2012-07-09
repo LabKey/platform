@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.study.model.SecurityType" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController" %>
+<%@ page import="org.labkey.api.security.SecurityPolicyManager" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     HttpView<StudyImpl> me = (HttpView<StudyImpl>) HttpView.currentView();
@@ -54,7 +55,7 @@ Any user with READ access to this folder may view some summary data.  However, a
             <th width=100>NONE<%=PageFlowUtil.helpPopup("NONE","user/group may not view or edit any detail data")%></th></tr>
     <%
     SecurityPolicy folderPolicy = me.getViewContext().getContainer().getPolicy();
-    SecurityPolicy studyPolicy = SecurityManager.getPolicy(study);
+    SecurityPolicy studyPolicy = SecurityPolicyManager.getPolicy(study);
     Group[] groups = SecurityManager.getGroups(study.getContainer().getProject(), true);
     for (Group group : groups)
     {

@@ -178,7 +178,7 @@ public class SecurityController extends SpringActionController
 
                 if (group2Perm != null)
                 {
-                    SecurityManager.savePolicy(policyFromPost(group2Perm, groupsInProject, dsDef));
+                    SecurityPolicyManager.savePolicy(policyFromPost(group2Perm, groupsInProject, dsDef));
                 }
             }
             return true;
@@ -323,7 +323,7 @@ public class SecurityController extends SpringActionController
                 throw new NotFoundException();
             }
 
-            MutableSecurityPolicy policy = new MutableSecurityPolicy(report.getDescriptor(), SecurityManager.getPolicy(report.getDescriptor()));
+            MutableSecurityPolicy policy = new MutableSecurityPolicy(report.getDescriptor(), SecurityPolicyManager.getPolicy(report.getDescriptor()));
             Integer owner = null;
 
             if (form.getPermissionType().equals(PermissionType.privatePermission.toString()))
@@ -366,7 +366,7 @@ public class SecurityController extends SpringActionController
                         }
                 }
             }
-            SecurityManager.savePolicy(policy);
+            SecurityPolicyManager.savePolicy(policy);
             report.getDescriptor().setOwner(owner);
             ReportService.get().saveReport(getViewContext(), report.getDescriptor().getReportKey(), report);
             return true;

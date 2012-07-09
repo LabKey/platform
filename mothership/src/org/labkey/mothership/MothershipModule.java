@@ -27,6 +27,7 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.InvalidGroupMembershipException;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
@@ -92,14 +93,14 @@ public class MothershipModule extends DefaultModule
     {
         Container c = ContainerManager.ensureContainer(MothershipReport.CONTAINER_PATH);
         Group mothershipGroup = SecurityManager.createGroup(c, NAME);
-        MutableSecurityPolicy policy = new MutableSecurityPolicy(c, SecurityManager.getPolicy(c));
+        MutableSecurityPolicy policy = new MutableSecurityPolicy(c, SecurityPolicyManager.getPolicy(c));
         Role noPermsRole = RoleManager.getRole(NoPermissionsRole.class);
         Role projAdminRole = RoleManager.getRole(ProjectAdminRole.class);
         policy.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), noPermsRole);
         policy.addRoleAssignment(SecurityManager.getGroup(Group.groupUsers), noPermsRole);
         policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), projAdminRole);
         policy.addRoleAssignment(mothershipGroup, projAdminRole);
-        SecurityManager.savePolicy(policy);
+        SecurityPolicyManager.savePolicy(policy);
 
         try
         {

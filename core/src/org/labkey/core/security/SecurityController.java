@@ -56,6 +56,7 @@ import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityMessage;
 import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -1326,15 +1327,15 @@ public class SecurityController extends SpringActionController
                 addAuditEvent(getUser(), String.format("Container %s was updated to inherit security permissions", c.getName()), 0);
 
                 //get any existing policy specifically for this container (may return null)
-                SecurityPolicy oldPolicy = SecurityManager.getPolicy(c, false);
+                SecurityPolicy oldPolicy = SecurityPolicyManager.getPolicy(c, false);
 
                 //delete if we found one
                 if(null != oldPolicy)
-                    SecurityManager.deletePolicy(c);
+                    SecurityPolicyManager.deletePolicy(c);
 
                 //now get the nearest policy for this container so we can write to the
                 //audit log how the permissions have changed
-                SecurityPolicy newPolicy = SecurityManager.getPolicy(c);
+                SecurityPolicy newPolicy = SecurityPolicyManager.getPolicy(c);
 
                 changeType = AuditChangeType.toInherited;
 
@@ -1348,7 +1349,7 @@ public class SecurityController extends SpringActionController
                 MutableSecurityPolicy newPolicy = new MutableSecurityPolicy(c);
 
                 //get the current nearest policy for this container
-                SecurityPolicy oldPolicy = SecurityManager.getPolicy(c);
+                SecurityPolicy oldPolicy = SecurityPolicyManager.getPolicy(c);
 
                 //if resource id is not the same as the current container
                 //set change type to indicate we're moving from inherited
@@ -1383,7 +1384,7 @@ public class SecurityController extends SpringActionController
                     }
                 }
 
-                SecurityManager.savePolicy(newPolicy);
+                SecurityPolicyManager.savePolicy(newPolicy);
             }
             return true;
         }
@@ -1874,7 +1875,7 @@ public class SecurityController extends SpringActionController
             {
                 user = UserManager.getUser(user.getUserId()); // the cache from UserManager.getActiveUsers might not have the udpated groups list
                 Map<String, List<Group>> userAccessGroups = new TreeMap<String, List<Group>>();
-                SecurityPolicy policy = SecurityManager.getPolicy(getContainer());
+                SecurityPolicy policy = SecurityPolicyManager.getPolicy(getContainer());
                 Set<Role> effectiveRoles = policy.getEffectiveRoles(user);
                 effectiveRoles.remove(RoleManager.getRole(NoPermissionsRole.class)); //ignore no perms
                 for (Role role : effectiveRoles)
@@ -1979,7 +1980,7 @@ public class SecurityController extends SpringActionController
             policy.addRoleAssignment(admin, RoleManager.getRole(SiteAdminRole.class));
             policy.addRoleAssignment(guest, RoleManager.getRole(ReaderRole.class));
             policy.addRoleAssignment(user, RoleManager.getRole(EditorRole.class));
-            SecurityManager.savePolicy(policy);
+            SecurityPolicyManager.savePolicy(policy);
 
             // @RequiresNoPermission
             assertPermission(guest, BeginAction.class);

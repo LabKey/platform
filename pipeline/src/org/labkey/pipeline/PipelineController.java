@@ -359,7 +359,7 @@ public class PipelineController extends SpringActionController
 
                 if (pipeRoot != null && !errors.hasErrors())
                 {
-                    main.addView(new PermissionView(SecurityManager.getPolicy(pipeRoot)));
+                    main.addView(new PermissionView(SecurityPolicyManager.getPolicy(pipeRoot)));
                 }
                 main.setTitle("Data Processing Pipeline Setup");
                 main.setFrame(WebPartView.FrameType.PORTAL);
@@ -710,7 +710,7 @@ public class PipelineController extends SpringActionController
                 }
 
                 // UNDONE: move setACL() to PipelineManager
-                SecurityManager.savePolicy(policy);
+                SecurityPolicyManager.savePolicy(policy);
                 ContainerManager.ContainerPropertyChangeEvent evt = new ContainerManager.ContainerPropertyChangeEvent(
                         c, ContainerManager.Property.PipelineRoot, pipeRoot, pipeRoot);
                 ContainerManager.firePropertyChangeEvent(evt);
@@ -1151,7 +1151,7 @@ public class PipelineController extends SpringActionController
                 throw new NotFoundException();
 
             // check pipeline ACL
-            if (!org.labkey.api.security.SecurityManager.getPolicy(pipeRoot).hasPermission(getUser(), ReadPermission.class))
+            if (!SecurityPolicyManager.getPolicy(pipeRoot).hasPermission(getUser(), ReadPermission.class))
                 throw new UnauthorizedException();
 
             File file = pipeRoot.resolvePath(form.getPath());

@@ -28,8 +28,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -100,7 +100,7 @@ class SecurityFilter extends Filter
                     if (null == canRead)
                     {
                         SecurableResource sr = new _SecurableResource(resourceId, containerIds.get(id));
-                        SecurityPolicy p = SecurityManager.getPolicy(sr);
+                        SecurityPolicy p = SecurityPolicyManager.getPolicy(sr);
                         canRead = p.hasPermission(user, ReadPermission.class);
                         securableResourceIds.put(resourceId, canRead);
                     }

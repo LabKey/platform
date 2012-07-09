@@ -32,6 +32,7 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.security.SecurityPolicyManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%
     JspView<Report> me = (JspView<Report>) HttpView.currentView();
@@ -41,7 +42,7 @@
     Study study = StudyManager.getInstance().getStudy(context.getContainer());
     Container c = study.getContainer();
     SecurityPolicy containerPolicy = c.getPolicy();
-    SecurityPolicy reportPolicy = SecurityManager.getPolicy(bean.getDescriptor());
+    SecurityPolicy reportPolicy = SecurityPolicyManager.getPolicy(bean.getDescriptor());
 
     boolean isAttachmentReport = false;  // TODO: Remove all references
 
@@ -178,7 +179,7 @@
     {
         if (report.getDescriptor().getOwner() != null)
             return SecurityController.PermissionType.privatePermission;
-        if (!SecurityManager.getPolicy(report.getDescriptor(), false).isEmpty())
+        if (!SecurityPolicyManager.getPolicy(report.getDescriptor(), false).isEmpty())
             return SecurityController.PermissionType.customPermission;
         return SecurityController.PermissionType.defaultPermission;
     }
