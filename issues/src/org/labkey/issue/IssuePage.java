@@ -232,7 +232,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
             // If custom column has pick list, then show select with keywords, otherwise input box
             if (_ccc.getPickListColumns().contains(type.getColumnName()))
                 sb.append(writeSelect(type, tabIndex));
-            else if (tableColumnName.startsWith("int"))
+            else if (type.isCustomInteger())
                 sb.append(writeIntegerInput(type, tabIndex));
             else
                 sb.append(writeInput(tableColumnName, type.getValue(getIssue()), tabIndex));

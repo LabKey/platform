@@ -18,7 +18,7 @@ import java.util.Map;
  */
 public enum ColumnType
 {
-    INT1(0, "int1", false, false)
+    INT1(0, "int1", false)
     {
         @Override
         public void setValue(Issue issue, HString value)
@@ -32,7 +32,7 @@ public enum ColumnType
             return HString.valueOf(issue.getInt1());
         }
     },
-    INT2(0, "int2", false, false)
+    INT2(0, "int2", false)
     {
         @Override
         public void setValue(Issue issue, HString value)
@@ -46,7 +46,7 @@ public enum ColumnType
             return HString.valueOf(issue.getInt2());
         }
     },
-    AREA(1, "area", true, false)
+    AREA(1, "area", true)
     {
         @Override
         public HString getValue(Issue issue)
@@ -60,7 +60,7 @@ public enum ColumnType
             issue.setArea(value);
         }
     },
-    TYPE(2, "type", true, false)
+    TYPE(2, "type", true)
     {
         @Override
         public HString getValue(Issue issue)
@@ -74,7 +74,7 @@ public enum ColumnType
             issue.setType(value);
         }
     },
-    MILESTONE(3, "milestone", true, false)
+    MILESTONE(3, "milestone", true)
     {
         @Override
         public HString getValue(Issue issue)
@@ -88,7 +88,7 @@ public enum ColumnType
             issue.setMilestone(value);
         }
     },
-    PRIORITY(6, "priority", true, false)
+    PRIORITY(6, "priority", true)
     {
         @Override
         public HString getValue(Issue issue)
@@ -122,7 +122,7 @@ public enum ColumnType
             return false;
         }
     },
-    RESOLUTION(7, "resolution", false, false)
+    RESOLUTION(7, "resolution", false)
     {
         @Override
         public HString getValue(Issue issue)
@@ -156,7 +156,7 @@ public enum ColumnType
             return false;
         }
     },
-    STRING1(4, "string1", false, true)
+    STRING1(4, "string1", false)
     {
         @Override
         public void setValue(Issue issue, HString value)
@@ -170,7 +170,7 @@ public enum ColumnType
             return issue.getString1();
         }
     },
-    STRING2(5, "string2", false, true)
+    STRING2(5, "string2", false)
     {
         @Override
         public void setValue(Issue issue, HString value)
@@ -184,7 +184,7 @@ public enum ColumnType
             return issue.getString2();
         }
     },
-    STRING3(8, "string3", false, true)
+    STRING3(8, "string3", false)
     {
         @Override
         public void setValue(Issue issue, HString value)
@@ -198,7 +198,7 @@ public enum ColumnType
             return issue.getString3();
         }
     },
-    STRING4(9, "string4", false, true)
+    STRING4(9, "string4", false)
     {
         @Override
         public void setValue(Issue issue, HString value)
@@ -212,7 +212,7 @@ public enum ColumnType
             return issue.getString4();
         }
     },
-    STRING5(10, "string5", false, true)
+    STRING5(10, "string5", false)
     {
         @Override
         public void setValue(Issue issue, HString value)
@@ -227,10 +227,11 @@ public enum ColumnType
         }
     };
 
-    private final int _ordinal;           // Ordinal used for storing/retrieving associated keywords in database (same as old int fake enum)
-    private final String _columnName;     // Standard database column name (same as old static final string)... these names never need HTML encoding
-    private final boolean _standard;      // Is this one of the four "standard" columns? (Type, Area, Priority, or Milestone)
-    private final boolean _customString;  // Is this a custom string column?
+    private final int _ordinal;            // Ordinal used for storing/retrieving associated keywords in database (same as old int fake enum)
+    private final String _columnName;      // Standard database column name (same as old static final string)... these names never need HTML encoding
+    private final boolean _standard;       // Is this one of the four "standard" columns? (Type, Area, Priority, or Milestone)
+    private final boolean _customString;   // Is this a custom String column?
+    private final boolean _customInteger;  // Is this a custom Integer column?
 
     private static final Map<String, ColumnType> mapByColumnName = new CaseInsensitiveHashMap<ColumnType>(15);
     private static final Map<Integer, ColumnType> mapByOrdinal = new HashMap<Integer, ColumnType>(15);
@@ -249,12 +250,13 @@ public enum ColumnType
         }
     }
 
-    ColumnType(int ordinal, String columnName, boolean standard, boolean customString)
+    ColumnType(int ordinal, String columnName, boolean standard)
     {
         _ordinal = ordinal;
         _columnName = columnName;
         _standard = standard;
-        _customString = customString;
+        _customString = columnName.startsWith("string");
+        _customInteger = columnName.startsWith("int");
     }
 
     public int getOrdinal()
@@ -275,6 +277,16 @@ public enum ColumnType
     public boolean isCustomString()
     {
         return _customString;
+    }
+
+    public boolean isCustomInteger()
+    {
+        return _customInteger;
+    }
+
+    public boolean isCustom()
+    {
+        return _customString || _customInteger;
     }
 
     // Most pick lists display a blank entry

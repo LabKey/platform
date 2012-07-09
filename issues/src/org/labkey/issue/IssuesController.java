@@ -864,8 +864,14 @@ public class IssuesController extends SpringActionController
         editable.add("comments");
         editable.add("attachments");
 
+        // Add all the enabled custom fields
         for (String columnName : ccc.getColumnHCaptions().keySet())
-            editable.add(columnName);
+        {
+            ColumnType type = ColumnType.forName(columnName);
+
+            if (null != type && type.isCustom())
+                editable.add(columnName);
+        }
 
         editable.add("notifyList");
 
