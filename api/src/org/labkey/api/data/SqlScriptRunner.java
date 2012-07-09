@@ -20,7 +20,7 @@ import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.cache.DbCache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
@@ -92,10 +92,10 @@ public class SqlScriptRunner
                 SCRIPT_LOCK.notifyAll();
             }
         }
-        
-        //invalidate the schemas so that we pick up changes made by the upgrade scripts
-        DbScope.invalidateAllIncompleteSchemas();
-        DbCache.invalidateAllCaches();
+
+        // Clear caches to invalidate previously loaded DbSchemas (upgrade scripts we just ran may have changed them)
+        // and invalidate potentially stale objects that have been cached.
+        CacheManager.clearAllKnownCaches();
 
         synchronized(SCRIPT_LOCK)
         {

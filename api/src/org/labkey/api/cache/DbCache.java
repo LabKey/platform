@@ -16,7 +16,6 @@
 
 package org.labkey.api.cache;
 
-import org.apache.log4j.Logger;
 import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.util.Path;
@@ -32,9 +31,10 @@ import java.util.Map;
  * DbCache is a wrapper that allocates a shared transaction-aware cache per TableInfo (for non-transaction use)
  * and a private transaction-aware cache per TableInfo per thread/connection (used for the duration of a transaction)
  */
+
+@Deprecated  // Use CacheManager.getCache() or DatabaseCache instead
 public class DbCache
 {
-    private static Logger LOG = Logger.getLogger(DbCache.class);
     private static final Map<Path, DatabaseCache<Object>> CACHES = new HashMap<Path, DatabaseCache<Object>>(100);
 
     public static int DEFAULT_CACHE_SIZE = 1000;   // Each TableInfo can override this (see tableInfo.xsd <cacheSize> element)
@@ -101,60 +101,12 @@ public class DbCache
     }
 
 
-//    /*
-//    With the introduction of the query layer, we can now have multiple tableinfo objects
-//    for a single actual table.  These tableinfo objects may have different filters applied.
-//    As a result, we need to be very careful with our caching; we look up and store using
-//    Object .equals (by just letting the CacheMap do its thing), but on removal we need to
-//    remove all tableinfos that are bound to the same underlying table.  We gather that
-//    list of tables here:
-//    */
-//    private static List<TableInfo> getTableInfosByUnderlyingTable(TableInfo tinfo)
-//    {
-//        synchronized (CACHES)
-//        {
-//            List<TableInfo> matchingCaches = new ArrayList<TableInfo>();
-//            for (Map.Entry<Path, DatabaseCache<Object>> entry : CACHES.entrySet())
-//            {
-//                if (entry.getKey().getName().equals(tinfo.getName()))
-//                    matchingCaches.add(entry.getKey());
-//            }
-//            return matchingCaches;
-//        }
-//    }
-
-
-    /* used by SqlScriptRunner */
-    public static void invalidateAllCaches()
-    {
-        synchronized(CACHES)
-        {
-            for (DatabaseCache<Object> c : CACHES.values())
-                c.clear();
-        }
-    }
-
-
     /** used by Table */
     public static void invalidateAll(TableInfo tinfo)
     {
         DatabaseCache cache = CACHES.get(tinfo.getNotificationKey());
         if (null != cache)
             cache.clear();
-
-//        // see comment above 'getTableInfosByUnderlyingTable' for an explanation of why
-//        // we clear multiple caches here:
-//        synchronized(CACHES)
-//        {
-//            List<TableInfo> tableInfos = getTableInfosByUnderlyingTable(tinfo);
-//
-//            for (TableInfo matchingTinfo : tableInfos)
-//            {
-//                DatabaseCache cache = CACHES.get(matchingTinfo);
-//                if (null != cache)
-//                    cache.clear();
-//            }
-//        }
     }
 
 
