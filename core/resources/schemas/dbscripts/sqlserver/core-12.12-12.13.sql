@@ -1,0 +1,1 @@
+UPDATE core.Modules SET AutoUninstall = 1, Schemas = 'dataspace' WHERE ClassName = 'org.labkey.dataspace.DataspaceModule';
