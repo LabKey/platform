@@ -16,6 +16,7 @@
 package org.labkey.query;
 
 import org.apache.xmlbeans.XmlObject;
+import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.admin.ImportContext;
@@ -39,18 +40,12 @@ import java.util.Collection;
  * User: cnathe
  * Date: Apr 10, 2012
  */
-public class ExternalSchemaDefImporterFactory implements FolderImporterFactory
+public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactory
 {
     @Override
     public FolderImporter create()
     {
         return new ExternalSchemaDefImporter();
-    }
-
-    @Override
-    public boolean isFinalImporter()
-    {
-        return false;
     }
 
     public class ExternalSchemaDefImporter implements FolderImporter<FolderDocument.Folder>

@@ -17,6 +17,7 @@ package org.labkey.query;
 
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
+import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.admin.ImportContext;
@@ -181,17 +182,11 @@ public class QueryImporter implements FolderImporter
         return false;
     }
 
-    public static class Factory implements FolderImporterFactory
+    public static class Factory extends AbstractFolderImportFactory
     {
         public FolderImporter create()
         {
             return new QueryImporter();
-        }
-
-        @Override
-        public boolean isFinalImporter()
-        {
-            return false;
         }
     }
 }

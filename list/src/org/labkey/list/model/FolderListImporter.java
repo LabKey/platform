@@ -17,6 +17,7 @@
 package org.labkey.list.model;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.admin.ImportContext;
@@ -73,7 +74,7 @@ public class FolderListImporter implements FolderImporter
         return true;
     }
 
-    public static class Factory implements FolderImporterFactory
+    public static class Factory extends AbstractFolderImportFactory
     {
         public FolderImporter create()
         {
@@ -81,9 +82,9 @@ public class FolderListImporter implements FolderImporter
         }
 
         @Override
-        public boolean isFinalImporter()
+        public int getPriority()
         {
-            return true;
+            return 60;
         }
     }
 }

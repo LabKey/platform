@@ -18,10 +18,13 @@ package org.labkey.core.admin.writer;
 import org.labkey.api.admin.*;
 import org.labkey.api.admin.FolderWriter;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -57,33 +60,35 @@ public class FolderSerializationRegistryImpl implements FolderSerializationRegis
     }
 
     // These importers can be defined and registered by other modules.  They have no knowledge of folder internals, other
-    // than being able to read elements from folder.xml. The initial importers are those that do not require other importers
-    // to be called first.
-    public Collection<FolderImporter> getRegisteredInitialFolderImporters()
+    // than being able to read elements from folder.xml.
+    //
+    public Collection<FolderImporter> getRegisteredFolderImporters()
     {
         // New up the importers every time since these classes can be stateful
         Collection<FolderImporter> importers = new LinkedList<FolderImporter>();
 
-        for (FolderImporterFactory factory : IMPORTER_FACTORIES)
-            if (!factory.isFinalImporter())
-                importers.add(factory.create());
+        for (FolderImporterFactory factory : getSortedFactories())
+            importers.add(factory.create());
 
         return importers;
     }
 
-    // These importers can be defined and registered by other modules.  They have no knowledge of folder internals, other
-    // than being able to read elements from folder.xml. The final importers are those that should be called after other
-    // importers have completed (i.e. pages/webparts should be deserialized after reports/queries have been imported
-    public Collection<FolderImporter> getRegisteredFinalFolderImporters()
+    private List<FolderImporterFactory> getSortedFactories()
     {
-        // New up the importers every time since these classes can be stateful
-        Collection<FolderImporter> importers = new LinkedList<FolderImporter>();
+        List<FolderImporterFactory> factories = new ArrayList<FolderImporterFactory>();
+        factories.addAll(IMPORTER_FACTORIES);
 
-        for (FolderImporterFactory factory : IMPORTER_FACTORIES)
-            if (factory.isFinalImporter())
-                importers.add(factory.create());
+        // sort the factories by priority in ascending order
+        Collections.sort(factories, new Comparator<FolderImporterFactory>()
+        {
+            @Override
+            public int compare(FolderImporterFactory o1, FolderImporterFactory o2)
+            {
+                return o1.getPriority() - o2.getPriority();
+            }
+        });
 
-        return importers;
+        return factories;
     }
 
     public void addFactories(FolderWriterFactory writerFactory, FolderImporterFactory importerFactory)

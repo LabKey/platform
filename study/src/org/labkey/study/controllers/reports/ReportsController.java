@@ -17,16 +17,13 @@
 package org.labkey.study.controllers.reports;
 
 import gwt.client.org.labkey.study.chart.client.StudyChartDesigner;
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.SimpleViewAction;
@@ -46,7 +43,6 @@ import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
@@ -65,7 +61,6 @@ import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -2187,9 +2182,9 @@ public class ReportsController extends BaseStudyController
             if (form.getReportId() != null)
                 report = form.getReportId().getReport();
 
-            if (report != null)
+            if (report instanceof ParticipantReport)
             {
-                response.put("reportConfig", ParticipantReportForm.toJSON(getUser(), getContainer(), report));
+                response.put("reportConfig", ParticipantReport.toJSON(getUser(), getContainer(), report));
                 response.put("success", true);
             }
             else
@@ -2261,24 +2256,6 @@ public class ReportsController extends BaseStudyController
             {
                 _groups = ((JSONArray)groups).toString();
             }
-        }
-
-        public static JSONObject toJSON(User user, Container container, Report report)
-        {
-            JSONObject json = ReportUtil.JsonReportForm.toJSON(user, container, report);
-            ReportDescriptor descriptor = report.getDescriptor();
-
-            String measuresConfig = descriptor.getProperty(ParticipantReport.MEASURES_PROP);
-            if (measuresConfig != null)
-            {
-                json.put("measures", new JSONArray(measuresConfig));
-            }
-            String groupsConfig = descriptor.getProperty(ParticipantReport.GROUPS_PROP);
-            if (groupsConfig != null)
-            {
-                json.put("groups", new JSONArray(groupsConfig));
-            }
-            return json;
         }
     }
 }

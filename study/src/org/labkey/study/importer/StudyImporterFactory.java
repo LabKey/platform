@@ -44,7 +44,7 @@ import java.util.Collection;
  * User: cnathe
  * Date: Apr 11, 2012
  */
-public class StudyImporterFactory implements FolderImporterFactory
+public class StudyImporterFactory extends AbstractFolderImportFactory
 {
     @Override
     public FolderImporter create()
@@ -53,9 +53,9 @@ public class StudyImporterFactory implements FolderImporterFactory
     }
 
     @Override
-    public boolean isFinalImporter()
+    public int getPriority()
     {
-        return true;
+        return 60;
     }
 
     public class StudyFolderImporter implements FolderImporter<FolderDocument.Folder>

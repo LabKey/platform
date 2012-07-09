@@ -1086,7 +1086,8 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
     },
 
     empty : function() {
-        this.templateReport.update('<i>No matching results</i>');
+        if (this.templateReport)
+            this.templateReport.update('<i>No matching results</i>');
         this.lengthReportField.setValue('Showing 0 Results');
     },
 

@@ -15,6 +15,7 @@
  */
 package org.labkey.core.admin.importer;
 
+import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.admin.ImportContext;
@@ -31,18 +32,12 @@ import java.util.Collection;
  * User: cnathe
  * Date: Apr 10, 2012
  */
-public class SearchSettingsImporterFactory implements FolderImporterFactory
+public class SearchSettingsImporterFactory extends AbstractFolderImportFactory
 {
     @Override
     public FolderImporter create()
     {
         return new SearchSettingsImporter();
-    }
-
-    @Override
-    public boolean isFinalImporter()
-    {
-        return false;
     }
 
     public class SearchSettingsImporter implements  FolderImporter<FolderDocument.Folder>

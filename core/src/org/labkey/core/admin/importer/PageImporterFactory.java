@@ -16,6 +16,7 @@
 package org.labkey.core.admin.importer;
 
 import org.apache.xmlbeans.XmlObject;
+import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.admin.ImportContext;
@@ -45,7 +46,7 @@ import java.util.Map;
  * User: cnathe
  * Date: Jan 17, 2012
  */
-public class PageImporterFactory implements FolderImporterFactory
+public class PageImporterFactory extends AbstractFolderImportFactory
 {
     @Override
     public FolderImporter create()
@@ -54,9 +55,9 @@ public class PageImporterFactory implements FolderImporterFactory
     }
 
     @Override
-    public boolean isFinalImporter()
+    public int getPriority()
     {
-        return true;
+        return 70;
     }
 
     public class PageImporter implements FolderImporter<FolderDocument.Folder>

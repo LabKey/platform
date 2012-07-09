@@ -559,7 +559,10 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
             Report report = createReportInstance(type);
 
             if (report != null)
+            {
                 report.setDescriptor(descriptor);
+                report.afterImport(container, user);
+            }
 
             return report;
         }

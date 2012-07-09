@@ -17,6 +17,7 @@ package org.labkey.study.importer;
 
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.admin.ImportContext;
@@ -36,18 +37,12 @@ import java.util.Map;
  * User: cnathe
  * Date: May 1, 2012
  */
-public class MissingValueImporterFactory implements FolderImporterFactory
+public class MissingValueImporterFactory extends AbstractFolderImportFactory
 {
     @Override
     public FolderImporter create()
     {
         return new MissingValueImporter();
-    }
-
-    @Override
-    public boolean isFinalImporter()
-    {
-        return false;
     }
 
     public class MissingValueImporter implements FolderImporter

@@ -16,9 +16,15 @@
 package org.labkey.study.reports;
 
 import org.apache.commons.lang3.BooleanUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.labkey.api.data.Container;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.AbstractReport;
+import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportUrls;
+import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.thumbnail.Thumbnail;
@@ -31,8 +37,15 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.study.controllers.reports.ReportsController;
+import org.labkey.study.model.CohortImpl;
+import org.labkey.study.model.ParticipantCategory;
+import org.labkey.study.model.ParticipantGroup;
+import org.labkey.study.model.ParticipantGroupManager;
+import org.labkey.study.model.StudyManager;
 
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -101,5 +114,83 @@ public class ParticipantReport extends AbstractReport
     public String getStaticThumbnailCacheKey()
     {
         return "Reports:ParticipantReportStatic";
+    }
+
+    /**
+     * Utility method to serialize the report to JSON, we might consider formalizing
+     * this into the report interface as using JSON to serialize report state to clients
+     * is becoming more common.
+     */
+    public static JSONObject toJSON(User user, Container container, Report report)
+    {
+        JSONObject json = ReportUtil.JsonReportForm.toJSON(user, container, report);
+        ReportDescriptor descriptor = report.getDescriptor();
+
+        String measuresConfig = descriptor.getProperty(ParticipantReport.MEASURES_PROP);
+        if (measuresConfig != null)
+        {
+            json.put("measures", new JSONArray(measuresConfig));
+        }
+        String groupsConfig = descriptor.getProperty(ParticipantReport.GROUPS_PROP);
+        if (groupsConfig != null)
+        {
+            json.put("groups", new JSONArray(groupsConfig));
+        }
+        return json;
+    }
+
+    @Override
+    public void afterImport(Container container, User user)
+    {
+        // lookup the filtered cohort and participant groups (if they have been imported as well)
+        String groupsConfig = getDescriptor().getProperty(GROUPS_PROP);
+        if (groupsConfig != null)
+        {
+            JSONArray groups = new JSONArray(groupsConfig);
+            Map<String, CohortImpl> cohortMap = new HashMap<String, CohortImpl>();
+            Map<String, ParticipantGroup> groupMap = new HashMap<String, ParticipantGroup>();
+
+            for (CohortImpl cohort : StudyManager.getInstance().getCohorts(container, user))
+                cohortMap.put(cohort.getLabel(), cohort);
+
+            for (ParticipantCategory category : ParticipantGroupManager.getInstance().getParticipantCategories(container, user))
+            {
+                for (ParticipantGroup group : category.getGroups())
+                    groupMap.put(group.getLabel(), group);
+            }
+
+            JSONArray newGroups = new JSONArray();
+            for (JSONObject group : groups.toJSONObjectArray())
+            {
+                String type = group.getString("type");
+                String label = group.getString("label");
+                int id = group.getInt("id");
+
+                if (id == -1)
+                {
+                    newGroups.put(group);
+                }
+                else if ("cohort".equals(type))
+                {
+                    if (cohortMap.containsKey(label))
+                    {
+                        group.put("id", cohortMap.get(label).getRowId());
+                        newGroups.put(group);
+                    }
+                }
+                else if ("participantGroup".equals(type))
+                {
+                    if (groupMap.containsKey(label))
+                    {
+                        group.put("id", groupMap.get(label).getRowId());
+                        newGroups.put(group);
+                    }
+                }
+                else
+                    newGroups.put(group);
+            }
+
+            getDescriptor().setProperty(GROUPS_PROP, newGroups.toString());
+        }
     }
 }

@@ -15,6 +15,7 @@
  */
 package org.labkey.query;
 
+import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.admin.ImportContext;
@@ -69,17 +70,11 @@ public class CustomViewImporter implements FolderImporter
         return true;
     }
 
-    public static class Factory implements FolderImporterFactory
+    public static class Factory extends AbstractFolderImportFactory
     {
         public FolderImporter create()
         {
             return new CustomViewImporter();
-        }
-
-        @Override
-        public boolean isFinalImporter()
-        {
-            return false;
         }
     }
 }
