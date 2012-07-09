@@ -28,7 +28,6 @@ import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.security.*;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -636,7 +635,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
 
         if (null != permissionsRequired)
         {
-            SecurityPolicy policy = SecurityManager.getPolicy(c);
+            SecurityPolicy policy = SecurityPolicyManager.getPolicy(c);
             if (!policy.hasOneOf(user, permissionsRequired, contextualRoles))
                 throw new UnauthorizedException();
         }

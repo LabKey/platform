@@ -32,8 +32,8 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.HasPermission;
 import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -247,7 +247,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     // instead, to ensure proper behavior during impersonation.
     public @NotNull SecurityPolicy getPolicy()
     {
-        return SecurityManager.getPolicy(this);
+        return SecurityPolicyManager.getPolicy(this);
     }
 
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
@@ -443,7 +443,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
             Report[] reports = ReportService.get().getReports(user, this);
             for(Report report : reports)
             {
-                SecurityPolicy policy = SecurityManager.getPolicy(report.getDescriptor());
+                SecurityPolicy policy = SecurityPolicyManager.getPolicy(report.getDescriptor());
                 if (policy.hasPermission(user, AdminPermission.class))
                     ret.add(report.getDescriptor());
             }
@@ -457,7 +457,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         PipeRoot root = PipelineService.get().findPipelineRoot(this);
         if (null != root)
         {
-            SecurityPolicy policy = SecurityManager.getPolicy(root);
+            SecurityPolicy policy = SecurityPolicyManager.getPolicy(root);
             if (policy.hasPermission(user, AdminPermission.class))
                 ret.add(root);
         }

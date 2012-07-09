@@ -893,6 +893,7 @@ api/src/org/labkey/api/security/SecurityManager.java -text
 api/src/org/labkey/api/security/SecurityMessage.java -text
 api/src/org/labkey/api/security/SecurityPolicy.java -text
 api/src/org/labkey/api/security/SecurityPolicyBean.java -text
+api/src/org/labkey/api/security/SecurityPolicyManager.java -text
 api/src/org/labkey/api/security/SecurityUrls.java -text
 api/src/org/labkey/api/security/TokenAuthentication.java -text
 api/src/org/labkey/api/security/UserCache.java -text

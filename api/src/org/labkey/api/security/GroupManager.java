@@ -387,7 +387,7 @@ public class GroupManager
 
             MutableSecurityPolicy op = new MutableSecurityPolicy(project);
             op.addRoleAssignment(groupA, ReaderRole.class);
-            SecurityManager.savePolicy(op);
+            SecurityPolicyManager.savePolicy(op);
 
             String newContainerPath = "GroupManagerJunitTestProject";
             Container newProject = ContainerManager.getContainerService().getForPath("GroupManagerJunitTestProject");
@@ -401,7 +401,7 @@ public class GroupManager
 
             MutableSecurityPolicy np = new MutableSecurityPolicy(newProject);
             np.addRoleAssignment(newGroupA, ReaderRole.class);
-            SecurityManager.savePolicy(np);
+            SecurityPolicyManager.savePolicy(np);
 
             //should be copied from the previous project though groupB membership
             assertTrue(np.hasPermission(getUser(), ReadPermission.class));

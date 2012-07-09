@@ -23,9 +23,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.admin.CoreUrls;
-import org.labkey.api.attachments.Attachment;
-import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RenderContext;
@@ -52,8 +49,8 @@ import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.ScriptReport;
 import org.labkey.api.reports.report.ScriptReportDescriptor;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -560,7 +557,7 @@ public class ReportUtil
                         if (descriptor.getOwner() != null)
                             security = "private";
                         // FIXME: see 10473: ModuleRReportDescriptor extends securable resource, but doesn't properly implement it.  File-based resources don't have a Container or Owner.
-                        else if (!(descriptor instanceof ModuleRReportDescriptor) && !SecurityManager.getPolicy(descriptor, false).isEmpty())
+                        else if (!(descriptor instanceof ModuleRReportDescriptor) && !SecurityPolicyManager.getPolicy(descriptor, false).isEmpty())
                             security = "custom"; // 13571: Explicit is a bad name for custom permissions
                         else
                             security = "public";

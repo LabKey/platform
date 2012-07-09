@@ -40,6 +40,7 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
@@ -1155,7 +1156,7 @@ public class ContainerManager
                     Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoContainerAliases() + " WHERE ContainerId=?", c.getId());
                     Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoContainers() + " WHERE EntityId=?", c.getId());
                     // now that the container is actually gone, delete all ACLs (better to have an ACL w/o object than object w/o ACL)
-                    SecurityManager.removeAll(c);
+                    SecurityPolicyManager.removeAll(c);
                 }
                 finally
                 {
@@ -1721,7 +1722,7 @@ public class ContainerManager
                 policy.addRoleAssignment(SecurityManager.getGroup(Group.groupAdministrators), adminRole);
                 policy.addRoleAssignment(SecurityManager.getGroup(Group.groupUsers), userRole);
                 policy.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), guestRole);
-                SecurityManager.savePolicy(policy);
+                SecurityPolicyManager.savePolicy(policy);
             }
         }
         catch (SQLException e)

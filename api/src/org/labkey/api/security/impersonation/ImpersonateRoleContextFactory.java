@@ -18,8 +18,8 @@ package org.labkey.api.security.impersonation;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserUrls;
@@ -120,7 +120,7 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
     static void addMenu(NavTree menu, Container c, ActionURL currentURL, Set<Role> roles)
     {
         UserUrls userURLs = PageFlowUtil.urlProvider(UserUrls.class);
-        SecurityPolicy policy = SecurityManager.getPolicy(c);
+        SecurityPolicy policy = SecurityPolicyManager.getPolicy(c);
         NavTree roleMenu = new NavTree("Role");
 
         boolean hasRead = false;

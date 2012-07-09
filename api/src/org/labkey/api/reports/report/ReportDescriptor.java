@@ -35,7 +35,7 @@ import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.RoleManager;
@@ -543,7 +543,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
     public void updatePolicy(ViewContext context, MutableSecurityPolicy policy)
     {
         assert policy.getResourceId().equalsIgnoreCase(this.getResourceId());
-        SecurityManager.savePolicy(policy);
+        SecurityPolicyManager.savePolicy(policy);
     }
 
     public boolean isNew()

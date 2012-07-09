@@ -311,7 +311,7 @@ public class AuthenticationManager
 
 
     /** avoid spamming the audit log **/
-    static Cache<String,String> authMessages = CacheManager.getCache(100, TimeUnit.MINUTES.toMillis(10), "authMessages");
+    private static Cache<String, String> authMessages = CacheManager.getCache(100, TimeUnit.MINUTES.toMillis(10), "Authentication Messages");
 
     private static void addAuditEvent(@NotNull User user, HttpServletRequest request, String msg)
     {

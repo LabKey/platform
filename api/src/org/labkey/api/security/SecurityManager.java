@@ -27,7 +27,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -39,12 +38,9 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.impersonation.ImpersonateGroupContextFactory;
 import org.labkey.api.security.impersonation.ImpersonateRoleContextFactory;
@@ -2072,196 +2068,6 @@ public class SecurityManager
     }
 
 
-    //
-    // Permissions, ACL cache and Permission testing
-    //
-
-    //manage SecurityPolicy
-    private static final String _policyPrefix = "Policy/";
-
-    @NotNull
-    public static SecurityPolicy getPolicy(@NotNull SecurableResource resource)
-    {
-        return getPolicy(resource, true);
-    }
-
-    @NotNull
-    public static SecurityPolicy getPolicy(@NotNull SecurableResource resource, boolean findNearest)
-    {
-        String cacheName = cacheName(resource);
-        SecurityPolicy policy = (SecurityPolicy) DbCache.get(core.getTableInfoRoleAssignments(), cacheName);
-
-        if (null == policy)
-        {
-            SimpleFilter filter = new SimpleFilter("ResourceId", resource.getResourceId());
-
-            SecurityPolicyBean policyBean = Table.selectObject(core.getTableInfoPolicies(), resource.getResourceId(),
-                    SecurityPolicyBean.class);
-
-            TableInfo table = core.getTableInfoRoleAssignments();
-
-            Selector selector = new TableSelector(table, filter, new Sort("UserId"));
-            RoleAssignment[] assignments = selector.getArray(RoleAssignment.class);
-
-            policy = new SecurityPolicy(resource, assignments, null != policyBean ? policyBean.getModified() : new Date());
-            DbCache.put(table, cacheName, policy);
-        }
-
-        if (findNearest && policy.isEmpty() && resource.mayInheritPolicy())
-        {
-            SecurableResource parent = resource.getParentResource();
-            if (null != parent)
-                return getPolicy(parent, findNearest);
-        }
-        
-        return policy;
-    }
-
-
-    public static void savePolicy(@NotNull MutableSecurityPolicy policy)
-    {
-        DbScope scope = core.getSchema().getScope();
-
-        try
-        {
-            scope.ensureTransaction();
-
-            //if the policy to save has a version, check to see if it's the current one
-            //(note that this may be a new policy so there might not be an existing one)
-            SecurityPolicyBean currentPolicyBean = Table.selectObject(core.getTableInfoPolicies(),
-                    policy.getResourceId(), SecurityPolicyBean.class);
-
-            if (null != currentPolicyBean && null != policy.getModified() &&
-                    0 != policy.getModified().compareTo(currentPolicyBean.getModified()))
-            {
-                throw new Table.OptimisticConflictException("The security policy you are attempting to save" +
-                " has been altered by someone else since you selected it.", Table.SQLSTATE_TRANSACTION_STATE, 0);
-            }
-
-            //normalize the policy to get rid of extraneous no perms role assignments
-            policy.normalize();
-
-            //save to policies table
-            if (null == currentPolicyBean)
-                Table.insert(null, core.getTableInfoPolicies(), policy.getBean());
-            else
-                Table.update(null, core.getTableInfoPolicies(), policy.getBean(), policy.getResourceId());
-
-            TableInfo table = core.getTableInfoRoleAssignments();
-
-            //delete all rows where resourceid = resource.getId()
-            Table.delete(table, new SimpleFilter("ResourceId", policy.getResourceId()));
-
-            //insert rows for the policy entries
-            for (RoleAssignment assignment : policy.getAssignments())
-            {
-                Table.insert(null, table, assignment);
-            }
-
-            //commit transaction
-            scope.commitTransaction();
-
-            //remove the resource-oriented policy from cache
-            DbCache.remove(table, cacheNameForResourceId(policy.getResourceId()));
-            notifyPolicyChange(policy.getResourceId());
-        }
-        catch(SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            scope.closeConnection();
-        }
-    }
-
-    public static void deletePolicy(@NotNull SecurableResource resource)
-    {
-        DbScope scope = core.getSchema().getScope();
-        try
-        {
-            scope.ensureTransaction();
-
-            TableInfo table = core.getTableInfoRoleAssignments();
-
-            //delete all rows where resourceid = resource.getResourceId()
-            SimpleFilter filter = new SimpleFilter("ResourceId", resource.getResourceId());
-            Table.delete(table, filter);
-            Table.delete(core.getTableInfoPolicies(), filter);
-
-            //commit transaction
-            scope.commitTransaction();
-
-            //remove the resource-oriented policy from cache
-            DbCache.remove(table, cacheName(resource));
-
-            notifyPolicyChange(resource.getResourceId());
-        }
-        catch(SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-        finally
-        {
-            scope.closeConnection();
-        }
-    }
-
-    /**
-     * Clears all role assignments for the specified principals for the specified resources.
-     * After this call completes, all the specified principals will no longer have any role
-     * assignments for the specified resources.
-     * @param resources The resources
-     * @param principals The principals
-     */
-    public static void clearRoleAssignments(@NotNull Set<SecurableResource> resources, @NotNull Set<UserPrincipal> principals)
-    {
-        if (resources.size() == 0 || principals.size() == 0)
-            return;
-
-        TableInfo table = core.getTableInfoRoleAssignments();
-
-        SQLFragment sql = new SQLFragment("DELETE FROM ");
-        sql.append(core.getTableInfoRoleAssignments());
-        sql.append(" WHERE ResourceId IN (");
-
-        String sep = "";
-        SQLFragment resourcesList = new SQLFragment();
-
-        for (SecurableResource resource : resources)
-        {
-            resourcesList.append(sep);
-            resourcesList.append("?");
-            resourcesList.add(resource.getResourceId());
-            sep = ",";
-        }
-
-        sql.append(resourcesList);
-        sql.append(") AND UserId IN (");
-        sep = "";
-        SQLFragment principalsList = new SQLFragment();
-
-        for (UserPrincipal principal : principals)
-        {
-            principalsList.append(sep);
-            principalsList.append("?");
-            principalsList.add(principal.getUserId());
-            sep = ",";
-        }
-
-        sql.append(principalsList);
-        sql.append(")");
-
-        new SqlExecutor(core.getSchema(), sql).execute();
-
-        DbCache.clear(table);
-
-        for (SecurableResource resource : resources)
-        {
-            notifyPolicyChange(resource.getResourceId());
-        }
-    }
-
     // Modules register a factory to add module-specific ui to the permissions page
     public static void addViewFactory(ViewFactory vf)
     {
@@ -2278,44 +2084,6 @@ public class SecurityManager
     public interface ViewFactory
     {
         public HttpView createView(ViewContext context);
-    }
-
-
-    private static String cacheName(SecurableResource resource)
-    {
-        return cacheNameForResourceId(resource.getResourceId());
-    }
-
-    private static String cacheNameForResourceId(String resourceId)
-    {
-        return _policyPrefix + "resource/" + resourceId;
-    }
-
-    private static String cacheNameForUserId(int userId)
-    {
-        return _policyPrefix + "principal/" + userId;
-    }
-
-
-    public static void removeAll(Container c)
-    {
-        try
-        {
-            Table.execute(
-                    core.getSchema(),
-                    "DELETE FROM " + core.getTableInfoRoleAssignments() + " WHERE ResourceId IN (SELECT ResourceId FROM " +
-                    core.getTableInfoPolicies() + " WHERE Container = ?)",
-                    c.getId());
-            Table.execute(
-                    core.getSchema(),
-                    "DELETE FROM " + core.getTableInfoPolicies() + " WHERE Container = ?",
-                    c.getId());
-            DbCache.clear(core.getTableInfoRoleAssignments());
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
     }
 
 
@@ -2591,12 +2359,6 @@ public class SecurityManager
     }
 
 
-    protected static void notifyPolicyChange(String objectID)
-    {
-        // UNDONE: generalize cross manager/module notifications
-        ContainerManager.notifyContainerChange(objectID);
-    }
-
     public static List<ValidEmail> normalizeEmails(String[] rawEmails, List<String> invalidEmails)
     {
         if (rawEmails == null || rawEmails.length == 0)
@@ -2792,7 +2554,7 @@ public class SecurityManager
         policy.addRoleAssignment(getGroup(Group.groupUsers), noPermsRole);
         policy.addRoleAssignment(getGroup(Group.groupGuests), noPermsRole);
         
-        savePolicy(policy);
+        SecurityPolicyManager.savePolicy(policy);
     }
 
     public static void setAdminOnlyPermissions(Container c)
@@ -2821,7 +2583,7 @@ public class SecurityManager
         if (policy.isEmpty())
             policy.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), NoPermissionsRole.class);
 
-        savePolicy(policy);
+        SecurityPolicyManager.savePolicy(policy);
     }
 
     public static boolean isAdminOnlyPermissions(Container c)
@@ -2843,7 +2605,7 @@ public class SecurityManager
 
     public static void setInheritPermissions(Container c)
     {
-        deletePolicy(c);
+        SecurityPolicyManager.deletePolicy(c);
     }
 
     private static final String SUBFOLDERS_INHERIT_PERMISSIONS_NAME = "SubfoldersInheritPermissions";
@@ -2897,27 +2659,9 @@ public class SecurityManager
         }
 
         /*
-         * Clear all ACLS for folders that changed project!
+         * Clear all policies and assignments for folders that changed project!
          */
-        Container[] subtrees = ContainerManager.getAllChildren(c);
-        StringBuilder sb = new StringBuilder();
-        String comma = "";
-
-        for (Container sub : subtrees)
-        {
-            sb.append(comma);
-            sb.append("'");
-            sb.append(sub.getId());
-            sb.append("'");
-            comma = ",";
-        }
-
-        Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoRoleAssignments() + "\n" +
-            "WHERE ResourceId IN (SELECT ResourceId FROM " + core.getTableInfoPolicies() + " WHERE Container IN (" +
-                sb.toString() + "))");
-        Table.execute(core.getSchema(), "DELETE FROM " + core.getTableInfoPolicies() + "\n" +
-            "WHERE Container IN (" + sb.toString() + ")");
-        DbCache.clear(core.getTableInfoRoleAssignments());
+        SecurityPolicyManager.removeAllChildren(c);
 
         /* when promoting a folder to a project, create default project groups */
         if (newProject == c)

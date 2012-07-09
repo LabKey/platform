@@ -27,6 +27,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
@@ -650,7 +651,7 @@ public class WebdavResolverImpl implements WebdavResolver
             MutableSecurityPolicy policyNone = new MutableSecurityPolicy(cTest);
             policyNone.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), NoPermissionsRole.class);
             policyNone.addRoleAssignment(user, ReaderRole.class);
-            SecurityManager.savePolicy(policyNone);
+            SecurityPolicyManager.savePolicy(policyNone);
 
             WebdavResource rTest = resolver.lookup(rootPath.append(pathTest));
             assertNotNull(rTest);
@@ -666,7 +667,7 @@ public class WebdavResolverImpl implements WebdavResolver
 
             MutableSecurityPolicy policyRead = new MutableSecurityPolicy(cTest);
             policyRead.addRoleAssignment(SecurityManager.getGroup(Group.groupGuests), ReaderRole.class);
-            SecurityManager.savePolicy(policyRead);
+            SecurityPolicyManager.savePolicy(policyRead);
             rTest = resolver.lookup(rootPath.append(pathTest));
             assertTrue(rTest.canRead(guest,true));
 

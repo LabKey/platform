@@ -16,7 +16,6 @@
 
 package org.labkey.api.files.view;
 
-import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -30,8 +29,8 @@ import org.labkey.api.jsp.JspLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.SecurableResource;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -50,7 +49,6 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavService;
 
 import java.io.File;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
@@ -167,7 +165,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         actions.add(FilesForm.actions.refresh);
 
         // Actions not based on the current selection
-        SecurityPolicy policy = SecurityManager.getPolicy(getSecurableResource());
+        SecurityPolicy policy = SecurityPolicyManager.getPolicy(getSecurableResource());
         if (policy.hasPermission(getViewContext().getUser(), InsertPermission.class))
             actions.add(FilesForm.actions.createDirectory);
 
