@@ -21,7 +21,10 @@ package org.labkey.api.admin;
  */
 public interface FolderImporterFactory
 {
+    public static int DEFAULT_PRIORITY = 50;
+
     FolderImporter create();
-    /* add semi-ordering of folder importers as some need to occur after others (i.e. pages/webparts should be deserialized after reports/queries have been imported) */
-    boolean isFinalImporter();
+
+    /* priority allows importers to be ordered relative to each other in ascending order. 0 would be the highest priority */
+    int getPriority();
 }

@@ -176,6 +176,11 @@ public abstract class AbstractReport implements Report
             throw new IllegalArgumentException("Cannot serialize a report that hasn't been saved yet");
     }
 
+    @Override
+    public void afterImport(Container container, User user)
+    {
+    }
+
     public void afterDeserializeFromFile(File reportFile) throws IOException
     {
     }

@@ -124,6 +124,11 @@ public interface Report extends AttachmentParent, StaticThumbnailProvider
     void serializeToFolder(ContainerUser context, VirtualFile directory) throws IOException;
 
     /**
+     * Called after import to perform report-specific processing after deserialization from a virtual file.
+     */
+    void afterImport(Container container, User user);
+
+    /**
      * Optional method to perform report-specific processing after file based deserialization
      * @param reportMetaFile - the original file containing the report meta-data
      */

@@ -50,8 +50,7 @@ public class FolderImporterImpl implements FolderImporter<FolderDocument.Folder>
             throw new RuntimeException();
         }
 
-        _importers = registry.getRegisteredInitialFolderImporters();
-        _importers.addAll(registry.getRegisteredFinalFolderImporters());
+        _importers = registry.getRegisteredFolderImporters();
 
         _job = job;
     }
