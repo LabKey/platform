@@ -145,6 +145,7 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
 
         // combobox for the selection of the date axis interval unit
         this.intervalCombo = Ext4.create('Ext.form.field.ComboBox', {
+            id: 'xaxis_interval', // for selenium testing
             cls: 'x-axis-interval-combo-test',
             disabled: this.time == 'visit', //disable combo if the chart is visit based.
             triggerAction: 'all',

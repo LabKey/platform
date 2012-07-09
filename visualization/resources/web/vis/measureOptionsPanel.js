@@ -174,6 +174,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
 
         // combobox for choosing axis on left/right
         this.yAxisSide = Ext4.create('Ext.form.field.ComboBox', {
+            id: 'yaxis_side', // for selenium testing
             triggerAction: 'all',
             queryMode: 'local',
             store: Ext4.create('Ext.data.ArrayStore', {
