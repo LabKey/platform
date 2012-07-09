@@ -54,7 +54,9 @@ public class ReportWriter extends BaseFolderWriter
 
             for (Report report : reports)
             {
-                report.serializeToFolder(ctx, reportsDir);
+                // Issue 15416: don't export private reports
+                if (report.getDescriptor() != null && report.getDescriptor().getOwner() == null)
+                    report.serializeToFolder(ctx, reportsDir);
             }
         }
     }
