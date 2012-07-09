@@ -657,6 +657,8 @@ LABKEY.Security = new function()
          *      <li>name: the name of the requested container</li>
          *      <li>path: the path of the requested container</li>
          *      <li>sortOrder: the relative sort order of the requested container</li>
+         *      <li>activeModules: an assay of the names (strings) of active modules in the container</li>
+         *      <li>folderType: the name (string) of the folder type, matched with getFolderTypes()</li>
          *      <li>description: an optional description for the container (may be null or missing)</li>
          *      <li>title: an optional non-unique title for the container (may be null or missing)</li>
          *      <li>isWorkbook: true if this container is a workbook. Workbooks do not appear in the left-hand project tree.</li>

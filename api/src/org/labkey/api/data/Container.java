@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -1019,6 +1020,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
             containerProps.put("description", getDescription());
         containerProps.put("isWorkbook", isWorkbook());
         containerProps.put("type", getContainerNoun());
+        JSONArray activeModuleNames = new JSONArray();
+        for (Module module : getActiveModules())
+        {
+            activeModuleNames.put(module.getName());
+        }
+        containerProps.put("activeModules", activeModuleNames);
+        containerProps.put("folderType", getFolderType().getName());
 
         Container parent = getParent();
         containerProps.put("parentPath", parent==null ? null : parent.getPath());
