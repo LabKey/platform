@@ -692,7 +692,15 @@ public class ListController extends SpringActionController
                 bb.add(editButton);
             }
 
-            ActionButton gridButton = new ActionButton("Show Grid", _list.urlShowData());
+            ActionButton gridButton;
+            URLHelper url = form.getReturnURLHelper();
+            if (url != null)
+            {
+                gridButton = new ActionButton("Back", url);
+            }
+            else
+                gridButton = new ActionButton("Show Grid", _list.urlShowData());
+
             bb.add(gridButton);
             details.getDataRegion().setButtonBar(bb);
             setDisplayColumnsFromDefaultView(_list.getListId(), details.getDataRegion());
