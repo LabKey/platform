@@ -424,6 +424,12 @@ li.ptid a.unhighlight
                 }
             }
         });
+
+        Ext4.create('Ext.resizer.Resizer', {
+            target: ptidPanel,
+            handles: 'e',
+            minWidth: 260
+        });
         <% } %>
 
         function scrollHorizontal(evt) {

@@ -66,6 +66,8 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
                 deselect: this.deselect,
                 getGrid: function(){return this;}
             });
+            cfg.height = 22;
+            cfg.width = 75;
             this.items.push(cfg);
 
             this.on('selectionchange', function(){
@@ -107,7 +109,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
 
             function renderTip(tip) {
                 if (_active)
-                    tip.update(_active.data[labelField]);
+                    tip.update(Ext4.util.Format.htmlEncode(_active.data[labelField]));
             }
 
 
@@ -234,9 +236,9 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
         return [{
             xtype     : 'templatecolumn',
             flex      : 1,
-            dataIndex : 'label',
+            dataIndex : this.labelField,
             tdCls     : 'x4-label-column-cell',
-            tpl       : '<div>{'+this.labelField+':htmlEncode}</div>',
+            tpl       : '{'+this.labelField+':htmlEncode}',
             scope     : this
         },{
             dataIndex : 'type',

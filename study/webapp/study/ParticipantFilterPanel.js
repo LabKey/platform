@@ -211,7 +211,6 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
         return {
             xtype    : 'labkey-filterselectpanel',
             itemId   : 'filterPanel',
-            flex     : 1,
             border   : false, frame : false,
             allowAll : true,
             sections : this.groupSectionCfg
@@ -238,7 +237,6 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
         return {
             xtype    : 'labkey-filterselectpanel',
             itemId   : 'filterPanel',
-            flex     : 1,
             border   : false, frame : false,
             allowAll : true,
             sections : this.participantSectionCfg,
