@@ -35,6 +35,8 @@ public interface DocumentConversionService
     // Closes the passed in pdfStream. Returns null if requested page doesn't exist.
     @Nullable BufferedImage pdfToImage(InputStream pdfStream, int page, int bufferedImageType, int resolution);
 
+    // Use the dimensions in the SVG
     public void svgToPng(String svg, OutputStream os) throws TranscoderException;
-    public void svgToPng(String svg, OutputStream os, @Nullable Double height) throws TranscoderException;
+    // If height is provided, auto-size keeping the aspect ratio; if null, use the dimensions in the SVG
+    public void svgToPng(String svg, OutputStream os, @Nullable Float height) throws TranscoderException;
 }
