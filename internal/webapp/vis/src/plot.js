@@ -332,7 +332,7 @@ LABKEY.vis.Plot = function(config){
             if(this.scales.yLeft.scaleType == 'continuous'){
                 leftTicks = this.scales.yLeft.scale.ticks(10);
             } else {
-                leftTicks = this.scales.yLeft.domain();
+                leftTicks = this.scales.yLeft.scale.domain();
             }
 
 			this.paper.path(LABKEY.vis.makeLine(this.grid.leftEdge +.5, -this.grid.bottomEdge + 1, this.grid.leftEdge+.5, -this.grid.topEdge)).attr('stroke', '#000').attr('stroke-width', '1').transform("t0," + this.grid.height);
@@ -363,7 +363,7 @@ LABKEY.vis.Plot = function(config){
             if(this.scales.yLeft.scaleType == 'continuous'){
                 rightTicks = this.scales.yRight.scale.ticks(10);
             } else {
-                rightTicks = this.scales.yRight.domain();
+                rightTicks = this.scales.yRight.scale.domain();
             }
 
             this.paper.path(LABKEY.vis.makeLine(this.grid.rightEdge + .5, -this.grid.bottomEdge + 1, this.grid.rightEdge + .5, -this.grid.topEdge)).attr('stroke', '#000').attr('stroke-width', '1').transform("t0," + this.grid.height);
@@ -618,15 +618,16 @@ LABKEY.vis.Plot = function(config){
             }
 
             labelElements[name].text = renderLabel.call(this, x, y, value);
+            // TODO: Automatically detect the default font to use for labels.
             if(name == 'main'){
-                labelElements[name].text.attr({font: "18px Georgia, sans-serif"});
+                labelElements[name].text.attr({font: "18px verdana, arial, helvetica, sans-serif"});
             } else if(name == 'x'){
-                labelElements[name].text.attr({font: "14px Georgia, sans-serif"}).attr({'text-anchor': 'middle'});
+                labelElements[name].text.attr({font: "14px verdana, arial, helvetica, sans-serif"}).attr({'text-anchor': 'middle'});
             } else if(name == 'yRight') {
-                labelElements[name].text.attr({font: "14px Georgia, sans-serif"});
+                labelElements[name].text.attr({font: "14px verdana, arial, helvetica, sans-serif"});
                 labelElements[name].text.transform("t0," + this.h+"r90");
             } else if(name == 'yLeft'){
-                labelElements[name].text.attr({font: "14px Georgia, sans-serif"});
+                labelElements[name].text.attr({font: "14px verdana, arial, helvetica, sans-serif"});
                 labelElements[name].text.transform("t0," + this.h+"r270");
             }
 

@@ -335,6 +335,43 @@ var boxPlot = new LABKEY.vis.Plot({
     }
 });
 
+var discreteScatter = new LABKEY.vis.Plot({
+    renderTo: 'discreteScatter',
+    width: 900,
+    height: 300,
+    labels: {
+        main: {value: 'Scatterplot With Jitter'},
+        yLeft: {value: 'Age'},
+        x: {value: 'Groups of People'}
+    },
+    data: boxPlotData,
+    layers: [new LABKEY.vis.Layer({
+        geom: new LABKEY.vis.Geom.Point({
+            position: 'jitter',
+            color: 'teal',
+            size: 3
+        })
+    })],
+    aes: {
+        yLeft: 'age',
+        x: 'group'
+    },
+    scales: {
+        x: {
+            scaleType: 'discrete'
+        },
+        yLeft: {
+//            scaleType: 'discrete',
+//            domain: ['10', '20', '30', '40', '50', '60', '70', '80', '90']
+            scaleType: 'continuous',
+            trans: 'linear'
+        }
+    },
+    margins: {
+        bottom: 75
+    }
+});
+
 var scatterData = [];
 for(var i = 0; i < 1000; i++){
     var point = {
@@ -392,5 +429,6 @@ plot.render();
 errorPlot.render();
 coffeePlot.render();
 boxPlot.render();
+discreteScatter.render();
 scatterPlot.render();
 renderStats();

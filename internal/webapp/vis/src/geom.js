@@ -94,6 +94,7 @@ LABKEY.vis.Geom.Point = function(config){
     this.size = config.size ? config.size : 5;
     this.opacity = config.opacity ? config.opacity : 1;
     this.plotNullPoints = config.plotNullPoints ? config.plotNullPoints : false;
+    this.position = config.position ? config.position : null;
 
     return this;
 };
@@ -103,7 +104,15 @@ LABKEY.vis.Geom.Point.prototype.render = function(paper, grid, scales, data, lay
         return false;
     }
     var hoverText = layerAes.hoverText ? layerAes.hoverText : parentAes.hoverText;
-    var yScale = this.yMap.side == "left" ? scales.yLeft.scale : scales.yRight.scale
+    var yScale = this.yMap.side == "left" ? scales.yLeft : scales.yRight;
+    var xBinWidth = null, yBinWidth = null;
+    if(scales.x.scaleType == 'discrete'){
+        xBinWidth = ((grid.rightEdge - grid.leftEdge) / (scales.x.scale.domain().length)) / 2;
+    }
+
+    if(yScale.scaleType == 'discrete'){
+        yBinWidth = ((grid.topEdge - grid.bottomEdge) / (yScale.scale.domain().length)) / 2;
+    }
 
     if(layerAes.shape){
         this.shapeMap = layerAes.shape;
@@ -112,11 +121,20 @@ LABKEY.vis.Geom.Point.prototype.render = function(paper, grid, scales, data, lay
     }
 
     for(var i = 0; i < data.length; i++){
-        var y = this.getY(yScale, data[i]);
+        var y = this.getY(yScale.scale, data[i]);
         var x = this.getX(scales.x.scale, data[i]);
         if(!x || !y){
             continue;
         }
+
+        if(xBinWidth != null && this.position == 'jitter'){
+            x = (x - (xBinWidth / 2)) +(Math.random()*(xBinWidth));
+        }
+
+        if(yBinWidth != null && this.position == 'jitter'){
+            y = (y - (yBinWidth / 2)) +(Math.random()*(yBinWidth));
+        }
+
         var color = this.colorMap ? scales.color.scale(this.colorMap.getValue(data[i]) + ' ' + name) : this.color;
         var size = this.sizeMap ? this.sizeMap.getValue(data[i]) : this.size;
         var shapeFunction = this.shapeMap ? scales.shape.scale(this.shapeMap.getValue(data[i]) + ' ' + name) : function(paper, x, y, r){return paper.circle(x, y, r)};
@@ -307,21 +325,16 @@ LABKEY.vis.Geom.Boxplot.prototype.render = function(paper, grid, scales, data, l
     for(var group in groupedData){
         // Create a box.
         var stats = LABKEY.vis.Stat.summary(groupedData[group], this.yMap.getValue);
-
-        var width = binWidth * .5;
-
+        var width = binWidth / 2;
+        var middleX = Math.floor(scales.x.scale(group)) + .5;
         var x = scales.x.scale(group) - width/2;
         var bottom = Math.floor(-yScale(stats.Q1)) + .5;
         var top = Math.floor(-yScale(stats.Q3)) + .5;
         var middleY = Math.floor(-yScale(stats.Q2)) + .5;
-
-        var middleX = Math.floor(x+(width/2)) + .5;
-        var whiskerLeft = middleX - (width / 4);
-        var whiskerRight = middleX + (width / 4);
         var smallestNotOutlier = stats.Q1 - (1.5 * stats.IQR);
         var biggestNotOutlier = stats.Q3 + (1.5 * stats.IQR);
-
         var i = 0;
+        
         while(stats.sortedValues[i] < smallestNotOutlier){
             i++;
         }
@@ -340,9 +353,9 @@ LABKEY.vis.Geom.Boxplot.prototype.render = function(paper, grid, scales, data, l
                 var val = this.yMap.getValue(groupedData[group][i])
                 if(val > biggestNotOutlier || val < smallestNotOutlier){
                     var outlier;
-                    var x = (this.position == 'jitter') ? x+(Math.random()*(width)) : middleX;
+                    var outlierX = (this.position == 'jitter') ? x+(Math.random()*(width)) : middleX;
 
-                    outlier = paper.circle(x, -yScale(val), this.outlierSize)
+                    outlier = paper.circle(outlierX, -yScale(val), this.outlierSize)
                             .attr('fill', this.outlierFill)
                             .attr('stroke', 'none')
                             .attr('fill-opacity', this.outlierOpacity);

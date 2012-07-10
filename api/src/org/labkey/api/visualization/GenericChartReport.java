@@ -92,6 +92,29 @@ public abstract class GenericChartReport extends AbstractReport
             {
                 return AppProps.getInstance().getContextPath() + "/visualization/report/scatter_plot.gif";
             }
+        },
+        AUTO_PLOT()
+        {
+            @Override
+            public String getId()
+            {
+                return "auto_plot";
+            }
+            @Override
+            public String getName()
+            {
+                return "Auto Plot";
+            }
+            @Override
+            public String getDescription()
+            {
+                return "Automatic Plot";
+            }
+            @Override
+            public String getIconPath()
+            {
+                return AppProps.getInstance().getContextPath() + "/visualization/report/box_plot.gif";
+            }
         };
         public abstract String getId();
         public abstract String getName();
@@ -149,29 +172,17 @@ public abstract class GenericChartReport extends AbstractReport
             if (!quickChartDisabled)
             {
                 Class cls = col.getJavaClass();
-                RenderType type = null;
+                RenderType type = RenderType.AUTO_PLOT;
 
-                if (Integer.class.equals(cls) || String.class.equals(cls))
-                {
-                    type = RenderType.BOX_PLOT;
-                }
-                else if (Double.class.equals(cls))
-                {
-                    type = RenderType.SCATTER_PLOT;
-                }
+                VisualizationUrls urlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
+                ActionURL plotURL = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), settings, type).addParameter("autoColumnYName", col.getName());
 
-                if (type != null)
-                {
-                    VisualizationUrls urlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
-                    ActionURL plotURL = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), settings, type).addParameter("autoColumnYName", col.getName());
+                NavTree navItem = new NavTree("Quick Chart");
 
-                    NavTree navItem = new NavTree("Quick Chart");
+                navItem.setImageSrc(type.getIconPath());
+                navItem.setHref(plotURL.getLocalURIString());
 
-                    navItem.setImageSrc(type.getIconPath());
-                    navItem.setHref(plotURL.getLocalURIString());
-
-                    return navItem;
-                }
+                return navItem;
             }
         }
         return null;
