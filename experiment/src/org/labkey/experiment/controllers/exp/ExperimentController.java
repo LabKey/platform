@@ -2605,6 +2605,7 @@ public class ExperimentController extends SpringActionController
         SampleSetWebPart.populateButtonBar(model, bb, detailsView);
 
         dr.setButtonBar(bb);
+        bb.setStyle(ButtonBar.Style.separateButtons);
 
         return dr;
 

@@ -289,6 +289,11 @@ public class UploadSamplesHelper
                 }
             }
 
+            if (_form.getName().length() > ExperimentServiceImpl.get().getTinfoMaterialSource().getColumn("Name").getScale())
+            {
+                throw new ExperimentException("Sample set names are limited to " + ExperimentServiceImpl.get().getTinfoMaterialSource().getColumn("Name").getScale() + " characters");
+            }
+
             Set<String> reusedMaterialLSIDs = new HashSet<String>();
             if (source == null)
             {
