@@ -40,7 +40,18 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.api.view.WebThemeManager" %>
 <%@ page import="org.labkey.api.view.WebTheme" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        resources.add(ClientDependency.fromFilePath("study/ParticipantFilterPanel.js"));
+        return resources;
+    }
+%>
 <%
     JspView<SubjectsWebPart.SubjectsBean> me = (JspView<SubjectsWebPart.SubjectsBean>) HttpView.currentView();
     SubjectsWebPart.SubjectsBean bean = me.getModelBean();
@@ -121,13 +132,6 @@ li.ptid a.unhighlight
 
 
 </style>
-<script type="text/javascript">
-    LABKEY.requiresExt4Sandbox(true);
-<% if (bean.getWide()) { %>
-    LABKEY.requiresCss('study/DataViewsPanel.css');
-    LABKEY.requiresScript("study/ParticipantFilterPanel.js");
-<% } %>
-</script>
 <script type="text/javascript">
 <%=viewObject%> = (function()
 {
@@ -397,7 +401,7 @@ li.ptid a.unhighlight
             title     : 'Show',
             border    : true,
             width     : 260,
-            height    : 400,
+            height    : 350,
             overCls   : 'iScroll',
             layout    : 'fit',
             bodyStyle : 'padding: 8px',
@@ -425,9 +429,9 @@ li.ptid a.unhighlight
             }
         });
 
-        Ext4.create('Ext.resizer.Resizer', {
+        X.create('Ext.resizer.Resizer', {
             target: ptidPanel,
-            handles: 'e',
+//            handles: 'e',
             minWidth: 260
         });
         <% } %>
@@ -569,26 +573,6 @@ li.ptid a.unhighlight
             highlightGroupsForPart(-1);
         });
 
-        /* groups events * /
-
-        var groupsDiv = X.get(<%=q(groupsDivId)%>);
-        groupsDiv.on('mouseover', function(e,dom)
-        {
-            var indexAttr = dom.attributes.index || dom.parentNode.attributes.index;
-            if (X.isDefined(indexAttr))
-                highlightPtidsInGroup(parseInt(indexAttr.value));
-        });
-        groupsDiv.on('mouseout', function(e,dom)
-        {
-            highlightPtidsInGroup(-1);
-        });
-        groupsDiv.on('click', function(e,dom)
-        {
-            var indexAttr = dom.attributes.index || dom.parentNode.attributes.index;
-            if (X.isDefined(indexAttr))
-                filterGroup(parseInt(indexAttr.value));
-        }); */
-
         // we don't want ptidDiv to change height as it filters, so set height explicitly after first layout
         ptidDiv.setHeight(ptidDiv.getHeight());
 
@@ -607,7 +591,7 @@ li.ptid a.unhighlight
         var viewWidth = X.getBody().getViewSize().width;
         var right = viewWidth - padding - rightAreaWidth;
         var x = listDiv.getXY()[0];
-        var width = Math.max(<%=bean.getWide() ? 400 : 200%>, (right-x));
+        var width = Math.max(<%=bean.getWide() ? 350 : 200%>, (right-x));
         listDiv.setWidth(width);
     }
 

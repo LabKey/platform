@@ -1494,7 +1494,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
     },
 
     mask : function(msg) {
-        if (!this.filterWindow || false)//this.filterWindow.isCollapsed())
+        if (this.previewPanel)
             this.previewPanel.getEl().mask(msg || 'loading data...');
         else if (this.filterWindow) {
             this.filterWindow.getEl().mask(msg || 'Filtering...');
@@ -1502,7 +1502,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
     },
 
     unmask : function() {
-        if (!this.filterWindow || false)//this.filterWindow.isCollapsed())
+        if (this.previewPanel)
             this.previewPanel.getEl().unmask();
         else if (this.filterWindow) {
             this.filterWindow.getEl().unmask();
