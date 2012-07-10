@@ -53,6 +53,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
@@ -475,6 +476,14 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             view.setFrame(WebPartView.FrameType.PORTAL);
             Container c = portalCtx.getContainer();
             NavTree menu = new NavTree();
+
+            if (portalCtx.hasPermission(InsertPermission.class))
+            {
+                NavTree reportMenu = new NavTree("Add Report");
+                reportMenu.addChild("From File", PageFlowUtil.urlProvider(ReportUrls.class).urlAttachmentReport(portalCtx.getContainer(), portalCtx.getActionURL()));
+                reportMenu.addChild("From Link", PageFlowUtil.urlProvider(ReportUrls.class).urlLinkReport(portalCtx.getContainer(), portalCtx.getActionURL()));
+                menu.addChild(reportMenu);
+            }
 
             if (portalCtx.hasPermission(AdminPermission.class))
             {
