@@ -37,7 +37,8 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             fields: ['renderType', 'label'],
             data: [
                 {renderType: 'scatter_plot', label: 'Scatter Plot'},
-                {renderType: 'box_plot', label: 'Box Plot'}
+                {renderType: 'box_plot', label: 'Box Plot'},
+                {renderType: 'auto_plot', label: 'Auto Plot'}
             ]
         });
 
@@ -55,11 +56,6 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             value: this.renderType,
             listeners: {
                 change: function(combo){
-                    if(combo.getValue() == 'scatter_plot'){
-                        this.enableScatterPlotOptions();
-                    } else if(combo.getValue() == 'box_plot'){
-                        this.enableBoxPlotOptions();
-                    }
                     if(!this.suppressEvents){
                         this.fireEvent('chartDefinitionChanged', this);
                     }
@@ -69,7 +65,6 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         });
 
         this.opacitySlider = Ext4.create('Ext.slider.Single', {
-            hidden: this.renderType == 'box_plot',
             labelSeparator: labelSeparator,
             labelWidth: labelWidth,
             fieldLabel: 'Opacity',
@@ -89,10 +84,9 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         });
 
         this.pointSizeSlider = Ext4.create('Ext.slider.Single', {
-            hidden: this.renderType == 'box_plot',
             labelSeparator: labelSeparator,
             labelWidth: labelWidth,
-            fieldLabel: 'Size',
+            fieldLabel: 'Point Size',
             width: '100%',
             value: 5,
             increment: 1,
@@ -134,7 +128,6 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         });
 
         this.lineWidthSlider = Ext4.create('Ext.slider.Single', {
-            hidden: this.renderType == 'scatter_plot',
             labelSeparator: labelSeparator,
             labelWidth: labelWidth,
             fieldLabel: 'Line Width',
@@ -155,13 +148,20 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
         this.items = [
             this.renderTypeCombo,
+            this.lineWidthSlider,
             this.opacitySlider,
             this.pointSizeSlider,
-            this.colorFieldContainer,
-            this.lineWidthSlider
+            this.colorFieldContainer
         ];
 
         this.callParent();
+    },
+
+    checkForChangesAndFireEvents: function(){
+        if(this.hasChanges){
+            this.fireEvent('chartDefinitionChanged')
+        }
+        this.hasChanges = false;
     },
 
     getPanelOptionValues: function() {
@@ -238,23 +238,5 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
     setLineWidth: function(value){
         this.lineWidthSlider.setValue(value);
-    },
-
-    enableScatterPlotOptions: function(){
-        // Scatter
-        this.opacitySlider.show();
-        this.pointSizeSlider.show();
-        this.colorFieldContainer.show();
-        // Box
-        this.lineWidthSlider.hide();
-    },
-
-    enableBoxPlotOptions: function(){
-        // Scatter
-        this.opacitySlider.hide();
-        this.pointSizeSlider.hide();
-        this.colorFieldContainer.hide();
-        // Box
-        this.lineWidthSlider.show();
     }
 });

@@ -38,15 +38,19 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             listeners: {
                 scope: this,
                 'change': function(cmp, newVal, oldVal) {
-                    this.hasChanges = true;
+                    if(!this.suppressEvents){
+                        this.hasChanges = true;
+                    }
                 },
                 'specialkey': this.specialKeyPressed
             }
         });
 
         this.axisLabelField.addListener('keyup', function(){
-            this.userEditedLabel = true;
-            this.hasChanges = true;
+            if(!this.suppressEvents){
+                this.userEditedLabel = true;
+                this.hasChanges = true;
+            }
         }, this, {buffer: 500});
 
         this.scaleTypeRadioGroup = Ext4.create('Ext.form.RadioGroup', {
@@ -68,7 +72,7 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             listeners: {
                 change: function(){
                     if(!this.suppressEvents){
-                        this.fireEvent('chartDefinitionChanged');
+                        this.hasChanges = true;
                     }
                 },
                 scope: this
@@ -82,6 +86,13 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
         ];
         
         this.callParent();
+    },
+
+    checkForChangesAndFireEvents: function(){
+        if(this.hasChanges){
+            this.fireEvent('chartDefinitionChanged')
+        }
+        this.hasChanges = false;
     },
 
     disableScaleAndRange: function() {

@@ -18,18 +18,26 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.visualization.GenericChartReport" %>
 <%@ page import="org.labkey.visualization.VisualizationController" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.reports.permissions.ShareReportPermission" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.ExtUtil" %>
+<%@ page import="org.labkey.api.util.Formats" %>
+<%@ page import="org.labkey.api.data.PropertyManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<VisualizationController.GenericReportForm> me = (JspView<VisualizationController.GenericReportForm>) HttpView.currentView();
     ViewContext ctx = me.getViewContext();
     Container c = ctx.getContainer();
     VisualizationController.GenericReportForm form = me.getModelBean();
+    String numberFormat = PropertyManager.getProperties(ctx.getContainer(), "DefaultStudyFormatStrings").get("NumberFormatString");
+    String numberFormatFn;
+    if(numberFormat == null)
+    {
+        numberFormat = Formats.f1.toPattern();
+    }
+    numberFormatFn = ExtUtil.toExtNumberFormatFn(numberFormat);
 
     String renderId = "generic-report-div-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
 %>
@@ -60,7 +68,8 @@
             allowShare      : <%=c.hasPermission(ctx.getUser(), ShareReportPermission.class)%>,
             hideSave        : <%=ctx.getUser().isGuest()%>,
             autoColumnYName  : <%=form.getAutoColumnYName() != null ? q(form.getAutoColumnYName()) : null%>,
-            autoColumnXName  : <%=form.getAutoColumnXName() != null ? q(form.getAutoColumnXName()) : null%>
+            autoColumnXName  : <%=form.getAutoColumnXName() != null ? q(form.getAutoColumnXName()) : null%>,
+            defaultNumberFormat: eval("<%=numberFormatFn%>")
         });
 
         var _resize = function(w,h) {
