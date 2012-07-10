@@ -23,6 +23,7 @@ import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.ParticipantCategory;
+import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -110,13 +111,20 @@ public class ParticipantGroupImporter implements InternalStudyImporter
                     pc.setDatasetId(category.getDatasetId());
                     pc.setGroupProperty(category.getGroupProperty());
 
-                    List<String> participants = new ArrayList<String>();
+                    pc = ParticipantGroupManager.getInstance().setParticipantCategory(ctx.getContainer(), ctx.getUser(), pc);
+
                     for (GroupType group : category.getGroupArray())
                     {
-                        participants.addAll(Arrays.asList(group.getParticipantIdArray()));
+                        ParticipantGroup pg = new ParticipantGroup();
+
+                        pg.setCategoryId(pc.getRowId());
+                        pg.setContainerId(ctx.getContainer().getId());
+                        pg.setLabel(group.getLabel());
+                        pg.setCategoryLabel(pc.getLabel());
+                        pg.setParticipantIds(group.getParticipantIdArray());
+
+                        ParticipantGroupManager.getInstance().setParticipantGroup(ctx.getContainer(), ctx.getUser(), pg);
                     }
-                    ParticipantGroupManager.getInstance().setParticipantCategory(ctx.getContainer(), ctx.getUser(), pc,
-                            participants.toArray(new String[participants.size()]), null, null);
                 }
                 scope.commitTransaction();
             }

@@ -57,7 +57,7 @@ public class PageImporterFactory extends AbstractFolderImportFactory
     @Override
     public int getPriority()
     {
-        return 70;
+        return 80;
     }
 
     public class PageImporter implements FolderImporter<FolderDocument.Folder>

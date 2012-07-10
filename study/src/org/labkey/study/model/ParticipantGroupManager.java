@@ -336,6 +336,9 @@ public class ParticipantGroupManager
         return getParticipantCategories(c, user, new SimpleFilter());
     }
 
+    /**
+     * @deprecated create participant categories and groups separately
+     */
     public ParticipantCategory setParticipantCategory(Container c, User user, ParticipantCategory def, String[] participants, String participantFilters, String description) throws ValidationException
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
@@ -370,6 +373,9 @@ public class ParticipantGroupManager
                     throw new UnsupportedOperationException("Participant category type: query not yet supported");
                 case cohort:
                     throw new UnsupportedOperationException("Participant category type: cohort not yet supported");
+                case manual:
+                    throw new UnsupportedOperationException("Participant category type: manual cannot be created using this API, you must use " +
+                            "the API to create categories and groups separately.");
             }
             scope.commitTransaction();
 
