@@ -49,7 +49,7 @@ public class DocumentConversionServiceImpl implements DocumentConversionService
 
     // If height is provided, auto-size keeping the aspect ratio; if null, use the dimensions in the SVG
     @Override
-    public void svgToPng(String svg, OutputStream os, @Nullable Double height) throws TranscoderException
+    public void svgToPng(String svg, OutputStream os, @Nullable Float height) throws TranscoderException
     {
         TranscoderInput xIn = new TranscoderInput(new StringReader(svg));
         TranscoderOutput xOut = new TranscoderOutput(os);
