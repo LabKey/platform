@@ -15,6 +15,7 @@
  */
 package org.labkey.announcements.model;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.announcements.AnnouncementsController.DownloadAction;
 import org.labkey.announcements.AnnouncementsController.ThreadAction;
@@ -314,8 +315,13 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
         _emailList = emailList;
     }
 
+    @NotNull
     public List<User> getMemberList()
     {
+        if (_memberList == null)
+        {
+            AnnouncementManager.attachMemberLists(this);
+        }
         return _memberList;
     }
 

@@ -117,7 +117,7 @@ public class AnnouncementManager
     {
     }
 
-    protected static void attachResponses(Container c, AnnouncementModel[] announcementModels)
+    protected static void attachResponses(Container c, AnnouncementModel... announcementModels)
     {
         for (AnnouncementModel announcementModel : announcementModels)
         {
@@ -127,7 +127,7 @@ public class AnnouncementManager
     }
 
 
-    protected static void attachMemberLists(AnnouncementModel[] announcementModels)
+    protected static void attachMemberLists(AnnouncementModel... announcementModels)
     {
         for (AnnouncementModel announcementModel : announcementModels)
             announcementModel.setMemberList(getMemberList(announcementModel));
@@ -268,12 +268,10 @@ public class AnnouncementManager
             return null;
 
         // TODO: Eliminate bitmasks and proactive retrieval of responses and memberlists; replace with lazy loading (similar to wiki)
-        AnnouncementModel[] annArray = new AnnouncementModel[]{ann};
-
         if ((mask & INCLUDE_RESPONSES) != 0)
-            attachResponses(c, annArray);
+            attachResponses(c, ann);
         if ((mask & INCLUDE_MEMBERLIST) != 0)
-            attachMemberLists(annArray);
+            attachMemberLists(ann);
 
         return ann;
     }
@@ -306,12 +304,9 @@ public class AnnouncementManager
 
         List<User> users = ann.getMemberList();
 
-        if (users != null)
-        {
-            // Always attach member list to initial message
-            int first = (null == ann.getParent() ? ann.getRowId() : getParentRowId(ann));
-            insertMemberList(user, ann.getMemberList(), first);
-        }
+        // Always attach member list to initial message
+        int first = (null == ann.getParent() ? ann.getRowId() : getParentRowId(ann));
+        insertMemberList(user, users, first);
 
         AttachmentService.get().addAttachments(insert, files, user);
         indexThread(insert);
