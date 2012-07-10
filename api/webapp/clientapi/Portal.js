@@ -221,10 +221,10 @@ LABKEY.Portal = new function()
         var params = {};
 
         LABKEY.Utils.applyTranslated(params, config, {
-                success: false,
-                failure: false,
-                scope: false
-            });
+            success: false,
+            failure: false,
+            scope: false
+        });
 
         if (direction == MOVE_UP || direction == MOVE_DOWN)
             params.direction = direction;
@@ -342,7 +342,7 @@ LABKEY.Portal = new function()
                 url: LABKEY.ActionURL.buildURL('project', 'moveWebPartAsync', config.containerPath),
                 method : 'GET',
                 success: LABKEY.Utils.getOnSuccess(callConfig),
-                failure: LABKEY.Utils.getOnFailure(callConfig),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(callConfig), callConfig.scope, true),
                 params: callConfig.params
             });
         },
@@ -392,7 +392,7 @@ LABKEY.Portal = new function()
                 url: LABKEY.ActionURL.buildURL('project', 'moveWebPartAsync', config.containerPath),
                 method : 'GET',
                 success: LABKEY.Utils.getOnSuccess(callConfig),
-                failure: LABKEY.Utils.getOnFailure(callConfig),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(callConfig), callConfig.scope, true),
                 params: callConfig.params
             });
         },
@@ -439,7 +439,7 @@ LABKEY.Portal = new function()
                 url: LABKEY.ActionURL.buildURL('project', 'deleteWebPartAsync', config.containerPath),
                 method : 'GET',
                 success: LABKEY.Utils.getOnSuccess(callConfig),
-                failure: LABKEY.Utils.getOnFailure(callConfig),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(callConfig), callConfig.scope, true),
                 params: callConfig.params
             });
         }
