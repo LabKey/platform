@@ -1284,11 +1284,11 @@ public class ReportsController extends SpringActionController
             // additional properties
             String entityId = report.getEntityId();
             if (author != null)
-                ReportPropsManager.get().setPropertyValue(entityId, getContainer(), "author", author.getUserId());
+                ReportPropsManager.get().setPropertyValue(entityId, getContainer(), DataViewProvider.EditInfo.Property.author.name(), author.getUserId());
             if (status != null)
-                ReportPropsManager.get().setPropertyValue(entityId, getContainer(), "status", status.name());
+                ReportPropsManager.get().setPropertyValue(entityId, getContainer(), DataViewProvider.EditInfo.Property.status.name(), status.name());
             if (form.getRefreshDate() != null)
-                ReportPropsManager.get().setPropertyValue(entityId, getContainer(), "refreshDate", form.getRefreshDate());
+                ReportPropsManager.get().setPropertyValue(entityId, getContainer(), DataViewProvider.EditInfo.Property.refreshDate.name(), form.getRefreshDate());
         }
 
         public ActionURL getSuccessURL(F uploadForm)

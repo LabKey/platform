@@ -44,11 +44,11 @@
     ArrayList<String> reportNames = new ArrayList<String>();
     for (Report report : ReportService.get().getReports(context.getUser(), context.getContainer()))
     {
+        if (report.getDescriptor().isHidden())
+            continue;
+
         if (!StringUtils.isEmpty(report.getDescriptor().getReportName()))
         {
-            if ("Study.attachmentReport".equals(report.getType()) || "Study.exportExcelReport".equals(report.getType()))
-                continue;
-
             reportMap.put(report.getDescriptor().getReportName(), report.getDescriptor().getReportId().toString());
             reportNames.add(report.getDescriptor().getReportName().toString());
         }

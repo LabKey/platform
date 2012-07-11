@@ -298,7 +298,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
             ActionURL returnUrl = PageFlowUtil.urlProvider(AssayUrls.class).getImportURL(getContainer(), protocol, StringUtils.defaultString(directoryPath, ""), new File[]{files.get(0)});
             ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(getContainer(), protocol, false, returnUrl);
 
-            return url.getLocalURIString();
+            return url == null ? null : url.getLocalURIString();
         }
         return null;
     }

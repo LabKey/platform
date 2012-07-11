@@ -107,6 +107,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipEntry;
@@ -490,6 +491,16 @@ public class AssayController extends SpringActionController
         public List<AssayProvider> getProviders()
         {
             List<AssayProvider> providers = new ArrayList<AssayProvider>(AssayManager.get().getAssayProviders());
+
+            // Remove AssayProviders without a designer action
+            ListIterator<AssayProvider> iter = providers.listIterator();
+            while (iter.hasNext())
+            {
+                AssayProvider provider = iter.next();
+                if (provider.getDesignerAction() == null)
+                    iter.remove();
+            }
+
             Collections.sort(providers, new Comparator<AssayProvider>()
             {
                 public int compare(AssayProvider o1, AssayProvider o2)
@@ -758,33 +769,32 @@ public class AssayController extends SpringActionController
             return url;
         }
 
-        public ActionURL getDesignerURL(Container container, ExpProtocol protocol, boolean copy, ActionURL returnUrl)
+        public @Nullable ActionURL getDesignerURL(Container container, ExpProtocol protocol, boolean copy, ActionURL returnURL)
         {
             AssayProvider provider = AssayService.get().getProvider(protocol);
-            if (provider == null)
-                return null;
-            ActionURL url = getProtocolURL(container, protocol, provider.getDesignerAction());
-            if (copy)
-                url.addParameter("copy", "true");
-            url.addParameter("providerName", provider.getName());
-            if (null != returnUrl)
-                url.addParameter(ActionURL.Param.returnUrl, returnUrl.toString());
-            return url;
+            return getDesignerURL(container, provider, protocol, false, returnURL);
         }
 
-        public ActionURL getDesignerURL(Container container, String providerName, ActionURL returnURL)
+        public @Nullable ActionURL getDesignerURL(Container container, String providerName, ActionURL returnURL)
         {
             AssayProvider provider = AssayService.get().getProvider(providerName);
+            return getDesignerURL(container, provider, null, false, returnURL);
+        }
+
+        private ActionURL getDesignerURL(Container container, AssayProvider provider, ExpProtocol protocol, boolean copy, ActionURL returnURL)
+        {
             if (provider == null)
-            {
                 return null;
-            }
-            ActionURL url = getProtocolURL(container, null, provider.getDesignerAction());
+
+            Class<? extends Controller> designerAction = provider.getDesignerAction();
+            if (designerAction == null)
+                return null;
+
+            ActionURL url = getProtocolURL(container, null, designerAction);
             url.addParameter("providerName", provider.getName());
             if (returnURL != null)
-            {
                 url.addParameter(ActionURL.Param.returnUrl, returnURL.toString());
-            }
+
             return url;
         }
 
@@ -890,6 +900,11 @@ public class AssayController extends SpringActionController
 
         public ActionURL getChooseCopyDestinationURL(ExpProtocol protocol, Container container)
         {
+            // Check if the provider supports designing before handing out copy URL
+            ActionURL designerURL = getDesignerURL(container, protocol, false, null);
+            if (designerURL == null)
+                return null;
+
             return getProtocolURL(container, protocol, ChooseCopyDestinationAction.class);
         }
 

@@ -179,7 +179,7 @@ public class CustomViewInfoImpl implements CustomViewInfo
 
     public String getCustomIconUrl()
     {
-        return AppProps.getInstance().getContextPath() + "/reports/icon_query_view.png";
+        return "/reports/icon_query_view.png";
     }
 
     public boolean hasFilterOrSort()
