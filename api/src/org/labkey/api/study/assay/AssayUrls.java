@@ -15,6 +15,7 @@
  */
 package org.labkey.api.study.assay;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
@@ -34,6 +35,7 @@ public interface AssayUrls extends UrlProvider
 
     ActionURL getCopyToStudyURL(Container container, ExpProtocol protocol);
     ActionURL getCopyToStudyConfirmURL(Container container, ExpProtocol protocol);
+    @Nullable
     ActionURL getDesignerURL(Container container, String providerName, ActionURL returnURL);
 
     /**
@@ -42,8 +44,9 @@ public interface AssayUrls extends UrlProvider
      * @param protocol if null, start a new design from scratch. If not null, either the design to edit or the design to copy
      * @param copy if true, create a copy of the protocol that's passed in and start editing it
      * @param returnUrl a return URL to use, or null to use default
-     * @return The assay designer URL with the proper query string arguments
+     * @return The assay designer URL with the proper query string arguments or null if the assay provider doesn't support designing.
      */
+    @Nullable
     ActionURL getDesignerURL(Container container, ExpProtocol protocol, boolean copy, ActionURL returnUrl);
     ActionURL getAssayListURL(Container container);
     ActionURL getAssayBatchesURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter);

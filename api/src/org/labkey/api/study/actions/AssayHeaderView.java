@@ -79,14 +79,20 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
         {
             if (allowUpdate(_protocol))
             {
-                String editLink = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(_protocol.getContainer(), _protocol, false, getViewContext().getActionURL()).toString();
-                if (!_protocol.getContainer().equals(getViewContext().getContainer()))
+                ActionURL editURL = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(_protocol.getContainer(), _protocol, false, getViewContext().getActionURL());
+                if (editURL != null)
                 {
-                    editLink = "javascript: if (window.confirm('This assay is defined in the " + _protocol.getContainer().getPath() + " folder. Would you still like to edit it?')) { window.location = '" + editLink + "' }";
+                    String editLink = editURL.toString();
+                    if (!_protocol.getContainer().equals(getViewContext().getContainer()))
+                    {
+                        editLink = "javascript: if (window.confirm('This assay is defined in the " + _protocol.getContainer().getPath() + " folder. Would you still like to edit it?')) { window.location = '" + editLink + "' }";
+                    }
+                    manageMenu.addChild("edit assay design", editLink);
                 }
-                manageMenu.addChild("edit assay design", editLink);
+
                 ActionURL copyURL = PageFlowUtil.urlProvider(AssayUrls.class).getChooseCopyDestinationURL(_protocol, _protocol.getContainer());
-                manageMenu.addChild("copy assay design", copyURL.toString());
+                if (copyURL != null)
+                    manageMenu.addChild("copy assay design", copyURL.toString());
             }
 
             if (allowDelete(_protocol))

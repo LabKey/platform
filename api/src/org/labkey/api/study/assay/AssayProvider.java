@@ -145,9 +145,9 @@ public interface AssayProvider extends Handler<ExpProtocol>
     void deleteProtocol(ExpProtocol protocol, User user) throws ExperimentException;
 
     /**
-     * Get the action that implements the assay designer for this type
+     * Get the action that implements the assay designer for this type or null if the assay has no designer.
      */
-    Class<? extends Controller> getDesignerAction();
+    @Nullable Class<? extends Controller> getDesignerAction();
 
     /**
      * Returns the action that implements the data import action for this type when the

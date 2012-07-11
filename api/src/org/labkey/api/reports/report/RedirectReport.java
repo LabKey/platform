@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
 
 import java.net.MalformedURLException;
@@ -40,9 +41,15 @@ public abstract class RedirectReport extends AbstractReport
     {
     }
 
-    public HttpView renderReport(ViewContext viewContext) throws Exception
+    public HttpView renderReport(ViewContext context) throws Exception
     {
-        return HttpView.redirect(getUrl(viewContext.getContainer()));
+        String url = getUrl(context.getContainer());
+
+        // When rendering in a portal webpart, render the redirect link and thumbnail
+        if (context.get(renderParam.reportWebPart.name()) != null)
+            return new JspView<RedirectReport>("/org/labkey/api/reports/report/view/redirectReportWebPart.jsp", this);
+
+        return HttpView.redirect(url);
     }
 
     public void setUrl(URLHelper url)

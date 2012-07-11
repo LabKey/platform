@@ -57,6 +57,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
@@ -636,7 +637,7 @@ public class ReportUtil
                 info.setInherited(inherited);
 
                 if (!StringUtils.isEmpty(view.getCustomIconUrl()))
-                    info.setIcon(view.getCustomIconUrl());
+                    info.setIcon(AppProps.getInstance().getContextPath() + "/" + view.getCustomIconUrl());
 
                 info.setThumbnailUrl(PageFlowUtil.urlProvider(QueryUrls.class).urlThumbnail(c));
 

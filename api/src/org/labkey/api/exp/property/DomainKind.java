@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.property;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
@@ -43,7 +44,7 @@ abstract public class DomainKind implements Handler<String>
     abstract public String generateDomainURI(String schemaName, String queryName, Container container, User user);
 
     abstract public ActionURL urlShowData(Domain domain);
-    abstract public ActionURL urlEditDefinition(Domain domain);
+    abstract public @Nullable ActionURL urlEditDefinition(Domain domain);
     abstract public ActionURL urlCreateDefinition(String schemaName, String queryName, Container container, User user);
 
     abstract public boolean canCreateDefinition(User user, Container container);

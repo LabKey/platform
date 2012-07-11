@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.property;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -113,6 +114,7 @@ public abstract class AssayDomainKind extends AbstractDomainKind
     }
 
 
+    @Nullable
     public ActionURL urlEditDefinition(Domain domain)
     {
         ExpProtocol protocol = findProtocol(domain);
