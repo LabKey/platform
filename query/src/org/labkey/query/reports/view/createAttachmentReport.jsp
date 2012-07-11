@@ -101,7 +101,13 @@
 
         var extraItems = [ fileUploadRadioGroup, fileUploadField, serverFileTextField ];
         <% } else { %>
-        var extraItems = [ fileUploadField ];
+
+        var attachmentTypeField = {
+            xtype:'hidden',
+            name:'attachmentType',
+            value:'<%=AttachmentReportForm.AttachmentReportType.local.toString()%>'
+        }
+        var extraItems = [ attachmentTypeField, fileUploadField ];
         <% } %>
 
         var form = Ext4.create('LABKEY.study.DataViewPropertiesPanel', {
