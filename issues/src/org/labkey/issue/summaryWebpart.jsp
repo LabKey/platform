@@ -49,8 +49,8 @@
     </tr>
 <% } %>
 </table>
-<%=textLink("view open " + names.pluralName, bean.listURL + "Issues.Status~eq=open")%>
-<%=textLink("submit new " + names.singularName, bean.insertURL)%>
+<%=textLink("view open " + names.pluralName.getSource(), bean.listURL + "Issues.Status~eq=open")%>
+<%=textLink("submit new " + names.singularName.getSource(), bean.insertURL)%>
 <%
     }
     else

@@ -49,7 +49,7 @@
 <br>
 <table>
 <tr><td>
-    <%=generateButton("Back to " + bean.entryTypeNames.pluralName, buildURL(ListAction.class) + DataRegion.LAST_FILTER_PARAM + "=true")%>
+    <%=generateButton("Back to " + bean.entryTypeNames.pluralName.getSource(), buildURL(ListAction.class) + DataRegion.LAST_FILTER_PARAM + "=true")%>
     <%=generateButton("Customize Email Template", urlProvider(AdminUrls.class).getCustomizeEmailURL(c, IssueUpdateEmailTemplate.class, me.getViewContext().getActionURL()))%>
 </td></tr>
 <tr><td>&nbsp;</td></tr>

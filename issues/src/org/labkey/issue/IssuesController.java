@@ -2488,7 +2488,7 @@ public class IssuesController extends SpringActionController
             //set specified web part title
             Object title = context.get("title");
             if (title == null)
-                title = IssueManager.getEntryTypeNames(c).pluralName + " Summary";
+                title = IssueManager.getEntryTypeNames(c).pluralName.getSource() + " Summary";
             setTitle(title.toString());
 
             User u = context.getUser();

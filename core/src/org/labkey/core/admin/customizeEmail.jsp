@@ -183,7 +183,7 @@
         // delete all rows first
         clearValidSubstitutions();
 
-        if (record.replacements == undefined)
+        if (record == undefined || record.replacements == undefined)
         {
             var selection = Ext.get('templateClass').dom;
             for (var i=0; i < this.emailTemplates.length; i++)
@@ -212,7 +212,7 @@
         cell.className = "labkey-form-label";
         cell.innerHTML = "<strong>Current Value</strong>";
 
-        if (record.replacements != undefined)
+        if (record && record.replacements != undefined)
         {
             for (var i = 0; i < record.replacements.length; i++)
             {

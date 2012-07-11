@@ -75,7 +75,7 @@
     <%=generateSubmitButton("Update")%><%
     if (issueId > 0)
     {
-        %><%= generateButton("Back to " + names.singularName, IssuesController.issueURL(context.getContainer(), IssuesController.DetailsAction.class).addParameter("issueId", bean.getIssueId())) %><%
+        %><%= generateButton("Back to " + names.singularName.getSource(), IssuesController.issueURL(context.getContainer(), IssuesController.DetailsAction.class).addParameter("issueId", bean.getIssueId())) %><%
     }
     else
     {
