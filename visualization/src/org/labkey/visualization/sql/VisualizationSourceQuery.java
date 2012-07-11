@@ -167,14 +167,36 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
     }
 
 
-    private class PivotSourceColumn extends VisualizationSourceColumn
+    public class PivotSourceColumn extends VisualizationSourceColumn
     {
-        PivotSourceColumn(VisualizationAggregateColumn agg, Object pivotValue)
+        /** The value that's being used to pivot the data into this column */
+        private String _pivotValue;
+        private String _originalName;
+
+        PivotSourceColumn(VisualizationAggregateColumn agg, Object pivotValue, String clientAlias)
         {
-            super(VisualizationSourceQuery.this.getSchema(), VisualizationSourceQuery.this.getQueryName(), pivotValue.toString(), true);
+            super(VisualizationSourceQuery.this.getSchema(), VisualizationSourceQuery.this.getQueryName(), pivotValue.toString() + "_" + agg.getOriginalName(), true);
+            _originalName = agg.getOriginalName();
             this._alias = pivotValue.toString() + "::" + agg.getAlias();
             if (null != agg.getLabel())
-                this._label = pivotValue.toString(); // + " - " + agg.getLabel();
+                this._label = pivotValue.toString() + " - " + agg.getLabel();
+            _pivotValue = pivotValue.toString();
+            // Remember the alias that the client using to refer to this column
+            _clientAlias = clientAlias;
+        }
+
+        @Override
+        public String getOriginalName()
+        {
+            return _originalName;
+        }
+
+        @Override
+        public Map<String, String> toJSON(String measureName)
+        {
+            Map<String, String> result = super.toJSON(measureName);
+            result.put("pivotValue", _pivotValue);
+            return result;
         }
     }
 
@@ -193,7 +215,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
                     // Aggregate with pivot:
                     for (Object pivotValue : getPivot().getValues())
                     {
-                        VisualizationSourceColumn pivotCol = new PivotSourceColumn(aggregate, pivotValue);
+                        VisualizationSourceColumn pivotCol = new PivotSourceColumn(aggregate, pivotValue, aggregate.getClientAlias());
                         addToColMap(colMap, pivotCol.getOriginalName(), pivotCol);
                     }
                 }
@@ -241,8 +263,8 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         if (_pivot != null)
         {
 // SEE 12369
-//            if (_pivot.equals(pivot))
-//                return;
+            if (_pivot.equals(pivot))
+                return;
             throw new IllegalArgumentException("Can't pivot a single dataset by more than one column.  Attempt to pivot " +
                 getSchemaName() + "." + _queryName + " by both " + _pivot.getSelectName() + " and " + pivot.getSelectName());
         }

@@ -42,10 +42,23 @@ public class VisualizationSourceColumn
     private boolean _allowNullResults;
     private String _name;
     protected String _alias;
+    protected String _clientAlias;
     private String _otherAlias;
     protected String _label;
     private JdbcType _type = null;
     private Set<Object> _values = new LinkedHashSet<Object>();
+
+    public Map<String, String> toJSON(String measureName)
+    {
+        Map<String, String> info = new HashMap<String, String>();
+        info.put("measureName", getOriginalName());
+        if (getClientAlias() != null)
+        {
+            info.put("alias", getClientAlias());
+        }
+        info.put("columnName", getAlias());
+        return info;
+    }
 
     public static class Factory
     {
@@ -108,6 +121,7 @@ public class VisualizationSourceColumn
     {
         this(getUserSchema(context, (String) properties.get("schemaName")), (String) properties.get("queryName"), (String) properties.get("name"), (Boolean) properties.get("allowNullResults"));
         JSONArray values = (JSONArray) properties.get("values");
+        _clientAlias = (String)properties.get("alias");
         if (values != null)
         {
             for (int i = 0; i < values.length(); i++)
@@ -143,6 +157,11 @@ public class VisualizationSourceColumn
     public String getOriginalName()
     {
         return _name;
+    }
+
+    public String getClientAlias()
+    {
+        return _clientAlias;
     }
 
     public boolean isAllowNullResults()

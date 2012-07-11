@@ -652,6 +652,35 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         throw new IllegalArgumentException("At least one column should have a schema");
     }
 
+    public List<Map<String, String>> getColumnAliases()
+    {
+        Collection<IVisualizationSourceQuery> queries = new LinkedHashSet<IVisualizationSourceQuery>(_sourceQueries.values());
+        Map<String, Set<VisualizationSourceColumn>> allAliases = getColumnMapping(_columnFactory, queries);
+        Set<Map<String, String>> result = new LinkedHashSet<Map<String, String>>();
+        // The default column mapping references the first available valid alias:
+        for (Map.Entry<String, Set<VisualizationSourceColumn>> entry : allAliases.entrySet())
+        {
+            result.add(entry.getValue().iterator().next().toJSON(entry.getKey()));
+
+            if (entry.getValue().size() > 1)
+            {
+                for (VisualizationSourceColumn select : entry.getValue())
+                {
+                    VisualizationProvider provider = getVisualizationProvider(select.getSchemaName());
+                    if (!provider.isJoinColumn(select, getViewContext().getContainer()))
+                        result.add(select.toJSON(select.getAlias()));
+                }
+            }
+        }
+
+        return new ArrayList<Map<String, String>>(result);
+    }
+
+    @Deprecated
+    /**
+     * This method and its usage should go away as soon as the client has been migrated to use the columnAliases JSON
+     * values, since they contain everything this mapping does and more.
+     */
     public Map<String, String> getColumnMapping()
     {
         Collection<IVisualizationSourceQuery> queries = new LinkedHashSet<IVisualizationSourceQuery>(_sourceQueries.values());

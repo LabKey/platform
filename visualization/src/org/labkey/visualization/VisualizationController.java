@@ -772,8 +772,8 @@ public class VisualizationController extends SpringActionController
 
             // Note: extra properties can only be gathered after the query has executed, since execution populates the name maps.
             Map<String, Object> extraProperties = new HashMap<String, Object>();
-            Map<String, String> measureNameToColumnName = sqlGenerator.getColumnMapping();
-            extraProperties.put("measureToColumn", measureNameToColumnName);
+            extraProperties.put("measureToColumn", sqlGenerator.getColumnMapping());
+            extraProperties.put("columnAliases", sqlGenerator.getColumnAliases());
             extraProperties.put("visitMap", getVisitMetaData());
             String filterDescription = sqlGenerator.getFilterDescription();
             if (filterDescription != null && filterDescription.length() > 0)
