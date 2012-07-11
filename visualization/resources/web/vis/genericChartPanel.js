@@ -6,6 +6,7 @@
 
 LABKEY.requiresExt4Sandbox(true);
 
+LABKEY.requiresCss("study/DataViewsPanel.css");
 LABKEY.requiresCss("_images/icons.css");
 LABKEY.requiresScript("vis/genericOptionsPanel.js");
 LABKEY.requiresScript("vis/genericChartOptionsPanel.js");
@@ -45,13 +46,44 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     initComponent : function() {
 
         this.items = [];
+        this.showOptionsBtn = Ext4.create('Ext.button.Button', {
+            text: 'Options',
+            handler: function(){
+                this.optionsWindow.setVisible(this.optionsWindow.isHidden());
+            },
+            scope: this
+        });
 
-        this.centerPanel = Ext4.create('Ext.tab.Panel', {
+        this.toggleBtn = Ext4.create('Ext.button.Button', {
+            text:'View Data',
+            width: 95,
+            handler: function(){
+                if(this.viewPanel.isHidden()){
+                    this.centerPanel.getLayout().setActiveItem(0);
+                    this.toggleBtn.setText('View Data');
+                } else {
+                    this.centerPanel.getLayout().setActiveItem(1);
+                    this.toggleBtn.setText('View Chart');
+                }
+            },
+            scope: this
+        });
+
+        this.centerPanel = Ext4.create('Ext.panel.Panel', {
             border   : false, frame : false,
             region   : 'center',
             header : false,
             headerPosition : 'left',
-            items    : [this.getViewPanel(), this.getDataPanel()]
+            layout: {
+                type:'card',
+                deferredRender: true
+            },
+            activeItem: 0,
+            items    : [this.getViewPanel(), this.getDataPanel()],
+            tbar: [
+                this.toggleBtn,
+                this.showOptionsBtn
+            ]
         });
 
         Ext4.define('MeasureModel',{
@@ -83,7 +115,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     if(this.yAxisMeasure){
                         var measure = this.yMeasureStore.findRecord('name', this.yAxisMeasure.name);
                         if(measure){
-                            this.yMeasureGrid.getSelectionModel().select(measure);
+                            this.yMeasureGrid.getSelectionModel().select(measure, false, true);
+                            this.yMeasurePanel.selectionChange(true);
                         }
                     }
                 },
@@ -108,7 +141,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     if(this.xAxisMeasure){
                         var measure = this.xMeasureStore.findRecord('name', this.xAxisMeasure.name);
                         if(measure){
-                            this.xMeasureGrid.getSelectionModel().select(measure);
+                            this.xMeasureGrid.getSelectionModel().select(measure, false, true);
+                            this.xMeasurePanel.selectionChange(true);
                         }
                     }
                 },
@@ -224,6 +258,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             ],
             listeners: {
                 show: function(){
+                    if(this.yMeasureGrid.getSelectionModel().hasSelection()){
+                        this.yOkBtn.setDisabled(false);
+                    }
                     if(!this.yAxisMeasure){
                         this.yMeasurePanel.hideNonMeasureElements();
                     } else {
@@ -265,6 +302,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             ],
             listeners: {
                 show: function(){
+                    if(this.xMeasureGrid.getSelectionModel().hasSelection()){
+                        this.xOkBtn.setDisabled(false);
+                    }
                     if(!this.xAxisMeasure){
                         this.xMeasurePanel.hideNonMeasureElements();
                     } else {
@@ -288,13 +328,16 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 labelSeparator: ''
             },
             listeners: {
-                chartDefinitionChanged: function(panel){
-                    var renderType = panel.getRenderType();
+                chartDefinitionChanged: function(){
+                    var renderType = this.optionsPanel.getRenderType();
                     if(this.renderType != renderType){
                         this.renderType = renderType;
                     }
                     this.viewPanel.getEl().mask('Rendering Chart...');
                     this.chartDefinitionChanged.delay(500);
+                },
+                'closeOptionsWindow': function(){
+                    this.optionsWindow.hide();
                 },
                 scope: this
             }
@@ -302,15 +345,23 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         this.optionsWindow = Ext4.create('Ext.window.Window', {
             title: 'Plot Options',
+            hidden: true,
             border: 1,
             width: 325,
-            closable: false,
-            collapsible: true,
-            collapsed: (this.reportId != null && this.reportId != undefined),
+            cls: 'data-window',
+            modal: true,
+            closable: true,
+            closeAction: 'hide',
             expandOnShow: false,
             items:[this.optionsPanel],
-            relative: this.centerPanel,
-            draggable: false
+            relative: this.showOptionsBtn,
+            draggable: false,
+            listeners: {
+                scope: this,
+                show: function(){
+                    this.optionsWindow.alignTo(this.showOptionsBtn, 'tl-tr', [-175, 30]);
+                }
+            }
         });
 
         this.mainTitlePanel = Ext4.create('LABKEY.vis.MainTitleOptionsPanel', {
@@ -371,10 +422,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
 
         this.centerPanel.on('resize', function(){
-            if(this.optionsWindow.hidden){
-                this.optionsWindow.show();
+            if(!this.optionsWindow.hidden){
+                this.optionsWindow.alignTo(this.showOptionsBtn, 'tl-tr', [-175, 30]);
             }
-            this.optionsWindow.alignTo(this.centerPanel, 'tl-tr', [-325, 30]);
         }, this);
 
         // customization
@@ -391,7 +441,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.viewPanel = Ext4.create('Ext.panel.Panel', {
                 flex        : 1,
                 layout      : 'fit',
-                title       : 'View',
                 bodyStyle   : 'overflow-y: auto;',
                 cls         : 'iScroll',
                 ui          : 'custom',
@@ -405,14 +454,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             // only re-render after the initial chart rendering
             if (this.chartData)
                 this.renderPlot();
-        }, this);
-
-        this.viewPanel.on('hide', function(){
-            this.optionsWindow.hide();
-        }, this);
-
-        this.viewPanel.on('show', function(){
-            this.optionsWindow.show();
         }, this);
 
         return this.viewPanel;
@@ -433,7 +474,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.dataPanel = Ext4.create('Ext.panel.Panel', {
                 flex        : 1,
                 layout      : 'fit',
-                title       : 'Data',
                 padding     : '10',
                 border      : false,
                 frame       : false,
@@ -1102,7 +1142,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             {
                 measure = this.yMeasureStore.findRecord('name', this.autoColumnYName);
                 if (measure){
-                    this.yMeasureGrid.getSelectionModel().select(measure);
+                    this.yMeasureGrid.getSelectionModel().select(measure, false, true);
+                    this.yMeasurePanel.selectionChange(true);
                     this.yAxisMeasure = measure.data;
                 }
             }
@@ -1121,7 +1162,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             {
                 measure = this.xMeasureStore.findRecord('name', this.autoColumnXName);
                 if (measure) {
-                    this.xMeasureGrid.getSelectionModel().select(measure);
+                    this.xMeasureGrid.getSelectionModel().select(measure, false, true);
+                    this.xMeasurePanel.selectionChange(true);
                     this.xAxisMeasure = measure.data;
                 }
             }
@@ -1173,7 +1215,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             yPadding = ((yMax - yMin) * .1);
             scales.y = {min: yMin - yPadding, max: yMax + yPadding, scaleType: 'continuous', trans: chartOptions.yAxis.scaleType};
             geom = new LABKEY.vis.Geom.Boxplot({
-                lineWidth: chartOptions.lineWidth
+                lineWidth: chartOptions.lineWidth,
+                outlierOpacity: chartOptions.opacity,
+                outlierFill: '#' + chartOptions.pointColor,
+                outlierSize: chartOptions.pointSize
             });
         } else if(this.renderType == "scatter_plot" || (this.renderType == "auto_plot" && this.xAxisMeasure.type == 'int' || this.xAxisMeasure.type == "float" || this.xAxisMeasure.type == "date")){
             scales.x = (this.xAxisMeasure.type == 'int' || this.xAxisMeasure.type == 'float' || this.xAxisMeasure.type == 'double') ?
@@ -1253,6 +1298,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 return x + ':\nMin: ' + stats.min + '\nMax: ' + stats.max + '\nQ1: ' + stats.Q1 + '\nQ2: ' + stats.Q2 +
                         '\nQ3: ' + stats.Q3;
             };
+            aes.outlierHoverText = function(row){
+                return xAxis + ': ' + row[xAxis] + ', ' + yAxis + ': ' + row[yAxis];
+            }
         } else if(geom.type == "Point"){
             aes.hoverText = function(row){
                 return xAxis + ': ' + row[xAxis] + ', ' + yAxis + ': ' + row[yAxis];

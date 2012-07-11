@@ -108,11 +108,17 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
         this.scaleTypeRadioGroup.setDisabled(disable);
     },
 
-    selectionChange: function(){
+    selectionChange: function(suppressEvents){
         this.disableScaleAndRange();
+        if(suppressEvents){
+            this.suppressEvents = true;
+        } else {
+            this.hasChanges = true;
+        }
         if(!this.userEditedLabel){
             this.axisLabelField.setValue(this.getDefaultLabel());
         }
+        this.suppressEvents = false;
     },
 
     getDefaultLabel: function(){

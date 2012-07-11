@@ -57,7 +57,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             listeners: {
                 change: function(combo){
                     if(!this.suppressEvents){
-                        this.fireEvent('chartDefinitionChanged', this);
+                        this.hasChanges = true;
                     }
                 },
                 scope: this
@@ -67,7 +67,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         this.opacitySlider = Ext4.create('Ext.slider.Single', {
             labelSeparator: labelSeparator,
             labelWidth: labelWidth,
-            fieldLabel: 'Opacity',
+            fieldLabel: 'Point Opacity',
             width: '100%',
             value: 50,
             increment: 10,
@@ -76,7 +76,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             listeners: {
                 change: function(combo){
                     if(!this.suppressEvents){
-                        this.fireEvent('chartDefinitionChanged', this);
+                        this.hasChanges = true;
                     }
                 },
                 scope: this
@@ -95,7 +95,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             listeners: {
                 change: function(combo){
                     if(!this.suppressEvents){
-                        this.fireEvent('chartDefinitionChanged', this);
+                        this.hasChanges = true;
                     }
                 },
                 scope: this
@@ -114,7 +114,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             listeners: {
                 select: function(picker, selColor) {
                     if(!this.suppressEvents){
-                        this.fireEvent('chartDefinitionChanged', this);
+                        this.hasChanges = true;
                     }
                 },
                 scope: this
@@ -122,7 +122,6 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         });
 
         this.colorFieldContainer = Ext4.create('Ext.form.FieldContainer', {
-            hidden: this.renderType == 'box_plot',
             layout: 'hbox',
             items: [this.colorLabel, this.pointColorPicker]
         });
@@ -139,7 +138,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             listeners: {
                 change: function(combo){
                     if(!this.suppressEvents){
-                        this.fireEvent('chartDefinitionChanged', this);
+                        this.hasChanges = true;
                     }
                 },
                 scope: this
@@ -152,6 +151,18 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             this.opacitySlider,
             this.pointSizeSlider,
             this.colorFieldContainer
+        ];
+
+        this.buttons = [
+            {
+                xtype: 'button',
+                text: 'Apply',
+                handler: function(){
+                    this.fireEvent('closeOptionsWindow');
+                    this.checkForChangesAndFireEvents();
+                },
+                scope: this
+            }
         ];
 
         this.callParent();
