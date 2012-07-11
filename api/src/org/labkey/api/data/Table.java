@@ -831,11 +831,13 @@ public class Table
                 valueSQL.append("NULL");
             else
             {
-                // Check if the value is too long for a VARCHAR column
-                if (column.getJdbcType() == JdbcType.VARCHAR && column.getScale() > 0 && value.toString().length() > column.getScale())
-                {
-                    throw new SQLException("The column '" + column.getName() + "' has a maximum length of " + column.getScale() + " but the value '" + value + "' is " + value.toString().length() + " characters long.");
-                }
+                // Check if the value is too long for a VARCHAR column, and provide a better error message than the database does
+                // Can't do this right now because various modules override the <scale> in their XML metadata so that
+                // it doesn't match the actual column length in the database
+//                if (column.getJdbcType() == JdbcType.VARCHAR && column.getScale() > 0 && value.toString().length() > column.getScale())
+//                {
+//                    throw new SQLException("The column '" + column.getName() + "' has a maximum length of " + column.getScale() + " but the value '" + value + "' is " + value.toString().length() + " characters long.");
+//                }
                 valueSQL.append('?');
                 parameters.add(value);
             }
@@ -1003,11 +1005,13 @@ public class Table
             }
             else
             {
-                // Check if the value is too long for a VARCHAR column
-                if (column.getJdbcType() == JdbcType.VARCHAR && column.getScale() > 0 && value.toString().length() > column.getScale())
-                {
-                    throw new SQLException("The column '" + column.getName() + "' has a maximum length of " + column.getScale() + " but the value '" + value + "' is " + value.toString().length() + " characters long.");
-                }
+                // Check if the value is too long for a VARCHAR column, and provide a better error message than the database does
+                // Can't do this right now because various modules override the <scale> in their XML metadata so that
+                // it doesn't match the actual column length in the database
+//                if (column.getJdbcType() == JdbcType.VARCHAR && column.getScale() > 0 && value.toString().length() > column.getScale())
+//                {
+//                    throw new SQLException("The column '" + column.getName() + "' has a maximum length of " + column.getScale() + " but the value '" + value + "' is " + value.toString().length() + " characters long.");
+//                }
 
                 setSQL.append("=?");
                 parametersSet.add(value);
