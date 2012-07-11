@@ -790,7 +790,7 @@ public class AssayController extends SpringActionController
             if (designerAction == null)
                 return null;
 
-            ActionURL url = getProtocolURL(container, null, designerAction);
+            ActionURL url = getProtocolURL(container, protocol, designerAction);
             url.addParameter("providerName", provider.getName());
             if (returnURL != null)
                 url.addParameter(ActionURL.Param.returnUrl, returnURL.toString());
