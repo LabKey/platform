@@ -331,7 +331,7 @@ public class ViewServlet extends HttpServlet
                 strPath = "/" + strPath;
             if (strPath.endsWith("/"))
                 strPath = strPath.substring(0, strPath.length() - 1);
-            c = ContainerManager.getForPathAlias(strPath);
+            c = ContainerManager.resolveContainerPathAlias(strPath);
             if (c != null)
             {
                 url.setContainer(c);

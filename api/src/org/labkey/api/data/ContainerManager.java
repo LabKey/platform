@@ -1652,7 +1652,48 @@ public class ContainerManager
         }
     }
 
-    public static Container getForPathAlias(String path)
+    @Nullable
+    public static Container resolveContainerPathAlias(String path)
+    {
+        return resolveContainerPathAlias(path, false);
+    }
+
+    @Nullable
+    private static Container resolveContainerPathAlias(String path, boolean top)
+    {
+        // Simple case -- resolve directly (sans alias)
+        Container aliased = getForPath(path);
+        if (aliased != null)
+            return aliased;
+
+        // Simple case -- directly resolve from database
+        aliased = getForPathAlias(path);
+        if (aliased != null)
+            return aliased;
+
+        // At the leaf and the container was not found
+        if (top)
+            return null;
+
+        List<String> splits = Arrays.asList(path.split("/"));
+        String subPath = "";
+        for (int i=0; i < splits.size()-1; i++) // minus 1 due to leaving off last container
+        {
+            if (splits.get(i).length() > 0)
+                subPath += "/" + splits.get(i);
+        }
+
+        aliased = resolveContainerPathAlias(subPath, false);
+
+        if (aliased == null)
+            return null;
+
+        String leafPath = aliased.getPath() + "/" + splits.get(splits.size()-1);
+        return resolveContainerPathAlias(leafPath, true);
+    }
+
+    @Nullable
+    private static Container getForPathAlias(String path)
     {
         try
         {
