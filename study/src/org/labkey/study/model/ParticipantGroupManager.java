@@ -35,6 +35,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.permissions.SharedParticipantGroupPermission;
@@ -95,31 +96,31 @@ public class ParticipantGroupManager
         return StudySchema.getInstance().getTableInfoParticipantCategory();
     }
 
-    public ParticipantCategory getParticipantCategory(Container c, User user, String label)
+    public ParticipantCategoryImpl getParticipantCategory(Container c, User user, String label)
     {
         SimpleFilter filter = new SimpleFilter("Label", label);
 
-        ParticipantCategory[] lists = getParticipantCategories(c, user, filter);
+        ParticipantCategoryImpl[] lists = getParticipantCategories(c, user, filter);
 
         if (lists.length > 0)
         {
             return lists[0];
         }
-        ParticipantCategory def = new ParticipantCategory();
+        ParticipantCategoryImpl def = new ParticipantCategoryImpl();
         def.setContainer(c.getId());
         def.setLabel(label);
 
         return def;
     }
 
-    public ParticipantCategory[] getParticipantCategories(Container c, User user, SimpleFilter filter)
+    public ParticipantCategoryImpl[] getParticipantCategories(Container c, User user, SimpleFilter filter)
     {
         try {
             filter.addCondition("Container", c);
-            ParticipantCategory[] categories = Table.select(StudySchema.getInstance().getTableInfoParticipantCategory(), Table.ALL_COLUMNS, filter, null, ParticipantCategory.class);
-            List<ParticipantCategory> filtered = new ArrayList<ParticipantCategory>();
+            ParticipantCategoryImpl[] categories = Table.select(StudySchema.getInstance().getTableInfoParticipantCategory(), Table.ALL_COLUMNS, filter, null, ParticipantCategoryImpl.class);
+            List<ParticipantCategoryImpl> filtered = new ArrayList<ParticipantCategoryImpl>();
 
-            for (ParticipantCategory pc : categories)
+            for (ParticipantCategoryImpl pc : categories)
             {
                 if (pc.canRead(c, user))
                 {
@@ -127,7 +128,7 @@ public class ParticipantGroupManager
                     filtered.add(pc);
                 }
             }
-            return filtered.toArray(new ParticipantCategory[filtered.size()]);
+            return filtered.toArray(new ParticipantCategoryImpl[filtered.size()]);
         }
         catch (SQLException x)
         {
@@ -153,8 +154,8 @@ public class ParticipantGroupManager
             colFilters.put(colName, context.getActionURL().getParameter(colFilterParamName));
         }
 
-        ParticipantCategory[] allCategories = getParticipantCategories(container, context.getUser());
-        for (ParticipantCategory category : allCategories)
+        ParticipantCategoryImpl[] allCategories = getParticipantCategories(container, context.getUser());
+        for (ParticipantCategoryImpl category : allCategories)
         {
             ParticipantGroup[] allGroups = getParticipantGroups(container, context.getUser(), category);
             for (ParticipantGroup group : allGroups)
@@ -177,12 +178,12 @@ public class ParticipantGroupManager
             StudyImpl study = StudyManager.getInstance().getStudy(container);
             MenuButton button = new MenuButton(study.getSubjectNounSingular() + " Groups");
 
-            ParticipantCategory[] classes = getParticipantCategories(container, context.getUser());
+            ParticipantCategoryImpl[] classes = getParticipantCategories(container, context.getUser());
 
             // Remove all ptid list filters from the URL- this lets users switch between lists via the menu (versus adding filters with each click)
             ActionURL baseURL = CohortFilter.clearURLParameters(context.cloneActionURL());
 
-            for (ParticipantCategory cls : classes)
+            for (ParticipantCategoryImpl cls : classes)
             {
                 ParticipantGroup[] groups = cls.getGroups();
                 if (groups != null)
@@ -203,7 +204,7 @@ public class ParticipantGroupManager
                 button.addMenuItem(cohort);
             }
 
-            for (ParticipantCategory cls : classes)
+            for (ParticipantCategoryImpl cls : classes)
             {
                 ParticipantGroup[] groups = cls.getGroups();
                 if (null != groups && groups.length > 1)
@@ -331,7 +332,7 @@ public class ParticipantGroupManager
         return sb.toString();
     }
 
-    public ParticipantCategory[] getParticipantCategories(Container c, User user)
+    public ParticipantCategoryImpl[] getParticipantCategories(Container c, User user)
     {
         return getParticipantCategories(c, user, new SimpleFilter());
     }
@@ -339,13 +340,13 @@ public class ParticipantGroupManager
     /**
      * @deprecated create participant categories and groups separately
      */
-    public ParticipantCategory setParticipantCategory(Container c, User user, ParticipantCategory def, String[] participants, String participantFilters, String description) throws ValidationException
+    public ParticipantCategoryImpl setParticipantCategory(Container c, User user, ParticipantCategoryImpl def, String[] participants, String participantFilters, String description) throws ValidationException
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
         try {
             scope.ensureTransaction();
-            ParticipantCategory ret;
+            ParticipantCategoryImpl ret;
             boolean isUpdate = !def.isNew();
             List<Throwable> errors;
 
@@ -354,7 +355,7 @@ public class ParticipantGroupManager
             
             if (def.isNew())
             {
-                ParticipantCategory previous = getParticipantCategory(c, user, def.getLabel());
+                ParticipantCategoryImpl previous = getParticipantCategory(c, user, def.getLabel());
                 if (!previous.isNew())
                     throw new ValidationException("There is aready a group named: " + def.getLabel() + " within this study. Please choose a unique group name.");
                 ret = Table.insert(user, StudySchema.getInstance().getTableInfoParticipantCategory(), def);
@@ -404,14 +405,14 @@ public class ParticipantGroupManager
         }
     }
 
-    public ParticipantCategory setParticipantCategory(Container c, User user, ParticipantCategory def) throws ValidationException
+    public ParticipantCategoryImpl setParticipantCategory(Container c, User user, ParticipantCategoryImpl def) throws ValidationException
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
         try
         {
             scope.ensureTransaction();
-            ParticipantCategory ret;
+            ParticipantCategoryImpl ret;
             List<Throwable> errors;
 
             if (!def.canEdit(c, user))
@@ -419,7 +420,7 @@ public class ParticipantGroupManager
 
             if (def.isNew())
             {
-                ParticipantCategory previous = getParticipantCategory(c, user, def.getLabel());
+                ParticipantCategoryImpl previous = getParticipantCategory(c, user, def.getLabel());
                 if (!previous.isNew())
                     throw new ValidationException("There is aready a category named: " + def.getLabel() + " within this study. Please choose a unique category name.");
                 ret = Table.insert(user, StudySchema.getInstance().getTableInfoParticipantCategory(), def);
@@ -509,7 +510,7 @@ public class ParticipantGroupManager
 
     public ParticipantGroup setParticipantGroup(Container c, User user, ParticipantGroup group) throws SQLException, ValidationException
     {
-        ParticipantCategory cat = getParticipantCategory(c, user, group.getCategoryId());
+        ParticipantCategoryImpl cat = getParticipantCategory(c, user, group.getCategoryId());
 
         if (cat == null)
         {
@@ -543,18 +544,18 @@ public class ParticipantGroupManager
         return ret;
     }
 
-    public ParticipantCategory addCategoryParticipants(Container c, User user, ParticipantCategory def, String[] participants) throws ValidationException
+    public ParticipantCategoryImpl addCategoryParticipants(Container c, User user, ParticipantCategoryImpl def, String[] participants) throws ValidationException
     {
         return modifyParticipantCategory(c, user, def, participants, Modification.ADD);
     }
 
-    public ParticipantCategory removeCategoryParticipants(Container c, User user, ParticipantCategory def, String[] participants) throws ValidationException
+    public ParticipantCategoryImpl removeCategoryParticipants(Container c, User user, ParticipantCategoryImpl def, String[] participants) throws ValidationException
     {
         return modifyParticipantCategory(c, user, def, participants, Modification.REMOVE);
     }
 
     private enum Modification {ADD, REMOVE}
-    private ParticipantCategory modifyParticipantCategory(Container c, User user, ParticipantCategory def, String[] participants, Modification modification) throws ValidationException
+    private ParticipantCategoryImpl modifyParticipantCategory(Container c, User user, ParticipantCategoryImpl def, String[] participants, Modification modification) throws ValidationException
     {
         if (!def.canEdit(c, user))
             throw new ValidationException("You don't have permission to edit this participant category");
@@ -563,7 +564,7 @@ public class ParticipantGroupManager
 
         try {
             scope.ensureTransaction();
-            ParticipantCategory ret;
+            ParticipantCategoryImpl ret;
             List<Throwable> errors;
 
             ParticipantGroup[] groups = getParticipantGroups(c, user, def);
@@ -694,11 +695,11 @@ public class ParticipantGroupManager
         }
     }
 
-    public ParticipantCategory getParticipantCategory(Container c, User user, int rowId)
+    public ParticipantCategoryImpl getParticipantCategory(Container c, User user, int rowId)
     {
         SimpleFilter filter = new SimpleFilter("RowId", rowId);
 
-        ParticipantCategory[] categories = getParticipantCategories(c, user, filter);
+        ParticipantCategoryImpl[] categories = getParticipantCategories(c, user, filter);
 
         if (categories.length > 0)
             return categories[0];
@@ -715,7 +716,7 @@ public class ParticipantGroupManager
             rs = Table.select(getTableInfoParticipantGroup(), Collections.singleton("CategoryId"), filter, null);
             if (rs.next())
             {
-                ParticipantCategory category = getParticipantCategory(container, user, rs.getInt("CategoryId"));
+                ParticipantCategoryImpl category = getParticipantCategory(container, user, rs.getInt("CategoryId"));
                 if (category != null)
                 {
                     // Use getParticipantGroups here to pull the entire category into the cache- this is more expensive up-front,
@@ -789,7 +790,7 @@ public class ParticipantGroupManager
     }
 
 
-    public ParticipantGroup[] getParticipantGroups(Container c, User user, ParticipantCategory def)
+    public ParticipantGroup[] getParticipantGroups(Container c, User user, ParticipantCategoryImpl def)
     {
         if (!def.isNew())
         {
@@ -867,7 +868,7 @@ public class ParticipantGroupManager
         }
     }
 
-    private void updateListTypeDef(Container c, User user, ParticipantCategory def, boolean update, String[] participants, String filters, String description) throws SQLException, ValidationException
+    private void updateListTypeDef(Container c, User user, ParticipantCategoryImpl def, boolean update, String[] participants, String filters, String description) throws SQLException, ValidationException
     {
         assert !def.isNew() : "The participant category has not been created yet";
 
@@ -909,7 +910,7 @@ public class ParticipantGroupManager
         }
     }
 
-    public void deleteParticipantCategory(Container c, User user, ParticipantCategory def) throws ValidationException
+    public void deleteParticipantCategory(Container c, User user, ParticipantCategoryImpl def) throws ValidationException
     {
         if (def.isNew())
             throw new ValidationException("Participant category has not been saved to the database yet");
@@ -961,7 +962,7 @@ public class ParticipantGroupManager
 
     public void deleteParticipantGroup(Container c, User user, ParticipantGroup group) throws ValidationException
     {
-        ParticipantCategory cat = getParticipantCategory(c, user, group.getCategoryId());
+        ParticipantCategoryImpl cat = getParticipantCategory(c, user, group.getCategoryId());
 
         if (!cat.canDelete(c, user))
             throw new ValidationException("You must either be an administrator, editor or the owner to delete a participant group");
@@ -1055,7 +1056,7 @@ public class ParticipantGroupManager
         return ptids;
     }
 
-    private String getCacheKey(ParticipantCategory def)
+    private String getCacheKey(ParticipantCategoryImpl def)
     {
         return "ParticipantCategory-" + def.getRowId();
     }
@@ -1075,7 +1076,7 @@ public class ParticipantGroupManager
         _listeners.remove(listener);
     }
 
-    private static List<Throwable> fireDeleteCategory(User user, ParticipantCategory category)
+    private static List<Throwable> fireDeleteCategory(User user, ParticipantCategoryImpl category)
     {
         List<Throwable> errors = new ArrayList<Throwable>();
 
@@ -1092,7 +1093,7 @@ public class ParticipantGroupManager
         return errors;
     }
 
-    private static List<Throwable> fireUpdateCategory(User user, ParticipantCategory category)
+    private static List<Throwable> fireUpdateCategory(User user, ParticipantCategoryImpl category)
     {
         List<Throwable> errors = new ArrayList<Throwable>();
 
@@ -1109,7 +1110,7 @@ public class ParticipantGroupManager
         return errors;
     }
 
-    private static List<Throwable> fireCreatedCategory(User user, ParticipantCategory category)
+    private static List<Throwable> fireCreatedCategory(User user, ParticipantCategoryImpl category)
     {
         List<Throwable> errors = new ArrayList<Throwable>();
 
@@ -1139,7 +1140,7 @@ public class ParticipantGroupManager
 //            g.setContainer("14944030-c56c-102e-8297-ca47709443a1");
 //            g.setLabel("pie2");
 
-            ParticipantCategory def = new ParticipantCategory();
+            ParticipantCategoryImpl def = new ParticipantCategoryImpl();
             p.getParticipantGroups(null, null, def);
         }
 

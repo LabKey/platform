@@ -37,7 +37,7 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.model.ParticipantCategory;
+import org.labkey.study.model.ParticipantCategoryImpl;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyManager;
 
@@ -127,7 +127,7 @@ public class ParticipantTable extends FilteredTable
         setDefaultVisibleColumns(getDefaultVisibleColumns());
 
         // join in participant categories
-        for (ParticipantCategory category : ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), _schema.getUser()))
+        for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), _schema.getUser()))
         {
             ColumnInfo categoryColumn = new ParticipantCategoryColumn(category, this);
             addColumn(categoryColumn);
@@ -141,12 +141,12 @@ public class ParticipantTable extends FilteredTable
 
     public static class ParticipantCategoryColumn extends ExprColumn
     {
-        private ParticipantCategory _def;
+        private ParticipantCategoryImpl _def;
         private String PARTICIPANT_GROUP_ALIAS;
         private String PARTICIPANT_GROUP_GROUPMAP_JOIN;
         private String PARTICIPANT_GROUPMAP_JOIN_ALIAS;
 
-        public ParticipantCategoryColumn(ParticipantCategory def, FilteredTable parent)
+        public ParticipantCategoryColumn(ParticipantCategoryImpl def, FilteredTable parent)
         {
             super(parent, def.getLabel(), new SQLFragment(), JdbcType.VARCHAR);
 

@@ -63,7 +63,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.ParticipantCategory;
+import org.labkey.study.model.ParticipantCategoryImpl;
 import org.labkey.study.model.ParticipantCategoryListener;
 import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
@@ -171,7 +171,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
             for (Integer groupId : groups)
             {
-                ParticipantCategory category = ParticipantGroupManager.getInstance().getParticipantCategory(qsDef.getContainer(), context.getUser(), groupId);
+                ParticipantCategoryImpl category = ParticipantGroupManager.getInstance().getParticipantCategory(qsDef.getContainer(), context.getUser(), groupId);
 
                 if (category != null)
                 {
@@ -527,17 +527,17 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     }
 
     @Override
-    public void categoryDeleted(User user, ParticipantCategory category) throws Exception
+    public void categoryDeleted(User user, ParticipantCategoryImpl category) throws Exception
     {
     }
 
     @Override
-    public void categoryCreated(User user, ParticipantCategory category) throws Exception
+    public void categoryCreated(User user, ParticipantCategoryImpl category) throws Exception
     {
     }
 
     @Override
-    public void categoryUpdated(User user, ParticipantCategory category) throws Exception
+    public void categoryUpdated(User user, ParticipantCategoryImpl category) throws Exception
     {
         _log.debug("Category updated notification on participant category : " + category.getLabel());
 

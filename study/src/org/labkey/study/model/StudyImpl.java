@@ -46,6 +46,7 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.Site;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
@@ -230,6 +231,12 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public CohortImpl[] getCohorts(User user)
     {
         return StudyManager.getInstance().getCohorts(getContainer(), user);
+    }
+
+    @Override
+    public ParticipantCategory[] getParticipantCategories(User user)
+    {
+        return ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), user);
     }
 
     public SampleRequestStatus[] getSampleRequestStatuses(User user) throws SQLException

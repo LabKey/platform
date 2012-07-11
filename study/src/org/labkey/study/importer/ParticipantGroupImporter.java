@@ -22,7 +22,7 @@ import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.ParticipantCategory;
+import org.labkey.study.model.ParticipantCategoryImpl;
 import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
@@ -33,10 +33,7 @@ import org.labkey.study.xml.participantGroups.GroupType;
 import org.labkey.study.xml.participantGroups.ParticipantGroupsDocument;
 import org.springframework.validation.BindException;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -85,8 +82,8 @@ public class ParticipantGroupImporter implements InternalStudyImporter
 
                 scope.ensureTransaction();
 
-                Map<String, ParticipantCategory> existingGroups = new HashMap<String, ParticipantCategory>();
-                for (ParticipantCategory group : ParticipantGroupManager.getInstance().getParticipantCategories(ctx.getContainer(), ctx.getUser()))
+                Map<String, ParticipantCategoryImpl> existingGroups = new HashMap<String, ParticipantCategoryImpl>();
+                for (ParticipantCategoryImpl group : ParticipantGroupManager.getInstance().getParticipantCategories(ctx.getContainer(), ctx.getUser()))
                     existingGroups.put(group.getLabel(), group);
 
                 // create the imported participant groups
@@ -96,7 +93,7 @@ public class ParticipantGroupImporter implements InternalStudyImporter
                     if (existingGroups.containsKey(category.getLabel()))
                         ParticipantGroupManager.getInstance().deleteParticipantCategory(ctx.getContainer(), ctx.getUser(), existingGroups.get(category.getLabel()));
                     
-                    ParticipantCategory pc = new ParticipantCategory();
+                    ParticipantCategoryImpl pc = new ParticipantCategoryImpl();
 
                     pc.setContainer(ctx.getContainer().getId());
                     pc.setLabel(category.getLabel());

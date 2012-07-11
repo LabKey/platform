@@ -31,8 +31,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.view.ViewContext;
-import org.labkey.study.model.ParticipantCategory;
-import org.labkey.study.model.ParticipantGroup;
+import org.labkey.study.model.ParticipantCategoryImpl;
 import org.labkey.study.model.StudyManager;
 import org.springframework.validation.BindException;
 
@@ -202,7 +201,7 @@ public abstract class SnapshotDependency
         {
             if (sourceData.getType() == SourceDataType.Type.participantCategory)
             {
-                ParticipantCategory category = (ParticipantCategory)sourceData.getValue();
+                ParticipantCategoryImpl category = (ParticipantCategoryImpl)sourceData.getValue();
                 List<QuerySnapshotDefinition> dependencies = new ArrayList<QuerySnapshotDefinition>();
                 List<Integer> groups = new ArrayList<Integer>();
 

@@ -22,6 +22,7 @@ import org.labkey.api.data.Entity;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.permissions.SharedParticipantGroupPermission;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -36,7 +37,7 @@ import org.labkey.api.view.ViewContext;
 /**
  * Represents a category of participants in related groups.
  */
-public class ParticipantCategory extends Entity
+public class ParticipantCategoryImpl extends Entity implements ParticipantCategory
 {
     private int _rowId;
     private boolean _shared;
@@ -54,13 +55,6 @@ public class ParticipantCategory extends Entity
     private String _groupProperty;
 
     private ParticipantGroup[] _groups = new ParticipantGroup[0];
-
-    public enum Type {
-        manual,
-        list,
-        query,
-        cohort,
-    }
 
     public boolean isNew()
     {
@@ -84,7 +78,7 @@ public class ParticipantCategory extends Entity
 
     public void setType(String type)
     {
-        if (Type.valueOf(type) == null)
+        if (ParticipantCategory.Type.valueOf(type) == null)
             throw new IllegalArgumentException("Invalid ParticipantCategory type");
         
         _type = type;
@@ -175,6 +169,18 @@ public class ParticipantCategory extends Entity
         return _groups;
     }
 
+    @Override
+    public String[] getGroupNames()
+    {
+        String[] groupNames = new String[_groups.length];
+        int i = 0;
+
+        for (ParticipantGroup group : _groups)
+            groupNames[i++] = group.getLabel();
+
+        return groupNames;
+    }
+
     public void setGroups(ParticipantGroup[] groups)
     {
         _groups = groups;
@@ -205,14 +211,14 @@ public class ParticipantCategory extends Entity
         User modifiedBy = UserManager.getUser(getModifiedBy());
         json.put("modifiedBy", createDisplayValue(getModifiedBy(), modifiedBy != null ? modifiedBy.getDisplayName(currentUser) : getModifiedBy()));
 
-        if (Type.query.equals(Type.valueOf(getType())))
+        if (ParticipantCategory.Type.query.equals(ParticipantCategory.Type.valueOf(getType())))
         {
             json.put("queryName", getQueryName());
             json.put("schemaName", getSchemaName());
             json.put("viewName", getViewName());
         }
 
-        if (Type.cohort.equals(Type.valueOf(getType())))
+        if (ParticipantCategory.Type.cohort.equals(ParticipantCategory.Type.valueOf(getType())))
         {
             json.put("datasetId", getDatasetId());
             json.put("groupProperty", getGroupProperty());
@@ -268,7 +274,7 @@ public class ParticipantCategory extends Entity
         return json;
     }
 
-    public void copySpecialFields(ParticipantCategory copy)
+    public void copySpecialFields(ParticipantCategoryImpl copy)
     {
         if (getEntityId() == null)
             setEntityId(copy.getEntityId());
@@ -286,7 +292,7 @@ public class ParticipantCategory extends Entity
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        ParticipantCategory that = (ParticipantCategory) o;
+        ParticipantCategoryImpl that = (ParticipantCategoryImpl) o;
 
         if (_rowId != that._rowId) return false;
 
@@ -325,4 +331,6 @@ public class ParticipantCategory extends Entity
         }
         return true;
     }
+
+
 }

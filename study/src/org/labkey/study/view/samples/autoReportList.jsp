@@ -28,7 +28,7 @@
 <%@ page import="org.labkey.study.CohortFilter" %>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page import="org.labkey.study.model.CohortImpl" %>
-<%@ page import="org.labkey.study.model.ParticipantCategory" %>
+<%@ page import="org.labkey.study.model.ParticipantCategoryImpl" %>
 <%@ page import="org.labkey.study.model.ParticipantGroup" %>
 <%@ page import="org.labkey.study.model.ParticipantGroupManager" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
@@ -49,7 +49,7 @@
     String optionLabelStyle = "text-align:right";
     Map<String, CustomView> views = bean.getCustomViews(getViewContext());
 
-    ParticipantCategory[] categories = ParticipantGroupManager.getInstance().getParticipantCategories(container, user);
+    ParticipantCategoryImpl[] categories = ParticipantGroupManager.getInstance().getParticipantCategories(container, user);
     boolean showParticipantGroups = categories != null && categories.length > 0;
 %>
 <%
@@ -187,7 +187,7 @@ This folder does not contain a study.
                                 <select name="participantGroupFilter">
                                     <option value="">All Groups</option>
                                     <%
-                                        for (ParticipantCategory cat : categories)
+                                        for (ParticipantCategoryImpl cat : categories)
                                         {
                                             ParticipantGroup[] groups = cat.getGroups();
                                             if (null != groups)

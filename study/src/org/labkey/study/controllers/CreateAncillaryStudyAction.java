@@ -42,11 +42,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.XmlBeansUtil;
-import org.labkey.api.writer.AbstractVirtualFile;
-import org.labkey.api.writer.Archive;
 import org.labkey.api.writer.MemoryVirtualFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudyFolderType;
@@ -59,7 +55,7 @@ import org.labkey.study.importer.QcStatesImporter;
 import org.labkey.study.importer.VisitImporter;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.EmphasisStudyDefinition;
-import org.labkey.study.model.ParticipantCategory;
+import org.labkey.study.model.ParticipantCategoryImpl;
 import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.SecurityType;
@@ -79,20 +75,10 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -107,7 +93,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
     private Container _dstContainer;
     private StudyImpl _sourceStudy;
     private Set<DataSetDefinition> _datasets = new HashSet<DataSetDefinition>();
-    private List<ParticipantCategory> _participantCategories = new ArrayList<ParticipantCategory>();
+    private List<ParticipantCategoryImpl> _participantCategories = new ArrayList<ParticipantCategoryImpl>();
     private boolean _destFolderCreated;
 
     public CreateAncillaryStudyAction()
@@ -147,7 +133,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
 
                 for (int rowId : form.getCategories())
                 {
-                    ParticipantCategory pc = ParticipantGroupManager.getInstance().getParticipantCategory(_sourceStudy.getContainer(), getViewContext().getUser(), rowId);
+                    ParticipantCategoryImpl pc = ParticipantGroupManager.getInstance().getParticipantCategory(_sourceStudy.getContainer(), getViewContext().getUser(), rowId);
                     if (pc != null)
                         _participantCategories.add(pc);
                 }
@@ -277,7 +263,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
         if (!_participantCategories.isEmpty())
         {
             // get the participant categories that were copied to the ancillary study
-            for (ParticipantCategory category : ParticipantGroupManager.getInstance().getParticipantCategories(_dstContainer, user))
+            for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(_dstContainer, user))
             {
                 participantGroups.add(category.getRowId());
             }
@@ -323,7 +309,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
     {
         User user = getViewContext().getUser();
 
-        List<ParticipantCategory> categoriesToCopy = new ArrayList<ParticipantCategory>();
+        List<ParticipantCategoryImpl> categoriesToCopy = new ArrayList<ParticipantCategoryImpl>();
         if (form.isCopyParticipantGroups())
             categoriesToCopy.addAll(_participantCategories);
 
@@ -390,7 +376,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
                 String delim = "";
 
                 groupInClause.append("(");
-                for (ParticipantCategory category : _participantCategories)
+                for (ParticipantCategoryImpl category : _participantCategories)
                 {
                     for (ParticipantGroup group : category.getGroups())
                     {

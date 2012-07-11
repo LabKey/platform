@@ -18,7 +18,7 @@ package org.labkey.study.writer;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.study.model.ParticipantCategory;
+import org.labkey.study.model.ParticipantCategoryImpl;
 import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
@@ -42,7 +42,7 @@ public class ParticipantGroupWriter implements InternalStudyWriter
     public static final String FILE_NAME = "participant_groups.xml";
     public static final String DATA_TYPE = "Participant Groups";
 
-    private List<ParticipantCategory> _categoriesToCopy = Collections.emptyList();
+    private List<ParticipantCategoryImpl> _categoriesToCopy = Collections.emptyList();
 
     @Override
     public String getSelectionText()
@@ -56,7 +56,7 @@ public class ParticipantGroupWriter implements InternalStudyWriter
         serialize(ctx.getUser(), ctx.getContainer(), vf);
     }
 
-    public void setCategoriesToCopy(List<ParticipantCategory> categoriesToCopy)
+    public void setCategoriesToCopy(List<ParticipantCategoryImpl> categoriesToCopy)
     {
         _categoriesToCopy = categoriesToCopy;
     }
@@ -66,14 +66,14 @@ public class ParticipantGroupWriter implements InternalStudyWriter
      */
     private void serialize(User user, Container container, VirtualFile vf) throws IOException
     {
-        ParticipantCategory[] categories = ParticipantGroupManager.getInstance().getParticipantCategories(container, user);
+        ParticipantCategoryImpl[] categories = ParticipantGroupManager.getInstance().getParticipantCategories(container, user);
 
         if (categories.length > 0)
         {
             ParticipantGroupsDocument doc = ParticipantGroupsDocument.Factory.newInstance();
             ParticipantGroupsType groups = doc.addNewParticipantGroups();
 
-            for (ParticipantCategory category : categories)
+            for (ParticipantCategoryImpl category : categories)
             {
                 if (_categoriesToCopy.isEmpty() || _categoriesToCopy.contains(category))
                 {

@@ -38,7 +38,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.CohortImpl;
-import org.labkey.study.model.ParticipantCategory;
+import org.labkey.study.model.ParticipantCategoryImpl;
 import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyManager;
@@ -153,7 +153,7 @@ public class ParticipantReport extends AbstractReport
             for (CohortImpl cohort : StudyManager.getInstance().getCohorts(container, user))
                 cohortMap.put(cohort.getLabel(), cohort);
 
-            for (ParticipantCategory category : ParticipantGroupManager.getInstance().getParticipantCategories(container, user))
+            for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(container, user))
             {
                 for (ParticipantGroup group : category.getGroups())
                     groupMap.put(group.getLabel(), group);

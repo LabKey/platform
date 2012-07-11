@@ -41,7 +41,7 @@
 <%@ page import="org.labkey.study.query.StudyPropertiesQueryView" %>
 <%@ page import="org.labkey.study.security.permissions.ManageRequestSettingsPermission" %>
 <%@ page import="org.labkey.study.model.ParticipantGroupManager" %>
-<%@ page import="org.labkey.study.model.ParticipantCategory" %>
+<%@ page import="org.labkey.study.model.ParticipantCategoryImpl" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.HashMap" %>
@@ -64,7 +64,7 @@
     String intervalLabel;
 
     String subjectNounSingle = StudyService.get().getSubjectNounSingular(getViewContext().getContainer());
-    ParticipantCategory[] categories = ParticipantGroupManager.getInstance().getParticipantCategories(c, user);
+    ParticipantCategoryImpl[] categories = ParticipantGroupManager.getInstance().getParticipantCategories(c, user);
 
     if (!study.isAllowReload())
         intervalLabel = "This study is set to not reload";

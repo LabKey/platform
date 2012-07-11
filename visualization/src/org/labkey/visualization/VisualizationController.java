@@ -72,6 +72,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.DataSetTable;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.Visit;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.PageFlowUtil;
@@ -1538,6 +1539,91 @@ public class VisualizationController extends SpringActionController
                 throw new IllegalStateException("Unable to find specified report");
 
             return response;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetGenericReportColumnsAction extends ApiAction<ColumnListForm>
+    {
+        @Override
+        public ApiResponse execute(ColumnListForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName());
+            List<String> columns = new ArrayList<String>();
+
+            if (schema != null)
+            {
+                TableInfo table = schema.getTable(form.getQueryName());
+                if (table != null)
+                {
+                    Study study = StudyService.get().getStudy(getContainer());
+
+                    if (study != null)
+                    {
+                        if (form.isIncludeCohort())
+                        {
+                            FieldKey cohort = FieldKey.fromParts(study.getSubjectColumnName(), "Cohort");
+                            columns.add(cohort.toString());
+                        }
+
+                        if (form.isIncludeParticipantCategory())
+                        {
+                            for (ParticipantCategory category : study.getParticipantCategories(getUser()))
+                            {
+                                FieldKey cohort = FieldKey.fromParts(study.getSubjectColumnName(), category.getLabel());
+                                columns.add(cohort.toString());
+                            }
+                        }
+                    }
+
+                    if (form.isIncludeDefault())
+                    {
+                        for (FieldKey fk : table.getDefaultVisibleColumns())
+                            columns.add(fk.toString());
+                    }
+                }
+            }
+            response.put("columns", columns);
+
+            return response;
+        }
+    }
+
+    public static class ColumnListForm extends ReportUtil.JsonReportForm
+    {
+        private boolean _includeDefault;
+        private boolean _includeCohort;
+        private boolean _includeParticipantCategory;
+
+        public boolean isIncludeDefault()
+        {
+            return _includeDefault;
+        }
+
+        public void setIncludeDefault(boolean includeDefault)
+        {
+            _includeDefault = includeDefault;
+        }
+
+        public boolean isIncludeCohort()
+        {
+            return _includeCohort;
+        }
+
+        public void setIncludeCohort(boolean includeCohort)
+        {
+            _includeCohort = includeCohort;
+        }
+
+        public boolean isIncludeParticipantCategory()
+        {
+            return _includeParticipantCategory;
+        }
+
+        public void setIncludeParticipantCategory(boolean includeParticipantCategory)
+        {
+            _includeParticipantCategory = includeParticipantCategory;
         }
     }
 

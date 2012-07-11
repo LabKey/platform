@@ -37,7 +37,7 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.CohortImpl;
-import org.labkey.study.model.ParticipantCategory;
+import org.labkey.study.model.ParticipantCategoryImpl;
 import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyImpl;
@@ -87,7 +87,7 @@ public class ParticipantGroupController extends BaseStudyController
 
             form.setContainer(getContainer().getId());
 
-            ParticipantCategory category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form, form.getParticipantIds(), form.getFilters(), form.getDescription());
+            ParticipantCategoryImpl category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form, form.getParticipantIds(), form.getFilters(), form.getDescription());
 
             resp.put("success", true);
             resp.put("category", category.toJSON());
@@ -99,7 +99,7 @@ public class ParticipantGroupController extends BaseStudyController
     /**
      * Bean used to create and update participant categories
      */
-    public static class ParticipantCategorySpecification extends ParticipantCategory
+    public static class ParticipantCategorySpecification extends ParticipantCategoryImpl
     {
         private String[] _participantIds = new String[0];
         private String _filters;
@@ -173,11 +173,11 @@ public class ParticipantGroupController extends BaseStudyController
             }
 
             SimpleFilter filter = new SimpleFilter("RowId", form.getRowId());
-            ParticipantCategory[] defs = ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser(), filter);
+            ParticipantCategoryImpl[] defs = ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser(), filter);
             if (defs.length == 1)
             {
                 form.copySpecialFields(defs[0]);
-                ParticipantCategory category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form, form.getParticipantIds(), form.getFilters(), form.getDescription());
+                ParticipantCategoryImpl category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form, form.getParticipantIds(), form.getFilters(), form.getDescription());
 
                 resp.put("success", true);
                 resp.put("category", category.toJSON());
@@ -203,13 +203,13 @@ public class ParticipantGroupController extends BaseStudyController
             }
 
             SimpleFilter filter = new SimpleFilter("RowId", form.getRowId());
-            ParticipantCategory[] defs = ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser(), filter);
+            ParticipantCategoryImpl[] defs = ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser(), filter);
             if (defs.length == 1)
             {
-                ParticipantCategory def = defs[0];
+                ParticipantCategoryImpl def = defs[0];
                 form.copySpecialFields(def);
 
-                ParticipantCategory category;
+                ParticipantCategoryImpl category;
 
                 if (modification == Modification.ADD)
                     category = ParticipantGroupManager.getInstance().addCategoryParticipants(getContainer(), getUser(), def, form.getParticipantIds());
@@ -249,14 +249,14 @@ public class ParticipantGroupController extends BaseStudyController
 
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class GetParticipantCategory extends ApiAction<ParticipantCategory>
+    public class GetParticipantCategory extends ApiAction<ParticipantCategoryImpl>
     {
         @Override
-        public ApiResponse execute(ParticipantCategory form, BindException errors) throws Exception
+        public ApiResponse execute(ParticipantCategoryImpl form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
-            ParticipantCategory category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), form.getLabel());
+            ParticipantCategoryImpl category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), form.getLabel());
 
             resp.put("success", true);
             resp.put("category", category.toJSON());
@@ -272,7 +272,7 @@ public class ParticipantGroupController extends BaseStudyController
         public ApiResponse execute(GetParticipantCategoriesForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
-            ParticipantCategory[] categories;
+            ParticipantCategoryImpl[] categories;
             if (form.getCategoryType() != null && form.getCategoryType().equals("manual"))
             {
                 SimpleFilter filter = new SimpleFilter();
@@ -286,7 +286,7 @@ public class ParticipantGroupController extends BaseStudyController
 
             JSONArray defs = new JSONArray();
 
-            for (ParticipantCategory pc : categories)
+            for (ParticipantCategoryImpl pc : categories)
             {
                 defs.put(pc.toJSON());
             }
@@ -313,14 +313,14 @@ public class ParticipantGroupController extends BaseStudyController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class DeleteParticipantCategory extends MutatingApiAction<ParticipantCategory>
+    public class DeleteParticipantCategory extends MutatingApiAction<ParticipantCategoryImpl>
     {
         @Override
-        public ApiResponse execute(ParticipantCategory form, BindException errors) throws Exception
+        public ApiResponse execute(ParticipantCategoryImpl form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
-            ParticipantCategory category = form;
+            ParticipantCategoryImpl category = form;
 
             if (form.isNew())
             {
@@ -328,14 +328,14 @@ public class ParticipantGroupController extends BaseStudyController
                 SimpleFilter filter = new SimpleFilter("Container", getContainer());
                 filter.addCondition("Label", form.getLabel());
 
-                ParticipantCategory[] defs = ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser(), filter);
+                ParticipantCategoryImpl[] defs = ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser(), filter);
                 if (defs.length == 1)
                     category = defs[0];
             }
             else
             {
                 SimpleFilter filter = new SimpleFilter("RowId", form.getRowId());
-                ParticipantCategory[] defs = ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser(), filter);
+                ParticipantCategoryImpl[] defs = ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser(), filter);
                 if (defs.length == 1)
                     category = defs[0];
             }
@@ -451,7 +451,7 @@ public class ParticipantGroupController extends BaseStudyController
                 switch(groupType)
                 {
                     case participantGroup:
-                        for (ParticipantCategory category : ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser()))
+                        for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser()))
                         {
                             JSONObject jsonCategory = category.toJSON();
 
@@ -698,7 +698,7 @@ public class ParticipantGroupController extends BaseStudyController
 
             form.setContainer(getContainer().getId());
 
-            ParticipantCategory category;
+            ParticipantCategoryImpl category;
             ParticipantGroup group;
 
             if (form.getCategoryId() == 0)

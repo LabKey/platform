@@ -34,7 +34,36 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             if (this.isConfigurationChanged())
             {
                 this.viewPanel.getEl().mask('loading data...');
-                LABKEY.Query.selectRows(this.getQueryConfig());
+
+                if (!this.initialColumnList)
+                {
+                    params = {
+                        schemaName  : this.schemaName,
+                        queryName   : this.queryName,
+                        includeCohort : true,
+                        includeParticipantCategory : true,
+                        includeDefault : this.savedColumns ? false : true
+                    };
+                    Ext4.Ajax.request({
+                        url     : LABKEY.ActionURL.buildURL('visualization', 'getGenericReportColumns.api'),
+                        method  : 'GET',
+                        params  : params,
+                        success : function(response){
+
+                            var o = Ext4.decode(response.responseText);
+                            if (this.savedColumns)
+                                this.initialColumnList = o.columns.concat(this.savedColumns);
+                            else
+                                this.initialColumnList = o.columns;
+                            LABKEY.Query.selectRows(this.getQueryConfig());
+                        },
+                        failure : this.onFailure,
+                        scope   : this
+                    });
+
+                }
+                else
+                    LABKEY.Query.selectRows(this.getQueryConfig());
             }
 
         }, this);
@@ -637,17 +666,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         var dataRegion = LABKEY.DataRegions[this.panelDataRegionName];
         var config = {
             schemaName  : this.schemaName,
-            queryName   : this.queryName
+            queryName   : this.queryName,
+            maxRows     : 5000
+            //requiredVersion : 12.1
         };
 
-        if (this.savedColumns)
-            config.columns = this.savedColumns;
-        else if (this.chartData)
-        {
-            config.columns = [];
-            for (var i=0; i < this.chartData.metaData.fields.length; i++)
-                config.columns.push(this.chartData.metaData.fields[i].name);
-        }
+        if (this.initialColumnList)
+            config.columns = this.initialColumnList;
 
         if(!serialize){
             config.success = this.onSelectRowsSuccess;

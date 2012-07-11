@@ -31,7 +31,7 @@
 <%@ page import="java.sql.ResultSet" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.BitSet" %>
-<%@ page import="org.labkey.study.model.ParticipantCategory" %>
+<%@ page import="org.labkey.study.model.ParticipantCategoryImpl" %>
 <%@ page import="org.labkey.study.model.ParticipantGroupManager" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.study.model.ParticipantGroup" %>
@@ -194,13 +194,13 @@ li.ptid a.unhighlight
         // groups/categories
         final HashMap<Integer,Integer> groupMap = new HashMap<Integer,Integer>();
         ParticipantGroupManager m = ParticipantGroupManager.getInstance();
-        ParticipantCategory[] categories = m.getParticipantCategories(container, user);
+        ParticipantCategoryImpl[] categories = m.getParticipantCategories(container, user);
         boolean hasGroups = categories.length > 0;
         if (hasGroups)
         {
             for (int isShared=1 ; isShared>=0 ; isShared--)
             {
-                for (ParticipantCategory cat : categories)
+                for (ParticipantCategoryImpl cat : categories)
                 {
                     if ((isShared==1) == cat.isShared())
                     {

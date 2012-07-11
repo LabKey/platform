@@ -25,7 +25,7 @@ import org.labkey.api.security.User;
  */
 public interface ParticipantCategoryListener
 {
-    void categoryDeleted(User user, ParticipantCategory category) throws Exception;
-    void categoryCreated(User user, ParticipantCategory category) throws Exception;
-    void categoryUpdated(User user, ParticipantCategory category) throws Exception;
+    void categoryDeleted(User user, ParticipantCategoryImpl category) throws Exception;
+    void categoryCreated(User user, ParticipantCategoryImpl category) throws Exception;
+    void categoryUpdated(User user, ParticipantCategoryImpl category) throws Exception;
 }
