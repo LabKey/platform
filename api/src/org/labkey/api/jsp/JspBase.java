@@ -82,6 +82,23 @@ abstract public class JspBase extends JspContext implements HasViewContext
     }
 
     /**
+     * No-op encoding
+     * Indicate that you explicit want to include a string in the page WITHOUT encoding
+     */
+    public String text(String s)
+    {
+        return null==s ? "" : s;
+    }
+
+
+    public String text(HString s)
+    {
+        // should this assert !s.isTainted()?
+        return null==s ? "" : s.getSource();
+    }
+
+
+    /**
      * Html escape an object.toString().
      * The name comes from Embedded Ruby.
      */
