@@ -43,6 +43,8 @@ public interface Study extends StudyEntity
 
     Cohort[] getCohorts(User user);
 
+    ParticipantCategory[] getParticipantCategories(User user);
+
     boolean isAdvancedCohorts();
 
     TimepointType getTimepointType();
