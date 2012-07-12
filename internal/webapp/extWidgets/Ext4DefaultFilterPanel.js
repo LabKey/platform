@@ -331,13 +331,13 @@ Ext4.define('LABKEY.ext4.DefaultFilterPanel', {
     {
         var model = Ext4.ModelManager.getModel('LABKEY.ext4.FilterTypeOption');
         if (null == model)
-            Ext.define('LABKEY.ext4.FilterTypeOption', {
+            Ext4.define('LABKEY.ext4.FilterTypeOption', {
                 extend : 'Ext.data.Model',
                 fields : ['text', 'value', {name: 'isMulti', type: Ext4.data.Types.BOOL}, 'mappedType', {name: 'isOperatorOnly', type: Ext4.data.Types.BOOL}]
             });
         
         var options = [];
-        Ext.each(LABKEY.Filter.getFilterTypesForType(mappedType, mvEnabled), function (filterType) {
+        Ext4.each(LABKEY.Filter.getFilterTypesForType(mappedType, mvEnabled), function (filterType) {
             options.push({text:filterType.getDisplayText(), value: filterType.getURLSuffix(), mappedType: mappedType, isMulti : filterType.isMultiValued(), isOperatorOnly : !filterType.isDataValueRequired()});
         });
         if (storeNum > 0)
