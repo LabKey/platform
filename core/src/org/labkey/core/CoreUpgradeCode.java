@@ -17,10 +17,16 @@ package org.labkey.core;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.FileSqlScriptProvider;
+import org.labkey.api.data.SqlScriptManager;
+import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 
 import java.sql.SQLException;
@@ -65,5 +71,28 @@ public class CoreUpgradeCode implements UpgradeCode
     public void handleUnknownModules(ModuleContext context)
     {
         ModuleLoader.getInstance().handleUnkownModules();
+    }
+
+    // invoked by core-12.10-12.20.sql
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void installGroupConcat(ModuleContext context)
+    {
+        SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
+
+        // Run the install script only if dialect supports GROUP_CONCAT
+        if (dialect.isSqlServer() && dialect.supportsGroupConcat())
+        {
+            FileSqlScriptProvider provider = new FileSqlScriptProvider((DefaultModule)ModuleLoader.getInstance().getCoreModule());
+            SqlScriptRunner.SqlScript script = new FileSqlScriptProvider.FileSqlScript(provider, "group_concat_install.sql", "core");
+
+            try
+            {
+                SqlScriptManager.runScript(context.getUpgradeUser(), script, context);
+            }
+            catch (Exception e)
+            {
+                ExceptionUtil.logExceptionToMothership(null, e);
+            }
+        }
     }
 }

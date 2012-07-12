@@ -435,8 +435,10 @@ core/resources/schemas/dbscripts/sqlserver/core-11.31-11.32.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-11.32-11.33.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-12.10-12.11.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-12.12-12.13.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-12.13-12.14.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-drop.sql -text
+core/resources/schemas/dbscripts/sqlserver/group_concat_install.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/bootstrap.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/core-0.00-1.21.sql -text
 core/resources/schemas/dbscripts/sqlserver/obsolete/core-0.00-1.30.sql -text
