@@ -40,6 +40,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -467,6 +468,20 @@ public class QueryView extends WebPartView<Object>
                 }
                 ActionURL expandedURL = getViewContext().cloneActionURL();
                 addParamsByPrefix(ret, expandedURL, getDataRegionName() + ".", DATAREGIONNAME_DEFAULT + ".");
+                // Copy the other parameters that aren't scoped to the data region as well. Some exports may use them.
+                // For example, see issue 15451
+                for (Map.Entry<String, String[]> entry : expandedURL.getParameterMap().entrySet())
+                {
+                    String name = entry.getKey();
+                    // schemaName isn't prefixed with the data region name
+                    if (!name.equals("schemaName") && !name.startsWith(getDataRegionName() + ".") && !name.startsWith(DATAREGIONNAME_DEFAULT + "."))
+                    {
+                        for (String value : entry.getValue())
+                        {
+                            ret.addParameter(entry.getKey(), value);
+                        }
+                    }
+                }
                 ret.deleteParameter(DATAREGIONNAME_DEFAULT + ".maxRows");
                 ret.replaceParameter(DATAREGIONNAME_DEFAULT + ".showRows", ShowRows.ALL.toString());
                 break;
