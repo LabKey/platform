@@ -105,7 +105,7 @@ public class SqlScriptManager
         Table.update(user, _core.getTableInfoSqlScripts(), new HashMap(), pk);  // Update user and modified date
     }
 
-    static void runScript(@Nullable User user, SqlScript script, ModuleContext moduleContext) throws SqlScriptException, SQLException
+    public static void runScript(@Nullable User user, SqlScript script, ModuleContext moduleContext) throws SqlScriptException, SQLException
     {
         DbSchema schema = DbSchema.get(script.getSchemaName());
         SqlDialect dialect = schema.getSqlDialect();
