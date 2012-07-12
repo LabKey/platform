@@ -2064,7 +2064,7 @@ public class SecurityManager
     public static boolean isLdapEmail(ValidEmail email)
     {
         String ldapDomain = AuthenticationManager.getLdapDomain();
-        return ldapDomain != null && email.getEmailAddress().endsWith("@" + ldapDomain.toLowerCase());
+        return AuthenticationManager.ALL_DOMAINS.equals(ldapDomain) || ldapDomain != null && email.getEmailAddress().endsWith("@" + ldapDomain.toLowerCase());
     }
 
 

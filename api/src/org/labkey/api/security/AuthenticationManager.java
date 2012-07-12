@@ -62,6 +62,8 @@ import java.util.regex.Pattern;
  */
 public class AuthenticationManager
 {
+    public static final String ALL_DOMAINS = "*";
+
     private static final Logger _log = Logger.getLogger(AuthenticationManager.class);
     // All registered authentication providers (DbLogin, LDAP, SSO, etc.)
     private static final List<AuthenticationProvider> _allProviders = new CopyOnWriteArrayList<AuthenticationProvider>();
