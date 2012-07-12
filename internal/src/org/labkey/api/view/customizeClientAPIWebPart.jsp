@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.ClientAPIWebPartFactory" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -23,6 +22,7 @@
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
@@ -66,7 +66,7 @@
             <%=generateSubmitButton("Save & Close")%>
             <%=generateButton("Preview", "", "preview()")%>
             <%=generateButton("Reset", "", "reset()")%>
-            <%=generateButton("Cancel", "begin.view")%>
+            <%=generateButton("Cancel", ctx.getContainer().getStartURL(ctx.getUser()))%>
         </td>
     </tr>
 </table>
