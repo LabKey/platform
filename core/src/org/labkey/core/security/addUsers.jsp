@@ -92,7 +92,7 @@
         <tr><td colspan="3">
             <input type=checkbox name="sendMail" id="sendMail" checked><label for="sendmail">Send notification emails to all new<%
             String LDAPDomain = AuthenticationManager.getLdapDomain();
-            if (LDAPDomain != null && LDAPDomain.length() > 0)
+            if (LDAPDomain != null && LDAPDomain.length() > 0 && !AuthenticationManager.ALL_DOMAINS.equals(LDAPDomain))
             {
                 %>, non-<%=LDAPDomain%><%
             }

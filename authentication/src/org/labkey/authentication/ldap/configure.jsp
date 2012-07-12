@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.authentication.ldap.LdapController" %>
 <%@ page import="org.labkey.authentication.ldap.LdapController.Config" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Config> me = (JspView<Config>)HttpView.currentView();
@@ -29,11 +30,11 @@
 <form action="configure.post" method="post"><labkey:csrf/>
 <table>
     <tr>
-        <td class="labkey-form-label">LDAP servers</td>
+        <td class="labkey-form-label">LDAP servers<%= PageFlowUtil.helpPopup("LDAP servers", "Specifies the addresses of your organization's LDAP server or servers. You can provide a list of multiple servers separated by semicolons. The general form for the LDAP server address is ldap://servername.domain.org:389")%></td>
         <td><input type="text" name="servers" size="50" value="<%=h(bean.getServers()) %>"></td>
     </tr>
     <tr>
-        <td class="labkey-form-label">LDAP domain</td>
+        <td class="labkey-form-label">LDAP domain<%= PageFlowUtil.helpPopup("LDAP domain", "For all users signing in with an email address from this domain, LabKey will attempt authentication against the LDAP server. Use '*' to attempt LDAP authentication on all email addresses entered, regardless of domain..")%></td>
         <td><input type="text" name="domain" size="50" value="<%=h(bean.getDomain()) %>"></td>
     </tr>
     <tr>

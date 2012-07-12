@@ -30,6 +30,7 @@
 <%@ page import="org.labkey.api.security.PrincipalType" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
+<%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ page import="org.labkey.core.security.SecurityApiActions" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
@@ -253,7 +254,7 @@ else
          onKeyUp="return handleChange(this, event, 'completeMember.view?groupId=<%= bean.group.getUserId() %>&prefix=');">
 </textarea><br>
 <input type="checkbox" name="sendEmail" value="true" checked>Send notification emails to all new<%
-if (null != bean.ldapDomain)
+if (null != bean.ldapDomain && bean.ldapDomain.length() != 0 && !org.labkey.api.security.AuthenticationManager.ALL_DOMAINS.equals(bean.ldapDomain))
 {
     %>, non-<%= bean.ldapDomain %><%
 }
