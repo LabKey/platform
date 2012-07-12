@@ -42,7 +42,7 @@
         <tr>
             <td colspan=2 align="right">
                 <%=generateSubmitButton("Submit")%>
-                <%=generateButton("Cancel", buildURL(ExperimentController.BeginAction.class))%>
+                <%=generateButton("Cancel", ExperimentController.BeginAction.class)%>
             </td>
         </tr>
     </table>

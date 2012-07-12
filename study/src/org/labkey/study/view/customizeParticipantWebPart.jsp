@@ -96,7 +96,7 @@
     <tr>
         <td>
             <%=generateSubmitButton("Submit")%>
-            <%=generateButton("Cancel", "begin.view")%>
+            <%=generateButton("Cancel", ctx.getContainer().getStartURL(ctx.getUser()))%>
         </td>
     </tr>
 </table>

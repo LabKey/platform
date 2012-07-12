@@ -30,6 +30,7 @@
 <%@ page import="org.labkey.api.security.PrincipalType" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
+<%@ page import="org.labkey.core.security.SecurityApiActions" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -130,7 +131,7 @@ if (!bean.group.isDevelopers())
 {
 %>
     <br/>
-    <%if (!bean.group.isSystemGroup()){%><%=generateButton("Rename Group", "renameGroup.view?id=" + bean.group.getUserId())%><%}%>
+    <%if (!bean.group.isSystemGroup()){%><%=generateButton("Rename Group", buildURL(SecurityApiActions.RenameGroupAction.class,"id=" + bean.group.getUserId()))%><%}%>
     <%=generateButton("View Permissions", urlProvider(SecurityUrls.class).getGroupPermissionURL(c, bean.group.getUserId()))%>
 <%
 }

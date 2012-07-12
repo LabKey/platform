@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     JspView<String> me = (JspView<String>) HttpView.currentView();
@@ -29,7 +30,7 @@
     <tr><td>You must configure a valid pipeline root before <%=description%>.</td></tr>
     <tr>
         <td>
-            <%=generateButton("Pipeline Setup", urlProvider(PipelineUrls.class).urlSetup(c))%>&nbsp;<%=generateButton("Cancel", "manageStudy.view")%>
+            <%=generateButton("Pipeline Setup", urlProvider(PipelineUrls.class).urlSetup(c))%>&nbsp;<%=generateButton("Cancel", StudyController.ManageStudyAction.class)%>
         </td>
     </tr>
 </table>

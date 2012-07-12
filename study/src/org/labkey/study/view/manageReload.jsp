@@ -75,7 +75,7 @@
                                  PageFlowUtil.generateButton("Attempt Reload Now", "javascript:void(0);", null, "id=\"reloadNow\"")%></td>
         </tr>
         <tr>
-            <td><%=generateSubmitButton("Update")%>&nbsp;<%=generateButton("Cancel", "manageStudy.view")%></td>
+            <td><%=generateSubmitButton("Update")%>&nbsp;<%=generateButton("Cancel", StudyController.ManageStudyAction.class)%></td>
         </tr>
     </table>
 </form>

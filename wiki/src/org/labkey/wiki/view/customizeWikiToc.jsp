@@ -21,12 +21,14 @@
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.wiki.WikiController" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
     Portal.WebPart webPart = me.getModelBean();
+    ViewContext ctx = me.getViewContext();
+    Container currentContainer = ctx.getContainer();
     String title = webPart.getPropertyMap().get("title");
-    Container currentContainer = getViewContext().getContainer();
     List<Container> containerList = WikiController.populateWikiContainerList(getViewContext());
 %>
 <% // Post to current action; URL includes pageId and index (or webPartId) parameters %>
@@ -65,7 +67,7 @@
 <tr>
     <td colspan=2 align="right">
         <%=generateSubmitButton("Submit")%>
-        <%=generateButton("Cancel", "begin.view")%>
+        <%=generateButton("Cancel", ctx.getContainer().getStartURL(ctx.getUser()))%>
     </td>
 </tr>
 </table>

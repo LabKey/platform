@@ -78,7 +78,7 @@ field in the uploaded data and that subject's StartDate.
         </tr>
         <tr>
             <td>&nbsp;</td>
-            <td><%= this.generateSubmitButton("Save")%>&nbsp;<%= this.generateButton("Cancel", "manageVisits.view")%></td>
+            <td><%= this.generateSubmitButton("Save")%>&nbsp;<%= this.generateButton("Cancel", StudyController.ManageVisitsAction.class)%></td>
         </tr>
     </table>
 </form>

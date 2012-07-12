@@ -20,9 +20,11 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
+    ViewContext ctx = me.getViewContext();
     Portal.WebPart webPart = me.getModelBean();
     String title = webPart.getPropertyMap().get("title");
     HString singularName = IssueManager.getEntryTypeNames(me.getViewContext().getContainer()).singularName;
@@ -41,7 +43,7 @@
   <tr>
     <td colspan=2 align="right">
       <%=generateSubmitButton("Submit")%>
-      <%=generateButton("Cancel", "begin.view")%>
+      <%=generateButton("Cancel", ctx.getContainer().getStartURL(ctx.getUser()))%>
     </td>
   </tr>
 </table>

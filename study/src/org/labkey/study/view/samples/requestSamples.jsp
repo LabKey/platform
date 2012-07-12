@@ -184,7 +184,7 @@ function setDefaults()
                 %>
                 <%= buttonImg((shoppingCart ? "Create" : "Submit") + " and View Details", 
                         "document.CreateSampleRequest." + SpecimenController.CreateSampleRequestForm.PARAMS.ignoreReturnUrl.name() + ".value='true'; return true;")%>
-                <%= hasReturnURL ? generateButton("Cancel", bean.getReturnUrl()) : generateButton("Cancel", "viewRequests.view")%>
+                <%= hasReturnURL ? generateButton("Cancel", bean.getReturnUrl()) : generateButton("Cancel", SpecimenController.ViewRequestsAction.class)%>
             </td>
         </tr>
 

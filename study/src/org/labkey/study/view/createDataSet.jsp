@@ -51,7 +51,7 @@
         <tr>
             <td>&nbsp;</td>
             <td>
-                <%= this.generateSubmitButton("Save")%>&nbsp;<%= this.generateButton("Cancel", "manageTypes.view")%>
+                <%= this.generateSubmitButton("Save")%>&nbsp;<%= this.generateButton("Cancel", StudyController.ManageTypesAction.class)%>
             </td>
         </tr>
     </table>

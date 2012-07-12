@@ -97,7 +97,7 @@ Each file set is an additional directory that stores files accessible to users o
             <td><%=h(attDir.getFileSystemDirectory().getPath())%> <%=attDir.getFileSystemDirectory().exists() ? "" : "Directory does not exist. An administrator must create it."%></td>
         </tr>
         <tr>
-            <td colspan=2><%=generateButton("Show Files", "begin.view?fileSetName=" + h(attDir.getLabel()))%> <%=generateSubmitButton("Remove")%> (Files will not be deleted)</td>
+            <td colspan=2><%=generateButton("Show Files", buildURL(FileContentController.BeginAction.class, "fileSetName=" + h(attDir.getLabel())))%> <%=generateSubmitButton("Remove")%> (Files will not be deleted)</td>
         </tr>
     </table>
         </form>

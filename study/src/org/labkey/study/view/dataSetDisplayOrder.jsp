@@ -121,6 +121,6 @@ function orderModule(down)
     </table>
     <input type="hidden" name="order" value="">
     <%= generateSubmitButton("Save") %>
-    <%= generateButton("Cancel", "manageTypes.view") %>
+    <%= generateButton("Cancel", StudyController.ManageTypesAction.class) %>
     <%= generateButton("Reset Order", "#", "if (confirm('Resetting will order the datasets by category, and then by their ID numbers within each category.  This cannot be undone.  Continue?')) return submitReset(); else return false;") %>
 </form>

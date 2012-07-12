@@ -78,7 +78,7 @@ is uploaded along with the data. This form allows you to define a range of seque
         </tr>
         <tr>
             <td>&nbsp;</td>
-            <td><%= this.generateSubmitButton("Save")%>&nbsp;<%= this.generateButton("Cancel", "manageVisits.view")%></td>
+            <td><%= this.generateSubmitButton("Save")%>&nbsp;<%= this.generateButton("Cancel", StudyController.ManageVisitsAction.class)%></td>
         </tr>
     </table>
 </form>

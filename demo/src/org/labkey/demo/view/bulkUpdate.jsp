@@ -23,6 +23,7 @@
 <%@ page import="java.util.HashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.demo.DemoController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<List<Person>> me = (JspView<List<Person>>) HttpView.currentView();
@@ -76,7 +77,7 @@
                 }
             %>
         </table>
-        <%= generateSubmitButton("Save") %>&nbsp;<%= generateButton("Cancel", "begin.view") %>
+        <%= generateSubmitButton("Save") %>&nbsp;<%= generateButton("Cancel", DemoController.BeginAction.class) %>
     </form>
 <%
     }
@@ -84,7 +85,7 @@
     {
 %>
     <span>There is no data to update.</span><br>
-    <%= generateButton("Grid View", "begin.view") %>
+    <%= generateButton("Grid View", DemoController.BeginAction.class) %>
 <%
     }
 %>

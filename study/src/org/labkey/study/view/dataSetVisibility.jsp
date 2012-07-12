@@ -40,7 +40,7 @@
         createURL.addParameter("autoDatasetId", "true");
 %>
     No datasets have been created in this study.<br><br>
-    <%= generateButton("Create New Dataset", createURL) %>&nbsp;<%= generateButton("Cancel", "manageTypes.view")%>
+    <%= generateButton("Create New Dataset", createURL) %>&nbsp;<%= generateButton("Cancel", StudyController.ManageTypesAction.class)%>
 <%
     }
     else
@@ -121,7 +121,7 @@
         }
     %>
     </table>
-    <%= generateSubmitButton("Save") %>&nbsp;<%= generateButton("Cancel", "manageTypes.view")%>
+    <%= generateSubmitButton("Save") %>&nbsp;<%= generateButton("Cancel", StudyController.ManageTypesAction.class)%>
 </form>
 <%
     }

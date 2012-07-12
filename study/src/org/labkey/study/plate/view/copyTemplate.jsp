@@ -38,7 +38,7 @@
             <form action="<%=h(buildURL(PlateController.HandleCopyAction.class))%>" method="POST">
                 <input type="hidden" name="destination" value="<%= h(bean.getSelectedDestination()) %>">
                 <input type="hidden" name="templateName" value="<%= h(bean.getTemplateName()) %>">
-                <%= generateButton("Cancel", "plateTemplateList.view")%>
+                <%= generateButton("Cancel", PlateController.PlateTemplateListAction.class)%>
                 <%= buttonImg("Copy", bean.getSelectedDestination() != null ? "" : "alert('Please select a destination folder.'); return false;") %>
             </form>
         </td>

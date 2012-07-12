@@ -104,5 +104,5 @@ function orderModule(down)
         </tr>
     </table>
     <input type="hidden" name="order" value="">
-    <%= generateSubmitButton("Save") %>&nbsp;<%= generateButton("Cancel", "manageActors.view") %>
+    <%= generateSubmitButton("Save") %>&nbsp;<%= generateButton("Cancel", SpecimenController.ManageActorsAction.class) %>
 </form>

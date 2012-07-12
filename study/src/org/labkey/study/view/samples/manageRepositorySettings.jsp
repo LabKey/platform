@@ -35,6 +35,6 @@
     </div>
     <br/>
     <div>
-        <%= generateSubmitButton("Submit")%>&nbsp;<%= generateButton("Back", "manageRepositorySettings.view", "window.history.back();return false;")%>
+        <%= generateSubmitButton("Submit")%>&nbsp;<%= generateButton("Back", buildURL(SpecimenController.ManageRepositorySettingsAction.class), "window.history.back();return false;")%>
     </div>
 </form>

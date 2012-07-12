@@ -94,5 +94,5 @@
         }
     %>
     </table>
-    <%= generateSubmitButton("Save") %>&nbsp;<%= generateButton("Cancel", "manageVisits.view")%>
+    <%= generateSubmitButton("Save") %>&nbsp;<%= generateButton("Cancel", StudyController.ManageVisitsAction.class)%>
 </form>
