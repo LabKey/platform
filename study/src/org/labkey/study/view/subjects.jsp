@@ -405,6 +405,7 @@ li.ptid a.unhighlight
             overCls   : 'iScroll',
             layout    : 'fit',
             bodyStyle : 'padding: 8px',
+            normalWrap : true,
             listeners : {
                 itemmouseenter : function(v,r,item,idx)
                 {

@@ -20,6 +20,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
 
         Ext4.applyIf(config, {
             allowAll  : true,
+            normalWrap : false,
             cls       : 'participant-filter-panel',
             border    : false, frame : false,
             bodyStyle : 'padding: 5px;',
@@ -198,10 +199,12 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
             });
 
             this.groupSectionCfg = [{
+                normalWrap  : this.normalWrap,
                 store       : Ext4.create('Ext.data.Store', cohortConfig),
                 selection   : this.getInitialSelection('cohort'),
                 description : '<b class="filter-description">Cohorts</b>'
             },{
+                normalWrap  : this.normalWrap,
                 store       : Ext4.create('Ext.data.Store', groupConfig),
                 selection   : this.getInitialSelection('participantGroup'),
                 description : '<b class="filter-description">Groups</b>'

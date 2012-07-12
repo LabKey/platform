@@ -16,6 +16,7 @@ Ext4.ns('LABKEY.ext4.filter');
  * @cfg fn A filter function that will be applied to the Ext store
  * @cfg labelField The name of the store field used to render the label for each item.  Defaults to 'label'
  * @cfg allowAll If true, a checkbox will be added to toggle selection across all items
+ * @cfg normalWrap if true, wrap the text of the grid cells normally (i.e. removing white-space:nowrap)
  */
 Ext4.define('LABKEY.ext4.filter.SelectList', {
 
@@ -238,7 +239,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
             flex      : 1,
             dataIndex : this.labelField,
             tdCls     : 'x4-label-column-cell',
-            tpl       : '{'+this.labelField+':htmlEncode}',
+            tpl       : '<div' + (this.normalWrap ? ' class="normalwrap-gridcell"' : '') + '>{'+this.labelField+':htmlEncode}</div>',
             scope     : this
         },{
             dataIndex : 'type',

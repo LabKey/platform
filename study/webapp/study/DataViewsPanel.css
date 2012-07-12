@@ -21,6 +21,10 @@
     border: 0 none;
 }
 
+.normalwrap-gridcell {
+  white-space: normal !important;
+}
+
 /* Specific to Data Views Panel */
 /* Border Layout */
 .data-views-container .x4-reset .x4-border-layout-ct {
