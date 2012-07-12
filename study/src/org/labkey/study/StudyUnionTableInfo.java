@@ -102,7 +102,10 @@ public class StudyUnionTableInfo extends VirtualTable
             {
                 if ("_visitdate".equalsIgnoreCase(column))
                     continue;
-                sqlf.append(", ").append(ti.getColumn(column).getValueSql("D"));
+                ColumnInfo ci = ti.getColumn(column);
+                if (null == ci)
+                    throw new RuntimeException("Schema consistency problem, column not found: " + def.getName() + "." + column);
+                sqlf.append(", ").append(ci.getValueSql("D"));
             }
 
             // Add all of the properties that are common to all datasets
