@@ -302,7 +302,9 @@ public class DatasetWriter implements InternalStudyWriter
                     outColumns.add(in);
                     ColumnInfo displayField = in.getDisplayField();
                     // For assay datasets only, include both the display value and raw value for FKs if they differ
-                    if (def.isAssayData() && displayField != null && displayField != in)
+                    // Don't do this for the Participant and SequenceNum columns, since we know that their lookup targets
+                    // will be available. See issue 15141
+                    if (def.isAssayData() && displayField != null && displayField != in && !ptidURI.equals(in.getPropertyURI()) && !sequenceURI.equals(in.getPropertyURI()))
                     {
                         boolean foundMatch = false;
                         for (ColumnInfo existingColumns : inColumns)
