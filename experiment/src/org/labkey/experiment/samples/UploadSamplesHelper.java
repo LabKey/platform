@@ -108,6 +108,11 @@ public class UploadSamplesHelper
             if (source == null && !_form.isCreateNewSampleSet())
                 throw new ExperimentException("Can't create new Sample Set '" + _form.getName() + "'");
 
+            if (_form.isCreateNewSampleSet() && _form.getName().length() > ExperimentServiceImpl.get().getTinfoMaterialSource().getColumn("Name").getScale())
+            {
+                throw new ExperimentException("Sample set names are limited to " + ExperimentServiceImpl.get().getTinfoMaterialSource().getColumn("Name").getScale() + " characters");
+            }
+
             ExperimentService.get().getSchema().getScope().ensureTransaction();
 
             ColumnDescriptor[] columns = loader.getColumns();
@@ -287,11 +292,6 @@ public class UploadSamplesHelper
                         }
                     }
                 }
-            }
-
-            if (_form.getName().length() > ExperimentServiceImpl.get().getTinfoMaterialSource().getColumn("Name").getScale())
-            {
-                throw new ExperimentException("Sample set names are limited to " + ExperimentServiceImpl.get().getTinfoMaterialSource().getColumn("Name").getScale() + " characters");
             }
 
             Set<String> reusedMaterialLSIDs = new HashSet<String>();
