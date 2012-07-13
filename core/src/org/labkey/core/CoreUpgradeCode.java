@@ -29,6 +29,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 
 /**
@@ -77,22 +78,24 @@ public class CoreUpgradeCode implements UpgradeCode
     @SuppressWarnings({"UnusedDeclaration"})
     public void installGroupConcat(ModuleContext context)
     {
-        SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
-
-        // Run the install script only if dialect supports GROUP_CONCAT
-        if (dialect.isSqlServer() && dialect.supportsGroupConcat())
+        try
         {
-            FileSqlScriptProvider provider = new FileSqlScriptProvider((DefaultModule)ModuleLoader.getInstance().getCoreModule());
-            SqlScriptRunner.SqlScript script = new FileSqlScriptProvider.FileSqlScript(provider, "group_concat_install.sql", "core");
+            SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
 
-            try
+            // Run the install script only if dialect supports GROUP_CONCAT
+            if (dialect.isSqlServer() && dialect.supportsGroupConcat())
             {
-                SqlScriptManager.runScript(context.getUpgradeUser(), script, context);
+                FileSqlScriptProvider provider = new FileSqlScriptProvider((DefaultModule)ModuleLoader.getInstance().getCoreModule());
+                SqlScriptRunner.SqlScript script = new FileSqlScriptProvider.FileSqlScript(provider, "group_concat_install.sql", "core");
+
+                Connection conn = CoreSchema.getInstance().getSchema().getScope().getUnpooledConnection();
+                SqlScriptManager.runScript(context.getUpgradeUser(), script, context, conn);
+                conn.close();
             }
-            catch (Exception e)
-            {
-                ExceptionUtil.logExceptionToMothership(null, e);
-            }
+        }
+        catch (Throwable t)
+        {
+            throw new RuntimeException(t);
         }
     }
 }

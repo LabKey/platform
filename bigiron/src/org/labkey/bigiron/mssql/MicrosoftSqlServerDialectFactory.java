@@ -153,11 +153,11 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
             {
                 SqlDialect dialect = new MicrosoftSqlServer2005Dialect();
                 TestUpgradeCode good = new TestUpgradeCode();
-                dialect.runSql(null, goodSql, good, null);
+                dialect.runSql(null, goodSql, good, null, null);
                 assertEquals(10, good.getCounter());
 
                 TestUpgradeCode bad = new TestUpgradeCode();
-                dialect.runSql(null, badSql, bad, null);
+                dialect.runSql(null, badSql, bad, null, null);
                 assertEquals(0, bad.getCounter());
             }
             catch (SQLException e)

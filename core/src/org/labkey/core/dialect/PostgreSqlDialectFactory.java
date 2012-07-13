@@ -167,11 +167,11 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
             {
                 SqlDialect dialect = new PostgreSql83Dialect();
                 TestUpgradeCode good = new TestUpgradeCode();
-                dialect.runSql(null, goodSql, good, null);
+                dialect.runSql(null, goodSql, good, null, null);
                 assertEquals(4, good.getCounter());
 
                 TestUpgradeCode bad = new TestUpgradeCode();
-                dialect.runSql(null, badSql, bad, null);
+                dialect.runSql(null, badSql, bad, null, null);
                 assertEquals(0, bad.getCounter());
             }
             catch (SQLException e)

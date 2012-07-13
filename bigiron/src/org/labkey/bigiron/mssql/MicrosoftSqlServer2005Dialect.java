@@ -24,7 +24,7 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SqlScriptParser;
+import org.labkey.api.data.SqlScriptExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
@@ -622,9 +622,9 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
     private static final Pattern JAVA_CODE_PATTERN = Pattern.compile("^\\s*EXEC(?:UTE)*\\s+core\\.executeJavaUpgradeCode\\s*'(.+)'\\s*;?\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
     @Override
-    public void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext) throws SQLException
+    public void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext, @Nullable Connection conn) throws SQLException
     {
-        SqlScriptParser parser = new SqlScriptParser(sql, GO_PATTERN, JAVA_CODE_PATTERN, schema, upgradeCode, moduleContext);
+        SqlScriptExecutor parser = new SqlScriptExecutor(sql, GO_PATTERN, JAVA_CODE_PATTERN, schema, upgradeCode, moduleContext, conn);
         parser.execute();
     }
 

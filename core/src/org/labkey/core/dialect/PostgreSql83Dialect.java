@@ -19,6 +19,7 @@ package org.labkey.core.dialect;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ConnectionWrapper;
@@ -29,7 +30,7 @@ import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
-import org.labkey.api.data.SqlScriptParser;
+import org.labkey.api.data.SqlScriptExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableChange;
@@ -760,9 +761,9 @@ class PostgreSql83Dialect extends SqlDialect
     private static final Pattern JAVA_CODE_PATTERN = Pattern.compile("^\\s*SELECT\\s+core\\.executeJavaUpgradeCode\\s*\\(\\s*'(.+)'\\s*\\)\\s*;\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
     @Override
-    public void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext) throws SQLException
+    public void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext, @Nullable Connection conn) throws SQLException
     {
-        SqlScriptParser parser = new SqlScriptParser(sql, null, JAVA_CODE_PATTERN, schema, upgradeCode, moduleContext);
+        SqlScriptExecutor parser = new SqlScriptExecutor(sql, null, JAVA_CODE_PATTERN, schema, upgradeCode, moduleContext, conn);
 
         try
         {
