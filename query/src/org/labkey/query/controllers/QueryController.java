@@ -294,6 +294,11 @@ public class QueryController extends SpringActionController
             throw new NotFoundException("Could not find schema: " + form.getSchemaName().getSource());
         }
 
+        if (StringUtils.isEmpty(form.getQueryName()))
+        {
+            throw new NotFoundException("Query not specified");
+        }
+
         if (!queryExists(form))
         {
             throw new NotFoundException("Query '" + form.getQueryName() + "' in schema '" + form.getSchemaName().getSource() + "' doesn't exist.");
