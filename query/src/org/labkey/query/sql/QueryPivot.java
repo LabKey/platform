@@ -264,7 +264,14 @@ public class QueryPivot extends QueryRelation
                 // execute query
                 sqlPivotValues = new SQLFragment();
                 sqlPivotValues.append("SELECT DISTINCT ").append(_pivotColumn.getValueSql("_pivotValues"));
-                sqlPivotValues.append("\nFROM (").append(_from.getSql()).append(") _pivotValues");
+                SQLFragment fromSql = _from.getSql();
+                if (null == fromSql)
+                {
+                    // If there are errors, it will get handled later
+                    assert !getParseErrors().isEmpty();
+                    return _pivotValues;
+                }
+                sqlPivotValues.append("\nFROM (").append(fromSql).append(") _pivotValues");
                 sqlPivotValues.append("\nORDER BY 1 ASC");
             }
             rs = Table.executeQuery(getSchema().getDbSchema(), sqlPivotValues);
