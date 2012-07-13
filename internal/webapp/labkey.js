@@ -19,7 +19,6 @@ if (typeof LABKEY == "undefined")
     LABKEY.devMode = false;
     LABKEY.demoMode = false;
     LABKEY.extJsRoot = "ext-3.4.0";
-    //LABKEY.extJsRoot_40 = "ext-4.0.7";
     LABKEY.extJsRoot_41 = "ext-4.1.0";
     LABKEY.extThemeRoot = "labkey-ext-theme";
     LABKEY.verbose = false;
