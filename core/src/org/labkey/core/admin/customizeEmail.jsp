@@ -47,7 +47,7 @@
     <% if (bean.getReturnUrl() != null) { %>
         <input type="hidden" name="returnUrl" value="<%= bean.getReturnUrl()%>" />
     <% } %>
-    <table>
+    <table width="85%">
         <tr class="labkey-wp-header"><th colspan=2>Custom Emails</th></tr>
         <tr><td></td></tr>
         <tr><td class="labkey-form-label">Email Type:</td>
@@ -61,8 +61,8 @@
         }
 %>
         </select></td></tr>
-        <tr><td class="labkey-form-label">Description:</td><td width="600"><div id="emailDescription"></div></td><td></td></tr>
-        <tr><td class="labkey-form-label">Subject:</td><td width="600"><input id="emailSubject" name="emailSubject" style="width:100%" value="<%=h(bean.getEmailSubject())%>"></td><td></td></tr>
+        <tr><td class="labkey-form-label">Description:</td><td><div id="emailDescription"></div></td><td></td></tr>
+        <tr><td class="labkey-form-label">Subject:</td><td><input id="emailSubject" name="emailSubject" style="width:100%" value="<%=h(bean.getEmailSubject())%>"></td><td></td></tr>
         <tr><td class="labkey-form-label">Message:</td><td><textarea id="emailMessage" name="emailMessage" style="width:100%" rows="20"><%=h(bean.getEmailMessage())%></textarea></td></tr>
         <tr>
             <td></td><td>
@@ -72,9 +72,9 @@
             <%=PageFlowUtil.generateSubmitButton("Delete Folder-Level Template", "this.form.action='deleteCustomEmail.view'", "id='folderResetButton' style='display: none;'")%>
         </tr>
         <tr><td>&nbsp;</td></tr>
+        <tr><td colspan="2"><hr></td></tr>
         <tr>
-            <td></td>
-            <td>
+            <td align="justify" colspan="2">
                 An email subject or message can contain a mix of static text and substitution parameters.
                 A substitution parameter is inserted into the text when the email is generated. The syntax is:
                 <pre>^&lt;param name&gt;^</pre>
@@ -86,14 +86,15 @@
                 see the <a target="_blank" href="http://download-llnw.oracle.com/javase/6/docs/api/java/util/Formatter.html">documentation for java.util.Formatter</a>. The syntax is:
                 <pre>^&lt;param name&gt;|&lt;format string&gt;^</pre>
                 For example:
-                <pre>^currentDateTime|The current date is: %1$tb %1$te, %1$tY^
-^siteShortName|The site short name is not blank and its value is: %s^</pre>
-                <br/>
+                <pre>^currentDateTime|The current date is: %1$tb %1$te, %1$tY^</pre>
+                <pre>^siteShortName|The site short name is not blank and its value is: %s^</pre>
             </td>
         </tr>
-        <tr><td></td><td><table id="validSubstitutions"></table></td></tr>
+        <tr><td colspan="2"><hr></td></tr>
         <tr><td>&nbsp;</td></tr>
-        <tr><td></td><td><i>The values of many of these parameters can be configured on
+        <tr><td colspan="2"><table id="validSubstitutions" width="100%"></table></td></tr>
+        <tr><td>&nbsp;</td></tr>
+        <tr><td align="justify" colspan="2"><i>The values of many of these parameters can be configured on
             the <a href="<%=urlProvider(AdminUrls.class).getProjectSettingsURL(c)%>">Look and Feel Settings page</a> and on the Project Settings page for each project.</i>
         </tr>
     </table>
@@ -236,7 +237,7 @@
         {
             if (LABKEY.ActionURL.getParameter('templateClass'))
             {
-                Ext.get('templateClass').dom.value = LABKEY.ActionURL.getParameter('templateClassName');
+                Ext.get('templateClass').dom.value = LABKEY.ActionURL.getParameter('templateClass');
             }
             changeEmailTemplate();
         });

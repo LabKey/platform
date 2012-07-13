@@ -29,7 +29,6 @@ import org.labkey.api.action.ExtFormAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
@@ -87,9 +86,7 @@ import org.labkey.api.reports.report.view.ChartDesignerBean;
 import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.RenderBackgroundRReportView;
 import org.labkey.api.reports.report.view.ReportDesignBean;
-import org.labkey.api.reports.report.view.ReportDesignerSessionCache;
 import org.labkey.api.reports.report.view.ReportUtil;
-import org.labkey.api.reports.report.view.RunReportView;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
@@ -106,7 +103,6 @@ import org.labkey.api.settings.AdminConsole.SettingsLinkType;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.thumbnail.BaseThumbnailAction;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
-import org.labkey.api.thumbnail.ImageStreamThumbnailProvider;
 import org.labkey.api.thumbnail.StaticThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.HelpTopic;
@@ -139,9 +135,6 @@ import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import javax.servlet.ServletException;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
@@ -178,20 +171,10 @@ public class ReportsController extends SpringActionController
             return new ActionURL(RunReportAction.class, c);
         }
 
-        public ActionURL urlSaveScriptReportState(Container c)
-        {
-            return new ActionURL(SaveScriptReportStateAction.class, c);
-        }
-
         @Override
         public ActionURL urlAjaxSaveScriptReport(Container c)
         {
             return new ActionURL(AjaxSaveScriptReportAction.class, c);
-        }
-
-        public ActionURL urlUpdateRReportState(Container c)
-        {
-            return new ActionURL(UpdateScriptReportStateAction.class, c);
         }
 
         public ActionURL urlDesignChart(Container c)
@@ -554,54 +537,6 @@ public class ReportsController extends SpringActionController
             return new ApiSimpleResponse("success", true);
         }
     }
-
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class SaveScriptReportStateAction extends FormViewAction<RReportBean>
-    {
-        public ModelAndView getView(RReportBean bean, boolean reshow, BindException errors) throws Exception
-        {
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;  
-        }
-
-        public void validateCommand(RReportBean bean, Errors errors)
-        {
-        }
-
-        public boolean handlePost(RReportBean bean, BindException errors) throws Exception
-        {
-            bean.setIsDirty(true);
-            ReportDesignerSessionCache.updateReportCache(bean, true);
-            return true;
-        }
-
-        public ActionURL getSuccessURL(RReportBean bean)
-        {
-            return null;
-        }
-    }
-
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class UpdateScriptReportStateAction extends SaveScriptReportStateAction
-    {
-        public boolean handlePost(RReportBean form, BindException errors) throws Exception
-        {
-            //form.setIsDirty(true);    // TODO: Remove RReport dependencies?
-            assert false : "This code should not be executed";
-            Report report = form.getReport();
-            if (report instanceof RReport)
-                report.clearCache();
-            ReportDesignerSessionCache.updateReportCache(form, false);
-            return true;
-        }
-    }
-
 
     @RequiresPermissionClass(InsertPermission.class)  // Need insert AND developer (checked below)
     public class CreateScriptReportAction extends FormViewAction<ScriptReportBean>
@@ -1016,10 +951,6 @@ public class ReportsController extends SpringActionController
 
             if (null == form.getReportId())
             {
-                // report not saved yet, get state from the cache
-                String key = getViewContext().getActionURL().getParameter(RunReportView.CACHE_PARAM);
-                if (key != null && ReportDesignerSessionCache.isCacheValid(key, context))
-                    ReportDesignerSessionCache.populateBeanFromCache(form, key, context);
                 report = form.getReport();
                 job = new RReportJob(ReportsPipelineProvider.NAME, info, form, root);
             }

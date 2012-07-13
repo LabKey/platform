@@ -3489,12 +3489,12 @@ public class AdminController extends SpringActionController
                     errors.reject(ERROR_MSG, errorStrings[0]);
             }
 
-            return false;
+            return !errors.hasErrors();
         }
 
-        public ActionURL getSuccessURL(CustomEmailForm customEmailForm)
+        public ActionURL getSuccessURL(CustomEmailForm form)
         {
-            return null;
+            return new ActionURL(CustomizeEmailAction.class, getContainer()).replaceParameter("templateClass", form.getTemplateClass());
         }
 
         public NavTree appendNavTrail(NavTree root)
