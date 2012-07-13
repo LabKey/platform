@@ -263,6 +263,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
             case FileExists:
             {
                 ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                result.setJdbcType(JdbcType.BOOLEAN);
                 result.setDisplayColumnFactory(new DisplayColumnFactory()
                 {
                     public DisplayColumn createRenderer(ColumnInfo colInfo)

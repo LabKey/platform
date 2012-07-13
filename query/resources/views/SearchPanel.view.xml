@@ -1,0 +1,6 @@
+<view xmlns="http://labkey.org/data/xml/view">
+    <dependencies>
+        <dependency path="Ext4ClientApi"/>
+        <dependency path="/extWidgets/SearchPanel.js"/>
+    </dependencies>
+</view>

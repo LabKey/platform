@@ -565,6 +565,7 @@ core/resources/views/ModulePropertyAdmin.html -text
 core/resources/views/ModulePropertyAdmin.view.xml -text
 core/resources/views/ext4PageAnalyzer.html -text
 core/resources/views/ext4PageAnalyzer.view.xml -text
+core/resources/views/ext4Test.html -text
 core/script-fragments/Ext.footer.js -text
 core/script-fragments/Ext.header.js -text
 core/script-fragments/Ext.middle.js -text
@@ -2074,7 +2075,7 @@ query/resources/schemas/dbscripts/sqlserver/query-11.20-11.30.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-11.30-12.10.sql -text
 query/resources/schemas/query.xml -text
 query/resources/views/SearchPanel.html -text
-query/resources/views/ext4Test.html -text
+query/resources/views/SearchPanel.view.xml -text
 query/resources/views/importData.html -text
 query/resources/views/importData.view.xml -text
 query/resources/views/importWizard.html -text
@@ -2082,6 +2083,7 @@ query/resources/views/importWizard.view.xml -text
 query/resources/views/manageRecord.html -text
 query/resources/views/manageRecord.view.xml -text
 query/resources/views/recordDetails.html -text
+query/resources/views/recordDetails.view.xml -text
 query/resources/views/runCustomSql.html -text
 query/src/META-INF/query/jars.txt -text
 query/src/org/labkey/query/CustomQueryDefinitionImpl.java -text

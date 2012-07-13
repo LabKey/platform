@@ -1,10 +1,6 @@
-<head>
 <script type="text/javascript">
-LABKEY.requiresExt4ClientAPI();
-LABKEY.requiresScript("/extWidgets/ImportPanel.js");
-</script>
-<script type="text/javascript">
-Ext4.onReady(function(){
+
+    Ext4.onReady(function(){
     var webpart = <%=webpartContext%>;
 
     Ext4.create('LABKEY.ext.ImportPanel', {
@@ -16,5 +12,3 @@ Ext4.onReady(function(){
 });
 
 </script>
-</head>
-

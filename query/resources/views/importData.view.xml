@@ -1,7 +1,9 @@
-<view xmlns="http://labkey.org/data/xml/view"
-       title="Import Data"
-        >
-        <permissions>
-            <permission name="insert" />
-        </permissions>
+<view xmlns="http://labkey.org/data/xml/view" title="Import Data">
+    <permissions>
+        <permission name="insert" />
+    </permissions>
+    <dependencies>
+        <dependency path="Ext4ClientApi"/>
+        <dependency path="/extWidgets/ImportPanel.js"/>
+    </dependencies>
 </view>
