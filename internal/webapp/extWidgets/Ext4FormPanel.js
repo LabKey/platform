@@ -94,7 +94,7 @@ Ext4.define('LABKEY.ext4.FormPanel', {
     defaultFieldLabelWidth: 150,
     initComponent: function(){
         Ext4.QuickTips.init();
-        Ext4.FocusManager.enable();
+//        Ext4.FocusManager.enable();
 
         this.initStore();
 

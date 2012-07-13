@@ -5166,7 +5166,6 @@ internal/webapp/editarea/resize_area.js -text
 internal/webapp/editarea/search_replace.js -text
 internal/webapp/editarea/template.html -text
 internal/webapp/ext-exploded.js -text
-internal/webapp/extWidgets/AssayUploadPanel.js -text
 internal/webapp/extWidgets/DetailsPanel.js -text
 internal/webapp/extWidgets/ExcelUploadPanel.js -text
 internal/webapp/extWidgets/Ext4DefaultFilterPanel.js -text
@@ -5182,7 +5181,6 @@ internal/webapp/extWidgets/IconPanel.js -text
 internal/webapp/extWidgets/ImportPanel.js -text
 internal/webapp/extWidgets/ImportWizard.js -text
 internal/webapp/extWidgets/LabkeyCombo.js -text
-internal/webapp/extWidgets/NavPanel.js -text
 internal/webapp/extWidgets/SearchPanel.js -text
 internal/webapp/gxt/css/gxt-all.css -text
 internal/webapp/gxt/css/gxt-gray.css -text

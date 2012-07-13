@@ -655,6 +655,10 @@ function showMenu(parent, menuElementId, align) {
     {
         // While the menu's open, highlight the button that caused it to open
         Ext.get(parent).addClass('labkey-menu-button-active');
+
+        //provide mechanism for menu to identify owner.  primarily used for animations
+        menu.floatParent = parent;
+
         menu.show(parent, align);
         var listener = function()
         {
@@ -662,6 +666,7 @@ function showMenu(parent, menuElementId, align) {
             // can be reused
             menu.removeListener('beforehide', listener);
             Ext.get(parent).removeClass('labkey-menu-button-active');
+            menu.floatParent = null;
         };
         menu.on('beforehide', listener);
     }

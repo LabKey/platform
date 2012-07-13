@@ -68,9 +68,9 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             fieldDefaults: {
                 labelWidth: this.LABEL_WIDTH
             },
-            buttons: [
-                {text: 'Submit', scope: this, handler: this.onSubmit}
-            ],
+            buttons: this.buttons || [{
+                text: 'Submit', scope: this, handler: this.onSubmit
+            }],
             defaults: {
                 border: false,
                 bodyBorder: false
@@ -78,17 +78,17 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             items: [{
                 html: 'Loading...'
             }],
+            keys: this.keys || [{
+                key: Ext4.EventObject.ENTER,
+                handler: this.onSubmit,
+                scope: this
+            }]
+        });
+
+        Ext4.applyIf(this, {
             border: true,
             bodyBorder: false,
-            width: 505,
-            autoHeight: true,
-            keys: [
-                {
-                    key: Ext4.EventObject.ENTER,
-                    handler: this.onSubmit,
-                    scope: this
-                }
-            ]
+            width: 505
         });
 
         this.callParent();
@@ -156,8 +156,8 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
                 },{
                     xtype: 'labkey-viewcombo',
                     containerPath: this.containerPath,
-                    queryName: this.queryName,
-                    schemaName: this.schemaName,
+                    queryName: this.store.queryName,
+                    schemaName: this.store.schemaName,
                     width: this.OP_FIELD_WIDTH,
                     value: this.defaultViewName || '',
                     fieldType: 'viewName',
@@ -186,6 +186,14 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
     addRow: function(meta){
         if (meta.inputType == 'textarea'){
             meta.inputType = 'textbox';
+        }
+
+        if (this.metadataDefaults){
+            LABKEY.Utils.merge(meta, this.metadataDefaults);
+        }
+
+        if (this.metadata && this.metadata[meta.name]){
+            LABKEY.Utils.merge(meta, this.metadata[meta.name]);
         }
 
         var rows = [];
@@ -276,8 +284,8 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
 
     onSubmit: function(){
         var params = {
-            schemaName: this.schemaName,
-            'query.queryName': this.queryName
+            schemaName: this.store.schemaName,
+            'query.queryName': this.store.queryName
         };
 
         var cf = this.down('#containerFilterName');
@@ -307,6 +315,12 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
                 op = 'eq';
             }
             var filterType = LABKEY.Filter.getFilterTypeForURLSuffix(op);
+            if(!filterType){
+                //TODO: report?
+                alert('ERROR: Unknown filter type: ' + op);
+                return;
+            }
+
             var val = item.getValue();
             if (Ext4.isArray(val))
                 val = val.join(';');
