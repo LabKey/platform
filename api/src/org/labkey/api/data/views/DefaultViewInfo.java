@@ -56,6 +56,7 @@ public class DefaultViewInfo implements DataViewInfo
     private boolean _visible = true;
     private boolean _shared = true;
     private String _access;
+    private boolean _allowCustomThumbnail = false;
 
     private List<Pair<DomainProperty, Object>> _tags = Collections.emptyList();
 
@@ -249,5 +250,15 @@ public class DefaultViewInfo implements DataViewInfo
     public void setShared(boolean shared)
     {
         _shared = shared;
+    }
+
+    public boolean isAllowCustomThumbnail()
+    {
+        return _allowCustomThumbnail;
+    }
+
+    public void setAllowCustomThumbnail(boolean allowCustomThumbnail)
+    {
+        _allowCustomThumbnail = allowCustomThumbnail;
     }
 }

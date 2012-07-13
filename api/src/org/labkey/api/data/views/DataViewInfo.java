@@ -80,4 +80,6 @@ public interface DataViewInfo
      * type and an Object representing the value.
      */
     List<Pair<DomainProperty, Object>> getTags();
+
+    boolean isAllowCustomThumbnail();
 }

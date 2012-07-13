@@ -217,6 +217,8 @@ public class DataViewService
         if (info.getDetailsUrl() != null)
             o.put("detailsUrl", info.getDetailsUrl().getLocalURIString());
 
+        o.put("allowCustomThumbnail", info.isAllowCustomThumbnail());
+
         // tags
         for (Pair<DomainProperty, Object> tag : info.getTags())
         {
