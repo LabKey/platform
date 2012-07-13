@@ -84,7 +84,7 @@ public class QAggregate extends QExpr
 
         if (type == Type.GROUP_CONCAT)
         {
-            SqlBuilder nestedBuilder = new SqlBuilder(builder.getDialect());
+            SqlBuilder nestedBuilder = new SqlBuilder(builder.getDbSchema());
             for (QNode child : children())
             {
                 ((QExpr)child).appendSql(nestedBuilder);
