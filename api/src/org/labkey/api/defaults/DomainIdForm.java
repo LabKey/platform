@@ -16,7 +16,6 @@
 
 package org.labkey.api.defaults;
 
-import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.ViewForm;
 
 /*
@@ -28,7 +27,6 @@ import org.labkey.api.view.ViewForm;
 public class DomainIdForm extends ViewForm
 {
     private int _domainId;
-    private ReturnURLString _returnUrl;
 
     public int getDomainId()
     {
@@ -38,15 +36,5 @@ public class DomainIdForm extends ViewForm
     public void setDomainId(int domainId)
     {
         _domainId = domainId;
-    }
-
-    public ReturnURLString getReturnUrl()
-    {
-        return _returnUrl;
-    }
-
-    public void setReturnUrl(ReturnURLString returnUrl)
-    {
-        _returnUrl = returnUrl;
     }
 }

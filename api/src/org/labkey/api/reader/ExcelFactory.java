@@ -18,7 +18,6 @@ package org.labkey.api.reader;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.poi.hssf.OldExcelFormatException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
-import org.apache.poi.ss.format.CellFormat;
 import org.apache.poi.ss.format.CellGeneralFormatter;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -262,6 +261,10 @@ public class ExcelFactory
                         return formatter.format(cell.getNumericCellValue());
                     case Cell.CELL_TYPE_FORMULA:
                     {
+                        if (cell.getCachedFormulaResultType() == Cell.CELL_TYPE_STRING)
+                        {
+                            return cell.getStringCellValue();
+                        }
                         Workbook wb = cell.getSheet().getWorkbook();
                         FormulaEvaluator evaluator = createFormulaEvaluator(wb);
                         if (evaluator != null)
@@ -276,6 +279,8 @@ public class ExcelFactory
             }
             else if (isCellNumeric(cell) && DateUtil.isCellDateFormatted(cell) && cell.getDateCellValue() != null)
                 return formatter.format(cell.getDateCellValue());
+            else if (cell.getCellType() == Cell.CELL_TYPE_FORMULA && cell.getCachedFormulaResultType() == Cell.CELL_TYPE_STRING)
+                return cell.getStringCellValue();
             else
                 // This seems to be the best way to get the value that's shown in Excel
                 // http://stackoverflow.com/questions/1072561/how-can-i-read-numeric-strings-in-excel-cells-as-string-not-numbers-with-apach
@@ -289,8 +294,12 @@ public class ExcelFactory
         if (cell != null)
         {
             int type = cell.getCellType();
+            if (type == Cell.CELL_TYPE_FORMULA)
+            {
+                type = cell.getCachedFormulaResultType();
+            }
 
-            return type == Cell.CELL_TYPE_BLANK || type == Cell.CELL_TYPE_NUMERIC || type == Cell.CELL_TYPE_FORMULA;
+            return type == Cell.CELL_TYPE_BLANK || type == Cell.CELL_TYPE_NUMERIC;
         }
         return false;
     }

@@ -93,7 +93,10 @@ public class LookupColumn extends ColumnInfo
         FieldKey fieldKey = new FieldKey(_foreignKey.getFieldKey().getParent(), foreignKeyFieldKey.getName());
         Map<FieldKey, ColumnInfo> map = QueryService.get().getColumns(_foreignKey.getParentTable(), Collections.singleton(fieldKey));
         ColumnInfo translatedFK = map.get(fieldKey);
-        assert translatedFK != null : "ForeignKey '" + foreignKeyFieldKey + "' not found on table '" + _foreignKey.getParentTable() + "' for lookup to '" + lookupKey.getFieldKey() + "'";
+        if (translatedFK == null)
+        {
+            throw new IllegalArgumentException("ForeignKey '" + foreignKeyFieldKey + "' not found on table '" + _foreignKey.getParentTable() + "' for lookup to '" + lookupKey.getFieldKey() + "'");
+        }
 
         _additionalJoins.put(translatedFK, Pair.of(lookupKey, equalOrIsNull));
     }

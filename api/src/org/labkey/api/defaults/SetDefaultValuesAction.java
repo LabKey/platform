@@ -29,6 +29,7 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ReturnURLString;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.*;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -49,7 +50,7 @@ import java.util.Map;
 @RequiresPermissionClass(AdminPermission.class)
 public class SetDefaultValuesAction<FormType extends DomainIdForm> extends DefaultValuesAction<FormType>
 {
-    private ReturnURLString _returnUrl;
+    private URLHelper _returnUrl;
 
     public SetDefaultValuesAction()
     {
@@ -144,7 +145,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
 
     public ModelAndView getView(FormType domainIdForm, boolean reshow, BindException errors) throws Exception
     {
-        _returnUrl = domainIdForm.getReturnUrl();
+        _returnUrl = domainIdForm.getReturnURLHelper();
         Domain domain = getDomain(domainIdForm);
         DomainProperty[] properties = domain.getProperties();
         if (properties.length == 0)
@@ -196,7 +197,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
             clearButton.setActionType(ActionButton.Action.POST);
             bbar.add(clearButton);
         }
-        bbar.add(new ActionButton("Cancel", new ActionURL(domainIdForm.getReturnUrl())));
+        bbar.add(new ActionButton("Cancel", _returnUrl));
         rgn.addHiddenFormField("domainId", "" + domainIdForm.getDomainId());
         rgn.addHiddenFormField(ActionURL.Param.returnUrl, domainIdForm.getReturnUrl());
         rgn.setButtonBar(bbar);
@@ -311,8 +312,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
 
     public NavTree appendNavTrail(NavTree root)
     {
-        ActionURL returnUrl = new ActionURL(_returnUrl);
-        root.addChild("Edit Type", returnUrl);
+        root.addChild("Edit Type", _returnUrl);
         root.addChild("Set Default Values");
         return root;
     }
