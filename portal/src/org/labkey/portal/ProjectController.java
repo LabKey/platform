@@ -1158,8 +1158,14 @@ public class ProjectController extends SpringActionController
                 implicitCssScripts.addAll(d.getCssPaths(!AppProps.getInstance().isDevMode()));
             }
 
+
             MockHttpServletResponse mr = new MockHttpServletResponse();
             view.render(request, mr);
+
+            if (mr.getStatus() != HttpServletResponse.SC_OK){
+                view.render(request, getViewContext().getResponse());
+                return null;
+            }
 
             resp.getProperties().put("html", mr.getContentAsString());
             resp.getProperties().put("requiredJsScripts", includes);
