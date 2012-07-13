@@ -259,8 +259,10 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
             listeners: {
                 scope: this,
                 'change': function(field, checked){
+                    var measureIndex = this.getSelectedMeasureIndex();
+
                     // when this radio option is selected, enable the dimension combo box
-                    if (checked && this.getSelectedMeasureIndex() != -1)
+                    if (checked && measureIndex != -1)
                     {
                         // enable the dimension and aggregate combo box
                         this.measureDimensionComboBox.enable();
@@ -269,13 +271,17 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                         this.setDimensionAggregate(LABKEY.Visualization.Aggregate.AVG);
 
                         // if saved chart, then set dimension value based on the saved value
-                        if (this.measures[this.getSelectedMeasureIndex()].dimension.name)
+                        if (this.measures[measureIndex].dimension.name)
                         {
-                            this.measureDimensionComboBox.setValue(this.measures[this.getSelectedMeasureIndex()].dimension.name);
+                            this.measureDimensionComboBox.setValue(this.measures[measureIndex].dimension.name);
                         }
                         // otherwise try to select the first item and then give the input focus
-                        else{
-                            var selIndex = 0;
+                        else
+                            {
+                            // Issue 12369: if two measures from the same schema/query are both pivoted, force the dimensions to be the same
+                            var initDimensionIndex = this.getDimensionIndexForQuery(this.measures[measureIndex].measure.schemaName, this.measures[measureIndex].measure.queryName);
+
+                            var selIndex = initDimensionIndex != -1 ? initDimensionIndex : 0;
                             var selRecord = this.measureDimensionComboBox.getStore().getAt(selIndex);
                             if (selRecord)
                             {
@@ -453,6 +459,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
             {
                 text: 'Apply',
                 handler: function(){
+                    this.showDimensionFilterPanel();
                     this.fireEvent('closeOptionsWindow');
                     this.checkForChangesAndFireEvents();
                 },
@@ -461,6 +468,47 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
         ];
 
         this.callParent();
+    },
+
+    showDimensionFilterPanel: function() {
+        // show any dimension filter panels that were added (only show unique panels)
+        this.uniqueDimensions = [];
+        for (var i = 0; i < this.measures.length; i++)
+        {
+            if (this.measures[i].dimensionSelectorPanel)
+            {
+                var dimensionInfo = this.getDimensionConcat(this.measures[i].dimension);
+                if (this.uniqueDimensions.indexOf(dimensionInfo) == -1)
+                {
+                    this.measures[i].dimensionSelectorPanel.show();
+                    this.uniqueDimensions.push(dimensionInfo);
+                }
+            }
+        }
+
+        // and if there is a dimension filter panel that should be expanded, do that too
+        if (this.filterPanelToExpand)
+            this.filterPanelToExpand.expand();
+    },
+
+    getDimensionConcat: function(d) {
+        return d.schemaName + "_" + d.queryName + "_" + d.name;
+    },
+
+    getDimensionIndexForQuery: function(schemaName, queryName) {
+        // if there is already a selected dimension from the given schema/query, return the selected index for that dimension
+        for (var i = 0; i < this.measures.length; i++)
+        {
+            if (this.measures[i].dimension)
+            {
+                var d = this.measures[i].dimension;
+                if (d.schemaName == schemaName && d.queryName == queryName && this.measures[i].dimensionStore)
+                {
+                    return this.measures[i].dimensionStore.find("name", d.name);
+                }
+            }
+        }
+        return -1;
     },
 
     setFilterWarningText: function(text)
@@ -725,6 +773,13 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
         var measure = this.measures[index].measure;
         var dimension = this.measures[index].dimension;
 
+        var hidePanel = true;
+        if (!reloadChartData && this.uniqueDimensions.indexOf(this.getDimensionConcat(dimension)) == -1)
+        {
+            hidePanel = false;
+            this.uniqueDimensions.push(this.getDimensionConcat(dimension));
+        }
+
         // get the dimension values for the selected dimension/grouping
         Ext4.Ajax.request({
             url : LABKEY.ActionURL.buildURL("visualization", "getDimensionValues", null, dimension),
@@ -762,7 +817,8 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                     // sort the selected dimension array
                     dimension.values.sort();
 
-                    this.fireEvent('chartDefinitionChanged', true);
+                    // Issue 12369: there may be multiple measures that use the same dimension selector, so set all dimension values accordingly
+                    this.setDimensionValues(dimension, index);
                 }, this, {buffer: 1000}); // buffer allows single event to fire if bulk changes are made within the given time (in ms)
 
                 var ttRenderer = function(value, p, record) {
@@ -776,6 +832,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                     border: false,
                     cls: 'report-filter-panel',
                     autoScroll: true,
+                    hidden: hidePanel,
                     items: [
                         this.defaultDisplayField,
                         Ext4.create('Ext.grid.GridPanel', {
@@ -791,7 +848,35 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                                         idProperty:'value'
                                     }
                                 },
-                                data: dimensionValues
+                                data: dimensionValues,
+                                listeners: {
+                                    'load': function(store, records) {
+                                        // if this is not a saved chart with pre-selected values, initially select the first 5 values
+                                        dimension.selectDefault = false;
+                                        if (!dimension.values)
+                                        {
+                                            var tempValues = this.getDimensionValues(dimension, index);
+                                            if (tempValues.length > 0)
+                                            {
+                                                dimension.values = tempValues;
+                                            }
+                                            else
+                                            {
+                                                dimension.selectDefault = true;
+                                                dimension.values = [];
+                                                for(var i = 0; i < (store.getCount() < 5 ? store.getCount() : 5); i++) {
+                                                    dimension.values.push(store.getAt(i).data.value);
+                                                }
+                                            }
+                                        }
+
+                                        if (reloadChartData){
+                                            this.hasChanges = true;
+                                            this.requireDataRefresh = true;
+                                        }
+                                    },
+                                    scope: this
+                                }
                             }),
                             viewConfig: {forceFit: true},
                             sortableColumns: false,
@@ -810,17 +895,6 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                             listeners: {
                                 scope: this,
                                 'viewready': function(grid) {
-                                    // if this is not a saved chart with pre-selected values, initially select the first 5 values
-                                    var selectDefault = false;
-                                    if (!dimension.values)
-                                    {
-                                        selectDefault = true;
-                                        dimension.values = [];
-                                        for(var i = 0; i < (grid.getStore().getCount() < 5 ? grid.getStore().getCount() : 5); i++) {
-                                            dimension.values.push(grid.getStore().getAt(i).data.value);
-                                        }
-                                    }
-
                                     // check selected dimension values in grid panel (but suspend events during selection)
                                     var dimSelModel = grid.getSelectionModel();
                                     var dimStore = grid.getStore();
@@ -831,7 +905,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                                     dimSelModel.resumeEvents();
 
                                     // show the selecting default text if necessary
-                                    if (grid.getStore().getCount() > 5 && selectDefault)
+                                    if (grid.getStore().getCount() > 5 && dimension.selectDefault)
                                     {
                                         // show the display for 5 seconds before hiding it again
                                         var refThis = this;
@@ -840,11 +914,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                                             refThis.defaultDisplayField.hide();
                                         },5000);
                                     }
-
-                                    if (reloadChartData){
-                                        this.hasChanges = true;
-                                        this.requireDataRefresh = true;
-                                    }
+                                    delete dimension.selectDefault;
                                 }
                             }
                          })
@@ -852,13 +922,38 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                 });
 
                 this.filtersParentPanel.add(this.measures[index].dimensionSelectorPanel);
-                this.measures[index].dimensionSelectorPanel.expand();
+                this.filterPanelToExpand = this.measures[index].dimensionSelectorPanel;
             },
             failure: function(info, response, options) {
                 LABKEY.Utils.displayAjaxErrorResponse(response, options);
             },
             scope: this
         });
+    },
+
+    setDimensionValues: function(d, currIndex){
+        // set dimension values for any measure that has a matching dimension selected
+        for (var i = 0; i < this.measures.length; i++)
+        {
+            if (i != currIndex && this.measures[i].dimension && this.matchingDimension(this.measures[i].dimension, d))
+                this.measures[i].dimension.values = Ext4.Array.clone(d.values);
+        }
+
+        this.fireEvent('chartDefinitionChanged', true);
+    },
+
+    getDimensionValues: function(d, currIndex){
+        // get the dimension values for any measure that has a matching dimension selected
+        for (var i = 0; i < this.measures.length; i++)
+        {
+            if (i != currIndex && this.measures[i].dimension && this.matchingDimension(this.measures[i].dimension, d))
+                return Ext4.Array.clone(this.measures[i].dimension.values);
+        }
+        return [];
+    },
+
+    matchingDimension: function(d1, d2){
+        return d1.name == d2.name && d1.queryName == d2.queryName && d1.schemaName == d2.schemaName;
     },
 
     getSelectedMeasureIndex: function(){
@@ -880,7 +975,10 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
 
     // method called on render of this panel when a saved chart is being viewed to set the dimension stores for all of the measrues
     initializeDimensionStores: function(){
-        for(var i = 0; i < this.measures.length; i++){
+        this.uniqueDimensions = [];
+
+        for (var i = 0; i < this.measures.length; i++)
+        {
             if (!this.measures[i].dimensionStore)
                 this.setDimensionStore(i, false);
 

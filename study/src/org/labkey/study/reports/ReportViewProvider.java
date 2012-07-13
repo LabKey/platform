@@ -208,6 +208,9 @@ public class ReportViewProvider implements DataViewProvider
                     if (!StringUtils.isEmpty(iconPath))
                         info.setIcon(iconPath);
 
+                    // see to-do below regarding static vs. dynamic thumbnail providers  
+                    info.setAllowCustomThumbnail(r instanceof DynamicThumbnailProvider);
+
                     info.setThumbnailUrl(PageFlowUtil.urlProvider(ReportUrls.class).urlThumbnail(c, r));
                     info.setTags(ReportPropsManager.get().getProperties(descriptor.getEntityId(), context.getContainer()));
 

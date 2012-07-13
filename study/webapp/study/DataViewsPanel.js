@@ -68,6 +68,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             {name : 'detailsUrl'},
             {name : 'thumbnail'},
             {name : 'thumbnailType'},
+            {name : 'allowCustomThumbnail'},
             {name : 'status'}
         ];
 

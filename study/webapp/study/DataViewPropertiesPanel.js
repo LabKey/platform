@@ -221,8 +221,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 readOnly   : true
             });
 
-            // TODO: see todo from ReportViewProvider.updateProperties, this should be possible for any report type
-            if (this.record.get('type') == "Time Chart" || this.record.get('type') == "R View" || this.record.get('type') == "Attachment Report" || this.record.get('type') == "Link Report")
+            if (this.data.allowCustomThumbnail)
             {
                 formItems.push({
                     xtype      : 'filefield',
