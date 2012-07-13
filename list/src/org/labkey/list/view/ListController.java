@@ -696,7 +696,7 @@ public class ListController extends SpringActionController
             if (form.getReturnUrl() != null)
             {
                 URLHelper url = form.getReturnURLHelper();
-                gridButton = new ActionButton("Back", url);
+                gridButton = new ActionButton("Done", url);
             }
             else
                 gridButton = new ActionButton("Show Grid", _list.urlShowData());
