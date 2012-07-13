@@ -297,6 +297,21 @@ public class DbScope
     }
 
 
+    public Connection getUnpooledConnection() throws SQLException
+    {
+        SqlDialect.DataSourceProperties props = new SqlDialect.DataSourceProperties(_dsName, _dataSource);
+
+        try
+        {
+            return DriverManager.getConnection(_URL, props.getUsername(), props.getPassword());
+        }
+        catch (ServletException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+
     static Class classDelegatingConnection = null;
     static Method methodGetInnermostDelegate = null;
     static boolean isDelegating = false;

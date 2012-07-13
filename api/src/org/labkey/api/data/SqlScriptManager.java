@@ -25,6 +25,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.security.User;
 import org.labkey.api.module.ModuleContext;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -105,7 +106,7 @@ public class SqlScriptManager
         Table.update(user, _core.getTableInfoSqlScripts(), new HashMap(), pk);  // Update user and modified date
     }
 
-    public static void runScript(@Nullable User user, SqlScript script, ModuleContext moduleContext) throws SqlScriptException, SQLException
+    public static void runScript(@Nullable User user, SqlScript script, ModuleContext moduleContext, @Nullable Connection conn) throws SqlScriptException, SQLException
     {
         DbSchema schema = DbSchema.get(script.getSchemaName());
         SqlDialect dialect = schema.getSqlDialect();
@@ -125,7 +126,7 @@ public class SqlScriptManager
         {
             dialect.checkSqlScript(contents);
             Logger.getLogger(SqlScriptManager.class).info("start running script : " + script.getDescription());
-            dialect.runSql(schema, contents, script.getProvider().getUpgradeCode(), moduleContext);
+            dialect.runSql(schema, contents, script.getProvider().getUpgradeCode(), moduleContext, conn);
             Logger.getLogger(SqlScriptManager.class).info("finished running script : " + script.getDescription());
         }
         catch(SQLException e)

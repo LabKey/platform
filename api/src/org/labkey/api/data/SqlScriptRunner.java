@@ -84,7 +84,7 @@ public class SqlScriptRunner
 
         for (SqlScript script : scripts)
         {
-            SqlScriptManager.runScript(user, script, ModuleLoader.getInstance().getModuleContext(module));
+            SqlScriptManager.runScript(user, script, ModuleLoader.getInstance().getModuleContext(module), null);
 
             synchronized(SCRIPT_LOCK)
             {

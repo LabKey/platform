@@ -15,6 +15,8 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -67,7 +69,12 @@ public class SqlExecutor extends JdbcCommand
         }
         finally
         {
-            Table.doFinally(null, null, conn, getScope());
+            doFinally(conn);
         }
+    }
+
+    protected void doFinally(@Nullable Connection conn)
+    {
+        Table.doFinally(null, null, conn, getScope());
     }
 }

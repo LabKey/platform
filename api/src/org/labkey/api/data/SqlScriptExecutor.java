@@ -22,6 +22,7 @@ import org.labkey.api.module.ModuleContext;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,17 +36,18 @@ import java.util.regex.Pattern;
  * Date: Nov 24, 2008
  * Time: 3:22:16 PM
  */
-public class SqlScriptParser
+public class SqlScriptExecutor
 {
-    private static final Logger _log = Logger.getLogger(SqlScriptParser.class);
+    private static final Logger _log = Logger.getLogger(SqlScriptExecutor.class);
     private final String _sql;
     private final Pattern _splitPattern;
     private final Pattern _executeJavaCodePattern;
     private final DbSchema _schema;
     private final UpgradeCode _upgradeCode;
     private final ModuleContext _moduleContext;
+    @Nullable private final Connection _conn;
 
-    public SqlScriptParser(String sql, @Nullable Pattern splitPattern, @NotNull Pattern executeJavaCodePattern, @Nullable DbSchema schema, @Nullable UpgradeCode upgradeCode, ModuleContext moduleContext)
+    public SqlScriptExecutor(String sql, @Nullable Pattern splitPattern, @NotNull Pattern executeJavaCodePattern, @Nullable DbSchema schema, @Nullable UpgradeCode upgradeCode, ModuleContext moduleContext, @Nullable Connection conn)
     {
         _sql = sql;
         _splitPattern = splitPattern;
@@ -53,11 +55,12 @@ public class SqlScriptParser
         _schema = schema;
         _upgradeCode = upgradeCode;
         _moduleContext = moduleContext;
+        _conn = conn;
     }
 
     public void execute() throws SQLException
     {
-        for (SqlScriptParser.Block block : getBlocks())
+        for (SqlScriptExecutor.Block block : getBlocks())
             block.execute();
     }
 
@@ -161,7 +164,29 @@ public class SqlScriptParser
         {
             // Null schema allowed for testing
             if (_sql.length() > 0 && null != _schema)
-                Table.execute(_schema, _sql);
+            {
+                if (null == _conn)
+                {
+                    new SqlExecutor(_schema.getScope(), _sql).execute();
+                }
+                else
+                {
+                    SqlExecutor executor = new SqlExecutor(_schema.getScope(), _sql) {
+                        @Override
+                        public Connection getConnection() throws SQLException
+                        {
+                            return _conn;
+                        }
+
+                        @Override
+                        protected void doFinally(Connection conn)
+                        {
+                            super.doFinally(null);   // This keeps the connection open; caller must close it.
+                        }
+                    };
+                    executor.execute();
+                }
+            }
         }
     }
 
