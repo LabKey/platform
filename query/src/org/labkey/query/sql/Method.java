@@ -896,7 +896,9 @@ public abstract class Method
     static
     {
         mssqlMethods.put("ascii",new PassthroughMethod("ascii",JdbcType.INTEGER,1,1));
-        mssqlMethods.put("char",new PassthroughMethod("char",JdbcType.VARCHAR,1,1));
+        Method chr = new PassthroughMethod("char",JdbcType.VARCHAR,1,1);
+        mssqlMethods.put("char", chr);
+        mssqlMethods.put("chr", chr);   // postgres and oracle use 'chr' (see 15473)
         mssqlMethods.put("charindex",new PassthroughMethod("charindex",JdbcType.INTEGER,2,3));
         mssqlMethods.put("difference",new PassthroughMethod("difference",JdbcType.INTEGER,2,2));
         mssqlMethods.put("len",new PassthroughMethod("len",JdbcType.INTEGER,1,1));
