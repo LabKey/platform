@@ -27,17 +27,16 @@
 <%@ page import="org.labkey.api.reports.report.ScriptReport" %>
 <%@ page import="org.labkey.api.reports.report.ScriptReportDescriptor" %>
 <%@ page import="org.labkey.api.reports.report.view.AjaxScriptReportView.Mode" %>
-<%@ page import="org.labkey.api.reports.report.view.ReportDesignerSessionCache" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page import="org.labkey.api.reports.report.view.ScriptReportBean" %>
 <%@ page import="org.labkey.api.security.roles.ProjectAdminRole" %>
+<%@ page import="org.labkey.api.thumbnail.DynamicThumbnailProvider" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.thumbnail.DynamicThumbnailProvider" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ScriptReportBean> me = (JspView<ScriptReportBean>)HttpView.currentView();
@@ -665,7 +664,6 @@ function setDisabled(checkbox, label, disabled)
                 if (null != bean.getReportId()) { %>
                 <input type="hidden" name="reportId" value="<%=bean.getReportId()%>">
                 <% } %>
-                <input type="hidden" name="cacheKey" value="<%=ReportDesignerSessionCache.getReportCacheKey(bean.getReportId(), c)%>">
                 <input type="hidden" name="showDebug" value="true">
                 <input type="hidden" name="<%=ScriptReportDescriptor.Prop.scriptExtension%>" value="<%=StringUtils.trimToEmpty(bean.getScriptExtension())%>">
                 <input type="hidden" name="reportName" id="reportName" value="<%=StringUtils.trimToEmpty(bean.getReportName())%>">

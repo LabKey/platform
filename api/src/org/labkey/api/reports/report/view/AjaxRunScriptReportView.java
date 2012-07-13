@@ -49,7 +49,8 @@ public class AjaxRunScriptReportView extends AjaxScriptReportView
         else
             bean.setErrors(new NullSafeBindException(bean, "form"));
 
-        ReportDesignerSessionCache.initReportCache(bean, _report);
+        if (_report != null)
+            bean.populateFromDescriptor(_report.getDescriptor());
 
         if (null == bean.getScript())
         {
