@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2012 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
 /**
  * An extension to the Ext4 combobox.  The primary features this provides are more control over
  * how the display values are rendered and auto-resizing of the pick list based on the size of
