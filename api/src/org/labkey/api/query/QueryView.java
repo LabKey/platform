@@ -473,8 +473,8 @@ public class QueryView extends WebPartView<Object>
                 for (Map.Entry<String, String[]> entry : expandedURL.getParameterMap().entrySet())
                 {
                     String name = entry.getKey();
-                    // schemaName isn't prefixed with the data region name
-                    if (!name.equals("schemaName") && !name.startsWith(getDataRegionName() + ".") && !name.startsWith(DATAREGIONNAME_DEFAULT + "."))
+                    // schemaName isn't prefixed with the data region name, and don't specify a special data region name
+                    if (!name.equals("schemaName") && !name.equals("dataRegionName") && !name.startsWith(getDataRegionName() + ".") && !name.startsWith(DATAREGIONNAME_DEFAULT + "."))
                     {
                         for (String value : entry.getValue())
                         {
