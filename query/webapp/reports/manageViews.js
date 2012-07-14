@@ -70,7 +70,7 @@ LABKEY.ViewsPanel.prototype = {
                         '<tr><td></td><td>',
                             '<tpl if="runUrl != undefined">&nbsp;<a href="{runUrl}" class="labkey-text-link">view</a></tpl>',
                             '<tpl if="editUrl != undefined">&nbsp;<a href="{editUrl}" class="labkey-text-link">source</a></tpl>',
-                            '<tpl if="infoUrl != undefined">&nbsp;<a href="{infoUrl}" class="labkey-text-link">info</a></tpl></td></tr>',
+                            '<tpl if="detailsUrl != undefined">&nbsp;<a href="{detailsUrl}" class="labkey-text-link">details</a></tpl></td></tr>',
                     '</tpl>',
                 '</table>')
         }),
@@ -99,6 +99,7 @@ LABKEY.ViewsPanel.prototype = {
                         {name:'editUrl', defaultValue:undefined},
                         {name:'reportId', defaultValue:undefined},
                         {name:'infoUrl', defaultValue:undefined},
+                        {name:'detailsUrl', defaultValue:undefined},
                         {name:'queryView', type:'boolean', defaultValue:false},
                         {name:'container'},
                         {name:'type'}]),

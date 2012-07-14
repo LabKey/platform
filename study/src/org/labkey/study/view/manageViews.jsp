@@ -211,7 +211,7 @@
                             '<tr><td></td><td>',
                                 '<tpl if="runUrl != undefined">&nbsp;<a href="{runUrl}" class="labkey-text-link">view</a></tpl>',
                                 '<tpl if="editUrl != undefined">&nbsp;<a href="{editUrl}" class="labkey-text-link">edit</a></tpl>',
-                                '<tpl if="infoUrl != undefined">&nbsp;<a href="{infoUrl}" class="labkey-text-link">info</a></tpl>',
+                                '<tpl if="detailsUrl != undefined">&nbsp;<a href="{detailsUrl}" class="labkey-text-link">details</a></tpl>',
                             <% if (context.hasPermission(AdminPermission.class)) { %>
                                 '<tpl if="!queryView && !inherited">&nbsp;<a class="labkey-text-link" href="<%=permissionURL.getLocalURIString()%>reportId={reportId}">permissions</a></tpl>',
                             <% } %>

@@ -128,20 +128,30 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                 });
             }
             else {
-                Ext4.Msg.confirm('Filter Change', 'By changing filter types, your selections will be lost.  Do you want to continue?', function(btn){
-                    if(btn == 'yes'){
-                        filterArea.removeAll(true);
-                        filterArea.add(cfg);
-                        this.initSelection();
-                        this.fireEvent('selectionchange')
-                    }
-                    else {
-                        var rg = this.down('radiogroup');
-                        rg.suspendEvents();
-                        rg.setValue({filterType: 'participant'});
-                        rg.resumeEvents();
-                    }
-                }, this);
+                if (this.participantSelectionChanged)
+                {
+                    Ext4.Msg.confirm('Filter Change', 'By changing filter types, your selections will be lost.  Do you want to continue?', function(btn){
+                        if(btn == 'yes'){
+                            filterArea.removeAll(true);
+                            filterArea.add(cfg);
+                            this.initSelection();
+                            this.fireEvent('selectionchange');
+                        }
+                        else {
+                            var rg = this.down('radiogroup');
+                            rg.suspendEvents();
+                            rg.setValue({filterType: 'participant'});
+                            rg.resumeEvents();
+                        }
+                    }, this);
+                }
+                else
+                {
+                    filterArea.removeAll(true);
+                    filterArea.add(cfg);
+                    this.initSelection();
+                    this.fireEvent('selectionchange')
+                }
             }
         }
     },
@@ -169,8 +179,12 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
 
             var sm = panel.getGrid().getSelectionModel();
             sm.select.defer(10, sm, [recs]);
-
         }
+        this.setParticipantSelectionDirty.defer(50, this, [false]);
+    },
+
+    setParticipantSelectionDirty : function(dirty) {
+        this.participantSelectionChanged = dirty;
     },
 
     getGroupPanelCfg: function(){
@@ -229,9 +243,12 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                 autoLoad: true
             });
 
+            var selections = this.getInitialSelection('participant');
+            this.participantSelectionChanged = selections && selections.length > 0;
+
             this.participantSectionCfg = [{
                 store       : store,
-                selection   : this.getInitialSelection('participant'),
+                selection   : selections,
                 maxInitSelection : this.maxInitSelection,
                 description : '<b class="filter-description">' + this.subjectNoun.plural + '</b>'
             }]
@@ -254,6 +271,12 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
 
                 },
                 dimension: true
+            },
+            listeners : {
+                selectionchange : function(){
+                    console.log('selection change');
+                    this.participantSelectionChanged = true;},
+                scope : this
             }
         }
     },

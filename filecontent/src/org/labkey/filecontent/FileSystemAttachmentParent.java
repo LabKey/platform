@@ -185,7 +185,6 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
                     {
                         FileContentServiceImpl.moveToDeleted(attachmentFile);
                         FileContentServiceImpl.logFileAction(parentDir, name, FileContentServiceImpl.FileAction.DELETE, user);
-                        AttachmentService.get().addAuditEvent(user, this, attachmentFile.getName(), "The attachment: " + attachmentFile.getName() + " was deleted");
                     }
                 }
                 else                        // delete the entire folder (and subfolders)
