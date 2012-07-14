@@ -188,7 +188,7 @@ function onStoreLoad(store){
             menu.removeAll();
 
             if(data && data.rows && data.rows.length){
-                Ext.each(data.rows, function(row){
+                Ext4.each(data.rows, function(row){
                     menu.add({
                         text: row.Name,
                         controller: 'experiment',

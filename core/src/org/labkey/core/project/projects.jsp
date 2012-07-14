@@ -67,7 +67,7 @@ Ext4.onReady(function(){
     config.hideCreateButton = config.hideCreateButton === 'true';
 
     if(!<%=hasPermission%>){
-        Ext.get('<%=renderTarget%>').update('You do not have permission to view this folder');
+        Ext4.get('<%=renderTarget%>').update('You do not have permission to view this folder');
         return;
     }
 
