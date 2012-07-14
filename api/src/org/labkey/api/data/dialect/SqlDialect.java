@@ -411,7 +411,12 @@ public abstract class SqlDialect
     public abstract boolean supportsGroupConcat();
 
     // GroupConcat is usable as an aggregate function within a GROUP BY
-    public abstract SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted);
+    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted)
+    {
+        return getGroupConcat(sql, distinct, sorted, ",");
+    }
+
+    public abstract SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull String delimiter);
 
     public abstract boolean supportsSelectConcat();
 
