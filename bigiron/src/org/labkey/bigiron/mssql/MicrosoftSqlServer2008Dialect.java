@@ -44,20 +44,20 @@ public class MicrosoftSqlServer2008Dialect extends MicrosoftSqlServer2005Dialect
         return true;
     }
 
-    // Uses custom CLR aggregate function defined in core-12.10-12.20.sql
+    // Uses custom CLR aggregate function defined in group_concat_install.sql
     @Override
-    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted)
+    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull String delimiter)
     {
         // SQL Server does not support aggregates on sub-queries; return a string constant in that case to keep from
         // blowing up. TODO: Don't pass sub-selects into group_contact.
         if (StringUtils.containsIgnoreCase(sql.getSQL(), "SELECT"))
             return new SQLFragment("'NOT SUPPORTED'");
 
-        SQLFragment result = new SQLFragment("core.GROUP_CONCAT");
+        SQLFragment result = new SQLFragment("core.GROUP_CONCAT_D");
 
         if (sorted)
         {
-            result.append("_S");
+            result.append("S");
         }
 
         result.append("(");
@@ -68,6 +68,9 @@ public class MicrosoftSqlServer2008Dialect extends MicrosoftSqlServer2005Dialect
         }
 
         result.append(sql);
+        result.append(", '");
+        result.append(delimiter);
+        result.append("'");
 
         if (sorted)
         {

@@ -427,7 +427,7 @@ class PostgreSql83Dialect extends SqlDialect
     }
 
     @Override
-    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted)
+    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull String delimiter)
     {
         SQLFragment result = new SQLFragment("array_to_string(");
         if (sorted)
@@ -445,7 +445,7 @@ class PostgreSql83Dialect extends SqlDialect
         {
             result.append(")");
         }
-        result.append(", ',')");
+        result.append(", '" + delimiter + "')");
         return result;
     }
 

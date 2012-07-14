@@ -24,11 +24,9 @@ import org.antlr.runtime.MissingTokenException;
 import org.antlr.runtime.ParserRuleReturnScope;
 import org.antlr.runtime.RecognitionException;
 import org.antlr.runtime.Token;
-import org.antlr.runtime.TokenStream;
 import org.antlr.runtime.tree.CommonTree;
 import org.antlr.runtime.tree.CommonTreeAdaptor;
 import org.antlr.runtime.tree.Tree;
-import org.antlr.runtime.tree.TreeAdaptor;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
@@ -46,7 +44,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -733,12 +730,28 @@ public class SqlParser
             }
             case AGGREGATE:
             {
-                if ((QAggregate.GROUP_CONCAT.equalsIgnoreCase(node.getText()) || QAggregate.COUNT.equalsIgnoreCase(node.getText()))
-                        && children.size() > 1 && first(children) instanceof QDistinct)
+                if (QAggregate.GROUP_CONCAT.equalsIgnoreCase(node.getText()) || QAggregate.COUNT.equalsIgnoreCase(node.getText()))
                 {
-                    children.remove(0);
+                    boolean distinct = false;
+                    String delimiter = null;
+
+                    if (children.size() > 1 && first(children) instanceof QDistinct)
+                    {
+                        children.remove(0);
+                        distinct = true;
+                    }
+
+                    // Delimiter parameter is optional... handle it if specified.
+                    if (QAggregate.GROUP_CONCAT.equalsIgnoreCase(node.getText()) && children.size() == 2)
+                    {
+                        QString delim = (QString)children.remove(1);
+                        delimiter = delim.getValue();
+                    }
+
                     QAggregate result = (QAggregate)qnode(node, children);
-                    result.setDistinct(true);
+                    result.setDistinct(distinct);
+                    result.setDelimiter(delimiter);
+
                     return result;
                 }
                 break;
@@ -1145,6 +1158,13 @@ public class SqlParser
         // comments
         "SELECT DISTINCT R.a, b AS B --nadlkf (*&F asdfl alsdkfj\nFROM rel R /* aldkjf (alsdf !! */ INNER JOIN S ON R.x=S.x WHERE R.y=0 AND R.a IS NULL OR R.b IS NOT NULL",
 
+        // GROUP_CONCAT
+        "SELECT a, GROUP_CONCAT(b) FROM R GROUP BY a",
+        "SELECT a, GROUP_CONCAT(DISTINCT b) FROM R GROUP BY a",
+        "SELECT a, GROUP_CONCAT(b, '%$') FROM R GROUP BY a",
+        "SELECT a, GROUP_CONCAT(DISTINCT b, '%$') FROM R GROUP BY a",
+        "SELECT GROUP_CONCAT(b) FROM R GROUP BY a",
+
         "BROKEN",
 
         // nested JOINS
@@ -1167,6 +1187,9 @@ public class SqlParser
 		"SELECT R.value, T.a, T.b FROM R INNER JOIN (SELECT S.a, S.b FROM S)",
         "SELECT \"a\",\"b\",AVG(x),COUNT(x),MIN(x),MAX(x),SUM(x),STDDEV(x) FROM R WHERE R.x='key' HAVING SUM(x)>100 ORDER BY a ASC, b DESC, SUM(x)",
         "SELECT SUM(*) FROM R",
+        "SELECT a, GROUP_CONCAT(b, '%$', 'STUPID') FROM R GROUP BY a",
+        "SELECT a, GROUP_CONCAT(b, 2) FROM R GROUP BY a",
+        "SELECT a, GROUP_CONCAT() FROM R GROUP BY a",
 
         "BROKEN",
             
@@ -1184,7 +1207,7 @@ public class SqlParser
     
     public static class SqlParserTestCase extends Assert
     {
-        Pair<String,String>[] parseExprs = new Pair[]
+        Pair<String, String>[] parseExprs = new Pair[]
         {
             // IDENT
             new Pair("a", "a"),
@@ -1352,7 +1375,6 @@ public class SqlParser
         @Test
         public void testSql()
         {
-
             for (String sql : testSql)
             {
                 try

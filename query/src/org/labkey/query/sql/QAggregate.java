@@ -60,6 +60,7 @@ public class QAggregate extends QExpr
 
     private Type _type;
     private boolean _distinct;
+    private String _delimiter = null;
 
     public QAggregate()
     {
@@ -89,7 +90,7 @@ public class QAggregate extends QExpr
             {
                 ((QExpr)child).appendSql(nestedBuilder);
             }
-            builder.append(builder.getDialect().getGroupConcat(nestedBuilder, _distinct, true));
+            builder.append(builder.getDialect().getGroupConcat(nestedBuilder, _distinct, true, null == _delimiter ? "," : _delimiter));
         }
         else if (type == Type.STDERR)
         {
@@ -186,6 +187,11 @@ public class QAggregate extends QExpr
     public void setDistinct(boolean distinct)
     {
         _distinct = distinct;
+    }
+
+    public void setDelimiter(String delimiter)
+    {
+        _delimiter = delimiter;
     }
 
     @Override
