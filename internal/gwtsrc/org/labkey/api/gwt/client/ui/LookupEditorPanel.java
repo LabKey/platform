@@ -31,6 +31,7 @@ import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.shared.HandlerManager;
 import com.google.gwt.user.client.Event;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.*;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
@@ -121,6 +122,14 @@ public class LookupEditorPanel extends LayoutContainer
     {
         String folder = getContainer();
         String schema = getSchemaName();
+
+        //Issue 15485: prevent query if the user enters an invalid container
+        if (folder != null && _comboContainer.getStore().findModel("text", folder) == null)
+        {
+            Window.alert("Container not found: " + folder);
+            _comboContainer.reset();
+            return;
+        }
 
         ComboStore schemaStore = (ComboStore)_comboSchema.getStore();
         populateSchemaStore(schemaStore, folder);
