@@ -416,7 +416,14 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             // UNDONE: 9077: check container permission on each row before delete
             Object oldContainer = new CaseInsensitiveHashMap(oldRowMap).get("container");
             if (null != oldContainer && !container.getId().equals(oldContainer))
-                throw new UnauthorizedException("The row is from the wrong container.");
+            {
+                //Issue 15301: allow workbooks records to be deleted/updated from the parent container
+                Container rowContainer = ContainerManager.getForId((String)oldContainer);
+                if (rowContainer != null && rowContainer.isWorkbook() && rowContainer.getParent().equals(container))
+                    container = rowContainer;
+                else
+                    throw new UnauthorizedException("The row is from the wrong container.");
+            }
         }
 
         _delete(container, oldRowMap);
@@ -513,6 +520,18 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     protected void setSpecialColumns(User user, Container container, TableInfo table, Map<String,Object> row)
     {
         if (null != container)
+        {
+            //Issue 15301: allow workbooks records to be deleted/updated from the parent container
+            if (row.get("container") != null)
+            {
+                Container rowContainer = ContainerManager.getForId((String)row.get("container"));
+                if (rowContainer != null && rowContainer.isWorkbook() && rowContainer.getParent().equals(container))
+                {
+                    return;
+                }
+
+            }
             row.put("container", container.getId());
+        }
     }
 }
