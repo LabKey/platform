@@ -28,6 +28,7 @@ import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.api.writer.VirtualFile;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -108,7 +109,7 @@ public class ReportService
          * parameters. Imported reports are always treated as new reports even if they were exported from
          * the same container.
          */
-        public Report importReport(User user, Container container, XmlObject reportXml) throws IOException, SQLException, XmlValidationException;
+        public Report importReport(User user, Container container, XmlObject reportXml, VirtualFile root) throws IOException, SQLException, XmlValidationException;
 
         /**
          * Runs maintenance on the report service.

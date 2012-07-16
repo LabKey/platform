@@ -181,6 +181,11 @@ public abstract class AbstractReport implements Report
     {
     }
 
+    @Override
+    public void afterSave(Container container, User user, VirtualFile root)
+    {
+    }
+
     public void afterDeserializeFromFile(File reportFile) throws IOException
     {
     }

@@ -129,6 +129,11 @@ public interface Report extends AttachmentParent, StaticThumbnailProvider
     void afterImport(Container container, User user);
 
     /**
+     * Called after save to perform report-specific processing after deserialization from a virtual file 
+     */
+    void afterSave(Container container, User user, VirtualFile root);
+
+    /**
      * Optional method to perform report-specific processing after file based deserialization
      * @param reportMetaFile - the original file containing the report meta-data
      */
