@@ -17,34 +17,35 @@
 package org.labkey.study.reports;
 
 import org.apache.commons.lang3.math.NumberUtils;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.report.RedirectReport;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.query.DataSetQuerySettings;
+import org.labkey.study.query.DataSetQueryView;
+import org.labkey.study.query.StudyQuerySchema;
+import org.springframework.validation.BindException;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 
 /**
  * User: Matthew
@@ -116,7 +117,7 @@ public class ExportExcelReport extends RedirectReport
     }
 
 
-    public void runExportToExcel(HttpServletResponse response, StudyImpl study, User user)
+    public void runExportToExcel(ViewContext context, StudyImpl study, User user, BindException errors)
             throws IOException, ServletException, SQLException
     {
         // TODO: wire up the security
@@ -146,26 +147,18 @@ public class ExportExcelReport extends RedirectReport
             if (checkUserPermissions && !def.canRead(user))
                 continue;
 
-            TableInfo tinfo = def.getTableInfo(user, checkUserPermissions);
             Sort sort = new Sort(StudyService.get().getSubjectColumnName(study.getContainer()) + ",SequenceNum");
-            ResultSet rs = Table.select(tinfo, Table.ALL_COLUMNS, siteFilter, sort);
 
+            UserSchema schema = QueryService.get().getUserSchema(user, study.getContainer(), StudyQuerySchema.SCHEMA_NAME);
+            DataSetQuerySettings settings = (DataSetQuerySettings)schema.getSettings(context, DataSetQueryView.DATAREGION, def.getLabel());
+            settings.setBaseFilter(siteFilter);
+            settings.setBaseSort(sort);
+
+            QueryView queryView = schema.createView(context, settings, errors);
             String label = def.getLabel() != null ? def.getLabel() : String.valueOf(def.getDataSetId());
 
-            // Filter out labkey-specific columns, lsid and sourcelsid
-            List<ColumnInfo> columns = tinfo.getColumns();
-            List<ColumnInfo> destColumns = new ArrayList<ColumnInfo>(columns.size() - 2);
-            for (ColumnInfo column : columns)
-            {
-                String name = column.getName();
-                if (!("lsid".equals(name) || "sourcelsid".equals(name)))
-                {
-                    destColumns.add(column);
-                }
-            }
-
-            writer.setColumns(destColumns);
-            renderSheet(writer, label, rs);
+            writer.setDisplayColumns(queryView.getExportColumns(queryView.getDisplayColumns()));
+            renderSheet(writer, label, queryView.getResults());
         }
 
         if (writer.getWorkbook().getNumberOfSheets() == 0)
@@ -186,16 +179,25 @@ public class ExportExcelReport extends RedirectReport
                     null);
 
             writer.createColumns(rs.getMetaData());
-            renderSheet(writer, StudyService.get().getSubjectNounPlural(study.getContainer()), rs);
+
+            String label = StudyService.get().getSubjectNounPlural(study.getContainer());
+            writer.setResultSet(rs);
+            writer.setAutoSize(true);
+            writer.setCaptionRowVisible(true);
+
+            if (label.length() > 0)
+                writer.setSheetName(label);
+
+            writer.renderNewSheet();
         }
 
-        writer.write(response, study.getLabel());
+        writer.write(context.getResponse(), study.getLabel());
     }
 
 
-    private static void renderSheet(ExcelWriter writer, String label, ResultSet rs)
+    private static void renderSheet(ExcelWriter writer, String label, Results results)
     {
-        writer.setResultSet(rs);
+        writer.setResults(results);
         writer.setAutoSize(true);
         writer.setCaptionRowVisible(true);
 

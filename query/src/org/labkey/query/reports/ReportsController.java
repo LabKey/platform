@@ -578,7 +578,10 @@ public class ReportsController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild(_report.getTypeDescription() + " Builder");
+            if (_report != null)
+                return root.addChild(_report.getTypeDescription() + " Builder");
+
+            return null;
         }
     }
 
@@ -799,13 +802,18 @@ public class ReportsController extends SpringActionController
 
     protected void validatePermissions(ViewContext context, Report report, List<ValidationError> errors)
     {
-        if (report.getDescriptor().isNew())
+        if (report != null)
         {
-            if (!ReportUtil.canCreateScript(context))
-                errors.add(new SimpleValidationError("Only members of the Site Admin and Site Developers groups are allowed to create script views."));
+            if (report.getDescriptor().isNew())
+            {
+                if (!ReportUtil.canCreateScript(context))
+                    errors.add(new SimpleValidationError("Only members of the Site Admin and Site Developers groups are allowed to create script views."));
+            }
+            else
+                report.canEdit(context.getUser(), context.getContainer(), errors);
         }
         else
-            report.canEdit(context.getUser(), context.getContainer(), errors);
+            errors.add(new SimpleValidationError("Unable to locate the report, it may have been deleted."));
     }
 
 

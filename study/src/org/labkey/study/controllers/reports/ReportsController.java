@@ -996,7 +996,7 @@ public class ReportsController extends BaseStudyController
             User user = getUser();
             StudyImpl study = getStudy();
 
-            report.runExportToExcel(getViewContext().getResponse(), study, user);
+            report.runExportToExcel(getViewContext(), study, user, errors);
             return null;
         }
 
