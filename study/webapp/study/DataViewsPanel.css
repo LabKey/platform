@@ -23,6 +23,7 @@
 
 .normalwrap-gridcell {
   white-space: normal !important;
+  word-wrap: break-word;
 }
 
 /* Specific to Data Views Panel */

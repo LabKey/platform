@@ -48,6 +48,7 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.reports.StudyChartQueryReport" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.util.ExceptionUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
@@ -155,8 +156,13 @@
                 sort = new Sort("-SequenceNum");
             }
 
-            Map<String, Object> result = new TableSelector(datasetTable, new CsvSet("lsid," + StudyService.get().getSubjectColumnName(dataSet.getContainer()) + ",Date,SequenceNum"), filter, sort).getObject(Map.class);
-            String lsid = result != null ? (String)result.get("lsid") : null;
+            // Issue 13496: it is possible for older studies (<12.1) to have multiple records for a participant in a demographic dataset, so default to the first one
+            Map<String, Object>[] results = new TableSelector(datasetTable, new CsvSet("lsid," + StudyService.get().getSubjectColumnName(dataSet.getContainer()) + ",Date,SequenceNum"), filter, sort).getArray(Map.class);
+            if (results.length > 1)
+            {
+                ExceptionUtil.logExceptionToMothership(context.getRequest(), new IllegalStateException("Unexpected number of demographic dataset records. Expected 0 or 1 but found " + results.length));
+            }
+            String lsid = results.length > 0 ? (String)results[0].get("lsid") : null;
             Map<String, Object> datasetRow = null;
 
             if (lsid != null)

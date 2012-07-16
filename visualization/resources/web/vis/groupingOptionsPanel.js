@@ -101,7 +101,7 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
                 }
             }
         });
-        this.subjectSelectionRadioGroup = new Ext.form.RadioGroup({
+        this.subjectSelectionRadioGroup = Ext4.create('Ext.form.RadioGroup', {
             border: false,
             columns: 1,
             items:[

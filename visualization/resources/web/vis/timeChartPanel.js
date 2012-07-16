@@ -1125,7 +1125,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         if (force !== true) {
             var msg = ""; var sep = "";
             var noDataCounter = 0;
-            Ext.iterate(this.aggregateHasData ? this.aggregateHasData : this.individualHasData, function(key, value, obj){
+            Ext4.iterate(this.aggregateHasData ? this.aggregateHasData : this.individualHasData, function(key, value, obj){
                 if (!value)
                 {
                     noDataCounter++;

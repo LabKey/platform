@@ -21,20 +21,28 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.DocumentConversionService;
+import org.labkey.api.attachments.InputStreamAttachmentFile;
 import org.labkey.api.data.Container;
+import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailOutputStream;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.query.reports.ReportsController.DownloadAction;
 import org.labkey.query.reports.ReportsController.DownloadReportFileAction;
 
@@ -44,6 +52,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -316,6 +327,79 @@ public class AttachmentReport extends BaseRedirectReport implements DynamicThumb
 
             return Type.Other;
         }
+    }
+
+    @Override
+    public void serializeToFolder(ContainerUser context, VirtualFile dir) throws IOException
+    {
+        ReportDescriptor descriptor = getDescriptor();
+
+        if (descriptor.getReportId() != null && descriptor.getReportName() != null)
+        {
+            // for attachment reports, write the attachment to a subdirectory to avoid collisions
+            VirtualFile reportDir = dir.getDir(getSerializedReportName());
+            Attachment attachment = getLatestVersion();
+            if (attachment != null && attachment.getName() != null)
+            {
+                InputStream is = null;
+                OutputStream os = null;
+
+                try
+                {
+                    is = AttachmentService.get().getInputStream(this, attachment.getName());
+                    os = reportDir.getOutputStream(attachment.getName());
+                    FileUtil.copyData(is, os);
+                }
+                catch (FileNotFoundException e)
+                {
+                    throw new FileNotFoundException("Attachment report file not found: " + attachment.getName());
+                }
+                finally
+                {
+                    if (null != is)
+                        is.close();
+                    if (null != os)
+                        os.close();
+                }
+            }
+
+            super.serializeToFolder(context, dir);
+        }
+        else
+            throw new IllegalArgumentException("Cannot serialize a report that hasn't been saved yet");
+    }
+
+    @Override
+    public void afterSave(Container container, User user, VirtualFile root)
+    {
+        // get the attachment file to go along with this report from the report dir root
+        if (root != null)
+        {
+            VirtualFile reportDir = root.getDir(getSerializedReportName());
+            String[] attachments = reportDir.list();
+            if (attachments.length > 0)
+            {
+                if (attachments.length > 1)
+                    throw new IllegalStateException("Only one attachment file expected for an attachment report.");
+
+                try
+                {
+                    InputStream is = reportDir.getInputStream(attachments[0]);
+                    AttachmentFile attachmentFile = new InputStreamAttachmentFile(is, attachments[0]);
+                    AttachmentService.get().addAttachments(this, new ArrayList<AttachmentFile>(Collections.singleton(attachmentFile)), user);
+                }
+                catch (Exception e)
+                {
+                    throw UnexpectedException.wrap(e);
+                }
+            }
+        }
+    }
+
+    protected String getSerializedReportName()
+    {
+        ReportDescriptor descriptor = getDescriptor();
+        return FileUtil.makeLegalName(descriptor.getReportName());
     }
 
     @Override

@@ -56,6 +56,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.api.writer.VirtualFile;
 
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
@@ -586,7 +587,8 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         throw new IllegalArgumentException("Report XML file does not exist.");
     }
 
-    public Report importReport(final User user, final Container container, XmlObject reportXml) throws IOException, SQLException, XmlValidationException
+    @Override
+    public Report importReport(final User user, final Container container, XmlObject reportXml, VirtualFile root) throws IOException, SQLException, XmlValidationException
     {
         Report report = deserialize(container, user, reportXml);
         ReportDescriptor descriptor = report.getDescriptor();
@@ -613,6 +615,10 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
         int rowId = _saveReport(user, container, key, descriptor).getRowId();
         descriptor.setReportId(new DbReportIdentifier(rowId));
+
+        // re-load the report to get the updated property information (i.e container, etc.)
+        report = ReportService.get().getReport(rowId);
+        report.afterSave(container, user, root);
 
         return report;
     }

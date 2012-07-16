@@ -70,7 +70,7 @@ public class ReportImporter implements FolderImporter
 
                 try
                 {
-                    ReportService.get().importReport(ctx.getUser(), ctx.getContainer(), reportsDir.getXmlBean(reportFileName));
+                    ReportService.get().importReport(ctx.getUser(), ctx.getContainer(), reportsDir.getXmlBean(reportFileName), reportsDir);
                     count++;
                 }
                 catch (XmlValidationException e)
