@@ -853,7 +853,7 @@ public class QueryView extends WebPartView<Object>
         ActionURL tsvURL = urlFor(QueryAction.exportRowsTsv);
         if (exportAsWebPage)
         {
-            tsvURL.addParameter("exportAsWebPage", "true");
+            tsvURL.replaceParameter("exportAsWebPage", "true");
         }
         exportButton.addSubPanel("Text", new JspView<ActionURL>("/org/labkey/api/query/textExportOptions.jsp", tsvURL));
 
