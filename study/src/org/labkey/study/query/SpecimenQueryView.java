@@ -679,18 +679,41 @@ public class SpecimenQueryView extends BaseStudyQueryView
 
         if (_viewType.isVialView())
         {
-            getSettings().addAggregates(
+/*            getSettings().addAggregates(
                     new Aggregate(getTable().getColumn("Volume"), Aggregate.Type.SUM),
-                    new Aggregate(getTable().getColumn("GlobalUniqueId"), Aggregate.Type.COUNT));
+                    new Aggregate(getTable().getColumn("GlobalUniqueId"), Aggregate.Type.COUNT));    */
+            addAggregateIfInDisplay("Volume", Aggregate.Type.SUM);
+            addAggregateIfInDisplay("GlobalUniqueId", Aggregate.Type.COUNT);
         }
         else
         {
-            getSettings().addAggregates(new Aggregate(getTable().getColumn("TotalVolume"), Aggregate.Type.SUM),
+/*            getSettings().addAggregates(new Aggregate(getTable().getColumn("TotalVolume"), Aggregate.Type.SUM),
                     new Aggregate(getTable().getColumn("LockedInRequestCount"), Aggregate.Type.SUM),
                     new Aggregate(getTable().getColumn("AtRepositoryCount"), Aggregate.Type.SUM),
                     new Aggregate(getTable().getColumn("VialCount"), Aggregate.Type.SUM),
                     new Aggregate(getTable().getColumn("AvailableVolume"), Aggregate.Type.SUM),
-                    new Aggregate(getTable().getColumn("AvailableCount"), Aggregate.Type.SUM));
+                    new Aggregate(getTable().getColumn("AvailableCount"), Aggregate.Type.SUM));      */
+            addAggregateIfInDisplay("TotalVolume", Aggregate.Type.SUM);
+            addAggregateIfInDisplay("LockedInRequestCount", Aggregate.Type.SUM);
+            addAggregateIfInDisplay("AtRepositoryCount", Aggregate.Type.SUM);
+            addAggregateIfInDisplay("VialCount", Aggregate.Type.SUM);
+            addAggregateIfInDisplay("AvailableVolume", Aggregate.Type.SUM);
+            addAggregateIfInDisplay("AvailableCount", Aggregate.Type.SUM);
+        }
+    }
+
+    // Add the aggregate clause only if the aggregated column is going to be displayed
+    // (otherwise SQL is not happy)
+    private void addAggregateIfInDisplay(String colName, Aggregate.Type aggregateType)
+    {
+        ColumnInfo columnInfo = getTable().getColumn(colName);
+        for (DisplayColumn displayColumn : super.getDisplayColumns())
+        {
+            if (displayColumn.getColumnInfo().equals(columnInfo))
+            {
+                getSettings().addAggregates(new Aggregate(columnInfo, aggregateType));
+                return;
+            }
         }
     }
 
