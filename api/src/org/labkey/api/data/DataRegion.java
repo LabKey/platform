@@ -854,7 +854,7 @@ public class DataRegion extends AbstractDataRegion
 
         renderHeader(ctx, out, renderButtons, colCount);
 
-        if (false == errorCreatingResults)
+        if (!errorCreatingResults)
         {
             renderGridHeaderColumns(ctx, out, showRecordSelectors, renderers);
 
@@ -1934,12 +1934,13 @@ public class DataRegion extends AbstractDataRegion
         //Make sure all pks are included
         if (action == MODE_UPDATE)
         {
-            List<String> pkColNames = getTable().getPkColumnNames();
-            for (String pkColName : pkColNames)
+            List<ColumnInfo> pkCols = getTable().getPkColumns();
+            for (ColumnInfo pkCol : pkCols)
             {
+                String pkColName = pkCol.getName();
                 if (!renderedColumns.contains(pkColName)) {
                     Object pkVal = null;
-                    //UNDONE: Should we require a viewForm whenver someone
+                    //UNDONE: Should we require a viewForm whenever someone
                     //posts? I tend to think so.
                     if (null != viewForm)
                         pkVal = viewForm.getPkVal();        //TODO: Support multiple PKs?
@@ -1949,7 +1950,10 @@ public class DataRegion extends AbstractDataRegion
 
                     if (null != pkVal) {
                         out.write("<input type='hidden' name='");
-                        out.write(pkColName);
+                        if (viewForm != null)
+                            out.write(viewForm.getFormFieldName(pkCol));
+                        else
+                            out.write(pkColName);
                         out.write("' value=\"");
                         out.write(PageFlowUtil.filter(pkVal.toString()));
                         out.write("\">");
@@ -2171,9 +2175,10 @@ public class DataRegion extends AbstractDataRegion
         //Make sure all pks are included
         if (action == MODE_UPDATE)
         {
-            List<String> pkColNames = getTable().getPkColumnNames();
-            for (String pkColName : pkColNames)
+            List<ColumnInfo> pkCols = getTable().getPkColumns();
+            for (ColumnInfo pkCol : pkCols)
             {
+                String pkColName = pkCol.getName();
                 if (!renderedColumns.contains(pkColName)) {
                     Object pkVal = null;
                     //UNDONE: Should we require a viewForm whenever someone
@@ -2186,11 +2191,15 @@ public class DataRegion extends AbstractDataRegion
 
                     if (null != pkVal) {
                         out.write("<input type='hidden' name='");
-                        out.write(pkColName);
+                        if (viewForm != null)
+                            out.write(viewForm.getFormFieldName(pkCol));
+                        else
+                            out.write(pkColName);
                         out.write("' value=\"");
                         out.write(PageFlowUtil.filter(pkVal.toString()));
                         out.write("\">");
                     }
+                    renderedColumns.add(pkColName);
                 }
             }
         }
