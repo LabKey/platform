@@ -78,7 +78,7 @@ public class IssuesTable extends FilteredTable
         });
 
         issueIdColumn.setKeyField(true);
-        issueIdColumn.setLabel(names.singularName.toString() + " ID");
+        issueIdColumn.setLabel(names.singularName.getSource() + " ID");
         addColumn(issueIdColumn);
 
         ColumnInfo folder = new AliasedColumn(this, "Folder", _rootTable.getColumn("container"));

@@ -61,7 +61,7 @@
     <td valign=top>
         <table>
             <tr><td colspan=2 align=center><div class="labkey-form-label"><b>Required Fields</b></div></td></tr>
-            <tr><td colspan=2>Select fields to be required when entering or updating <%=bean.getEntryTypeNames().getIndefiniteSingularArticle()%> <%=bean.getEntryTypeNames().singularName%>:</td></tr>
+            <tr><td colspan=2>Select fields to be required when entering or updating <%=bean.getEntryTypeNames().getIndefiniteSingularArticle()%> <%=h(bean.getEntryTypeNames().singularName)%>:</td></tr>
             <tr><td colspan=2>&nbsp;</td></tr>
             <tr>
                 <td><input type="checkbox" name="requiredFields" <%=isRequired("comment", bean.getRequiredFields()) ? "checked " : ""%>value="comment">Comments (new issues only)</td><%
@@ -92,7 +92,7 @@
     <td valign=top>
         <table>
         <tr><td colspan=2 align=center><div class="labkey-form-label"><b>Custom Fields</b></div></td></tr>
-        <tr><td colspan=2>Enter captions below to use custom fields in this <%=bean.entryTypeNames.pluralName%> list:</td></tr>
+        <tr><td colspan=2>Enter captions below to use custom fields in this <%=h(bean.entryTypeNames.pluralName)%> list:</td></tr>
         <tr><td colspan=2>&nbsp;</td></tr>
         <tr><td>Type</td><td><input name="type" value="<%=h(captions.get("type"))%>" size=20></td></tr>
         <tr><td>Area</td><td><input name="area" value="<%=h(captions.get("area"))%>" size=20></td></tr>
@@ -120,12 +120,12 @@
                         <tr>
                             <td>Singular item name</td>
                             <td><input type="text" name="<%=ConfigureIssuesForm.ParamNames.entrySingularName.name()%>"
-                                       value="<%=bean.entryTypeNames.singularName%>" size="20"/></td>
+                                       value="<%=h(bean.entryTypeNames.singularName)%>" size="20"/></td>
                         </tr>
                         <tr>
                             <td>Plural items name</td>
                             <td><input type="text" name="<%=ConfigureIssuesForm.ParamNames.entryPluralName.name()%>"
-                                       value="<%=bean.entryTypeNames.pluralName%>" size="20"/></td>
+                                       value="<%=h(bean.entryTypeNames.pluralName)%>" size="20"/></td>
                         </tr>
                         <tr>
                             <td>Comment sort direction</td>

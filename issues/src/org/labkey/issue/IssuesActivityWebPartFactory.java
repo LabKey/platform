@@ -81,7 +81,7 @@ public class IssuesActivityWebPartFactory extends BaseWebPartFactory
             //set specified web part title
             Object title = context.get("title");
             if (title == null)
-                title = IssueManager.getEntryTypeNames(c).pluralName + " Activity";
+                title = IssueManager.getEntryTypeNames(c).pluralName.getSource() + " Activity";
             setTitle(title.toString());
 
             User u = context.getUser();

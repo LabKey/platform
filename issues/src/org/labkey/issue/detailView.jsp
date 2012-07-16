@@ -56,7 +56,7 @@
 
     if (bean.getHasUpdatePermissions())
     {
-        %><td><%= textLink("new " + names.singularName.toLowerCase(), PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), InsertAction.class)))%></td><%
+        %><td><%= textLink("new " + names.singularName.getSource().toLowerCase(), PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), InsertAction.class)))%></td><%
     }%>
 
     <td><%= textLink("return to grid", PageFlowUtil.getLastFilter(context, IssuesController.issueURL(context.getContainer(), ListAction.class)).deleteParameter("error"))%></td><%
@@ -81,7 +81,7 @@
     }
     %><td><%= textLink("print", context.cloneActionURL().replaceParameter("_print", "1"))%></td>
     <td><%= textLink("email prefs", IssuesController.issueURL(context.getContainer(), EmailPrefsAction.class).addParameter("issueId", issueId))%></td>
-    <td>&nbsp;&nbsp;&nbsp;Jump to <%=names.singularName%>: <input type="text" size="5" name="issueId"/></td>
+    <td>&nbsp;&nbsp;&nbsp;Jump to <%=h(names.singularName)%>: <input type="text" size="5" name="issueId"/></td>
     </tr></table>
 </form><%
 }

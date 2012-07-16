@@ -74,7 +74,7 @@
 %>
     <div class="comment">
         <span class="comment-created-by"><%=h(comment.getCreatedByName(user))%></span>
-        made changes to <a href="<%=detailsURL%>"><%=names.singularName%> <%=issue.getIssueId()%></a>
+        made changes to <a href="<%=detailsURL%>"><%=h(names.singularName)%> <%=issue.getIssueId()%></a>
         <a href="<%=detailsURL%>"><%=h(issue.getTitle())%></a>
         <div class="comment-text">
             <%

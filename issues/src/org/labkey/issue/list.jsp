@@ -43,11 +43,11 @@
         if (context.getContainer().hasPermission(context.getUser(), InsertPermission.class))
         {
     %>
-            <%=generateButton("New " + names.singularName, new ActionURL(IssuesController.InsertAction.class, context.getContainer()))%>&nbsp;&nbsp;&nbsp;
+            <%=generateButton("New " + names.singularName.getSource(), new ActionURL(IssuesController.InsertAction.class, context.getContainer()))%>&nbsp;&nbsp;&nbsp;
     <%
         }
     %><input type="text" size="5" name="issueId"/>
-        <%=PageFlowUtil.generateSubmitButton("Jump to " + names.singularName, "", "align=\"top\" vspace=\"2\"")%></form></td>
+        <%=PageFlowUtil.generateSubmitButton("Jump to " + names.singularName.getSource(), "", "align=\"top\" vspace=\"2\"")%></form></td>
     <td width=100%>&nbsp;</td>
     <td align="right" nowrap>
         <form action="<%=h(urlProvider(SearchUrls.class).getSearchURL(context.getContainer(), null))%>" method="get">

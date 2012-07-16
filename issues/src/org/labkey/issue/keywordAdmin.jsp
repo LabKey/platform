@@ -42,7 +42,7 @@
 %>
     <!-- <%=kwp.type.getColumnName()%> -->
     <td style="vertical-align:top">
-    <div class="labkey-form-label"><b><%=kwp.name%> Options</b></div>
+    <div class="labkey-form-label"><b><%=h(kwp.name)%> Options</b></div>
     <form id="<%=formId%>" method="POST" action="<%=h(buildURL(IssuesController.DeleteKeywordAction.class))%>">
 <%
     if (kwp.keywords.isEmpty())
@@ -85,7 +85,7 @@
 <td align="center">
     <form method="POST" name="add<%=kwp.type.getColumnName()%>" action="<%=h(buildURL(IssuesController.AddKeywordAction.class))%>">
     <input name="keyword" value=""><br>
-        <%=generateSubmitButton("Add " + kwp.name)%><br>
+        <%=generateSubmitButton("Add " + kwp.name.getSource())%><br>
     <input type="hidden" name="type" value="<%=kwp.type.getOrdinal()%>">
     </form>
 </td><%
