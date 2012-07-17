@@ -2449,6 +2449,26 @@ public class StudyManager
         }
     }
 
+    public Table.TableResultSet getParticipantIdsStartsWith(Study study, String lowerCasePrefix)
+    {
+        try
+        {
+            TableInfo groupMapTable = StudySchema.getInstance().getTableInfoParticipantGroupMap();
+            DbSchema schema = StudySchema.getInstance().getSchema();
+
+            SQLFragment sql = new SQLFragment(String.format(
+                    "SELECT ParticipantId FROM %s WHERE Container = ? AND ParticipantId %s '%s%%' ORDER BY ParticipantId",
+                    _tableInfoParticipant, schema.getSqlDialect().getCaseInsensitiveLikeOperator(), lowerCasePrefix),
+                    study.getContainer().getId());
+
+            return Table.executeQuery(schema, sql, 5000);
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
     private void parseData(User user,
                DataSetDefinition def,
                DataLoader loader,

@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.study.samples.report.SpecimenVisitReportParameters" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenVisitReportParameters> me = (JspView<SpecimenVisitReportParameters>) HttpView.currentView();
@@ -41,7 +42,16 @@ This folder does not contain a study.
         return;
     }
 
-    for (SpecimenVisitReport report : bean.getReports())
+    List<? extends SpecimenVisitReport> reports = bean.getReports();
+    if (reports == null || reports.size() == 0)
+    {
+%>
+The request has produced no records.
+<%
+    }
+    else
+    {
+    for (SpecimenVisitReport report : reports)
     {
         VisitImpl[] visits = report.getVisits();
         int colCount = visits.length + report.getLabelDepth();
@@ -170,5 +180,6 @@ This folder does not contain a study.
     }
 %>
 <%
+    }
     }
 %>

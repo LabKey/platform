@@ -88,6 +88,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.AjaxCompletion;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.DisplayElement;
@@ -114,6 +115,7 @@ import org.labkey.study.designer.MapArrayExcelWriter;
 import org.labkey.study.importer.RequestabilityManager;
 import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.Participant;
 import org.labkey.study.model.ParticipantDataset;
 import org.labkey.study.model.SampleRequest;
 import org.labkey.study.model.SampleRequestActor;
@@ -5382,4 +5384,70 @@ public class SpecimenController extends BaseStudyController
 
     }
 
+    public static class CompleteSpecimenForm
+    {
+        private String _prefix;
+
+        public String getPrefix()
+        {
+            return _prefix;
+        }
+
+        public void setPrefix(String prefix)
+        {
+            _prefix = prefix;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class CompleteSpecimenAction extends SimpleViewAction<CompleteSpecimenForm>
+    {
+        public ModelAndView getView(CompleteSpecimenForm form, BindException errors) throws Exception
+        {
+            Study study = getStudy();
+            if (study == null)
+                throw new NotFoundException("No study exists in this folder.");
+
+            List<AjaxCompletion> completions = getAjaxCompletions(form.getPrefix(), study);
+            PageFlowUtil.sendAjaxCompletions(getViewContext().getResponse(), completions);
+            return null;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    public static List<AjaxCompletion> getAjaxCompletions(String prefix, Study study) throws SQLException
+    {
+        List<AjaxCompletion> completions = new ArrayList<AjaxCompletion>();
+        if (prefix != null && prefix.length() != 0)
+        {
+            String allString = "All " + PageFlowUtil.filter(StudyService.get().getSubjectNounPlural(study.getContainer())) +  " (Large Report)";
+            String lowerPrefix = prefix.toLowerCase();
+
+            if (allString.toLowerCase().startsWith(lowerPrefix))
+                completions.add(new AjaxCompletion(allString, allString));
+
+            Table.TableResultSet results = StudyManager.getInstance().getParticipantIdsStartsWith(study, lowerPrefix);
+            try
+            {
+                int count = 0;
+
+                Iterator<Map<String, Object>> iter = results.iterator();
+                while (iter.hasNext())
+                {
+                    String participantId = (String)iter.next().get("ParticipantId");
+                    completions.add(new AjaxCompletion(participantId, participantId));
+                    count += 1;
+                }
+            }
+            finally
+            {
+                results.close();
+            }
+        }
+        return completions;
+    }
 }

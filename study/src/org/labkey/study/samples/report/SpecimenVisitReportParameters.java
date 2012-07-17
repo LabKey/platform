@@ -372,33 +372,75 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
         return builder.toString();
     }
 
-    protected static final String ALL_SUBJECTS_OPTION = "~all~";
+    private String _allString = null;
+    protected String getAllString()
+    {
+       if (_allString == null)
+           _allString = "All " + PageFlowUtil.filter(StudyService.get().getSubjectNounPlural(getContainer())) + " (Large Report)";
+        return _allString;
+    }
+
+    public boolean isAllSubjectsOption(String subject)
+    {
+        if (subject == null)
+            return false;
+        String allString = getAllString().toLowerCase();
+        subject = subject.toLowerCase();
+        if (subject.length() > allString.length())
+            return false;
+        return allString.startsWith(subject);
+    }
+
     protected Pair<String, String> getParticipantPicker(String inputName, String selectedParticipantId)
     {
         try
         {
             Study study = StudyManager.getInstance().getStudy(getContainer());
             StringBuilder builder = new StringBuilder();
-            builder.append("<select name=\"").append(inputName).append("\">\n");
-            builder.append("<option value=\"").append(ALL_SUBJECTS_OPTION).append("\"");
-            if (ALL_SUBJECTS_OPTION.equals(selectedParticipantId))
-                builder.append(" SELECTED");
-            builder.append(">All ").append(PageFlowUtil.filter(StudyService.get().getSubjectNounPlural(getContainer()))).append(" (Large Report)</option>\n");
-            boolean first = true;
-            for (Participant participant : StudyManager.getInstance().getParticipants(study))
+
+            String allString = getAllString();
+
+            Participant[] participants = StudyManager.getInstance().getParticipants(study);
+            if (participants.length <= 200)
             {
-                builder.append("<option value=\"").append(PageFlowUtil.filter(participant.getParticipantId())).append("\"");
-                // select the previously selected option or the first non-all option.  We don't want to select 'all participants'
-                // by default, since these reports are extremely expensive to generate.
-                if ((selectedParticipantId != null && selectedParticipantId.equals(participant.getParticipantId())) ||
-                        (selectedParticipantId == null && first))
+                builder.append("<select name=\"").append(inputName).append("\">\n");
+                builder.append("<option value=\"").append(allString).append("\"");
+                if (isAllSubjectsOption(selectedParticipantId))
                     builder.append(" SELECTED");
-                builder.append(">");
-                builder.append(PageFlowUtil.filter(DemoMode.id(participant.getParticipantId(), getContainer(), getUser())));
-                builder.append("</option>\n");
-                first = false;
+                builder.append(">").append(allString).append("</option>\n");
+                boolean first = true;
+                for (Participant participant : participants)
+                {
+                    builder.append("<option value=\"").append(PageFlowUtil.filter(participant.getParticipantId())).append("\"");
+                    // select the previously selected option or the first non-all option.  We don't want to select 'all participants'
+                    // by default, since these reports are extremely expensive to generate.
+                    if ((selectedParticipantId != null && selectedParticipantId.equals(participant.getParticipantId())) ||
+                            (selectedParticipantId == null && first))
+                        builder.append(" SELECTED");
+                    builder.append(">");
+                    builder.append(PageFlowUtil.filter(DemoMode.id(participant.getParticipantId(), getContainer(), getUser())));
+                    builder.append("</option>\n");
+                    first = false;
+                }
+                builder.append("</select>");
             }
-            builder.append("</select>");
+            else
+            {
+                builder.append("<script type=\"text/javascript\">LABKEY.requiresScript('completion.js');</script>");
+                builder.append("<input type=\"text\" name=\"").append(inputName).append("\"onKeyDown=\"return ctrlKeyCheck(event);\" onBlur=\"hideCompletionDiv();\" autocomplete=\"off\" size=\"25\"");
+                builder.append("onKeyUp=\"return handleChange(this, event, 'completeSpecimen.view?type=ParticipantId&prefix=');\" value=\"");
+                if (selectedParticipantId != null)
+                {
+                    builder.append(selectedParticipantId);
+                }
+                else
+                {
+                    builder.append(participants[0].getParticipantId());     // Set to the first one
+                }
+                builder.append("\">");
+//                <input type='text' size='0' name='specimen1_ParticipantID' value="" onKeyDown="return ctrlKeyCheck(event);" onBlur="hideCompletionDiv();" autocomplete="off" onKeyUp="return handleChange(this, event, '/labkey/study-samples/home/New%20Demo%20Study/autoComplete.view?type=ParticipantId&prefix=');">
+            }
+
             return new Pair<String, String>(StudyService.get().getSubjectColumnName(getContainer()), builder.toString());
         }
         catch (SQLException e)

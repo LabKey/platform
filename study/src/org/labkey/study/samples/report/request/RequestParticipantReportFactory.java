@@ -16,6 +16,7 @@
 package org.labkey.study.samples.report.request;
 
 import org.labkey.api.util.DemoMode;
+import org.labkey.study.model.Participant;
 import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.SampleManager;
@@ -80,8 +81,14 @@ public class RequestParticipantReportFactory extends BaseRequestReportFactory
     protected List<? extends SpecimenVisitReport> createReports()
     {
         String[] participantIds;
-        if (!ALL_SUBJECTS_OPTION.equals(_participantId) && _participantId != null && _participantId.trim().length() > 0)
+        if (!isAllSubjectsOption(_participantId) && _participantId != null && _participantId.trim().length() > 0)
+        {
+            Study study = StudyManager.getInstance().getStudy(getContainer());
+            Participant participant = StudyManager.getInstance().getParticipant(study, _participantId);
+            if (participant == null)
+                return Collections.<SpecimenVisitReport>emptyList();
             participantIds = new String[] { _participantId };
+        }
         else
         {
             Study study = StudyManager.getInstance().getStudy(getContainer());
