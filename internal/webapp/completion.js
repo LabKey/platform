@@ -139,10 +139,10 @@ function postProcess(responseXML)
         if (i == _optionSelectedIndex)
             styleClass = "labkey-completion-highlight";
 
-        completionText += "<tr class='" + styleClass + "' style='cursor:pointer' onclick='selectOption(" + i +
-                          ")'><td id='completionTR" + i + "'>" + display.childNodes[0].nodeValue +
-                          "<span style='display:none' id='insertSpan" + i + "'>" + insert.childNodes[0].nodeValue + "</span>" +
-                          "</td></tr>\n";
+        completionText += "<tr class='" + styleClass + "' style='cursor:pointer'><td id='completionTR" + i + "'><span onclick='selectOption(" + i +
+                ")'>" + display.childNodes[0].nodeValue +
+                "</span><span style='display:none' id='insertSpan" + i + "'>" + insert.childNodes[0].nodeValue + "</span>" +
+                "</td></tr>\n";
     }
     _optionCount = completionList.length;
     completionText += "</table>";
