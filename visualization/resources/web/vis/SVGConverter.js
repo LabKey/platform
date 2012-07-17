@@ -3,7 +3,7 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-Ext.namespace("LABKEY", "LABKEY.vis");
+Ext4.namespace("LABKEY", "LABKEY.vis");
 
 /**
  * A singleton class to convert SVG text to downloadable images
@@ -39,7 +39,7 @@ LABKEY.vis.SVGConverter = {
         else
             throw "Unknown format: " + format;
 
-        var newForm = Ext.DomHelper.append(document.getElementsByTagName('body')[0],
+        var newForm = Ext4.DomHelper.append(document.getElementsByTagName('body')[0],
         {tag:"form", method:"POST", action:LABKEY.ActionURL.buildURL("visualization", action), target:'_blank',
             children:[{tag:"input", type:"hidden", name:"svg"}]});
         newForm.svg.value = svg;

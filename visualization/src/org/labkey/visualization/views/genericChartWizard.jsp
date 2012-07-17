@@ -48,10 +48,10 @@
     LABKEY.requiresScript("vis/genericChartPanel.js");
     LABKEY.requiresVisualization();
 
-    Ext.QuickTips.init();
 </script>
 
 <script type="text/javascript">
+    Ext4.QuickTips.init();
 
     Ext4.onReady(function(){
 
