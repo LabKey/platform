@@ -37,6 +37,7 @@ public class ContainerDisplayColumn extends DataColumn
     private Container _c;
     private ActionURL _url;
     private final boolean _showPath;
+    private final boolean _boundColHasEntityId;
 
     /**
      * @param showPath if true, show the container's full path. If false, show just its name
@@ -51,8 +52,18 @@ public class ContainerDisplayColumn extends DataColumn
      */
     public ContainerDisplayColumn(ColumnInfo col, boolean showPath, ActionURL actionURL)
     {
+        this(col, showPath, actionURL, false);
+    }
+
+    /**
+     * @param showPath if true, show the container's full path. If false, show just its name
+     * @param boundColHasEntityId if true, the value of this column will be used as the entityId.  If not, it will resolve to the containers table (for example, container/EntityId)
+     */
+    public ContainerDisplayColumn(ColumnInfo col, boolean showPath, ActionURL actionURL, boolean boundColHasEntityId)
+    {
         super(col);
         _showPath = showPath;
+        _boundColHasEntityId = boundColHasEntityId;
         if (actionURL == null)
         {
             _url = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(ContainerManager.getRoot());
@@ -104,9 +115,17 @@ public class ContainerDisplayColumn extends DataColumn
     private List<FieldKey> getEntityIdFieldKeys()
     {
         List<FieldKey> keys = new ArrayList<FieldKey>();
-        keys.add(new FieldKey(getDisplayColumn().getFieldKey().getParent(), "EntityId"));
-        keys.add(new FieldKey(getDisplayColumn().getFieldKey().getParent(), "Container"));
-        keys.add(new FieldKey(getDisplayColumn().getFieldKey().getParent(), "Folder"));
+
+        if(_boundColHasEntityId)
+        {
+            keys.add(getBoundColumn().getFieldKey());
+        }
+        else
+        {
+            keys.add(new FieldKey(getDisplayColumn().getFieldKey().getParent(), "EntityId"));
+            keys.add(new FieldKey(getDisplayColumn().getFieldKey().getParent(), "Container"));
+            keys.add(new FieldKey(getDisplayColumn().getFieldKey().getParent(), "Folder"));
+        }
 
         return keys;
     }
@@ -136,10 +155,7 @@ public class ContainerDisplayColumn extends DataColumn
     {
         String id = getEntityIdValue(ctx);
 
-        if (id != null)
-        {
-            _c = ContainerManager.getForId(id);
-        }
+        _c = id == null ? null : ContainerManager.getForId(id);
         return _c;
     }
 
@@ -187,14 +203,14 @@ public class ContainerDisplayColumn extends DataColumn
         String displayValue = getDisplayValue(ctx).toString();
 
         StringBuilder sb = new StringBuilder();
-        if (_url != null)
+        if (_c != null && _url != null)
         {
             sb.append("<a href=\"");
             sb.append(_url.getLocalURIString());
             sb.append("\">");
         }
         sb.append(PageFlowUtil.filter(displayValue));
-        if (_url != null)
+        if (_c != null && _url != null)
         {
             sb.append("</a>");
         }

@@ -47,7 +47,7 @@ public class ContainerForeignKey extends LookupForeignKey
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
-                return new ContainerDisplayColumn(colInfo, false, url);
+                return new ContainerDisplayColumn(colInfo, false, url, true);
             }
         });
         return column;
