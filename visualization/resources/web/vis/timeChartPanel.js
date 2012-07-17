@@ -599,6 +599,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 floating: true,
                 cls: 'data-window',
                 draggable : false,
+                resizable: false,
                 width: 860,
                 autoHeight: true,
                 modal: true,

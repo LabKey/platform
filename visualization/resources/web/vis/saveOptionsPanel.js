@@ -114,7 +114,7 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
                         boxLabel: 'None',
                         description: 'Use the default static image for this report type',
                         thumbnailPreview: '<img src="' + LABKEY.contextPath + '/visualization/report/timechart.png"/>', 
-                        inputValue: 'NONE',                                                   // TODO: point to the same png used in TimeChartReportImpl.getStaticThumbnail
+                        inputValue: 'NONE',
                         checked: this.thumbnailType == 'NONE'
                     },
                     {
@@ -267,6 +267,8 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
 
             this.down('#reportSaveButton').setVisible(this.canEdit);
         }
+
+        this.setThumbnailPreview();
     },
 
     setThumbnailPreview: function() {
@@ -281,6 +283,11 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
             Ext4.getDom(this.thumbnailPreviewId).innerHTML = "";
 
         this.doLayout();
+    },
+
+    restoreValues: function() {
+        // remove the reference to the SVG so that the original image doesn't get confused
+        Ext4.getDom(this.thumbnailPreviewId).innerHTML = "";
     },
 
     updateCurrentChartThumbnail: function(chartSVGStr, size)
