@@ -104,8 +104,10 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
         try
         {
-            // serialize the run properties to a tsv
-            writeRunProperties(context, runProperties, scriptDir, pw, writer);
+            // serialize the batch and run properties to a tsv
+            Map<DomainProperty, String> mergedProps = new HashMap<DomainProperty, String>(runProperties);
+            mergedProps.putAll(batchProperties);
+            writeRunProperties(context, mergedProps, scriptDir, pw, writer);
 
             // add the run data entries
             Set<File> dataFiles = writeRunData(context, run, scriptDir, pw);
