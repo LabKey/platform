@@ -431,8 +431,9 @@ li.ptid a.unhighlight
         });
 
         X.create('Ext.resizer.Resizer', {
+            // default handles are east, south, and souteast
             target: ptidPanel,
-//            handles: 'e',
+            dynamic: false,
             minWidth: 260
         });
         <% } %>
