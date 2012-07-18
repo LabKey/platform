@@ -667,8 +667,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         var config = {
             schemaName  : this.schemaName,
             queryName   : this.queryName,
-            maxRows     : 5000
-            //requiredVersion : 12.1
+            maxRows     : 5000,
+            requiredVersion : 12.1
         };
 
         if (this.initialColumnList)
@@ -1181,31 +1181,60 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
         }
 
-        if(!this.xAxisMeasure && this.renderType == "scatter_plot"){
+        if(!this.xAxisMeasure){
+            if(this.renderType == "scatter_plot"){
+                if (this.autoColumnXName)
+                {
+                    measure = this.xMeasureStore.findRecord('name', this.autoColumnXName);
+                    if (measure) {
+                        this.xMeasureGrid.getSelectionModel().select(measure, false, true);
+                        this.xMeasurePanel.selectionChange(true);
+                        this.xAxisMeasure = measure.data;
+                    }
+                }
 
-            if (this.autoColumnXName)
-            {
-                measure = this.xMeasureStore.findRecord('name', this.autoColumnXName);
+                if (!this.xAxisMeasure)
+                {
+                    this.viewPanel.getEl().unmask();
+                    this.showXMeasureWindow();
+                    return;
+                }
+            } else {
+                measure = this.xMeasureStore.findRecord('label', 'Cohort');
                 if (measure) {
                     this.xMeasureGrid.getSelectionModel().select(measure, false, true);
                     this.xMeasurePanel.selectionChange(true);
                     this.xAxisMeasure = measure.data;
                 }
-            }
-
-            if (!this.xAxisMeasure)
-            {
-                this.viewPanel.getEl().unmask();
-                this.showXMeasureWindow();
-                return;
-            }
+           }
         }
 
         var chartOptions = this.getChartOptions();
         var scales = {}, geom, plotConfig, newChartDiv, labels, yMin, yMax, yPadding;
         var xMeasureName = this.xAxisMeasure ? this.xAxisMeasure.name : this.chartData.queryName;
+        var xMeasureLabel = this.xAxisMeasure ? this.xAxisMeasure.label : this.chartData.queryName;
         var yMeasureName = this.yAxisMeasure.name;
-        
+        var yAcc = function(row){
+            var value = row[yMeasureName].value;
+            if(value === false || value === true){
+                value = value.toString();
+            }
+            return value;
+        };
+        var xAcc = null;
+
+        if(this.xAxisMeasure){
+            xAcc = function(row){
+                var value = row[xMeasureName].displayValue ? row[xMeasureName].displayValue : row[xMeasureName].value;
+                if(value === null){
+                    value = "Not in " + xMeasureLabel;
+                }
+                return value;
+            };
+        } else {
+            xAcc = function(row){return xMeasureName};
+        }
+
         var xClickHandler = function(scopedThis){
             return function(){
                 scopedThis.showXMeasureWindow();
@@ -1232,11 +1261,16 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         });
         this.viewPanel.add(newChartDiv);
 
+        if(this.xAxisMeasure && this.xAxisMeasure.type === 'int' && xMeasureLabel == 'Cohort'){
+            this.xAxisMeasure.type = 'string';
+        }
+
         // TODO: make line charts render if this.xAxisMeasure.type == "date"
-        if(this.renderType == "box_plot" || (this.renderType == "auto_plot" && (!this.xAxisMeasure || this.xAxisMeasure.type == "string"))) {
+        if(this.renderType == 'box_plot' ||
+                (this.renderType == 'auto_plot' && (!this.xAxisMeasure || this.xAxisMeasure.type == 'string' || this.xAxisMeasure.type == 'boolean'))) {
             scales.x = {scaleType: 'discrete'};
-            yMin = d3.min(this.chartData.rows, function(row){return row[yMeasureName]});
-            yMax = d3.max(this.chartData.rows, function(row){return row[yMeasureName]});
+            yMin = d3.min(this.chartData.rows, yAcc);
+            yMax = d3.max(this.chartData.rows, yAcc);
             yPadding = ((yMax - yMin) * .1);
             scales.y = {min: yMin - yPadding, max: yMax + yPadding, scaleType: 'continuous', trans: chartOptions.yAxis.scaleType};
             geom = new LABKEY.vis.Geom.Boxplot({
@@ -1245,9 +1279,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 outlierFill: '#' + chartOptions.pointColor,
                 outlierSize: chartOptions.pointSize
             });
-        } else if(this.renderType == "scatter_plot" || (this.renderType == "auto_plot" && this.xAxisMeasure.type == 'int' || this.xAxisMeasure.type == "float" || this.xAxisMeasure.type == "date")){
+        } else if(this.renderType == 'scatter_plot' ||
+                (this.renderType == 'auto_plot' && this.xAxisMeasure.type == 'int' || this.xAxisMeasure.type == 'float' || this.xAxisMeasure.type == 'date')){
             scales.x = (this.xAxisMeasure.type == 'int' || this.xAxisMeasure.type == 'float' || this.xAxisMeasure.type == 'double') ?
-                {scaleType: 'continuous',trans: chartOptions.xAxis.scaleType} :
+                {scaleType: 'continuous', trans: chartOptions.xAxis.scaleType} :
                 {scaleType: 'discrete'};
             scales.y = {scaleType: 'continuous', trans: chartOptions.yAxis.scaleType};
             geom = new LABKEY.vis.Geom.Point({
@@ -1261,12 +1296,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         for(var i = 0; i < this.chartData.metaData.fields.length; i++){
             var field = this.chartData.metaData.fields[i];
-            if(field.type == "int" || field.type == "float"){
+            if(field.type == 'int' || field.type == 'float'){
                 if(field.name == this.yAxisMeasure.name){
                     scales.y.tickFormat = getFormatFn.call(this, field);
                 }
 
-                if(this.xAxisMeasure && field.name == this.xAxisMeasure.name){
+                if(this.xAxisMeasure && field.name == this.xAxisMeasure.name && field.caption != 'Cohort'){
                     scales.x.tickFormat = getFormatFn.call(this, field);
                 }
             }
@@ -1305,18 +1340,21 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 this.chartData.rows,
                 labels,
                 scales,
-                this.xAxisMeasure ? xMeasureName : function(row){return xMeasureName},
-                this.yAxisMeasure.name
+                xMeasureName,
+                this.yAxisMeasure.name,
+                xAcc,
+                yAcc
         );
         var plot = new LABKEY.vis.Plot(plotConfig);
         plot.render();
         this.viewPanel.getEl().unmask();
     },
 
-    generatePlotConfig: function(geom, renderTo, width, height, data, labels, scales, xAxis, yAxis){
+    generatePlotConfig: function(geom, renderTo, width, height, data, labels, scales, xAxisName, yAxisName, xAcc, yAcc){
+
         var aes = {
-            y: yAxis,
-            x: xAxis
+            y: yAcc,
+            x: xAcc
         };
         if(geom.type == "Boxplot"){
             aes.hoverText = function(x, stats){
@@ -1324,11 +1362,15 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         '\nQ3: ' + stats.Q3;
             };
             aes.outlierHoverText = function(row){
-                return xAxis + ': ' + row[xAxis] + ', ' + yAxis + ': ' + row[yAxis];
+                if(row[xAxisName]){
+                    return xAxisName + ': ' + row[xAxisName].value + ', ' + yAxisName + ': ' + row[yAxisName].value;
+                } else {
+                    return xAxisName + ', ' + yAxisName + ': ' + row[yAxisName].value;
+                }
             }
         } else if(geom.type == "Point"){
             aes.hoverText = function(row){
-                return xAxis + ': ' + row[xAxis] + ', ' + yAxis + ': ' + row[yAxis];
+                return xAxisName + ': ' + row[xAxisName].value + ', ' + yAxisName + ': ' + row[yAxisName].value;
             };
         }
 
