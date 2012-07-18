@@ -190,6 +190,9 @@ public class WebdavResolverImpl implements WebdavResolver
                         invalidate(oldParent.getParsedPath(), false);
                         break;
                     }
+                    case SiteRoot:
+                        _folderCache.clear();
+                        break;
                 }
             }
             catch (Exception x)

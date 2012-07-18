@@ -124,7 +124,8 @@ public class ContainerManager
         AttachmentDirectory,
         PipelineRoot,
         Title,
-        Description
+        Description,
+        SiteRoot
     }
     
     static Path makePath(Container parent, String name)
