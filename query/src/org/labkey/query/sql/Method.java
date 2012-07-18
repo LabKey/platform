@@ -35,7 +35,7 @@ import java.util.concurrent.Callable;
 
 public abstract class Method
 {
-    static HashMap<String,Method> labkeyMethod = new HashMap<String,Method>();
+    private final static HashMap<String, Method> labkeyMethod = new HashMap<String, Method>();
 
     static
     {
@@ -70,7 +70,6 @@ public abstract class Method
         labkeyMethod.put("sqrt", new JdbcMethod("sqrt", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("tan", new JdbcMethod("tan", JdbcType.DOUBLE, 1, 1));
         labkeyMethod.put("truncate", new JdbcMethod("truncate", JdbcType.DOUBLE, 2, 2));
-
 
         labkeyMethod.put("concat", new JdbcMethod("concat", JdbcType.VARCHAR, 2, 2));
         labkeyMethod.put("lcase", new JdbcMethod("lcase", JdbcType.VARCHAR, 1, 1));
@@ -109,8 +108,7 @@ public abstract class Method
         labkeyMethod.put("ucase", new JdbcMethod("ucase", JdbcType.VARCHAR, 1, 1));
         labkeyMethod.put("upper", new JdbcMethod("ucase", JdbcType.VARCHAR, 1, 1));
 
-
-        labkeyMethod.put("curdate", new JdbcMethod("curdate", JdbcType.DATE, 0, 0));
+        labkeyMethod.put("curdate", new CurDateMethod(JdbcType.DATE));
         labkeyMethod.put("curtime", new JdbcMethod("curtime", JdbcType.DATE, 0, 0));
         labkeyMethod.put("dayofmonth", new JdbcMethod("dayofmonth", JdbcType.INTEGER, 1, 1));
         labkeyMethod.put("dayofweek", new JdbcMethod("dayofweek", JdbcType.INTEGER, 1, 1));
@@ -119,7 +117,7 @@ public abstract class Method
         labkeyMethod.put("minute", new JdbcMethod("minute", JdbcType.INTEGER, 1, 1));
         labkeyMethod.put("month", new JdbcMethod("month", JdbcType.INTEGER, 1, 1));
         labkeyMethod.put("monthname", new JdbcMethod("monthname", JdbcType.VARCHAR, 1, 1));
-        labkeyMethod.put("now", new JdbcMethod("curdate", JdbcType.TIMESTAMP, 0, 0));
+        labkeyMethod.put("now", new CurDateMethod(JdbcType.TIMESTAMP));
         labkeyMethod.put("quarter", new JdbcMethod("quarter", JdbcType.INTEGER, 1, 1));
         labkeyMethod.put("second", new JdbcMethod("second", JdbcType.INTEGER, 1, 1));
         labkeyMethod.put("week", new JdbcMethod("week", JdbcType.INTEGER, 1, 1));
@@ -297,6 +295,41 @@ public abstract class Method
             }
             ret.append(")}");
             return ret;
+        }
+    }
+
+
+    // Address jTDS parsing issue; see #15479
+    private static class CurDateMethod extends JdbcMethod
+    {
+        CurDateMethod(JdbcType type)
+        {
+            super("curdate", type, 0, 0);
+        }
+
+        @Override
+        public MethodInfo getMethodInfo()
+        {
+            return new CurDateMethodInfo(this);
+        }
+    }
+
+
+    private class CurDateMethodInfo extends JdbcMethodInfoImpl
+    {
+        public CurDateMethodInfo(Method method)
+        {
+            super(method._name, method._jdbcType);
+        }
+
+        @Override
+        public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
+        {
+            // jTDS driver blows up if query contains more than a few {fn curdate()} expansions, so don't use it on SQL Server. See #15479.
+            if (schema.getSqlDialect().isSqlServer())
+                return new SQLFragment("convert(datetime, convert(varchar, getdate(), 112))");
+            else
+                return super.getSQL(schema, arguments);
         }
     }
 
