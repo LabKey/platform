@@ -21,6 +21,9 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ page import="org.labkey.api.util.Pair" %>
+<%@ page import="java.util.List" %>
+<%@ page import="org.apache.commons.lang3.ObjectUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%=formatMissedErrors("form")%>
@@ -98,6 +101,10 @@ Click the Save button at any time to accept the current settings and continue.</
 
 <table>
 <tr>
+    <th style="width: 35em;"></th>
+    <th></th>
+</tr>
+<tr>
     <td colspan=2>&nbsp;</td>
 </tr>
 
@@ -141,6 +148,17 @@ Click the Save button at any time to accept the current settings and continue.</
             <td><b>ON, medium</b> - Check for updates, report system information, organization, and administrator information from this page</td>
         </tr>
     </table>
+    </td>
+</tr>
+<tr>
+    <td class="labkey-form-label" valign="top" style="padding-top:2;">Site administrator to use for Medium level reporting</td>
+    <td>
+        <select name="administratorContactEmail">
+        <% List<Pair<Integer, String>> members = org.labkey.api.security.SecurityManager.getGroupMemberNamesAndIds("Administrators");
+        for (Pair<Integer,String> member : members) { %>
+              <option value="<%=h(member.getValue())%>" <%= org.apache.commons.lang3.ObjectUtils.equals(member.getValue(), appProps.getAdministratorContactEmail()) ? "selected" : "" %>><%=h(member.getValue())%></option>
+        <% } %>
+        </select>
     </td>
 </tr>
 <tr>

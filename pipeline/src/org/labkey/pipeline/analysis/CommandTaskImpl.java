@@ -47,6 +47,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         private int _pipeOutputLineInterval;
         private boolean _preview;
         private String _actionableInput;
+        private String _installPath;
 
         public Factory()
         {
@@ -94,6 +95,9 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
 
             if (settings.getActionableInput() != null)
                 _actionableInput = settings.getActionableInput();
+
+            if (settings.getInstallPath() != null)
+                _installPath = settings.getInstallPath();
         }
 
         public CommandTaskImpl createTask(PipelineJob job)
@@ -121,6 +125,11 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         public String getStatusName()
         {
             return _statusName;
+        }
+
+        public String getInstallPath()
+        {
+            return _installPath;
         }
 
         public boolean isJobComplete(PipelineJob job)
@@ -267,6 +276,12 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         return getJob().getJobSupport(FileAnalysisJobSupport.class);
     }
 
+    @Override
+    public String getInstallPath()
+    {
+        return _factory.getInstallPath();
+    }
+
     public String[] getProcessPaths(WorkDirectory.Function f, String key) throws IOException
     {
         TaskPath tp = (WorkDirectory.Function.input.equals(f) ?
@@ -291,6 +306,8 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             action.addInput(fileInput, role);
         }
     }
+
+
     
     public RecordedActionSet run() throws PipelineJobException
     {

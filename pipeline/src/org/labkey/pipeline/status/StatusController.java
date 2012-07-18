@@ -23,6 +23,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
@@ -716,6 +717,7 @@ public class StatusController extends SpringActionController
         }
     }
 
+    @RequiresLogin
     @RequiresPermissionClass(ReadPermission.class)
     public class EscalateJobFailureAction extends SimpleViewAction<RowIdForm>
     {
@@ -940,7 +942,7 @@ public class StatusController extends SpringActionController
         if (!PipelineJob.COMPLETE_STATUS.equals(sf.getStatus()))
         {
             final String escalationUsers = PipelineEmailPreferences.get().getEscalationUsers(c);
-            if (!StringUtils.isEmpty(escalationUsers))
+            if (!StringUtils.isEmpty(escalationUsers) && !getUser().isGuest())
             {
                 ActionURL url = new ActionURL(EscalateJobFailureAction.class, c);
                 url.addParameter("rowId", rowId);

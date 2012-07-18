@@ -465,12 +465,17 @@ public class PipelineJobServiceImpl extends PipelineJobService
         return file.toString();
     }
 
-    public String getExecutablePath(String exeRel, String packageName, String ver, Logger jobLogger) throws FileNotFoundException
+    public String getExecutablePath(String exeRel, String installPath, String packageName, String ver, Logger jobLogger) throws FileNotFoundException
     {
         // Make string replacements
         exeRel = getVersionedPath(exeRel, packageName, ver);
-        
-        String toolsDir = getAppProperties().getToolsDirectory();
+
+        if (new File(exeRel).isAbsolute())
+        {
+            return exeRel;
+        }
+
+        String toolsDir = installPath == null ? getAppProperties().getToolsDirectory() : installPath;
         if (toolsDir == null || toolsDir.trim().equals(""))
         {
             // If the tools directory is not set, then rely on the path.
@@ -491,9 +496,9 @@ public class PipelineJobServiceImpl extends PipelineJobService
         return getToolsDirPath(toolsDir, exeRel, false);
     }
 
-    public String getJarPath(String jarRel, String packageName, String ver) throws FileNotFoundException
+    public String getJarPath(String jarRel, String installPath, String packageName, String ver) throws FileNotFoundException
     {
-        String toolsDir = getAppProperties().getToolsDirectory();
+        String toolsDir = installPath == null ? getAppProperties().getToolsDirectory() : installPath;
         if (toolsDir == null || toolsDir.trim().equals(""))
         {
             throw new FileNotFoundException("Failed to locate " + jarRel + ".  " +

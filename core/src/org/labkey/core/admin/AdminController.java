@@ -1140,6 +1140,7 @@ public class AdminController extends SpringActionController
             props.setNetworkDrivePath(form.getNetworkDrivePath() == null ? null : form.getNetworkDrivePath().trim());
             props.setNetworkDriveUser(form.getNetworkDriveUser() == null ? null : form.getNetworkDriveUser().trim());
             props.setNetworkDrivePassword(form.getNetworkDrivePassword() == null ? null : form.getNetworkDrivePassword().trim());
+            props.setAdministratorContactEmail(form.getAdministratorContactEmail() == null ? null : form.getAdministratorContactEmail().trim());
 
             if (null != form.getBaseServerUrl())
             {
@@ -1452,6 +1453,7 @@ public class AdminController extends SpringActionController
         private int _maxBLOBSize;
         private String _exceptionReportingLevel;
         private String _usageReportingLevel;
+        private String _administratorContactEmail;
         private String _mascotServer;
         private String _mascotUserAccount;
         private String _mascotUserPassword;
@@ -1612,6 +1614,16 @@ public class AdminController extends SpringActionController
         public void setUsageReportingLevel(String usageReportingLevel)
         {
             _usageReportingLevel = usageReportingLevel;
+        }
+
+        public String getAdministratorContactEmail()
+        {
+            return _administratorContactEmail;
+        }
+
+        public void setAdministratorContactEmail(String administratorContactEmail)
+        {
+            _administratorContactEmail = administratorContactEmail;
         }
 
         public boolean isUpgradeInProgress()
