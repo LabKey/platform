@@ -27,5 +27,7 @@ public interface CommandTask
 {
     PipelineJob getJob();
 
+    String getInstallPath();
+
     String[] getProcessPaths(WorkDirectory.Function f, String key) throws IOException;
 }

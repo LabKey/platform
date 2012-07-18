@@ -17,6 +17,7 @@ package org.labkey.api.pipeline;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.file.PathMapper;
 
 import java.io.FileNotFoundException;
@@ -106,9 +107,17 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
 
     abstract public PathMapper getClusterPathMapper();
 
-    abstract public String getExecutablePath(String exeRel, String packageName, String ver, Logger jobLogger) throws FileNotFoundException;
+    /**
+     * @param exeRel if relative, interpreted based on either the installPath or tools directory
+     * @param installPath if non-null, use this as the path to the file instead of the standard tools directory
+     */
+    abstract public String getExecutablePath(String exeRel, @Nullable String installPath, String packageName, String ver, Logger jobLogger) throws FileNotFoundException;
 
-    abstract public String getJarPath(String jarRel, String packageName, String ver) throws FileNotFoundException;
+    /**
+     * @param jarRel if relative, interpreted based on either the installPath or tools directory
+     * @param installPath if non-null, use this as the path to the file instead of the standard tools directory
+     */
+    abstract public String getJarPath(String jarRel, @Nullable String installPath, String packageName, String ver) throws FileNotFoundException;
 
     abstract public String getJavaPath() throws FileNotFoundException;
     

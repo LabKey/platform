@@ -42,6 +42,7 @@ public class CommandTaskFactorySettings extends AbstractTaskFactorySettings
     private Integer _pipeOutputLineInterval;
     private Boolean _preview;
     private String _actionableInput;
+    private String _installPath;
 
     public CommandTaskFactorySettings(String name)
     {
@@ -247,5 +248,15 @@ public class CommandTaskFactorySettings extends AbstractTaskFactorySettings
     public String getActionableInput()
     {
         return _actionableInput;
+    }
+
+    public void setInstallPath(String installPath)
+    {
+        _installPath = installPath;
+    }
+
+    public String getInstallPath()
+    {
+        return _installPath;
     }
 }

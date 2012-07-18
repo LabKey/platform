@@ -175,6 +175,11 @@ public class WriteableAppProps extends AppPropsImpl
         storeStringValue(WEB_ROOT, root);
     }
 
+    public void setAdministratorContactEmail(String email)
+    {
+        storeStringValue(ADMINISTRATOR_CONTACT_EMAIL, email);
+    }
+
     private void incrementLookAndFeelRevision()
     {
         storeIntValue(LOOK_AND_FEEL_REVISION, getLookAndFeelRevision() + 1);

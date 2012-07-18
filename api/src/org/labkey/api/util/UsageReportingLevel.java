@@ -20,7 +20,9 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 
 import java.net.MalformedURLException;
@@ -79,23 +81,7 @@ public enum UsageReportingLevel
         report.addParam("systemDescription", laf.getDescription());
         report.addParam("systemShortName", laf.getShortName());
 
-        // Add the first administrator's email address
-        List<Pair<Integer, String>> members = SecurityManager.getGroupMemberNamesAndIds("Administrators");
-        Collections.sort(members, new Comparator<Pair<Integer, String>>()
-        {
-            public int compare(Pair<Integer, String> o1, Pair<Integer, String> o2)
-            {
-                return o1.getKey().compareTo(o2.getKey());
-            }
-        });
-        for (Pair<Integer, String> entry : members)
-        {
-            if (entry != null && entry.getValue() != null)
-            {
-                report.addParam("administratorEmail", entry.getValue());
-                break;
-            }
-        }
+        report.addParam("administratorEmail", AppProps.getInstance().getAdministratorContactEmail());
     }
 
     private static void addLowUsageReportingParams(MothershipReport report)

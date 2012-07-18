@@ -20,9 +20,11 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.security.*;
 import org.labkey.api.util.ExceptionReportingLevel;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.URLHelper;
@@ -37,7 +39,12 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -63,6 +70,7 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     protected static final String ADMIN_ONLY_MESSAGE = "adminOnlyMessage";
     protected static final String EXCEPTION_REPORTING_LEVEL = "exceptionReportingLevel";
     protected static final String USAGE_REPORTING_LEVEL = "usageReportingLevel";
+    protected static final String ADMINISTRATOR_CONTACT_EMAIL = "administratorContactEmail";
     protected static final String SERVER_GUID = "serverGUID";
     protected static final String SERVER_GUID_XML_PARAMETER_NAME = "org.labkey.mothership." + SERVER_GUID;
     protected static final String BLAST_SERVER_BASE_URL_PROP = "BLASTBaseURL";
@@ -492,6 +500,39 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
         String path = getContextPath();
 
         return "".equals(path) ? "root.xml" : path.substring(1) + ".xml";
+    }
+
+    @Override
+    public String getAdministratorContactEmail()
+    {
+        String defaultValue = null;
+        // Default to the oldest site administrator's email address
+        List<Pair<Integer, String>> members = org.labkey.api.security.SecurityManager.getGroupMemberNamesAndIds("Administrators");
+        // Sort to find the minimum user id
+        Collections.sort(members, new Comparator<Pair<Integer, String>>()
+        {
+            public int compare(Pair<Integer, String> o1, Pair<Integer, String> o2)
+            {
+                return o1.getKey().compareTo(o2.getKey());
+            }
+        });
+        Set<String> validOptions = new HashSet<String>();
+        for (Pair<Integer, String> entry : members)
+        {
+            validOptions.add(entry.getValue());
+            if (entry.getValue() != null)
+            {
+                defaultValue = entry.getValue();
+            }
+        }
+        String result = lookupStringValue(ADMINISTRATOR_CONTACT_EMAIL, defaultValue);
+
+        // If that user is no long a site admin, go back to the default value
+        if (!validOptions.contains(result))
+        {
+            return defaultValue;
+        }
+        return result;
     }
 
     public String getLabKeyVersionString()
