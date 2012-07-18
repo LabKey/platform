@@ -25,6 +25,7 @@ import org.labkey.api.action.HasViewContext;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Pair;
@@ -521,13 +522,13 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                         break;
                     }
                 }
-                
+
                 if (isJoinColumn)
                     allAliases.put(entry.getKey(), entry.getValue());
                 else
                 {
                     // if the select is not a join column, we key the column map by the alias so
-                    // that the columns don't get coalesced in the outer select 
+                    // that the columns don't get coalesced in the outer select
                     for (VisualizationSourceColumn select : entry.getValue())
                         allAliases.put(select.getAlias(), Collections.singleton(select));
                 }
@@ -573,7 +574,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             for (VisualizationSourceColumn orderBy : query.getSorts())
             {
                 Set<VisualizationSourceColumn> orderByAliases = allAliases.get(orderBy.getOriginalName());
-                
+
                 VisualizationSourceColumn column;
                 if (orderByAliases != null && orderByAliases.size() > 1)
                 {
@@ -638,6 +639,25 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         if (findSchema(orderBys.keySet()).getDbSchema().getSqlDialect().isSqlServer() && !hasRowLimit)
             sql.append(" LIMIT 1000000");
         return sql.toString();
+    }
+
+    public Sort getSort()
+    {
+        Sort sort = new Sort();
+
+        Map<String, VisualizationSourceColumn> sorts = new LinkedHashMap<String, VisualizationSourceColumn>();
+        for (IVisualizationSourceQuery query : _sourceQueries.values())
+        {
+            for (VisualizationSourceColumn orderBy : query.getSorts())
+            {
+                sorts.put(orderBy.getAlias(), orderBy);
+            }
+        }
+        for (VisualizationSourceColumn sortCol : sorts.values())
+        {
+            sort.appendSortColumn(sortCol.getAlias(), true);
+        }
+        return sort;
     }
 
     private static UserSchema findSchema(Collection<VisualizationSourceColumn> columns)

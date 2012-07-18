@@ -279,12 +279,16 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
             throw new IllegalArgumentException("Invalid site root: does not exist");
         
         try {
+            File prevRoot = getSiteDefaultRoot();
             WriteableAppProps props = AppProps.getWriteableInstance();
 
             props.setFileSystemRoot(root.getAbsolutePath());
             props.save();
 
             FileRootManager.get().clearCache();
+            ContainerManager.ContainerPropertyChangeEvent evt = new ContainerManager.ContainerPropertyChangeEvent(
+                    ContainerManager.getRoot(), ContainerManager.Property.SiteRoot, prevRoot, root);
+            ContainerManager.firePropertyChangeEvent(evt);
         }
         catch (SQLException e)
         {
@@ -718,13 +722,12 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
             if (doRename && !prev.renameTo(dest))
             {
-                File parentDir = dest.getParentFile();
+                _log.info("rename failed, attempting to copy");
 
-                if (parentDir != null && parentDir.exists())
-                {
-                    FileUtil.copyBranch(prev, parentDir);
-                    FileUtil.deleteDir(prev);
-                }
+                for (File file : prev.listFiles())
+                    FileUtil.copyBranch(file, dest);
+
+                FileUtil.deleteDir(prev);
             }
         }
         catch (IOException e)

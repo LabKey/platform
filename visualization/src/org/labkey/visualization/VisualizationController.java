@@ -41,6 +41,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.views.DataViewProvider;
@@ -769,7 +770,7 @@ public class VisualizationController extends SpringActionController
                 return null;
             }
 
-            ApiQueryResponse response = getApiResponse(getViewContext(), sqlGenerator.getPrimarySchema(), sql, sqlGenerator.isMetaDataOnly(), errors);
+            ApiQueryResponse response = getApiResponse(getViewContext(), sqlGenerator.getPrimarySchema(), sql, sqlGenerator.isMetaDataOnly(), sqlGenerator.getSort(), errors);
 
             // Note: extra properties can only be gathered after the query has executed, since execution populates the name maps.
             Map<String, Object> extraProperties = new HashMap<String, Object>();
@@ -804,7 +805,7 @@ public class VisualizationController extends SpringActionController
             return metaData;
         }
 
-        private ApiQueryResponse getApiResponse(ViewContext context, UserSchema schema, String sql, boolean metaDataOnly, BindException errors) throws Exception
+        private ApiQueryResponse getApiResponse(ViewContext context, UserSchema schema, String sql, boolean metaDataOnly, Sort sort, BindException errors) throws Exception
         {
             String schemaName = schema.getName();
             //create a temp query settings object initialized with the posted LabKey SQL
@@ -819,6 +820,7 @@ public class VisualizationController extends SpringActionController
             settings.setAllowChooseQuery(false);
             settings.setAllowChooseView(false);
             settings.setAllowCustomizeView(false);
+            settings.setBaseSort(sort);
 
             //by default, return all rows
             settings.setShowRows(ShowRows.ALL);
