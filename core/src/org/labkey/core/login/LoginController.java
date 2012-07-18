@@ -957,7 +957,7 @@ public class LoginController extends SpringActionController
                         errors.reject("setPassword", "This email address doesn't exist.  Make sure you've copied the entire link into your browser's address bar.");
                     else if (SecurityManager.isVerified(email))
                         errors.reject("setPassword", "This email address has already been verified.");
-                    else if (verification.length() < SecurityManager.tempPasswordLength)
+                    else if (null == verification || verification.length() < SecurityManager.tempPasswordLength)
                         errors.reject("setPassword", "Make sure you've copied the entire link into your browser's address bar.");
                     else
                         // Incorrect verification string

@@ -397,7 +397,7 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
                     '<span>Module Defined Query</span>' +
                 '</div>' +
                 '<div class=\'g-tip-subheader\'>' +
-                    'This query is defined in an external module. Externally defined queries are for display only.' +
+                    'This query is defined in an external module. Externally defined queries are not editable.' +
                 '</div>' +
             '</div>';
             children.push({

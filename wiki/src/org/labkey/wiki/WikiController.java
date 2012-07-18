@@ -2656,7 +2656,7 @@ public class WikiController extends SpringActionController
             List<Map<String, Object>> pageProps = getChildrenProps(toc);
             response.put("pages", pageProps);
 
-            Set<String> expandedPaths = NavTreeManager.getExpandedPaths(getViewContext(), WikiTOC.getNavTreeId(getViewContext()));
+            Set<String> expandedPaths = NavTreeManager.getExpandedPathsCopy(getViewContext(), WikiTOC.getNavTreeId(getViewContext()));
             applyExpandedState(pageProps, expandedPaths, form.getCurrentPage());
 
             //include info about the current container
