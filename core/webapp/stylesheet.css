@@ -2262,7 +2262,12 @@ table.labkey-output
 
 table.labkey-protocol-applications
 {
-   border-collapse: separate; border-spacing: 5px;
+   border-collapse: collapse; border-spacing: 0;
+}
+
+table.labkey-protocol-applications td
+{
+   border: 1px solid #DDDDDD; padding: 5px;
 }
 
 /* Flow */

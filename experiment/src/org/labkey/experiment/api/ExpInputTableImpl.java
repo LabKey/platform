@@ -22,6 +22,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.permissions.ReadPermission;
 
 import java.util.Collection;
 
@@ -67,7 +68,29 @@ public abstract class ExpInputTableImpl<C extends Enum> extends ExpTableImpl<C> 
         }
         sqlFragment.append(")");
 
-        addCondition(getContainerFilter().getSQLFragment(getSchema(), sqlFragment, getContainer(), true, false), "FolderRunType");
+        if (_run == null)
+        {
+            // We're not filtering to a single run, so we need to filter based on all of the containers that the user
+            // has permission to see, subject to the container filter
+            addCondition(getContainerFilter().getSQLFragment(getSchema(), sqlFragment, getContainer(), true, false), "FolderRunType");
+        }
+        else
+        {
+            // We're filtering on a single run, so we can bypass some of the permissions checking based on whether
+            // the user has permission to the run's container or not
+            if (_run.getContainer().hasPermission(_schema.getUser(), ReadPermission.class))
+            {
+                // All we care is that the run exists and matches the TargetApplicationId
+                sqlFragment.append(" IS NOT NULL ");
+            }
+            else
+            {
+                // Don't match anything, the user doesn't have permission. Shouldn't get this far anyway, but just
+                // to play it safe.
+                sqlFragment.append(" = NULL ");
+            }
+            addCondition(sqlFragment, "FolderRunType");
+        }
     }
 
     @Override
