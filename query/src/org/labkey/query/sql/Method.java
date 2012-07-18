@@ -270,7 +270,7 @@ public abstract class Method
     }
 
 
-    class JdbcMethodInfoImpl extends AbstractMethodInfo
+    static class JdbcMethodInfoImpl extends AbstractMethodInfo
     {
         String _name;
 
@@ -315,7 +315,7 @@ public abstract class Method
     }
 
 
-    private class CurDateMethodInfo extends JdbcMethodInfoImpl
+    private static class CurDateMethodInfo extends JdbcMethodInfoImpl
     {
         public CurDateMethodInfo(Method method)
         {
