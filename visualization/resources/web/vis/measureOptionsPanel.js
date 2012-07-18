@@ -87,6 +87,9 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
         this.hasChanges = false;
         this.requireDataRefresh = false;
 
+        // array to track what panels need to be delted/destroyed when the measure option panel is closed
+        this.panelsToDestroy = [];
+
         // the measure editor panel will be laid out with 2 columns
         var columnOneItems = [];
         var columnTwoItems = [];
@@ -324,10 +327,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
 
                         // if the combo value is being changed, remove the selector panel from the previous value
                         if (this.measures[this.getSelectedMeasureIndex()].dimensionSelectorPanel)
-                        {
-                            this.measures[this.getSelectedMeasureIndex()].dimensionSelectorPanel.destroy();
-                            delete this.measures[this.getSelectedMeasureIndex()].dimensionSelectorPanel;
-                        }
+                            this.panelsToDestroy.push(this.measures[this.getSelectedMeasureIndex()].dimensionSelectorPanel);
 
                         this.measureDimensionSelected(this.getSelectedMeasureIndex(), true);
                     }
@@ -471,6 +471,12 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
     },
 
     showDimensionFilterPanel: function() {
+        // delete/destoy any dimension filter panels that have been tagged
+        Ext4.each(this.panelsToDestroy, function(panel){
+            panel.destroy();
+        });
+        this.panelsToDestroy = [];
+
         // show any dimension filter panels that were added (only show unique panels)
         this.uniqueDimensions = [];
         for (var i = 0; i < this.measures.length; i++)
@@ -528,7 +534,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
     {
         this.dataFilterUrl = undefined;
         this.dataFilterQuery = undefined;
-        this.dataFilterWarning.setText('');
+        this.dataFilterWarning.hide();
         this.dataFilterRemoveButton.hide();
 
         this.hasChanges = true;
@@ -605,7 +611,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
                     if (toFireEvent)
                         this.fireEvent('measureMetadataRequestComplete');
 
-                    // if this is the last loader for the given measure, reload teh measure list store data
+                    // if this is the last loader for the given measure, reload the measure list store data
                     this.loaderCount--;
                     if (this.loaderCount == 0)
                     {
@@ -670,7 +676,8 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
         {
             // remove the dimension selector panel, if necessary
             if (this.measures[index].dimensionSelectorPanel){
-                this.measures[index].dimensionSelectorPanel.destroy();
+                this.panelsToDestroy.push(this.measures[index].dimensionSelectorPanel);
+                this.filterPanelToExpand = undefined;
             }
 
             // remove the measure from this object and reload the measure listview store
@@ -679,7 +686,8 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
 
             // select the previous measure, if there is one
             if (this.measures.length > 0){
-                this.measuresListsView.getSelectionModel().select(index > 0 ? index-1 : 0);
+                this.measuresListsView.getSelectionModel().select(index > 0 ? index-1 : 0, false, true);
+                this.measuresListsView.fireEvent('selectionchange', this.measuresListsView, this.measuresListsView.getSelectionModel().getSelection());
             }
             else{
                 // if there are no other measure to select/remove, disable the remove button
@@ -1040,10 +1048,7 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
 
         // if there was a different dimension selection, remove that list view from the series selector
         if (this.measures[this.getSelectedMeasureIndex()].dimensionSelectorPanel)
-        {
-            this.measures[this.getSelectedMeasureIndex()].dimensionSelectorPanel.destroy();
-            delete this.measures[this.getSelectedMeasureIndex()].dimensionSelectorPanel;
-        }
+            this.panelsToDestroy.push(this.measures[this.getSelectedMeasureIndex()].dimensionSelectorPanel);
     },
 
     setDimensionAggregate: function(newAggregate){
@@ -1097,8 +1102,37 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
         return {
             dataFilterUrl: this.dataFilterUrl,
             dataFilterQuery: this.dataFilterQuery,
-            measuresAndDimensions: this.measures
+            measuresAndDimensions: Ext4.clone(this.measures)
         };
+    },
+
+    restoreValues : function(initValues) {
+        if (initValues.hasOwnProperty("measuresAndDimensions"))
+        {
+            this.panelsToDestroy = [];
+            this.measures = Ext4.clone(initValues.measuresAndDimensions);
+            this.measuresListsView.getStore().loadRawData(this);
+            if (this.measures.length > 0)
+            {
+                this.measuresListsView.getSelectionModel().select(this.measures.length > 0 ? this.measures.length-1 : 0, false, true);
+                this.measuresListsView.fireEvent('selectionchange', this.measuresListsView, this.measuresListsView.getSelectionModel().getSelection());
+                this.removeMeasureButton.enable();
+            }
+        }
+
+        if (initValues.hasOwnProperty("dataFilterUrl") && initValues.hasOwnProperty("dataFilterQuery"))
+        {
+            this.dataFilterUrl = initValues.dataFilterUrl;
+            this.dataFilterQuery = initValues.dataFilterQuery;
+            if (this.dataFilterUrl || this.dataFilterQuery)
+            {
+                this.dataFilterWarning.show();
+                this.dataFilterRemoveButton.show();
+            }
+        }
+
+        this.requireDataRefresh = false;
+        this.hasChanges = false;
     },
 
     checkForChangesAndFireEvents : function() {

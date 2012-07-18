@@ -251,25 +251,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 'measureMetadataRequestComplete': this.measureMetadataRequestComplete
             }
         });
-        // the measure panel will be handled separately because of issue 15410
-        // once that issue is fixed, we can possibly merge this panel back with the others
-        this.editorMeasureWindow = Ext4.create('Ext.window.Window', {
-            cls: 'data-window',
-            draggable : false,
-            width: 860,
-            autoHeight: true,
-            modal: true,
-            closable: false,
-            closeAction: 'hide',
-            layout: 'fit',
-            items: this.editorMeasurePanel,
-            listeners: {
-                'closeOptionsWindow': function() {
-                    this.editorMeasureWindow.hide();
-                },
-                scope: this
-            }
-        });
 
         this.editorXAxisPanel = Ext4.create('LABKEY.vis.XAxisOptionsPanel', {
             axis: this.chartInfo.axis[xAxisIndex] ? this.chartInfo.axis[xAxisIndex] : {},
@@ -423,15 +404,10 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             scope: this
         });
 
-        this.measuresButton = Ext4.create('Ext.button.Button', {text: 'Measures',
-                                handler: function(btn){
-                                    var pLeft = btn.getEl().getX() - btn.getWidth();
-                                    var pTop = btn.getEl().getY() + 20;
-                                    this.editorMeasureWindow.setPosition(pLeft, pTop, false);
-                                    this.editorMeasureWindow.show();
-                                }, scope: this});
-
         // setup buttons for the charting options panels (items to be added to the toolbar)
+        this.measuresButton = Ext4.create('Ext.button.Button', {text: 'Measures',
+                                handler: function(btn){this.optionsButtonClicked(btn, this.editorMeasurePanel, 860, 210, 'left');}, scope: this});
+        
         this.groupingButton = Ext4.create('Ext.button.Button', {text: 'Grouping',
                                 handler: function(btn){this.optionsButtonClicked(btn, this.editorGroupingPanel, 600, 210, 'left');}, scope: this});
 
@@ -622,10 +598,9 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.optionWindowPanel = panel;
         this.initialPanelValues = panel.getPanelOptionValues();
 
-        // TODO: currently not supported for measures panel (issue 15410)
+        // reset the before close event handler for the given panel
         this.optionWindow.un('beforeclose', this.restorePanelValues, this);
-        if (!this.optionWindowPanel.hasOwnProperty("origMeasures"))
-            this.optionWindow.on('beforeclose', this.restorePanelValues, this);
+        this.optionWindow.on('beforeclose', this.restorePanelValues, this);
 
         this.optionWindow.setWidth(width);
         if (positionLeft && positionTop)
