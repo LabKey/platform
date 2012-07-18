@@ -138,6 +138,8 @@ abstract public class QueryService
      */
     abstract public TableType findMetadataOverride(UserSchema schema, String tableName, boolean customQuery, boolean allModules, @NotNull Collection<QueryException> errors, @Nullable Path dir);
 
+    abstract public TableType parseMetadata(String metadataXML, Collection<QueryException> errors);
+
 	public ResultSet select(QuerySchema schema, String sql) throws SQLException
     {
         return select(schema, sql, false);

@@ -36,6 +36,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
+import org.labkey.data.xml.TableType;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -118,6 +119,11 @@ public class QueryWebPart extends WebPartView
                 if (null != qd)
                 {
                     td = qd.getTable(_schema, errors, false);
+                    if (_metadata != null && !_hasSql && td != null)
+                    {
+                        TableType type = QueryService.get().parseMetadata(_metadata, errors);
+                        td.overlayMetadata(type, _schema, errors);
+                    }
                 }
                 if (!errors.isEmpty())
                     td = null;
@@ -238,9 +244,6 @@ public class QueryWebPart extends WebPartView
                 out.write("Schema '" + PageFlowUtil.filter(_schemaName) + "' does not exist.");
             }
         }
-
-        if (_metadata != null && !_hasSql)
-            out.write("<div class='labkey-error'>Configuration error : specifying column metadata is only available if the query is specified through the 'sql' config option.</div><br/>");
 
         if (_schema != null && _settings != null)
         {

@@ -67,6 +67,7 @@ public class QuerySettings
 
     private SimpleFilter _baseFilter;
     private Sort _baseSort;
+    private QueryDefinition _queryDef;
 
 
     protected QuerySettings(String dataRegionName)
@@ -433,17 +434,26 @@ public class QuerySettings
 
     public QueryDefinition getQueryDef(UserSchema schema)
     {
+        if (_queryDef == null)
+        {
+            _queryDef = createQueryDef(schema);
+        }
+        return _queryDef;
+    }
+
+    protected QueryDefinition createQueryDef(UserSchema schema)
+    {
         String queryName = getQueryName();
         if (queryName == null)
             return null;
         QueryDefinition ret = QueryService.get().getQueryDef(schema.getUser(), schema.getContainer(), schema.getSchemaName(), queryName);
         if (ret != null && getContainerFilterName() != null)
             ret.setContainerFilter(ContainerFilter.getContainerFilterByName(getContainerFilterName(), schema.getUser()));
-        if (ret != null)
+        if (ret == null)
         {
-            return ret;
+            ret = schema.getQueryDefForTable(queryName);
         }
-        return schema.getQueryDefForTable(queryName);
+        return ret;
     }
 
     public CustomView getCustomView(ViewContext context, QueryDefinition queryDef)
