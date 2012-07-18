@@ -513,19 +513,35 @@ public class PipelineStatusManager
 
     public static void deleteStatus(ViewBackgroundInfo info, int... rowIds) throws PipelineProvider.HandlerException
     {
-        Set<Integer> ids = new HashSet<Integer>(rowIds.length);
-        for (int rowId : rowIds)
+        DbScope scope = _schema.getSchema().getScope();
+        try
         {
-            ids.add(rowId);
+            scope.ensureTransaction();
+            Set<Integer> ids = new HashSet<Integer>(rowIds.length);
+            for (int rowId : rowIds)
+            {
+                ids.add(rowId);
+            }
+            deleteStatus(info, ids);
+            if (!ids.isEmpty())
+            {
+                throw new PipelineProvider.HandlerException("Failed to delete " + ids.size() + " job" + (ids.size() > 1 ? "s" : ""));
+            }
+            scope.commitTransaction();
         }
-        deleteStatus(info, ids);
-        if (!ids.isEmpty())
+        catch (SQLException e)
         {
-            throw new PipelineProvider.HandlerException("Failed to delete " + ids.size() + " job" + (ids.size() > 1 ? "s" : ""));
+            throw new RuntimeSQLException(e);
+        }
+        finally
+        {
+            scope.closeConnection();
         }
     }
-    public static void deleteStatus(ViewBackgroundInfo info, Set<Integer> rowIds) throws PipelineProvider.HandlerException
+
+    private static void deleteStatus(ViewBackgroundInfo info, Set<Integer> rowIds) throws SQLException
     {
+        assert _schema.getSchema().getScope().isTransactionActive() : "Should only be invoked inside of a transaction";
         if (rowIds.isEmpty())
         {
             return;
@@ -611,20 +627,9 @@ public class PipelineStatusManager
                 expSql.append(" AND Container = ?");
                 params.add(c.getId());
             }
-            try
-            {
-                ExperimentService.get().ensureTransaction();
-                Table.execute(ExperimentService.get().getSchema(), expSql.toString(), params.toArray());
-                Table.execute(_schema.getSchema(), sql.toString(), params.toArray());
-                ExperimentService.get().commitTransaction();
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
-            finally {
-                ExperimentService.get().closeTransaction();
-            }
+
+            Table.execute(ExperimentService.get().getSchema(), expSql.toString(), params.toArray());
+            Table.execute(_schema.getSchema(), sql.toString(), params.toArray());
 
             // If we deleted anything, try recursing since we may have deleted all the child jobs which would
             // allow a parent job to be deleted
