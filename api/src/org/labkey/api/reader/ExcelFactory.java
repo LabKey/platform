@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.poi.hssf.OldExcelFormatException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.format.CellGeneralFormatter;
+import org.apache.poi.ss.formula.FormulaParseException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.DataFormat;
@@ -269,8 +270,14 @@ public class ExcelFactory
                         FormulaEvaluator evaluator = createFormulaEvaluator(wb);
                         if (evaluator != null)
                         {
-                            String val = evaluator.evaluate(cell).formatAsString();
-                            return val;
+                            try
+                            {
+                                return evaluator.evaluate(cell).formatAsString();
+                            }
+                            catch (FormulaParseException e)
+                            {
+                                return e.getMessage() == null ? e.toString() : e.getMessage();
+                            }
                         }
                         return "";
                     }
