@@ -917,7 +917,7 @@ class PostgreSql83Dialect extends SqlDialect
         List<String> sqlParts = new ArrayList<String>();
         for (PropertyStorageSpec prop : change.getColumns())
         {
-            String name = prop.getExactName() ? quoteIdentifier(prop.getName()) : makeLegalIdentifier(prop.getName());
+            String name = prop.getExactName() ? quoteIdentifier(prop.getName()) : makePropertyIdentifier(prop.getName());
             sqlParts.add("DROP COLUMN " + name);
         }
 

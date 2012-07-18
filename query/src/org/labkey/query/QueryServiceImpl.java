@@ -1077,7 +1077,7 @@ public class QueryServiceImpl extends QueryService
         return parseMetadata(queryDef.getMetaData(), errors);
     }
 
-    protected TableType parseMetadata(String metadataXML, Collection<QueryException> errors)
+    public TableType parseMetadata(String metadataXML, Collection<QueryException> errors)
     {
         if (metadataXML == null || StringUtils.isBlank(metadataXML))
             return null;
