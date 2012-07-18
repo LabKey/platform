@@ -83,6 +83,7 @@ public class NavTreeManager
     };
 
 
+    // Returned set is synchronized, but all iteration requires manual synchronization on the set, see crashweb #13038
     public static Set<String> getExpandedPaths(ViewContext viewContext, String navTreeId)
     {
         //Each navtreeid has a set of expanded paths...
@@ -97,6 +98,13 @@ public class NavTreeManager
         }
 
         return expandedPaths;
+    }
+
+
+    // Give external callers a copy of the synchronzied set... I don't trust them to synchronize properly
+    public static Set<String> getExpandedPathsCopy(ViewContext viewContext, String navTreeId)
+    {
+        return new HashSet<String>(getExpandedPaths(viewContext, navTreeId));
     }
 
 
@@ -116,8 +124,12 @@ public class NavTreeManager
     {
         Set<String> expandedPaths = getExpandedPaths(viewContext, tree.getId());
 
-        for (String p : expandedPaths)
-            _expandCollapseSubtree(tree, p, false);
+        // Synchronized set iteration must be manually synchronized
+        synchronized (expandedPaths)
+        {
+            for (String p : expandedPaths)
+                _expandCollapseSubtree(tree, p, false);
+        }
     }
 
     /*
