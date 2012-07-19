@@ -1232,6 +1232,21 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         };
         var xAcc = null;
 
+        // Check if y axis actually has data first, if not show error message and have user select new measure.
+        var yDataIsNull = true;
+        for(var i = 0; i < this.chartData.rows.length; i++){
+            var value = yAcc(this.chartData.rows[i]);
+            if(value != null){
+                yDataIsNull = false;
+            }
+        }
+
+        if(yDataIsNull){
+            this.viewPanel.getEl().unmask();
+            Ext.MessageBox.alert('Error', 'All data values for ' + this.yAxisMeasure.label + ' are null. Please choose a different measure', this.showYMeasureWindow, this);
+            return;
+        }
+
         if(this.xAxisMeasure){
             xAcc = function(row){
                 var value = row[xMeasureName].displayValue ? row[xMeasureName].displayValue : row[xMeasureName].value;
