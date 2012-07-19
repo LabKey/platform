@@ -36,24 +36,23 @@ LABKEY.vis.Scale.Continuous = function(trans, data, value, domain, range){
 		scale = d3.scale.linear().domain(domain).range(range);
         return scale;
 	} else {
+        var increment = false;
+
+        if(domain[0] == 0){
+            domain[0] = domain[0] + 1;
+            domain[1] = domain[1] + 1;
+            increment = true;
+        }
+
 		scale = d3.scale.log().domain(domain).range(range);
         var logScale = function(val){
+            if(val != 0 && increment === true){
+                val = val + 1;
+            }
             return val <= 0 ? (scale(scale.domain()[0]) - 5) : scale(val);
         };
         logScale.domain = scale.domain;
         logScale.range = scale.range;
-//        logScale.ticks = function(){
-//            var ticks = [];
-//            // Rounding because there is a weird issue where d3 log scales warp the domain
-//            // ex:  s = d3.scale.log().domain([5, 150]).range([200, 500]);
-//            //      s.domain() = [4.99999999999999999, 150]
-//            var i = Math.round(logScale.domain()[0]);
-//            while(i < logScale.domain()[1]){
-//                ticks.push(i);
-//                i = i * 10;
-//            }
-//            return ticks;
-//        };
         logScale.ticks = scale.ticks;
 
         return logScale;
