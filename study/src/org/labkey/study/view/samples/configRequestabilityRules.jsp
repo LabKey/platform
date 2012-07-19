@@ -317,6 +317,10 @@
             return false;
         }
 
+        // Don't add more than 1 AdminOverride or AtRepository
+        if ((type == 'ADMIN_OVERRIDE' || type == 'AT_REPOSITORY') && ruleTypeAlreadyPresent(grid, type))
+            return true;
+
         var ruleProperties = {
             type: type,
             ruleData: ruleData,
@@ -337,6 +341,18 @@
         grid.getView().refresh();
         
         return true;
+    }
+
+    function ruleTypeAlreadyPresent(grid, type)
+    {
+        var store = grid.store;
+        for (var i = 0; i < store.getCount(); i++)
+        {
+            var record = store.getAt(i);
+            if (type == record.data.type)
+                return true;
+        }
+        return false;
     }
 
     function actionColumnRenderer(value, p, record)
