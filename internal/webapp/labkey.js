@@ -276,7 +276,22 @@ LABKEY.requiresCss = function(file)
 };
 
 
-LABKEY.requiresExtJs = function(immediate)
+/**
+ * This can be added to any LABKEY page in order to load ExtJS 3.  This is the preferred method to declare Ext3 usage
+ * from wiki pages.  For HTML or JSP pages defined in a module, see our <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=ext4Development">documentation</a> on declaration of client dependencies.
+ * <p>
+ * NOTE: It is important to place this line in a separate script block the your code.  For example:
+ * @example
+&lt;script type="text/javascript"&gt;
+    LABKEY.requiresExt3();
+&lt;/script&gt;
+&lt;script type="text/javascript"&gt;
+    Ext.onReady(function(){
+    //your code here
+    });
+&lt;/script&gt;
+ */
+LABKEY.requiresExt3 = function(immediate)
 {
     if (arguments.length < 1) immediate = true;
 
@@ -288,6 +303,27 @@ LABKEY.requiresExtJs = function(immediate)
     LABKEY.requiresScript(LABKEY.extJsRoot + "/ext-patches.js", immediate);
 };
 
+/**
+ * Depreciated.  Use LABKEY.requiresExt3 instead.
+ * @private
+ */
+LABKEY.requiresExtJs = LABKEY.requiresExt3;
+
+/**
+ * This can be added to any LABKEY page in order to load ExtJS 4.  This is the preferred method to declare Ext4 usage
+ * from wiki pages.  For HTML or JSP pages defined in a module, see our <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=ext4Development">documentation</a> on declaration of client dependencies.
+ * <p>
+ * NOTE: It is important to place this line in a separate script block the your code.  For example:
+ * @example
+&lt;script type="text/javascript"&gt;
+    LABKEY.requiresExt4Sandbox();
+&lt;/script&gt;
+&lt;script type="text/javascript"&gt;
+    Ext4.onReady(function(){
+    //your code here
+    });
+&lt;/script&gt;
+ */
 LABKEY.requiresExt4Sandbox = function(immediate)
 {
     if (arguments.length < 1) immediate = true;
