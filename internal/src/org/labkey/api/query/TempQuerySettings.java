@@ -54,7 +54,8 @@ public class TempQuerySettings extends QuerySettings
         setQueryName("sql");
     }
 
-    protected QueryDefinition createQueryDef(UserSchema schema)
+    @Override
+    public QueryDefinition getQueryDef(UserSchema schema)
     {
         QueryDefinition qdef;
         qdef = QueryService.get().createQueryDef(schema.getUser(), _container, schema, getQueryName());
