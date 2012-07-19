@@ -26,28 +26,27 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PkFilter;
+import org.labkey.api.data.Results;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Path;
-import org.labkey.api.util.StringExpression;
-import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.StringExpressionFactory.FieldKeyStringExpression;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -59,7 +58,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class ListManager implements SearchService.DocumentProvider
 {
@@ -275,60 +273,74 @@ public class ListManager implements SearchService.DocumentProvider
     // Reindex items specified by filter
     private int indexItems(@NotNull final SearchService.IndexTask task, final ListDefinition list, SimpleFilter filter)
     {
-        final StringExpression titleTemplate = createTitleTemplate(list);
-        final StringExpression bodyTemplate = createBodyTemplate(list, list.getEachItemBodySetting(), list.getEachItemBodyTemplate());
-        final AtomicInteger count = new AtomicInteger();
+        FieldKeyStringExpression titleTemplate = createEachItemTitleTemplate(list);
+        FieldKeyStringExpression bodyTemplate = createBodyTemplate(list, list.getEachItemBodySetting(), list.getEachItemBodyTemplate());
         TableInfo ti = list.getTable(User.getSearchUser());
 
-        new TableSelector(ti, filter, null).forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
+        try
         {
-            @Override
-            public void exec(Map<String, Object> map) throws SQLException
+            Results results = null;
+
+            try
             {
-                // TODO: Hack for SQL Server... need to generalize this.  Table/executor should map aliased columns to
-                // external column names?  I.e., shouldn't have a map with "_key" as key
-                if (null == map.get("Key") && null != map.get("_key"))
-                    map.put("Key", map.get("_key"));
+                results = Table.selectForDisplay(ti, Table.ALL_COLUMNS, null, filter, null, Table.ALL_ROWS, Table.NO_OFFSET);
+                results.getFieldMap().keySet();
+                FieldKey key = new FieldKey(null, list.getKeyName());
+                int count = 0;
 
-                final Object pk = map.get(list.getKeyName());
-                String documentId = getDocumentId(list, pk);
-                Map<String, Object> props = new HashMap<String, Object>();
-                props.put(SearchService.PROPERTY.categories.toString(), listCategory.toString());
-                props.put(SearchService.PROPERTY.displayTitle.toString(), titleTemplate.eval(map));
+                while (results.next())
+                {
+                    Map<FieldKey, Object> map = results.getFieldKeyRowMap();
+                    final Object pk = map.get(key);
 
-                String body = bodyTemplate.eval(map);
+                    String documentId = getDocumentId(list, pk);
+                    Map<String, Object> props = new HashMap<String, Object>();
+                    props.put(SearchService.PROPERTY.categories.toString(), listCategory.toString());
+                    props.put(SearchService.PROPERTY.displayTitle.toString(), titleTemplate.eval(map));  // TODO: Best effort replacement (don't return null if single value is null)
 
-                ActionURL itemURL = list.urlDetails(pk);
-                itemURL.setExtraPath(list.getContainer().getId()); // Use ID to guard against folder moves/renames
+                    String body = bodyTemplate.eval(map);
 
-                SimpleDocumentResource r = new SimpleDocumentResource(
-                        new Path(documentId),
-                        documentId,
-                        list.getContainer().getId(),
-                        "text/plain",
-                        body.getBytes(),
-                        itemURL,
-                        props) {
-                    @Override
-                    public void setLastIndexed(long ms, long modified)
-                    {
-                        ListManager.get().setLastIndexed(list, pk, ms);
-                    }
-                };
+                    ActionURL itemURL = list.urlDetails(pk);
+                    itemURL.setExtraPath(list.getContainer().getId()); // Use ID to guard against folder moves/renames
 
-                // Add navtrail that includes link to full list grid
-                ActionURL gridURL = list.urlShowData();
-                gridURL.setExtraPath(list.getContainer().getId()); // Use ID to guard against folder moves/renames
-                NavTree t = new NavTree("list", gridURL);
-                String nav = NavTree.toJS(Collections.singleton(t), null, false).toString();
-                r.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
+                    SimpleDocumentResource r = new SimpleDocumentResource(
+                            new Path(documentId),
+                            documentId,
+                            list.getContainer().getId(),
+                            "text/plain",
+                            null == body ? new byte[0] : body.getBytes(),
+                            itemURL,
+                            props) {
+                        @Override
+                        public void setLastIndexed(long ms, long modified)
+                        {
+                            ListManager.get().setLastIndexed(list, pk, ms);
+                        }
+                    };
 
-                task.addResource(r, SearchService.PRIORITY.item);
-                count.incrementAndGet();
+                    // Add navtrail that includes link to full list grid
+                    ActionURL gridURL = list.urlShowData();
+                    gridURL.setExtraPath(list.getContainer().getId()); // Use ID to guard against folder moves/renames
+                    NavTree t = new NavTree("list", gridURL);
+                    String nav = NavTree.toJS(Collections.singleton(t), null, false).toString();
+                    r.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
+
+                    task.addResource(r, SearchService.PRIORITY.item);
+                    count++;
+                }
+
+                return count;
             }
-        });
-
-        return count.intValue();
+            finally
+            {
+                if (null != results)
+                    results.close();
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
 
@@ -385,18 +397,34 @@ public class ListManager implements SearchService.DocumentProvider
 
         if (setting.indexItemData())
         {
-            final StringBuilder data = new StringBuilder();
-            final StringExpression template = createBodyTemplate(list, list.getEntireListBodySetting(), list.getEntireListBodyTemplate());
+            StringBuilder data = new StringBuilder();
+            FieldKeyStringExpression template = createBodyTemplate(list, list.getEntireListBodySetting(), list.getEntireListBodyTemplate());
             TableInfo ti = list.getTable(User.getSearchUser());
 
-            new TableSelector(ti).forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
+            try
             {
-                @Override
-                public void exec(Map<String, Object> map) throws SQLException
+                Results results = null;
+
+                try
                 {
-                    data.append(template.eval(map)).append("\n");
+                    results = Table.selectForDisplay(ti, Table.ALL_COLUMNS, null, null, null, Table.ALL_ROWS, Table.NO_OFFSET);
+
+                    while (results.next())
+                    {
+                        Map<FieldKey, Object> map = results.getFieldKeyRowMap();
+                        data.append(template.eval(map)).append("\n");
+                    }
                 }
-            });
+                finally
+                {
+                    if (null != results)
+                        results.close();
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
 
             body.append(sep);
             body.append(data);
@@ -445,24 +473,24 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
 
-    private StringExpression createTitleTemplate(ListDefinition list)
+    private FieldKeyStringExpression createEachItemTitleTemplate(ListDefinition list)
     {
         String template;
 
-        if (list.getEntireListTitleSetting() == ListDefinition.TitleSetting.Standard)
+        if (list.getEachItemTitleSetting() == ListDefinition.TitleSetting.Standard || StringUtils.isBlank(list.getEachItemTitleTemplate()))
             template = "List " + list.getName() + " - ${" + list.getKeyName() + "}";
         else
             template = list.getEachItemTitleTemplate();
 
-        return StringExpressionFactory.create(template, false);
+        return FieldKeyStringExpression.create(template, false);
     }
 
 
-    private StringExpression createBodyTemplate(ListDefinition list, ListDefinition.BodySetting setting, @Nullable String customTemplate)
+    private FieldKeyStringExpression createBodyTemplate(ListDefinition list, ListDefinition.BodySetting setting, @Nullable String customTemplate)
     {
         String template;
 
-        if (setting == ListDefinition.BodySetting.Custom)
+        if (setting == ListDefinition.BodySetting.Custom && !StringUtils.isBlank(customTemplate))
         {
             template = customTemplate;
         }
@@ -478,7 +506,7 @@ public class ListManager implements SearchService.DocumentProvider
                 {
                     sb.append(sep);
                     sb.append("${");
-                    sb.append(column.getSelectName());  // TODO: Check this... which name?
+                    sb.append(column.getFieldKey());
                     sb.append("}");
                     sep = " ";
                 }
@@ -487,7 +515,7 @@ public class ListManager implements SearchService.DocumentProvider
             template = sb.toString();
         }
 
-        return StringExpressionFactory.create(template, false);
+        return FieldKeyStringExpression.create(template, false);
     }
 
 
