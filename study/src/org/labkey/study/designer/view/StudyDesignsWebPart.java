@@ -18,6 +18,7 @@ package org.labkey.study.designer.view;
 
 import org.labkey.api.data.*;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -62,19 +63,17 @@ public class StudyDesignsWebPart extends GridView
         dr.getDisplayColumn("PublicRevision").setCaption("Revision");
         dr.getDisplayColumn("Container").setVisible(false);
         dr.getDisplayColumn("Active").setVisible(false);
-        final ActionURL studyFolderUrl = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(ctx.getContainer());
-        dr.addDisplayColumn(new DataColumn(table.getColumn("Active")) {
+        DisplayColumn dc = new DataColumn(table.getColumn("Active")) {
+
             @Override
             public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
             {
-                boolean value = ((Boolean)getValue(ctx)).booleanValue();
+                boolean value = ((Boolean)super.getValue(ctx)).booleanValue();
                 if (value)
                 {
-                    Container c = ContainerManager.getForId((String) ctx.get("Container"));
-                    studyFolderUrl.setContainer(c);
                     Map<String, String> style = new HashMap<String, String>();
                     style.put("style", "white-space:nowrap");
-                    out.write(PageFlowUtil.textLink("Go To Study Folder", studyFolderUrl, "", "", style));
+                    out.write(PageFlowUtil.textLink("Go To Study Folder", renderURL(ctx), "", "", style));
                 }
                 else
                 {
@@ -87,7 +86,10 @@ public class StudyDesignsWebPart extends GridView
             {
                 return "";
             }
-        });
+        };
+        final ActionURL studyFolderUrl = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(ctx.getContainer());
+        dc.setURLExpression(new DetailsURL(studyFolderUrl));
+        dr.addDisplayColumn(dc);
         ButtonBar bb = new ButtonBar();
         if (ctx.getContainer().hasPermission(ctx.getUser(), InsertPermission.class))
         {
