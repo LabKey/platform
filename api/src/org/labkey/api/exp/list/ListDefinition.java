@@ -235,7 +235,7 @@ public interface ListDefinition extends Comparable<ListDefinition>
                     @Override
                     public boolean accept(ColumnInfo column)
                     {
-                        throw new IllegalStateException();
+                        return TextOnly.accept(column);  // This gets called if "custom" is selected but template is blank; use default template in that case
                     }
                 };
 

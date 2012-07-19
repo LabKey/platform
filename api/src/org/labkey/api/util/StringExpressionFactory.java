@@ -216,6 +216,7 @@ public class StringExpressionFactory
             }
         }
     }
+
     private static class ConstantPart extends StringPart
     {
         private String _value;
@@ -426,24 +427,31 @@ public class StringExpressionFactory
     }
 
 
-    static class FieldPart extends StringPart
+    private static class FieldPart extends StringPart
     {
-        FieldKey key;
+        private FieldKey _key;
+        private final boolean _urlEncodeSubstitutions;
 
         FieldPart(String s)
         {
-            key = FieldKey.decode(s);
+            this(s, true);
+        }
+
+        FieldPart(String s, boolean urlEncodeSubstitutions)
+        {
+            _key = FieldKey.decode(s);
+            _urlEncodeSubstitutions = urlEncodeSubstitutions;
         }
 
         String getValue(Map map)
         {
-            Object lookupKey = key;
+            Object lookupKey = _key;
 
             if (!map.containsKey(lookupKey))
             {
-                lookupKey = key.getParent() == null ? key.getName() : key.encode();
+                lookupKey = _key.getParent() == null ? _key.getName() : _key.encode();
                 if (map.containsKey(lookupKey))
-                    LOG.debug("No string substitution found for FieldKey '" + key.encode() + "', but found String '" + lookupKey + "'.");
+                    LOG.debug("No string substitution found for FieldKey '" + _key.encode() + "', but found String '" + lookupKey + "'.");
             }
             if (!map.containsKey(lookupKey))
             {
@@ -451,28 +459,43 @@ public class StringExpressionFactory
                 // don't have the info required to evaluate this expression
                 return null;
             }
-            Object value = map.get(lookupKey);
-            return PageFlowUtil.encodePath(valueOf(value));
+
+            String value = valueOf(map.get(lookupKey));
+
+            return _urlEncodeSubstitutions ? PageFlowUtil.encodePath(value) : value;
         }
 
         @Override
         public String toString()
         {
-            return "${" + key.encode() + "}";
+            return "${" + _key.encode() + "}";
         }
     }
 
 
     public static class FieldKeyStringExpression extends AbstractStringExpression
     {
+        private final boolean _urlEncodeSubstitutions;
+
         protected FieldKeyStringExpression()
         {
-            super("");
+            this("");
         }
         
         protected FieldKeyStringExpression(String source)
         {
+            this(source, true);
+        }
+
+        public FieldKeyStringExpression(String source, boolean urlEncodeSubstitutions)
+        {
             super(source);
+            _urlEncodeSubstitutions = urlEncodeSubstitutions;
+        }
+
+        public static FieldKeyStringExpression create(String source, boolean urlEncodeSubstitutions)
+        {
+            return new FieldKeyStringExpression(source, urlEncodeSubstitutions);
         }
 
         protected StringPart parsePart(String expr)
@@ -480,7 +503,7 @@ public class StringExpressionFactory
             // HACK
             if ("containerPath".equals(expr) || "contextPath".equals(expr) || "_row".equals(expr) || "selectionKey".equals(expr))
                 return new SubstitutePart(expr);
-            return new FieldPart(expr);
+            return new FieldPart(expr, _urlEncodeSubstitutions);
         }
 
         /**
@@ -501,7 +524,7 @@ public class StringExpressionFactory
                 if (p instanceof FieldPart)
                 {
                     FieldPart fp = (FieldPart)p;
-                    fp.key = _remap(fp.key, parent, remap);
+                    fp._key = _remap(fp._key, parent, remap);
                 }
                 source.append(p.toString());
             }
@@ -538,7 +561,7 @@ public class StringExpressionFactory
             for (StringPart p : getParsedExpression())
             {
                 if (p instanceof FieldPart)
-                    set.add(((FieldPart)p).key);
+                    set.add(((FieldPart)p)._key);
             }
             return set;
         }
@@ -563,7 +586,7 @@ public class StringExpressionFactory
                 if (stringPart instanceof FieldPart)
                 {
                     FieldPart fieldPart = (FieldPart)stringPart;
-                    List<String> parts = fieldPart.key.getParts();
+                    List<String> parts = fieldPart._key.getParts();
                     // If it the first part of the FieldKey matches the parent name
                     if (parts.get(0).equals(parentName))
                     {
@@ -573,7 +596,7 @@ public class StringExpressionFactory
                             // Copy all of the subsequent parts
                             newFieldKey = new FieldKey(newFieldKey, parts.get(i));
                         }
-                        fieldPart.key = newFieldKey;
+                        fieldPart._key = newFieldKey;
                     }
                 }
                 source.append(stringPart.toString());

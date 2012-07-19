@@ -41,6 +41,9 @@ public interface Results extends ResultSet, Table.TableResultSet
     @NotNull
     Map<FieldKey, ColumnInfo> getFieldMap();
 
+    @NotNull
+    public Map<FieldKey, Object> getFieldKeyRowMap();
+
     @Nullable
     ResultSet getResultSet();
 
