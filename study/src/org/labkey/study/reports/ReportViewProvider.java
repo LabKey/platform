@@ -241,7 +241,8 @@ public class ReportViewProvider implements DataViewProvider
                 Property.status.name(),
                 Property.refreshDate.name(),
                 Property.shared.name(),
-                Property.customThumbnail.name()
+                Property.customThumbnail.name(),
+                Property.customThumbnailFileName.name()
         };
 
         @Override

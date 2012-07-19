@@ -231,8 +231,8 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                     msgTarget  : 'side',
                     validator  : function(value) {
                         value = value.toLowerCase();
-                        if (value != null && value.length > 0 && !(/\.png$/.test(value) || /\.jpg$/.test(value) || /\.jpeg$/.test(value) || /\.gif$/.test(value)))
-                            return "Please choose a PNG, JPG, or GIF image.";
+                        if (value != null && value.length > 0 && !(/\.png$/.test(value) || /\.jpg$/.test(value) || /\.jpeg$/.test(value) || /\.gif$/.test(value) || /\.svg$/.test(value)))
+                            return "Please choose a PNG, JPG, GIF, or SVG image.";
                         else
                             return true;
                     },
@@ -240,10 +240,22 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                         afterrender : function(cmp) {
                             Ext4.tip.QuickTipManager.register({
                                 target: cmp.getId(),
-                                text: 'Choose a PNG, JPG, or GIF image. Images will be scaled to 250 pixels high.'
+                                text: 'Choose a PNG, JPG, GIF, or SVG image. Images will be scaled to 250 pixels high.'
                             });
-                        }
+                        },
+                        change : function(cmp, value) {
+                            this.down('#customThumbnailFileName').setValue(value);
+                        },
+                        scope: this
                     }
+                });
+
+                // hidden form field for the custom thumbnail file name
+                formItems.push({
+                    xtype : 'hidden',
+                    id    : 'customThumbnailFileName',
+                    name  : 'customThumbnailFileName',
+                    value : null
                 });
             }
         }
