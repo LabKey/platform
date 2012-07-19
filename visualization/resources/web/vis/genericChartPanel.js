@@ -83,6 +83,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             scope: this
         });
 
+        this.exportPdfBtn = Ext4.create('Ext.button.Button', {
+            text: 'Export PDF',
+            disabled: true,
+            scope: this
+        });
+
         this.toggleBtn = Ext4.create('Ext.button.Button', {
             text:'View Data',
             width: 95,
@@ -111,6 +117,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             items    : [this.getViewPanel(), this.getDataPanel()],
             tbar: [
                 this.toggleBtn,
+                this.exportPdfBtn,
                 this.showOptionsBtn
             ]
         });
@@ -1161,6 +1168,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             return field.extFormatFn ? eval(field.extFormatFn) : this.defaultNumberFormat;
         };
         this.viewPanel.getEl().mask('Rendering Chart...');
+        this.exportPdfBtn.removeListener('click', this.exportChartToPdf);
+        this.exportPdfBtn.disable();
         if(!this.yAxisMeasure){
 
             if (this.autoColumnYName)
@@ -1347,7 +1356,17 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         );
         var plot = new LABKEY.vis.Plot(plotConfig);
         plot.render();
+
+        this.chartDivId = newChartDiv.id;
+        this.exportPdfBtn.addListener('click', this.exportChartToPdf, this);
+        this.exportPdfBtn.enable();
+
         this.viewPanel.getEl().unmask();
+    },
+
+    exportChartToPdf: function() {
+        if (this.chartDivId)
+            LABKEY.vis.SVGConverter.convert(Ext4.get(this.chartDivId).child('svg').dom, 'pdf');
     },
 
     generatePlotConfig: function(geom, renderTo, width, height, data, labels, scales, xAxisName, yAxisName, xAcc, yAcc){
