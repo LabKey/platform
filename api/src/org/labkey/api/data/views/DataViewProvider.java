@@ -75,7 +75,8 @@ public interface DataViewProvider
             refreshDate,
             status,
             
-            customThumbnail
+            customThumbnail,
+            customThumbnailFileName
         }
 
         // a list of thumbnail types
