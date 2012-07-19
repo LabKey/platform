@@ -22,6 +22,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.view.ActionURL;
@@ -250,6 +251,35 @@ public class StringExpressionFactory
         public String toString()
         {
             return "${" + _value + "}";
+        }
+    }
+    private static class RenderContextPart extends SubstitutePart
+    {
+        public RenderContextPart(String value)
+        {
+            super(value);
+            assert "containerPath".equals(value) || "contextPath".equals(value) || "selectionKey".equals(value);
+        }
+
+        @Override
+        public String getValue(Map map)
+        {
+            if (!(map instanceof RenderContext))
+                return "";
+
+            if ("containerPath".equals(_value))
+                return ((RenderContext)map).getContainerPath();
+            if ("contextPath".equals(_value))
+                return ((RenderContext)map).getContextPath();
+            if ("selectionKey".equals(_value))
+                return ((RenderContext)map).getSelectionKey();
+            return "";
+        }
+
+        @Override
+        public String toString()
+        {
+            return super.toString();
         }
     }
     private static class EncodePart extends SubstitutePart
@@ -501,8 +531,8 @@ public class StringExpressionFactory
         protected StringPart parsePart(String expr)
         {
             // HACK
-            if ("containerPath".equals(expr) || "contextPath".equals(expr) || "_row".equals(expr) || "selectionKey".equals(expr))
-                return new SubstitutePart(expr);
+            if ("containerPath".equals(expr) || "contextPath".equals(expr) || "selectionKey".equals(expr))
+                return new RenderContextPart(expr);
             return new FieldPart(expr, _urlEncodeSubstitutions);
         }
 

@@ -33,18 +33,20 @@ import org.springframework.validation.Errors;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.io.Serializable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class RenderContext extends BoundMap
+public class RenderContext implements Map<String, Object>, Serializable
 {
     private static final Logger _log = Logger.getLogger(RenderContext.class);
 
@@ -55,6 +57,7 @@ public class RenderContext extends BoundMap
     private DataRegion _currentRegion;
     private Filter _baseFilter;
     private Map<String, Object> _row;
+    private Map<String, Object> _extra = new HashMap<String, Object>();
     private Sort _baseSort;
     private int _mode = DataRegion.MODE_NONE;
     private boolean _cache = true;
@@ -75,7 +78,6 @@ public class RenderContext extends BoundMap
 
     public RenderContext(ViewContext context, Errors errors)
     {
-        setBean(this);
         _viewContext = context;
         setErrors(errors);
         assert MemTracker.put(this);
@@ -421,14 +423,14 @@ public class RenderContext extends BoundMap
         _cache = cache;
     }
 
-    public Map getRow()
+    public Map<String, Object> getRow()
     {
         return _row;
     }
 
-    public void setRow(Map row)
+    public void setRow(Map<String, Object> row)
     {
-        _row = row;
+        _row = Collections.unmodifiableMap(row);
     }
 
     public int getMode()
@@ -447,7 +449,7 @@ public class RenderContext extends BoundMap
     @Override
     public boolean isEmpty()
     {
-        return super.isEmpty() && (_row == null || _row.isEmpty());
+        return _extra.isEmpty() && (_row == null || _row.isEmpty());
     }
 
     /**
@@ -469,7 +471,7 @@ public class RenderContext extends BoundMap
             // </UNDONE>
         }
 
-        return super.containsKey(key) || (_row != null && _row.containsKey(key));
+        return _extra.containsKey(key) || (_row != null && _row.containsKey(key));
     }
 
     /**
@@ -478,18 +480,21 @@ public class RenderContext extends BoundMap
     @Override
     public boolean containsValue(Object value)
     {
-        return super.containsValue(value) || (_row != null && _row.containsValue(value));
+        return _extra.containsValue(value) || (_row != null && _row.containsValue(value));
     }
 
     /**
      * Overrides values() to combine keys from map and current row
      */
     @Override
-    public Collection values()
+    public Collection<Object> values()
     {
-        Collection values = super.values();
+        Collection<Object> values = _extra.values();
         if (null != _row)
+        {
+            values = new ArrayList<Object>(values);
             values.addAll(_row.values());
+        }
 
         return values;
     }
@@ -498,13 +503,13 @@ public class RenderContext extends BoundMap
      * Overrides entrySet to combine entries from map and current row
      */
     @Override
-    public Set entrySet()
+    public Set<Map.Entry<String, Object>> entrySet()
     {
-        Set entrySet = super.entrySet();
+        Set<Map.Entry<String, Object>> entrySet = _extra.entrySet();
 
         if (null != _row)
         {
-            entrySet = new HashSet(entrySet);
+            entrySet = new HashSet<Map.Entry<String, Object>>(entrySet);
             entrySet.addAll(_row.entrySet());
         }
 
@@ -515,9 +520,9 @@ public class RenderContext extends BoundMap
      * Overrides keySet to combine keys from map and current row
      */
     @Override
-    public Set keySet()
+    public Set<String> keySet()
     {
-        Set<String> keySet = super.keySet();
+        Set<String> keySet = _extra.keySet();
 
         if (null != _row)
         {
@@ -573,11 +578,52 @@ public class RenderContext extends BoundMap
             val = _row.get(key);
 
         if (null == val)
-            val = super.get(key);
+            val = _extra.get(key);
 
         return val;
     }
 
+    @Override
+    public int size()
+    {
+        return (_row != null ? _row.size() : 0) + _extra.size();
+    }
+
+    @Override
+    public Object put(String key, Object value)
+    {
+        if (_row != null && _row.containsKey(key))
+        {
+            _log.warn("Attempted to update '" + key + "' in row");
+            return null;
+        }
+
+        return _extra.put(key, value);
+    }
+
+    @Override
+    public Object remove(Object key)
+    {
+        if (_row != null && _row.containsKey(key))
+        {
+            _log.warn("Attempted to remove '" + key + "' from row");
+            return null;
+        }
+
+        return _extra.remove(key);
+    }
+
+    @Override
+    public void putAll(Map<? extends String, ? extends Object> m)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void clear()
+    {
+        throw new UnsupportedOperationException();
+    }
 
     // for backward compatibility in URL substitution
     public String getContainerPath()

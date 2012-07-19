@@ -199,13 +199,13 @@ public class RenderContextDecorator extends RenderContext
     }
 
     @Override
-    public Map getRow()
+    public Map<String, Object> getRow()
     {
         return _ctx.getRow();
     }
 
     @Override
-    public void setRow(Map row)
+    public void setRow(Map<String, Object> row)
     {
         _ctx.setRow(row);
     }
@@ -361,25 +361,6 @@ public class RenderContextDecorator extends RenderContext
     }
 
     @Override
-    public void setBean(Object bean)
-    {
-        _ctx.setBean(bean);
-    }
-
-    @Override
-    public Object getBean()
-    {
-        return _ctx.getBean();
-    }
-
-    @Override
-    public Object clone()
-            throws CloneNotSupportedException
-    {
-        return _ctx.clone();
-    }
-
-    @Override
     public Object put(String key, Object value)
     {
         return _ctx.put(key, value);
@@ -395,12 +376,6 @@ public class RenderContextDecorator extends RenderContext
     public Object remove(Object key)
     {
         return _ctx.remove(key);
-    }
-
-    @Override
-    public Map getExtendedProperties()
-    {
-        return _ctx.getExtendedProperties();
     }
 
     @Override

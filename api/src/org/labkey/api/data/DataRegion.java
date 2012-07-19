@@ -1638,7 +1638,7 @@ public class DataRegion extends AbstractDataRegion
         {
             TableViewForm form = ctx.getForm();
             if (null != form)
-                ctx.setRow(form.getStrings());
+                ctx.setRow((Map)form.getStrings());
         }
         renderForm(ctx, out);
     }
