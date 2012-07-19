@@ -64,8 +64,10 @@
         Issue issue = IssueManager.getIssue(null, Integer.parseInt(issueId));
         boolean hasReadPermission = ContainerManager.getForId(issue.getContainerId()).hasPermission(getViewContext().getUser(), ReadPermission.class);
 
-        if(!hasReadPermission)
+        if (!hasReadPermission)
             continue;
+
+        bean.setIssue(issue);
 %>
 <table width=640>
     <tr><td colspan="3"><h3><%=issueId + " : " + h(issue.getTitle())%></h3></td></tr>
