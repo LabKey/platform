@@ -245,6 +245,9 @@ public class QueryWebPart extends WebPartView
             }
         }
 
+        if (_metadata != null && !_hasSql)
+            out.write("<div class='labkey-error'>Configuration error : specifying column metadata is only available if the query is specified through the 'sql' config option.</div><br/>");
+
         if (_schema != null && _settings != null)
         {
             QueryDefinition queryDef = _settings.getQueryDef(_schema);
