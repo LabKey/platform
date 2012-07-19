@@ -19,19 +19,17 @@ package org.labkey.api.reports.report.r.view;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.ScriptEngineReport;
-import org.labkey.api.util.FileUtil;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.reports.report.r.ParamReplacement;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.HttpView;
 
-import java.io.FileFilter;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.File;
+import java.io.FileFilter;
+import java.io.PrintWriter;
 import java.util.Map;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: May 5, 2008
  */

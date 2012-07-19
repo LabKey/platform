@@ -17,6 +17,7 @@ package org.labkey.api.util;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailOutputStream;
 import org.w3c.dom.Document;
@@ -141,7 +142,7 @@ public class ImageUtil
     // Standard thumbnail height in pixels.
     public static final float THUMBNAIL_HEIGHT = 256.0f;
 
-    public static Thumbnail renderThumbnail(BufferedImage image) throws IOException
+    public static @Nullable Thumbnail renderThumbnail(BufferedImage image) throws IOException
     {
         // TODO: Check size -- don't scale up if smaller than THUMBNAIL_HEIGHT
 

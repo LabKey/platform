@@ -15,7 +15,12 @@
  */
 package org.labkey.api.thumbnail;
 
+import org.apache.batik.transcoder.TranscoderException;
+import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.attachments.DocumentConversionService;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.CheckedInputStream;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ImageUtil;
@@ -33,13 +38,16 @@ import java.io.InputStream;
  */
 public class ImageStreamThumbnailProvider implements DynamicThumbnailProvider
 {
+    private static final Logger LOG = Logger.getLogger(ImageStreamThumbnailProvider.class);
     private final DynamicThumbnailProvider _provider;
+    private final @Nullable String _contentType;
     private final InputStream _is;
 
     // Generates a thumbnail from the image in the inputstream and associates it with the provider
-    public ImageStreamThumbnailProvider(DynamicThumbnailProvider provider, InputStream is)
+    public ImageStreamThumbnailProvider(DynamicThumbnailProvider provider, InputStream is, @Nullable String contentType)
     {
         _provider = provider;
+        _contentType = contentType;
         _is = new CheckedInputStream(is);
     }
 
@@ -49,24 +57,52 @@ public class ImageStreamThumbnailProvider implements DynamicThumbnailProvider
     {
         try
         {
-            BufferedImage image;
-
-            try
+            if ("image/svg+xml".equals(_contentType))
             {
-                image = ImageIO.read(_is);
-            }
-            finally
-            {
-                _is.close();
-            }
+                DocumentConversionService svc = ServiceRegistry.get().getService(DocumentConversionService.class);
 
-            return ImageUtil.renderThumbnail(image);
+                if (null != svc)
+                {
+                    ThumbnailOutputStream os = new ThumbnailOutputStream();
+
+                    try
+                    {
+                        svc.svgToPng(IOUtils.toString(_is), os, ImageUtil.THUMBNAIL_HEIGHT);
+
+                        return os.getThumbnail("image/png");
+                    }
+                    catch (TranscoderException e)
+                    {
+                        LOG.error("Couldn't generate thumbnail", e);
+                    }
+                    finally
+                    {
+                        IOUtils.closeQuietly(_is);
+                    }
+                }
+            }
+            else if (null == _contentType || _contentType.startsWith("image/"))
+            {
+                BufferedImage image = null;
+
+                try
+                {
+                    image = ImageIO.read(_is);
+                }
+                finally
+                {
+                    IOUtils.closeQuietly(_is);
+                }
+
+                return ImageUtil.renderThumbnail(image);
+            }
         }
         catch (IOException e)
         {
             ExceptionUtil.logExceptionToMothership(null, e);
-            return null;
         }
+
+        return null;
     }
 
     @Override
