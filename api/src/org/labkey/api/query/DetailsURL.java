@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ContainerContext;
@@ -288,7 +289,10 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
             return _containerContext.getContainer(context);
         if (null != _context)
             return _context.getContainer();
-        Object c = null==context ? null : context.get("container");
+        Object c = null==context ? null
+                 : context.containsKey("container") ? context.get("container")
+                 : context instanceof RenderContext ? ((RenderContext)context).getContainer()
+                 : null;
         if (c instanceof Container)
             return (Container)c;
         return null;
