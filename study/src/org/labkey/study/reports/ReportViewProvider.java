@@ -17,6 +17,7 @@ package org.labkey.study.reports;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.views.DataViewInfo;
@@ -43,6 +44,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.ImageStreamThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService;
+import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -107,7 +109,7 @@ public class ReportViewProvider implements DataViewProvider
         return Collections.emptyList();
     }
 
-    private List<DataViewInfo> getViews(ViewContext context, String schemaName, String queryName, ReportUtil.ReportFilter filter)
+    private List<DataViewInfo> getViews(ViewContext context, @Nullable String schemaName, @Nullable String queryName, ReportUtil.ReportFilter filter)
     {
         Container c = context.getContainer();
         User user = context.getUser();
@@ -279,8 +281,10 @@ public class ReportViewProvider implements DataViewProvider
         {
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
-            try {
+            try
+            {
                 Report report = ReportService.get().getReportByEntityId(context.getContainer(), id);
+
                 if (report != null)
                 {
                     scope.ensureTransaction();
@@ -321,13 +325,15 @@ public class ReportViewProvider implements DataViewProvider
 
                     if (props.containsKey(Property.customThumbnail.name()))
                     {
-                        // custom thumbnail file provided by the user would be store in the properties map as an InputStream
+                        // custom thumbnail file provided by the user is stored in the properties map as an InputStream
                         InputStream is = (InputStream)props.get(Property.customThumbnail.name());
+                        String filename = (String)props.get(Property.customThumbnailFileName.name());
 
                         // TODO: I don't like this... need to rethink static vs. dynamic providers. Reports that aren't dynamic providers should still allow custom thumbnails
                         if (report instanceof DynamicThumbnailProvider)
                         {
-                            DynamicThumbnailProvider wrapper = new ImageStreamThumbnailProvider((DynamicThumbnailProvider)report, is);
+                            String contentType = null != filename ? new MimeMap().getContentTypeFor(filename) : null;
+                            DynamicThumbnailProvider wrapper = new ImageStreamThumbnailProvider((DynamicThumbnailProvider)report, is, contentType);
 
                             ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
 
