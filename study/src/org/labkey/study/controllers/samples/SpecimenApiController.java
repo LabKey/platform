@@ -237,8 +237,10 @@ public class SpecimenApiController extends BaseStudyController
                 List<SampleRequest> nonFinalRequests = new ArrayList<SampleRequest>();
                 for (SampleRequest request : allUserRequests)
                 {
-                    if (request.getStatusId() == shoppingCartStatus.getRowId())
+                    if (SampleManager.getInstance().hasEditRequestPermissions(getUser(), request) && !SampleManager.getInstance().isInFinalState(request))
+                    {
                         nonFinalRequests.add(request);
+                    }
                 }
                 response.put("requests", getRequestListResponse(getViewContext(), nonFinalRequests));
             }
