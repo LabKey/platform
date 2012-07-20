@@ -2057,7 +2057,7 @@ public class QueryView extends WebPartView<Object>
         TableInfo table = getTable();
         if (table == null)
             return Collections.emptyList();
-        if (_showDetailsColumn && !isPrintView() && !isExportView() && table.hasDetailsURL())
+        if (_showDetailsColumn && !isPrintView() && !isExportView())
         {
             StringExpression urlDetails = urlExpr(QueryAction.detailsQueryRow);
 
@@ -2067,7 +2067,7 @@ public class QueryView extends WebPartView<Object>
                 {
                     ret.add(new DetailsColumn(urlDetails));
                 }
-                else
+                else if (table.hasDetailsURL())
                 {
                     // We resolve lookups later.  Assume this table will have a valid details url.
                     // this is messy because for most columns we just omit the link if the url is not valid
