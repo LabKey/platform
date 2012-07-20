@@ -28,6 +28,9 @@ import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.*;
+import com.google.gwt.user.client.ui.HorizontalPanel;
+import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.VerticalPanel;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.*;
@@ -39,7 +42,6 @@ import org.labkey.api.gwt.client.util.*;
 import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
  * User: matthewb
  * Date: Apr 24, 2007
  * Time: 9:24:04 AM
@@ -146,15 +148,14 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
     {
         panel.clear();
         Element e = panel.getElement();
-        panel.getElement().removeClassName(getLoadingStyle());
-        panel.getElement().addClassName("extContainer");
+        e.removeClassName(getLoadingStyle());
+        e.addClassName("extContainer");
     }
 
 
     public void loading(RootPanel panel, String message)
     {
         panel.clear();
-        Element e = panel.getElement();
         panel.getElement().addClassName(getLoadingStyle());
         _loading = new Label(null==message?"Loading...":message);
         panel.add(_loading);
@@ -972,20 +973,50 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                 table.setWidget(row, 1, indexPanel);
 
                 VerticalPanel entireListSettings = new VerticalPanel();
-                RadioButton metaData = new BoundRadioButton("ff_entireListSetting", "Meta data only", _list.entireListIndexSetting, 0, dirtySetter);
-                metaData.setEnabled(!readonly);
-                RadioButton data = new BoundRadioButton("ff_entireListSetting", "Item data only", _list.entireListIndexSetting, 1, dirtySetter);
+                RadioButton metadata = new BoundRadioButton("ff_entireListSetting", "Metadata only (name and descriptions of list and fields)", _list.entireListIndexSetting, 0, dirtySetter);
+                metadata.setEnabled(!readonly);
+                RadioButton data = new BoundRadioButton("ff_entireListSetting", "Data only", _list.entireListIndexSetting, 1, dirtySetter);
                 data.setEnabled(!readonly);
-                RadioButton both = new BoundRadioButton("ff_entireListSetting", "Meta data and item data", _list.entireListIndexSetting, 2, dirtySetter);
+                RadioButton both = new BoundRadioButton("ff_entireListSetting", "Metadata and data", _list.entireListIndexSetting, 2, dirtySetter);
                 both.setEnabled(!readonly);
-                entireListSettings.add(metaData);
-                entireListSettings.add(data);
-                entireListSettings.add(both);
+                entireListSettings.add(metadata);
+
+                HelpPopup eachItemTitleHelp = null;
+                HelpPopup eachItemBodyHelp = null;
+                HelpPopup entireListTitleHelp = null;
+                HelpPopup entireListBodyHelp = null;
+
+                if (readonly)
+                {
+                    entireListSettings.add(data);
+                    entireListSettings.add(both);
+                }
+                else
+                {
+                    String warningTitle = "Index Entire List Data";
+                    String warningText = "Not recommend for large lists with frequent updates, since updating any item will cause re-indexing of the entire list";
+                    HorizontalPanel hpData = new HorizontalPanel();
+                    hpData.add(data);
+                    hpData.add(new HelpPopup(warningTitle, warningText));
+                    entireListSettings.add(hpData);
+
+                    HorizontalPanel hpBoth = new HorizontalPanel();
+                    hpBoth.add(both);
+                    hpBoth.add(new HelpPopup(warningTitle, warningText));
+                    entireListSettings.add(hpBoth);
+
+                    eachItemTitleHelp = new HelpPopup("Example Title Template", getExampleTemplate(_list.getName() + " - ", 2));
+                    eachItemBodyHelp = new HelpPopup("Example Body Template", getExampleTemplate("", 5));
+                    entireListTitleHelp = new HelpPopup("Custom Title", "Any text you want displayed and indexed as the search result title");
+                    entireListBodyHelp = new HelpPopup("Example Body Template", getExampleTemplate("", 5));
+                }
 
                 addIndexSettings(indexPanel, "eachItem", "Index each item as a separate document", _list.eachItemIndex, null,
-                        _list.eachItemTitleSetting, _list.eachItemTitleTemplate, _list.eachItemBodySetting, _list.eachItemBodyTemplate, readonly);
-                addIndexSettings(indexPanel, "entireList", "Index entire list as a single document", _list.entireListIndex, entireListSettings, _list.entireListTitleSetting,
-                        _list.entireListTitleTemplate, _list.entireListBodySetting, _list.entireListBodyTemplate, readonly);
+                        _list.eachItemTitleSetting, _list.eachItemTitleTemplate, eachItemTitleHelp,
+                        _list.eachItemBodySetting, _list.eachItemBodyTemplate, eachItemBodyHelp, readonly);
+                addIndexSettings(indexPanel, "entireList", "Index entire list as a single document", _list.entireListIndex, entireListSettings,
+                        _list.entireListTitleSetting, _list.entireListTitleTemplate, entireListTitleHelp,
+                        _list.entireListBodySetting, _list.entireListBodyTemplate, entireListBodyHelp, readonly);
 
                 row++;
             }
@@ -993,8 +1024,8 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
 
         private void addIndexSettings(VerticalPanel panel, String type, String description, BooleanProperty indexProperty,
-              Panel additionalOptions, IntegerProperty titleSetting, StringProperty titleTemplate, IntegerProperty bodySetting,
-              StringProperty bodyTemplate, boolean readonly)
+              Panel additionalOptions, IntegerProperty titleSetting, StringProperty titleTemplate, HelpPopup titleHelp,
+              IntegerProperty bodySetting, StringProperty bodyTemplate, HelpPopup bodyHelp, boolean readonly)
         {
             final BoundCheckBox indexCheckBox = new BoundCheckBox("ff_" + type + "Index", indexProperty, dirtySetter);
             indexCheckBox.setText(description);
@@ -1018,9 +1049,9 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                 vPanel.add(new Spacer());
             }
 
-            vPanel.add(createOptionsAndTemplatePanel(new String[]{"Standard title", "Custom title"}, "ff_" + type + "TitleSetting", titleSetting, "ff_" + type + "TitleTemplate", titleTemplate, readonly));
+            vPanel.add(createOptionsAndTemplatePanel(new String[]{"Standard title", "Custom title"}, titleHelp, "ff_" + type + "TitleSetting", titleSetting, "ff_" + type + "TitleTemplate", titleTemplate, readonly));
             vPanel.add(new Spacer());
-            vPanel.add(createOptionsAndTemplatePanel(new String[]{"Index all text fields", "Index all fields (text, number, date and boolean)", "Index using custom template"}, "ff_" + type + "BodySetting", bodySetting, "ff_" + type + "BodyTemplate", bodyTemplate, readonly));
+            vPanel.add(createOptionsAndTemplatePanel(new String[]{"Index all text fields", "Index all fields (text, number, date and boolean)", "Index using custom template"}, bodyHelp, "ff_" + type + "BodySetting", bodySetting, "ff_" + type + "BodyTemplate", bodyTemplate, readonly));
 
             ClickHandler ch = new ClickHandler()
             {
@@ -1036,7 +1067,29 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         }
 
 
-        private Panel createOptionsAndTemplatePanel(String[] radioCaptions, String radioName, final IntegerProperty radioProperty, String templateName, StringProperty templateProperty, boolean readonly)
+        private String getExampleTemplate(String prefix, int maxFields)
+        {
+            // Get the field names in the title list box, skipping the first one (<AUTO>)
+            int count = Math.min(_titleListBox.getItemCount() - 1, maxFields);
+
+            String template = prefix;
+
+            for (int i = 1; i <= count; i++)
+            {
+                String value = _titleListBox.getValue(i);
+                int idx = value.indexOf('|');
+
+                if (idx > -1)
+                {
+                    template = template + " ${" + value.substring(idx + 1) + "}";
+                }
+            }
+
+            return template;
+        }
+
+
+        private Panel createOptionsAndTemplatePanel(String[] radioCaptions, HelpPopup help, String radioName, final IntegerProperty radioProperty, String templateName, StringProperty templateProperty, boolean readonly)
         {
             Panel vPanel = new VerticalPanel();
             final HorizontalPanel templatePanel = new HorizontalPanel();
@@ -1057,8 +1110,19 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
             {
                 RadioButton radio = new BoundRadioButton(radioName, caption, radioProperty, i++, dirtySetter);
                 radio.setEnabled(!readonly);
-                vPanel.add(radio);
                 radio.addClickHandler(ch);
+
+                if (readonly || i < radioCaptions.length || null == help)
+                {
+                    vPanel.add(radio);
+                }
+                else
+                {
+                    HorizontalPanel hp = new HorizontalPanel();
+                    hp.add(radio);
+                    hp.add(help);
+                    vPanel.add(hp);
+                }
             }
 
             templatePanel.add(new Spacer());
