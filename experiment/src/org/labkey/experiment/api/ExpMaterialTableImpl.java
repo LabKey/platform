@@ -66,7 +66,7 @@ import java.util.Set;
 
 public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> implements ExpMaterialTable
 {
-    ExpSampleSet _ss;
+    ExpSampleSetImpl _ss;
 
     public ExpMaterialTableImpl(String name, UserSchema schema)
     {
@@ -99,10 +99,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
             case LSID:
                 return wrapColumn(alias, _rootTable.getColumn("LSID"));
             case Name:
-            {
-                ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("Name"));
-                return columnInfo;
-            }
+                return wrapColumn(alias, _rootTable.getColumn("Name"));
             case SampleSet:
             {
                 ColumnInfo columnInfo = wrapColumn(alias, _rootTable.getColumn("CpasType"));
@@ -200,7 +197,11 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
         }
         if (filter)
             addCondition(getRealTable().getColumn("CpasType"), ss.getLSID());
-        _ss = ss;
+        if (ss != null && !(ss instanceof ExpSampleSetImpl))
+        {
+            throw new IllegalArgumentException("Expected sample set to be an instance of " + ExpSampleSetImpl.class.getName() + " but was a " + ss.getClass().getName());
+        }
+        _ss = (ExpSampleSetImpl)ss;
         if (_ss != null)
         {
             ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getShowUploadMaterialsURL(getContainer());

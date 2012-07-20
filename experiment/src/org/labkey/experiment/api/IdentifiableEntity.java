@@ -100,7 +100,7 @@ public class IdentifiableEntity extends IdentifiableBase implements Identifiable
 
     public void setCreated(Date created)
     {
-        this.created = created.getTime();
+        this.created = created == null ? 0 : created.getTime();
     }
 
     public int getModifiedBy()
@@ -120,7 +120,7 @@ public class IdentifiableEntity extends IdentifiableBase implements Identifiable
 
     public void setModified(Date modified)
     {
-        this.modified = modified.getTime();
+        this.modified = modified == null ? 0 : modified.getTime();
     }
 
     public int getRowId()

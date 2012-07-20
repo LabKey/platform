@@ -4660,7 +4660,12 @@ public class DavController extends SpringActionController
     {
         try
         {
-            return r.getInputStream(user);
+            InputStream result = r.getInputStream(user);
+            if (result == null)
+            {
+                throw new DavException(WebdavStatus.SC_NOT_FOUND, r.getPath().toString());
+            }
+            return result;
         }
         catch (FileNotFoundException fnfe)
         {

@@ -55,10 +55,17 @@ public class UploadSamplesHelper
     private static final Logger _log = Logger.getLogger(UploadSamplesHelper.class);
 
     UploadMaterialSetForm _form;
+    private MaterialSource _materialSource;
 
     public UploadSamplesHelper(UploadMaterialSetForm form)
     {
+        this(form, null);
+    }
+
+    public UploadSamplesHelper(UploadMaterialSetForm form, MaterialSource materialSource)
+    {
         _form = form;
+        _materialSource = materialSource;
     }
 
     public Map<Integer, String> getIdFieldOptions(boolean allowBlank)
@@ -95,7 +102,6 @@ public class UploadSamplesHelper
     // TODO: This function is way to long and difficult to read. Break it out.
     public Pair<MaterialSource, List<ExpMaterial>> uploadMaterials() throws ExperimentException, ValidationException, IOException
     {
-        MaterialSource source;
         List<ExpMaterial> materials = Collections.emptyList();
         try
         {
@@ -103,10 +109,18 @@ public class UploadSamplesHelper
             // Look at more rows than normal when inferring types for sample set columns
             // This isn't a big perf hit because the full TSV is already in memory
             loader.setScanAheadLineCount(1000);
-            String materialSourceLsid = ExperimentService.get().getSampleSetLsid(_form.getName(), _form.getContainer()).toString();
-            source = ExperimentServiceImpl.get().getMaterialSource(materialSourceLsid);
-            if (source == null && !_form.isCreateNewSampleSet())
-                throw new ExperimentException("Can't create new Sample Set '" + _form.getName() + "'");
+            String materialSourceLsid;
+            if (_materialSource == null)
+            {
+                materialSourceLsid = ExperimentService.get().getSampleSetLsid(_form.getName(), _form.getContainer()).toString();
+                _materialSource = ExperimentServiceImpl.get().getMaterialSource(materialSourceLsid);
+                if (_materialSource == null && !_form.isCreateNewSampleSet())
+                    throw new ExperimentException("Can't create new Sample Set '" + _form.getName() + "'");
+            }
+            else
+            {
+                materialSourceLsid = _materialSource.getLSID();
+            }
 
             if (_form.isCreateNewSampleSet() && _form.getName().length() > ExperimentServiceImpl.get().getTinfoMaterialSource().getColumn("Name").getScale())
             {
@@ -151,7 +165,7 @@ public class UploadSamplesHelper
                 else
                 {
                     DomainProperty pd = descriptorsByName.get(cd.name);
-                    if ((pd == null && _form.isCreateNewColumnsOnExistingSampleSet()) || source == null)
+                    if ((pd == null && _form.isCreateNewColumnsOnExistingSampleSet()) || _materialSource == null)
                     {
                         pd = domain.addProperty();
                         //todo :  name for domain?
@@ -177,7 +191,7 @@ public class UploadSamplesHelper
 
             if (addedProperty)
             {
-                if (source != null && !_form.isCreateNewColumnsOnExistingSampleSet())
+                if (_materialSource != null && !_form.isCreateNewColumnsOnExistingSampleSet())
                     throw new ExperimentException("Can't create new columns on existing sample set.");
                 // Need to save the domain - it has at least one new property
                 domain.save(_form.getUser());
@@ -185,9 +199,9 @@ public class UploadSamplesHelper
 
             boolean usingNameAsUniqueColumn = false;
             List<String> idColPropertyURIs = new ArrayList<String>();
-            if (source != null && source.getIdCol1() != null)
+            if (_materialSource != null && _materialSource.getIdCol1() != null)
             {
-                usingNameAsUniqueColumn = getIdColPropertyURIs(source, idColPropertyURIs);
+                usingNameAsUniqueColumn = getIdColPropertyURIs(_materialSource, idColPropertyURIs);
             }
             else
             {
@@ -218,9 +232,9 @@ public class UploadSamplesHelper
                 }
             }
             String parentColPropertyURI;
-            if (source != null && source.getParentCol() != null)
+            if (_materialSource != null && _materialSource.getParentCol() != null)
             {
-                parentColPropertyURI = source.getParentCol();
+                parentColPropertyURI = _materialSource.getParentCol();
             }
             else if (_form.getParentColumn() >= 0)
             {
@@ -295,33 +309,33 @@ public class UploadSamplesHelper
             }
 
             Set<String> reusedMaterialLSIDs = new HashSet<String>();
-            if (source == null)
+            if (_materialSource == null)
             {
                 assert _form.isCreateNewSampleSet();
-                source = new MaterialSource();
+                _materialSource = new MaterialSource();
                 String setName = PageFlowUtil.encode(_form.getName());
-                source.setContainer(_form.getContainer());
-                source.setDescription("Samples uploaded by " + _form.getUser().getEmail());
+                _materialSource.setContainer(_form.getContainer());
+                _materialSource.setDescription("Samples uploaded by " + _form.getUser().getEmail());
                 Lsid lsid = ExperimentServiceImpl.get().getSampleSetLsid(_form.getName(), _form.getContainer());
-                source.setLSID(lsid.toString());
-                source.setName(_form.getName());
-                setCols(usingNameAsUniqueColumn, idColPropertyURIs, parentColPropertyURI, source);
-                source.setMaterialLSIDPrefix(new Lsid("Sample", String.valueOf(_form.getContainer().getRowId()) + "." + setName, "").toString());
-                ExpSampleSetImpl sampleSet = new ExpSampleSetImpl(source);
+                _materialSource.setLSID(lsid.toString());
+                _materialSource.setName(_form.getName());
+                setCols(usingNameAsUniqueColumn, idColPropertyURIs, parentColPropertyURI, _materialSource);
+                _materialSource.setMaterialLSIDPrefix(new Lsid("Sample", String.valueOf(_form.getContainer().getRowId()) + "." + setName, "").toString());
+                ExpSampleSetImpl sampleSet = new ExpSampleSetImpl(_materialSource);
                 sampleSet.save(_form.getUser());
-                source = sampleSet.getDataObject();
+                _materialSource = sampleSet.getDataObject();
             }
             else
             {
                 // 6088: update id cols for already existing material source if none have been set
-                if (source.getIdCol1() == null || (source.getParentCol() == null && parentColPropertyURI != null))
+                if (_materialSource.getIdCol1() == null || (_materialSource.getParentCol() == null && parentColPropertyURI != null))
                 {
-                    assert source.getName().equals(_form.getName());
-                    assert source.getLSID().equals(ExperimentServiceImpl.get().getSampleSetLsid(_form.getName(), _form.getContainer()).toString());
-                    setCols(usingNameAsUniqueColumn, idColPropertyURIs, parentColPropertyURI, source);
-                    ExpSampleSetImpl sampleSet = new ExpSampleSetImpl(source);
+                    assert _materialSource.getName().equals(_form.getName());
+                    assert _materialSource.getLSID().equals(ExperimentServiceImpl.get().getSampleSetLsid(_form.getName(), _form.getContainer()).toString());
+                    setCols(usingNameAsUniqueColumn, idColPropertyURIs, parentColPropertyURI, _materialSource);
+                    ExpSampleSetImpl sampleSet = new ExpSampleSetImpl(_materialSource);
                     sampleSet.save(_form.getUser());
-                    source = sampleSet.getDataObject();
+                    _materialSource = sampleSet.getDataObject();
                 }
 
                 if (maps.size() > 0)
@@ -339,7 +353,7 @@ public class UploadSamplesHelper
                 {
                     Map<String, Object> map = li.next();
                     String name = decideName(map, idColPropertyURIs);
-                    Lsid l = new Lsid(source.getMaterialLSIDPrefix() + "ToBeReplaced");
+                    Lsid l = new Lsid(_materialSource.getMaterialLSIDPrefix() + "ToBeReplaced");
                     l.setObjectId(name);
                     String lsid = l.toString();
                     ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
@@ -384,8 +398,8 @@ public class UploadSamplesHelper
                     }
                 }
             }
-            materials = insertTabDelimitedMaterial(maps, descriptors.toArray(new PropertyDescriptor[descriptors.size()]), source, reusedMaterialLSIDs);
-            _form.getSampleSet().onSamplesChanged(_form.getUser(), null);
+            materials = insertTabDelimitedMaterial(maps, descriptors.toArray(new PropertyDescriptor[descriptors.size()]), _materialSource, reusedMaterialLSIDs);
+            new ExpSampleSetImpl(_materialSource).onSamplesChanged(_form.getUser(), null);
 
             ExperimentService.get().getSchema().getScope().commitTransaction();
         }
@@ -402,7 +416,7 @@ public class UploadSamplesHelper
             ExperimentService.get().getSchema().getScope().closeConnection();
         }
 
-        return new Pair<MaterialSource, List<ExpMaterial>>(source, materials);
+        return new Pair<MaterialSource, List<ExpMaterial>>(_materialSource, materials);
     }
 
     private boolean isNameHeader(String name)
@@ -575,7 +589,7 @@ public class UploadSamplesHelper
         event.setCreatedBy(_form.getUser());
         event.setContainerId(getContainer().getId());
         event.setEventType(SampleSetAuditViewFactory.EVENT_TYPE);
-        event.setKey1(_form.getSampleSet().getLSID());
+        event.setKey1(source.getLSID());
         event.setKey2(_form.getName());
         event.setKey3(_form.getInsertUpdateChoice());
         event.setComment("Samples inserted or updated in: " + _form.getName());

@@ -55,9 +55,9 @@ import static org.labkey.experiment.samples.UploadMaterialSetForm.InsertUpdateCh
  */
 class SampleSetUpdateService extends AbstractQueryUpdateService
 {
-    private ExpSampleSet _ss;
+    private ExpSampleSetImpl _ss;
 
-    public SampleSetUpdateService(ExpMaterialTableImpl table, ExpSampleSet ss)
+    public SampleSetUpdateService(ExpMaterialTableImpl table, ExpSampleSetImpl ss)
     {
         super(table);
         _ss = ss;
@@ -106,7 +106,7 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
         {
             form.setLoader(new MapLoader(rows));
 
-            UploadSamplesHelper helper = new UploadSamplesHelper(form);
+            UploadSamplesHelper helper = new UploadSamplesHelper(form, _ss.getDataObject());
             Pair<MaterialSource, List<ExpMaterial>> pair = helper.uploadMaterials();
             return pair.second;
         }

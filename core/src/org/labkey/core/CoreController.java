@@ -841,6 +841,10 @@ public class CoreController extends SpringActionController
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
         {
             JSONObject json = form.getJsonObject();
+            if (json == null)
+            {
+                throw new NotFoundException("No JSON posted");
+            }
             String name = StringUtils.trimToNull(json.getString("name"));
             String title = StringUtils.trimToNull(json.getString("title"));
             String description = StringUtils.trimToNull(json.getString("description"));
