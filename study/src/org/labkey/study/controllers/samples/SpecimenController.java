@@ -3245,6 +3245,7 @@ public class SpecimenController extends BaseStudyController
         private Map<String, List<SpecimenVisitReportParameters>> _reportFactories = new LinkedHashMap<String, List<SpecimenVisitReportParameters>>();
         private boolean _listView = true;
         private ViewContext _viewContext;
+        private boolean _hasReports = true;
 
         public ReportConfigurationBean(ViewContext viewContext)
         {
@@ -3276,6 +3277,7 @@ public class SpecimenController extends BaseStudyController
             _viewContext = singleFactory.getViewContext();
             assert (_viewContext != null) : "Expected report factory to be instantiated by Spring.";
             registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, singleFactory);
+            _hasReports = (singleFactory.getReports().size() > 0);
         }
 
         private void registerReportFactory(String category, SpecimenVisitReportParameters factory)
@@ -3314,6 +3316,11 @@ public class SpecimenController extends BaseStudyController
             StudyQuerySchema schema = (StudyQuerySchema) new StudySchemaProvider().getSchema(DefaultSchema.get(context.getUser(), context.getContainer()));
             QueryDefinition def = QueryService.get().createQueryDefForTable(schema, "SpecimenDetail");
             return def.getCustomViews(context.getUser(), context.getRequest());
+        }
+
+        public boolean hasReports()
+        {
+            return _hasReports;
         }
     }
 

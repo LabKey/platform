@@ -35,6 +35,7 @@
 <%@ page import="org.labkey.study.samples.report.SpecimenVisitReportParameters" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenController.ReportConfigurationBean> me = (JspView<SpecimenController.ReportConfigurationBean>) HttpView.currentView();
@@ -297,7 +298,8 @@ This folder does not contain a study.
                         <td colspan="2">
                         <%= buttonImg("Refresh",  "document['" + formName + "']['excelExport'].value=false;") %>
                         <%= buttonImg("Print View", "document['" + formName + "']['_print'].value=1; document['" + formName + "']['excelExport'].value=false;") %>
-                        <%= buttonImg("Export to Excel", "document['" + formName + "']['excelExport'].value=true;") %>
+                        <%= bean.hasReports() ? buttonImg("Export to Excel", "document['" + formName + "']['excelExport'].value=true;") :
+                                PageFlowUtil.generateDisabledSubmitButton("Export to Excel", "document['" + formName + "']['excelExport'].value=true;", "") %>
                         </td>
                     </tr>
                 <%
