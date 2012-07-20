@@ -119,6 +119,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         if(this.viewInfo.type != "line")
             return;
+        
+        this.editMode = LABKEY.ActionURL.getParameter("edit") == "true";
 
         // chartInfo will be all of the information needed to render the line chart (axis info and data)
         if(typeof this.chartInfo != "object") {
@@ -473,24 +475,44 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             scopedThis.optionsButtonClicked(scopedThis.aestheticsButton, panelRef, width, height, 'center');
         };
 
+        // if edit mode, then add the editor panel buttons and save buttons
+        var toolbarButtons = [
+            this.viewGridBtn,
+            this.viewChartBtn,
+            this.exportPdfSingleBtn,
+            this.exportPdfMenuBtn
+        ];
+        if ((this.editMode && this.allowEditMode) || !this.editorSavePanel.isSavedReport())
+        {
+            toolbarButtons.push(this.measuresButton);
+            toolbarButtons.push(this.groupingButton);
+            toolbarButtons.push(this.aestheticsButton);
+            toolbarButtons.push(this.developerButton);
+            toolbarButtons.push('->');
+            toolbarButtons.push(this.saveButton);
+            toolbarButtons.push(this.saveAsButton);
+        }
+        else if (this.allowEditMode)
+        {
+            // add an "edit" button if the user is allowed to toggle to edit mode for this report
+            toolbarButtons.push('->');
+            toolbarButtons.push({
+                xtype: 'button',
+                text: 'Edit',
+                handler: function() {
+                    var params = LABKEY.ActionURL.getParameters();
+                    Ext4.apply(params, {edit: "true"});
+                    window.location = LABKEY.ActionURL.buildURL(LABKEY.ActionURL.getController(), LABKEY.ActionURL.getAction(), null, params);
+                }
+            })
+        }
+
         this.chart = Ext4.create('Ext.panel.Panel', {
             region: 'center',
             border: true,
             autoScroll: true,
             frame: false,
-            tbar: [
-                    this.viewGridBtn,
-                    this.viewChartBtn,
-                    this.exportPdfSingleBtn,
-                    this.exportPdfMenuBtn,
-                    this.measuresButton,
-                    this.groupingButton,
-                    this.aestheticsButton,
-                    this.developerButton,
-                    '->',
-                    this.saveButton,
-                    this.saveAsButton
-            ],
+            tbar: toolbarButtons,
             items: [],
             listeners: {
                 scope: this,
@@ -1057,8 +1079,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             }
             else
             {
-                //Don't mark dirty if the user can't edit the report, that's just mean.
-                if (this.canEdit)
+                //Don't mark dirty if the user can't edit the report or if this is the view mode, that's just mean.
+                if (this.canEdit && this.editMode)
                 {
                     this.markDirty(true);
                 }
@@ -1211,7 +1233,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         // remove any existing charts, purge listeners from exportPdfSingleBtn, and remove items from the exportPdfMenu button
         this.chart.removeAll();
         this.firstChartComponent = null;
-        this.exportPdfSingleBtn.removeListener('click');
+        this.exportPdfSingleBtn.removeListener('click', this.exportFirstChartToPdf);
         this.exportPdfMenu.removeAll();
 
         var charts = [];
@@ -1430,9 +1452,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
                 this.firstChartComponent = newChart.renderTo;
 
-                this.exportPdfSingleBtn.addListener('click', function(){
-                    LABKEY.vis.SVGConverter.convert(Ext4.get(this.firstChartComponent).child('svg').dom, 'pdf');
-                }, this);
+                this.exportPdfSingleBtn.addListener('click', this.exportFirstChartToPdf, this);
 
                 this.toggleExportPdfBtns(true);
             }
@@ -1455,6 +1475,11 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         }
 
         this.unmaskPanel();
+    },
+
+    exportFirstChartToPdf : function() {
+        if (this.firstChartComponent)
+            LABKEY.vis.SVGConverter.convert(Ext4.get(this.firstChartComponent).child('svg').dom, 'pdf');
     },
 
     generatePlot: function(chart, studyType, viewInfo, chartInfo, mainTitle, seriesList, individualData, individualColumnAliases, individualVisitMap, aggregateData, aggregateColumnAliases, aggregateVisitMap, chartHeight, chartStyle){
@@ -1723,30 +1748,30 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             labels: {
                 main: {
                     value: mainTitle,
-                    lookClickable: true,
+                    lookClickable: this.editMode,
                     listeners: {
-                        click: mainTitleClickFn(this)
+                        click: this.editMode ? mainTitleClickFn(this) : null
                     }
                 },
                 x: {
                     value: xTitle,
-                    lookClickable: true,
+                    lookClickable: this.editMode,
                     listeners: {
-                        click: xAxisLabelClickFn(this)
+                        click: this.editMode ? xAxisLabelClickFn(this) : null
                     }
                 },
                 yLeft: {
                     value: yLeftTitle,
-                    lookClickable: true,
+                    lookClickable: this.editMode,
                     listeners: {
-                        click: yAxisLeftLabelClickFn(this)
+                        click: this.editMode ? yAxisLeftLabelClickFn(this) : null
                     }
                 },
                 yRight: {
                     value: yRightTitle,
-                    lookClickable: true,
+                    lookClickable: this.editMode,
                     listeners: {
-                        click: yAxisRightLabelClickFn(this)
+                        click: this.editMode ? yAxisRightLabelClickFn(this) : null
                     }
                 }
             },

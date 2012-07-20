@@ -47,6 +47,7 @@ public class TimeChartReportImpl extends TimeChartReport implements DynamicThumb
         VisualizationController.GetVisualizationForm form = new VisualizationController.GetVisualizationForm();
 
         form.setReportId(getReportId());
+        form.setAllowToggleMode(false);
         JspView timeChartWizard = new JspView<VisualizationController.GetVisualizationForm>("/org/labkey/visualization/views/timeChartWizard.jsp", form);
 
         timeChartWizard.setFrame(WebPartView.FrameType.NONE);

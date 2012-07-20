@@ -274,7 +274,6 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
             },
             listeners : {
                 selectionchange : function(){
-                    console.log('selection change');
                     this.participantSelectionChanged = true;},
                 scope : this
             }

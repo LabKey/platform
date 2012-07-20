@@ -1052,6 +1052,7 @@ public class VisualizationController extends SpringActionController
         private String _name;
         private String _renderType;
         private ReportIdentifier _reportId;
+        private boolean _allowToggleMode = false; // edit vs. view mode
 
         public String getName()
         {
@@ -1101,6 +1102,16 @@ public class VisualizationController extends SpringActionController
         public void setRenderType(String renderType)
         {
             _renderType = renderType;
+        }
+
+        public boolean allowToggleMode()
+        {
+            return _allowToggleMode;
+        }
+
+        public void setAllowToggleMode(boolean allowToggleMode)
+        {
+            _allowToggleMode = allowToggleMode;
         }
     }
 
@@ -1334,6 +1345,7 @@ public class VisualizationController extends SpringActionController
         @Override
         public ModelAndView getView(GetVisualizationForm form, BindException errors) throws Exception
         {
+            form.setAllowToggleMode(true);
             JspView timeChartWizard = new JspView<GetVisualizationForm>("/org/labkey/visualization/views/timeChartWizard.jsp", form);
 
             timeChartWizard.setTitle(TITLE);

@@ -52,7 +52,7 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
             border: false,
             disabled: this.pointClickFn == null,                    // name is for selenium testing
             html: '<textarea id="' + this.pointClickTextAreaId + '" name="point-click-fn-textarea" onchange="Ext4.ComponentManager.get(\'' + this.getId() + '\').hasChanges = true;"'
-                    + 'cols="123" wrap="on" rows="23"></textarea>',
+                    + 'wrap="on" rows="23" cols="120" style="width: 100%;"></textarea>',
             listeners: {
                 afterrender: function() {
                     editAreaLoader.init({
@@ -61,7 +61,6 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
                         syntax: "js",
                         start_highlight: true,
                         allow_resize: "no",
-                        min_width: 755,
                         min_height: 340,
                         change_callback: "Ext4.ComponentManager.get('" + this.getId() + "').hasChanges = true;" // JavaScript string to eval, NOT a function
                     });
