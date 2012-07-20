@@ -1001,6 +1001,15 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         });
     },
 
+    onFailure : function(resp){
+        var error = Ext4.decode(resp.responseText).exception;
+        if(error){
+            Ext.MessageBox.alert('Error', error);
+        } else {
+            Ext.MessageBox.alert('Error', 'An unknown error has ocurred, unable to save the chart.');
+        }
+    },
+
     onSaveAs : function() {
         var formItems = [];
 
