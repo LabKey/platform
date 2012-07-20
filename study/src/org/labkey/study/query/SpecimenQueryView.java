@@ -707,12 +707,15 @@ public class SpecimenQueryView extends BaseStudyQueryView
     private void addAggregateIfInDisplay(String colName, Aggregate.Type aggregateType)
     {
         ColumnInfo columnInfo = getTable().getColumn(colName);
-        for (DisplayColumn displayColumn : super.getDisplayColumns())
+        if (columnInfo != null)
         {
-            if (displayColumn.getColumnInfo().equals(columnInfo))
+            for (DisplayColumn displayColumn : super.getDisplayColumns())
             {
-                getSettings().addAggregates(new Aggregate(columnInfo, aggregateType));
-                return;
+                if (columnInfo.equals(displayColumn.getColumnInfo()))
+                {
+                    getSettings().addAggregates(new Aggregate(columnInfo, aggregateType));
+                    return;
+                }
             }
         }
     }
