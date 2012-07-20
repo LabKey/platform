@@ -19,11 +19,13 @@ package org.labkey.study.designer.view;
 import org.labkey.api.data.*;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GridView;
@@ -88,7 +90,9 @@ public class StudyDesignsWebPart extends GridView
             }
         };
         final ActionURL studyFolderUrl = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(ctx.getContainer());
-        dc.setURLExpression(new DetailsURL(studyFolderUrl));
+        DetailsURL url = new DetailsURL(studyFolderUrl);
+        url.setContainerContext(new ContainerContext.FieldKeyContext(FieldKey.fromParts("Container")));
+        dc.setURLExpression(url);
         dr.addDisplayColumn(dc);
         ButtonBar bb = new ButtonBar();
         if (ctx.getContainer().hasPermission(ctx.getUser(), InsertPermission.class))

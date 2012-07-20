@@ -289,6 +289,9 @@ public class StudyDesignManager
         deletedTables.add(getStudyVersionTable());
         Table.delete(getStudyDesignTable(), filter);
         deletedTables.add(getStudyDesignTable());
+        //Legacy design sourceContainer "remembered" where the study design was created. If deleting sourceContainer make sure don't have orphan rows
+        SQLFragment updateContainers = new SQLFragment("UPDATE " + getStudyDesignTable() + " SET sourceContainer=container WHERE sourceContainer=?", c);
+        Table.execute(getSchema(), updateContainers);
     }
 
     public void inactivateStudyDesign(Container c) throws SQLException
