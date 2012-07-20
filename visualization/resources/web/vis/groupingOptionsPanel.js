@@ -32,6 +32,7 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
     initComponent : function(){
         // track if the panel has changed in a way that would require a chart/data refresh
         this.hasChanges = false;
+        this.subjectSelectionChange = false;
         this.requireDataRefresh = false;
 
         var colOneItems = [];
@@ -66,6 +67,8 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
                         this.displayAggregateCheckbox.disable();
                         this.displayAggregateCheckbox.setValue(false);
                         this.displayErrorComboBox.setValue("None");
+
+                        this.subjectSelectionChange = true;
                     }
                 }
             }
@@ -97,6 +100,8 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
 
                         this.displayIndividualCheckbox.enable();
                         this.displayAggregateCheckbox.enable();
+
+                        this.subjectSelectionChange = true;
                     }
                 }
             }
@@ -365,18 +370,21 @@ Ext4.define('LABKEY.vis.GroupingOptionsPanel', {
             this.displayErrorComboBox.setValue(initValues.errorBars);        
 
         this.hasChanges = false;
+        this.subjectSelectionChange = false;
         this.requireDataRefresh = false;
     },
 
     checkForChangesAndFireEvents : function() {
         if (this.hasChanges)
         {
-            this.fireEvent('groupLayoutSelectionChanged', this.getChartSubjectSelection() == "groups");
+            if (this.subjectSelectionChange)
+                this.fireEvent('groupLayoutSelectionChanged', this.getChartSubjectSelection() == "groups");
             this.fireEvent('chartDefinitionChanged', this.requireDataRefresh);
         }
 
         // reset the changes flags
         this.requireDataRefresh = false;
+        this.subjectSelectionChange = false;
         this.hasChanges = false;
     }
 });

@@ -220,6 +220,9 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 scope: this,
                 'afterRender': function(){
                     this.setOptionsForGroupLayout(this.chartInfo.chartSubjectSelection == "groups");
+                },
+                'expand': function(){
+                    this.setOptionsForGroupLayout(this.editorGroupingPanel.getChartSubjectSelection() == "groups");
                 }
             }
         });
@@ -334,7 +337,13 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     }
                     this.chartDefinitionChanged(requiresDataRefresh);
                 },
-                'groupLayoutSelectionChanged': this.setOptionsForGroupLayout
+                'groupLayoutSelectionChanged': function(groupLayoutSelected) {
+                    // if the filters panel is collapsed, first open it up so the user sees that the filter options have changed
+                    if (this.filtersPanel.collapsed)
+                        this.filtersPanel.expand();
+                    else
+                        this.setOptionsForGroupLayout(groupLayoutSelected);
+                }
             }
         });
 
@@ -516,20 +525,18 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             items: [],
             listeners: {
                 scope: this,
+                buffer: 500,
                 'resize': this.resizeCharts
             }
         });
         items.push(this.chart);
 
-        Ext4.applyIf(this, {
-            autoResize: true
-        });
-
+        Ext4.applyIf(this, {autoResize: true});
         if (this.autoResize)
         {
             Ext4.EventManager.onWindowResize(function(w,h){
                 this.resizeToViewport(w,h);
-            }, this);
+            }, this, {buffer: 500});
         }
 
         this.items = items;
@@ -639,21 +646,17 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
     },
 
     setOptionsForGroupLayout : function(groupLayoutSelected){
-        // if the filters panel is collapsed, first open it up so the user sees that the filter options have changed
-        if (this.filtersPanel.collapsed)
-            this.filtersPanel.expand();
-
         if (groupLayoutSelected)
         {
-            this.participantSelector.hide();
             this.groupsSelector.show();
             this.groupsSelector.expand();
+            this.participantSelector.hide();
         }
         else
         {
-            this.groupsSelector.hide();
             this.participantSelector.show();
             this.participantSelector.expand();
+            this.groupsSelector.hide();
         }
     },
 
@@ -665,6 +668,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         var xy = this.el.getXY();
         var width = Math.max(875,w-xy[0]-padding[0]);
         this.setWidth(width);
+        this.resizeCharts();
     },
 
     getFilterQuery :  function()
