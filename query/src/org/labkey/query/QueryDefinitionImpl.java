@@ -31,6 +31,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.MetadataException;
 import org.labkey.api.query.QueryAction;
@@ -496,10 +497,32 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public StringExpression urlExpr(QueryAction action, Container container)
     {
-        // UNDONE: use getMainTable().urlExpr(action, container) instead
         ActionURL url = urlFor(action, container);
         if (url != null)
-            return StringExpressionFactory.create(url.getLocalURIString());
+        {
+            // Query's pk columns may not correspond to the main table's pk columns.
+            // Adding the pk URL parameters will probably only work for simple queries.
+            Query query = getQuery(getSchema());
+            TableInfo table = query.getTableInfo();
+            if (table != null)
+            {
+                List<String> pkColumnNames = table.getPkColumnNames();
+                if (pkColumnNames.size() > 0)
+                {
+                    Map<String, String> params = new HashMap<String, String>();
+                    for (String columnName : pkColumnNames)
+                    {
+                        params.put(columnName, columnName);
+                    }
+                    return new DetailsURL(url, params);
+                }
+            }
+            else
+            {
+                return StringExpressionFactory.create(url.getLocalURIString());
+            }
+        }
+
         return null;
     }
 
