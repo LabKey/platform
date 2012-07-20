@@ -750,6 +750,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
     {
         ExpProtocol copy = ExperimentService.get().createExpProtocol(targetContainer, toCopy.getApplicationType(), toCopy.getName());
         copy.setDescription(toCopy.getDescription());
+        Map<String, ObjectProperty> copiedProps = new HashMap<String, ObjectProperty>();
+        for (ObjectProperty prop : toCopy.getObjectProperties().values())
+        {
+            copiedProps.put(createPropertyURI(copy, prop.getName()), prop);
+        }
+        copy.setObjectProperties(copiedProps);
 
         List<Pair<Domain, Map<DomainProperty, Object>>> originalDomains = getDomains(toCopy);
         List<Pair<Domain, Map<DomainProperty, Object>>> copiedDomains = new ArrayList<Pair<Domain, Map<DomainProperty, Object>>>(originalDomains.size());
