@@ -129,17 +129,19 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
     @Override
     public K fromMap(K bean, Map<String, ?> m)
     {
-        for (String key : m.keySet())
+        if (!(m instanceof CaseInsensitiveHashMap))
+            m = new CaseInsensitiveHashMap(m);
+
+        for (String prop : _writeableProperties)
         {
             Object value = null;
             try
             {
                 // If the map contains the key, assuming that we should use the map's value, even if it's null.
                 // Otherwise, don't set a value on the bean.
-                String prop = convertToPropertyName(key);
-                if (_writeableProperties.contains(prop))
+                if (m.containsKey(prop))
                 {
-                    value = m.get(key);
+                    value = m.get(prop);
                     BeanUtils.copyProperty(bean, prop, value);
                 }
             }
@@ -153,7 +155,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
             }
             catch (IllegalArgumentException x)
             {
-                _log.error("could not set property: " + key + "=" + String.valueOf(value), x);
+                _log.error("could not set property: " + prop + "=" + String.valueOf(value), x);
             }
         }
 
