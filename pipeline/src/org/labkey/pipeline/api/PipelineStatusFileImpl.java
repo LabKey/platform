@@ -63,15 +63,44 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
     protected String _email;
     private boolean _hadError;
 
-    private int MAX_STATUS_LENGTH = 100;
-    private int MAX_INFO_LEN = 1024;
-    private int MAX_FILEPATH_LENGTH = 1024;
-    private int MAX_DATAURL_LENGTH = 1024;
-    private int MAX_DESCRIPTION_LENGTH = 255;
-    private int MAX_EMAIL_LENGTH = 255;
+    private static final int MAX_STATUS_LENGTH = 100;
+    private static final int MAX_INFO_LEN = 1024;
+    private static final int MAX_FILEPATH_LENGTH = 1024;
+    private static final int MAX_DATAURL_LENGTH = 1024;
+    private static final int MAX_DESCRIPTION_LENGTH = 255;
+    private static final int MAX_EMAIL_LENGTH = 255;
 
     public PipelineStatusFileImpl()
     {
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        PipelineStatusFileImpl that = (PipelineStatusFileImpl) o;
+
+        if (_rowId != that._rowId) return false;
+        if (_activeTaskId != null ? !_activeTaskId.equals(that._activeTaskId) : that._activeTaskId != null)
+            return false;
+        if (_filePath != null ? !_filePath.equals(that._filePath) : that._filePath != null) return false;
+        if (_job != null ? !_job.equals(that._job) : that._job != null) return false;
+        if (_jobParent != null ? !_jobParent.equals(that._jobParent) : that._jobParent != null) return false;
+        return !(_provider != null ? !_provider.equals(that._provider) : that._provider != null);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = _rowId;
+        result = 31 * result + (_job != null ? _job.hashCode() : 0);
+        result = 31 * result + (_jobParent != null ? _jobParent.hashCode() : 0);
+        result = 31 * result + (_activeTaskId != null ? _activeTaskId.hashCode() : 0);
+        result = 31 * result + (_provider != null ? _provider.hashCode() : 0);
+        result = 31 * result + (_filePath != null ? _filePath.hashCode() : 0);
+        return result;
     }
 
     public PipelineStatusFileImpl(PipelineJob job, String status, String info)

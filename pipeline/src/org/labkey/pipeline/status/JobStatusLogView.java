@@ -108,7 +108,9 @@ public class JobStatusLogView extends ReaderView
             {
                 return;
             }
+            out.write("<pre class=\"labkey-log-file\">");
             super.outputLine(out, line);
+            out.write("</pre>");
         }
         finally
         {

@@ -201,6 +201,14 @@ table.labkey-expandable-nav th.labkey-header {
 	border-bottom: 1px solid #e5e5e5;
 }
 
+pre.labkey-log-file
+{
+    text-indent: -4em;
+    padding-left: 4em;
+    margin: 2px 0;
+    white-space: pre-wrap;
+}
+
 .labkey-expandable-nav-body {
     border: 0;
     padding: 0 0 10px 12px;

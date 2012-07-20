@@ -339,9 +339,9 @@ public class StatusController extends SpringActionController
                         ActionURL url = getViewContext().cloneActionURL();
                         url.replaceParameter("showDetails", Boolean.toString(!form.isShowDetails()));
 
-                        String prefix = PageFlowUtil.textLink(form.isShowDetails() ? "Show summary" : "Show full log file", url) + "<pre>";
+                        String prefix = PageFlowUtil.textLink(form.isShowDetails() ? "Show summary" : "Show full log file", url);
 
-                        WebPartView logFileView = new JobStatusLogView(new FileInputStream(f), form.isShowDetails(), prefix, "</pre>");
+                        WebPartView logFileView = new JobStatusLogView(new FileInputStream(f), form.isShowDetails(), prefix, "");
                         logFileView.setTitle(f.getName());
                         result.addView(logFileView);
                     }

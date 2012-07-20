@@ -547,7 +547,9 @@ public class PipelineStatusManager
             return;
         }
 
-        ArrayList<PipelineStatusFile> deleteable = new ArrayList<PipelineStatusFile>();
+        // Use a set instead of a list since the incoming set of rowIds may contain child and parent jobs, and
+        // we don't want to double-log the deletion of the child jobs
+        Set<PipelineStatusFile> deleteable = new HashSet<PipelineStatusFile>();
         for (int rowId : rowIds)
         {
             PipelineStatusFile sf = getStatusFile(rowId);
