@@ -2492,8 +2492,9 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         this._fieldCaption = this.boundColumn.caption;
         this._fieldName = this.boundColumn.name;
         this._tableName = this.dataRegionName;
-        this._mappedType = this.getMappedType(this.boundColumn.displayFieldSqlType ? this.boundColumn.displayFieldSqlType : this.boundColumn.sqlType);
-        this.MAX_FILTER_CHOICES = 75;
+        this._jsonType = this.boundColumn.displayFieldJsonType ? this.boundColumn.displayFieldJsonType : this.boundColumn.jsonType;
+        //Issue #15565, Switch faceted filtering limit to 250
+        this.MAX_FILTER_CHOICES = 250;
 
         //determine the type of filter UI to show
         var dataRegion = LABKEY.DataRegions[this.dataRegionName];
@@ -2528,6 +2529,11 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                      this.close();
                  }
             }],
+            items: [{
+                html: 'Loading...',
+                style: 'padding: 5px;',
+                border: false
+            }],
             listeners: {
                 scope: this,
                 destroy: function(){
@@ -2556,6 +2562,8 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         });
         this.windowGroup.register(this);
 
+        this.mask();
+
         //NOTE: we should just change the name of one of these
         if (!this.confirmCallback)
         {
@@ -2568,7 +2576,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             this.changeFilterCallback = this.confirmCallback;
         }
 
-        this.configurePanel();
+        this.prepareToShowPanel();
     },
 
     itemDefaults: {
@@ -2576,50 +2584,77 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         msgTarget: 'under'
     },
 
-    configurePanel: function(){
-        var panelCfg = {
-            xtype: 'tabpanel',
-            //deferredRender: false,
-            bodyStyle: 'padding: 5px;',
-            //style: 'padding: 5px;',
-            width: this.width - 5,
-            autoHeight: true,
-            activeTab: this.shouldShowFacetedUI() ? 1 : 0,
-            defaults: this.itemDefaults,
-            itemId: 'filterArea',
-            border: true,
-            monitorValid: true,
-            listeners: {
-                scope: this,
-                beforetabchange: this.beforeTabChange,
-                tabchange: function(){
-                    this.syncShadow();
-                }
-            },
-            items: [
-                this.getDefaultFilterPanelCfg()
-            ]
-        };
-
-        var shouldShow;
-        if(this.shouldShowFacetedUI()){
-            panelCfg.items.push(this.getFacetedFilterPanelCfg());
-            shouldShow = true;
+    prepareToShowPanel: function(){
+        if(!this.isFacetingCandidate()){
+            this.facetingAvailable = false;
+            this.configurePanel();
         }
+        else {
+            //we need to load the store to determine if faceting is possible
+            var store = this.getLookupStore();
 
+            if (!store.fields){
+                //a proxy for whether the store has loaded.  the store's load event will call this again
+                return;
+            }
+
+            if(
+                (store.getCount() >= this.MAX_FILTER_CHOICES) ||
+                (store.fields && store.getCount() === 0) || //Issue 13946: faceted filtering: loading mask doesn't go away if the lookup returns zero rows
+                this.forceAdvancedFilters
+            ){
+                this.facetingAvailable = false;
+            }
+            else {
+                this.facetingAvailable = true;
+            }
+            this.configurePanel();
+        }
+    },
+
+    configurePanel: function(){
+        this.unmask();
+        this.removeAll();
         var dataRegion = LABKEY.DataRegions[this.dataRegionName];
-
         if (!this.queryString){
             this.queryString = dataRegion ? dataRegion.requestURL : null;
         }
 
-        this.add(panelCfg);
-
-        if(!shouldShow) {
-            this.hideTabStrip();
+        if (!this.facetingAvailable){
+            var cfg = this.getDefaultFilterPanelCfg();
+            cfg.title = null;
+            Ext.apply(cfg, {
+                bodyStyle: 'padding: 5px;',
+                defaults: this.itemDefaults,
+                itemId: 'filterArea'
+            });
+            this.add(cfg);
         }
-
-        this.configureLookupPanel();
+        else {
+            this.add({
+                xtype: 'tabpanel',
+                bodyStyle: 'padding: 5px;',
+                width: this.width - 5,
+                autoHeight: true,
+                activeTab: this.canShowFacetedUI() ? 1 : 0,
+                defaults: this.itemDefaults,
+                itemId: 'filterArea',
+                border: true,
+                monitorValid: true,
+                listeners: {
+                    scope: this,
+                    beforetabchange: this.beforeTabChange,
+                    tabchange: function(){
+                        this.syncShadow();
+                    }
+                },
+                items: [
+                    this.getDefaultFilterPanelCfg(),
+                    this.getFacetedFilterPanelCfg()
+                ]
+            });
+            this.configureLookupPanel();
+        }
     },
 
     beforeTabChange: function(panel, newTab, oldTab){
@@ -2630,7 +2665,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         var optimized;
         var filterDef;
 
-        if(!this.allowFilterDiscard && oldTab && oldTab.filterType == 'default' && newTab.filterType != 'default' && !this.shouldShowFacetedUI(newTab.filterType)){
+        if(!this.allowFilterDiscard && oldTab && oldTab.filterType == 'default' && newTab.filterType != 'default' && !this.canShowFacetedUI(newTab.filterType)){
             var msgBox = Ext.Msg.confirm('Confirm change', 'If you switch tabs you will lose one or more filters.  Do you want to continue?', function(input){
                 if(input == 'yes'){
                     this.allowFilterDiscard = true;
@@ -2653,10 +2688,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 if(optimized){
                     newFilters.push({operator: optimized[0], value: optimized[1]});
                 }
-//                else {
-//                    console.log('dropping filter');
-//                    console.log(filter);
-//                }
+
             }, this);
         }
         else {
@@ -2666,9 +2698,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         this.setValuesFromParams(newTab, newFilters);
     },
 
-    getInitialFilterType: function(){
-        var filterType = 'default';
-        var dataRegion = LABKEY.DataRegions[this.dataRegionName];
+    isFacetingCandidate: function(){
         var isFacetingCandidate = false;
 
         switch (this.boundColumn.facetingBehaviorType) {
@@ -2680,38 +2710,31 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 break;
             case 'AUTOMATIC':
                 // auto rules are if the column is a lookup or dimension OR if it is of type : (boolean, int, date, text), multiline excluded
-                
+
                 if (this.boundColumn.lookup || this.boundColumn.dimension)
                     isFacetingCandidate = true;
                 //ISSUE 15156: disabled faceted filtering on date columns until we address issues described in this bug
-                else if (this.boundColumn.jsonType == 'boolean' || this.boundColumn.jsonType == 'int' ||
-                        (this.boundColumn.jsonType == 'string' && this.boundColumn.inputType != 'textarea'))
+                else if (this._jsonType == 'boolean' || this._jsonType == 'int' ||
+                        (this._jsonType == 'string' && this.boundColumn.inputType != 'textarea'))
                     isFacetingCandidate = true;
 
                 break;
         }
+        return isFacetingCandidate;
+    },
+
+    getInitialFilterType: function(){
+        var filterType = 'default';
+        var dataRegion = LABKEY.DataRegions[this.dataRegionName];
+        var isFacetingCandidate = this.isFacetingCandidate();
 
         if (isFacetingCandidate && dataRegion && dataRegion.schemaName && dataRegion.queryName )
-        {
-            var paramValPairs = this.getParamsForField(this._fieldName);
+            filterType = 'include';
 
-            if(!paramValPairs.length){
-                filterType = 'include';
-            }
-            else {
-                switch(paramValPairs[0].operator){
-                    case 'notin':
-                        filterType = 'include';
-                        break;
-                    default:
-                        filterType = 'include';
-                }
-            }
-        }
         return filterType;
     },
 
-    shouldShowFacetedUI: function(filterType){
+    canShowFacetedUI: function(filterType){
         filterType = filterType || this.filterType;
 
         var paramValPairs = this.getParamsForField(this._fieldName);
@@ -2795,7 +2818,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
         //NOTE: currently we always render 2 inputs, but in theory we could allow any number
         //it would be easy to give an 'Add Filter' button, which adds a new input pair
-        form.items.push(this.getFilterInputPairConfig(2));
+        form.items = this.getFilterInputPairConfig(2);
 
         return form;
     },
@@ -2827,21 +2850,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                     border: false
                 },
                 items: []
-            }],
-            mask: function(doMask){
-                if(this.rendered)
-                    this.body.mask('Loading...');
-                else
-                    this.on('render', this.mask, this, {single: true});
-            },
-            unMask: function(){
-                if(this.rendered){
-                    this.body.unmask();
-                }
-                else {
-                    this.un('render', this.mask, this);
-                }
-            }
+            }]
         };
     },
 
@@ -2857,78 +2866,42 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             return;
         }
 
-        //identify and render the correct UI
-        if(this.shouldShowFacetedUI()){
-            //start loading the store
-            var store = this.getLookupStore();
+        var filterConfig = this.getComboConfig(0);
+        filterConfig.hidden = true;
+        filterConfig.value = 'in';
+        filterConfig.initialValue = 'in';
 
-            if(!store.fields || !store.fields.length){
-                panel.mask();
-                return;
-            }
-
-            var filterConfig = this.getComboConfig(0);
-            filterConfig.hidden = true;
-            filterConfig.value = 'in';
-            filterConfig.initialValue = 'in';
-
-            var toAdd = [];
-            toAdd.push(filterConfig);
-            toAdd.push({
-                xtype: 'panel',
-                //autoScroll: true,
-                //height: 200,
-                //autoHeight: true,
-                bodyStyle: 'padding-left: 5px;',
-                items: [
-                    this.getCheckboxGroupConfig(0)
-                ]
-            });
-            panel.removeAll();
-            panel.add(toAdd);
-            this.doLayout();
-
-            panel.unMask();
-        }
-        else {
-            if(this.rendered){
-                this.hideTabStrip();
-            }
-            else {
-                if(panel){
-                    panel.setDisabled(true);
-                    panel.setVisible(false);
-                }
-                this.on('render', this.hideTabStrip, this, {single: true});
-            }
-        }
+        var toAdd = [];
+        toAdd.push(filterConfig);
+        toAdd.push({
+            xtype: 'panel',
+            //autoScroll: true,
+            //height: 200,
+            //autoHeight: true,
+            bodyStyle: 'padding-left: 5px;',
+            items: [
+                this.getCheckboxGroupConfig(0)
+            ]
+        });
+        panel.removeAll();
+        panel.add(toAdd);
+        this.doLayout();
     },
 
-    hideTabStrip: function(){
+    mask: function(){
+        if(this.rendered)
+            this.getEl().mask('Loading...');
+        else
+            this.on('render', this.mask, this, {single: true});
+    },
+
+    unmask: function(){
         if(this.rendered){
-            var tabpanel = this.find('tabpanel')[0];
-            if(!tabpanel){
-                return;
-            }
-
-            if(tabpanel.rendered){
-                tabpanel.setActiveTab(0);
-                tabpanel.remove(1);  //remove the faceted UI
-
-                tabpanel.hideTabStripItem(0);
-
-                tabpanel.strip.setVisibilityMode(Ext.Element.OFFSETS);
-                tabpanel.strip.setVisible(false);
-                this.doLayout();
-            }
-            else {
-                tabpanel.on('render', this.hideTabStrip, this, {single: true});
-            }
+            this.getEl().unmask();
         }
         else {
-            this.on('render', this.hideTabStrip, this, {single: true});
+            this.un('render', this.mask, this);
         }
-
     },
 
     getFilterCombos: function(panel){
@@ -3071,56 +3044,6 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         return newValues.join(';');
     },
 
-    _typeMap : {
-        "BIGINT":"INT",
-        "BIGSERIAL":"INT",
-        "BIT":"BOOL",
-        "BOOL":"BOOL",
-        "BOOLEAN":"BOOL",
-        "CHAR":"TEXT",
-        "CLOB":"LONGTEXT",
-        "DATE":"DATE",
-        "DECIMAL":"DECIMAL",
-        "DOUBLE":"DECIMAL",
-        "DOUBLE PRECISION":"DECIMAL",
-        "FLOAT":"DECIMAL",
-        "INTEGER":"INT",
-        "LONGVARCHAR":"LONGTEXT",
-        "NTEXT":"LONGTEXT",
-        "NUMERIC":"DECIMAL",
-        "REAL":"DECIMAL",
-        "SMALLINT":"INT",
-        "TIME":"TEXT",
-        "TIMESTAMP":"DATE",
-        "TINYINT":"INT",
-        "VARCHAR":"TEXT",
-        "INT":"INT",
-        "INT IDENTITY":"INT",
-        "DATETIME":"DATE",
-        "TEXT":"TEXT",
-        "NVARCHAR":"TEXT",
-        "INT2":"INT",
-        "INT4":"INT",
-        "INT8":"INT",
-        "FLOAT4":"DECIMAL",
-        "FLOAT8":"DECIMAL",
-        "SERIAL":"INT",
-        "USERID":"INT",
-        "VARCHAR2":"TEXT" // Oracle
-    },
-
-    //NOTE: i think we really should be able ot just change the values in TypeMap to match ext
-    _extTypeMap: {
-        'LONGTEXT': 'STRING',
-        'TEXT': 'STRING',
-        'INT': 'INT',
-        'DECIMAL': 'FLOAT',
-        'DATE': 'DATE',
-        'BOOL': 'BOOL'
-    },
-
-    _mappedType : "TEXT",
-
     savedSearchString : null,
 
     changeFilterCallback : null,
@@ -3132,13 +3055,13 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
     getXtype: function()
     {
-        switch(this._mappedType){
-            case "DATE":
+        switch(this._jsonType){
+            case "date":
                 return "datefield";
-            case "INT":
-            case "DECIMAL":
+            case "int":
+            case "float":
                 return "numberfield";
-            case "BOOL":
+            case "boolean":
                 return 'labkey-booleantextfield';
             default:
                 return "textfield";
@@ -3156,7 +3079,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
     getCheckboxGroupConfig: function(idx)
     {
-        var dataRegion = LABKEY.DataRegions[this.dataRegionName];
+        //var dataRegion = LABKEY.DataRegions[this.dataRegionName];
 
         var sm = new Ext.grid.CheckboxSelectionModel({
             listeners: {
@@ -3321,7 +3244,11 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         if(!panel || !panel.length){
             return;
         }
-        return panel[0].getActiveTab();
+        panel = panel[0];
+        if(panel.xtype == 'tabpanel')
+            return panel.getActiveTab();
+        else
+            return panel;
     },
 
     getComboConfig: function(idx)
@@ -3330,14 +3257,14 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             xtype: 'combo',
             itemId: 'filterComboBox' + idx,
             filterIndex: idx,
-            listWidth: (this._mappedType == 'DATE' || this._mappedType == 'BOOL') ? null : 380,
+            listWidth: (this._jsonType == 'date' || this._jsonType == 'boolean') ? null : 380,
             emptyText: idx === 0 ? 'Choose a filter:' : 'No other filter',
             autoSelect: false,
             width: 250,
             //allowBlank: 'false',
             triggerAction: 'all',
             fieldLabel: (idx === 0 ?'Filter Type' : 'and'),
-            store: this.getComboStore(this.boundColumn.mvEnabled, this._mappedType, idx),
+            store: this.getComboStore(this.boundColumn.mvEnabled, this._jsonType, idx),
             displayField: 'text',
             valueField: 'value',
             typeAhead: 'false',
@@ -3345,8 +3272,8 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             mode: 'local',
             clearFilterOnReset: false,
             editable: false,
-            value: idx === 0 ? this.getComboDefaultValue() : '',
-            originalValue: idx === 0 ? this.getComboDefaultValue() : '',
+            value: idx === 0 ? LABKEY.Filter.getDefaultFilterForType(this.boundColumn.jsonType).getURLSuffix() : '',
+            originalValue: idx === 0 ? LABKEY.Filter.getDefaultFilterForType(this.boundColumn.jsonType).getURLSuffix() : '',
             listeners:{
                 scope: this,
                 select: function(combo){
@@ -3423,23 +3350,6 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         }
     },
 
-    getComboDefaultValue: function()
-    {
-        //afterRender of combobox we set the default value.
-        if(this.shouldShowFacetedUI()){
-            return 'in';
-        }
-        else if(this._mappedType == 'LONGTEXT' || this._mappedType == 'TEXT'){
-            return 'startswith';
-        }
-        else if(this._mappedType == 'DATE'){
-            return 'dateeq';
-        }
-        else{
-            return 'eq';
-        }
-    },
-
     getInputFieldConfig: function(idx)
     {
         idx = idx || 0;
@@ -3483,7 +3393,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             }
         };
 
-        if(this._mappedType == "DATE")
+        if(this._jsonType == "date")
             config.altFormats = LABKEY.Utils.getDateAltFormats();
 
         if(idx === 0){
@@ -3496,7 +3406,8 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
     },
 
-    getNextFilterIdx: function(){
+    getNextFilterIdx: function()
+    {
         return this.getFilterCombos() ? this.getFilterCombos().length : 0;
     },
 
@@ -3527,7 +3438,8 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     okHandler: function(btn)
     {
         var panel = this.find('itemId', 'filterArea')[0];
-        var tab = panel.getActiveTab();
+        var tab = this.getActiveTab();
+
         if(!tab.getForm().isValid())
             return;
 
@@ -3621,87 +3533,26 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         this.close();
     },
 
-    getMappedType : function(dataType)
+    getComboStore : function(mvEnabled, jsonType, storeNum)
     {
-        var mappedType = this._typeMap[dataType.toUpperCase()];
-        if (mappedType == undefined)
-            mappedType = dataType.toUpperCase();
-        return mappedType;
-    },
-
-    getComboStore : function(mvEnabled, mappedType, storeNum)
-    {
-        var fields      = ['text', 'value', {name: 'isMulti', type: Ext.data.Types.BOOL}, 'mappedType', {name: 'isOperatorOnly', type: Ext.data.Types.BOOL}];
+        var fields      = ['text', 'value', {name: 'isMulti', type: Ext.data.Types.BOOL}, {name: 'isOperatorOnly', type: Ext.data.Types.BOOL}];
         var store       = new Ext.data.ArrayStore({
             fields: fields,
             idIndex: 1
         });
         var comboRecord = Ext.data.Record.create(fields);
 
-        if(storeNum == 0){
-            store.add(new comboRecord({text:'Has Any Value', value: ''}));
-        } else{
-            store.add(new comboRecord({text:'No Other Filter', value: ''}));
-        }
-
-        if (mappedType != "LONGTEXT")
+        var filters = LABKEY.Filter.getFilterTypesForType(this._jsonType, mvEnabled);
+        for (var i=0;i<filters.length;i++)
         {
-            if(mappedType == "DATE"){
-                store.add(new comboRecord({text:'Equals', value: 'dateeq'}))
-            } else {
-                store.add(new comboRecord({text:'Equals', value: 'eq'}));
-            }
-
-            if(mappedType == "DATE"){
-                store.add(new comboRecord({text:'Does Not Equal', value: 'dateneq'}));
-            } else {
-                store.add(new comboRecord({text:'Does Not Equal', value: 'neqornull'}));
-            }
-
-            if (mappedType != "BOOL" && mappedType != "DATE"){
-                store.add(new comboRecord({text:"Equals One Of (e.g. \"a;b;c\")", value: 'in', isMulti: true}));
-                store.add(new comboRecord({text:"Does Not Equal Any Of (e.g. \"a;b;c\")", value: 'notin', isMulti: true}));
-            }
+            var filter = filters[i];
+            store.add(new comboRecord({text: filter.getLongDisplayText(), value: filter.getURLSuffix(), isMulti: filter.isMultiValued(), isOperatorOnly: filter.isDataValueRequired()}))
         }
 
-        if (mappedType != "LONGTEXT" && mappedType != "BOOL")
-        {
-            if(mappedType == "DATE"){
-                store.add(new comboRecord({text:'Is Greater Than',             value: 'dategt'}));
-                store.add(new comboRecord({text:'Is Less Than',                value: 'datelt'}));
-                store.add(new comboRecord({text:'Is Greater Than Or Equal To', value: 'dategte'}));
-                store.add(new comboRecord({text:'Is Less Than Or Equal To',    value: 'datelte'}));
-            } else {
-                store.add(new comboRecord({text:'Is Greater Than',             value: 'gt'}));
-                store.add(new comboRecord({text:'Is Less Than',                value: 'lt'}));
-                store.add(new comboRecord({text:'Is Greater Than Or Equal To', value: 'gte'}));
-                store.add(new comboRecord({text:'Is Less Than Or Equal To',    value: 'lte'}));
-            }
+        if(storeNum > 0){
+            store.removeAt(0);
+            store.insert(0, new comboRecord({text:'No Other Filter', value: ''}));
         }
-
-        if (mappedType == "TEXT" || mappedType == "LONGTEXT")
-        {
-            store.add(new comboRecord({text:'Starts With',         value: 'startswith'}));
-            store.add(new comboRecord({text:'Does Not Start With', value: 'doesnotstartwith'}));
-            store.add(new comboRecord({text:'Contains',            value: 'contains'}));
-            store.add(new comboRecord({text:'Does Not Contain',    value: 'doesnotcontain'}));
-            store.add(new comboRecord({text:"Contains One Of (e.g. \"a;b;c\")", value: 'containsoneof', isMulti: true}));
-            store.add(new comboRecord({text:"Does Not Contain Any Of (e.g. \"a;b;c\")", value: 'containsnoneof', isMulti: true}));
-        }
-
-        //All mappedTypes will have these:
-        store.add(new comboRecord({text:'Is Blank',     value: 'isblank', isOperatorOnly: true}));
-        store.add(new comboRecord({text:'Is Not Blank', value: 'isnonblank', isOperatorOnly: true}));
-
-        if (mvEnabled)
-        {
-            store.add(new comboRecord({text:'Has A Missing Value Indicator',           value: 'hasmvvalue', isOperatorOnly: true}));
-            store.add(new comboRecord({text:'Does Not Have A Missing Value Indicator', value: 'nomvvalue', isOperatorOnly: true}));
-        }
-
-        store.each(function(rec){
-            rec.set('mappedType', mappedType);
-        }, this);
 
         return store;
     },
@@ -3844,18 +3695,19 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                             valMap[rec.get('displayValue')] = rec;
                         }
                     }, this);
-                    this.configureLookupPanel(store);
+                    this.prepareToShowPanel();
                 },
                 exception: function(){
                     this.forceAdvancedFilters = true;
-                    this.configureLookupPanel();
+                    this.prepareToShowPanel();
                 }
             }
         }));
 
     },
 
-    formatValue: function(val){
+    formatValue: function(val)
+    {
         if(this.boundColumn){
             if (this.boundColumn.extFormatFn){
                 try {
@@ -3869,7 +3721,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                     val = this.boundColumn.extFormatFn(val);
                 }
             }
-            else if (this._mappedType == 'INT'){
+            else if (this._jsonType == 'int'){
                 val = parseInt(val);
             }
         }
@@ -3972,21 +3824,21 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
         if(rec){
             if(filter.isMultiValued()){
-                return this.validateEqOneOf(input.getValue(), rec.get('mappedType'));
+                return this.validateEqOneOf(input.getValue());
             }
 
-            return this.validateInputField(input.getValue(), rec.get('mappedType'));
+            return this.validateInputField(input.getValue());
         }
         return true;
     },
 
-    validateEqOneOf: function(input, mappedType)
+    validateEqOneOf: function(input)
     {
         // Used when "Equals One Of.." is selected. Calls validateInputField on each value entered.
         var values = input.split(';');
         var isValid = "";
         for(var i = 0; i < values.length; i++){
-            isValid = this.validateInputField(values[i], mappedType);
+            isValid = this.validateInputField(values[i]);
             if(isValid !== true){
                 return isValid;
             }
@@ -3995,14 +3847,23 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         return true;
     },
 
+    _extTypeMap:  {
+        'string': 'STRING',
+        'int': 'INT',
+        'float': 'FLOAT',
+        'date': 'DATE',
+        'boolean': 'BOOL'
+    },
+
     //The fact that Ext3 ties validation to the editor is a little funny, but using this shifts the work to Ext
-    validateInputField: function(value, mappedType){
+    validateInputField: function(value)
+    {
         //the reason for this change is to try to shift more of the burden from our code into Ext
-        var type = this._extTypeMap[this._mappedType];
+        var type = this._extTypeMap[this._jsonType];
         if(type){
             var field = new Ext.data.Field({
                 type: Ext.data.Types[type],
-                allowDecimals :  this._mappedType != "INT",  //will be ignored by anything besides numberfield
+                allowDecimals :  this._jsonType != "int",  //will be ignored by anything besides numberfield
                 useNull: true
             });
 
@@ -4012,7 +3873,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             }
         }
         else {
-            console.log('Unrecognized type: ' + this._mappedType);
+            console.log('Unrecognized type: ' + this._jsonType);
         }
 
         return true;
