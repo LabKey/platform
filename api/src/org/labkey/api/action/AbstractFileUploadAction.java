@@ -84,6 +84,18 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
         OutputStream out = response.getOutputStream();
         OutputStreamWriter writer = new OutputStreamWriter(out);
 
+        if (form.getFileName() == null)
+        {
+            error(writer, "No fileName parameter values included", HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+
+        if (form.getFileContent() == null)
+        {
+            error(writer, "No fileContent parameter values included", HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+
         if (form.getFileName().length != form.getFileContent().length)
         {
             error(writer, "Must include the same number of fileName and fileContent parameter values", HttpServletResponse.SC_BAD_REQUEST);
