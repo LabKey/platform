@@ -156,6 +156,6 @@ String verbing = loader.isNewInstall() ? "Installing" : "Upgrading";
 </script>
 <br/>
 <div id="completeDiv" style="visibility: hidden">
-    <%--Could send install/upgrade paths to different pages for settings, but for now use the same simple one for both --%>
-    <%= PageFlowUtil.generateButton("Next", new ActionURL(AdminController.NewInstallSiteSettingsAction.class, ContainerManager.getRoot()), null, "id=\"nextButton\"") %>
+    <%-- Send new installs to set their defaults, and upgrades to the complete page --%>
+    <%= PageFlowUtil.generateButton("Next", new ActionURL(loader.isNewInstall() ? AdminController.NewInstallSiteSettingsAction.class : AdminController.InstallCompleteAction.class, ContainerManager.getRoot()), null, "id=\"nextButton\"") %>
 </div>

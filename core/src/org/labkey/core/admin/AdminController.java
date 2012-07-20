@@ -3234,12 +3234,12 @@ public class AdminController extends SpringActionController
         {
             navTrail.add(new NavTree("Account Setup"));
             navTrail.add(new NavTree("Install Modules"));
+            navTrail.add(new NavTree("Set Defaults"));
         }
         else
         {
             navTrail.add(new NavTree("Upgrade Modules"));
         }
-        navTrail.add(new NavTree("Set Defaults"));
         navTrail.add(new NavTree("Complete"));
         return navTrail;
     }
