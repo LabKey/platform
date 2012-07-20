@@ -3566,6 +3566,14 @@ ul.x-tab-strip-top li {
     margin: 0 25px 0 25px;
 }
 
+/* Added for Note-in-Wiki */
+div.note {
+    background-color: #FFFFFF;
+    border: 1px solid #DDDDDD;
+    padding: 0 20px;
+    margin: 0 25px;
+}
+
 /* Generic selector to add for normal wrap element */
 .normal-wrap {
     white-space: normal;
