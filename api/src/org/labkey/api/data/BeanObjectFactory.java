@@ -105,7 +105,6 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
             return name;
     }
 
-
     public K fromMap(Map<String, ?> m)
     {
         try
@@ -130,16 +129,17 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
     @Override
     public K fromMap(K bean, Map<String, ?> m)
     {
-        for (String prop : _writeableProperties)
+        for (String key : m.keySet())
         {
             Object value = null;
             try
             {
                 // If the map contains the key, assuming that we should use the map's value, even if it's null.
                 // Otherwise, don't set a value on the bean.
-                if (m.containsKey(prop))
+                String prop = convertToPropertyName(key);
+                if (_writeableProperties.contains(prop))
                 {
-                    value = m.get(prop);
+                    value = m.get(key);
                     BeanUtils.copyProperty(bean, prop, value);
                 }
             }
@@ -153,7 +153,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
             }
             catch (IllegalArgumentException x)
             {
-                _log.error("could not set property: " + prop + "=" + String.valueOf(value), x);
+                _log.error("could not set property: " + key + "=" + String.valueOf(value), x);
             }
         }
 

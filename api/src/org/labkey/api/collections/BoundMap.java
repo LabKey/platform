@@ -247,7 +247,7 @@ public class BoundMap extends AbstractMap<String, Object> implements Serializabl
     public boolean containsKey(Object key)
     {
         String sKey = (String)key;
-        if (null != _properties.get(sKey))
+        if (null != getBoundProperty(sKey))
             return true;
         return _map.containsKey(sKey);
     }
@@ -257,7 +257,7 @@ public class BoundMap extends AbstractMap<String, Object> implements Serializabl
     public Object remove(Object key)
     {
         String sKey = (String)key;
-        if (null != _properties.get(sKey))
+        if (null != getBoundProperty(sKey))
             throw new UnsupportedOperationException("can't remove property " + key);
         return _map.remove(sKey);
     }
