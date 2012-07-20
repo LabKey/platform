@@ -182,6 +182,9 @@ public abstract class ScheduleGrid extends EditableGrid
             addClickListener(new ClickListener() {
                 public void onClick(Widget sender)
                 {
+                    if (designer.isReadOnly())
+                        return;
+
                     DefineTimepointDialog dialog = new DefineTimepointDialog();
                     dialog.setPopupPosition(getAbsoluteLeft(), getAbsoluteTop() + getOffsetHeight());
                     dialog.show();
