@@ -772,7 +772,7 @@ public class AssayController extends SpringActionController
         public @Nullable ActionURL getDesignerURL(Container container, ExpProtocol protocol, boolean copy, ActionURL returnURL)
         {
             AssayProvider provider = AssayService.get().getProvider(protocol);
-            return getDesignerURL(container, provider, protocol, false, returnURL);
+            return getDesignerURL(container, provider, protocol, copy, returnURL);
         }
 
         public @Nullable ActionURL getDesignerURL(Container container, String providerName, ActionURL returnURL)
@@ -791,6 +791,8 @@ public class AssayController extends SpringActionController
                 return null;
 
             ActionURL url = getProtocolURL(container, protocol, designerAction);
+            if (copy)
+                url.addParameter("copy", "true");
             url.addParameter("providerName", provider.getName());
             if (returnURL != null)
                 url.addParameter(ActionURL.Param.returnUrl, returnURL.toString());
