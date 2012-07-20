@@ -57,14 +57,14 @@
         {
             boolean selected = keyword.isDefault();
 %>
-        <tr><td><%=selected ? "<b>" + h(keyword.getKeyword()) + "</b>" : h(keyword.getKeyword())%></td><td><%=textLink("delete", "javascript:callAction('deleteKeyword', '" + formId + "', " + PageFlowUtil.jsString(keyword.getKeyword()) + ")", "", null, delete)%>&nbsp;<%
+        <tr><td><%=selected ? "<b>" + h(keyword.getKeyword()) + "</b>" : h(keyword.getKeyword())%></td><td><%=textLink("delete", "javascript:callAction('deleteKeyword', '" + formId + "', " + PageFlowUtil.jsString(keyword.getKeyword().getSource()) + ")", "", null, delete)%>&nbsp;<%
             if (selected)
             {
-                %><%=textLink("clear", "javascript:callAction('clearKeywordDefault', '" + formId + "', " + PageFlowUtil.jsString(keyword.getKeyword()) + ")", "", null, clear)%><%
+                %><%=textLink("clear", "javascript:callAction('clearKeywordDefault', '" + formId + "', " + PageFlowUtil.jsString(keyword.getKeyword().getSource()) + ")", "", null, clear)%><%
             }
             else
             {
-                %><%=textLink("set", "javascript:callAction('setKeywordDefault', '" + formId + "', " + PageFlowUtil.jsString(keyword.getKeyword()) + ")", "", null, set)%><%
+                %><%=textLink("set", "javascript:callAction('setKeywordDefault', '" + formId + "', " + PageFlowUtil.jsString(keyword.getKeyword().getSource()) + ")", "", null, set)%><%
             }%></td></tr><%
         }
 
