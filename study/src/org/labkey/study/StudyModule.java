@@ -488,8 +488,13 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             if (portalCtx.hasPermission(AdminPermission.class))
             {
                 NavTree customize = new NavTree("");
-                customize.setScript("customizeDataViews(" + webPart.getRowId() + ", \'" + webPart.getPageId() + "\', " + webPart.getIndex() + ");");
+                String script = "customizeDataViews(" + webPart.getRowId() + ", \'" + webPart.getPageId() + "\', " + webPart.getIndex() + ");";
+
+                customize.setScript(script);
                 view.setCustomize(customize);
+
+                NavTree edit = new NavTree("Edit", "javascript:" + script, portalCtx.getContextPath() + "/_images/partedit.png");
+                view.addCustomMenu(edit);
 
                 menu.addChild("Manage Datasets", new ActionURL(StudyController.ManageTypesAction.class, c));
                 menu.addChild("Manage Queries", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(c));
@@ -497,7 +502,12 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
             if(portalCtx.hasPermission(ReadPermission.class) && !portalCtx.getUser().isGuest())
             {
-                menu.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(c));
+                ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(c);
+
+                if (StudyService.get().getStudy(c) != null)
+                    url = new ActionURL(ReportsController.ManageReportsAction.class, c);
+
+                menu.addChild("Manage Views", url);
             }
 
             view.setNavMenu(menu);

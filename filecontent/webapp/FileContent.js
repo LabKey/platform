@@ -181,13 +181,17 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.ext.FileBrowser, {
     createGrid : function()
     {
         var sm = new Ext.grid.CheckboxSelectionModel();
+        var cm = new Ext.grid.ColumnModel({
+            defaultSortable : true,
+            columns : this.createDefaultColumnModel(sm)
+        });
         var grid = new Ext.grid.GridPanel({
             store: this.store,
             cls: 'labkey-filecontent-grid',
             border:false,
             selModel : sm,
             loadMask:{msg:"Loading, please wait..."},
-            columns: this.createDefaultColumnModel(sm)
+            colModel : cm
         });
 
         // hack to get the file input field to size correctly

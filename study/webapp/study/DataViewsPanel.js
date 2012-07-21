@@ -739,7 +739,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             border : false, frame : false
         });
 
-        this.north.setHeight(185);
+        this.north.setHeight(220);
         this.north.add(customPanel);
 
         this.on('enableCustomMode',  this.onEnableCustomMode,  this);
@@ -999,28 +999,26 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 columns    : 2,
                 flex       : 1,
                 maxWidth   : 300,
-                minHeight  : 110,
+                minHeight  : 120,
                 items      : cbColumns
             },{
                 xtype   : 'hidden',
                 name    : 'webPartId',
                 value   : this.webpartId
             }],
+            buttons : [{
+                text    : 'Manage Categories',
+                handler : this.onManageCategories,
+                scope   : this
+            }],
+            buttonAlign : 'left',
             scope : this
         });
 
         var panel = Ext4.create('Ext.panel.Panel',{
             bodyPadding : 10,
-            items : [formPanel,{
-                xtype   : 'panel',
-                border  : false,
-                items: [{
-                    xtype   : 'button',
-                    text    : 'Manage Categories',
-                    handler : this.onManageCategories,
-                    scope   : this
-                }
-            ]}],
+            layout : 'fit',
+            items : [formPanel],
             buttons : [{
                 text    : 'Cancel',
                 handler : function() {

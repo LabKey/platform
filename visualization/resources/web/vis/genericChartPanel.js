@@ -69,6 +69,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }, this);
 
         this.reportLoaded = true;
+        this.typeToLabel = {
+            auto_plot : 'Auto Plot Report',
+            scatter_plot : 'Scatter Plot Report',
+            box_plot : 'Box Plot Report'
+        }
         this.callParent([config]);
     },
 
@@ -368,6 +373,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     var renderType = this.optionsPanel.getRenderType();
                     if(this.renderType != renderType){
                         this.renderType = renderType;
+
+                        if (!this.reportId)
+                            this.updateWebpartTitle(this.typeToLabel[renderType]);
                     }
                     this.viewPanel.getEl().mask('Rendering Chart...');
                     this.chartDefinitionChanged.delay(500);
@@ -691,8 +699,16 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         if (dataRegion)
             filters = dataRegion.getUserFilterArray();
-        else
+        else if (this.userFilters)
             filters = this.userFilters || [];
+        else
+        {
+            var urlParams = LABKEY.ActionURL.getParameters(this.baseUrl);
+            var filterUrl = urlParams['filterUrl'];
+
+            // lastly check if there is a filter on the url
+            filters = LABKEY.Filter.getFiltersFromUrl(filterUrl, this.dataRegionName);
+        }
 
         if (serialize)
         {
@@ -701,8 +717,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             for (var i=0; i < filters.length; i++) {
                 var f = filters[i];
                 newFilters.push({name : f.getColumnName(), value : f.getValue(), type : f.getFilterType().getURLSuffix()});
-            }
-            filters = newFilters;
+            } filters = newFilters;
         }
         config['filterArray'] = filters;
 
@@ -977,20 +992,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
                 var o = Ext4.decode(resp.responseText);
 
-                // Modify Title (hack: hardcode the webpart id since this is really not a webpart, just
-                // using a webpart frame, will need to start passing in the real id if this ever
-                // becomes a true webpart
-                var titleEl = Ext4.query('span[class=labkey-wp-title-text]:first', 'webpart_-1');
-                if (titleEl && (titleEl.length >= 1))
-                {
-                    titleEl[0].innerHTML = LABKEY.Utils.encodeHtml(data.name);
-                }
-
-                var navTitle = Ext4.query('table[class=labkey-nav-trail] span[class=labkey-nav-page-header]');
-                if (navTitle && (navTitle.length >= 1))
-                {
-                    navTitle[0].innerHTML = LABKEY.Utils.encodeHtml(data.name);
-                }
+                this.updateWebpartTitle(data.name);
 
                 this.reportId = o.reportId;
                 this.loadReport(this.reportId);
@@ -999,6 +1001,24 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             failure : this.onFailure,
             scope   : this
         });
+    },
+
+    updateWebpartTitle : function(title) {
+
+        // Modify Title (hack: hardcode the webpart id since this is really not a webpart, just
+        // using a webpart frame, will need to start passing in the real id if this ever
+        // becomes a true webpart
+        var titleEl = Ext4.query('span[class=labkey-wp-title-text]:first', 'webpart_-1');
+        if (titleEl && (titleEl.length >= 1))
+        {
+            titleEl[0].innerHTML = LABKEY.Utils.encodeHtml(title);
+        }
+
+        var navTitle = Ext4.query('table[class=labkey-nav-trail] span[class=labkey-nav-page-header]');
+        if (navTitle && (navTitle.length >= 1))
+        {
+            navTitle[0].innerHTML = LABKEY.Utils.encodeHtml(title);
+        }
     },
 
     onFailure : function(resp){
