@@ -433,6 +433,13 @@ public class ProjectController extends SpringActionController
             }
             PageFlowUtil.streamFile(response, iconFile, false);
         }
+
+        @Override
+        public void checkPermissions() throws UnauthorizedException
+        {
+            setUseBasicAuthentication(true);
+            super.checkPermissions();
+        }
     }
 
 
