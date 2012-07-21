@@ -238,7 +238,7 @@ LABKEY.ext.Ext4Helper = new function(){
                     initialValue: field.value,
                     showValueInList: meta.showValueInList,
     //                listClass: 'labkey-grid-editor',
-                    lookupNullCaption: meta.lookupNullCaption
+                    nullCaption: meta.nullCaption
                 });
             }
             else
@@ -387,14 +387,6 @@ LABKEY.ext.Ext4Helper = new function(){
                 config.sort = l.sort;
             else if (l.sort !== false)
                 config.sort = l.displayColumn;
-
-            if (!c.required && c.includeNullRecord !== false)
-            {
-                config.nullRecord = c.nullRecord || {
-                    displayColumn: l.displayColumn,
-                    nullCaption: (l.displayColumn==l.keyColumn ? null : (c.lookupNullCaption!==undefined ? c.lookupNullCaption : '[none]'))
-                };
-            }
 
             return config;
         },
@@ -736,7 +728,7 @@ LABKEY.ext.Ext4Helper = new function(){
                     return "[" + data + "]";
                 }
                 else {
-                    return Ext4.isDefined(meta.lookupNullCaption) ? meta.lookupNullCaption : "[none]";
+                    return Ext4.isDefined(meta.nullCaption) ? meta.nullCaption : "[none]";
                 }
             }
         },
@@ -885,13 +877,13 @@ LABKEY.ext.Ext4Helper = new function(){
         },
 
         /**
-         * Experimental.  If a store has not yet loaded, the implicit model always has zero fields
+         * Experimental.  Will only work for stores using a server proxy, but not ArrayStores or other simple cases.
          * @param store
          */
         hasStoreLoaded: function(store){
-            return store.model &&
-               store.model.prototype.fields &&
-               store.model.prototype.fields.getCount() > 1 // TODO: why is there 1 field initially with Ext4.1.0?
+            return store.proxy &&
+               store.proxy.reader &&
+               store.proxy.reader.rawData
         },
 
         /**

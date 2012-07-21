@@ -434,21 +434,6 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
                 }
             }
         }
-        //this is primarily used for comboboxes
-        //create an extra record with a blank id column
-        //and the null caption in the display column
-        if(this.nullRecord){
-            var data = {};
-            data[this.model.idProperty] = "";
-
-            //NOTE: unlike LABKEY.ext.Store, this does not default to the string [none].
-            // we should rely on Ext tpls to do this since supplying a non-null string
-            // defeats the purpose of a null record when the valueColumn is the same as the displayColumn
-            data[this.nullRecord.displayColumn] = this.nullRecord.nullCaption || this.nullCaption;
-
-            var record = this.model.create(data);
-            this.insert(0, record);
-        }
     },
 
     onProxyWrite: function(operation) {
@@ -809,7 +794,7 @@ Ext4.define('LABKEY.ext4.ExtendedJsonReader', {
     },
     readRecords: function(data) {
         if(data.metaData){
-            this.idProperty = data.metaData.id || "id"; //NOTE: normalize which field holds the PK.
+            this.idProperty = data.metaData.id || this.idProperty || 'id'; //NOTE: normalize which field holds the PK.
             this.model.prototype.idProperty = this.idProperty;
             this.totalProperty = data.metaData.totalProperty; //NOTE: normalize which field holds total rows.
             this.model.prototype.totalProperty = this.totalProperty;

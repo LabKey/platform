@@ -56,6 +56,7 @@ public class VBox extends WebPartView
         _views.add(index, v);
     }
 
+    @Override
     public List<ModelAndView> getViews()
     {
         ArrayList<ModelAndView> ret = new ArrayList<ModelAndView>(_views.size());

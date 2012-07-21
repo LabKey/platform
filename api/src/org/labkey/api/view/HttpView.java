@@ -39,8 +39,10 @@ import javax.servlet.http.HttpServletResponseWrapper;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
@@ -720,8 +722,23 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
         {
             for (ModelAndView v : _views.values())
             {
-                if(v instanceof HtmlView)
-                    resources.addAll(((HtmlView) v).getClientDependencies());
+                if(v instanceof HttpView)
+                    resources.addAll(((HttpView) v).getClientDependencies());
+            }
+        }
+
+        //necesary for hbox, vbox
+        if (_view != null && _view instanceof HttpView)
+        {
+            List<ModelAndView> views = ((HttpView) _view).getViews();
+            if (views != null)
+            {
+
+                for (ModelAndView v : views)
+                {
+                    if(v instanceof HttpView)
+                        resources.addAll(((HttpView) v).getClientDependencies());
+                }
             }
         }
         return resources;
@@ -735,5 +752,13 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     public void addClientDependencies(Set<ClientDependency> resources)
     {
         _clientDependencies.addAll(resources);
+    }
+
+    public List<ModelAndView> getViews()
+    {
+        if (_views == null)
+            return null;
+
+        return new ArrayList<ModelAndView>(_views.values());
     }
 }

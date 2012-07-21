@@ -30,13 +30,15 @@ Ext.define('Ext.ux.CheckCombo',
 
     initComponent: function()
     {
+        this.plugins = this.plugins || [];
+        this.plugins.push('combo-autowidth');
         this.listConfig = this.listConfig || {};
-        var me = this;
         Ext.apply(this.listConfig, {
             tpl:[
                 '<ul><tpl for=".">',
-                    '<li role="option" class="' + Ext.baseCSSPrefix + 'boundlist-item"><span class="' + Ext.baseCSSPrefix + 'combo-checker">&nbsp;</span> {' + this.displayField + '}</li>',
-                '</tpl></ul>'
+                    '<li role="option" class="' + Ext.baseCSSPrefix + 'boundlist-item"><span class="' + Ext.baseCSSPrefix + 'combo-checker"></span>',
+                    '&nbsp;{[(typeof values === "string" ? values : (values["' + this.displayField + '"] ? values["' + this.displayField + '"] : '+(Ext4.isDefined(this.nullCaption) ? '"' + this.nullCaption + '"' : '"[none]"')+'))]}',
+                '</li></tpl></ul>'
             ],
             childEls: [
                 'listEl',
@@ -104,10 +106,6 @@ Ext.define('Ext.ux.CheckCombo',
 
     getValue: function()
     {
-        return this.value.join(this.delim);
-    },
-
-    getValueAsArray: function(){
         return this.value;
     },
 

@@ -5,7 +5,7 @@
  */
 
 //This will contain custom ext components
-Ext.namespace('LABKEY.ext4');
+Ext4.namespace('LABKEY.ext4');
 
 
 Ext4.define('LABKEY.ext4.RemoteGroup', {
@@ -20,7 +20,7 @@ Ext4.define('LABKEY.ext4.RemoteGroup', {
                 fieldLabel: 'Loading...'
             }],
            fieldRendererTpl : new Ext4.XTemplate('<tpl for=".">' +
-                '{[values["' + this.valueField + '"] ? values["' + this.displayField + '"] : "'+ (this.lookupNullCaption ? this.lookupNullCaption : '[none]') +'"]}' +
+                '{[values["' + this.valueField + '"] ? values["' + this.displayField + '"] : "'+ (this.nullCaption ? this.nullCaption : '[none]') +'"]}' +
                 //allow a flag to display both display and value fields
                 '<tpl if="'+this.showValueInList+'">{[(values["' + this.valueField + '"] ? " ("+values["' + this.valueField + '"]+")" : "")]}</tpl>'+
                 '</tpl>'
@@ -76,7 +76,7 @@ Ext4.define('LABKEY.ext4.RemoteGroup', {
 valueField: the inputValue of the checkbox
 displayField: the label of the checkbox
 store
-lookupNullCaption
+nullCaption
 showValueInList
 
  */
@@ -97,7 +97,7 @@ Ext4.define('LABKEY.ext4.RemoteCheckboxGroup', {
 valueField: the inputValue of the checkbox
 displayField: the label of the checkbox
 store
-lookupNullCaption
+nullCaption
 showValueInList
 
  */
@@ -128,13 +128,12 @@ Ext4.define('LABKEY.ext.OperatorCombo', {
     config: {
         mvEnabled: false,
         jsonType: 'string',
-        //initialValue: null,
         includeHasAnyValue: false
     },
     initComponent: function(config){
         this.initConfig();
 
-        if(this.initialValue === undefined)
+        if(this.value === undefined)
             this.value = LABKEY.Filter.getDefaultFilterForType(this.jsonType).getURLSuffix();
 
         Ext4.apply(this, {
@@ -145,6 +144,8 @@ Ext4.define('LABKEY.ext.OperatorCombo', {
             ,queryMode: 'local'
             ,editable: false
             ,store: this.getStore()
+            ,plugins: ['combo-autowidth']
+            ,expandToFitContent: true
         });
 
         this.callParent(arguments);
@@ -323,6 +324,7 @@ Ext4.define('LABKEY.ext4.ViewStore', {
 Ext4.define('LABKEY.ext4.ViewCombo', {
     extend: 'Ext.form.field.ComboBox',
     alias: 'widget.labkey-viewcombo',
+    plugins: ['combo-autowidth'],
     constructor: function(config){
         Ext4.apply(this, {
             displayField: 'displayText'
@@ -341,6 +343,7 @@ Ext4.define('LABKEY.ext4.ViewCombo', {
                     }
                 }
             })
+            ,expandToFitContent: true
         });
 
         this.callParent(arguments);
@@ -354,7 +357,7 @@ Ext4.define('LABKEY.ext.ContainerFilterCombo', {
     extend: 'Ext.form.field.ComboBox',
     alias: 'widget.labkey-containerfiltercombo',
     initComponent: function(){
-        Ext.apply(this, {
+        Ext4.apply(this, {
             displayField: 'displayText'
             ,valueField: 'value'
             ,triggerAction: 'all'

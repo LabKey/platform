@@ -6,6 +6,9 @@
 
 Ext4.namespace('LABKEY.ext4');
 
+LABKEY.requiresScript('ux/CheckCombo/CheckCombo.js');
+LABKEY.requiresCss('ux/CheckCombo/CheckCombo.css');
+
 /**
  * Constructs a new LabKey Search Panel using the supplied configuration.
  * @class LabKey extension to the <a href="http://docs.sencha.com/ext-js/4-0/#!/api/Ext.form.Panel">Ext.form.Panel</a> class,
@@ -58,25 +61,22 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
     extend: 'Ext.panel.Panel',
     alias: 'widget.labkey-searchpanel',
     LABEL_WIDTH: 150,
-    FIELD_WIDTH: 150,
-    OP_FIELD_WIDTH: 165,
+    FIELD_WIDTH: 250,
+    OP_FIELD_WIDTH: 185,
 
     initComponent: function(){
         Ext4.apply(this, {
             title: this.title,
-            bodyStyle: 'padding: 5px;',
             fieldDefaults: {
                 labelWidth: this.LABEL_WIDTH
             },
-            buttons: this.buttons || [{
-                text: 'Submit', scope: this, handler: this.onSubmit
-            }],
             defaults: {
                 border: false,
                 bodyBorder: false
             },
             items: [{
-                html: 'Loading...'
+                html: 'Loading...',
+                bodyStyle: 'background-color: transparent;'
             }],
             keys: this.keys || [{
                 key: Ext4.EventObject.ENTER,
@@ -85,10 +85,25 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             }]
         });
 
+        //use dockedItems directly, in order to make background transparent
+        var buttons = this.buttons || [{
+            text: 'Submit', scope: this, handler: this.onSubmit
+        }];
+        this.buttons = null;
+        if(buttons){
+            this.dockedItems = {
+                xtype: 'toolbar',
+                ui: 'footer',
+                style: 'background-color: transparent;',
+                items: buttons
+            }
+        }
+
         Ext4.applyIf(this, {
+            bodyStyle: 'background-color: transparent;padding: 5px;',
             border: true,
             bodyBorder: false,
-            width: 505
+            width: 610
         });
 
         this.callParent();
@@ -135,8 +150,10 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
 
         if (this.showContainerFilter){
             toAdd.push(Ext4.apply(this.getRowCfg(), {
+                bodyStyle: 'background-color: transparent;',
                 items: [{
                     html: 'Container Filter:',
+                    bodyStyle: 'background-color: transparent;',
                     width: this.LABEL_WIDTH
                 },{
                     xtype: 'labkey-containerfiltercombo'
@@ -150,8 +167,10 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
 
         if (this.allowSelectView !== false){
             toAdd.push(Ext4.apply(this.getRowCfg(), {
+                bodyStyle: 'background-color: transparent;',
                 items: [{
                     html: 'View:',
+                    bodyStyle: 'background-color: transparent;',
                     width: this.LABEL_WIDTH
                 },{
                     xtype: 'labkey-viewcombo',
@@ -164,7 +183,6 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
                     itemId: 'viewNameField'
                 }]
             }));
-            //toAdd.push({html: ''});
         }
 
         this.add(toAdd);
@@ -197,7 +215,8 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
         }
 
         var rows = [];
-        if (!meta.hidden && meta.selectable !== false){
+        //NOTE: if the query lacks a PK, Ext automatically inserts a field called 'id'
+        if (!meta.hidden && meta.selectable !== false && meta.caption !== undefined){
             var replicates = 1;
             if (meta.duplicate)
                 replicates = 2;
@@ -236,7 +255,10 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
         theField.hidden = false;
 
         //the label
-        row.push({html: meta.caption + ':', width: this.LABEL_WIDTH});
+        row.push({
+            html: meta.caption + ':', width: this.LABEL_WIDTH,
+            bodyStyle: 'background-color: transparent;'
+        });
         Ext4.apply(theField, {
             nullable: true,
             allowBlank: true,
@@ -258,6 +280,13 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             row.push({width: this.OP_FIELD_WIDTH});
         }
         else if (theField.xtype == 'labkey-combo'){
+            Ext4.apply(theField, {
+                xtype: 'checkcombo',
+                expandToFitContent: true,
+                addAllSelector: true,
+                nullCaption: '[Blank]'
+            });
+
             theField.opField = id;
             row.push({
                 xtype: 'hidden',
@@ -301,6 +330,20 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             params['query.viewName'] = vf.getValue();
         }
 
+        Ext4.apply(params, this.getFilterParams());
+
+        window.location = LABKEY.ActionURL.buildURL(
+            'query',
+            'executeQuery.view',
+            (this.containerPath || LABKEY.ActionURL.getContainer()),
+            params
+        );
+    },
+
+    getFilterParams: function(dataRegionName){
+        dataRegionName = dataRegionName || 'query';
+        var params = {};
+
         this.cascade(function(item){
             if (!item.isSearchField)
                 return;
@@ -322,19 +365,50 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
             }
 
             var val = item.getValue();
-            if (Ext4.isArray(val))
+            if(Ext4.isArray(val)){
+                if(val.length > 1)
+                    op = 'in';
+
+                var optimized = this.optimizeFilter(op, val, item);
+                if(optimized){
+                    op = optimized[0];
+                    val = optimized[1];
+                }
+
                 val = val.join(';');
+            }
+            else if (val instanceof Date){
+                var format = item.format || 'Y-m-d';
+                val = val.format(format);
+            }
 
             if (!Ext4.isEmpty(val) || !filterType.isDataValueRequired()){
-                params[('query.' + item.dataIndex + '~' + op)] = val;
+                params[(dataRegionName + '.' + item.dataIndex + '~' + op)] = val;
             }
         }, this);
+        return params;
+    },
 
-        window.location = LABKEY.ActionURL.buildURL(
-            'query',
-            'executeQuery.view',
-            (this.containerPath || LABKEY.ActionURL.getContainer()),
-            params
-        );
+    optimizeFilter: function(op, values, field){
+        if(field && field.store){
+            if(values.length == field.store.getCount()){
+                op = null;
+                values = [];
+            }
+            else if(values.length > (field.store.getCount() / 2)){
+                op = LABKEY.Filter.getFilterTypeForURLSuffix(op).getOpposite().getURLSuffix();
+
+                var newValues = [];
+                field.store.each(function(rec){
+                    var v = rec.get(field.displayField)
+                    if(values.indexOf(v) == -1){
+                        newValues.push(v);
+                    }
+                }, this);
+                values = newValues;
+            }
+        }
+        values = Ext4.unique(values);
+        return [op, values];
     }
 });
