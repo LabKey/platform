@@ -711,6 +711,9 @@ public class SpecimenQueryView extends BaseStudyQueryView
         {
             for (DisplayColumn displayColumn : super.getDisplayColumns())
             {
+                if (displayColumn instanceof DetailsColumn)
+                    continue;
+
                 if (columnInfo.equals(displayColumn.getColumnInfo()))
                 {
                     getSettings().addAggregates(new Aggregate(columnInfo, aggregateType));

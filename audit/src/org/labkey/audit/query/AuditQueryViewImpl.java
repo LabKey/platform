@@ -19,6 +19,7 @@ package org.labkey.audit.query;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.query.AuditDisplayColumnFactory;
 import org.labkey.api.audit.query.AuditLogQueryView;
+import org.labkey.api.data.DetailsColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -66,6 +67,8 @@ public class AuditQueryViewImpl extends AuditLogQueryView
             {
                 for (DisplayColumn dc : view.getDataRegion().getDisplayColumns())
                 {
+                    if (dc instanceof DetailsColumn)
+                        continue;
                     if (!_columns.contains(dc.getColumnInfo().getName().toLowerCase()))
                         dc.setVisible(false);
                 }
