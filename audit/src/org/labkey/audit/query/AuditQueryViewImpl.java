@@ -54,7 +54,8 @@ public class AuditQueryViewImpl extends AuditLogQueryView
 
     public DataView createDataView()
     {
-        setShowDetailsColumn(true);
+        // Turn off the default QueryView details column.
+        setShowDetailsColumn(false);
 
         DataView view = super.createDataView();
 
