@@ -35,7 +35,7 @@ public abstract class BaseSelector<FACTORY extends SqlFactory> extends JdbcComma
 
     protected BaseSelector(DbScope scope)
     {
-        super(scope);
+        super(scope, null);
     }
 
     //@Override      // TODO: Not valid to call at the moment since connection never gets closed

@@ -286,7 +286,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         Collection<ColumnInfo> cols = getSelectColumns(displayColumns, tinfo);
 
         Sort sort = buildSort(tinfo, url, dataRegionName);
-        SimpleFilter filter = buildFilter(tinfo, url, dataRegionName, Table.ALL_ROWS, 0, sort);
+        SimpleFilter filter = buildFilter(tinfo, url, dataRegionName, Table.ALL_ROWS, Table.NO_OFFSET, sort);
 
         if (null != QueryService.get())
             cols = QueryService.get().ensureRequiredColumns(tinfo, cols, filter, sort, ignoredAggregateFilters);

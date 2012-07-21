@@ -18,6 +18,7 @@ package org.labkey.api.security;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -1285,6 +1286,8 @@ public class SecurityManager
     {
         SqlExecutor executor = new SqlExecutor(core.getSchema(), new SQLFragment("INSERT INTO " + core.getTableInfoMembers() +
             " (UserId, GroupId) VALUES (?, ?)", principal.getUserId(), group.getUserId()));
+
+        executor.setLogLevel(Level.ERROR);   // Don't log warnings (e.g., constraint violations)
 
         try
         {

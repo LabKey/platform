@@ -51,12 +51,12 @@ public abstract class BaseSqlFactory implements SqlFactory
         catch(SQLException e)
         {
             // TODO: Substitute SQL parameter placeholders with values?
-            Table.doCatch(sql.getSQL(), sql.getParamsArray(), conn, e);
+            Table.logException(sql.getSQL(), sql.getParamsArray(), conn, e, _selector.getLogLevel());
             throw _selector.getExceptionFramework().translate(_selector.getScope(), "Message", sql.getSQL(), e);  // TODO: Change message
         }
         finally
         {
-            Table.doFinally(rs, null, conn, _selector.getScope());
+            _selector.close(rs, conn);
         }
     }
 

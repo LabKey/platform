@@ -15,7 +15,12 @@
  */
 package org.labkey.api.data;
 
+import org.apache.log4j.Level;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
@@ -25,19 +30,30 @@ import java.sql.SQLException;
  */
 public abstract class JdbcCommand
 {
-    private final DbScope _scope;
+    private final @NotNull DbScope _scope;
+    private final @Nullable Connection _conn;
     private ExceptionFramework _exceptionFramework = ExceptionFramework.Spring;
+    private Level _logLevel = Level.WARN;  // Log all warnings and errors by default
 
-    protected JdbcCommand(DbScope scope)
+    protected JdbcCommand(@NotNull DbScope scope, @Nullable Connection conn)
     {
         _scope = scope;
+        _conn = conn;
     }
 
     public Connection getConnection() throws SQLException
     {
-        return _scope.getConnection();
+        return null == _conn ? _scope.getConnection() : _conn;
     }
 
+    protected void close(@Nullable ResultSet rs, Connection conn)
+    {
+        // Close Connection only if we got it from the scope (i.e., _conn is null)
+        @Nullable Connection connToClose = (null == _conn ? conn : null);
+        Table.doFinally(rs, null, connToClose, getScope());
+    }
+
+    @NotNull
     public DbScope getScope()
     {
         return _scope;
@@ -51,5 +67,15 @@ public abstract class JdbcCommand
     public ExceptionFramework getExceptionFramework()
     {
         return _exceptionFramework;
+    }
+
+    public Level getLogLevel()
+    {
+        return _logLevel;
+    }
+
+    public void setLogLevel(Level logLevel)
+    {
+        _logLevel = logLevel;
     }
 }

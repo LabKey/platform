@@ -42,6 +42,8 @@ public interface Selector
 
     void forEachMap(ForEachBlock<Map<String, Object>> block);
 
+    // TODO: forEachFieldKeyMap()
+
     <K> void forEach(ForEachBlock<K> block, Class<K> clazz);
 
     // Used to populate a map with a two-column query; the first column is the key, the second column is the value.

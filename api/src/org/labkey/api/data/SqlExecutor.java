@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
@@ -29,21 +30,28 @@ public class SqlExecutor extends JdbcCommand
 {
     private final SQLFragment _sql;
 
-    // Execute select SQL against a scope
-    public SqlExecutor(DbScope scope, SQLFragment sql)
+    // Execute SQL. When conn is null (vast majority of cases), a pooled connection will be obtained from the scope and
+    // closed after execution. If conn is provided then that connection will be used and will NOT be closed afterwards.
+    public SqlExecutor(@NotNull DbScope scope, @NotNull SQLFragment sql, @Nullable Connection conn)
     {
-        super(scope);
+        super(scope, conn);
         _sql = sql;
     }
 
-    // Execute select SQL against a scope
-    public SqlExecutor(DbScope scope, String sql)
+    // Execute SQLFragment against a scope.
+    public SqlExecutor(@NotNull DbScope scope, SQLFragment sql)
+    {
+        this(scope, sql, null);
+    }
+
+    // Execute SQL against a scope
+    public SqlExecutor(@NotNull DbScope scope, String sql)
     {
         this(scope, new SQLFragment(sql));
     }
 
-    // Execute select SQL against a schema
-    public SqlExecutor(DbSchema schema, SQLFragment sql)
+    // Execute SQL against a schema
+    public SqlExecutor(@NotNull DbSchema schema, SQLFragment sql)
     {
         this(schema.getScope(), sql);
     }
@@ -64,17 +72,12 @@ public class SqlExecutor extends JdbcCommand
         }
         catch(SQLException e)
         {
-            Table.doCatch( _sql.getSQL(), _sql.getParamsArray(), conn, e);
+            Table.logException(_sql.getSQL(), _sql.getParamsArray(), conn, e, getLogLevel());
             throw getExceptionFramework().translate(getScope(), "Message", _sql.getSQL(), e);  // TODO: Change message
         }
         finally
         {
-            doFinally(conn);
+            close(null, conn);
         }
-    }
-
-    protected void doFinally(@Nullable Connection conn)
-    {
-        Table.doFinally(null, null, conn, getScope());
     }
 }

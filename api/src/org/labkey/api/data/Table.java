@@ -392,7 +392,7 @@ public class Table
         }
         catch(SQLException e)
         {
-            doCatch(sql, parameters, conn, e);
+            logException(sql, parameters, conn, e);
             queryFailed = true;
             throw(e);
         }
@@ -478,7 +478,7 @@ public class Table
                     e = e.getNextException();
             }
 
-            doCatch(sql, null, conn, e);
+            logException(sql, null, conn, e);
             throw(e);
         }
         finally
@@ -528,7 +528,14 @@ public class Table
 
 
     // Standard SQLException catch block: log exception, query SQL, and params
-    static void doCatch(String sql, @Nullable Object[] parameters, Connection conn, SQLException e)
+    static void logException(String sql, @Nullable Object[] parameters, Connection conn, SQLException e)
+    {
+        logException(sql, parameters, conn, e, Level.WARN);    // Log all warnings and errors by default
+    }
+
+
+    // Standard SQLException catch block: log exception, query SQL, and params
+    static void logException(String sql, @Nullable Object[] parameters, Connection conn, SQLException e, Level logLevel)
     {
         if (SqlDialect.isCancelException(e))
         {
@@ -536,13 +543,19 @@ public class Table
         }
         else if (sql.startsWith("INSERT") && SqlDialect.isConstraintException(e))
         {
-            _log.warn("SQL Exception", e);
-            _logQuery(Level.WARN, sql, parameters, conn);
+            if (Level.WARN.isGreaterOrEqual(logLevel))
+            {
+                _log.warn("SQL Exception", e);
+                _logQuery(Level.WARN, sql, parameters, conn);
+            }
         }
         else
         {
-            _log.error("SQL Exception", e);
-            _logQuery(Level.ERROR, sql, parameters, conn);
+            if (Level.ERROR.isGreaterOrEqual(logLevel))
+            {
+                _log.error("SQL Exception", e);
+                _logQuery(Level.ERROR, sql, parameters, conn);
+            }
         }
     }
 
@@ -906,7 +919,7 @@ public class Table
         }
         catch(SQLException e)
         {
-            doCatch(insertSQL.toString(), parameters.toArray(), conn, e);
+            logException(insertSQL.toString(), parameters.toArray(), conn, e);
             throw(e);
         }
         finally
@@ -1048,7 +1061,7 @@ public class Table
         }
         catch(SQLException e)
         {
-            doCatch(updateSQL.getSQL(), updateSQL.getParamsArray(), conn, e);
+            logException(updateSQL.getSQL(), updateSQL.getParamsArray(), conn, e);
             throw(e);
         }
 
@@ -1278,7 +1291,7 @@ public class Table
     }
 
 
-    private static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String,Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int rowCount, long offset, boolean cache, boolean scrollable, @Nullable AsyncQueryRequest asyncRequest, @Nullable Logger log)
+    private static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int rowCount, long offset, boolean cache, boolean scrollable, @Nullable AsyncQueryRequest asyncRequest, @Nullable Logger log)
             throws SQLException
     {
         assert Table.checkAllColumns(table, select, "selectForDisplay() select columns");

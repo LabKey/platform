@@ -171,20 +171,7 @@ public class SqlScriptExecutor
                 }
                 else
                 {
-                    SqlExecutor executor = new SqlExecutor(_schema.getScope(), _sql) {
-                        @Override
-                        public Connection getConnection() throws SQLException
-                        {
-                            return _conn;
-                        }
-
-                        @Override
-                        protected void doFinally(Connection conn)
-                        {
-                            super.doFinally(null);   // This keeps the connection open; caller must close it.
-                        }
-                    };
-                    executor.execute();
+                    new SqlExecutor(_schema.getScope(), new SQLFragment(_sql), _conn).execute();
                 }
             }
         }

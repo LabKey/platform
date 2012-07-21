@@ -47,7 +47,7 @@ public class TSVGridWriter extends TSVColumnWriter
     {
         List<ColumnInfo> selectCols = RenderContext.getSelectColumns(displayColumns, tinfo);
         LinkedHashMap<FieldKey, ColumnInfo> fieldMap = QueryService.get().getColumns(tinfo, Collections.<FieldKey>emptySet(), selectCols);
-        Results rs = ctx.getResultSet(fieldMap, tinfo, null, Table.ALL_ROWS, 0, name, false);
+        Results rs = ctx.getResultSet(fieldMap, tinfo, null, Table.ALL_ROWS, Table.NO_OFFSET, name, false);
         init(rs, displayColumns);
     }
 

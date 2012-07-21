@@ -498,13 +498,13 @@ public class QuerySettings
     public long getOffset()
     {
         if (_showRows != ShowRows.PAGINATED)
-            return 0;
+            return Table.NO_OFFSET;
         return _offset;
     }
 
     public void setOffset(long offset)
     {
-        assert (offset == 0 && _showRows != ShowRows.PAGINATED) || _showRows == ShowRows.PAGINATED : "Can't set maxRows when not paginated";
+        assert (offset == Table.NO_OFFSET && _showRows != ShowRows.PAGINATED) || _showRows == ShowRows.PAGINATED : "Can't set maxRows when not paginated";
         _offset = offset;
     }
 

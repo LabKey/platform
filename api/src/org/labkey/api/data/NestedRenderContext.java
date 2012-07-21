@@ -179,7 +179,7 @@ public class NestedRenderContext extends RenderContext
 
     private ColumnInfo appendFromSQL(TableInfo tinfo, String dataRegionName, Sort sort, SQLFragment sql, String groupingColumnName)
     {
-        SimpleFilter filter = super.buildFilter(tinfo, getViewContext().getActionURL(), dataRegionName, Table.ALL_ROWS, 0, sort);
+        SimpleFilter filter = super.buildFilter(tinfo, getViewContext().getActionURL(), dataRegionName, Table.ALL_ROWS, Table.NO_OFFSET, sort);
 
         // We need to do an aggregate query to find out the group ids that we want to show based
         // on pagination.
