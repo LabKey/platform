@@ -1182,8 +1182,18 @@ public class SecurityApiActions
             Container c = getViewContext().getContainer();
             if (!c.isRoot() && !c.getProject().hasPermission(getViewContext().getUser(), AdminPermission.class))
                 throw new UnauthorizedException("You must be an administrator at the project level to add new users");
-            
-            ValidEmail email = new ValidEmail(form.getEmail().getSource().trim());
+
+            ValidEmail email;
+
+            try
+            {
+                email = new ValidEmail(form.getEmail().getSource().trim());
+            }
+            catch (ValidEmail.InvalidEmailException e)
+            {
+                throw new IllegalArgumentException(e.getMessage());
+            }
+
             String msg = SecurityManager.addUser(getViewContext(), email, form.isSendEmail(), null, null);
             User user = UserManager.getUser(email);
             if (null == user)
