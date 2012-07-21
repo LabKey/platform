@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.view.UnauthorizedException;
 import org.springframework.validation.BindException;
 
 import javax.servlet.http.HttpServletResponse;
@@ -32,6 +33,13 @@ import java.util.GregorianCalendar;
 */
 public abstract class BaseThumbnailAction<FORM> extends ExportAction<FORM>
 {
+    @Override
+    public void checkPermissions() throws UnauthorizedException
+    {
+        setUseBasicAuthentication(true);
+        super.checkPermissions();
+    }
+
     @Override
     protected String getCommandClassMethodName()
     {
