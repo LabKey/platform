@@ -973,7 +973,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
                 table.setWidget(row, 1, indexPanel);
 
                 VerticalPanel entireListSettings = new VerticalPanel();
-                RadioButton metadata = new BoundRadioButton("ff_entireListSetting", "Metadata only (name and descriptions of list and fields)", _list.entireListIndexSetting, 0, dirtySetter);
+                RadioButton metadata = new BoundRadioButton("ff_entireListSetting", "Metadata only (name and description of list and fields)", _list.entireListIndexSetting, 0, dirtySetter);
                 metadata.setEnabled(!readonly);
                 RadioButton data = new BoundRadioButton("ff_entireListSetting", "Data only", _list.entireListIndexSetting, 1, dirtySetter);
                 data.setEnabled(!readonly);

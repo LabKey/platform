@@ -46,6 +46,7 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior;
 import org.labkey.api.util.StringExpressionFactory.FieldKeyStringExpression;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.ActionURL;
@@ -296,7 +297,7 @@ public class ListManager implements SearchService.DocumentProvider
                     String documentId = getDocumentId(list, pk);
                     Map<String, Object> props = new HashMap<String, Object>();
                     props.put(SearchService.PROPERTY.categories.toString(), listCategory.toString());
-                    props.put(SearchService.PROPERTY.displayTitle.toString(), titleTemplate.eval(map));  // TODO: Best effort replacement (don't return null if single value is null)
+                    props.put(SearchService.PROPERTY.displayTitle.toString(), titleTemplate.eval(map));
 
                     String body = bodyTemplate.eval(map);
 
@@ -482,7 +483,8 @@ public class ListManager implements SearchService.DocumentProvider
         else
             template = list.getEachItemTitleTemplate();
 
-        return FieldKeyStringExpression.create(template, false);
+        // Don't URL encode and use lenient substitution (replace nulls with blank)
+        return FieldKeyStringExpression.create(template, false, NullValueBehavior.ReplaceNullWithBlank);
     }
 
 
@@ -515,7 +517,8 @@ public class ListManager implements SearchService.DocumentProvider
             template = sb.toString();
         }
 
-        return FieldKeyStringExpression.create(template, false);
+        // Don't URL encode and use lenient substitution (replace nulls with blank)
+        return FieldKeyStringExpression.create(template, false, NullValueBehavior.ReplaceNullWithBlank);
     }
 
 
