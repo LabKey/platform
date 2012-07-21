@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * User: adam
@@ -66,9 +67,9 @@ public class NestedGroupsTest extends Assert
     }
 
     @Test
-    public void test() throws SQLException
+    public void test() throws SQLException, InterruptedException
     {
-        User user = TestContext.get().getUser();
+        final User user = TestContext.get().getUser();
 
         // Grab the first group (if there is one) in the home project
         Container home = ContainerManager.getHomeContainer();
@@ -77,7 +78,7 @@ public class NestedGroupsTest extends Assert
 
         final Group all = create(ALL);
         Group divA = create(DIV_A);
-        Group divB = create(DIV_B);
+        final Group divB = create(DIV_B);
         Group divC = create(DIV_C);
         Group coders = create(CODERS);
         Group testers = create(TESTERS);
@@ -151,6 +152,27 @@ public class NestedGroupsTest extends Assert
 
         if (null != homeGroup)
             failAddMember(projectX, homeGroup, SecurityManager.DIFFERENT_PROJECTS_ERROR_MESSAGE);
+
+        // Attempt multiple simultaneous adds of the same member to the same group, see #14795. One of the five threads
+        // should succeed and the others should fail, with either an InvalidGroupMemberShipException (which would
+        // normally be displayed to the user) or a constraint violation (which is ignored).
+        JunitUtil.createRace(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                try
+                {
+                    SecurityManager.addMember(divB, user);
+                }
+                catch (InvalidGroupMembershipException e)
+                {
+                    // This is expected
+                }
+            }
+        }, 5, 5).awaitTermination(1, TimeUnit.MINUTES);
+        expected(divB, user);
+        SecurityManager.deleteMember(divB, user);
 
         // Test that we protect against concurrent threads making independent group adds that result in a cycle.  We
         // simulate this by adding two groups that result in a cycle, forcing the second add to occur just after the

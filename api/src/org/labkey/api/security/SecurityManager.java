@@ -79,6 +79,8 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.wiki.WikiService;
+import org.springframework.dao.DataIntegrityViolationException;
+import sun.rmi.runtime.Log;
 
 import javax.mail.Address;
 import javax.mail.Message;
@@ -1284,7 +1286,16 @@ public class SecurityManager
         SqlExecutor executor = new SqlExecutor(core.getSchema(), new SQLFragment("INSERT INTO " + core.getTableInfoMembers() +
             " (UserId, GroupId) VALUES (?, ?)", principal.getUserId(), group.getUserId()));
 
-        executor.execute();
+        try
+        {
+            executor.execute();
+        }
+        catch (DataIntegrityViolationException e)
+        {
+            // Assume this is a race condition and ignore, see #14795
+            _log.warn("Member could not be added: " + e.getMessage());
+        }
+
         fireAddPrincipalToGroup(group, principal);
     }
 
@@ -1317,7 +1328,7 @@ public class SecurityManager
     }
 
 
-    // TODO: getAddMemberError() now caches (see #14383), but this is still an n^2 algorithm.  Better would be for this
+    // TODO: getAddMemberError() now uses the cache (see #14383), but this is still an n^2 algorithm.  Better would be for this
     // method to validate an entire collection of candidates at once, and switch getAddMemberError() to call getValidPrincipals()
     // with a singleton.
     public static <K extends UserPrincipal> Collection<K> getValidPrincipals(Group group, Collection<K> candidates)
@@ -2417,7 +2428,7 @@ public class SecurityManager
     /**
      * @return null if the user already exists, or a message indicating success/failure
      */
-    public static String addUser(ViewContext context, ValidEmail email, boolean sendMail, String mailPrefix, Pair<String, String>[] extraParameters) throws Exception
+    public static String addUser(ViewContext context, ValidEmail email, boolean sendMail, String mailPrefix, @Nullable Pair<String, String>[] extraParameters) throws Exception
     {
         if (UserManager.userExists(email))
         {

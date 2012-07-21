@@ -31,6 +31,9 @@ import javax.xml.xpath.XPathFactory;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 
 public class JunitUtil
@@ -85,6 +88,42 @@ public class JunitUtil
     public static Container getTestContainer()
     {
         return ContainerManager.ensureContainer(ContainerManager.getSharedContainer().getParsedPath().append("_junit"));
+    }
+
+
+    // Simulate a race condition by starting the specified number of threads and invoking the runnable the specified
+    // number of times, using a CountDownLatch to synchronize task execution. This method does not wait for termination
+    // of the executed tasks; use the returned ExecutorService if awaiting termination is needed.
+    public static ExecutorService createRace(final Runnable runnable, int threads, int invocations)
+    {
+        final CountDownLatch latch = new CountDownLatch(invocations);
+
+        Runnable runnableWrapper = new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                latch.countDown();
+                try
+                {
+                    latch.await();
+                }
+                catch (InterruptedException e)
+                {
+                    return;
+                }
+                runnable.run();
+            }
+        };
+
+        ExecutorService pool = Executors.newFixedThreadPool(threads);
+
+        for (int i = 0; i < invocations; i++)
+            pool.execute(runnableWrapper);
+
+        pool.shutdown();
+
+        return pool;
     }
 
     public static void main(String[] args) throws Exception
