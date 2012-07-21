@@ -513,7 +513,7 @@ public class ListItemImpl implements ListItem
                             if (rowMap == null)
                             {
                                 TableInfo table = _list.getTable(user);
-                                ResultSet rs = Table.selectForDisplay(table, table.getColumns(), null, new PkFilter(table, _itm.getKey()), null, Table.ALL_ROWS, 0);
+                                ResultSet rs = Table.selectForDisplay(table, table.getColumns(), null, new PkFilter(table, _itm.getKey()), null, Table.ALL_ROWS, Table.NO_OFFSET);
                                 rs.next();
                                 rowMap = ResultSetUtil.mapRow(rs);
                                 rs.close();

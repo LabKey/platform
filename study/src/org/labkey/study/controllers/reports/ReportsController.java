@@ -1605,7 +1605,7 @@ public class ReportsController extends BaseStudyController
                 visit.addVisitFilter(filter);
             filter.addUrlFilters(filterUrl, tableInfo.getName());
 
-            resultSet = Table.selectForDisplay(tableInfo, Table.ALL_COLUMNS, null, filter, null, 0, 0);
+            resultSet = Table.selectForDisplay(tableInfo, Table.ALL_COLUMNS, null, filter, null, Table.NO_ROWS, Table.NO_OFFSET);
         }
 
         public TableInfo getTableInfo()

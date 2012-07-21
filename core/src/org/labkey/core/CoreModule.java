@@ -418,7 +418,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // Users & guests can read from /home
         ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, siteAdminRole, readerRole, readerRole);
 
-        // Only users can read from /home/support
+        // Only users can read from /Shared
         ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, siteAdminRole, readerRole, noPermsRole);
 
         try
