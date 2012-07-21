@@ -298,6 +298,16 @@ public class StringExpressionFactory
 
     public static abstract class AbstractStringExpression implements StringExpression, Cloneable
     {
+        // Ideally, we'd be able to distinguish between null values and missing fields... this would let us output
+        // the field part as part of eval (instead of blank) to signal the user that the template is broken.  But only
+        // FieldParts know the field, so this is hard.
+        public enum NullValueBehavior
+        {
+            NullResult,                 // Any null field results in a null eval (good for URLs)
+            ReplaceNullWithBlank;       // Null or missing fields get replaced with blank
+        }
+
+        protected NullValueBehavior _nullValueBehavior = NullValueBehavior.NullResult;
         protected String _source;
         protected ArrayList<StringPart> _parsedExpression = null;
 
@@ -349,9 +359,21 @@ public class StringExpressionFactory
                 String value = part.getValue(context);
                 if (value == null)
                 {
-                    // Bail out if the context is missing one of the substitutions. Better to have no URL than
-                    // a URL that's missing parameters
-                    return null;
+                    switch(_nullValueBehavior)
+                    {
+                        // Bail out if the context is missing one of the substitutions. Better to have no URL than
+                        // a URL that's missing parameters
+                        case NullResult:
+                            return null;
+
+                        // More lenient... just substitute blank for missing/null
+                        case ReplaceNullWithBlank:
+                            value = "";
+                            break;
+
+                        default:
+                            throw new IllegalStateException("Unknown behavior: " + _nullValueBehavior);
+                    }
                 }
                 builder.append(value);
             }
@@ -514,18 +536,19 @@ public class StringExpressionFactory
         
         protected FieldKeyStringExpression(String source)
         {
-            this(source, true);
+            this(source, true, NullValueBehavior.NullResult);
         }
 
-        public FieldKeyStringExpression(String source, boolean urlEncodeSubstitutions)
+        public FieldKeyStringExpression(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior)
         {
             super(source);
             _urlEncodeSubstitutions = urlEncodeSubstitutions;
+            _nullValueBehavior = nullValueBehavior;
         }
 
-        public static FieldKeyStringExpression create(String source, boolean urlEncodeSubstitutions)
+        public static FieldKeyStringExpression create(String source, boolean urlEncodeSubstitutions, NullValueBehavior nullValueBehavior)
         {
-            return new FieldKeyStringExpression(source, urlEncodeSubstitutions);
+            return new FieldKeyStringExpression(source, urlEncodeSubstitutions, nullValueBehavior);
         }
 
         protected StringPart parsePart(String expr)
