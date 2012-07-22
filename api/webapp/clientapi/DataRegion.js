@@ -2655,6 +2655,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             });
             this.configureLookupPanel();
         }
+        this.doLayout();
     },
 
     beforeTabChange: function(panel, newTab, oldTab){
