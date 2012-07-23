@@ -525,10 +525,18 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                 if (count > 0)
                 {
                     var msg;
-                    if (count == this.totalRows)
-                        msg = "Selected all " + this.totalRows + " rows.";
+                    if (this.totalRows)
+                    {
+                        if (count == this.totalRows)
+                            msg = "Selected all " + this.totalRows + " rows.";
+                        else
+                            msg = "Selected " + count + " of " + this.totalRows + " rows.";
+                    }
                     else
-                        msg = "Selected " + count + " of " + this.totalRows + " rows.";
+                    {
+                        // totalRows isn't available when showing all rows.
+                        msg = "Selected " + count + " rows.";
+                    }
                     this._showSelectMessage(msg);
                 }
                 else
@@ -547,17 +555,15 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
      */
     hasSelected : function ()
     {
-        if (!this.form)
+        if (!this.table)
             return false;
-        var len = this.form.length;
+
+        var checkboxes = Ext.query('input[@type="checkbox"][@name=".select"]', this.table.dom);
+        var len = checkboxes ? checkboxes.length : 0;
         for (var i = 0; i < len; i++)
         {
-            var e = this.form[i];
-            if (e.type == 'checkbox' && e.name != ".toggle")
-            {
-                if (e.checked)
-                    return true;
-            }
+            if (checkboxes[i].checked)
+                return true;
         }
         return false;
     },
@@ -569,19 +575,16 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
      */
     isPageSelected : function ()
     {
-        if (!this.form)
+        if (!this.table)
             return false;
-        var len = this.form.length;
-        var hasCheckbox = false;
+
+        var checkboxes = Ext.query('input[@type="checkbox"][@name=".select"]', this.table.dom);
+        var len = checkboxes ? checkboxes.length : 0;
+        var hasCheckbox = len > 0;
         for (var i = 0; i < len; i++)
         {
-            var e = this.form[i];
-            if (e.type == 'checkbox' && e.name != ".toggle")
-            {
-                hasCheckbox = true;
-                if (!e.checked)
-                    return false;
-            }
+            if (!checkboxes[i].checked)
+                return false;
         }
         return hasCheckbox;
     },
@@ -1332,13 +1335,16 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     // private
     _setAllCheckboxes : function (value, elementName)
     {
-        var elems = this.form.elements;
-        var l = elems.length;
+        if (!this.table)
+            return;
+
+        var checkboxes = Ext.query('input[@type="checkbox"]', this.table.dom);
+        var len = checkboxes ? checkboxes.length : 0;
         var ids = [];
-        for (var i = 0; i < l; i++)
+        for (var i = 0; i < len; i++)
         {
-            var e = elems[i];
-            if (e.type == 'checkbox' && !e.disabled && (elementName == null || elementName == e.name))
+            var e = checkboxes[i];
+            if (!e.disabled && (elementName == null || elementName == e.name))
             {
                 e.checked = value;
                 if (e.name != ".toggle")
