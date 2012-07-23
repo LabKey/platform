@@ -193,32 +193,89 @@ public class ListManager implements SearchService.DocumentProvider
             return;
         }
 
-        indexEntireList(task, list, domain);
-        indexAllItems(task, list);
+        indexEntireList(task, list);
+        indexModifiedItems(task, list);
     }
 
 
     // Index (or delete) a single list item after item save or delete
     public void indexItem(final ListDefinition list, final ListItem item)
     {
-        if (!list.getEntireListIndex() && !list.getEachItemIndex())
-            return;
-
-        final SearchService.IndexTask task = ServiceRegistry.get(SearchService.class).defaultTask();
-
-        Runnable r = new Runnable()
+        if (list.getEachItemIndex())
         {
-            public void run()
+            final SearchService.IndexTask task = ServiceRegistry.get(SearchService.class).defaultTask();
+
+            Runnable r = new Runnable()
             {
-                SimpleFilter filter = new SimpleFilter(list.getKeyName(), item.getKey());
-                int count = indexItems(task, list, filter);
+                public void run()
+                {
+                    SimpleFilter filter = new SimpleFilter(list.getKeyName(), item.getKey());
+                    int count = indexItems(task, list, filter);
 
-                if (0 == count)
-                    LOG.info("I should be deleting!");
-            }
-        };
+                    if (0 == count)
+                        LOG.info("I should be deleting!");
+                }
+            };
 
-        task.addRunnable(r, SearchService.PRIORITY.item);
+            task.addRunnable(r, SearchService.PRIORITY.item);
+        }
+
+        if (list.getEntireListIndex() && list.getEntireListIndexSetting().indexItemData())
+        {
+            SearchService.IndexTask task = ServiceRegistry.get(SearchService.class).defaultTask();
+            task.addRunnable(new ListIndexRunnable(task, list), SearchService.PRIORITY.item);
+        }
+    }
+
+
+    // This Runnable implementation defines equals() and hashCode() so the indexer will coalesce multiple re-indexing
+    // tasks of the same list within the same transaction (i.e., don't re-index the entire list on every insert during
+    // bulk upload).
+    private class ListIndexRunnable implements Runnable
+    {
+        private final @NotNull SearchService.IndexTask _task;
+        private final @NotNull ListDefinition _list;
+
+        private ListIndexRunnable(@NotNull SearchService.IndexTask task, final @NotNull ListDefinition list)
+        {
+            _task = task;
+            _list = list;
+        }
+
+        private int getListId()
+        {
+            return _list.getListId();
+        }
+
+        @Override
+        public void run()
+        {
+            LOG.debug("Indexing entire list: " + _list.getName() + ", " + _list.getListId());
+            indexEntireList(_task, _list);
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Indexing runnable for list " + getListId();
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ListIndexRunnable that = (ListIndexRunnable) o;
+
+            return this.getListId() == that.getListId();
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return getListId();
+        }
     }
 
 
@@ -234,7 +291,7 @@ public class ListManager implements SearchService.DocumentProvider
         {
             public void run()
             {
-                ServiceRegistry.get(SearchService.class).deleteResource(getDocumentId(list, item.getKey()));
+                ServiceRegistry.get(SearchService.class).deleteResource(getDocumentId(list, item.getEntityId()));
             }
         };
 
@@ -248,14 +305,16 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
 
-    private String getDocumentId(ListDefinition list, @Nullable Object pk)
+    // Use each item's EntityId since PKs are mutable. ObjectIds maybe be the better choice (they're shorter) but
+    // that would require adding this column to the query definition. Consider: a private TableInfo just for indexing.
+    private String getDocumentId(ListDefinition list, @Nullable String entityId)
     {
-        return getDocumentId(list) + ":" + (null != pk ?  pk.toString() : "");
+        return getDocumentId(list) + ":" + (null != entityId ? entityId : "");
     }
 
 
-    // Reindex all items in this list
-    private void indexAllItems(@NotNull final SearchService.IndexTask task, final ListDefinition list)
+    // Index all modified items in this list
+    private void indexModifiedItems(@NotNull final SearchService.IndexTask task, final ListDefinition list)
     {
         if (!list.getEachItemIndex())
         {
@@ -274,9 +333,9 @@ public class ListManager implements SearchService.DocumentProvider
     // Reindex items specified by filter
     private int indexItems(@NotNull final SearchService.IndexTask task, final ListDefinition list, SimpleFilter filter)
     {
-        FieldKeyStringExpression titleTemplate = createEachItemTitleTemplate(list);
-        FieldKeyStringExpression bodyTemplate = createBodyTemplate(list, list.getEachItemBodySetting(), list.getEachItemBodyTemplate());
-        TableInfo ti = list.getTable(User.getSearchUser());
+        TableInfo listTable = list.getTable(User.getSearchUser());
+        FieldKeyStringExpression titleTemplate = createEachItemTitleTemplate(list, listTable);
+        FieldKeyStringExpression bodyTemplate = createBodyTemplate(list, list.getEachItemBodySetting(), list.getEachItemBodyTemplate(), listTable);
 
         try
         {
@@ -284,17 +343,19 @@ public class ListManager implements SearchService.DocumentProvider
 
             try
             {
-                results = Table.selectForDisplay(ti, Table.ALL_COLUMNS, null, filter, null, Table.ALL_ROWS, Table.NO_OFFSET);
+                results = Table.selectForDisplay(listTable, Table.ALL_COLUMNS, null, filter, null, Table.ALL_ROWS, Table.NO_OFFSET);
                 results.getFieldMap().keySet();
-                FieldKey key = new FieldKey(null, list.getKeyName());
+                FieldKey keyKey = new FieldKey(null, list.getKeyName());
+                FieldKey entityIdKey = new FieldKey(null, "EntityId");
                 int count = 0;
 
                 while (results.next())
                 {
                     Map<FieldKey, Object> map = results.getFieldKeyRowMap();
-                    final Object pk = map.get(key);
+                    final Object pk = map.get(keyKey);
+                    String entityId = (String)map.get(entityIdKey);
 
-                    String documentId = getDocumentId(list, pk);
+                    String documentId = getDocumentId(list, entityId);
                     Map<String, Object> props = new HashMap<String, Object>();
                     props.put(SearchService.PROPERTY.categories.toString(), listCategory.toString());
                     props.put(SearchService.PROPERTY.displayTitle.toString(), titleTemplate.eval(map));
@@ -345,7 +406,7 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
 
-    private void indexEntireList(@NotNull SearchService.IndexTask task, final ListDefinition list, Domain domain)
+    private void indexEntireList(@NotNull SearchService.IndexTask task, final ListDefinition list)
     {
         if (!list.getEntireListIndex())
         {
@@ -384,7 +445,7 @@ public class ListManager implements SearchService.DocumentProvider
         if (setting.indexMetaData())
         {
             String comma = "";
-            for (DomainProperty property : domain.getProperties())
+            for (DomainProperty property : list.getDomain().getProperties())
             {
                 String n = StringUtils.trimToEmpty(property.getName());
                 String l = StringUtils.trimToEmpty(property.getLabel());
@@ -398,9 +459,9 @@ public class ListManager implements SearchService.DocumentProvider
 
         if (setting.indexItemData())
         {
-            StringBuilder data = new StringBuilder();
-            FieldKeyStringExpression template = createBodyTemplate(list, list.getEntireListBodySetting(), list.getEntireListBodyTemplate());
             TableInfo ti = list.getTable(User.getSearchUser());
+            FieldKeyStringExpression template = createBodyTemplate(list, list.getEntireListBodySetting(), list.getEntireListBodyTemplate(), ti);
+            StringBuilder data = new StringBuilder();
 
             try
             {
@@ -453,7 +514,7 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
 
-    private void deleteIndexedList(ListDefinition list)
+    public void deleteIndexedList(ListDefinition list)
     {
         deleteIndexedEntireListDoc(list);
         deleteIndexedItems(list);
@@ -474,12 +535,12 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
 
-    private FieldKeyStringExpression createEachItemTitleTemplate(ListDefinition list)
+    private FieldKeyStringExpression createEachItemTitleTemplate(ListDefinition list, TableInfo listTable)
     {
         String template;
 
         if (list.getEachItemTitleSetting() == ListDefinition.TitleSetting.Standard || StringUtils.isBlank(list.getEachItemTitleTemplate()))
-            template = "List " + list.getName() + " - ${" + list.getKeyName() + "}";
+            template = "List " + list.getName() + " - ${" + listTable.getTitleColumn() + "}";
         else
             template = list.getEachItemTitleTemplate();
 
@@ -488,7 +549,7 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
 
-    private FieldKeyStringExpression createBodyTemplate(ListDefinition list, ListDefinition.BodySetting setting, @Nullable String customTemplate)
+    private FieldKeyStringExpression createBodyTemplate(ListDefinition list, ListDefinition.BodySetting setting, @Nullable String customTemplate, TableInfo listTable)
     {
         String template;
 
@@ -499,10 +560,9 @@ public class ListManager implements SearchService.DocumentProvider
         else
         {
             StringBuilder sb = new StringBuilder();
-            TableInfo ti = list.getTable(User.getSearchUser());
             String sep = "";
 
-            for (ColumnInfo column : ti.getColumns())
+            for (ColumnInfo column : listTable.getColumns())
             {
                 if (setting.accept(column))
                 {

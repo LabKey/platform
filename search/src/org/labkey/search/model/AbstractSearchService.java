@@ -274,6 +274,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
     
+    // Consider: remove _op/OPERATION (not used), subclasses for resource vs. runnable (would clarify invariants and make
+    // hashCode() & equals() more straightfoward), formalize _id (using Runnable.toString() seems weak).
     class Item
     {
         OPERATION _op;
@@ -332,6 +334,38 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 if (null != r)
                     r.setLastIndexed(SavePaths.failDate.getTime(), _modified);
             }
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Item item = (Item) o;
+
+            if (_id != null ? !_id.equals(item._id) : item._id != null) return false;
+            if (_op != item._op) return false;
+            if (_res != null ? !_res.equals(item._res) : item._res != null) return false;
+            if (_run != null ? !_run.equals(item._run) : item._run != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result = _op != null ? _op.hashCode() : 0;
+            result = 31 * result + (_id != null ? _id.hashCode() : 0);
+            result = 31 * result + (_res != null ? _res.hashCode() : 0);
+            result = 31 * result + (_run != null ? _run.hashCode() : 0);
+            return result;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Item{" + (null != _res ? _res.toString() : _run.toString()) + '}';
         }
     }
 
@@ -439,23 +473,19 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
     
-    private void queueItem(final Item i)
+    private void queueItem(Item i)
     {
         // UNDONE: this is not 100% correct, consider passing in a scope with Item
         DbScope s = DbScope.getLabkeyScope();
+
         if (s.isTransactionActive())
         {
-            s.addCommitTask(new Runnable()
-            {
-                public void run()
-                {
-                    queueItem(i);
-                }
-            });
+            s.addCommitTask(new ItemRunnable(i));
             return;
         }
 
         _log.debug("_submitQueue.put(" + i._id + ")");
+
         if (null != i._run)
         {
             _runQueue.put(i);
@@ -463,6 +493,50 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         else
         {
             _itemQueue.put(i);
+        }
+    }
+
+
+    // ItemRunnable is used to delegate equals() and hashCode() to Item; this enables coalescing of redundant
+    // indexing tasks during transactions.
+    private class ItemRunnable implements Runnable
+    {
+        private final @NotNull Item _item;
+
+        public ItemRunnable(@NotNull Item item)
+        {
+            _item = item;
+        }
+
+        @Override
+        public void run()
+        {
+            queueItem(_item);
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ItemRunnable that = (ItemRunnable) o;
+
+            if (!_item.equals(that._item)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return _item.hashCode();
+        }
+
+        @Override
+        public String toString()
+        {
+            return "ItemRunnable of " + _item.toString();
         }
     }
 

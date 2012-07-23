@@ -518,9 +518,11 @@ public class ListDefinitionImpl implements ListDefinition
             }
             OntologyManager.deleteOntologyObjects(getContainer(), ids.toArray(new String[ids.size()]));
 
+            // Unindex all item docs and the entire list doc
+            ListManager.get().deleteIndexedList(this);
+
             //then delete the list itself
             Table.delete(ListManager.get().getTinfoList(), getListId());
-            ServiceRegistry.get(SearchService.class).deleteResource("list:" + _def.getEntityId());
             Domain domain = getDomain();
             domain.delete(user);
 
