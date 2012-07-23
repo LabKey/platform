@@ -1,27 +1,59 @@
-/*
- * Copyright (c) 2012 LabKey Corporation
- *
+/**
+ * @fileOverview
+ * @author <a href="https://www.labkey.org">LabKey Software</a> (<a href="mailto:info@labkey.com">info@labkey.com</a>)
+ * @license Copyright (c) 2012 LabKey Corporation
+ * <p/>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p/>
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * <p/>
  */
 
 /**
- * Construct a new LABKEY.FieldKey.
+ * The FieldKey constructor is private - use fromString() or fromParts() instead.
+ *
+ * @class FieldKey identifies a column from a table or query.
+ * Use {@link LABKEY.FieldKey.fromString()} or {@link LABKEY.FieldKey.fromParts()} to create new FieldKeys.
+ * <p>
+ * Example: Create a new FieldKey for column "C" from foreign key column "A,B".
+ <pre name="code">
+ var fieldKey = LABKEY.FieldKey.fromParts(["A,B", "C"]);
+
+ fieldKey.name;
+ // => "C"
+ fieldKey.parent;
+ // => LABKEY.FieldKey for "A,B"
+ fieldKey.toDisplayString();
+ // => "A,B/C"
+ fieldKey.toString();
+ // => "A$CB/C"
+ fieldKey.equals(LABKEY.FieldKey.fromString(fieldKey.toString()));
+ // => true
+ </pre>
+ *
+ * @constructor
  * @param {LABKEY.FieldKey} parent The parent FieldKey or null.
  * @param {string} name The FieldKey's unencoded name.
  */
 LABKEY.FieldKey = function (parent, name)
 {
+    /**
+     * The parent FieldKey or null.
+     * @type LABKEY.FieldKey
+     */
     this.parent = parent;
+    /**
+     * The FieldKey name.
+     * @type string
+     */
     this.name = name;
 };
 
@@ -102,6 +134,7 @@ LABKEY.FieldKey.prototype.toSQLString = function()
 /**
  * Use FieldKey encoding to encode a single part.
  * This matches org.labkey.api.query.FieldKey.encodePart() in the Java API.
+ * @private
  * @static
  * @returns {string}
  */
@@ -113,6 +146,7 @@ LABKEY.FieldKey.encodePart = function(s)
 /**
  * Use FieldKey encoding to decode a single part.
  * This matches org.labkey.api.query.FieldKey.decodePart() in the Java API.
+ * @private
  * @static
  * @returns {string}
  */
@@ -149,8 +183,10 @@ LABKEY.FieldKey.quote = function(s)
 };
 
 /**
+ * Create new FieldKey from a FieldKey encoded string with parts separated by '/' characters.
+ *
  * @static
- * @param {string} str FieldKey string with encoded parts separated by '/' characters.
+ * @param {string} str FieldKey string with FieldKey encoded parts separated by '/' characters.
  * @returns {LABKEY.FieldKey}
  */
 LABKEY.FieldKey.fromString = function(str)
@@ -166,16 +202,18 @@ LABKEY.FieldKey.fromString = function(str)
 };
 
 /**
+ * Create new FieldKey from an Array of unencoded FieldKey string parts.
+ *
  * @static
- * @param {Array} rgStr Array of unencoded string parts.
+ * @param {Array} parts Array of unencoded FieldKey string parts.
  * @returns {LABKEY.FieldKey}
  */
-LABKEY.FieldKey.fromParts = function(rgStr)
+LABKEY.FieldKey.fromParts = function(parts)
 {
     var ret = null;
-    for (var i = 0; i < rgStr.length; i ++)
+    for (var i = 0; i < parts.length; i ++)
     {
-        ret = new LABKEY.FieldKey(ret, rgStr[i]);
+        ret = new LABKEY.FieldKey(ret, parts[i]);
     }
     return ret;
 };
