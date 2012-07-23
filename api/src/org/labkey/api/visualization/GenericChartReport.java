@@ -171,18 +171,25 @@ public abstract class GenericChartReport extends AbstractReport
 
             if (!quickChartDisabled)
             {
-                Class cls = col.getJavaClass();
-                RenderType type = RenderType.AUTO_PLOT;
+                if (col.getFk() == null)
+                {
+                    Class cls = col.getJavaClass();
 
-                VisualizationUrls urlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
-                ActionURL plotURL = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), settings, type).addParameter("autoColumnYName", col.getName());
+                    if (Integer.class.equals(cls) || Double.class.equals(cls))
+                    {
+                        RenderType type = RenderType.AUTO_PLOT;
 
-                NavTree navItem = new NavTree("Quick Chart");
+                        VisualizationUrls urlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
+                        ActionURL plotURL = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), settings, type).addParameter("autoColumnYName", col.getName());
 
-                navItem.setImageSrc(type.getIconPath());
-                navItem.setHref(plotURL.getLocalURIString());
+                        NavTree navItem = new NavTree("Quick Chart");
 
-                return navItem;
+                        navItem.setImageSrc(type.getIconPath());
+                        navItem.setHref(plotURL.getLocalURIString());
+
+                        return navItem;
+                    }
+                }
             }
         }
         return null;
