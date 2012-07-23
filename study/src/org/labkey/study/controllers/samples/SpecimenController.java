@@ -2656,7 +2656,7 @@ public class SpecimenController extends BaseStudyController
                 {
                     errors.reject(ERROR_MSG, "The request could not be submitted because a requestability rule is configured incorrectly. " +
                                 "Please report this problem to an administrator.  Error details: "  + e.getMessage());
-
+                    return false;
                 }
                 return true;
             }
