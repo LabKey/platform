@@ -63,6 +63,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.message.settings.MessageConfigService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.security.ActionNames;
@@ -2036,7 +2037,7 @@ public class AnnouncementsController extends SpringActionController
             private ListBean(Container c, ActionURL url, User user, DiscussionService.Settings settings, Permissions perm, boolean displayAll)
             {
                 SimpleFilter urlFilter = new SimpleFilter(url, "Threads");
-                boolean isFiltered = !urlFilter.getWhereParamNames().isEmpty();
+                boolean isFiltered = !urlFilter.isEmpty();
 
                 init(c, url, user, settings, perm, displayAll, isFiltered, 0);
 
@@ -2045,9 +2046,9 @@ public class AnnouncementsController extends SpringActionController
                     new SimpleFilter.ColumnNameFormatter()
                     {
                         @Override
-                        public String format(String columnName)
+                        public String format(FieldKey fieldKey)
                         {
-                            return super.format(columnName).replaceFirst(".DisplayName", "");
+                            return super.format(fieldKey).replaceFirst(".DisplayName", "");
                         }
                     }) : null;
             }

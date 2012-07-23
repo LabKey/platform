@@ -31,6 +31,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AbstractBeanQueryUpdateService;
 import org.labkey.api.query.DuplicateKeyException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.LookupForeignKey;
@@ -77,7 +78,7 @@ public class AnnouncementTable extends FilteredTable
             public TableInfo getLookupTableInfo()
             {
                 AnnouncementTable result = new AnnouncementTable(_schema);
-                result.addCondition(new SimpleFilter(new CompareType.CompareClause("Parent", CompareType.ISBLANK, null)));
+                result.addCondition(new SimpleFilter(FieldKey.fromParts("Parent"), null, CompareType.ISBLANK));
                 result.setPublic(false);
                 return result;
             }

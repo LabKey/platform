@@ -216,7 +216,7 @@ public abstract class QueryRelation
         @Override
         public String toString()
         {
-            return (null == getFieldKey() ? "" : (getFieldKey().getDisplayString() + " ")) + super.toString();
+            return (null == getFieldKey() ? "" : (getFieldKey().toDisplayString() + " ")) + super.toString();
         }
     }
 

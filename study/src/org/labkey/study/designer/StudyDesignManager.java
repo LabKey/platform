@@ -22,6 +22,7 @@ import org.apache.xmlbeans.XmlException;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.study.TimepointType;
@@ -87,7 +88,7 @@ public class StudyDesignManager
     public StudyDesignInfo getStudyDesign(Container c, int studyId) throws SQLException
     {
         SimpleFilter filter = new SimpleFilter();
-        filter.addWhereClause("(Container = ? OR SourceContainer = ?) AND StudyId= ?", new Object[] {c.getId(), c.getId(), studyId} , "Container", "SourceContainer", "StudyId");
+        filter.addWhereClause("(Container = ? OR SourceContainer = ?) AND StudyId= ?", new Object[] {c.getId(), c.getId(), studyId} , FieldKey.fromParts("Container"), FieldKey.fromParts("SourceContainer"), FieldKey.fromParts("StudyId"));
 
         return Table.selectObject(getStudyDesignTable(), filter, null, StudyDesignInfo.class);
     }
@@ -95,7 +96,7 @@ public class StudyDesignManager
     public StudyDesignInfo[] getStudyDesigns(Container c) throws SQLException
     {
         SimpleFilter filter = new SimpleFilter();
-        filter.addWhereClause("(Container = ? OR SourceContainer = ?)", new Object[] {c.getId(), c.getId()} , "Container", "SourceContainer");
+        filter.addWhereClause("(Container = ? OR SourceContainer = ?)", new Object[] {c.getId(), c.getId()} , FieldKey.fromParts("Container"), FieldKey.fromParts("SourceContainer"));
 
         return Table.select(getStudyDesignTable(), Table.ALL_COLUMNS, filter, null, StudyDesignInfo.class);
     }
@@ -104,7 +105,7 @@ public class StudyDesignManager
     {
         SimpleFilter filter = new SimpleFilter();
         ContainerFilter cf = new ContainerFilter.CurrentAndSubfolders(u);
-        filter.addClause(cf.createFilterClause(getSchema(), "Container", root));
+        filter.addClause(cf.createFilterClause(getSchema(), FieldKey.fromParts("Container"), root));
 
         return Table.select(getStudyDesignTable(), Table.ALL_COLUMNS, filter, null, StudyDesignInfo.class);
     }
@@ -221,7 +222,7 @@ public class StudyDesignManager
     {
         SimpleFilter filter = new SimpleFilter("Container", c.getId());
         filter.addCondition("studyId", studyId);
-        filter.addWhereClause("revision = (SELECT MAX(revision) FROM " + getStudyVersionTable().toString() + " WHERE studyid=?)", new Object[] {studyId}, "revision","studyid");
+        filter.addWhereClause("revision = (SELECT MAX(revision) FROM " + getStudyVersionTable().toString() + " WHERE studyid=?)", new Object[] {studyId}, FieldKey.fromParts("revision"), FieldKey.fromParts("studyid"));
 
         StudyDesignVersion[] version = Table.select(getStudyVersionTable(), Table.ALL_COLUMNS, filter, null, StudyDesignVersion.class);
         assert(null == version || version.length == 0 || version.length == 1);

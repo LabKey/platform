@@ -928,7 +928,7 @@ public class QueryServiceImpl extends QueryService
     }
 
 
-    public Collection<ColumnInfo> ensureRequiredColumns(TableInfo table, @NotNull Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, @Nullable Set<String> unresolvedColumns)
+    public Collection<ColumnInfo> ensureRequiredColumns(TableInfo table, @NotNull Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, @Nullable Set<FieldKey> unresolvedColumns)
     {
         AliasManager manager = new AliasManager(table, columns);
         Set<FieldKey> selectedColumns = new HashSet<FieldKey>();
@@ -936,28 +936,26 @@ public class QueryServiceImpl extends QueryService
 
         for (ColumnInfo column : columns)
         {
-            FieldKey key = FieldKey.fromString(column.getName());
+            FieldKey key = column.getFieldKey();
             selectedColumns.add(key);
             columnMap.put(key, column);
         }
 
-        Set<String> names = new HashSet<String>();
+        Set<FieldKey> fieldKeys = new HashSet<FieldKey>();
 
         if (filter != null)
-            names.addAll(filter.getWhereParamNames());
+            fieldKeys.addAll(filter.getWhereParamFieldKeys());
 
         if (sort != null)
             for (Sort.SortField field : sort.getSortList())
-                names.add(field.getColumnName());
+                fieldKeys.add(field.getFieldKey());
 
         ArrayList<ColumnInfo> ret = null;
 
-        for (String name : names)
+        for (FieldKey field : fieldKeys)
         {
-            if (StringUtils.isEmpty(name))
+            if (field == null)
                 continue;
-
-            FieldKey field = FieldKey.fromString(name);
 
             if (selectedColumns.contains(field))
                 continue;
@@ -977,22 +975,22 @@ public class QueryServiceImpl extends QueryService
             else
             {
                 if (unresolvedColumns != null)
-                    unresolvedColumns.add(name);
+                    unresolvedColumns.add(field);
             }
         }
 
         if (unresolvedColumns != null)
         {
-            for (String columnName : unresolvedColumns)
+            for (FieldKey field : unresolvedColumns)
             {
                 if (filter instanceof SimpleFilter)
                 {
                     SimpleFilter simpleFilter = (SimpleFilter) filter;
-                    simpleFilter.deleteConditions(columnName);
+                    simpleFilter.deleteConditions(field);
                 }
 
                 if (sort != null)
-                    sort.deleteSortColumn(columnName);
+                    sort.deleteSortColumn(field);
             }
         }
         assert null == ret || ret.size() > 0;
@@ -1286,7 +1284,7 @@ public class QueryServiceImpl extends QueryService
         // Check columns again: ensureRequiredColumns() may have added new columns
         assert Table.checkAllColumns(table, allColumns, "getSelectSQL() results of ensureRequiredColumns()");
 
-        Map<String, ColumnInfo> columnMap = Table.createColumnMap(table, allColumns);
+        Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(table, allColumns);
         boolean requiresExtraColumns = allColumns.size() > selectColumns.size();
         SQLFragment outerSelect = new SQLFragment("SELECT *");
         SQLFragment selectFrag = new SQLFragment("SELECT");
@@ -1410,7 +1408,7 @@ public class QueryServiceImpl extends QueryService
 			ColumnInfo sortField = column.getSortField();
 			if (sortField != null)
 			{
-				sort.getSortList().add(sort.new SortField(sortField.getName(), column.getSortDirection()));
+				sort.getSortList().add(sort.new SortField(sortField.getFieldKey(), column.getSortDirection()));
 				return;
 			}
 		}

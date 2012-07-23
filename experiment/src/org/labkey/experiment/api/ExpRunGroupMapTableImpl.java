@@ -68,13 +68,14 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
     @Override
     protected void applyContainerFilter(ContainerFilter filter)
     {
-        clearConditions("FolderFilter");
+        FieldKey folderFieldKey = FieldKey.fromParts("FolderFilter");
+        clearConditions(folderFieldKey);
 
         SQLFragment sql = new SQLFragment();
         sql.append("(SELECT er.Container FROM ");
         sql.append(ExperimentServiceImpl.get().getTinfoExperimentRun(), "er");
         sql.append(" WHERE er.RowId = ExperimentRunId)");
 
-        addCondition(filter.getSQLFragment(getSchema(), sql, getContainer()), "FolderFilter");
+        addCondition(filter.getSQLFragment(getSchema(), sql, getContainer()), folderFieldKey);
     }
 }

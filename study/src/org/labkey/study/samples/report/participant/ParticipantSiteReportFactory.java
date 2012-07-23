@@ -17,6 +17,7 @@ package org.labkey.study.samples.report.participant;
 
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.Pair;
 import org.labkey.api.study.StudyService;
 import org.labkey.study.SampleManager;
@@ -76,12 +77,12 @@ public class ParticipantSiteReportFactory extends SpecimenVisitReportParameters
             if (site != null)
             {
                 filter.addWhereClause("" + StudyService.get().getSubjectColumnName(getContainer()) + " IN (SELECT ParticipantId FROM study.Participant " +
-                        "WHERE EnrollmentSiteId = ? AND Container = ?)", new Object[] { site.getRowId(), getContainer().getId() }, StudyService.get().getSubjectColumnName(getContainer()));
+                        "WHERE EnrollmentSiteId = ? AND Container = ?)", new Object[] { site.getRowId(), getContainer().getId() }, FieldKey.fromParts(StudyService.get().getSubjectColumnName(getContainer())));
             }
             else
             {
                 filter.addWhereClause(StudyService.get().getSubjectColumnName(getContainer()) + " IN (SELECT ParticipantId FROM study.Participant " +
-                        "WHERE EnrollmentSiteId IS NULL AND Container = ?)", new Object[] { getContainer().getId() }, StudyService.get().getSubjectColumnName(getContainer()));
+                        "WHERE EnrollmentSiteId IS NULL AND Container = ?)", new Object[] { getContainer().getId() }, FieldKey.fromParts(StudyService.get().getSubjectColumnName(getContainer())));
             }
             reports.add(new ParticipantSiteReport(label, visits, filter, this));
         }

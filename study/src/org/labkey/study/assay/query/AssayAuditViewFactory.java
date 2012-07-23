@@ -103,8 +103,8 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
     {
         SimpleFilter filter = new SimpleFilter();
         if (protocolId != -1)
-            filter.addCondition("IntKey1", protocolId);
-        filter.addCondition(containerFilter.createFilterClause(ExperimentService.get().getSchema(), "ContainerId", context.getContainer()));
+            filter.addCondition(FieldKey.fromParts("IntKey1"), protocolId);
+        filter.addCondition(containerFilter.createFilterClause(ExperimentService.get().getSchema(), FieldKey.fromParts("ContainerId"), context.getContainer()));
 
         AuditLogQueryView view = AuditLogService.get().createQueryView(context, filter, AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT);
         view.setSort(new Sort("-Date"));

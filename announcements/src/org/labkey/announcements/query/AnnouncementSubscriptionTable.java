@@ -30,6 +30,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.DuplicateKeyException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryUpdateService;
@@ -62,7 +63,7 @@ public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
             public TableInfo getLookupTableInfo()
             {
                 AnnouncementTable result = _schema.createAnnouncementTable();
-                result.addCondition(new SimpleFilter(new CompareType.CompareClause("Parent", CompareType.ISBLANK, null)));
+                result.addCondition(new SimpleFilter(FieldKey.fromParts("Parent"), null, CompareType.ISBLANK));
                 return result;
             }
         });
@@ -82,7 +83,7 @@ public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
         sql.append(filter.getSQLFragment(getSchema(), "a.Container", getContainer()));
         sql.append(")");
 
-        addCondition(sql, "Container");
+        addCondition(sql, FieldKey.fromParts("Container"));
     }
 
     @Override

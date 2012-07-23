@@ -15,6 +15,7 @@
  */
 package org.labkey.study.samples.report.request;
 
+import org.labkey.api.query.FieldKey;
 import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.study.model.SiteImpl;
 import org.labkey.study.model.VisitImpl;
@@ -118,7 +119,7 @@ public class RequestEnrollmentSiteReportFactory extends BaseRequestReportFactory
                     paramList.add(site.getRowId());
                 }
 
-                filter.addWhereClause(sql, paramList.toArray(new Object[paramList.size()]), "GlobalUniqueId");
+                filter.addWhereClause(sql, paramList.toArray(new Object[paramList.size()]), FieldKey.fromParts("GlobalUniqueId"));
                 addBaseFilters(filter);
                 reports.add(new RequestEnrollmentSiteReport(site == null ? "[Unassigned enrollment site]" : site.getLabel(),
                         filter, this, visits, site != null ? site.getRowId() : -1, isCompletedRequestsOnly()));

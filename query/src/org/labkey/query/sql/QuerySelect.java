@@ -15,7 +15,6 @@
  */
 package org.labkey.query.sql;
 
-import org.antlr.runtime.tree.CommonTree;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -720,7 +719,7 @@ groupByLoop:
             RelationColumn relColumn = table.getColumn(key.getName());
             if (relColumn == null)
             {
-                parseError("Unknown field " + key.getDisplayString(), location);
+                parseError("Unknown field " + key.toDisplayString(), location);
                 return null;
             }
             _declaredFields.put(key, relColumn);
@@ -735,7 +734,7 @@ groupByLoop:
                 nextColumn = table.getLookupColumn(colParent, key.getName());
                 if (nextColumn == null)
                 {
-                    parseError("Unknown field " + key.getDisplayString(), location);
+                    parseError("Unknown field " + key.toDisplayString(), location);
                     return null;
                 }
 

@@ -29,6 +29,7 @@
 <%@ page import="org.labkey.experiment.api.MaterialSource" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page import="org.labkey.api.study.SamplesUrls" %>
+<%@ page import="org.labkey.api.query.FieldKey" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView me = (JspView) HttpView.currentView();
@@ -42,7 +43,7 @@
     {
         SimpleFilter filter = new SimpleFilter();
         Object[] params = { proj.getId(), ContainerManager.getSharedContainer().getProject().getId(), ContainerManager.getSharedContainer().getId() };
-        filter.addWhereClause("(Project = ? OR Project = ? OR Container = ?)", params, "Project");
+        filter.addWhereClause("(Project = ? OR Project = ? OR Container = ?)", params, FieldKey.fromParts("Project"));
 
         ExpSampleSet[] sampleSets = ExpSampleSetImpl.fromMaterialSources(Table.select(ExperimentServiceImpl.get().getTinfoMaterialSourceWithProject(), Table.ALL_COLUMNS, filter, null, MaterialSource.class));
 

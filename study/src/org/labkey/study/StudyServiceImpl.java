@@ -556,7 +556,7 @@ public class StudyServiceImpl implements StudyService.Service
                 Map<FieldKey, ColumnInfo> qcStateColumnMap = QueryService.get().getColumns(view.getDataRegion().getTable(), Collections.singleton(qcStateKey));
                 ColumnInfo qcStateColumn = qcStateColumnMap.get(qcStateKey);
                 if (qcStateColumn != null)
-                    filter.addClause(new SimpleFilter.SQLClause(stateSet.getStateInClause(qcStateColumn.getAlias()), null, qcStateColumn.getName()));
+                    filter.addClause(new SimpleFilter.SQLClause(stateSet.getStateInClause(qcStateColumn.getAlias()), null, qcStateColumn.getFieldKey()));
             }
         }
     }

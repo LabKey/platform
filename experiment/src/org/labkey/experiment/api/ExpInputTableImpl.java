@@ -21,6 +21,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.ReadPermission;
 
@@ -72,7 +73,7 @@ public abstract class ExpInputTableImpl<C extends Enum> extends ExpTableImpl<C> 
         {
             // We're not filtering to a single run, so we need to filter based on all of the containers that the user
             // has permission to see, subject to the container filter
-            addCondition(getContainerFilter().getSQLFragment(getSchema(), sqlFragment, getContainer(), true, false), "FolderRunType");
+            addCondition(getContainerFilter().getSQLFragment(getSchema(), sqlFragment, getContainer(), true, false), FieldKey.fromParts("FolderRunType"));
         }
         else
         {
@@ -89,7 +90,7 @@ public abstract class ExpInputTableImpl<C extends Enum> extends ExpTableImpl<C> 
                 // to play it safe.
                 sqlFragment.append(" = NULL ");
             }
-            addCondition(sqlFragment, "FolderRunType");
+            addCondition(sqlFragment, FieldKey.fromParts("FolderRunType"));
         }
     }
 

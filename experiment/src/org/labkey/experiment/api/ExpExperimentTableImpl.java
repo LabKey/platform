@@ -43,7 +43,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
     public ExpExperimentTableImpl(String name, UserSchema schema)
     {
         super(name, ExperimentServiceImpl.get().getTinfoExperiment(), schema, new ExpExperimentImpl(new Experiment()));
-        addCondition(new SQLFragment("Hidden = ?", Boolean.FALSE), "Hidden");
+        addCondition(new SQLFragment("Hidden = ?", Boolean.FALSE), FieldKey.fromParts("Hidden"));
     }
 
     public ColumnInfo createColumn(String alias, Column column)
@@ -129,11 +129,11 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         SimpleFilter filter = new SimpleFilter();
         if (protocol != null)
         {
-            filter.addClause(new CompareType.CompareClause(Column.BatchProtocolId.name(), CompareType.EQUAL, protocol.getRowId()));
+            filter.addCondition(FieldKey.fromParts(Column.BatchProtocolId.name()), protocol.getRowId());
         }
         else
         {
-            filter.addClause(new CompareType.CompareClause(Column.BatchProtocolId.name(), CompareType.ISBLANK, null));
+            filter.addCondition(FieldKey.fromParts(Column.BatchProtocolId.name()), null, CompareType.ISBLANK);
         }
         addCondition(filter);
     }

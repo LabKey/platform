@@ -226,7 +226,7 @@ public class QWhere extends QNode
         if (op != CompareType.ISBLANK && op != CompareType.NONBLANK &&
             (literal == null || literal.length() == 0))
         {
-            errors.add(new QueryParseException("filter value for field '" + fieldKey.getDisplayString() + "' cannot be be empty.", null, 0, 0));
+            errors.add(new QueryParseException("filter value for field '" + fieldKey.toDisplayString() + "' cannot be be empty.", null, 0, 0));
             return null;
         }
 

@@ -25,6 +25,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpQCFlagTable;
 import org.labkey.api.query.DefaultQueryUpdateService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdForeignKey;
@@ -129,20 +130,21 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
         protocolSQL.append(ExperimentService.get().getTinfoExperimentRun(), "er");
         protocolSQL.append(" WHERE ProtocolLSID = ?)");
         protocolSQL.add(_assayProtocol.getLSID());
-        addCondition(protocolSQL, "ProtocolLSID");
+        addCondition(protocolSQL, FieldKey.fromParts("ProtocolLSID"));
     }
 
     @Override
     protected void applyContainerFilter(ContainerFilter filter)
     {
-        clearConditions("Container");
+        FieldKey containerFieldKey = FieldKey.fromParts("Container");
+        clearConditions(containerFieldKey);
         SQLFragment sql = new SQLFragment("RunId IN (SELECT er.RowId FROM ");
         sql.append(ExperimentService.get().getTinfoExperimentRun(), "er");
         sql.append(" WHERE ");
         sql.append(filter.getSQLFragment(getSchema(), "er.Container", getContainer()));
         sql.append(")");
 
-        addCondition(sql, "Container");
+        addCondition(sql, containerFieldKey);
     }
 
     @Override

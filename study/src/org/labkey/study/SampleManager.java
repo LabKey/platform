@@ -147,7 +147,7 @@ public class SampleManager
     public Specimen[] getSpecimens(Container container, String participantId, Double visit) throws SQLException
     {
         SimpleFilter filter = new SimpleFilter();
-        filter.addClause(new SimpleFilter.SQLClause("LOWER(ptid) = LOWER(?)", new Object[] {participantId}, "ptid"));
+        filter.addClause(new SimpleFilter.SQLClause("LOWER(ptid) = LOWER(?)", new Object[] {participantId}, FieldKey.fromParts("ptid")));
         filter.addCondition("VisitValue", visit);
         filter.addCondition("Container", container.getId());
         return _specimenDetailHelper.get(container, filter);
@@ -190,7 +190,7 @@ public class SampleManager
     public Specimen[] getSpecimens(Container container, String participantId, Date date) throws SQLException
     {
         SimpleFilter filter = new SimpleFilter();
-        filter.addClause(new SimpleFilter.SQLClause("LOWER(ptid) = LOWER(?)", new Object[] {participantId}, "ptid"));
+        filter.addClause(new SimpleFilter.SQLClause("LOWER(ptid) = LOWER(?)", new Object[] {participantId}, FieldKey.fromParts("ptid")));
         Calendar endCal = DateUtil.newCalendar(date.getTime());
         endCal.add(Calendar.DATE, 1);
         filter.addClause(new SimpleFilter.SQLClause("DrawTimestamp >= ? AND DrawTimestamp < ?", new Object[] {date, endCal.getTime()}));
@@ -1857,7 +1857,7 @@ public class SampleManager
             Map<FieldKey, ColumnInfo> colMap = QueryService.get().getColumns(tinfo, Collections.singleton(visitKey));
             Collection<ColumnInfo> cols = new ArrayList<ColumnInfo>();
             cols.add(colMap.get(visitKey));
-            Set<String> unresolvedColumns = new HashSet<String>();
+            Set<FieldKey> unresolvedColumns = new HashSet<FieldKey>();
             cols = QueryService.get().ensureRequiredColumns(tinfo, cols, null, null, unresolvedColumns);
             if (!unresolvedColumns.isEmpty())
                 throw new IllegalStateException("Unable to resolve column(s): " + unresolvedColumns.toString());
@@ -2138,7 +2138,7 @@ public class SampleManager
         // turn our fieldkeys into columns:
         Collection<ColumnInfo> cols = new ArrayList<ColumnInfo>();
         Map<FieldKey, ColumnInfo> colMap = QueryService.get().getColumns(tinfo, columns);
-        Set<String> unresolvedColumns = new HashSet<String>();
+        Set<FieldKey> unresolvedColumns = new HashSet<FieldKey>();
         cols.addAll(colMap.values());
         cols = QueryService.get().ensureRequiredColumns(tinfo, cols, specimenDetailFilter, null, unresolvedColumns);
         if (!unresolvedColumns.isEmpty())

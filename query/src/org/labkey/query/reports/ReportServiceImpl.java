@@ -33,6 +33,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.CustomView;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.reports.Report;
@@ -470,7 +471,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         ret.append(") = ");
         ret.append(flagValue);
         ret.append(")");
-        filter.addWhereClause(ret.getSQL(), ret.getParams().toArray(), "Flag");
+        filter.addWhereClause(ret.getSQL(), ret.getParams().toArray(), FieldKey.fromParts("Flag"));
 
         return _getReports(user, filter);
     }

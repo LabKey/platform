@@ -6,113 +6,6 @@
 var nsQuery = "http://query.labkey.org/design";
 var nsData = "http://labkey.org/data/xml";
 
-function FieldKey(parent, name)
-{
-    this.parent = parent;
-    this.name = name;
-}
-
-FieldKey.prototype.equals = function(other)
-{
-    return other != null && this.toString() == other.toString();
-}
-FieldKey.prototype.getParts = function()
-{
-    var ret = [];
-    if (this.parent)
-    {
-        ret = this.parent.getParts();
-    }
-    ret.push(this.name);
-    return ret;
-}
-
-FieldKey.prototype.toString = function()
-{
-    var parts = this.getParts();
-    for (var i = 0; i < parts.length; i ++)
-    {
-        parts[i] = FieldKey.encodePart(parts[i]);
-    }
-    return parts.join('/');
-}
-
-FieldKey.prototype.toDisplayString = function()
-{
-    return this.getParts().join('.');
-}
-
-FieldKey.prototype.toSQLString = function()
-{
-    var parts = this.getParts();
-    for (var i = 0; i < parts.length; i ++)
-    {
-        if (FieldKey.needsQuotes(parts[i]))
-        {
-            parts[i] = FieldKey.quote(parts[i]);
-        }
-    }
-    return parts.join('.');
-}
-
-FieldKey.encodePart = function(s)
-{
-    return s.replace(/\$/g, "$D").replace(/\//g, "$S").replace(/\&/g, "$A").replace(/\}/g, "$B").replace(/\~/g, "$T").replace(/\,/g, "$C");
-}
-
-FieldKey.decodePart = function(s)
-{
-    return s.replace(/\$C/g, ',').replace(/\$T/g, '~').replace(/\$B/g, '}').replace(/\$A/g, '&').replace(/\$S/g, '/').replace(/\$D/g, '$');
-}
-
-FieldKey.needsQuotes = function(s)
-{
-    if (!s.match(/^[a-zA-Z][_\$a-zA-Z0-9]*$/))
-        return true;
-    if (s.match(/^(all|any|and|as|asc|avg|between|class|count|delete|desc|distinct|elements|escape|exists|false|fetch|from|full|group|having|in|indices|inner|insert|into|is|join|left|like|limit|max|min|new|not|null|or|order|outer|right|select|set|some|sum|true|union|update|user|versioned|where|case|end|else|then|when|on|both|empty|leading|member|of|trailing)$/i))
-        return true;
-    return false;
-}
-
-FieldKey.quote = function(s)
-{
-    return '"' + s.replace(/\"/g, '""') + '"';
-}
-
-FieldKey.fromString = function(str)
-{
-    var rgStr = str.split('/');
-    var ret = null;
-    for (var i = 0; i < rgStr.length; i ++)
-    {
-        ret = new FieldKey(ret, FieldKey.decodePart(rgStr[i]));
-    }
-    return ret;
-
-}
-
-FieldKey.fromParts = function(rgStr)
-{
-    var ret = null;
-    for (var i = 0; i < rgStr.length; i ++)
-    {
-        ret = new FieldKey(ret, rgStr[i]);
-    }
-    return ret;
-}
-
-Ext.data.Types.FieldKey = {
-    convert: function (v, record) {
-        if (Ext.isArray(v))
-            return FieldKey.fromParts(v);
-        return FieldKey.fromString(v);
-    },
-    sortType: function (s) {
-        return s.toString();
-    },
-    type: 'FieldKey'
-};
-
 function Bind_Metadata(designer, dn, metadataTagName)
 {
     this.designer = designer;
@@ -174,7 +67,7 @@ function getColumnAlias(dn)
     var dnField = XMLUtil.getChildWithTagName(dnValue, "field", nsQuery);
     if (dnField)
     {
-        return FieldKey.fromString(XMLUtil.getInnerText(dnField)).name;
+        return LABKEY.FieldKey.fromString(XMLUtil.getInnerText(dnField)).name;
     }
     else
     {
@@ -461,7 +354,7 @@ Tab.prototype = {
             {
                 continue;
             }
-            var key = FieldKey.fromString(fields[i]);
+            var key = LABKEY.FieldKey.fromString(fields[i]);
             var node = this.createNodeForField(key, this.designer.columnPicker.fields[key.toString()]);
             if (node)
             {
@@ -701,7 +594,7 @@ function FilterTab(designer, dn)
         if (!XMLUtil.tagMatches(dn, 'compare', nsQuery))
             return null;
         var dnField = XMLUtil.getChildWithTagName(dn, 'field', nsQuery);
-        return FieldKey.fromString(XMLUtil.getInnerText(dnField));
+        return LABKEY.FieldKey.fromString(XMLUtil.getInnerText(dnField));
     }
     ret.elTab = document.getElementById('filter.tab');
     ret.elList = document.getElementById('filter.list.div');
@@ -775,7 +668,7 @@ function SortTab(designer, dn)
     {
         if (!XMLUtil.tagMatches(dn, 'field', nsQuery))
             return null;
-        return FieldKey.fromString(XMLUtil.getInnerText(dn));
+        return LABKEY.FieldKey.fromString(XMLUtil.getInnerText(dn));
     }
     ret.createNodeForSQL = function(strSQL)
     {
@@ -858,7 +751,7 @@ function ColumnsTab(designer, dn)
         var dnField = XMLUtil.getChildWithTagName(dnValue, "field", nsQuery);
         if (dnField)
         {
-            return FieldKey.fromString(XMLUtil.getInnerText(dnField));
+            return LABKEY.FieldKey.fromString(XMLUtil.getInnerText(dnField));
         }
         else
         {
@@ -989,7 +882,7 @@ function SqlTab(designer)
             }
             if (this.elEditor)
             {
-                var str = FieldKey.fromString(fields[0]).toSQLString();
+                var str = LABKEY.FieldKey.fromString(fields[0]).toSQLString();
                 if (this.elEditor.selectionStart || this.elEditor.selectionStart == '0')
                 {
                     var startPos = this.elEditor.selectionStart;
@@ -1475,7 +1368,7 @@ function ViewDesigner(tableInfoService)
         {
             bind.strDef = oField.label;
         }
-        var title = "Set Caption For '" + FieldKey.fromString(XMLUtil.getInnerText(dnField)).toDisplayString() + "' Column";
+        var title = "Set Caption For '" + LABKEY.FieldKey.fromString(XMLUtil.getInnerText(dnField)).toDisplayString() + "' Column";
 
         function onClose(buttonId, newValue)
         {
@@ -1515,7 +1408,7 @@ function ViewDesigner(tableInfoService)
     ret.getColumnTitle = function(dn)
     {
         var field = this.getFieldKeyString(dn);
-        return FieldKey.fromString(field).toDisplayString();
+        return LABKEY.FieldKey.fromString(field).toDisplayString();
     }
     ret.filterTabActivated = function()
     {
@@ -1568,7 +1461,7 @@ Bind_FieldKey.prototype =
 {
     getValue : function()
     {
-        return FieldKey.fromString(XMLUtil.getInnerText(this.dn)).toDisplayString();
+        return LABKEY.FieldKey.fromString(XMLUtil.getInnerText(this.dn)).toDisplayString();
     },
     setValue : function()
     {

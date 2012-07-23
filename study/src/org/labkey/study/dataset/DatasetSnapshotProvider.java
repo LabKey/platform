@@ -353,7 +353,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 {
                     // The key of the entry is the same code that generates the TSV header lines for
                     // TSVGridWriter.ColumnHeaderType.queryColumnName. It would be nice to use the code directly.
-                    columnMap.put(FieldKey.fromString(col.getName()).getDisplayString(), getPropertyURI(d, col));
+                    columnMap.put(FieldKey.fromString(col.getName()).toDisplayString(), getPropertyURI(d, col));
                 }
             }
         }

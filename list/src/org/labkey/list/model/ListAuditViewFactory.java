@@ -152,12 +152,12 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
         SimpleFilter filter = new SimpleFilter();
 
         SimpleFilter.OrClause or = new SimpleFilter.OrClause();
-        or.addClause(new CompareType.CompareClause("EventType", CompareType.EQUAL, ListManager.LIST_AUDIT_EVENT));
-        or.addClause(new CompareType.CompareClause("EventType", CompareType.EQUAL, DomainAuditViewFactory.DOMAIN_AUDIT_EVENT));
+        or.addClause(new CompareType.CompareClause(FieldKey.fromParts("EventType"), CompareType.EQUAL, ListManager.LIST_AUDIT_EVENT));
+        or.addClause(new CompareType.CompareClause(FieldKey.fromParts("EventType"), CompareType.EQUAL, DomainAuditViewFactory.DOMAIN_AUDIT_EVENT));
         filter.addClause(or);
 
         // try to filter on just list domains
-        filter.addCondition("Key1", ":" + ListDefinitionImpl.NAMESPACE_PREFIX + ".", CompareType.CONTAINS);
+        filter.addCondition(FieldKey.fromParts("Key1"), ":" + ListDefinitionImpl.NAMESPACE_PREFIX + ".", CompareType.CONTAINS);
 
         table.addCondition(filter);
 

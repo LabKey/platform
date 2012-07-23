@@ -99,7 +99,7 @@ public abstract class BaseStudyTable extends FilteredTable
                     }
                     condition.append(")) OR Container = ?");
                     condition.add(currentStudy.getContainer());
-                    addCondition(condition, "Container", getParticipantColumnName());
+                    addCondition(condition, FieldKey.fromParts("Container"), FieldKey.fromParts(getParticipantColumnName()));
                 }
             }
         }

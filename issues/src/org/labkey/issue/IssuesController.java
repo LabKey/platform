@@ -1741,15 +1741,14 @@ public class IssuesController extends SpringActionController
         {
             SimpleFilter filter = new SimpleFilter();
             ContainerFilter containerFilter = new ContainerFilter.CurrentAndSubfolders(user);
-            SQLFragment containerColumn = new SQLFragment();
-            containerColumn.append("IssueId_Container");
-            filter.addCondition(containerFilter.createFilterClause(IssuesSchema.getInstance().getSchema(), containerColumn.toString(), container));
+            FieldKey containerFieldKey = FieldKey.fromParts("IssueId_Container");
+            filter.addCondition(containerFilter.createFilterClause(IssuesSchema.getInstance().getSchema(), containerFieldKey, container));
 
             Sort sort = new Sort("-Created");
 
             // Selecting comments as maps so we can get the issue id -- it's not on the Comment entity.
             List<FieldKey> fields = new ArrayList<FieldKey>(IssuesSchema.getInstance().getTableInfoComments().getDefaultVisibleColumns());
-            fields.add(FieldKey.fromParts("IssueId", "Container"));
+            fields.add(containerFieldKey);
 
             Map<FieldKey, ColumnInfo> columnMap = QueryService.get().getColumns(IssuesSchema.getInstance().getTableInfoComments(), fields);
 

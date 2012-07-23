@@ -183,7 +183,7 @@ public class AuditLogTable extends FilteredTable
         if (containerColumn != null && getContainer() != null)
         {
             clearConditions(containerColumn.getName());
-            addCondition(new SimpleFilter(filter.createFilterClause(getSchema(), containerColumn.getName(), getContainer())));
+            addCondition(new SimpleFilter(filter.createFilterClause(getSchema(), containerColumn.getFieldKey(), getContainer())));
         }
     }
 

@@ -19,6 +19,7 @@ package org.labkey.study.query;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.*;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.Study;
@@ -538,7 +539,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
                 + "join study.SamplerequestStatus status ON r.StatusId=status.RowId "
                 +  "where r.DestinationSiteId=? AND v.Container=? AND status.SpecimensLocked=?)";
 
-        filter.addWhereClause(sql, new Object[] {siteId, container.getId(), Boolean.TRUE}, "SpecimenHash");
+        filter.addWhereClause(sql, new Object[] {siteId, container.getId(), Boolean.TRUE}, FieldKey.fromParts("SpecimenHash"));
 
         return filter;
     }
@@ -557,7 +558,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         else
             params = new Object[] {siteId, container.getId(), Boolean.TRUE};
 
-        filter.addWhereClause(sql, params, "GlobalUniqueId");
+        filter.addWhereClause(sql, params, FieldKey.fromParts("GlobalUniqueId"));
 
         return filter;
     }
@@ -599,7 +600,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
                 params = new Object[] { Boolean.TRUE, container.getId(), siteId };
         }
 
-        filter.addWhereClause(sql, params, "GlobalUniqueId");
+        filter.addWhereClause(sql, params, FieldKey.fromParts("GlobalUniqueId"));
 
         return filter;
     }
@@ -617,7 +618,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         else
             params = new Object[] {container.getId(), Boolean.TRUE};
 
-        filter.addWhereClause(sql, params, "GlobalUniqueId");
+        filter.addWhereClause(sql, params, FieldKey.fromParts("GlobalUniqueId"));
 
         return filter;
     }

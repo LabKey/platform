@@ -731,7 +731,7 @@ public class QueryManager
                     List<FieldKey> sortCols = new ArrayList<FieldKey>();
                     for (Sort.SortField f : fs.getSort())
                     {
-                        sortCols.add(FieldKey.fromString(f.getColumnName()));
+                        sortCols.add(f.getFieldKey());
                     }
                     validateViewColumns(user, container, v, "sort", sortCols, queryErrors, table);
 

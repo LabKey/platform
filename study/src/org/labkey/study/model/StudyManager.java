@@ -1663,7 +1663,7 @@ public class StudyManager
         }
         
         SimpleFilter filter = new SimpleFilter("Container", s.getContainer().getId());
-        filter.addWhereClause("LOWER(Label) = ?", new Object[]{label.toLowerCase()}, "Label");
+        filter.addWhereClause("LOWER(Label) = ?", new Object[]{label.toLowerCase()}, FieldKey.fromParts("Label"));
 
         DataSetDefinition[] defs = _dataSetHelper.get(s.getContainer(), filter);
         if (defs != null && defs.length == 1)
@@ -1691,7 +1691,7 @@ public class StudyManager
     public DataSet getDataSetDefinitionByName(Study s, String name)
     {
         SimpleFilter filter = new SimpleFilter("Container", s.getContainer().getId());
-        filter.addWhereClause("LOWER(Name) = ?", new Object[]{name.toLowerCase()}, "Name");
+        filter.addWhereClause("LOWER(Name) = ?", new Object[]{name.toLowerCase()}, FieldKey.fromParts("Name"));
 
         DataSet[] defs = _dataSetHelper.get(s.getContainer(), filter);
         if (defs != null && defs.length == 1)

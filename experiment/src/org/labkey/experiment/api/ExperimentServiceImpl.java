@@ -95,6 +95,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
@@ -2006,15 +2007,15 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         for (ExpData data : datas)
             ids.add(data.getRowId());
 
-        SimpleFilter.InClause in1 = new SimpleFilter.InClause("di.DataID", ids);
-        SimpleFilter.InClause in2 = new SimpleFilter.InClause("d.RowId", ids);
+        SimpleFilter.InClause in1 = new SimpleFilter.InClause("DataID", ids);
+        SimpleFilter.InClause in2 = new SimpleFilter.InClause("RowId", ids);
 
         SQLFragment sql = new SQLFragment("SELECT * FROM exp.ExperimentRun WHERE\n" +
                             "RowId IN (SELECT pa.RunId FROM exp.ProtocolApplication pa WHERE pa.RowId IN\n" +
                             "(SELECT di.TargetApplicationId FROM exp.DataInput di WHERE ");
-        sql.append(in1.toSQLFragment(Collections.<String, ColumnInfo>emptyMap(), getExpSchema().getSqlDialect()));
+        sql.append(in1.toSQLFragment(Collections.<FieldKey, ColumnInfo>emptyMap(), getExpSchema().getSqlDialect()));
         sql.append(") UNION (SELECT d.SourceApplicationId FROM exp.Data d WHERE ");
-        sql.append(in2.toSQLFragment(Collections.<String, ColumnInfo>emptyMap(), getExpSchema().getSqlDialect()));
+        sql.append(in2.toSQLFragment(Collections.<FieldKey, ColumnInfo>emptyMap(), getExpSchema().getSqlDialect()));
         sql.append(")) ORDER BY Created DESC");
 
         try
@@ -2353,7 +2354,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                         + " INNER JOIN " + getTinfoProtocolApplication().getSelectName() + " PA"
                         + " ON M.TargetApplicationId = PA.RowId"
                         + " WHERE ");
-                sql.append(in.toSQLFragment(Collections.<String, ColumnInfo>emptyMap(), getExpSchema().getSqlDialect()));
+                sql.append(in.toSQLFragment(Collections.<FieldKey, ColumnInfo>emptyMap(), getExpSchema().getSqlDialect()));
                 sql.append(" AND PA.RunId <> ? ORDER BY TargetApplicationId, MaterialId");
                 sql.add(runId);
 

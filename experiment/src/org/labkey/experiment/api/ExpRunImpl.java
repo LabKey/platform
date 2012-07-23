@@ -23,6 +23,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.*;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.settings.AppProps;
@@ -104,7 +105,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         try
         {
             SimpleFilter filter = new SimpleFilter();
-            filter.addCondition("RunId", getRowId());
+            filter.addCondition(FieldKey.fromParts("RunId"), getRowId());
             if (type != null)
             {
                 filter.addWhereClause(Lsid.namespaceFilter("LSID", type.getNamespacePrefix()), null);

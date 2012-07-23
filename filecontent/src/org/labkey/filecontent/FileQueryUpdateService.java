@@ -39,6 +39,7 @@ import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.DuplicateKeyException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
@@ -176,23 +177,23 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         if (keys.containsKey(ExpDataTable.Column.RowId.name()))
         {
             Object o = keys.get(ExpDataTable.Column.RowId.name());
-            filter = new SimpleFilter(ExpDataTable.Column.RowId.name(), _converter.convert(Integer.class, o));
+            filter = new SimpleFilter(FieldKey.fromParts(ExpDataTable.Column.RowId.name()), _converter.convert(Integer.class, o));
         }
         else if (keys.containsKey(ExpDataTable.Column.LSID.name()))
         {
             Object o = keys.get(ExpDataTable.Column.LSID.name());
-            filter = new SimpleFilter(ExpDataTable.Column.LSID.name(), o);
+            filter = new SimpleFilter(FieldKey.fromParts(ExpDataTable.Column.LSID.name()), o);
         }
         else if (keys.containsKey(ExpDataTable.Column.DataFileUrl.name()))
         {
             Object o = keys.get(ExpDataTable.Column. DataFileUrl.name());
-            filter = new SimpleFilter("DataFileUrl", o);
+            filter = new SimpleFilter(FieldKey.fromParts("DataFileUrl"), o);
         }
         else
             throw new QueryUpdateServiceException("Either RowId, LSID, or DataFileURL is required to get ExpData.");
 
         // Just look in the current container
-        filter.addClause(new CompareType.EqualsCompareClause(ExpDataTable.Column.Folder.name(), CompareType.EQUAL, container.getId()));
+        filter.addCondition(FieldKey.fromParts(ExpDataTable.Column.Folder.name()), container.getId());
 
         return filter;
     }

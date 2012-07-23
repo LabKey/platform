@@ -115,8 +115,8 @@ public class CustomViewUtil
                 String fieldKey = (String)sortInfo.get("fieldKey");
                 String dir = (String)sortInfo.get("dir");
 
-                String columnName = ((dir != null && dir.length() == 1) ? dir : "") + fieldKey;
-                sort.appendSortColumn(columnName, true);
+                Sort.SortDirection sortDir = Sort.SortDirection.fromString(dir);
+                sort.appendSortColumn(FieldKey.fromString(fieldKey), sortDir, true);
             }
             sort.applyToURL(url, FILTER_PARAM_PREFIX, false);
         }
@@ -252,19 +252,19 @@ public class CustomViewUtil
             for (Sort.SortField sf : fas.getSort())
             {
                 Map<String, Object> sortInfo = new HashMap<String, Object>();
-                sortInfo.put("fieldKey", sf.getColumnName());
+                sortInfo.put("fieldKey", sf.getFieldKey());
                 sortInfo.put("dir", sf.getSortDirection().getDir());
-                allKeys.add(FieldKey.fromString(sf.getColumnName()));
+                allKeys.add(FieldKey.fromString(sf.getFieldKey().toString()));
                 sortInfos.add(sortInfo);
             }
 
             for (Aggregate agg : fas.getAggregates())
             {
                 Map<String, Object> aggInfo = new HashMap<String, Object>();
-                aggInfo.put("fieldKey", agg.getColumnName());
+                aggInfo.put("fieldKey", agg.getFieldKey());
                 aggInfo.put("type", agg.getType().toString());
                 aggInfo.put("label", agg.getLabel());
-                allKeys.add(FieldKey.fromString(agg.getColumnName()));
+                allKeys.add(FieldKey.fromString(agg.getFieldKey().toString()));
                 aggInfos.add(aggInfo);
             }
 

@@ -349,7 +349,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
                 {
                     SortType sortXml = sortsXml.addNewSort();
 
-                    sortXml.setColumn(sort.getColumnName());
+                    sortXml.setColumn(sort.getFieldKey().toString());
                     sortXml.setDescending(sort.getSortDirection() == Sort.SortDirection.DESC);
                 }
             }
@@ -364,7 +364,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
                     if (aggEnum != null)
                     {
                         AggregateType aggXml = aggsXml.addNewAggregate();
-                        aggXml.setColumn(agg.getColumnName());
+                        aggXml.setColumn(agg.getFieldKey().toString());
                         aggXml.setType(aggEnum);
                     }
                 }
@@ -528,7 +528,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
                     continue;
                 }
                 ColumnInfo column = new ColumnInfo(field);
-                column.setLabel(field.getDisplayString() + " (not found)");
+                column.setLabel(field.toDisplayString() + " (not found)");
                 ret.put(field, column);
             }
         }

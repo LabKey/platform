@@ -39,6 +39,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Site;
@@ -913,7 +914,7 @@ public class SpecimenUtils
         whereClause.append(") AND Container = ?");
 
         SimpleFilter filter = new SimpleFilter();
-        filter.addWhereClause(whereClause.toString(), params, "RowId", "Container");
+        filter.addWhereClause(whereClause.toString(), params, FieldKey.fromParts("RowId"), FieldKey.fromParts("Container"));
         return filter;
     }
 

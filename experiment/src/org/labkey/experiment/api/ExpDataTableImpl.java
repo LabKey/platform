@@ -322,7 +322,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         _run = run;
         if (run == null)
         {
-            addCondition(new SQLFragment("(RunId IS NULL)"), "RunId");
+            addCondition(new SQLFragment("(RunId IS NULL)"), FieldKey.fromParts("RunId"));
         }
         else
         {
@@ -380,10 +380,10 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
     public void setDataType(DataType type)
     {
         _type = type;
-        getFilter().deleteConditions("LSID");
+        getFilter().deleteConditions(FieldKey.fromParts("LSID"));
         if (_type != null)
         {
-            addCondition(new SQLFragment("LSID LIKE " + getSqlDialect().concatenate("'urn:lsid:%:'", "?", "'%'"), _type.getNamespacePrefix()), "LSID");
+            addCondition(new SQLFragment("LSID LIKE " + getSqlDialect().concatenate("'urn:lsid:%:'", "?", "'%'"), _type.getNamespacePrefix()), FieldKey.fromParts("LSID"));
         }
     }
 
