@@ -954,7 +954,10 @@ public class DbScope
 
         void addCommitTask(Runnable task)
         {
-            _commitTasks.add(task);
+            boolean added = _commitTasks.add(task);
+
+            if (!added)
+                _log.debug("Skipping duplicate runnable: " + task.toString());
         }
 
         private Connection getConnection()
