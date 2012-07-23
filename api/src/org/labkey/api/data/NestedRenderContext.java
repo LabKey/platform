@@ -60,7 +60,7 @@ public class NestedRenderContext extends RenderContext
             {
                 boolean innerColumn = _nestingOption.isOuter(field.getColumnName());
                 foundGroupId = foundGroupId || field.getColumnName().equalsIgnoreCase(_nestingOption.getRowIdColumnName());
-                sort.insertSortColumn(field.toUrlString(), field.isUrlClause(), innerColumn ? outerIndex++ : totalIndex);
+                sort.insertSortColumn(field.getFieldKey(), field.getSortDirection(), field.isUrlClause(), innerColumn ? outerIndex++ : totalIndex);
                 totalIndex++;
             }
 
@@ -94,7 +94,7 @@ public class NestedRenderContext extends RenderContext
                 if (_nestingOption.isOuter(sortField.getColumnName()))
                 {
                     // Only include ones that are part of the grouping data, and preserve their order
-                    groupingSort.insertSortColumn(sortField.getSortDirection().getDir() + sortField.getColumnName(), sortField.isUrlClause(), groupingSort.getSortList().size());
+                    groupingSort.insertSortColumn(sortField.getFieldKey(), sortField.getSortDirection(), sortField.isUrlClause(), groupingSort.getSortList().size());
                 }
             }
 

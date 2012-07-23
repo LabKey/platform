@@ -385,7 +385,7 @@ public abstract class DisplayColumn extends RenderColumn
             addQueryColumns(ret);
             for (ColumnInfo info : ret)
             {
-                Sort.SortField sortField = sort.getSortColumn(info.getName());
+                Sort.SortField sortField = sort.getSortColumn(info.getFieldKey());
                 if (sortField != null)
                     return sortField;
             }
@@ -398,7 +398,7 @@ public abstract class DisplayColumn extends RenderColumn
         Sort sort = getSort(ctx);
         Sort.SortField sortField = getSortColumn(sort);
         boolean filtered = isFiltered(ctx);
-        String baseId = ctx.getCurrentRegion().getName() + ":" + (getColumnInfo() != null ? getColumnInfo().getName() : super.getName());
+        String baseId = ctx.getCurrentRegion().getName() + ":" + (getColumnInfo() != null ? getColumnInfo().getFieldKey() : super.getName());
         baseId = PageFlowUtil.filter(baseId);
 
         out.write("\n<td class='labkey-column-header ");
@@ -523,7 +523,7 @@ public abstract class DisplayColumn extends RenderColumn
 
         if (isFilterable() && rgn.getShowFilters())
         {
-            Set<String> filteredColSet = (Set<String>) ctx.get(rgn.getName() + ".filteredCols");
+            Set<FieldKey> filteredColSet = (Set<FieldKey>) ctx.get(rgn.getName() + ".filteredCols");
 
             if (null == filteredColSet)
             {
@@ -532,18 +532,18 @@ public abstract class DisplayColumn extends RenderColumn
                 ActionURL url = ctx.getSortFilterURLHelper();
                 SimpleFilter filter = new SimpleFilter(url, rgn.getName());
 
-                filteredColSet = new HashSet<String>();
-                for (String s : filter.getWhereParamNames())
+                filteredColSet = new HashSet<FieldKey>();
+                for (FieldKey fieldKey : filter.getWhereParamFieldKeys())
                 {
-                    filteredColSet.add(s.toLowerCase());
+                    filteredColSet.add(fieldKey);
                 }
                 ctx.put(rgn.getName() + ".filteredCols", filteredColSet);
             }
 
             return (null != this.getColumnInfo() &&
-                    (filteredColSet.contains(this.getColumnInfo().getName().toLowerCase())) ||
+                    (filteredColSet.contains(this.getColumnInfo().getFieldKey())) ||
                         (this.getColumnInfo().getDisplayField() != null &&
-                        filteredColSet.contains(this.getColumnInfo().getDisplayField().getName().toLowerCase())));
+                        filteredColSet.contains(this.getColumnInfo().getDisplayField().getFieldKey())));
         }
         return false;
     }
@@ -568,7 +568,7 @@ public abstract class DisplayColumn extends RenderColumn
                 if (sort != null)
                 {
                     sortField = getSortColumn(sort);
-                    primarySort = sort.indexOf(getColumnInfo().getName()) == 0;
+                    primarySort = sort.indexOf(getColumnInfo().getFieldKey()) == 0;
                     isRemoveableSort = isUserSort(ctx);
                 }
 

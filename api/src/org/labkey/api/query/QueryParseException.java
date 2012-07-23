@@ -16,13 +16,10 @@
 
 package org.labkey.api.query;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.TableInfo;
-
-import java.util.List;
 
 public class QueryParseException extends QueryException
 {
@@ -66,7 +63,7 @@ public class QueryParseException extends QueryException
     public ColumnInfo makeErrorColumnInfo(TableInfo parent, FieldKey key)
     {
         NullColumnInfo col = new NullColumnInfo(parent, key, "VARCHAR");
-        col.setLabel("#ERROR: " + key.getDisplayString() + " " + getMessage());
+        col.setLabel("#ERROR: " + key.toDisplayString() + " " + getMessage());
         return col;
     }
 

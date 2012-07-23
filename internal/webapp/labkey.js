@@ -358,6 +358,7 @@ LABKEY.requiresClientAPI = function(immediate)
         LABKEY.requiresScript("clientapi/Experiment.js", immediate);
         LABKEY.requiresScript("clientapi/LongTextEditor.js", immediate);
         LABKEY.requiresScript("clientapi/EditorGridPanel.js", immediate);
+        LABKEY.requiresScript("clientapi/FieldKey.js", immediate);
         LABKEY.requiresScript("clientapi/Filter.js", immediate);
         LABKEY.requiresScript("clientapi/GridView.js", immediate);
         LABKEY.requiresScript("clientapi/NavTrail.js", immediate);

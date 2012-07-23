@@ -154,15 +154,15 @@ public abstract class AbstractDataRegion extends DisplayElement
     protected String getFilterDescription(RenderContext ctx) throws IOException
     {
         SimpleFilter urlFilter = getValidFilter(ctx);
-        if (urlFilter != null && !urlFilter.getWhereParamNames().isEmpty())
+        if (urlFilter != null && !urlFilter.isEmpty())
         {
             StringBuilder filterDesc = new StringBuilder();
             filterDesc.append(urlFilter.getFilterText(new SimpleFilter.ColumnNameFormatter()
             {
                 @Override
-                public String format(String columnName)
+                public String format(FieldKey fieldKey)
                 {
-                    String formatted = super.format(columnName);
+                    String formatted = super.format(fieldKey);
                     for (String hiddenFilter : HIDDEN_FILTER_COLUMN_SUFFIXES)
                     {
                         if (formatted.toLowerCase().endsWith("/" + hiddenFilter.toLowerCase()) ||
@@ -196,7 +196,7 @@ public abstract class AbstractDataRegion extends DisplayElement
             if (ignoredColumns.size() == 1)
             {
                 FieldKey field = ignoredColumns.iterator().next();
-                buf.append("Ignoring filter/sort on column '").append(field.getDisplayString()).append("' because it does not exist.");
+                buf.append("Ignoring filter/sort on column '").append(field.toDisplayString()).append("' because it does not exist.");
             }
             else
             {
@@ -207,7 +207,7 @@ public abstract class AbstractDataRegion extends DisplayElement
                     buf.append(comma);
                     comma = ", ";
                     buf.append("'");
-                    buf.append(field.getDisplayString());
+                    buf.append(field.toDisplayString());
                     buf.append("'");
                 }
                 buf.append(" because they do not exist.");

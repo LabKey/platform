@@ -188,7 +188,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
 
             // Filter it to get only the rows from this set of runs
             SimpleFilter filter = new SimpleFilter();
-            filter.addClause(new SimpleFilter.InClause(runFieldKey.toString(), runIds, true));
+            filter.addClause(new SimpleFilter.InClause(runFieldKey, runIds, true));
 
             ResultSet rs = Table.selectForDisplay(table, Arrays.asList(dataRowIdColumn, runIdColumn), null, filter, new Sort(runFieldKey.toString()), Table.ALL_ROWS, Table.NO_OFFSET);
             try

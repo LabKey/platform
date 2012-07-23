@@ -10,48 +10,6 @@
     /** @private */
     var $h = X.util.Format.htmlEncode;
 
-    /* TODO Consolidate FieldKey code here with FieldKey in queryDesigner.js */
-
-    /** @constructor @private */
-    var FieldKey = function()
-    {
-        /** @private @type {[string]} */
-        this._parts = [];
-    };
-
-    /** @param {string} fk field key using old $ encoding */
-    FieldKey.prototype.parseOldEncoding = function(fk)
-    {
-        function decodePart(str)
-        {
-                str = str.replace(/\$C/, ",");
-                str = str.replace(/\$T/, "~");
-                str = str.replace(/\$B/, "}");
-                str = str.replace(/\$A/, "&");
-                str = str.replace(/\$S/, "/");
-                str = str.replace(/\$D/, "$");
-            return str;
-        }
-        var a = fk.split('/');
-        for (var i=0; i<a.length ; i++)
-            a[i] = decodePart(a[i]);
-        this._parts = a;
-    };
-
-    /** @returns {string} */
-    FieldKey.prototype.getName = function()
-    {
-        return this._parts.length > 0 ? this._parts[this._parts.length-1] : null;
-    };
-
-    /** @returns {string} */
-    FieldKey.prototype.toDottedString = function()
-    {
-        // TODO escape names with "
-        return "\"" + this._parts.join("\".\"") + "\"";
-    };
-
-
     /** @constructor
      *
      * @param {Object} field as defined by SelectRowsResult
@@ -61,7 +19,7 @@
     {
         X.apply(this, field||{}, column||{});
         if (this.fieldKeyPath)
-            this.fieldKey = (new FieldKey()).parseOldEncoding(this.fieldKeyPath);
+            this.fieldKey = LABKEY.FieldKey.fromString(this.fieldKeyPath);
         if (this.extFormatFn)
         {
             try

@@ -113,7 +113,7 @@ abstract public class QueryService
      *
      * NOTE: shouldn't need to call this anymore unless you really care about the unresolvedColumns
      */
-    abstract public Collection<ColumnInfo> ensureRequiredColumns(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, Set<String> unresolvedColumns);
+    abstract public Collection<ColumnInfo> ensureRequiredColumns(TableInfo table, Collection<ColumnInfo> columns, Filter filter, Sort sort, Set<FieldKey> unresolvedColumns);
 
     abstract public Map<String, UserSchema> getExternalSchemas(DefaultSchema folderSchema);
     abstract public UserSchema getExternalSchema(DefaultSchema folderSchema, String name);

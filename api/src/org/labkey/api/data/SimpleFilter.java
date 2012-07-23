@@ -20,6 +20,7 @@ import junit.framework.Assert;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 import org.labkey.api.data.CompareType.CompareClause;
@@ -28,7 +29,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 
 import java.util.*;
 
@@ -41,26 +41,16 @@ public class SimpleFilter implements Filter
 {
     public static abstract class FilterClause
     {
-        private boolean _urlClause = false;
-        private Object[] _paramVals = new Object[0];
-        private boolean _includeNull = false;
-        private boolean _isNegated = false;
+        protected boolean _urlClause = false;
+        protected Object[] _paramVals = new Object[0];
+        protected boolean _includeNull = false;
+        protected boolean _negated = false;
 
         boolean isUrlClause()
         {
             return _urlClause;
         }
 
-
-        void setUrlClause(boolean urlClause)
-        {
-            _urlClause = urlClause;
-        }
-
-        public void setIncludeNull(boolean value)
-        {
-            _includeNull = value;
-        }
 
         public boolean isIncludeNull()
         {
@@ -69,25 +59,13 @@ public class SimpleFilter implements Filter
 
         public boolean isNegated()
         {
-            return _isNegated;
-        }
-
-        public void setIsNegated(boolean value)
-        {
-            _isNegated = value;
+            return _negated;
         }
 
         public Object[] getParamVals()
         {
             return _paramVals;
         }
-
-
-        public void setParamVals(Object[] paramVals)
-        {
-            _paramVals = paramVals;
-        }
-
 
         protected void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
         {
@@ -119,15 +97,17 @@ public class SimpleFilter implements Filter
 
         protected void appendSqlText(StringBuilder sb, ColumnNameFormatter formatter)
         {
-            SQLFragment sqlf = toSQLFragment(Collections.<String, ColumnInfo>emptyMap(), null);
+            SQLFragment sqlf = toSQLFragment(Collections.<FieldKey, ColumnInfo>emptyMap(), null);
             if (sqlf.isEmpty())
                 sb.append("1=1");
             else
                 sb.append(sqlf);
         }
 
-        // TODO List<FieldKey> getColumnNames()
+        @Deprecated // Use getFieldKeys() instead
         abstract public List<String> getColumnNames();
+
+        abstract public List<FieldKey> getFieldKeys();
 
         /** @return whether the value meets the criteria of this filter */
         public boolean meetsCriteria(Object value)
@@ -162,23 +142,14 @@ public class SimpleFilter implements Filter
             return sql.toString();
         }
 
-        protected static String getLabKeySQLColName(String simpleFilterColName)
+        protected static String getLabKeySQLColName(FieldKey key)
         {
-            FieldKey key = FieldKey.fromString(simpleFilterColName);
-            List<String> parts = key.getParts();
-            StringBuilder escapedColName = new StringBuilder();
-            String sep = "";
-            for (String part : parts)
-            {
-                escapedColName.append(sep).append("\"").append(part).append("\"");
-                sep = ".";
-            }
-            return escapedColName.toString();
+            return key.toSQLString();
         }
 
         public abstract String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap);
 
-        public abstract SQLFragment toSQLFragment(Map<String, ? extends ColumnInfo> columnMap, SqlDialect dialect);
+        public abstract SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect);
 
         @Override
         public boolean equals(Object o)
@@ -189,11 +160,11 @@ public class SimpleFilter implements Filter
             FilterClause that = (FilterClause) o;
 
             if (_includeNull != that._includeNull) return false;
-            if (_isNegated != that._isNegated) return false;
+            if (_negated != that._negated) return false;
             if (_urlClause != that._urlClause) return false;
             // Probably incorrect - comparing Object[] arrays with Arrays.equals
             if (!Arrays.equals(_paramVals, that._paramVals)) return false;
-            if (!getColumnNames().equals(that.getColumnNames())) return false;
+            if (!getFieldKeys().equals(that.getFieldKeys())) return false;
 
             return true;
         }
@@ -204,7 +175,7 @@ public class SimpleFilter implements Filter
             int result = (_urlClause ? 1 : 0);
             result = 31 * result + (_paramVals != null ? Arrays.hashCode(_paramVals) : 0);
             result = 31 * result + (_includeNull ? 1 : 0);
-            result = 31 * result + (_isNegated ? 1 : 0);
+            result = 31 * result + (_negated ? 1 : 0);
             return result;
         }
     }
@@ -231,29 +202,37 @@ public class SimpleFilter implements Filter
     public static class SQLClause extends FilterClause
     {
         String _fragment;
-        private List<String> _colNames = new ArrayList<String>();
+        private List<FieldKey> _fieldKeys = new ArrayList<FieldKey>();
 
-
-        public SQLClause(String fragment, Object[] paramVals, String... colNames)
+        public SQLClause(String fragment, Object[] paramVals, FieldKey... fieldKeys)
         {
-            setUrlClause(false);
+            _urlClause = false;
             _fragment = fragment;
             if (paramVals == null)
             {
                 paramVals = new Object[0];
             }
-            setParamVals(paramVals);
-            _colNames = Arrays.asList(colNames);
+            _paramVals = paramVals;
+            _fieldKeys = Arrays.asList(fieldKeys);
         }
 
-        public SQLFragment toSQLFragment(Map<String, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             return new SQLFragment(_fragment, getParamVals());
         }
 
+        @Deprecated // Use .getFieldKeys() instead.
         public List<String> getColumnNames()
         {
-            return _colNames;
+            List<String> colNames = new ArrayList<String>(_fieldKeys.size());
+            for (FieldKey fieldKey : _fieldKeys)
+                colNames.add(fieldKey.toString());
+            return colNames;
+        }
+
+        public List<FieldKey> getFieldKeys()
+        {
+            return Collections.unmodifiableList(_fieldKeys);
         }
 
         @Override
@@ -274,12 +253,23 @@ public class SimpleFilter implements Filter
             _clauses = new ArrayList<FilterClause>(Arrays.asList(clauses));
         }
 
+        @Deprecated // Use getFieldKeys() instead.
         public List<String> getColumnNames()
         {
             List<String> result = new ArrayList<String>();
             for (FilterClause clause : _clauses)
             {
                 result.addAll(clause.getColumnNames());
+            }
+            return result;
+        }
+
+        public List<FieldKey> getFieldKeys()
+        {
+            List<FieldKey> result = new ArrayList<FieldKey>();
+            for (FilterClause clause : _clauses)
+            {
+                result.addAll(clause.getFieldKeys());
             }
             return result;
         }
@@ -300,7 +290,7 @@ public class SimpleFilter implements Filter
             return result.toArray(new Object[result.size()]);
         }
 
-        public SQLFragment toSQLFragment(Map<String, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             SQLFragment sqlFragment = new SQLFragment();
             String separator = "";
@@ -402,9 +392,15 @@ public class SimpleFilter implements Filter
             _clause = clause;
         }
 
+        @Deprecated // Use getFieldKeys() instead.
         public List<String> getColumnNames()
         {
             return _clause.getColumnNames();
+        }
+
+        public List<FieldKey> getFieldKeys()
+        {
+            return _clause.getFieldKeys();
         }
 
         public Object[] getParamVals()
@@ -412,7 +408,7 @@ public class SimpleFilter implements Filter
             return _clause.getParamVals();
         }
 
-        public SQLFragment toSQLFragment(Map<String, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             SQLFragment sqlFragment = new SQLFragment();
             sqlFragment.append(" NOT (");
@@ -440,62 +436,81 @@ public class SimpleFilter implements Filter
 
     public static abstract class MultiValuedFilterClause extends FilterClause
     {
-        private String _colName;
+        @NotNull
+        protected FieldKey _fieldKey;
         public static final int MAX_FILTER_VALUES_TO_DISPLAY = 10;
 
-        public MultiValuedFilterClause(String colName, Collection params)
+        public MultiValuedFilterClause(FieldKey fieldKey, Collection params)
         {
             if (params.contains("")) //params.size() == 0 ||
             {
-                setIncludeNull(true);
+                _includeNull = true;
                 params.remove("");
             }
-            setColName(colName);
-            setParamVals(params.toArray());
+            _fieldKey = fieldKey;
+            _paramVals = params.toArray();
         }
 
-        public String getColName()
+        public FieldKey getFieldKey()
         {
-            return _colName;
-        }
-
-        public void setColName(String colName)
-        {
-            _colName = colName;
+            return _fieldKey;
         }
     }
 
     public static class InClause extends MultiValuedFilterClause
     {
+        @Deprecated // Use FieldKey version instead.
         public InClause(String colName, Collection params)
         {
             this(colName, params, false);
         }
 
+        public InClause(FieldKey fieldKey, Collection params)
+        {
+            this(fieldKey, params, false, false);
+        }
+
+        @Deprecated // Use FieldKey version instead.
         public InClause(String colName, Collection params, boolean urlClause)
         {
             this(colName, params, urlClause, false);
         }
 
-        public InClause(String colName, Collection params, boolean urlClause, boolean isNegated)
+        public InClause(FieldKey fieldKey, Collection params, boolean urlClause)
         {
-            super(colName, params);
-
-            setUrlClause(urlClause);
-            setParamVals(params.toArray());
-            setColName(colName);
-            setIsNegated(isNegated);
+            this(fieldKey, params, urlClause, false);
         }
 
+        @Deprecated // Use FieldKey version instead.
+        public InClause(String colName, Collection params, boolean urlClause, boolean negated)
+        {
+            this(FieldKey.fromString(colName), params, urlClause, negated);
+        }
+
+        public InClause(FieldKey fieldKey, Collection params, boolean urlClause, boolean negated)
+        {
+            super(fieldKey, params);
+
+            _urlClause = urlClause;
+            _paramVals = params.toArray();
+            _negated = negated;
+        }
+
+        @Deprecated // Use getFieldKeys() instead.
         public List<String> getColumnNames()
         {
-            return Arrays.asList(getColName());
+            return Arrays.asList(getFieldKey().toString());
+        }
+
+        public List<FieldKey> getFieldKeys()
+        {
+            return Arrays.asList(getFieldKey());
         }
 
         @Override
         protected void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
         {
-            sb.append(formatter.format(getColName()));
+            sb.append(formatter.format(getFieldKey()));
 
             if (getParamVals().length == 0 && !isIncludeNull())
             {
@@ -536,8 +551,8 @@ public class SimpleFilter implements Filter
         @Override
         public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
-            String alias = getLabKeySQLColName(getColName());
-            ColumnInfo col = columnMap.get(FieldKey.fromString(getColName()));
+            String alias = getLabKeySQLColName(getFieldKey());
+            ColumnInfo col = columnMap != null ? columnMap.get(getFieldKey()) : null;
             Object[] params = getParamVals();
             StringBuilder in =  new StringBuilder();
 
@@ -580,16 +595,14 @@ public class SimpleFilter implements Filter
         }
 
 
-        public SQLFragment toSQLFragment(Map<String, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             Object[] params = getParamVals();
 
-            ColumnInfo colInfo = columnMap.get(getColName());
-            String alias = getColName();
-            if (colInfo != null)
-            {
-                alias = dialect.getColumnSelectName(colInfo.getAlias());
-            }
+            ColumnInfo colInfo = columnMap != null ? columnMap.get(getFieldKey()) : null;
+            String name = colInfo != null ? colInfo.getAlias() : getFieldKey().getName();
+            String alias = dialect.getColumnSelectName(name);
+
             SQLFragment in = new SQLFragment();
 
             if (params.length == 0)
@@ -651,7 +664,7 @@ public class SimpleFilter implements Filter
         {
             Set<Object> values = new HashSet<Object>(Arrays.asList(getParamVals()));
             values.addAll(newValues);
-            setParamVals(values.toArray());
+            _paramVals = values.toArray();
         }
 
         @Override
@@ -660,7 +673,7 @@ public class SimpleFilter implements Filter
             for (Object params : getParamVals())
             {
                 // Loop through all the values and check if any of them are equals
-                FilterClause compareClause = CompareType.EQUAL.createFilterClause(getColumnNames().get(0), params);
+                FilterClause compareClause = CompareType.EQUAL.createFilterClause(getFieldKeys().get(0), params);
                 if (compareClause.meetsCriteria(value))
                 {
                     return true;
@@ -672,30 +685,35 @@ public class SimpleFilter implements Filter
 
     public static class ContainsOneOfClause extends MultiValuedFilterClause
     {
-        public ContainsOneOfClause(String colName, Collection params, boolean urlClause)
+        public ContainsOneOfClause(FieldKey fieldKey, Collection params, boolean urlClause)
         {
-            this(colName, params, urlClause, false);
+            this(fieldKey, params, urlClause, false);
         }
 
         public List<String> getColumnNames()
         {
-            return Arrays.asList(getColName());
+            return Arrays.asList(getFieldKey().toString());
         }
 
-        public ContainsOneOfClause(String colName, Collection params, boolean urlClause, boolean isNegated)
+        public List<FieldKey> getFieldKeys()
         {
-            super(colName, params);
+            return Arrays.asList(getFieldKey());
+        }
 
-            setUrlClause(urlClause);
-            setColName(colName);
-            setIsNegated(isNegated);
+        public ContainsOneOfClause(FieldKey fieldKey, Collection params, boolean urlClause, boolean negated)
+        {
+            super(fieldKey, params);
+
+            _urlClause = urlClause;
+            _fieldKey = fieldKey;
+            _negated = negated;
         }
 
         @Override
         protected void appendFilterText(StringBuilder sb, ColumnNameFormatter formatter)
         {
             //TODO: if nmber of values > 10, dont show each one
-            sb.append(formatter.format(getColName()));
+            sb.append(formatter.format(getFieldKey()));
             sb.append(" " +
                     (isNegated() ? "DOES NOT CONTAIN ANY OF (" : "CONTAINS ONE OF ("));
 
@@ -725,7 +743,7 @@ public class SimpleFilter implements Filter
         @Override
         public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
-            ColumnInfo col = columnMap.get(FieldKey.fromString(getColName()));
+            ColumnInfo col = columnMap.get(getFieldKey());
 
             Object[] params = getParamVals();
             if (params.length > 0)
@@ -737,16 +755,12 @@ public class SimpleFilter implements Filter
         }
 
 
-        public SQLFragment toSQLFragment(Map<String, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             Object[] params = getParamVals();
 
-            ColumnInfo colInfo = columnMap.get(getColName());
-            String alias = getColName();
-            if (colInfo != null)
-            {
-                alias = dialect.getColumnSelectName(colInfo.getAlias());
-            }
+            ColumnInfo colInfo = columnMap != null ? columnMap.get(getFieldKey()) : null;
+            String alias = colInfo != null ? colInfo.getAlias() : getFieldKey().getName();
 
             SQLFragment in = new SQLFragment();
             OperationClause oc = getContainsClause(colInfo);
@@ -765,18 +779,18 @@ public class SimpleFilter implements Filter
             else
                 oc = new OrClause();
 
-            String name = colInfo == null ? getColName() : colInfo.getName();
+            FieldKey fieldKey = colInfo == null ? getFieldKey() : colInfo.getFieldKey();
             if (params.length > 0)
             {
                 for(Object param : params)
                 {
                     if(isNegated())
                     {
-                        oc.addClause(new CompareType.DoesNotContainClause(name, param));
+                        oc.addClause(new CompareType.DoesNotContainClause(fieldKey, param));
                     }
                     else
                     {
-                        oc.addClause(new CompareType.ContainsClause(name, param));
+                        oc.addClause(new CompareType.ContainsClause(fieldKey, param));
                     }
                 }
             }
@@ -789,9 +803,9 @@ public class SimpleFilter implements Filter
                     clause.addClause(oc);
 
                 if(isNegated())
-                    clause.addClause(CompareType.NONBLANK.createFilterClause(name, null));
+                    clause.addClause(CompareType.NONBLANK.createFilterClause(fieldKey, null));
                 else
-                    clause.addClause(CompareType.ISBLANK.createFilterClause(name, null));
+                    clause.addClause(CompareType.ISBLANK.createFilterClause(fieldKey, null));
                 return clause;
             }
 
@@ -806,7 +820,7 @@ public class SimpleFilter implements Filter
         {
             Set<Object> values = new HashSet<Object>(Arrays.asList(getParamVals()));
             values.addAll(newValues);
-            setParamVals(values.toArray());
+            _paramVals = values.toArray();
         }
 
         @Override
@@ -815,7 +829,7 @@ public class SimpleFilter implements Filter
             for (Object params : getParamVals())
             {
                 // Loop through all the values and check if any of them are equals
-                FilterClause compareClause = CompareType.CONTAINS.createFilterClause(getColumnNames().get(0), params);
+                FilterClause compareClause = CompareType.CONTAINS.createFilterClause(getFieldKeys().get(0), params);
                 if (compareClause.meetsCriteria(value))
                 {
                     return true;
@@ -845,14 +859,26 @@ public class SimpleFilter implements Filter
         _clauses = (ArrayList<FilterClause>) src._clauses.clone();
     }
 
+    @Deprecated // Use FieldKey version instead.
     public SimpleFilter(String colName, Object value)
     {
         addCondition(colName, value);
     }
 
+    public SimpleFilter(FieldKey fieldKey, Object value)
+    {
+        addCondition(fieldKey, value);
+    }
+
+    @Deprecated // Use FieldKey version instead.
     public SimpleFilter(String colName, Object value, CompareType compare)
     {
         addCondition(colName, value, compare);
+    }
+
+    public SimpleFilter(FieldKey fieldKey, Object value, CompareType compare)
+    {
+        addCondition(fieldKey, value, compare);
     }
 
     public SimpleFilter(URLHelper urlHelp, String regionName)
@@ -873,7 +899,7 @@ public class SimpleFilter implements Filter
             {
                 String[] compareInfo = colTildeCompare.split("~");
                 CompareType type = null;
-                String columnName = compareInfo[0];
+                FieldKey fieldKey = FieldKey.fromString(compareInfo[0]);
                 if (compareInfo.length == 2)
                     type = CompareType.getByURLKey(compareInfo[1]);
 
@@ -882,14 +908,14 @@ public class SimpleFilter implements Filter
 
                 try
                 {
-                    FilterClause fc = type.createFilterClause(columnName, param);
-                    fc.setUrlClause(true);
+                    FilterClause fc = type.createFilterClause(fieldKey, param);
+                    fc._urlClause = true;
                     _clauses.add(fc);
                 }
                 catch (ConversionException e)
                 {
                     // rethrow with better error message.  Date CompareTypes convert the parameter when created.
-                    throw new ConversionException("Could not convert \"" + param + "\" for column \"" + columnName + "\"", e);
+                    throw new ConversionException("Could not convert \"" + param + "\" for column \"" + fieldKey.toDisplayString() + "\"", e);
                 }
             }
         }
@@ -907,6 +933,17 @@ public class SimpleFilter implements Filter
         return this;
     }
 
+    public List<FieldKey> getAllFieldKeys()
+    {
+        List<FieldKey> result = new ArrayList<FieldKey>();
+        for (FilterClause clause : _clauses)
+        {
+            result.addAll(clause.getFieldKeys());
+        }
+        return result;
+    }
+
+    @Deprecated // Use getAllFieldKeys() instead.
     public List<String> getAllColumnNames()
     {
         List<String> result = new ArrayList<String>();
@@ -917,36 +954,55 @@ public class SimpleFilter implements Filter
         return result;
     }
 
-    public SimpleFilter deleteConditions(String colName)
+    public SimpleFilter deleteConditions(FieldKey fieldKey)
     {
         for (Iterator<SimpleFilter.FilterClause> it = _clauses.iterator() ; it.hasNext(); )
         {
             SimpleFilter.FilterClause clause = it.next();
-            CaseInsensitiveHashSet names = new CaseInsensitiveHashSet(clause.getColumnNames());
-            if (names.contains(colName))
+            if (clause.getFieldKeys().contains(fieldKey))
                 it.remove();
         }
         return this;
     }
 
+    @Deprecated // Use FieldKey version instead
+    public SimpleFilter deleteConditions(String colName)
+    {
+        FieldKey fieldKey = FieldKey.fromString(colName);
+        deleteConditions(fieldKey);
+        return this;
+    }
+
+    @Deprecated // Use FieldKey version instead
     public SimpleFilter addCondition(String colName, Object value)
     {
-        return addCondition(colName, value == null ? Parameter.NULL_MARKER : value, CompareType.EQUAL);
+        return addCondition(FieldKey.fromString(colName), value);
+    }
+
+    public SimpleFilter addCondition(FieldKey fieldKey, Object value)
+    {
+        return addCondition(fieldKey, value == null ? Parameter.NULL_MARKER : value, CompareType.EQUAL);
     }
 
     public SimpleFilter addCondition(ColumnInfo column, Object value)
     {
-        return addCondition(column.getAlias(), value == null ? Parameter.NULL_MARKER : value, CompareType.EQUAL);
+        return addCondition(column.getFieldKey(), value == null ? Parameter.NULL_MARKER : value, CompareType.EQUAL);
     }
 
     public SimpleFilter addCondition(ColumnInfo column, Object value, CompareType compare)
     {
-        return addCondition(column.getAlias(), value, compare);
+        return addCondition(column.getFieldKey(), value, compare);
     }
 
+    @Deprecated // Use FieldKey version insead
     public SimpleFilter addCondition(String colName, @Nullable Object value, CompareType compare)
     {
-        _clauses.add(compare.createFilterClause(colName, value));
+        return addCondition(FieldKey.fromString(colName), value, compare);
+    }
+
+    public SimpleFilter addCondition(FieldKey fieldKey, @Nullable Object value, CompareType compare)
+    {
+        _clauses.add(compare.createFilterClause(fieldKey, value));
         return this;
     }
 
@@ -956,32 +1012,46 @@ public class SimpleFilter implements Filter
         return this;
     }
 
+    @Deprecated // Use FieldKey version instead.
     public SimpleFilter addBetween(String colName, Comparable value1, Comparable value2)
     {
+        FieldKey fieldKey = FieldKey.fromString(colName);
+        return addBetween(fieldKey, value1, value2);
+    }
+
+    public SimpleFilter addBetween(FieldKey fieldKey, Comparable value1, Comparable value2)
+    {
         if (value1 != null && value2 != null && value1.equals(value2))
-            addCondition(colName, value1);  // Equal
+            addCondition(fieldKey, value1);  // Equal
         else if (value1 != null && value2 != null && value1.compareTo(value2) > 0)
         {
-            addCondition(colName, value2, CompareType.GTE);
-            addCondition(colName, value1, CompareType.LTE);
+            addCondition(fieldKey, value2, CompareType.GTE);
+            addCondition(fieldKey, value1, CompareType.LTE);
         }
         else
         {
-            addCondition(colName, value1, CompareType.GTE);
-            addCondition(colName, value2, CompareType.LTE);
+            addCondition(fieldKey, value1, CompareType.GTE);
+            addCondition(fieldKey, value2, CompareType.LTE);
         }
         return this;
     }
 
-    public SimpleFilter addWhereClause(String fragment, Object[] paramVals, String... colNames)
+    public SimpleFilter addWhereClause(String fragment, Object[] paramVals, FieldKey... fieldKeys)
     {
-        _clauses.add(new SQLClause(fragment, paramVals, colNames));
+        _clauses.add(new SQLClause(fragment, paramVals, fieldKeys));
         return this;
     }
 
+    @Deprecated // Use FieldKey version instead.
     public SimpleFilter addInClause(String colName, Collection paramVals)
     {
         _clauses.add(new InClause(colName, paramVals));
+        return this;
+    }
+
+    public SimpleFilter addInClause(FieldKey fieldKey, Collection paramVals)
+    {
+        _clauses.add(new InClause(fieldKey, paramVals));
         return this;
     }
 
@@ -997,7 +1067,7 @@ public class SimpleFilter implements Filter
                 CompareClause cc = (CompareClause) fc;
                 ret.append(and);
                 and = "&";
-                ret.append(PageFlowUtil.encode(prefix + cc._colName + "~" + cc._comparison.getPreferredUrlKey()));
+                ret.append(PageFlowUtil.encode(prefix + cc._fieldKey.toString() + "~" + cc._comparison.getPreferredUrlKey()));
                 if (cc.getParamVals() != null && cc.getParamVals()[0] != null)
                 {
                     ret.append("=");
@@ -1092,10 +1162,10 @@ public class SimpleFilter implements Filter
 
     public SQLFragment getSQLFragment(SqlDialect dialect)
     {
-        return getSQLFragment(dialect, new HashMap<String, ColumnInfo>());
+        return getSQLFragment(dialect, Collections.<FieldKey, ColumnInfo>emptyMap());
     }
 
-    public SQLFragment getSQLFragment(SqlDialect dialect, Map<String, ? extends ColumnInfo> columnMap)
+    public SQLFragment getSQLFragment(SqlDialect dialect, Map<FieldKey, ? extends ColumnInfo> columnMap)
     {
         SQLFragment ret = new SQLFragment();
 
@@ -1130,14 +1200,20 @@ public class SimpleFilter implements Filter
     }
 
 
-    public Set<String> getWhereParamNames()
+    public Set<FieldKey> getWhereParamFieldKeys()
     {
-        Set<String> paramNames = new HashSet<String>(_clauses.size());
+        Set<FieldKey> paramNames = new HashSet<FieldKey>(_clauses.size());
 
         for (FilterClause fc : _clauses)
-            paramNames.addAll(fc.getColumnNames());
+            paramNames.addAll(fc.getFieldKeys());
 
         return paramNames;
+    }
+
+    @Override
+    public boolean isEmpty()
+    {
+        return getWhereParamFieldKeys().isEmpty();
     }
 
     public List<FilterClause> getClauses()
@@ -1231,9 +1307,9 @@ public class SimpleFilter implements Filter
     // Take care of column name artifacts
     public static class ColumnNameFormatter
     {
-        public String format(String columnName)
+        public String format(FieldKey fieldKey)
         {
-            return FieldKey.fromString(columnName).getDisplayString();
+            return fieldKey.toDisplayString();
         }
     }
 
@@ -1266,7 +1342,8 @@ public class SimpleFilter implements Filter
 
             Calendar cJan15 = asCalendar("2001-01-15");
 
-            CompareClause eqCompareClause = new CompareType.DateEqCompareClause("x", cJan15);
+            FieldKey x = FieldKey.fromParts("x");
+            CompareClause eqCompareClause = new CompareType.DateEqCompareClause(x, cJan15);
             assertFalse(eqCompareClause.meetsCriteria(dJan14));
             assertFalse(eqCompareClause.meetsCriteria(dJan14noon));
             assertTrue(eqCompareClause.meetsCriteria(dJan15));
@@ -1274,7 +1351,7 @@ public class SimpleFilter implements Filter
             assertFalse(eqCompareClause.meetsCriteria(dJan16));
             assertFalse(eqCompareClause.meetsCriteria(dJan16noon));
 
-            CompareClause neqCompareClause = new CompareType.DateNeqCompareClause("x", cJan15);
+            CompareClause neqCompareClause = new CompareType.DateNeqCompareClause(x, cJan15);
             assertTrue(neqCompareClause.meetsCriteria(dJan14));
             assertTrue(neqCompareClause.meetsCriteria(dJan14noon));
             assertFalse(neqCompareClause.meetsCriteria(dJan15));
@@ -1282,7 +1359,7 @@ public class SimpleFilter implements Filter
             assertTrue(neqCompareClause.meetsCriteria(dJan16));
             assertTrue(neqCompareClause.meetsCriteria(dJan16noon));
 
-            CompareClause ltCompareClause = new CompareType.DateLtCompareClause("x", cJan15);
+            CompareClause ltCompareClause = new CompareType.DateLtCompareClause(x, cJan15);
             assertTrue(ltCompareClause.meetsCriteria(dJan14));
             assertTrue(ltCompareClause.meetsCriteria(dJan14noon));
             assertFalse(ltCompareClause.meetsCriteria(dJan15));
@@ -1290,7 +1367,7 @@ public class SimpleFilter implements Filter
             assertFalse(ltCompareClause.meetsCriteria(dJan16));
             assertFalse(ltCompareClause.meetsCriteria(dJan16noon));
 
-            CompareClause lteCompareClause = new CompareType.DateLteCompareClause("x", cJan15);
+            CompareClause lteCompareClause = new CompareType.DateLteCompareClause(x, cJan15);
             assertTrue(lteCompareClause.meetsCriteria(dJan14));
             assertTrue(lteCompareClause.meetsCriteria(dJan14noon));
             assertTrue(lteCompareClause.meetsCriteria(dJan15));
@@ -1298,7 +1375,7 @@ public class SimpleFilter implements Filter
             assertFalse(lteCompareClause.meetsCriteria(dJan16));
             assertFalse(lteCompareClause.meetsCriteria(dJan16noon));
 
-            CompareClause gtCompareClause = new CompareType.DateGtCompareClause("x", cJan15);
+            CompareClause gtCompareClause = new CompareType.DateGtCompareClause(x, cJan15);
             assertFalse(gtCompareClause.meetsCriteria(dJan14));
             assertFalse(gtCompareClause.meetsCriteria(dJan14noon));
             assertFalse(gtCompareClause.meetsCriteria(dJan15));
@@ -1306,7 +1383,7 @@ public class SimpleFilter implements Filter
             assertTrue(gtCompareClause.meetsCriteria(dJan16));
             assertTrue(gtCompareClause.meetsCriteria(dJan16noon));
 
-            CompareClause gteCompareClause = new CompareType.DateGteCompareClause("x", cJan15);
+            CompareClause gteCompareClause = new CompareType.DateGteCompareClause(x, cJan15);
             assertFalse(gteCompareClause.meetsCriteria(dJan14));
             assertFalse(gteCompareClause.meetsCriteria(dJan14noon));
             assertTrue(gteCompareClause.meetsCriteria(dJan15));

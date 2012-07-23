@@ -345,7 +345,7 @@ public interface SearchService
     public static class LastIndexedClause extends SimpleFilter.FilterClause
     {
         SQLFragment _sqlf = new SQLFragment();
-        private Set<String> _colNames = new HashSet<String>();
+        private Set<FieldKey> _fieldKeys = new HashSet<FieldKey>();
 
         final static java.util.Date oldDate = new java.sql.Timestamp(DateUtil.parseStringJDBC("1967-10-04"));
 
@@ -365,7 +365,7 @@ public interface SearchService
             if (null != lastIndexed)
             {
                 _sqlf.append(prefix).append(lastIndexed.getSelectName()).append(" IS NULL");
-                _colNames.add(lastIndexed.getName());
+                _fieldKeys.add(lastIndexed.getFieldKey());
                 or = " OR ";
             }
 
@@ -373,8 +373,8 @@ public interface SearchService
             {
                 _sqlf.append(or);
                 _sqlf.append(prefix).append(modified.getSelectName()).append(">").append(prefix).append(lastIndexed.getSelectName());
-                _colNames.add(modified.getName());
-                _colNames.add(lastIndexed.getName());
+                _fieldKeys.add(modified.getFieldKey());
+                _fieldKeys.add(lastIndexed.getFieldKey());
                 or = " OR ";
             }
 
@@ -383,7 +383,7 @@ public interface SearchService
                 _sqlf.append(or);
                 _sqlf.append(prefix).append(modified.getSelectName()).append("> ?");
                 _sqlf.add(modifiedSince);
-                _colNames.add(modified.getName());
+                _fieldKeys.add(modified.getFieldKey());
             }
 
             if (_sqlf.isEmpty())
@@ -403,14 +403,22 @@ public interface SearchService
             throw new UnsupportedOperationException();
         }
 
-        public SQLFragment toSQLFragment(Map<String, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
             return _sqlf;
         }
 
         public List<String> getColumnNames()
         {
-            return new ArrayList<String>(_colNames);
+            List<String> names = new ArrayList<String>(_fieldKeys.size());
+            for (FieldKey fieldKey : _fieldKeys)
+                names.add(fieldKey.toString());
+            return names;
+        }
+
+        public List<FieldKey> getFieldKeys()
+        {
+            return new ArrayList<FieldKey>(_fieldKeys);
         }
     }
 }

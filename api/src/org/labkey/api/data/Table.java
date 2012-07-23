@@ -1222,7 +1222,7 @@ public class Table
         QueryService.get().bindNamedParameters(innerSql, parameters);
         QueryService.get().validateNamedParameters(innerSql);
 
-        Map<String, ColumnInfo> columnMap = Table.createColumnMap(table, columns.values());
+        Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(table, columns.values());
 
         StringBuilder sql = new StringBuilder();
         sql.append("SELECT ");
@@ -1230,7 +1230,7 @@ public class Table
 
         for (Aggregate agg : aggregates)
         {
-            if (agg.isCountStar() || columnMap.containsKey(agg.getColumnName()))
+            if (agg.isCountStar() || columnMap.containsKey(agg.getFieldKey()))
             {
                 if (first)
                     first = false;
@@ -1416,21 +1416,21 @@ public class Table
     public static void ensureRequiredColumns(TableInfo table, Map<String, ColumnInfo> cols, @Nullable Filter filter, @Nullable Sort sort, @Nullable List<Aggregate> aggregates)
     {
         List<ColumnInfo> allColumns = table.getColumns();
-        Set<String> requiredColumns = new HashSet();
+        Set<FieldKey> requiredColumns = new HashSet<FieldKey>();
 
         if (null != filter)
-            requiredColumns.addAll(filter.getWhereParamNames());
+            requiredColumns.addAll(filter.getWhereParamFieldKeys());
 
         if (null != sort)
         {
-            requiredColumns.addAll(sort.getRequiredColumnNames(cols));
+            requiredColumns.addAll(sort.getRequiredColumns(cols));
         }
 
         if (null != aggregates)
         {
             // UNDONE: use fieldkeys
             for (Aggregate agg : aggregates)
-                requiredColumns.add(agg.getColumnName());
+                requiredColumns.add(agg.getFieldKey());
         }
 
         // TODO: Ensure pk, filter & where columns in cases where caller is naive
@@ -1989,26 +1989,27 @@ public class Table
     }
     
 
-    static public Map<String, ColumnInfo> createColumnMap(TableInfo table, @Nullable Collection<ColumnInfo> columns)
+    static public Map<FieldKey, ColumnInfo> createColumnMap(TableInfo table, @Nullable Collection<ColumnInfo> columns)
     {
-        CaseInsensitiveHashMap<ColumnInfo> ret = new CaseInsensitiveHashMap<ColumnInfo>();
+        Map<FieldKey, ColumnInfo> ret = new HashMap<FieldKey, ColumnInfo>();
         if (columns != null)
         {
             for (ColumnInfo column : columns)
             {
-                ret.put(column.getName(), column);
+                ret.put(column.getFieldKey(), column);
             }
         }
         if (table != null)
         {
             for (String name : table.getColumnNameSet())
             {
-                if (ret.containsKey(name))
+                FieldKey f = FieldKey.fromParts(name);
+                if (ret.containsKey(f))
                     continue;
                 ColumnInfo column = table.getColumn(name);
                 if (column != null)
                 {
-                    ret.put(name, column);
+                    ret.put(column.getFieldKey(), column);
                 }
             }
         }

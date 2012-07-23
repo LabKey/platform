@@ -348,7 +348,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
 
         //add the aggregation query
         sql.append("\nFROM (\n");
-        Map<String,ColumnInfo> filterColMap = addAggQuery(sql);
+        Map<FieldKey,ColumnInfo> filterColMap = addAggQuery(sql);
         sql.append("\n) AS ");
         sql.append(AGG_FILTERED_ALIAS);
 
@@ -363,7 +363,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
 
     } //addPivotQuery()
 
-    protected Map<String,ColumnInfo> addAggQuery(SQLFragment sql)
+    protected Map<FieldKey,ColumnInfo> addAggQuery(SQLFragment sql)
     {
         //this is pretty nasty, but it seems to be the only way to
         //ensure that filters on fk table values can be applied
@@ -421,7 +421,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
      * @param filterColMap the filter column map to use
      * @param joinAlias the alias of the table to which the SQL should join
      */
-    protected void addOrAggFilterJoin(SQLFragment sql, Map<String,ColumnInfo> filterColMap, String joinAlias)
+    protected void addOrAggFilterJoin(SQLFragment sql, Map<FieldKey, ColumnInfo> filterColMap, String joinAlias)
     {
         //The theory here is that we will join the result of the aggregations
         //to another inner-select that gets the row dimension members that
@@ -508,12 +508,12 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         return new CrosstabTable(getSettings())._columnMap;
     }
 
-    protected Map<String, ColumnInfo> getAggregateFilterColMap(Collection<ColumnInfo> cols)
+    protected Map<FieldKey, ColumnInfo> getAggregateFilterColMap(Collection<ColumnInfo> cols)
     {
-        Map<String,ColumnInfo> map = new HashMap<String,ColumnInfo>(cols.size());
+        Map<FieldKey,ColumnInfo> map = new HashMap<FieldKey,ColumnInfo>(cols.size());
         for(ColumnInfo col : cols)
         {
-            map.put(col.getName(), col);
+            map.put(col.getFieldKey(), col);
         }
         return map;
     }

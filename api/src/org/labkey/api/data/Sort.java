@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.URLHelper;
 
 import java.util.*;
@@ -46,6 +47,28 @@ public class Sort
         {
             return dir == '+' ? "ASC" : "DESC";
         }
+
+        public static SortDirection fromString(String s)
+        {
+            if (s == null || s.length() == 0)
+                return ASC;
+
+            if (s.length() == 1)
+                return fromChar(s.charAt(0));
+
+            if (DESC.name().equals(s))
+                return DESC;
+            
+            return ASC;
+        }
+
+        public static SortDirection fromChar(char c)
+        {
+            if (DESC.dir == c)
+                return DESC;
+
+            return ASC;
+        }
      }
 
     private static String SORT_KEY = ".sort";
@@ -55,32 +78,41 @@ public class Sort
     public class SortField
     {
         SortDirection _dir = SortDirection.ASC;
-        String _colName = null;
+        FieldKey _fieldKey = null;
         boolean _urlClause = false;
 
-        public SortField(String str, SortDirection dir)
+        public SortField(FieldKey fieldKey, SortDirection dir)
         {
-            _colName = str.trim();
+            _fieldKey = fieldKey;
             _dir = dir;
         }
 
+        @Deprecated // Use FieldKey version instead.
+        public SortField(String str, SortDirection dir)
+        {
+            _fieldKey = FieldKey.fromString(str.trim());
+            _dir = dir;
+        }
+
+        @Deprecated // Use FieldKey version instead.
         public SortField(String str)
         {
+            String colName;
             if (str.charAt(0) == SortDirection.DESC.dir)
             {
                 _dir = SortDirection.DESC;
-                _colName = str.substring(1);
+                colName = str.substring(1);
             }
             else if (str.charAt(0) == SortDirection.ASC.dir)
-                _colName = str.substring(1);
+                colName = str.substring(1);
             else
-                _colName = str;
-            _colName = _colName.trim();
+                colName = str;
+            _fieldKey = FieldKey.fromString(colName.trim());
         }
 
         public String toUrlString()
         {
-            return (_dir == SortDirection.ASC ? "" : "-") + _colName;
+            return (_dir == SortDirection.ASC ? "" : "-") + _fieldKey.toString();
         }
 
         private String toOrderByString(SqlDialect dialect, String alias)
@@ -90,12 +122,18 @@ public class Sort
 
         public String getSelectName(SqlDialect dialect)
         {
-            return dialect.getColumnSelectName(_colName);
+            return dialect.getColumnSelectName(_fieldKey.getName());
         }
 
+        public FieldKey getFieldKey()
+        {
+            return _fieldKey;
+        }
+
+        @Deprecated // Use .getFieldKey() instead.
         public String getColumnName()
         {
-            return _colName;
+            return _fieldKey.toString();
         }
 
         public SortDirection getSortDirection()
@@ -174,7 +212,7 @@ public class Sort
      */
     public void insertSortColumn(SortField sortField)
     {
-        insertSortColumn(sortField.toUrlString(), sortField.isUrlClause());
+        insertSortColumn(sortField.getFieldKey(), sortField.getSortDirection(), sortField.isUrlClause());
     }
 
     /**
@@ -182,6 +220,7 @@ public class Sort
      *
      * @param columnName Name of column to sort on. Use -columnName to indicate a descending sort.
      */
+    @Deprecated // Use FieldKey version instead.
     public void insertSortColumn(String columnName)
     {
         insertSortColumn(columnName, false);
@@ -190,12 +229,36 @@ public class Sort
     /**
      * Insert a sort column to the head of the sort list.
      *
+     * @param fieldKey FieldKey of column to sort on. Use -fieldKey to indicate a descending sort.
+     * @param dir sort direction
+     */
+    public void insertSortColumn(FieldKey fieldKey, SortDirection dir)
+    {
+        insertSortColumn(fieldKey, dir, false);
+    }
+
+    /**
+     * Insert a sort column to the head of the sort list.
+     *
      * @param columnName Name of column to sort on. Use -columnName to indicate a descending sort.
      * @param urlClause  Make this column visible on the URL.
      */
+    @Deprecated // Use FieldKey version instead.
     public void insertSortColumn(String columnName, boolean urlClause)
     {
         insertSortColumn(columnName, urlClause, 0);
+    }
+
+    /**
+     * Insert a sort column to the head of the sort list.
+     *
+     * @param fieldKey FieldKey of column to sort on. Use -columnName to indicate a descending sort.
+     * @param dir sort direction
+     * @param urlClause  Make this column visible on the URL.
+     */
+    public void insertSortColumn(FieldKey fieldKey, SortDirection dir, boolean urlClause)
+    {
+        insertSortColumn(fieldKey, dir, urlClause, 0);
     }
 
     /**
@@ -205,9 +268,25 @@ public class Sort
      * @param urlClause  Make this column visible on the URL.
      * @param insertionIndex Index at which to insert into the sort
      */
+    @Deprecated // Use FieldKey version instead.
     public void insertSortColumn(String columnName, boolean urlClause, int insertionIndex)
     {
         SortField sfToInsert = new SortField(columnName);
+        sfToInsert._urlClause = urlClause;
+        replaceSortColumn(sfToInsert, insertionIndex);
+    }
+
+    /**
+     * Add a column to the sort.
+     *
+     * @param fieldKey FieldKey of column to sort on. Use -columnName to indicate a descending sort.
+     * @param dir sort direction
+     * @param urlClause  Make this column visible on the URL.
+     * @param insertionIndex Index at which to insert into the sort
+     */
+    public void insertSortColumn(FieldKey fieldKey, SortDirection dir, boolean urlClause, int insertionIndex)
+    {
+        SortField sfToInsert = new SortField(fieldKey, dir);
         sfToInsert._urlClause = urlClause;
         replaceSortColumn(sfToInsert, insertionIndex);
     }
@@ -219,7 +298,7 @@ public class Sort
      */
     public void appendSortColumn(SortField sortField)
     {
-        appendSortColumn(sortField.toUrlString(), sortField.isUrlClause());
+        appendSortColumn(sortField.getFieldKey(), sortField.getSortDirection(), sortField.isUrlClause());
     }
 
     /**
@@ -228,9 +307,22 @@ public class Sort
      * @param columnName Name of column to sort on. Use -columnName to indicate a descending sort.
      * @param urlClause  Make this column visible on the URL.
      */
+    @Deprecated // Use FieldKey version instead.
     public void appendSortColumn(String columnName, boolean urlClause)
     {
         insertSortColumn(columnName, urlClause, _sortList.size());
+    }
+
+    /**
+     * Append a sort column to the end of the sort list.
+     *
+     * @param fieldKey FieldKey of column to sort on. Use -columnName to indicate a descending sort.
+     * @param dir sort direction
+     * @param urlClause  Make this column visible on the URL.
+     */
+    public void appendSortColumn(FieldKey fieldKey, SortDirection dir, boolean urlClause)
+    {
+        insertSortColumn(fieldKey, dir, urlClause, _sortList.size());
     }
 
     // Add all the columns to this sort
@@ -244,7 +336,7 @@ public class Sort
 
     private void replaceSortColumn(SortField sortField, int insertionIndex)
     {
-        int deletedIndex = deleteSortColumn(sortField._colName);
+        int deletedIndex = deleteSortColumn(sortField._fieldKey);
         if (deletedIndex != -1 && insertionIndex > deletedIndex)
         {
 //            insertionIndex--;
@@ -252,37 +344,37 @@ public class Sort
         _sortList.add(insertionIndex, sortField);
     }
 
-    public int deleteSortColumn(String columnName)
+    public int deleteSortColumn(FieldKey fieldKey)
     {
-        int index = indexOf(columnName);
+        int index = indexOf(fieldKey);
         if (-1 != index)
             _sortList.remove(index);
         return index;
     }
 
-    public SortField getSortColumn(String columnName)
+    public SortField getSortColumn(FieldKey fieldKey)
     {
         for (SortField sf : _sortList)
-            if (sf._colName.equalsIgnoreCase(columnName))
+            if (sf._fieldKey.equals(fieldKey))
                 return sf;
         return null;
     }
 
-    public int indexOf(String columnName)
+    public int indexOf(FieldKey fieldKey)
     {
         for (int i = 0; i < _sortList.size(); i++)
         {
             SortField sf = _sortList.get(i);
-            if (sf._colName.equalsIgnoreCase(columnName))
+            if (sf._fieldKey.equals(fieldKey))
                 return i;
         }
 
         return -1;
     }
 
-    public boolean contains(String columnName)
+    public boolean contains(FieldKey fieldKey)
     {
-        return -1 != indexOf(columnName);
+        return -1 != indexOf(fieldKey);
     }
 
     public String getSortParamValue()
@@ -302,23 +394,24 @@ public class Sort
         return sb.toString();
     }
 
-    public Set<String> getRequiredColumnNames(Map<String,? extends ColumnInfo> columns)
+    public Set<FieldKey> getRequiredColumns(Map<String, ? extends ColumnInfo> columns)
     {
         if (null == _sortList || _sortList.size() == 0)
             return Collections.emptySet();
 
-        Set<String> requiredColumnNames = new HashSet<String>();
+        Set<FieldKey> requiredColumnNames = new HashSet<FieldKey>();
         for (SortField sf : _sortList)
         {
+            requiredColumnNames.add(sf.getFieldKey());
+
             String columnName = sf.getColumnName();
-            requiredColumnNames.add(columnName);
             ColumnInfo col = columns.get(columnName);
             if (col != null && col.isMvEnabled())
             {
                 // Note: The columns we're passed won't necessarily contain
                 // our mv column at this point -- we need to let the caller
                 // know it should be added
-                requiredColumnNames.add(col.getMvColumnName().getName());
+                requiredColumnNames.add(col.getMvColumnName());
             }
         }
         return requiredColumnNames;
@@ -326,10 +419,10 @@ public class Sort
 
     public String getOrderByClause(SqlDialect dialect)
     {
-        return getOrderByClause(dialect, Collections.<String, ColumnInfo>emptyMap());
+        return getOrderByClause(dialect, Collections.<FieldKey, ColumnInfo>emptyMap());
     }
 
-    public String getOrderByClause(SqlDialect dialect, Map<String, ? extends ColumnInfo> columns)
+    public String getOrderByClause(SqlDialect dialect, Map<FieldKey, ? extends ColumnInfo> columns)
     {
         if (null == _sortList || _sortList.size() == 0)
             return "";
@@ -339,10 +432,11 @@ public class Sort
         for (SortField sf : _sortList)
         {
             sb.append(sep);
-            String alias = sf.getColumnName();
+            FieldKey fieldKey = sf.getFieldKey();
+            String alias = fieldKey.getName();
             // If we have an mv indicator column, we need to sort on it secondarily
             ColumnInfo mvIndicatorColumn = null;
-            ColumnInfo colinfo = columns.get(alias);
+            ColumnInfo colinfo = columns.get(fieldKey);
             if (colinfo != null)
             {
                 alias = colinfo.getAlias();

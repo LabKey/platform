@@ -57,7 +57,7 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable
 
         // TODO - we should have a more reliable (and speedier) way of identifying just the data rows here
         SQLFragment dataRowClause = new SQLFragment("ObjectURI LIKE '%" + getDataRowLsidPrefix() + "%'");
-        addCondition(dataRowClause, "ObjectURI");
+        addCondition(dataRowClause, FieldKey.fromParts("ObjectURI"));
 
         ExprColumn runColumn = new ExprColumn(this, "Run", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".RunID"), JdbcType.INTEGER);
         runColumn.setFk(new LookupForeignKey("RowID")

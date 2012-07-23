@@ -52,10 +52,16 @@ public enum CompareType
 {
     EQUAL("Equals", "eq", true, " = ?", "EQUAL", OperatorType.EQ)
         {
-            @Override
+            @Deprecated // Use FieldKey version instead.
             FilterClause createFilterClause(String colName, Object value)
             {
-                return new EqualsCompareClause(colName, this, value);
+                return createFilterClause(FieldKey.fromString(colName), value);
+            }
+
+            @Override
+            FilterClause createFilterClause(FieldKey fieldKey, Object value)
+            {
+                return new EqualsCompareClause(fieldKey, this, value);
             }
 
             @Override
@@ -76,23 +82,41 @@ public enum CompareType
         },
     DATE_EQUAL("(Date) Equals", "dateeq", true, null, "DATE_EQUAL", OperatorType.DATEEQ)
         {
+            @Deprecated // Use FieldKey version instead.
             public CompareClause createFilterClause(String colName, Object value)
             {
-                return new DateEqCompareClause(colName, toDatePart(asDate(value)));
+                return createFilterClause(FieldKey.fromString(colName), value);
+            }
+
+            public CompareClause createFilterClause(FieldKey fieldKey, Object value)
+            {
+                return new DateEqCompareClause(fieldKey, toDatePart(asDate(value)));
             }
         },
     DATE_NOT_EQUAL("(Date) Does Not Equal", "dateneq", true, null, "DATE_NOT_EQUAL", OperatorType.DATENEQ)
         {
+            @Deprecated // Use FieldKey version instead.
             public CompareClause createFilterClause(String colName, Object value)
             {
-                return new DateNeqCompareClause(colName, toDatePart(asDate(value)));
+                return createFilterClause(FieldKey.fromString(colName), value);
+            }
+
+            public CompareClause createFilterClause(FieldKey fieldKey, Object value)
+            {
+                return new DateNeqCompareClause(fieldKey, toDatePart(asDate(value)));
             }
         },
     NEQ_OR_NULL("Does Not Equal", "neqornull", true, " <> ?", "NOT_EQUAL_OR_MISSING", OperatorType.NEQORNULL)
         {
+            @Deprecated // Use FieldKey version instead.
             public CompareClause createFilterClause(String colName, Object value)
             {
-                return new NotEqualOrNullClause(colName, value);
+                return createFilterClause(FieldKey.fromString(colName), value);
+            }
+
+            public CompareClause createFilterClause(FieldKey fieldKey, Object value)
+            {
+                return new NotEqualOrNullClause(fieldKey, value);
             }
 
             @Override
@@ -103,10 +127,16 @@ public enum CompareType
         },
     NEQ("Does Not Equal", "neq", true, " <> ?", "NOT_EQUAL", OperatorType.NEQ)
         {
-            @Override
+            @Deprecated // Use FieldKey version instead.
             FilterClause createFilterClause(String colName, Object value)
             {
-                return new NotEqualsCompareClause(colName, this, value);
+                return createFilterClause(FieldKey.fromString(colName), value);
+            }
+
+            @Override
+            FilterClause createFilterClause(FieldKey fieldKey, Object value)
+            {
+                return new NotEqualsCompareClause(fieldKey, this, value);
             }
 
             @Override
@@ -117,9 +147,15 @@ public enum CompareType
         },
     ISBLANK("Is Blank", "isblank", false, " IS NULL", "MISSING", OperatorType.ISBLANK)
         {
+            @Deprecated // Use FieldKey version instead.
             public FilterClause createFilterClause(String colName, Object value)
             {
-                return super.createFilterClause(colName, null);
+                return createFilterClause(FieldKey.fromString(colName), value);
+            }
+
+            public FilterClause createFilterClause(FieldKey fieldKey, Object value)
+            {
+                return super.createFilterClause(fieldKey, null);
             }
 
             @Override
@@ -130,9 +166,15 @@ public enum CompareType
         },
     NONBLANK("Is Not Blank", "isnonblank", false, " IS NOT NULL", "NOT_MISSING", OperatorType.ISNONBLANK)
         {
+            @Deprecated // Use FieldKey version instead.
             public FilterClause createFilterClause(String colName, Object value)
             {
-                return super.createFilterClause(colName, null);
+                return createFilterClause(FieldKey.fromString(colName), value);
+            }
+
+            public FilterClause createFilterClause(FieldKey fieldKey, Object value)
+            {
+                return super.createFilterClause(fieldKey, null);
             }
 
             @Override
@@ -143,9 +185,15 @@ public enum CompareType
         },
     DATE_GT("(Date) Is Greater Than", "dategt", true, " >= ?", "DATE_GREATER_THAN", OperatorType.GTE) // GT --> >= roundup(date)
         {
+            @Deprecated // Use FieldKey version instead.
             public CompareClause createFilterClause(String colName, Object value)
             {
-                return new DateGtCompareClause(colName, toDatePart(asDate(value)));
+                return createFilterClause(FieldKey.fromString(colName), value);
+            }
+
+            public CompareClause createFilterClause(FieldKey fieldKey, Object value)
+            {
+                return new DateGtCompareClause(fieldKey, toDatePart(asDate(value)));
             }
         },
     GT("Is Greater Than", "gt", true, " > ?", "GREATER_THAN", OperatorType.GT)
@@ -167,9 +215,15 @@ public enum CompareType
         },
     DATE_LT("(Date) Is Less Than", "datelt", true, " < ?", "DATE_LESS_THAN", OperatorType.LT)
         {
+            @Deprecated // Use FieldKey version instead.
             public CompareClause createFilterClause(String colName, Object value)
             {
-                return new DateLtCompareClause(colName, toDatePart(asDate(value)));
+                return createFilterClause(FieldKey.fromString(colName), value);
+            }
+
+            public CompareClause createFilterClause(FieldKey fieldKey, Object value)
+            {
+                return new DateLtCompareClause(fieldKey, toDatePart(asDate(value)));
             }
         },
     LT("Is Less Than", "lt", true, " < ?", "LESS_THAN", OperatorType.LT)
@@ -191,9 +245,15 @@ public enum CompareType
         },
     DATE_GTE("(Date) Is Greater Than or Equal To", "dategte", true, " >= ?", "DATE_GREATER_THAN_OR_EQUAL", OperatorType.GTE)
         {
+            @Deprecated // Use FieldKey version instead.
             public CompareClause createFilterClause(String colName, Object value)
             {
-                return new DateGteCompareClause(colName, toDatePart(asDate(value)));
+                return createFilterClause(FieldKey.fromString(colName), value);
+            }
+
+            public CompareClause createFilterClause(FieldKey fieldKey, Object value)
+            {
+                return new DateGteCompareClause(fieldKey, toDatePart(asDate(value)));
             }
         },
     GTE("Is Greater Than or Equal To", "gte", true, " >= ?", "GREATER_THAN_OR_EQUAL", OperatorType.GTE)
@@ -215,9 +275,15 @@ public enum CompareType
         },
     DATE_LTE("(Date) Is Less Than or Equal To", "datelte", true, " < ?", "DATE_LESS_THAN_OR_EQUAL", OperatorType.LT)  // LTE --> < roundup(date)
         {
+            @Deprecated // Use FieldKey version instead.
             public CompareClause createFilterClause(String colName, Object value)
             {
-                return new DateLteCompareClause(colName, toDatePart(asDate(value)));
+                return createFilterClause(FieldKey.fromString(colName), value);
+            }
+
+            public CompareClause createFilterClause(FieldKey fieldKey, Object value)
+            {
+                return new DateLteCompareClause(fieldKey, toDatePart(asDate(value)));
             }
         },
     LTE("Is Less Than or Equal To", "lte", true, " <= ?", "LESS_THAN_OR_EQUAL", OperatorType.LTE)
@@ -239,9 +305,15 @@ public enum CompareType
         },
     CONTAINS("Contains", "contains", true, null, "CONTAINS", OperatorType.CONTAINS)
         {
+            @Deprecated // Use FieldKey version instead.
             public CompareClause createFilterClause(String colName, Object value)
             {
-                return new ContainsClause(colName, value);
+                return createFilterClause(FieldKey.fromString(colName), value);
+            }
+
+            public CompareClause createFilterClause(FieldKey fieldKey, Object value)
+            {
+                return new ContainsClause(fieldKey, value);
             }
 
             @Override
@@ -252,9 +324,15 @@ public enum CompareType
         },
     DOES_NOT_CONTAIN("Does Not Contain", "doesnotcontain", true, null, "DOES_NOT_CONTAIN", OperatorType.DOESNOTCONTAIN)
             {
+                @Deprecated // Use FieldKey version instead.
                 public CompareClause createFilterClause(String colName, Object value)
                 {
-                    return new DoesNotContainClause(colName, value);
+                    return createFilterClause(FieldKey.fromString(colName), value);
+                }
+
+                public CompareClause createFilterClause(FieldKey fieldKey, Object value)
+                {
+                    return new DoesNotContainClause(fieldKey, value);
                 }
 
                 @Override
@@ -265,9 +343,15 @@ public enum CompareType
             },
     DOES_NOT_START_WITH("Does Not Start With", "doesnotstartwith", true, null, "DOES_NOT_START_WITH", OperatorType.DOESNOTSTARTWITH)
             {
+                @Deprecated // Use FieldKey version instead.
                 public CompareClause createFilterClause(String colName, Object value)
                 {
-                    return new DoesNotStartWithClause(colName, value);
+                    return createFilterClause(FieldKey.fromString(colName), value);
+                }
+
+                public CompareClause createFilterClause(FieldKey fieldKey, Object value)
+                {
+                    return new DoesNotStartWithClause(fieldKey, value);
                 }
 
                 @Override
@@ -278,9 +362,15 @@ public enum CompareType
             },
     STARTS_WITH("Starts With", "startswith", true, null, "STARTS_WITH", OperatorType.STARTSWITH)
             {
+                @Deprecated // Use FieldKey version instead.
                 public CompareClause createFilterClause(String colName, Object value)
                 {
-                    return new StartsWithClause(colName, value);
+                    return createFilterClause(FieldKey.fromString(colName), value);
+                }
+
+                public CompareClause createFilterClause(FieldKey fieldKey, Object value)
+                {
+                    return new StartsWithClause(fieldKey, value);
                 }
 
                 @Override
@@ -291,12 +381,18 @@ public enum CompareType
             },
     IN("Equals One Of (e.g. 'a;b;c')", "in", true, null, "IN", OperatorType.IN)
             {
-                // Each compare type uses CompareClause by default
+                @Deprecated // Use FieldKey version instead.
                 FilterClause createFilterClause(String colName, Object value)
+                {
+                    return createFilterClause(FieldKey.fromString(colName), value);
+                }
+
+                // Each compare type uses CompareClause by default
+                FilterClause createFilterClause(FieldKey fieldKey, Object value)
                 {
                     if (value instanceof Collection)
                     {
-                        return new SimpleFilter.InClause(colName, (Collection)value, false);
+                        return new SimpleFilter.InClause(fieldKey, (Collection)value, false);
                     }
                     else
                     {
@@ -305,7 +401,7 @@ public enum CompareType
                         {
                             values.addAll(parseParams(value, this));
                         }
-                        return new SimpleFilter.InClause(colName, values, true);
+                        return new SimpleFilter.InClause(fieldKey, values, true);
                     }
                 }
 
@@ -316,12 +412,18 @@ public enum CompareType
                 }},
     NOT_IN("Does Not Equal Any Of (e.g. 'a;b;c')", "notin", true, null, "NOT_IN", OperatorType.NOTIN)
             {
-                // Each compare type uses CompareClause by default
+                @Deprecated // Use FieldKey version instead.
                 FilterClause createFilterClause(String colName, Object value)
+                {
+                    return createFilterClause(FieldKey.fromString(colName), value);
+                }
+
+                // Each compare type uses CompareClause by default
+                FilterClause createFilterClause(FieldKey fieldKey, Object value)
                 {
                     if (value instanceof Collection)
                     {
-                        return new SimpleFilter.InClause(colName, (Collection)value, false, true);
+                        return new SimpleFilter.InClause(fieldKey, (Collection)value, false, true);
                     }
                     else
                     {
@@ -330,7 +432,7 @@ public enum CompareType
                         {
                             values.addAll(parseParams(value, this));
                         }
-                        return new SimpleFilter.InClause(colName, values, true, true);
+                        return new SimpleFilter.InClause(fieldKey, values, true, true);
                     }
                 }
 
@@ -342,12 +444,18 @@ public enum CompareType
             },
     CONTAINS_ONE_OF("Contains One Of (e.g. 'a;b;c')", "containsoneof", true, null, "CONTAINS_ONE_OF", OperatorType.CONTAINSONEOF)
             {
-                // Each compare type uses CompareClause by default
+                @Deprecated // Use FieldKey version instead.
                 FilterClause createFilterClause(String colName, Object value)
+                {
+                    return createFilterClause(FieldKey.fromString(colName), value);
+                }
+
+                // Each compare type uses CompareClause by default
+                FilterClause createFilterClause(FieldKey fieldKey, Object value)
                 {
                     if (value instanceof Collection)
                     {
-                        return new SimpleFilter.ContainsOneOfClause(colName, (Collection)value, false);
+                        return new SimpleFilter.ContainsOneOfClause(fieldKey, (Collection)value, false);
                     }
                     else
                     {
@@ -356,7 +464,7 @@ public enum CompareType
                         {
                             values.addAll(parseParams(value, this));
                         }
-                        return new SimpleFilter.ContainsOneOfClause(colName, values, true, false);
+                        return new SimpleFilter.ContainsOneOfClause(fieldKey, values, true, false);
                     }
                 }
 
@@ -367,18 +475,24 @@ public enum CompareType
                 }},
     CONTAINS_NONE_OF("Does Not Contain Any Of (e.g. 'a;b;c')", "containsnoneof", true, null, "CONTAINS_NONE_OF", OperatorType.CONTAINSNONEOF)
             {
-                // Each compare type uses CompareClause by default
+                @Deprecated // Use FieldKey version instead.
                 FilterClause createFilterClause(String colName, Object value)
+                {
+                    return createFilterClause(FieldKey.fromString(colName), value);
+                }
+
+                // Each compare type uses CompareClause by default
+                FilterClause createFilterClause(FieldKey fieldKey, Object value)
                 {
                     if (value instanceof Collection)
                     {
-                        return new SimpleFilter.ContainsOneOfClause(colName, (Collection)value, false, true);
+                        return new SimpleFilter.ContainsOneOfClause(fieldKey, (Collection)value, false, true);
                     }
                     else
                     {
                         Set<String> values = parseParams(value, this);
 
-                        return new SimpleFilter.ContainsOneOfClause(colName, values, false, true);
+                        return new SimpleFilter.ContainsOneOfClause(fieldKey, values, false, true);
                     }
                 }
 
@@ -390,10 +504,16 @@ public enum CompareType
     HAS_QC("Has A QC Value", new String[] { "hasmvvalue", "hasqcvalue" }, false, " has a missing value indicator", "MV_INDICATOR", OperatorType.HASMVVALUE)
     // TODO: Switch to MV_INDICATOR
             {
-                @Override
+                @Deprecated // Use FieldKey version instead.
                 QcClause createFilterClause(String colName, Object value)
                 {
-                    return new QcClause(colName, false);
+                    return createFilterClause(FieldKey.fromString(colName), value);
+                }
+
+                @Override
+                QcClause createFilterClause(FieldKey fieldKey, Object value)
+                {
+                    return new QcClause(fieldKey, false);
                 }
 
                 @Override
@@ -405,10 +525,16 @@ public enum CompareType
     NO_QC("Does Not Have A QC Value", new String[] { "nomvvalue", "noqcvalue" }, false, " does not have a missing value indicator", "NO_MV_INDICATOR", OperatorType.NOMVVALUE)
     // TODO: Switch to MV_INDICATOR
             {
-                @Override
+                @Deprecated // Use FieldKey version instead.
                 QcClause createFilterClause(String colName, Object value)
                 {
-                    return new QcClause(colName, true);
+                    return createFilterClause(FieldKey.fromString(colName), value);
+                }
+
+                @Override
+                QcClause createFilterClause(FieldKey fieldKey, Object value)
+                {
+                    return new QcClause(fieldKey, true);
                 }
 
                 @Override
@@ -573,33 +699,33 @@ public enum CompareType
         // if not implemented, but be implemented by the FilterClause
         throw new UnsupportedOperationException();
     }
-    
+
     // Each compare type uses CompareClause by default
-    FilterClause createFilterClause(String colName, Object value)
+    FilterClause createFilterClause(FieldKey fieldKey, Object value)
     {
-        return new CompareClause(colName, this, value);
+        return new CompareClause(fieldKey, this, value);
     }
 
     public static class CompareClause extends FilterClause
     {
         @NotNull
-        final String _colName;
+        final FieldKey _fieldKey;
         
         CompareType _comparison;
 
 
-        public CompareClause(String colName, CompareType comparison, Object value)
+        public CompareClause(FieldKey fieldKey, CompareType comparison, Object value)
         {
-            if (colName == null)
-                throw new IllegalArgumentException("colName cannot be null");
-            _colName = colName;
+            if (fieldKey == null)
+                throw new IllegalArgumentException("fieldKey cannot be null");
+            _fieldKey = fieldKey;
 
             _comparison = comparison;
 
             if (null == value)
-                setParamVals(null);
+                _paramVals = null;
             else
-                setParamVals(new Object[]{value});
+                _paramVals = new Object[]{value};
         }
 
         String toWhereClause(SqlDialect dialect, String alias)
@@ -611,7 +737,7 @@ public enum CompareType
         {
             JdbcType type = getColumnType(columnMap);
             if (type == null)
-                throw new IllegalArgumentException("Column " + _colName + " not found in column map.");
+                throw new IllegalArgumentException("Column " + _fieldKey.toDisplayString() + " not found in column map.");
             Object[] params = getParamVals();
             if (params == null || params.length == 0)
                 return sql;
@@ -629,8 +755,7 @@ public enum CompareType
 
         protected JdbcType getColumnType(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
-            FieldKey key = FieldKey.fromString(_colName);
-            ColumnInfo col = columnMap.get(key);
+            ColumnInfo col = columnMap.get(_fieldKey);
             return col != null ? col.getJdbcType() : null;
         }
 
@@ -639,7 +764,7 @@ public enum CompareType
             String comparisonSql = _comparison.getSql();
             if (comparisonSql == null)
                 throw new IllegalStateException("This compare type must override getLabKeySQLWhereClause.");
-            String sql = getLabKeySQLColName(_colName) + _comparison.getSql();
+            String sql = getLabKeySQLColName(_fieldKey) + _comparison.getSql();
             return substutiteLabKeySqlParams(sql, columnMap);
         }
 
@@ -652,19 +777,26 @@ public enum CompareType
 
         protected void appendColumnName(StringBuilder sb, ColumnNameFormatter formatter)
         {
-            sb.append(formatter.format(_colName));
+            sb.append(formatter.format(_fieldKey));
         }
 
+        @Deprecated // Use getFieldKeys() instead.
         public List<String> getColumnNames()
         {
-            return Arrays.asList(_colName);
+            return Arrays.asList(_fieldKey.toString());
+        }
+
+        public List<FieldKey> getFieldKeys()
+        {
+            return Arrays.asList(_fieldKey);
         }
 
 
-        public SQLFragment toSQLFragment(Map<String, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
-            ColumnInfo colInfo = columnMap.get(_colName);
-            String alias = colInfo != null ? colInfo.getAlias() : _colName;
+            ColumnInfo colInfo = columnMap != null ? columnMap.get(_fieldKey) : null;
+            String alias = colInfo != null ? colInfo.getAlias() : _fieldKey.getName();
+
             SQLFragment fragment = new SQLFragment(toWhereClause(dialect, alias));
             if (colInfo == null || !isUrlClause() || getParamVals() == null)
             {
@@ -858,20 +990,20 @@ public enum CompareType
     {
         String _filterTextDate;
         String _filterTextOperator;
-        
-        DateCompareClause(String colName, CompareType t, String op, Calendar date, Calendar param0)
+
+        DateCompareClause(FieldKey fieldKey, CompareType t, String op, Calendar date, Calendar param0)
         {
-            super(colName, t, param0.getTime());
+            super(fieldKey, t, param0.getTime());
             _filterTextDate = ConvertUtils.convert(date.getTime());
             _filterTextOperator = op;
         }
 
-        DateCompareClause(String colName, CompareType t, String op, Calendar date, Calendar param0, Calendar param1)
+        DateCompareClause(FieldKey fieldKey, CompareType t, String op, Calendar date, Calendar param0, Calendar param1)
         {
-            super(colName, t, null);
+            super(fieldKey, t, null);
             _filterTextDate = ConvertUtils.convert(date.getTime());
             _filterTextOperator = op;
-            setParamVals(new Object[]{param0.getTime(), param1.getTime()});
+            _paramVals = new Object[]{param0.getTime(), param1.getTime()};
         }
 
         @Override
@@ -894,9 +1026,9 @@ public enum CompareType
 
     static class DateEqCompareClause extends DateCompareClause
     {
-        DateEqCompareClause(String colName,Calendar startValue)
+        DateEqCompareClause(FieldKey fieldKey, Calendar startValue)
         {
-            super(colName, DATE_EQUAL, " = ", startValue, startValue, addOneDay(startValue));
+            super(fieldKey, DATE_EQUAL, " = ", startValue, startValue, addOneDay(startValue));
         }
 
         @Override
@@ -909,7 +1041,7 @@ public enum CompareType
         @Override
         public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
-            String selectName = getLabKeySQLColName(_colName);
+            String selectName = getLabKeySQLColName(_fieldKey);
             String sql = selectName + " >= ? AND " + selectName + " < ?";
             return substutiteLabKeySqlParams(sql, columnMap);
         }
@@ -929,9 +1061,9 @@ public enum CompareType
 
     static class DateNeqCompareClause extends DateCompareClause
     {
-        DateNeqCompareClause(String colName, Calendar startValue)
+        DateNeqCompareClause(FieldKey fieldKey, Calendar startValue)
         {
-            super(colName, DATE_NOT_EQUAL, " <> ", startValue, startValue, addOneDay(startValue));
+            super(fieldKey, DATE_NOT_EQUAL, " <> ", startValue, startValue, addOneDay(startValue));
         }
 
         @Override
@@ -944,7 +1076,7 @@ public enum CompareType
         @Override
         public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
-            String selectName = getLabKeySQLColName(_colName);
+            String selectName = getLabKeySQLColName(_fieldKey);
             String sql = selectName + " < ? OR " + selectName + " >= ?";
             return substutiteLabKeySqlParams(sql, columnMap);
         }
@@ -964,9 +1096,9 @@ public enum CompareType
 
     static class DateGtCompareClause extends DateCompareClause
     {
-        DateGtCompareClause(String colName, Calendar startValue)
+        DateGtCompareClause(FieldKey fieldKey, Calendar startValue)
         {
-            super(colName, DATE_GT, " > ", startValue, addOneDay(startValue));
+            super(fieldKey, DATE_GT, " > ", startValue, addOneDay(startValue));
         }
 
         @Override
@@ -983,9 +1115,9 @@ public enum CompareType
 
     static class DateGteCompareClause extends DateCompareClause
     {
-        DateGteCompareClause(String colName, Calendar startValue)
+        DateGteCompareClause(FieldKey fieldKey, Calendar startValue)
         {
-            super(colName, DATE_GTE, " >= ", startValue, startValue);
+            super(fieldKey, DATE_GTE, " >= ", startValue, startValue);
         }
 
         @Override
@@ -1002,9 +1134,9 @@ public enum CompareType
 
     static class DateLtCompareClause extends DateCompareClause
     {
-        DateLtCompareClause(String colName, Calendar startValue)
+        DateLtCompareClause(FieldKey fieldKey, Calendar startValue)
         {
-            super(colName, DATE_LT, " < ", startValue, startValue);
+            super(fieldKey, DATE_LT, " < ", startValue, startValue);
         }
 
         @Override
@@ -1021,9 +1153,9 @@ public enum CompareType
 
     static class DateLteCompareClause extends DateCompareClause
     {
-        DateLteCompareClause(String colName, Calendar startValue)
+        DateLteCompareClause(FieldKey fieldKey, Calendar startValue)
         {
-            super(colName, DATE_LTE, " <= ", startValue, addOneDay(startValue));
+            super(fieldKey, DATE_LTE, " <= ", startValue, addOneDay(startValue));
         }
 
         @Override
@@ -1045,9 +1177,9 @@ public enum CompareType
 
         private final String _unescapedValue;
 
-        protected LikeClause(String colName, CompareType compareType, Object value)
+        protected LikeClause(FieldKey fieldKey, CompareType compareType, Object value)
         {
-            super(colName, compareType, escapeLikePattern(ObjectUtils.toString(value)));
+            super(fieldKey, compareType, escapeLikePattern(ObjectUtils.toString(value)));
             _unescapedValue = ObjectUtils.toString(value);
         }
 
@@ -1091,9 +1223,9 @@ public enum CompareType
 
     private static class StartsWithClause extends LikeClause
     {
-        public StartsWithClause(String colName, Object value)
+        public StartsWithClause(FieldKey fieldKey, Object value)
         {
-            super(colName, CompareType.STARTS_WITH, value);
+            super(fieldKey, CompareType.STARTS_WITH, value);
         }
 
         String toWhereClause(SqlDialect dialect, String alias)
@@ -1105,7 +1237,7 @@ public enum CompareType
         public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
             Object value = getParamVals()[0];
-            return  getLabKeySQLColName(_colName) + " LIKE '" + escapeLabKeySqlValue(value, getColumnType(columnMap), true) + "%'";
+            return  getLabKeySQLColName(_fieldKey) + " LIKE '" + escapeLabKeySqlValue(value, getColumnType(columnMap), true) + "%'";
         }
 
         @Override
@@ -1118,9 +1250,9 @@ public enum CompareType
 
     private static class DoesNotStartWithClause extends LikeClause
     {
-        public DoesNotStartWithClause(String colName, Object value)
+        public DoesNotStartWithClause(FieldKey fieldKey, Object value)
         {
-            super(colName, CompareType.DOES_NOT_START_WITH, value);
+            super(fieldKey, CompareType.DOES_NOT_START_WITH, value);
         }
 
         String toWhereClause(SqlDialect dialect, String alias)
@@ -1132,7 +1264,7 @@ public enum CompareType
         public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
             Object value = getParamVals()[0];
-            return "(" + _colName + " IS NULL OR " + getLabKeySQLColName(_colName) + " NOT LIKE '" + escapeLabKeySqlValue(value, getColumnType(columnMap), true) + "%'" + ")";
+            return "(" + getLabKeySQLColName(_fieldKey) + " IS NULL OR " + getLabKeySQLColName(_fieldKey) + " NOT LIKE '" + escapeLabKeySqlValue(value, getColumnType(columnMap), true) + "%'" + ")";
         }
 
         @Override
@@ -1145,15 +1277,15 @@ public enum CompareType
 
     public static class EqualsCompareClause extends CompareClause
     {
-        public EqualsCompareClause(String colName, CompareType comparison, Object value)
+        public EqualsCompareClause(FieldKey fieldKey, CompareType comparison, Object value)
         {
-            super(colName, comparison, value);
+            super(fieldKey, comparison, value);
         }
 
         @Override
-        public SQLFragment toSQLFragment(Map<String, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
-            ColumnInfo colInfo = columnMap.get(_colName);
+            ColumnInfo colInfo = columnMap.get(_fieldKey);
             assert getParamVals().length == 1;
             if (isUrlClause())
             {
@@ -1161,7 +1293,7 @@ public enum CompareType
                 if (null == value || (value instanceof String && ((String)value).length() == 0))
                 {
                     // Flip to treat this as an IS NULL comparison request
-                    return ISBLANK.createFilterClause(_colName, null).toSQLFragment(columnMap, dialect);
+                    return ISBLANK.createFilterClause(_fieldKey, null).toSQLFragment(columnMap, dialect);
                 }
             }
 
@@ -1171,20 +1303,20 @@ public enum CompareType
 
     public static class NotEqualsCompareClause extends CompareClause
     {
-        public NotEqualsCompareClause(String colName, CompareType comparison, Object value)
+        public NotEqualsCompareClause(FieldKey fieldKey, CompareType comparison, Object value)
         {
-            super(colName, comparison, value);
+            super(fieldKey, comparison, value);
         }
 
         @Override
-        public SQLFragment toSQLFragment(Map<String, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
-            ColumnInfo colInfo = columnMap.get(_colName);
+            ColumnInfo colInfo = columnMap.get(_fieldKey);
             assert getParamVals().length == 1;
             if (isUrlClause() && convertParamValue(colInfo, getParamVals()[0]) == null)
             {
                 // Flip to treat this as an IS NOT NULL comparison request
-                return NONBLANK.createFilterClause(_colName, null).toSQLFragment(columnMap, dialect);
+                return NONBLANK.createFilterClause(_fieldKey, null).toSQLFragment(columnMap, dialect);
             }
 
             return super.toSQLFragment(columnMap, dialect);
@@ -1193,9 +1325,9 @@ public enum CompareType
 
     public static class ContainsClause extends LikeClause
     {
-        public ContainsClause(String colName, Object value)
+        public ContainsClause(FieldKey fieldKey, Object value)
         {
-            super(colName, CompareType.CONTAINS, value);
+            super(fieldKey, CompareType.CONTAINS, value);
         }
 
         String toWhereClause(SqlDialect dialect, String alias)
@@ -1206,7 +1338,7 @@ public enum CompareType
         @Override
         public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
-            String colName = getLabKeySQLColName(_colName);
+            String colName = getLabKeySQLColName(_fieldKey);
             return "LOWER(" + colName + ") LIKE LOWER('%" + escapeLabKeySqlValue(getParamVals()[0], getColumnType(columnMap), true) + "%')";
         }
 
@@ -1220,10 +1352,11 @@ public enum CompareType
 
     public static class DoesNotContainClause extends LikeClause
     {
-        public DoesNotContainClause(String colName, Object value)
+        public DoesNotContainClause(FieldKey fieldKey, Object value)
         {
-            super(colName, CompareType.DOES_NOT_CONTAIN, value);
+            super(fieldKey, CompareType.DOES_NOT_CONTAIN, value);
         }
+
         String toWhereClause(SqlDialect dialect, String alias)
         {
             return "(" + dialect.getColumnSelectName(alias) + " IS NULL OR " + dialect.getColumnSelectName(alias) + " NOT " + dialect.getCaseInsensitiveLikeOperator() + " " + dialect.concatenate("'%'", "?", "'%'") + sqlEscape() + ")"; 
@@ -1232,7 +1365,7 @@ public enum CompareType
         @Override
         public String getLabKeySQLWhereClause(Map<FieldKey, ? extends ColumnInfo> columnMap)
         {
-            String colName = getLabKeySQLColName(_colName);
+            String colName = getLabKeySQLColName(_fieldKey);
             return "(" + colName + " IS NULL OR LOWER(" + colName + ") NOT LIKE LOWER('%" + escapeLabKeySqlValue(getParamVals()[0], getColumnType(columnMap), true) + "%'))";
         }
 
@@ -1246,9 +1379,9 @@ public enum CompareType
 
     private static class NotEqualOrNullClause extends CompareClause
     {
-        NotEqualOrNullClause(String colName, Object value)
+        NotEqualOrNullClause(FieldKey fieldKey, Object value)
         {
-            super(colName, CompareType.NEQ_OR_NULL, value);
+            super(fieldKey, CompareType.NEQ_OR_NULL, value);
         }
 
         @Override
@@ -1264,9 +1397,9 @@ public enum CompareType
     {
         private final boolean isNull;
 
-        QcClause(String colName, boolean isNull)
+        QcClause(FieldKey fieldKey, boolean isNull)
         {
-            super(colName, isNull ? CompareType.NO_QC : CompareType.HAS_QC, null);
+            super(fieldKey, isNull ? CompareType.NO_QC : CompareType.HAS_QC, null);
             this.isNull = isNull;
         }
 
@@ -1274,15 +1407,25 @@ public enum CompareType
         public List<String> getColumnNames()
         {
             List<String> names = new ArrayList<String>();
-            names.add(_colName);
-            names.add(_colName + MvColumn.MV_INDICATOR_SUFFIX);
+            names.add(_fieldKey.toString());
+            names.add(_fieldKey.toString() + MvColumn.MV_INDICATOR_SUFFIX);
             return names;
         }
 
         @Override
-        public SQLFragment toSQLFragment(Map<String, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        public List<FieldKey> getFieldKeys()
         {
-            ColumnInfo qcColumn = columnMap.get(_colName + MvColumn.MV_INDICATOR_SUFFIX);
+            List<FieldKey> names = new ArrayList<FieldKey>();
+            names.add(_fieldKey);
+            names.add(new FieldKey(_fieldKey.getParent(), _fieldKey.getName() + MvColumn.MV_INDICATOR_SUFFIX));
+            return names;
+        }
+
+        @Override
+        public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        {
+            FieldKey mvFieldKey = new FieldKey(_fieldKey.getParent(), _fieldKey.getName() + MvColumn.MV_INDICATOR_SUFFIX);
+            ColumnInfo qcColumn = columnMap.get(mvFieldKey);
             SQLFragment sql = new SQLFragment(qcColumn.getAlias() + " IS " + (isNull ? "" : "NOT ") + "NULL");
             return sql;
         }

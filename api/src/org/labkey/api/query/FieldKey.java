@@ -259,9 +259,25 @@ public class FieldKey implements Comparable
     /**
      * Returns a string appropriate for display to the user.
      */
-    public String getDisplayString()
+    public String toDisplayString()
     {
         return StringUtils.join(getParts().iterator(), ".");
+    }
+
+    /**
+     * Returns a string appropriate for usage in LabKey SQL.
+     */
+    public String toSQLString()
+    {
+        List<String> parts = getParts();
+        StringBuilder escapedColName = new StringBuilder();
+        String sep = "";
+        for (String part : parts)
+        {
+            escapedColName.append(sep).append("\"").append(part).append("\"");
+            sep = ".";
+        }
+        return escapedColName.toString();
     }
 
     public boolean isAllColumns()

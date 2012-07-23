@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.FieldKey;
 
 import java.util.Set;
 import java.util.Map;
@@ -31,8 +32,9 @@ import java.util.List;
 public interface Filter
 {
     public SQLFragment getSQLFragment(TableInfo tableInfo, @Nullable List<ColumnInfo> colInfos);
-    public SQLFragment getSQLFragment(SqlDialect dialect, Map<String, ? extends ColumnInfo> columnMap);
-    public Set<String> getWhereParamNames();
+    public SQLFragment getSQLFragment(SqlDialect dialect, Map<FieldKey, ? extends ColumnInfo> columnMap);
+    public boolean isEmpty();
+    public Set<FieldKey> getWhereParamFieldKeys();
 
     /**
      * @return the SQL fragment with the parameter values substituted in.  Suitable for using as a key in a cache,

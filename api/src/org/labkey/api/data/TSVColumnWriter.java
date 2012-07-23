@@ -85,7 +85,7 @@ public abstract class TSVColumnWriter extends TSVWriter
                 String name;
                 if (columnInfo != null)
                 {
-                    name = FieldKey.fromString(columnInfo.getName()).getDisplayString();
+                    name = FieldKey.fromString(columnInfo.getName()).toDisplayString();
                 }
                 else
                 {

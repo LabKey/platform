@@ -236,11 +236,11 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
 	}
 
 
-    final public void addCondition(SQLFragment condition, String... columnNames)
+    final public void addCondition(SQLFragment condition, FieldKey... fieldKeys)
     {
         if (condition.isEmpty())
             return;
-        _filter.addWhereClause("(" + condition.getSQL() + ")", condition.getParams().toArray(), columnNames);
+        _filter.addWhereClause("(" + condition.getSQL() + ")", condition.getParams().toArray(), fieldKeys);
     }
 
     public void addCondition(SimpleFilter filter)
@@ -272,6 +272,11 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         _filter.deleteConditions(columnName);
     }
 
+    public void clearConditions(FieldKey fieldKey)
+    {
+        _filter.deleteConditions(fieldKey);
+    }
+
     public void addCondition(ColumnInfo col, Container container)
     {
         assertCorrectParentTable(col);
@@ -281,7 +286,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         frag.append(" = CAST(");
         frag.appendStringLiteral(container.getId());
         frag.append(" AS UniqueIdentifier)");
-        addCondition(frag, col.getName());
+        addCondition(frag, col.getFieldKey());
     }
 
     public void addCondition(ColumnInfo col, String value)
@@ -291,7 +296,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         frag.append(filterName(col));
         frag.append(" = ");
         frag.appendStringLiteral(value);
-        addCondition(frag, col.getName());
+        addCondition(frag, col.getFieldKey());
     }
 
     private void assertCorrectParentTable(ColumnInfo col)
@@ -335,8 +340,8 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
     public void addInClause(ColumnInfo col, Collection<?> params)
     {
         assertCorrectParentTable(col);
-        SimpleFilter.InClause clause = new SimpleFilter.InClause(filterName(col), params);
-        SQLFragment frag = clause.toSQLFragment(Collections.<String, ColumnInfo>emptyMap(), _schema.getSqlDialect());
+        SimpleFilter.InClause clause = new SimpleFilter.InClause(col.getFieldKey(), params);
+        SQLFragment frag = clause.toSQLFragment(Collections.<FieldKey, ColumnInfo>emptyMap(), _schema.getSqlDialect());
         addCondition(frag);
     }
 
@@ -375,7 +380,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
             ret.append(getFromTable().getFromSQL(StringUtils.defaultString(_innerAlias,"x")));
 
         // WHERE
-        Map<String, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
+        Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
         SQLFragment filterFrag = _filter.getSQLFragment(_rootTable.getSqlDialect(), columnMap);
         ret.append("\n").append(filterFrag).append(") ").append(alias);
         return ret;
@@ -448,7 +453,7 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         if (containerColumn != null && getContainer() != null)
         {
             clearConditions(containerColumn.getName());
-            addCondition(new SimpleFilter(filter.createFilterClause(getSchema(), getContainerFilterColumn(), getContainer())));
+            addCondition(new SimpleFilter(filter.createFilterClause(getSchema(), containerColumn.getFieldKey(), getContainer())));
         }
     }
 

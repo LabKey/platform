@@ -642,31 +642,42 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
 
     /**
      * Replaces the sort on the given column, if present, or sets a brand new sort
-     * @param columnName name of the column to be sorted
+     * @param {string or LABKEY.FieldKey} fieldKey name of the column to be sorted
      * @param sortDirection either "+' for ascending or '-' for descending
      */
-    changeSort : function (columnName, sortDirection)
+    changeSort : function (fieldKey, sortDirection)
     {
+        if (!fieldKey)
+            return;
+
+        if (!(fieldKey instanceof LABKEY.FieldKey))
+            fieldKey = LABKEY.FieldKey.fromString(""+fieldKey);
+
+        var columnName = fieldKey.toString();
         if (false === this.fireEvent("beforesortchange", this, columnName, sortDirection))
             return;
 
-        var newSortString = this.alterSortString(this.getParameter(this.name + ".sort"), columnName, sortDirection);
+        var newSortString = this.alterSortString(this.getParameter(this.name + ".sort"), fieldKey, sortDirection);
         this._setParam(".sort", newSortString, [".sort", ".offset"]);
     },
 
     /**
      * Removes the sort on a specified column
-     * @param columnName name of the column
+     * @param {string or LABKEY.FieldKey} fieldKey name of the column
      */
-    clearSort : function (columnName)
+    clearSort : function (fieldKey)
     {
-        if (!columnName)
+        if (!fieldKey)
             return;
 
+        if (!(fieldKey instanceof LABKEY.FieldKey))
+            fieldKey = LABKEY.FieldKey.fromString(""+fieldKey);
+
+        var columnName = fieldKey.toString();
         if (false === this.fireEvent("beforeclearsort", this, columnName))
             return;
 
-        var newSortString = this.alterSortString(this.getParameter(this.name + ".sort"), columnName, null);
+        var newSortString = this.alterSortString(this.getParameter(this.name + ".sort"), fieldKey, null);
         if (newSortString.length > 0)
             this._setParam(".sort", newSortString, [".sort", ".offset"]);
         else
@@ -684,13 +695,20 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
 
     /**
      * Removes all the filters for a particular field
-     * @param fieldName the name of the field from which all filters should be removed
+     * @param {string or FieldKey} fieldKey the name of the field from which all filters should be removed
      */
-    clearFilter : function (fieldName)
+    clearFilter : function (fieldKey)
     {
-        if (false === this.fireEvent("beforeclearfilter", this, fieldName))
+        if (!fieldKey)
             return;
-        this._removeParams(["." + fieldName + "~", ".offset"]);
+
+        if (!(fieldKey instanceof LABKEY.FieldKey))
+            fieldKey = LABKEY.FieldKey.fromString(""+fieldKey);
+
+        var columnName = fieldKey.toString();
+        if (false === this.fireEvent("beforeclearfilter", this, columnName))
+            return;
+        this._removeParams(["." + columnName + "~", ".offset"]);
     },
 
     /** Removes all filters from the DataRegion */
@@ -900,10 +918,20 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         return this.msgbox;
     },
 
-    alterSortString : function(currentSortString, columnName, direction)
+    /**
+     * @private
+     * @param currentSortString
+     * @param fieldKey FieldKey or FieldKey encoded string.
+     * @param direction
+     */
+    alterSortString : function(currentSortString, fieldKey, direction)
     {
-        var newSortArray = [];
+        if (!(fieldKey instanceof LABKEY.FieldKey))
+            fieldKey = LABKEY.FieldKey.fromString(""+fieldKey);
 
+        var columnName = fieldKey.toString();
+
+        var newSortArray = [];
         if (currentSortString != null)
         {
             var sortArray = currentSortString.split(",");
@@ -1279,7 +1307,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     // private
     _setParams : function (newParamValPairs, skipPrefixes)
     {
-        for (var i in skipPrefixes)
+        for (var i = 0; i < skipPrefixes.length; i++)
             skipPrefixes[i] = this.name + skipPrefixes[i];
 
         var paramValPairs = this.getParamValPairs(this.requestURL, skipPrefixes);
@@ -2356,15 +2384,15 @@ function verifySelected(form, url, method, pluralNoun, pluralConfirmText, singul
 }
 
 
-function doSort(tableName, columnName, sortDirection)
+function doSort(tableName, fieldKey, sortDirection)
 {
-    if (!tableName || !columnName)
+    if (!tableName || !fieldKey)
         return;
 
     var dr = LABKEY.DataRegions[tableName];
     if (!dr)
         return;
-    dr.changeSort(columnName, sortDirection);
+    dr.changeSort(fieldKey, sortDirection);
 }
 
 LABKEY.MessageArea = Ext.extend(Ext.util.Observable, {
@@ -2490,7 +2518,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         Ext.QuickTips.init();
 
         this._fieldCaption = this.boundColumn.caption;
-        this._fieldName = this.boundColumn.name;
+        this._fieldKey = this.boundColumn.fieldKey;
         this._tableName = this.dataRegionName;
         this._jsonType = this.boundColumn.displayFieldJsonType ? this.boundColumn.displayFieldJsonType : this.boundColumn.jsonType;
         //Issue #15565, Switch faceted filtering limit to 250
@@ -2502,7 +2530,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         if (this.boundColumn.lookup && dataRegion && dataRegion.schemaName && dataRegion.queryName){
             if (this.boundColumn.displayField){
                 //TODO: perhaps we could be smarter about resolving alternate fieldnames, like the value field, into the displayField?
-                this._fieldName = this.boundColumn.displayField;
+                this._fieldKey = this.boundColumn.displayField;
             }
         }
 
@@ -2659,7 +2687,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     },
 
     beforeTabChange: function(panel, newTab, oldTab){
-        var filterArray = this.getParamsForField(this._fieldName);
+        var filterArray = this.getParamsForField(this._fieldKey);
 
         //optimize filters
         var newFilters = [];
@@ -2738,7 +2766,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     canShowFacetedUI: function(filterType){
         filterType = filterType || this.filterType;
 
-        var paramValPairs = this.getParamsForField(this._fieldName);
+        var paramValPairs = this.getParamsForField(this._fieldKey);
         if (this.getInitialFilterType() == 'default')
             return false;
 
@@ -2944,7 +2972,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         }
 
         this.filterType = target.filterType;
-        var paramValPairs = values || this.getParamsForField(this._fieldName);
+        var paramValPairs = values || this.getParamsForField(this._fieldKey);
         this.hasLoaded = true;
 
         var filterIndex = 0;
@@ -3570,7 +3598,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         var dr = LABKEY.DataRegions[this._tableName];
         if (!dr)
             return;
-        dr.clearFilter(this._fieldName);
+        dr.clearFilter(this._fieldKey);
         this.close();
     },
 
@@ -3599,7 +3627,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         //We do however need to modify the date if it's not in the proper format, and parse ints/floats.
 
         var queryString = LABKEY.DataRegions[this._tableName] ? LABKEY.DataRegions[this._tableName].requestURL : null;
-        var newParamValPairs = this.getParamValPairs(queryString, [this._tableName + "." + this._fieldName + "~", this.getSkipPrefixes()]);
+        var newParamValPairs = this.getParamValPairs(queryString, [this._tableName + "." + this._fieldKey + "~", this.getSkipPrefixes()]);
         var comparisons = new Array(0);
 
         Ext.each(filters, function(filter){
@@ -3621,22 +3649,22 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         var pair;
         if (comparison == "isblank" || comparison == "isnonblank" || comparison == "nomvvalue" || comparison == "hasmvvalue")
         {
-            pair = [this._tableName + "." + this._fieldName + "~" + comparison];
+            pair = [this._tableName + "." + this._fieldKey + "~" + comparison];
         } else{
-            pair = [this._tableName + "." + this._fieldName + "~" + comparison, input];
+            pair = [this._tableName + "." + this._fieldKey + "~" + comparison, input];
         }
         return pair;
     },
 
-    clearSort : function(tableName, columnName)
+    clearSort : function(tableName, fieldKey)
     {
-        if(!tableName || !columnName)
+        if(!tableName || !fieldKey)
             return;
 
         var dr = LABKEY.DataRegions[tableName];
         if (!dr)
             return;
-        dr.clearSort(columnName);
+        dr.clearSort(fieldKey);
     },
 
     hideFilterPanel : function ()
@@ -3647,7 +3675,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     getLookupStore : function()
     {
         var dataRegion = LABKEY.DataRegions[this.dataRegionName];
-        var storeId = [dataRegion.schemaName, dataRegion.queryName, this._fieldName].join('||');
+        var storeId = [dataRegion.schemaName, dataRegion.queryName, this._fieldKey].join('||');
         var column = this.boundColumn;
 
         if(Ext.StoreMgr.get(storeId)){
@@ -3765,7 +3793,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         return LABKEY.DataRegion.getParamValPairsFromString(queryString, skipPrefixes);
     },
 
-    getParamsForField: function(fieldName)
+    getParamsForField: function(fieldKey)
     {
         var dataRegion = LABKEY.DataRegions[this._tableName];
 //        if(!dataRegion)
@@ -3779,9 +3807,9 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         //NOTE: if the dialog has loaded, we use the values from the inputs.  otherwise we resort to the dataregion
         var paramValPairs;
         if(!this.hasLoaded){
-            paramValPairs = LABKEY.DataRegion.getParamValPairsFromString(this.queryString, [this.getSkipPrefixes()]); //this._tableName + "." + this._fieldName + "~",
+            paramValPairs = LABKEY.DataRegion.getParamValPairsFromString(this.queryString, [this.getSkipPrefixes()]); //this._tableName + "." + this._fieldKey + "~",
             var results = [];
-            var re = new RegExp('^' + Ext.escapeRe(this._tableName) + '\.' + fieldName, 'i');
+            var re = new RegExp('^' + Ext.escapeRe(this._tableName + '.' + fieldKey), 'i');
             Ext.each(paramValPairs, function(pair){
                 if(pair[0].match(re)){
                     var operator = pair[0].split('~')[1];

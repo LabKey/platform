@@ -60,7 +60,7 @@ public class RenderContext implements Map<String, Object>, Serializable
     private Sort _baseSort;
     private int _mode = DataRegion.MODE_NONE;
     private boolean _cache = true;
-    protected Set<String> _ignoredColumnFilters = new LinkedHashSet<String>();
+    protected Set<FieldKey> _ignoredColumnFilters = new LinkedHashSet<FieldKey>();
     private Set<String> _selected = null;
     private ShowRows _showRows = ShowRows.PAGINATED;
     private List<String> _recordSelectorValueColumns;
@@ -281,7 +281,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         if (aggregatesIn == null || aggregatesIn.isEmpty())
             return Collections.emptyMap();
 
-        Set<String> ignoredAggregateFilters = new HashSet<String>();
+        Set<FieldKey> ignoredAggregateFilters = new HashSet<FieldKey>();
         ActionURL url = getViewContext().cloneActionURL();
         Collection<ColumnInfo> cols = getSelectColumns(displayColumns, tinfo);
 
@@ -299,11 +299,11 @@ public class RenderContext implements Map<String, Object>, Serializable
         }
 
         List<Aggregate> aggregates = new ArrayList<Aggregate>();
-        Map<String, ColumnInfo> availableColNames = Table.createColumnMap(tinfo, cols);
+        Map<FieldKey, ColumnInfo> availableFieldKeys = Table.createColumnMap(tinfo, cols);
 
         for (Aggregate aggregate : aggregatesIn)
         {
-            if (aggregate.isCountStar() || availableColNames.containsKey(aggregate.getColumnName()))
+            if (aggregate.isCountStar() || availableFieldKeys.containsKey(aggregate.getFieldKey()))
                 aggregates.add(aggregate);
         }
 
@@ -341,7 +341,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         if (null != c && null != containerCol && isUseContainerFilter() && tinfo.needsContainerClauseAdded())
         {
             // This CAST improves performance on Postgres for some queries by choosing a more efficient query plan
-            filter.addClause(new SimpleFilter.SQLClause(containerCol.getName() + " = CAST('" + c.getId() + "' AS UniqueIdentifier)", new Object[0], containerCol.getName()));
+            filter.addClause(new SimpleFilter.SQLClause(containerCol.getName() + " = CAST('" + c.getId() + "' AS UniqueIdentifier)", new Object[0], containerCol.getFieldKey()));
         }
 
         if (_currentRegion != null && _showRows == ShowRows.SELECTED || _showRows == ShowRows.UNSELECTED)
@@ -383,7 +383,7 @@ public class RenderContext implements Map<String, Object>, Serializable
                 assert parts.length == selectorColumns.size() : "Selected item and columns don't match in length: " + row;
                 for (int i = 0; i < parts.length; i++)
                 {
-                    and.addClause(CompareType.EQUAL.createFilterClause(selectorColumns.get(i), parts[i]));
+                    and.addClause(CompareType.EQUAL.createFilterClause(FieldKey.fromString(selectorColumns.get(i)), parts[i]));
                 }
                 or.addClause(and);
             }
@@ -683,14 +683,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         if (_ignoredColumnFilters.isEmpty())
             return Collections.emptySet();
 
-        Set<FieldKey> ret = new LinkedHashSet<FieldKey>();
-
-        for (String column : _ignoredColumnFilters)
-        {
-            ret.add(FieldKey.fromString(column));
-        }
-
-        return ret;
+        return new LinkedHashSet<FieldKey>(_ignoredColumnFilters);
     }
 
 
@@ -738,6 +731,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         return errors;
     }
 
+    // UNDONE: Use FieldKey instead
     public List<String> getRecordSelectorValueColumns()
     {
         return _recordSelectorValueColumns;

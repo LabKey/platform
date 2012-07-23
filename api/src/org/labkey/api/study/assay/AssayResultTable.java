@@ -258,7 +258,7 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
         // There isn't a container column directly on this table so do a special filter
         if (getContainer() != null)
         {
-            String containerColumn = "Run/Folder";
+            FieldKey containerColumn = FieldKey.fromParts("Run", "Folder");
             clearConditions(containerColumn);
             addCondition(filter.getSQLFragment(getSchema(), "(SELECT d.Container FROM exp.Data d WHERE d.RowId = DataId)", getContainer()), containerColumn);
         }

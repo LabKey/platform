@@ -65,15 +65,22 @@ public abstract class ContainerFilter
     }
 
     /** Create a FilterClause that restiracts based on the containers that meet the filter */
-    public SimpleFilter.FilterClause createFilterClause(DbSchema schema, String containerFilterColumn, Container container)
+    public SimpleFilter.FilterClause createFilterClause(DbSchema schema, FieldKey containerFilterColumn, Container container)
     {
         return new ContainerClause(schema, containerFilterColumn, this, container);
     }
 
     /** Create an expression for a WHERE clause */
+    @Deprecated // Use FieldKey version instead.
     public SQLFragment getSQLFragment(DbSchema schema, String containerColumnSQL, Container container)
     {
         return getSQLFragment(schema, new SQLFragment(containerColumnSQL), container);
+    }
+
+    /** Create an expression for a WHERE clause */
+    public SQLFragment getSQLFragment(DbSchema schema, FieldKey containerColumnFieldKey, Container container)
+    {
+        return getSQLFragment(schema, new SQLFragment(containerColumnFieldKey.toString()), container);
     }
 
     /** Create an expression for a WHERE clause */
@@ -809,22 +816,29 @@ public abstract class ContainerFilter
     public static class ContainerClause extends SimpleFilter.FilterClause
     {
         private final DbSchema _schema;
-        private final String _columnName;
+        private final FieldKey _fieldKey;
         private final ContainerFilter _filter;
         private final Container _container;
 
-        public ContainerClause(DbSchema schema, String columnName, ContainerFilter filter, Container container)
+        public ContainerClause(DbSchema schema, FieldKey fieldKey, ContainerFilter filter, Container container)
         {
             _schema = schema;
-            _columnName = columnName;
+            _fieldKey = fieldKey;
             _filter = filter;
             _container = container;
         }
 
         @Override
+        @Deprecated // Use getFieldKeys() instead.
         public List<String> getColumnNames()
         {
-            return Collections.singletonList(_columnName);
+            return Collections.singletonList(_fieldKey.toString());
+        }
+
+        @Override
+        public List<FieldKey> getFieldKeys()
+        {
+            return Collections.singletonList(_fieldKey);
         }
 
         @Override
@@ -834,9 +848,9 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public SQLFragment toSQLFragment(Map<String, ? extends ColumnInfo> columnMap, SqlDialect dialect)
+        public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
-            return _filter.getSQLFragment(_schema, _columnName, _container);
+            return _filter.getSQLFragment(_schema, _fieldKey, _container);
         }
     }
 }

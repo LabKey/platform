@@ -43,6 +43,7 @@ import java.util.Map;
 public class Aggregate
 {
     public static String STAR = "*";
+    private static FieldKey STAR_FIELDKEY = FieldKey.fromParts(STAR);
 
     public enum Type
     {
@@ -98,7 +99,7 @@ public class Aggregate
         }
     }
 
-    private String _columnName;
+    private FieldKey _fieldKey;
     private Type _type;
     private String _aggregateColumnName = null;
     private String _label;
@@ -109,17 +110,29 @@ public class Aggregate
 
     public Aggregate(ColumnInfo column, Aggregate.Type type)
     {
-        this(column.getAlias(), type);
+        this(column.getFieldKey(), type, null);
     }
 
+    @Deprecated // Use FieldKey version instead.
     public Aggregate(String columnAlias, Aggregate.Type type)
     {
         this(columnAlias, type, null);
     }
 
+    public Aggregate(FieldKey fieldKey, Aggregate.Type type)
+    {
+        this(fieldKey, type, null);
+    }
+    
+    @Deprecated // Use FieldKey version instead.
     public Aggregate(String columnAlias, Aggregate.Type type, String label)
     {
-        _columnName = columnAlias;
+        this(FieldKey.fromString(columnAlias), type, label);
+    }
+
+    public Aggregate(FieldKey fieldKey, Aggregate.Type type, String label)
+    {
+        _fieldKey = fieldKey;
         _type = type;
         _label = label;
     }
@@ -127,26 +140,26 @@ public class Aggregate
     public static Aggregate createCountStar()
     {
         Aggregate agg = new Aggregate();
-        agg._columnName = STAR;
+        agg._fieldKey = STAR_FIELDKEY;
         agg._type = Type.COUNT;
         return agg;
     }
 
     public boolean isCountStar()
     {
-        return _columnName.equals(STAR) && _type == Type.COUNT;
+        return _fieldKey == STAR_FIELDKEY && _type == Type.COUNT;
     }
 
-    public String getSQL(SqlDialect dialect, Map<String, ? extends ColumnInfo> columns)
+    public String getSQL(SqlDialect dialect, Map<FieldKey, ? extends ColumnInfo> columns)
     {
-        String alias = _columnName;
+        String alias = getColumnName();
         if (isCountStar())
         {
             _aggregateColumnName = "COUNT_STAR";
         }
         else
         {
-            ColumnInfo col = columns.get(alias);
+            ColumnInfo col = columns.get(getFieldKey());
             if (col != null)
                 alias = col.getAlias();
 
@@ -156,10 +169,15 @@ public class Aggregate
         return _type.getSQLColumnFragment(dialect, alias, _aggregateColumnName);
     }
 
-    // TODO FieldKey getColumnName()
+    public FieldKey getFieldKey()
+    {
+        return _fieldKey;
+    }
+
+    @Deprecated // Use getFieldKey() instead.
     public String getColumnName()
     {
-        return _columnName;
+        return _fieldKey.toString();
     }
 
     public Type getType()
@@ -214,7 +232,6 @@ public class Aggregate
             if (val.getName().startsWith(prefix))
             {
                 FieldKey fieldKey = FieldKey.fromString(val.getName().substring(prefix.length()));
-                String columnName = StringUtils.join(fieldKey.getParts(), "/");
 
                 List<String> values = new ArrayList<String>();
 
@@ -226,7 +243,7 @@ public class Aggregate
 
                 for(String s : values)
                 {
-                    Aggregate a = decodeAggregate(columnName, s);
+                    Aggregate a = decodeAggregate(fieldKey, s);
                     if(a != null)
                         aggregates.add(a);
                 }
@@ -236,7 +253,7 @@ public class Aggregate
         return aggregates;
     }
 
-    private static Aggregate decodeAggregate(String columnName, String value)
+    private static Aggregate decodeAggregate(FieldKey fieldKey, String value)
     {
         try
         {
@@ -259,10 +276,12 @@ public class Aggregate
             }
 
             Aggregate.Type type = Aggregate.Type.valueOf(properties.get("type").toUpperCase());
-            Aggregate a = new Aggregate(columnName, type);
 
-            if(properties.containsKey("label"))
-                a.setLabel(properties.get("label"));
+            String label = null;
+            if (properties.containsKey("label"))
+                label = properties.get("label");
+
+            Aggregate a = new Aggregate(fieldKey, type, label);
 
             return a;
         }

@@ -77,7 +77,7 @@ import java.util.Set;
 
         // TODO - we should have a more reliable (and speedier) way of identifying just the data rows here
         SQLFragment dataRowClause = new SQLFragment("ObjectURI LIKE '%.DataRow-%'");
-        addCondition(dataRowClause, "ObjectURI");
+        addCondition(dataRowClause, FieldKey.fromParts("ObjectURI"));
 
         ExprColumn dataColumn = new ExprColumn(this, "DataId", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".DataId"), JdbcType.INTEGER);
         addColumn(dataColumn);

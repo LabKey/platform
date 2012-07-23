@@ -282,16 +282,18 @@ public class DataColumn extends DisplayColumn
     {
         if (_filterColumn == null)
             return "";
-        return "LABKEY.DataRegions[" + PageFlowUtil.jsString(ctx.getCurrentRegion().getName()) + "]" +
-                ".clearFilter(" + PageFlowUtil.jsString(_filterColumn.getName()) + ")";
+        String tableName = ctx.getCurrentRegion().getName();
+        String fieldKey = _filterColumn.getFieldKey().toString();
+        return "LABKEY.DataRegions[" + PageFlowUtil.jsString(tableName) + "]" +
+                ".clearFilter(" + PageFlowUtil.jsString(fieldKey) + ")";
     }
 
     @Override
     public String getClearSortScript(RenderContext ctx)
     {
         String tableName = PageFlowUtil.jsString(ctx.getCurrentRegion().getName());
-        String columnName = PageFlowUtil.jsString(_sortColumn.getName());
-        return "LABKEY.DataRegions[" + tableName + "].clearSort(" + columnName + ");";
+        String fieldKey = _sortColumn.getFieldKey().toString();
+        return "LABKEY.DataRegions[" + tableName + "].clearSort(" + PageFlowUtil.jsString(fieldKey) + ");";
     }
 
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
@@ -663,7 +665,8 @@ public class DataColumn extends DisplayColumn
         }
         String uri;
         String regionName = ctx.getCurrentRegion().getName();
-        uri = "doSort("+ PageFlowUtil.jsString(regionName) + "," + PageFlowUtil.jsString(_sortColumn.getName()) + ",'" + h(sort.getDir()) + "')";
+        String fieldKey = _sortColumn.getFieldKey().toString();
+        uri = "doSort("+ PageFlowUtil.jsString(regionName) + "," + PageFlowUtil.jsString(fieldKey) + ",'" + h(sort.getDir()) + "')";
         out.write(uri);
     }
 

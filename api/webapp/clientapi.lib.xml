@@ -10,6 +10,7 @@
         <script path="clientapi/Experiment.js"/>
         <script path="clientapi/ExtendedJsonReader.js"/>
         <script path="clientapi/ExtJsConfig.js"/>
+        <script path="clientapi/FieldKey.js"/>
         <script path="clientapi/FileSystem.js"/>
         <script path="clientapi/Filter.js"/>
         <script path="clientapi/Form.js"/>

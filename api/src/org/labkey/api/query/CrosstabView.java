@@ -198,7 +198,7 @@ public class CrosstabView extends QueryView
         //set the default base sort (remove non-existant sort columns)
         Sort sort = new Sort();
         for (Sort.SortField sortField : CrosstabTable.getDefaultSort().getSortList())
-            if (getTable().getColumn(sortField.getColumnName()) != null)
+            if (getTable().getColumn(sortField.getFieldKey()) != null)
                 sort.appendSortColumn(sortField);
         view.getRenderContext().setBaseSort(sort);
 

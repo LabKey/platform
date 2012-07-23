@@ -341,6 +341,7 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
 
         this.fieldsTree.on('checkchange', this.onCheckChange, this);
         this.on('tabchange', this.onTabChange, this);
+        this.on('groupchange', this.onGroupChange, this);
 
         // Show 'does not exist' message only for non-default views.
         if (this.customView.doesNotExist && this.viewName)
@@ -439,11 +440,17 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
         return [this.columnsTab, this.filterTab, this.sortTab];
     },
 
+    getActiveGroup : function ()
+    {
+        var group = (typeof this.activeGroup == 'object') ? this.activeGroup : this.items.get(this.activeGroup);
+        return group;
+    },
+
     getActiveDesignerTab : function ()
     {
         if (this.activeGroup !== undefined)
         {
-            var group = (typeof this.activeGroup == 'object') ? this.activeGroup : this.items.get(this.activeGroup);
+            var group = this.getActiveGroup();
             if (group)
             {
                 var tab = group.activeTab || group.items.get(0);
@@ -537,7 +544,12 @@ LABKEY.DataRegion.ViewDesigner = Ext.extend(LABKEY.ext.SplitGroupTabPanel, {
             this.removeRecord(node.attributes.fieldKey);
     },
 
+    onGroupChange : function () {
+        this.onTabChange();
+    },
+
     onTabChange : function () {
+
         var tab = this.getActiveDesignerTab();
         if (tab instanceof LABKEY.DataRegion.Tab)
         {
@@ -855,6 +867,7 @@ LABKEY.DataRegion.Tab = Ext.extend(Ext.Panel, {
         {
             list.store.add([record]);
         }
+        return record;
     },
 
     getRecordIndex : function (fieldKeyOrIndex) {
@@ -1255,7 +1268,7 @@ LABKEY.DataRegion.ColumnsTab = Ext.extend(LABKEY.DataRegion.Tab, {
         if (fieldKey)
         {
             var o = {fieldKey: fieldKey};
-            var fk = FieldKey.fromString(fieldKey);
+            var fk = LABKEY.FieldKey.fromString(fieldKey);
             var record = this.fieldMetaStore.getById(fieldKey.toUpperCase());
             if (record)
                 o.name = record.caption || fk.name;
@@ -2193,7 +2206,7 @@ LABKEY.ext.FieldMetaRecord.getToolTipHtml = function (fieldMetaRecord) {
     {
         body += "<tr><td valign='top'><strong>Description:</strong></td><td>" + Ext.util.Format.htmlEncode(field.description) + "</td></tr>";
     }
-    body += "<tr><td valign='top'><strong>Field&nbsp;key:</strong></td><td>" + Ext.util.Format.htmlEncode(FieldKey.fromString(field.fieldKey).toDisplayString()) + "</td></tr>";
+    body += "<tr><td valign='top'><strong>Field&nbsp;key:</strong></td><td>" + Ext.util.Format.htmlEncode(LABKEY.FieldKey.fromString(field.fieldKey).toDisplayString()) + "</td></tr>";
     if (field.friendlyType)
     {
         body += "<tr><td valign='top'><strong>Data&nbsp;type:</strong></td><td>" + field.friendlyType + "</td></tr>";

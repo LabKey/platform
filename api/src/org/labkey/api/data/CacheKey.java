@@ -23,6 +23,7 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.cache.Wrapper;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
 
 
@@ -37,7 +38,7 @@ public class CacheKey<T, C extends Enum<C>> implements Cloneable, CacheLoader<St
         ret.append(") = ");
         ret.append(value);
         ret.append(")");
-        _filter.addWhereClause(ret.getSQL(), ret.getParams().toArray(), column.getName());
+        _filter.addWhereClause(ret.getSQL(), ret.getParams().toArray(), column.getFieldKey());
         addConditionToString(column.getName() + "&" + mask, value);
     }
 
@@ -78,7 +79,7 @@ public class CacheKey<T, C extends Enum<C>> implements Cloneable, CacheLoader<St
     {
         String selectName = column.name();
         value = value.toLowerCase();
-        _filter.addWhereClause("lower(" + selectName + ") = lower(?)", new Object[] { value }, column.name());
+        _filter.addWhereClause("lower(" + selectName + ") = lower(?)", new Object[] { value }, FieldKey.fromParts(column.name()));
         addConditionToString(column.toString() + "~iequal", value);
     }
 

@@ -24,6 +24,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.permissions.Permission;
 
 public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
@@ -45,7 +46,7 @@ public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
      */
     public ColumnInfo createPropertyColumn(String alias);
 
-    public void addCondition(SQLFragment condition, String... columnNames);
+    public void addCondition(SQLFragment condition, FieldKey... fieldKeys);
     public void addRowIdCondition(SQLFragment rowidCondition);
     public void addLSIDCondition(SQLFragment lsidCondition);
 

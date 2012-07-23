@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.PropertyDescriptorType;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.gwt.client.model.GWTConditionalFormat;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.data.xml.ColumnType;
@@ -131,7 +132,7 @@ public class ConditionalFormat extends GWTConditionalFormat
                 CompareType compareType = CompareType.getByURLKey(filter.getOperator().toString());
                 if (compareType != null)
                 {
-                    simpleFilter.addClause(compareType.createFilterClause(COLUMN_NAME, filter.getValue()));
+                    simpleFilter.addClause(compareType.createFilterClause(FieldKey.fromParts(COLUMN_NAME), filter.getValue()));
                 }
                 else
                 {

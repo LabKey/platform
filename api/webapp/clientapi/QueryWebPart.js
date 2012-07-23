@@ -666,14 +666,14 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         return false;
     },
 
-    beforeSortChange : function(dataRegion, columnName, sortDirection) {
-        this.userSort = dataRegion.alterSortString(this.userSort, columnName, sortDirection);
+    beforeSortChange : function(dataRegion, fieldKey, sortDirection) {
+        this.userSort = dataRegion.alterSortString(this.userSort, fieldKey, sortDirection);
         this.render();
         return false;
     },
 
-    beforeClearSort : function(dataRegion, columnName) {
-        this.userSort = dataRegion.alterSortString(this.userSort, columnName, null);
+    beforeClearSort : function(dataRegion, fieldKey) {
+        this.userSort = dataRegion.alterSortString(this.userSort, fieldKey, null);
         this.render();
         return false;
     },
