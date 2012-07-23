@@ -697,6 +697,7 @@ api/src/org/labkey/api/query/QueryDefinition.java -text
 api/src/org/labkey/api/query/QueryException.java -text
 api/src/org/labkey/api/query/QueryForeignKey.java -text
 api/src/org/labkey/api/query/QueryForm.java -text
+api/src/org/labkey/api/query/QueryHelper.java -text
 api/src/org/labkey/api/query/QueryMethod.java -text
 api/src/org/labkey/api/query/QueryNestingOption.java -text
 api/src/org/labkey/api/query/QueryParam.java -text
