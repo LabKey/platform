@@ -124,7 +124,7 @@ public class LookupEditorPanel extends LayoutContainer
         String schema = getSchemaName();
 
         //Issue 15485: prevent query if the user enters an invalid container
-        if (folder != null && _comboContainer.getStore().findModel("text", folder) == null)
+        if (folder != null && !"".equals(folder) && _comboContainer.getStore().findModel("text", folder) == null)
         {
             Window.alert("Container not found: " + folder);
             _comboContainer.reset();
