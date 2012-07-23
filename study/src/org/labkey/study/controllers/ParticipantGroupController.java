@@ -601,7 +601,6 @@ public class ParticipantGroupController extends BaseStudyController
             ApiSimpleResponse resp = new ApiSimpleResponse();
             Set<String> cohortSubjects = new HashSet<String>();
             Set<String> groupSubjects = new HashSet<String>();
-            Set<String> noGroupSubjects = new HashSet<String>();
             List<String> subjects = new ArrayList<String>();
 
             for (Map.Entry<GroupType, List<Integer>> entry : form.getGroupMap().entrySet())
@@ -636,8 +635,8 @@ public class ParticipantGroupController extends BaseStudyController
                 }
             }
 
-            // find the intersection of the two facets if both are not empty
-            if (groupSubjects.size() > 0 && cohortSubjects.size() > 0)
+            // find the intersection of the two facets if we have a selection from both facets (AND behavior)
+            if (form.getGroupMap().containsKey(GroupType.participantGroup) && form.getGroupMap().containsKey(GroupType.cohort))
             {
                 for (String ptid : groupSubjects)
                 {
@@ -650,8 +649,6 @@ public class ParticipantGroupController extends BaseStudyController
                 subjects.addAll(cohortSubjects);
                 subjects.addAll(groupSubjects);
             }
-            subjects.addAll(noGroupSubjects);
-
             Collections.sort(subjects);
 
             resp.put("success", true);

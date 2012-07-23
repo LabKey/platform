@@ -207,6 +207,7 @@ LABKEY.ViewsPanel.prototype = {
             buttons.push({
                 text:'Options...',
                 id: 'config_views',
+                disabled : !this.isAdmin,
                 tooltip: {text:'Configure View Options', title:'Options'},
                 listeners:{click:function(button, event) {this.configViewTypes();}, scope:this}
             });

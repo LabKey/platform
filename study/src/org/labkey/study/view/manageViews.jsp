@@ -195,6 +195,7 @@
                 filterDiv: 'filterMsg',
             <% } %>
             container: '<%=c.getPath()%>',
+            isAdmin : <%=context.hasPermission(AdminPermission.class)%>,
             dataConnection : new Ext.data.Connection({
                 url: LABKEY.ActionURL.buildURL("study-reports", "manageViewsSummary", this.container),
                 method: 'GET',

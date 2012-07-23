@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.query.reports.ReportsController" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -53,6 +54,7 @@
         var gridConfig = {
             renderTo: 'viewsGrid',
             border  : false,
+            isAdmin : <%=context.hasPermission(AdminPermission.class)%>,
             <% if (form.getSchemaName() != null && form.getQueryName() != null) { %>
                 baseQuery: {
                     schemaName: <%=PageFlowUtil.jsString(form.getSchemaName())%>,

@@ -103,7 +103,9 @@ public class StudyFolderType extends MultiPortalFolderType
     public void addManageLinks(NavTree adminNavTree, Container container)
     {
         super.addManageLinks(adminNavTree, container);
-        adminNavTree.addChild(new NavTree("Manage Views", new ActionURL(ReportsController.ManageReportsAction.class, container)));
+
+        if (StudyService.get().getStudy(container) != null)
+            adminNavTree.addChild(new NavTree("Manage Views", new ActionURL(ReportsController.ManageReportsAction.class, container)));
     }
 
     private static Set<Module> _activeModulesForOwnedFolder = null;
