@@ -56,6 +56,8 @@ LABKEY.vis.SVGConverter = {
 
         var xml;
         var svgns = 'http://www.w3.org/2000/svg';
+        var svgnsRegEx = new RegExp("xmlns=[\"']" + svgns + "[\"']");
+        var svgnsRegExG = new RegExp("xmlns=[\"']" + svgns + "[\"']", 'g');
 
         if (typeof XMLSerializer != 'undefined')
         { // non-IE browsers
@@ -71,8 +73,15 @@ LABKEY.vis.SVGConverter = {
         {
             nsString = 'xmlns="' + svgns + '" ';
         }
-
         xml = xml.replace(/<([^ ]+)/, '<$1 ' + nsString + ' ');
+        
+        // raphael may put the xmlns attr in the svg tag more than once (for IE)
+        var nsMatches = xml.match(svgnsRegExG);
+        if (nsMatches.length > 1)
+        {
+            for (var i = 1; i < nsMatches.length; i++)
+                xml = xml.replace(svgnsRegEx, "");
+        }
 
         return xml;
     }
