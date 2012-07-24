@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.study.pipeline.SpecimenBatch"%>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.study.pipeline.SpecimenArchive" %>
+<%@ page import="java.util.zip.ZipException" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenController.ImportSpecimensBean> me =
@@ -34,8 +35,10 @@
 %>
 <%= archiveCount %> specimen archive<%= archiveCount > 1 ? "s" : "" %> selected.<br><br>
 <%
-    for (SpecimenArchive archive : bean.getArchives())
+    try
     {
+        for (SpecimenArchive archive : bean.getArchives())
+        {
 %>
     Specimen archive <b><%= h(archive.getDefinitionFile().getName()) %></b> contains the following files:<br><br>
     <table class="labkey-data-region labkey-show-borders">
@@ -54,6 +57,14 @@
             }
         %>
     </table><br>
+<%
+        }
+    }
+    catch (ZipException z)
+    {
+        hasError = true;
+%>
+<p class="labkey-error"> The archive is corrupt and cannot be read.</p><br/>
 <%
     }
 %>
@@ -82,12 +93,24 @@
         <%
             }
         %>
+        <%
+            if (!bean.isNoSpecimens())
+            {
+        %>
         <labkey:radio id="replace" name="replaceOrMerge" value="replace" currentValue="replace" />
         <label for="merge"><b>Replace</b>: Replace all of the existing specimens.</label>
         <br>
         <labkey:radio id="merge" name="replaceOrMerge" value="merge" currentValue="replace"/>
         <label for="merge"><b>Merge</b>: Insert new specimens and update existing specimens.</label>
-
+        <%
+            }
+            else
+            {
+        %>
+        <input type="hidden" name="replaceOrMerge" value="replace">
+        <%
+            }
+        %>
         <p>
 
         <%= generateSubmitButton("Start Import")%>

@@ -64,7 +64,7 @@ public class SpecimenArchive
                     ZipEntry entry = entries.nextElement();
                     if (entry.isDirectory())
                         continue;
-                    entryList.add(new SpecimenArchive.EntryDescription(entry.getName(), entry.getSize(), new Date(entry.getTime())));
+                    entryList.add(new EntryDescription(entry.getName(), entry.getSize(), new Date(entry.getTime())));
                 }
             }
             finally

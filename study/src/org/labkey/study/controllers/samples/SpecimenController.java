@@ -126,6 +126,7 @@ import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.SiteImpl;
 import org.labkey.study.model.Specimen;
 import org.labkey.study.model.SpecimenComment;
+import org.labkey.study.model.SpecimenTypeSummary;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
@@ -3762,8 +3763,15 @@ public class SpecimenController extends BaseStudyController
                 SpecimenArchive archive = new SpecimenArchive(dataFile);
                 archives.add(archive);
             }
-            return new JspView<ImportSpecimensBean>("/org/labkey/study/view/samples/importSpecimens.jsp",
-                    new ImportSpecimensBean(getContainer(), archives, form.getPath(), form.getFile(), errors));
+
+            ImportSpecimensBean bean = new ImportSpecimensBean(getContainer(), archives, form.getPath(), form.getFile(), errors);
+            SpecimenTypeSummary summary = SampleManager.getInstance().getSpecimenTypeSummary(getContainer());
+            if (summary.isVialCountZero())
+            {
+                bean.setNoSpecimens(true);
+            }
+
+            return new JspView<ImportSpecimensBean>("/org/labkey/study/view/samples/importSpecimens.jsp", bean);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -3863,6 +3871,7 @@ public class SpecimenController extends BaseStudyController
         private List<String> _errors;
         private Container _container;
         private String[] _files;
+        private boolean noSpecimens = false;
 
         public ImportSpecimensBean(Container container, List<SpecimenArchive> archives,
                                    String path, String[] files, List<String> errors)
@@ -3897,6 +3906,16 @@ public class SpecimenController extends BaseStudyController
         public Container getContainer()
         {
             return _container;
+        }
+
+        public boolean isNoSpecimens()
+        {
+            return noSpecimens;
+        }
+
+        public void setNoSpecimens(boolean noSpecimens)
+        {
+            this.noSpecimens = noSpecimens;
         }
     }
 
