@@ -289,7 +289,8 @@ var boxLayer = new LABKEY.vis.Layer({
 //        color: 'teal',
 //        fill: '#FFFF00',
 //        outlierOpacity: '1',
-        outlierFill: 'red'
+//        outlierFill: 'red',
+        showOutliers: false
 //        opacity: '.5'
 //        lineWidth: 3
     }),
@@ -299,6 +300,18 @@ var boxLayer = new LABKEY.vis.Layer({
                     '\nQ3: ' + stats.Q3;
         },
         outlierHoverText: function(row){return "Group: " + row.group + ", Age: " + row.age;}
+    }
+});
+
+var boxPointLayer = new LABKEY.vis.Layer({
+    geom: new LABKEY.vis.Geom.Point({
+        position: 'jitter',
+        color: 'orange',
+        opacity: .6,
+        size: 3
+    }),
+    aes: {
+        hoverText: function(row){return row.group + ", Age: " + row.age;}
     }
 });
 
@@ -313,7 +326,7 @@ var boxPlot = new LABKEY.vis.Plot({
     },
 //    data: labResultsRows,
     data: boxPlotData,
-    layers: [boxLayer],
+    layers: [boxLayer, boxPointLayer],
     aes: {
         yLeft: 'age',
         x: 'group'

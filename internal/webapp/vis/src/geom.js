@@ -90,11 +90,11 @@ LABKEY.vis.Geom.Point = function(config){
     if(!config){
         config = {};
     }
-    this.color = config.color ? config.color : '#000000';
-    this.size = config.size ? config.size : 5;
-    this.opacity = config.opacity ? config.opacity : 1;
-    this.plotNullPoints = config.plotNullPoints ? config.plotNullPoints : false;
-    this.position = config.position ? config.position : null;
+    this.color = ('color' in config && config.color != null && config.color != undefined) ? config.color : '#000000';
+    this.size = ('size' in config && config.size != null && config.size != undefined) ? config.size : 5;
+    this.opacity = ('opacity' in config && config.opacity != null && config.opacity != undefined) ? config.opacity : 1;
+    this.plotNullPoints = ('plotNullPoints' in config && config.plotNullPoints != null && config.plotNullPoints != undefined) ? config.plotNullPoints : false;
+    this.position = ('position' in config && config.position != null && config.position != undefined) ? config.position : null;
 
     return this;
 };
@@ -161,9 +161,9 @@ LABKEY.vis.Geom.Path = function(config){
     if(!config){
         config = {};
     }
-    this.color = config.color ? config.color : '#000000';
-    this.size = config.size ? config.size : 3;
-    this.opacity = config.opacity ? config.opacity : 1;
+    this.color = ('color' in config && config.color != null && config.color != undefined) ? config.color : '#000000';
+    this.size = ('size' in config && config.size != null && config.size != undefined) ? config.size : 3;
+    this.opacity = ('opacity' in config && config.opacity != null && config.opacity != undefined) ? config.opacity : 1;
 
     return this;
 };
@@ -221,8 +221,8 @@ LABKEY.vis.Geom.ErrorBar = function(config){
     if(!config){
         config = {};
     }
-    this.color = config.color ? config.color : '#000000';
-    this.size = config.size ? config.size : 2;
+    this.color = ('color' in config && config.color != null && config.color != undefined) ? config.color : '#000000';
+    this.size = ('size' in config && config.size != null && config.size != undefined) ? config.size : 2;
 
     return this;
 };
@@ -260,15 +260,15 @@ LABKEY.vis.Geom.Boxplot = function(config){
     if(!config){
         config = {};
     }
-    this.color = config.color ? config.color : '#000000'; // line color
-    this.fill = config.fill ? config.fill : '#ffffff'; // fill color
-    this.lineWidth = config.lineWidth ? config.lineWidth : 1;
-    this.showOutliers = config.showOutliers ? config.showOutliers : true;
-    this.outlierSize = config.outlierSize ? config.outlierSize : 3;
-    this.outlierOpacity = config.outlierOpacity ? config.outlierOpacity : .5;
-    this.opacity = config.opacity ? config.opacity : 1;
-    this.outlierFill = config.outlierFill ? config.outlierFill : '#000000';
-    this.position = config.position ? config.position : null;
+    this.color = ('color' in config && config.color != null && config.color != undefined) ? config.color : '#000000'; // line color
+    this.fill = ('fill' in config && config.fill != null && config.fill != undefined) ? config.fill : '#ffffff'; // fill color
+    this.lineWidth = ('lineWidth' in config && config.lineWidth != null && config.lineWidth != undefined) ? config.lineWidth : 1;
+    this.opacity = ('opacity' in config && config.opacity != null && config.opacity != undefined) ? config.opacity : 1;
+    this.position = ('position' in config && config.position != null && config.position != undefined) ? config.position : null;
+    this.showOutliers = ('showOutliers' in config && config.showOutliers != null && config.showOutliers != undefined) ? config.showOutliers : true;
+    this.outlierFill = ('outlierFill' in config && config.outlierFill != null && config.outlierFill != undefined) ? config.outlierFill : '#000000';
+    this.outlierOpacity = ('outlierOpacity' in config && config.outlierOpacity != null && config.outlierOpacity != undefined) ? config.outlierOpacity : .5;
+    this.outlierSize = ('outlierSize' in config && config.outlierSize != null && config.outlierSize != undefined) ? config.outlierSize : 3;
 
     return this;
 };
