@@ -144,7 +144,7 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
         {
             type = PropertyType.xsdString;
         }
-        showFilterDialog(GWTConditionalFormat.DATA_REGION_NAME, GWTConditionalFormat.COLUMN_NAME, getCurrentField().getName(), type.getSqlName(), getCurrentField().getMvEnabled(), _activeFormat.getFilter(), this);
+        showFilterDialog(GWTConditionalFormat.DATA_REGION_NAME, GWTConditionalFormat.COLUMN_NAME, getCurrentField().getName(), type.getJsonType(), getCurrentField().getMvEnabled(), _activeFormat.getFilter(), this);
     }
 
     public native static String getDescription(String queryString, String dataRegionName, String columnName)
@@ -164,7 +164,7 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
             boundColumn: {
                 name: colName,
                 caption: caption,
-                sqlType: dataType,
+                jsonType: dataType,
                 mvEnabled: mvEnabled
             },
             title: "Apply Conditional Format Where " + caption,

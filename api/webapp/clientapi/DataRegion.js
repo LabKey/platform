@@ -2527,6 +2527,9 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         this._fieldKey = this.boundColumn.fieldKey;
         this._tableName = this.dataRegionName;
         this._jsonType = this.boundColumn.displayFieldJsonType ? this.boundColumn.displayFieldJsonType : this.boundColumn.jsonType;
+        if (!this._jsonType)
+            this._jsonType = 'string';
+
         //Issue #15565, Switch faceted filtering limit to 250
         this.MAX_FILTER_CHOICES = 250;
 
