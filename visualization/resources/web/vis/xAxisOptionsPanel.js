@@ -375,15 +375,19 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
         }];
 
         this.buttons = [{
-            text: 'Apply',
-            handler: this.applyButtonClicked,
+            text: 'OK',
+            handler: this.applyChangesButtonClicked,
+            scope: this
+        },{
+            text: 'Cancel',
+            handler: this.cancelChangesButtonClicked,
             scope: this
         }];
 
         this.callParent();
     },
 
-    applyButtonClicked: function() {
+    applyChangesButtonClicked: function() {
         // check to make sure that, if set, the max value is >= to min
         var maxVal = this.rangeMaxNumberField.getValue();
         var minVal = this.rangeMinNumberField.getValue();
@@ -395,8 +399,12 @@ Ext4.define('LABKEY.vis.XAxisOptionsPanel', {
             return;
         }
 
-        this.fireEvent('closeOptionsWindow');
+        this.fireEvent('closeOptionsWindow', false);
         this.checkForChangesAndFireEvents();
+    },
+
+    cancelChangesButtonClicked: function(){
+        this.fireEvent('closeOptionsWindow', true);
     },
 
     newZeroDateStore: function() {

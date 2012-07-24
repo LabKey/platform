@@ -191,14 +191,23 @@ Ext4.define('LABKEY.vis.SaveOptionsPanel', {
                     this.currentlyShared = shared;
                     this.thumbnailType = formVals.reportThumbnailType;
 
-                    this.fireEvent('closeOptionsWindow');
+                    this.fireEvent('closeOptionsWindow', false);
                 },
                 scope: this,
                 formBind: true
+            },
+            {
+                text: 'Cancel',
+                handler: this.cancelChangesButtonClicked,
+                scope: this
             }
         ];
 
         this.callParent();
+    },
+
+    cancelChangesButtonClicked: function(){
+        this.fireEvent('closeOptionsWindow', true);
     },
 
     isSavedReport : function()

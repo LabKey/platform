@@ -122,8 +122,12 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
         }
 
         this.buttons = [{
-            text: 'Apply',
-            handler: this.applyButtonClicked,
+            text: 'OK',
+            handler: this.applyChangesButtonClicked,
+            scope: this
+        },{
+            text: 'Cancel',
+            handler: this.cancelChangesButtonClicked,
             scope: this
         }];
 
@@ -189,7 +193,7 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
             + "}";
     },
 
-    applyButtonClicked: function() {
+    applyChangesButtonClicked: function() {
         // verify the pointClickFn for JS errors
         if (!this.pointClickTextAreaHtml.isDisabled())
         {
@@ -214,8 +218,12 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
             this.pointClickFn = editAreaLoader.getValue(this.pointClickTextAreaId);
         }
 
-        this.fireEvent('closeOptionsWindow');
+        this.fireEvent('closeOptionsWindow', false);
         this.checkForChangesAndFireEvents();
+    },
+
+    cancelChangesButtonClicked: function(){
+        this.fireEvent('closeOptionsWindow', true);
     },
 
     getPanelOptionValues : function() {

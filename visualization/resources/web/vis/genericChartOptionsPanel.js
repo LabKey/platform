@@ -153,19 +153,26 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             this.colorFieldContainer
         ];
 
-        this.buttons = [
-            {
-                xtype: 'button',
-                text: 'Apply',
-                handler: function(){
-                    this.fireEvent('closeOptionsWindow');
-                    this.checkForChangesAndFireEvents();
-                },
-                scope: this
-            }
-        ];
+        this.buttons = [{
+            text: 'OK',
+            handler: this.applyChangesButtonClicked,
+            scope: this
+        },{
+            text: 'Cancel',
+            handler: this.cancelChangesButtonClicked,
+            scope: this
+        }];
 
         this.callParent();
+    },
+
+    applyChangesButtonClicked: function() {
+        this.fireEvent('closeOptionsWindow', false);
+        this.checkForChangesAndFireEvents();
+    },
+
+    cancelChangesButtonClicked: function(){
+        this.fireEvent('closeOptionsWindow', true);
     },
 
     checkForChangesAndFireEvents: function(){

@@ -29,11 +29,14 @@ Ext4.define('LABKEY.vis.GenericOptionsPanel', {
 
     specialKeyPressed: function(f, e) {
         if(e.getKey() == e.ENTER){
-            this.applyButtonClicked();
+            this.applyChangesButtonClicked();
         }
     },
 
-    applyButtonClicked: function()
+    applyChangesButtonClicked: function()
+    {},
+
+    cancelChangesButtonClicked: function()
     {},
 
     getPanelOptionValues : function()

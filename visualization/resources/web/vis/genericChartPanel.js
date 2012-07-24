@@ -531,8 +531,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.viewPanel = Ext4.create('Ext.panel.Panel', {
                 flex        : 1,
                 layout      : 'fit',
-                bodyStyle   : 'overflow-y: auto;',
-                cls         : 'iScroll',
                 ui          : 'custom',
                 listeners   : {
                     activate  : this.viewPanelActivate,
@@ -1214,16 +1212,22 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.updateChartTask.delay(500);
     },
 
-    renderPlot: function() {
+    renderPlot: function(forExport) {
         var measure;
         var getFormatFn = function(field){
             return field.extFormatFn ? eval(field.extFormatFn) : this.defaultNumberFormat;
         };
-        this.viewPanel.getEl().mask('Rendering Chart...');
-        this.exportPdfBtn.removeListener('click', this.exportChartToPdf);
-        this.exportPdfBtn.disable();
-        if(!this.yAxisMeasure){
 
+        if (!forExport)
+        {
+            this.viewPanel.getEl().mask('Rendering Chart...');
+            this.viewPanel.removeAll();
+            this.exportPdfBtn.removeListener('click', this.exportChartToPdf);
+            this.exportPdfBtn.disable();
+        }
+
+        if (!this.yAxisMeasure && !forExport)
+        {
             if (this.autoColumnYName)
             {
                 measure = this.yMeasureStore.findRecord('name', this.autoColumnYName);
@@ -1242,7 +1246,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
         }
 
-        if(!this.xAxisMeasure){
+        if (!this.xAxisMeasure && !forExport)
+        {
             if(this.renderType == "scatter_plot"){
                 if (this.autoColumnXName)
                 {
@@ -1329,9 +1334,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
         };
 
-        this.viewPanel.removeAll();
         newChartDiv = Ext4.create('Ext.container.Container', {
-            height: 150,
             border: 1,
             autoEl: {tag: 'div'}
         });
@@ -1386,21 +1389,21 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         labels = {
             main: {
                 value: chartOptions.mainTitle,
-                lookClickable: true,
+                lookClickable: !forExport,
                 listeners: {
                     click: mainTitleClickHandler(this)
                 }
             },
             y: {
                 value: chartOptions.yAxis.label ? chartOptions.yAxis.label : this.yAxisMeasure.label,
-                lookClickable: true,
+                lookClickable: !forExport,
                 listeners: {
                     click: yClickHandler(this)
                 }
             },
             x: {
                 value: chartOptions.xAxis.label ? chartOptions.xAxis.label : "Choose a column",
-                lookClickable: true,
+                lookClickable: !forExport,
                 listeners: {
                     click: xClickHandler(this)
                 }
@@ -1411,8 +1414,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         plotConfig = this.generatePlotConfig(
                 geom,
                 newChartDiv.id,
-                newChartDiv.getWidth(),
-                newChartDiv.getHeight() - 25,
+                !forExport ? newChartDiv.getWidth() : 1200,
+                !forExport ? newChartDiv.getHeight() - 25 : 600,
                 this.chartData.rows,
                 labels,
                 scales,
@@ -1424,16 +1427,25 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         var plot = new LABKEY.vis.Plot(plotConfig);
         plot.render();
 
-        this.chartDivId = newChartDiv.id;
-        this.exportPdfBtn.addListener('click', this.exportChartToPdf, this);
-        this.exportPdfBtn.enable();
-
-        this.viewPanel.getEl().unmask();
+        if (!forExport)
+        {
+            this.exportPdfBtn.addListener('click', this.exportChartToPdf, this);
+            this.exportPdfBtn.enable();
+            this.viewPanel.getEl().unmask();
+        }
+        else
+        {
+            return newChartDiv.id;
+        }
     },
 
     exportChartToPdf: function() {
-        if (this.chartDivId)
-            LABKEY.vis.SVGConverter.convert(Ext4.get(this.chartDivId).child('svg').dom, 'pdf');
+        var tempDivId = this.renderPlot(true);
+        if (tempDivId)
+        {
+            LABKEY.vis.SVGConverter.convert(Ext4.get(tempDivId).child('svg').dom, 'pdf');
+            Ext4.getCmp(tempDivId).destroy();
+        }
     },
 
     generatePlotConfig: function(geom, renderTo, width, height, data, labels, scales, xAxisName, yAxisName, xAcc, yAcc){

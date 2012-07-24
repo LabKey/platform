@@ -34,7 +34,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
     constructor : function(config){
         // properties for this panel
         Ext4.apply(config, {
-            id: 'time-chart-outer-panel', // for selenium testing 
             layout: 'border',
             bodyStyle: 'background-color: white;',
             monitorResize: true,
@@ -116,6 +115,9 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
     },
 
     initComponent : function() {
+
+        // for selenium testing showTimeChartAxisPanel function
+        window.timeChartPanelId = this.getId();
 
         if(this.viewInfo.type != "line")
             return;
@@ -206,6 +208,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             layout: 'accordion',
             fill: false,
             width: 220,
+            minWidth: 220,
             border: true,
             split: true,
             collapsible: true,
@@ -447,7 +450,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         // for selenium testing, add a funtion that can be evaluated by selenium to open the axis/title panels similar to clicking on the axis label or title
         // this function can be removed once we figure out how to click on text within the SVG chart
         window.showTimeChartAxisPanel = function(type){
-            var scopedThis = Ext4.getCmp('time-chart-outer-panel');
+            var scopedThis = Ext4.getCmp(window.timeChartPanelId);
             var height = 100;
             var width = 100;
 
@@ -616,7 +619,9 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     this.hide();
                 },
                 listeners: {
-                    'closeOptionsWindow': function() {     
+                    'closeOptionsWindow': function(canceling) {
+                        if (canceling)
+                            this.optionWindow.fireEvent('beforeclose');
                         this.optionWindow.hide();
                     },
                     scope: this

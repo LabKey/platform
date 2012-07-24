@@ -434,7 +434,8 @@ li.ptid a.unhighlight
             // default handles are east, south, and souteast
             target: ptidPanel,
             dynamic: false,
-            minWidth: 260
+            minWidth: 260,
+            minHeight: 350
         });
         <% } %>
 
