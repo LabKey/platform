@@ -103,6 +103,7 @@ abstract public class PipelineJobService implements TaskPipelineRegistry
     @NotNull
     abstract public LocationType getLocationType();
 
+    @NotNull
     abstract public List<? extends GlobusClientProperties> getGlobusClientPropertiesList();
 
     abstract public PathMapper getClusterPathMapper();

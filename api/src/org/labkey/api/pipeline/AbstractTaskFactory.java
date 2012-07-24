@@ -20,7 +20,6 @@ import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
-import java.sql.SQLException;
 
 /**
  * <code>AbstractTaskFactory</code>
@@ -122,7 +121,19 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
     @Override
     public void validateParameters(PipelineJob job) throws PipelineValidationException
     {
-
+        for (PipelineJobService.GlobusClientProperties globusClientProperties : PipelineJobService.get().getGlobusClientPropertiesList())
+        {
+            if (globusClientProperties.getLocation() != null && globusClientProperties.getLocation().equalsIgnoreCase(getLocation()))
+            {
+                // Globus can't submit jobs that have a space in the path to the logs for stdout or stderr.
+                // See issue 15254
+                String clusterPath = globusClientProperties.getPathMapper().remoteToLocal(job.getLogFile().toURI().toString());
+                if (clusterPath.contains(" ") || clusterPath.contains("%20"))
+                {
+                    throw new PipelineValidationException("Paths cannot contain spaces when submitting a cluster job via Globus:" + job.getLogFile());
+                }
+            }
+        }
     }
 
     public boolean isAutoRetryEnabled(PipelineJob job)
