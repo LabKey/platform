@@ -353,7 +353,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
         return _globusClientProperties.get(0);
     }
     
-
+    @NotNull
     public List<GlobusClientPropertiesImpl> getGlobusClientPropertiesList()
     {
         return _globusClientProperties;
