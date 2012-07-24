@@ -2758,6 +2758,12 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
                 break;
         }
+
+        //NOTE: if the dataRegion does not provide a schema/query, we cannot render faceting
+        var dataRegion = LABKEY.DataRegions[this.dataRegionName];
+        if (!dataRegion || !dataRegion.schemaName || !dataRegion.queryName)
+            return false;
+
         return isFacetingCandidate;
     },
 
@@ -2913,9 +2919,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
         toAdd.push(filterConfig);
         toAdd.push({
             xtype: 'panel',
-            //autoScroll: true,
-            //height: 200,
-            //autoHeight: true,
+            width: this.width - 40, //prevent horizontal scroll
             bodyStyle: 'padding-left: 5px;',
             items: [
                 this.getCheckboxGroupConfig(0)
