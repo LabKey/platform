@@ -168,9 +168,12 @@ public class SimpleUserSchema extends UserSchema
             _userSchema = schema;
             wrapAllColumns();
 
-            // Generic query details page
-            DetailsURL detailsURL = QueryService.get().urlDefault(getContainer(), QueryAction.detailsQueryRow, this);
-            setDetailsURL(detailsURL);
+            // Generic query details page if none provided in schema xml.
+            if (!hasDetailsURL())
+            {
+                DetailsURL detailsURL = QueryService.get().urlDefault(getContainer(), QueryAction.detailsQueryRow, this);
+                setDetailsURL(detailsURL);
+            }
         }
 
         protected SimpleUserSchema getUserSchema()
