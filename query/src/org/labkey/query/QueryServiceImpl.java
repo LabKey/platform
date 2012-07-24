@@ -171,17 +171,39 @@ public class QueryServiceImpl extends QueryService
             }
         }
 
+        // old behavior for backwards compatibility
         if (ret == null)
-        {
-            // old behavior for backwards compatibility
-            ret = new ActionURL("query", action.toString(), container);
-            if (schema != null)
-                ret.addParameter(QueryParam.schemaName.toString(), schema);
-            if (query != null)
-                ret.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, query);
-        }
+            ret = urlDefault(container, action, schema, query);
 
         return ret;
+    }
+
+    public ActionURL urlDefault(Container container, QueryAction action, @Nullable String schema, @Nullable String query)
+    {
+        if (action == QueryAction.schemaBrowser)
+            action = QueryAction.begin;
+
+        ActionURL ret = new ActionURL("query", action.toString(), container);
+        if (schema != null)
+            ret.addParameter(QueryParam.schemaName.toString(), schema);
+        if (query != null)
+            ret.addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.queryName, query);
+        return ret;
+    }
+
+    public DetailsURL urlDefault(Container container, QueryAction action, String schema, String query, Map<String, ?> params)
+    {
+        ActionURL url = urlDefault(container, action, schema, query);
+        return new DetailsURL(url, params);
+    }
+
+    public DetailsURL urlDefault(Container container, QueryAction action, TableInfo table)
+    {
+        Map<String, FieldKey> params = new LinkedHashMap<String, FieldKey>();
+        for (ColumnInfo pkCol : table.getPkColumns())
+            params.put(pkCol.getColumnName(), pkCol.getFieldKey());
+
+        return urlDefault(container, action, table.getPublicSchemaName(), table.getPublicName(), params);
     }
 
     public QueryDefinition createQueryDefForTable(UserSchema schema, String tableName)
