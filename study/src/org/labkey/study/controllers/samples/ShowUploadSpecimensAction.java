@@ -37,6 +37,7 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.study.SampleManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.importer.SimpleSpecimenImporter;
+import org.labkey.study.model.SpecimenTypeSummary;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.samples.settings.RepositorySettings;
 import org.springframework.validation.BindException;
@@ -58,10 +59,17 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
 
     public ModelAndView getView(UploadSpecimensForm form, boolean reshow, BindException errors) throws Exception
     {
-        RepositorySettings settings =  SampleManager.getInstance().getRepositorySettings(getViewContext().getContainer());
+        Container container = getViewContext().getContainer();
+        RepositorySettings settings =  SampleManager.getInstance().getRepositorySettings(container);
         if (!settings.isSimple())
-            return HttpView.redirect(PageFlowUtil. urlProvider(PipelineUrls.class).urlBrowse(getViewContext().getContainer()));
+            return HttpView.redirect(PageFlowUtil. urlProvider(PipelineUrls.class).urlBrowse(container));
 
+        SpecimenTypeSummary summary = SampleManager.getInstance().getSpecimenTypeSummary(container);
+        if (summary.isVialCountZero())
+        {
+            form.setNoSpecimens(true);
+            form.setReplaceOrMerge("replace");
+        }
         return new JspView<UploadSpecimensForm>("/org/labkey/study/view/samples/uploadSimpleSpecimens.jsp", form, errors);
      }
 
@@ -273,6 +281,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         private String tsv;
         private String redir;
         private String replaceOrMerge = "merge";
+        private boolean noSpecimens = false;
 
         public String getTsv()
         {
@@ -307,6 +316,16 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         public boolean isMerge()
         {
             return "merge".equals(this.replaceOrMerge);
+        }
+
+        public boolean isNoSpecimens()
+        {
+            return noSpecimens;
+        }
+
+        public void setNoSpecimens(boolean noSpecimens)
+        {
+            this.noSpecimens = noSpecimens;
         }
     }
 }

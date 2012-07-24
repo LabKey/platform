@@ -35,13 +35,25 @@ Paste data in the area below
 <form action="<%=h(buildURL(ShowUploadSpecimensAction.class))%>" method="post" enctype="multipart/form-data">
     <textarea name=tsv id="tsv" rows=20 cols="70"><%=h(bean.getTsv())%></textarea><br>
 
+<%
+    if (!bean.isNoSpecimens())
+    {
+%>
     <p>
     <labkey:radio id="replace" name="replaceOrMerge" value="replace" currentValue="<%=bean.getReplaceOrMerge()%>"/>
     <label for="merge"><b>Replace</b>: Replace all of the existing specimens.</label>
     <br>
     <labkey:radio id="merge" name="replaceOrMerge" value="merge" currentValue="<%=bean.getReplaceOrMerge()%>"/>
     <label for="merge"><b>Merge</b>: Insert new specimens and update existing specimens.</label>
-
+<%
+    }
+    else
+    {
+%>
+    <input type="hidden" name="replaceOrMerge" value="replace">
+<%
+    }
+%>
     <p>
     <%=generateSubmitButton("Submit")%> <%=buttonImg("Cancel", "window.history.back();return false;")%>
 </form>

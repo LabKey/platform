@@ -265,4 +265,12 @@ public class SpecimenTypeSummary
         returnValues.addAll(counts.values());
         return returnValues;
     }
+
+    public boolean isVialCountZero()
+    {
+        for (SpecimenTypeSummaryRow row : _rows)
+            if (row.getVialCount() > 0)
+                return false;
+        return true;
+    }
 }
