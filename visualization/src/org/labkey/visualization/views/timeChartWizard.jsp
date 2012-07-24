@@ -146,12 +146,13 @@
             height: 650,
             minWidth: 875,
             resizable: false,
-            layout: 'fit',
+            layout: 'border',
             frame: false,
             border: false,
             items: [
                 Ext4.create('LABKEY.vis.TimeChartPanel', {
                     border: false,
+                    region: 'center',
                     viewInfo: viewTypes['line'],
                     chartInfo: chartInfo,
                     saveReportInfo: saveReportInfo,

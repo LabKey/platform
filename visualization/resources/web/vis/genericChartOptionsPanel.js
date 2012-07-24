@@ -192,6 +192,21 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         };
     },
 
+    restoreValues: function(initValues) {
+        if (initValues.hasOwnProperty("renderType"))
+            this.setRenderType(initValues.renderType);
+        if (initValues.hasOwnProperty("lineWidth"))
+            this.setLineWidth(initValues.lineWidth);
+        if (initValues.hasOwnProperty("opacity"))
+            this.setOpacity(initValues.opacity);
+        if (initValues.hasOwnProperty("pointSize"))
+            this.setPointSize(initValues.pointSize);
+        if (initValues.hasOwnProperty("pointColor"))
+            this.setPointColor(initValues.pointColor);
+
+        this.hasChanges = false;
+    },
+
     setPanelOptionValues: function(config){
         this.suppressEvents = true;
 

@@ -12,7 +12,7 @@ Ext4.define('LABKEY.vis.GenericOptionsPanel', {
 
     constructor : function(config)
     {
-        Ext4.apply(config, {
+        Ext4.applyIf(config, {
             header: false,
             autoHeight: true,
             autoWidth: true,

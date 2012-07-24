@@ -673,7 +673,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         var xy = this.el.getXY();
         var width = Math.max(875,w-xy[0]-padding[0]);
         this.setWidth(width);
-        this.resizeCharts();
     },
 
     getFilterQuery :  function()
