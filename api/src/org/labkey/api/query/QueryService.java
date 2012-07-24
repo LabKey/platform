@@ -80,6 +80,13 @@ abstract public class QueryService
 
     abstract public ActionURL urlQueryDesigner(User user, Container container, String schema);
     abstract public ActionURL urlFor(User user, Container container, QueryAction action, String schema, String queryName);
+    /** Generate a generic query URL for the QueryAction. */
+    abstract public ActionURL urlDefault(Container container, QueryAction action, @Nullable String schema, @Nullable String query);
+    /** Generate a generic query URL for the QueryAction with a parameter for each primary key column. */
+    abstract public DetailsURL urlDefault(Container container, QueryAction action, String schema, String query, Map<String, ?> params);
+    /** Generate a generic query URL for the QueryAction with a parameter for each primary key column. */
+    abstract public DetailsURL urlDefault(Container container, QueryAction action, TableInfo table);
+
     abstract public UserSchema getUserSchema(User user, Container container, String schema);
     abstract public List<CustomView> getCustomViews(User user, Container container, String schema, String query);
     abstract public List<CustomViewInfo> getCustomViewInfos(User user, Container container, String schema, String query);

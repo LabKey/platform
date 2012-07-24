@@ -37,6 +37,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -84,6 +85,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class QueryView extends WebPartView<Object>
 {
+    public static final String EXPERIMENTAL_GENERIC_DETAILS_URL = "generic-details-url";
+
     public static final String DATAREGIONNAME_DEFAULT = "query";
     protected DataRegion.ButtonBarPosition _buttonBarPosition = DataRegion.ButtonBarPosition.BOTH;
     private ButtonBarConfig _buttonBarConfig = null;
@@ -2048,6 +2051,11 @@ public class QueryView extends WebPartView<Object>
         return null;
     }
 
+    private final boolean isShowExperimentalGenericDetailsURL()
+    {
+        return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_GENERIC_DETAILS_URL);
+    }
+
 
     List<DisplayColumn> _queryDefDisplayColumns = null;
 
@@ -2057,7 +2065,7 @@ public class QueryView extends WebPartView<Object>
         TableInfo table = getTable();
         if (table == null)
             return Collections.emptyList();
-        if (_showDetailsColumn && !isPrintView() && !isExportView())
+        if (_showDetailsColumn && !isPrintView() && !isExportView() && (table.hasDetailsURL() || isShowExperimentalGenericDetailsURL()))
         {
             StringExpression urlDetails = urlExpr(QueryAction.detailsQueryRow);
 
@@ -2067,7 +2075,7 @@ public class QueryView extends WebPartView<Object>
                 {
                     ret.add(new DetailsColumn(urlDetails));
                 }
-                else if (table.hasDetailsURL())
+                else
                 {
                     // We resolve lookups later.  Assume this table will have a valid details url.
                     // this is messy because for most columns we just omit the link if the url is not valid
