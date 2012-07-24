@@ -182,53 +182,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     protected ParticipantVisitResolver createResolver(User user, ExpRun run, ExpProtocol protocol, AssayProvider provider, Container container)
             throws SQLException, IOException, ExperimentException
     {
-        List<DomainProperty> allProps = new ArrayList<DomainProperty>();
-        allProps.addAll(Arrays.asList(provider.getBatchDomain(protocol).getProperties()));
-        allProps.addAll(Arrays.asList(provider.getRunDomain(protocol).getProperties()));
-
-        Map<String, Object> props = OntologyManager.getProperties(container, run.getLSID());
-        ExpExperiment batch = AssayService.get().findBatch(run);
-        if (batch != null)
-        {
-            Map<String, Object> batchProps = OntologyManager.getProperties(container, batch.getLSID());
-            props.putAll(batchProps);
-        }
-        ParticipantVisitResolver resolver = null;
-
-        Container targetStudyContainer = null;
-        for (DomainProperty runProp : allProps)
-        {
-            if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equalsIgnoreCase(runProp.getName()))
-            {
-                Object targetObject = props.get(runProp.getPropertyURI());
-                if (targetObject instanceof String)
-                {
-                    targetStudyContainer = ContainerManager.getForId((String)targetObject);
-                    break;
-                }
-            }
-        }
-
-        for (DomainProperty runProp : allProps)
-        {
-            if (AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equalsIgnoreCase(runProp.getName()))
-            {
-                Object targetObject = props.get(runProp.getPropertyURI());
-                if (targetObject instanceof String)
-                {
-                    ParticipantVisitResolverType resolverType = AbstractAssayProvider.findType((String)targetObject, provider.getParticipantVisitResolverTypes());
-                    resolver = resolverType.createResolver(ExperimentService.get().getExpRun(run.getRowId()), targetStudyContainer, user);
-                    break;
-                }
-            }
-        }
-
-        if (resolver == null)
-        {
-            resolver = new StudyParticipantVisitResolver(container, targetStudyContainer);
-        }
-
-        return resolver;
+        return AssayService.get().createResolver(user, run, protocol, provider, null);
     }
 
     /** Insert the data into the database.  Transaction is active. */

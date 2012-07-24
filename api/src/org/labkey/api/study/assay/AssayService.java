@@ -19,6 +19,7 @@ package org.labkey.api.study.assay;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -31,6 +32,7 @@ import org.labkey.api.view.WebPartView;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -114,5 +116,20 @@ public class AssayService
          * @return the list of containers as pairs of container objects and corresponding label.
          */
         public List<Pair<Container, String>> getLocationOptions(Container container, User user);
+
+        /**
+         * Searches the ExpRun and ExpBatch for the configured participant visit resolver type.  If none is found,
+         * the StudyParticipantVisitResolverType will be used.  If targetStudyContainer is null, the ExpRun
+         * and ExpBatch will be searched for the configured TargetStudy.
+         *
+         * @param run experiment run
+         * @param protocol The run's protocol.  If null, the ExpRun.getProcotol() will be used.
+         * @param provider The assay provider.  If null, the provider will be found from the protocol.
+         * @param targetStudyContainer  The target study.  If null, the ExpRun and ExpBatch properties will be searched.
+         * @return The resolver.
+         * @throws ExperimentException
+         */
+        public ParticipantVisitResolver createResolver(User user, ExpRun run, @Nullable ExpProtocol protocol, @Nullable AssayProvider provider, @Nullable Container targetStudyContainer)
+                throws IOException, ExperimentException;
     }
 }
