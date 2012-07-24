@@ -1405,10 +1405,6 @@ public class VisualizationController extends SpringActionController
                 view.setTitle(_renderType.getName() + " Report");
                 view.setFrame(WebPartView.FrameType.PORTAL);
 
-                String script = String.format("javascript:customizeGenericReport('%s');", form.getComponentId());
-                NavTree edit = new NavTree("Edit", script, getViewContext().getContextPath() + "/_images/partedit.png");
-                view.addCustomMenu(edit);
-
                 if (getViewContext().hasPermission(InsertPermission.class))
                 {
                     NavTree menu = new NavTree();

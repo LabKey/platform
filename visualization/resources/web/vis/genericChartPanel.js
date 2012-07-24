@@ -94,6 +94,34 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             scope: this
         });
 
+        this.saveBtn = Ext4.create('Ext.button.Button', {
+            text: "Save",
+            hidden: this.hideSave,
+            handler: function(){
+                this.saveWindow.show();
+            },
+            scope: this
+        });
+
+        this.saveAsBtn = Ext4.create('Ext.button.Button', {
+            text: "Save As",
+            hidden  : this.isNew() || this.hideSave,
+            handler: function(){
+                this.onSaveAs();
+            },
+            scope: this
+        });
+
+        this.saveWindow = Ext4.create('Ext.window.Window', {
+            title: 'Save Chart',
+            width: 500,
+            height: 200,
+            closeAction: 'hide',
+            cls: 'data-window',
+            layout: 'fit',
+            items: [this.getSavePanel()]
+        });
+
         this.toggleBtn = Ext4.create('Ext.button.Button', {
             text:'View Data',
             width: 95,
@@ -101,9 +129,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 if(this.viewPanel.isHidden()){
                     this.centerPanel.getLayout().setActiveItem(0);
                     this.toggleBtn.setText('View Data');
+                    this.showOptionsBtn.show();
+                    this.exportPdfBtn.show();
                 } else {
                     this.centerPanel.getLayout().setActiveItem(1);
                     this.toggleBtn.setText('View Chart');
+                    this.showOptionsBtn.hide();
+                    this.exportPdfBtn.hide();
                 }
             },
             scope: this
@@ -123,7 +155,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             tbar: [
                 this.toggleBtn,
                 this.exportPdfBtn,
-                this.showOptionsBtn
+                this.showOptionsBtn,
+                '->',
+                this.saveBtn,
+                this.saveAsBtn
             ]
         });
 
@@ -193,7 +228,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         this.yMeasureGrid = Ext4.create('Ext.grid.Panel', {
             store: this.yMeasureStore,
-            width: 300,
+            width: 360,
             height: 200,
             sortableColumns: false,
             enableColumnHide: false,
@@ -212,7 +247,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         this.xMeasureGrid = Ext4.create('Ext.grid.Panel', {
             store: this.xMeasureStore,
-            width: 300,
+            width: 360,
             height: 200,
             sortableColumns: false,
             enableColumnHide: false,
@@ -273,10 +308,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         // Labkey.vis.GenericMeasurePanel so we have less duplicate code.
 
         this.yMeasurePanel = Ext4.create('LABKEY.vis.GenericChartAxisPanel',{
+            border: false,
+            frame: false,
             store: this.yMeasureStore,
             queryName: this.queryName,
             measureGrid: this.yMeasureGrid,
-            width: 320,
             listeners: {
                 'chartDefinitionChanged': function(){
                     this.viewPanel.getEl().mask('Rendering Chart...');
@@ -289,7 +325,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         this.yMeasureWindow = Ext4.create('Ext.window.Window', {
             title: 'Y Axis',
-            layout: 'fit',
+            cls: 'data-window',
+            border: false,
+            frame: false,
+            width: 400,
+            resizable: false,
             closeAction: 'hide',
             items: [
                 this.yMeasurePanel
@@ -317,10 +357,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         });
 
         this.xMeasurePanel = Ext4.create('LABKEY.vis.GenericChartAxisPanel',{
+            border: false,
+            frame: false,
             store: this.xMeasureStore,
             measureGrid: this.xMeasureGrid,
             queryName: this.queryName,
-            width: 320,
             listeners: {
                 'chartDefinitionChanged': function(){
                     this.viewPanel.getEl().mask('Rendering Chart...');
@@ -333,7 +374,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         this.xMeasureWindow = Ext4.create('Ext.window.Window', {
             title: 'X Axis',
+            cls: 'data-window',
             border: false,
+            frame: false,
+            width: 400,
+            resizable: false,
             closeAction: 'hide',
             items: [
                     this.xMeasurePanel
@@ -392,6 +437,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             hidden: true,
             border: 1,
             width: 325,
+            resizable: false,
             cls: 'data-window',
             modal: true,
             closable: true,
@@ -428,6 +474,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.mainTitleWindow = Ext4.create('Ext.window.Window', {
             title: 'Main Title',
             layout: 'fit',
+            cls: 'data-window',
+            resizable: false,
             width: 300,
             closeAction: 'hide',
             items: [this.mainTitlePanel],
@@ -448,9 +496,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }, this);
 
         this.items.push(this.optionsWindow);
-
         this.items.push(this.centerPanel);
-        this.items.push(this.getNorthPanel());
 
         this.callParent();
 
@@ -532,14 +578,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         return !this.reportId;
     },
 
-    getNorthPanel : function() {
+    getSavePanel : function() {
 
         var formItems = [];
 
         this.reportName = Ext4.create('Ext.form.field.Text', {
             fieldLabel : 'Report Name',
             allowBlank : false,
-            readOnly   : !this.isNew(),
             listeners : {
                 change : function() {this.markDirty(true);},
                 scope : this
@@ -584,7 +629,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             text    : 'Save',
             hidden  : this.hideSave,
             handler : function() {
-                var form = this.northPanel.getComponent('selectionForm').getForm();
+                var form = this.savePanel.getComponent('selectionForm').getForm();
 
                 if (form.isValid()) {
                     var data = this.getCurrentReportConfig();
@@ -607,33 +652,23 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             scope   : this
         });
 
-        this.saveAsButton = Ext4.create('Ext.button.Button', {
-            text    : 'Save As',
-            hidden  : this.isNew() || this.hideSave,
-            handler : function() {
-                this.onSaveAs();
-            },
-            scope   : this
-        });
-
-        this.northPanel = Ext4.create('Ext.panel.Panel', {
-            bodyPadding : 20,
-            hidden      : true,
+        this.savePanel = Ext4.create('Ext.panel.Panel', {
+            hidden      : false,
             preventHeader : true,
+            border      : false,
             frame       : false,
-            region      : 'north',
             items       : this.formPanel,
             buttons  : [{
                 text    : 'Cancel',
                 handler : function() {
-                    this.customize();
+                    this.saveWindow.hide();
                 },
                 scope   : this
             }, this.saveButton, this.saveAsButton
             ]
         });
 
-        return this.northPanel;
+        return this.savePanel;
     },
 
     renderDataGrid : function(renderTo) {
@@ -931,25 +966,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
     },
 
-    customize : function() {
-
-        this.fireEvent((this.customMode ? 'disableCustomMode' : 'enableCustomMode'), this);
-    },
-
-    onEnableCustomMode : function() {
-
-        this.northPanel.show();
-        this.customMode = true;
-    },
-
-    onDisableCustomMode : function() {
-
-        this.customMode = false;
-
-        if (this.northPanel)
-            this.northPanel.hide();
-    },
-
     getCurrentReportConfig : function() {
 
         var config = {
@@ -996,7 +1012,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
                 this.reportId = o.reportId;
                 this.loadReport(this.reportId);
-                this.customize();
+                this.saveWindow.close();
             },
             failure : this.onFailure,
             scope   : this
@@ -1049,7 +1065,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         var saveAsWindow = Ext4.create('Ext.window.Window', {
             width  : 500,
-            height : 300,
+            height : 200,
+            cls: 'data-window',
             layout : 'fit',
             draggable : false,
             modal  : true,
@@ -1057,9 +1074,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             defaults: {
                 border: false, frame: false
             },
-            bodyPadding : 20,
             items  : [{
                 xtype : 'form',
+                bodyPadding: 20,
                 fieldDefaults : {
                     anchor  : '100%',
                     maxWidth : 450,
@@ -1068,35 +1085,42 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 },
                 items       : formItems,
                 buttonAlign : 'left',
-                buttons     : [{
-                    text : 'Save',
-                    formBind: true,
-                    handler : function(btn) {
-                        var form = btn.up('form').getForm();
+                buttons     : [
+                    '->', {
+                        text: 'Cancel',
+                        handler: function(btn) {
+                            saveAsWindow.close();
+                        },
+                        scope: this
+                    }, {
+                        text : 'Save',
+                        formBind: true,
+                        handler : function(btn) {
+                            var form = btn.up('form').getForm();
 
-                        if (form.isValid()) {
-                            var data = this.getCurrentReportConfig();
-                            var values = form.getValues();
+                            if (form.isValid()) {
+                                var data = this.getCurrentReportConfig();
+                                var values = form.getValues();
 
-                            data.name = values.name;
-                            data.description = values.description;
-                            data.public = values.public || false;
-                            data.reportId = null;
+                                data.name = values.name;
+                                data.description = values.description;
+                                data.public = values.public || false;
+                                data.reportId = null;
 
-                            this.saveReport(data);
-                        }
-                        else {
-                            Ext4.Msg.show({
-                                 title: "Error",
-                                 msg: 'Report name must be specified.',
-                                 buttons: Ext4.MessageBox.OK,
-                                 icon: Ext4.MessageBox.ERROR
-                            });
-                        }
-                        saveAsWindow.close();
-                    },
-                    scope   : this
-                }]
+                                this.saveReport(data);
+                            }
+                            else {
+                                Ext4.Msg.show({
+                                    title: "Error",
+                                    msg: 'Report name must be specified.',
+                                    buttons: Ext4.MessageBox.OK,
+                                    icon: Ext4.MessageBox.ERROR
+                                });
+                            }
+                            saveAsWindow.close();
+                        },
+                        scope   : this
+                    }]
             }],
             scope : this
         });
@@ -1112,8 +1136,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             method  : 'GET',
             params  : {reportId : reportId},
             success : function(response){
-                this.reportName.setReadOnly(true);
-                this.saveAsButton.setVisible(true);
+                this.saveAsBtn.setVisible(true);
                 this.loadSavedConfig(Ext4.decode(response.responseText).reportConfig);
             },
             failure : this.onFailure,

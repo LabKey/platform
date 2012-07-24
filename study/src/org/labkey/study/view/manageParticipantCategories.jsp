@@ -48,6 +48,16 @@
     {
         Ext.QuickTips.init();
 
+        Ext.data.Types.PARTICIPANTCATEGORY = {
+            convert: function(v, rec) {
+                return v;
+            },
+            sortType: function(v) {
+                return v.label;
+            },
+            type: 'ParticpantCategory'
+        };
+
        this.groupStore = new Ext.data.JsonStore({
             proxy: new Ext.data.HttpProxy({
                 url : LABKEY.ActionURL.buildURL("participant-group", "browseParticipantGroups"),
@@ -66,7 +76,7 @@
                 {name: 'canEdit', type: 'boolean', mapping: 'category.canEdit'},
                 {name: 'canDelete', type: 'boolean', mapping: 'category.canDelete'},
                 {name: 'categoryLabel', type: 'string', mapping: 'category.label'},
-                {name: 'category', type: 'object'}
+                {name: 'category', type: Ext.data.Types.PARTICIPANTCATEGORY}
             ],
             sortInfo: {
                 field: 'categoryLabel',

@@ -34,7 +34,7 @@ Ext4.define('LABKEY.vis.GenericChartAxisPanel', {
             name: 'label',
             fieldLabel: 'Label',
             enableKeyEvents: true,
-            width: 300,
+            width: 360,
             listeners: {
                 scope: this,
                 'change': function(cmp, newVal, oldVal) {

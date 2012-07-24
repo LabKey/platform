@@ -49,10 +49,6 @@ public class GenericChartReportImpl extends GenericChartReport
 
         if (canEdit(context.getUser(), context.getContainer()))
         {
-            String script = String.format("javascript:customizeGenericReport('%s');", form.getComponentId());
-            NavTree edit = new NavTree("Edit", script, AppProps.getInstance().getContextPath() + "/_images/partedit.png");
-            view.addCustomMenu(edit);
-
             NavTree menu = new NavTree();
             menu.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(context.getContainer()));
             view.setNavMenu(menu);
