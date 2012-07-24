@@ -163,6 +163,7 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
             dataRegionName: dataRegionName,
             boundColumn: {
                 name: colName,
+                fieldKey: colName,
                 caption: caption,
                 jsonType: dataType,
                 mvEnabled: mvEnabled
