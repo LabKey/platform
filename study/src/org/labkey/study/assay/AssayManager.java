@@ -28,6 +28,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -198,7 +199,7 @@ public class AssayManager implements AssayService.Interface
 
     public WebPartView createAssayListView(ViewContext context, boolean portalView)
     {
-        String name = "AssayList";
+        String name = AssaySchema.ASSAY_LIST_TABLE_NAME;
         UserSchema schema = AssayService.get().createSchema(context.getUser(), context.getContainer());
         QuerySettings settings = schema.getSettings(context, name, name);
         QueryView queryView;
@@ -561,5 +562,62 @@ public class AssayManager implements AssayService.Interface
             containers.add(new Pair<Container, String>(shared, "Shared Folder"));
 
         return containers;
+    }
+
+    private Collection<ObjectProperty> batchAndRunProperties(ExpRun run, @Nullable ExpProtocol protocol) throws ExperimentException
+    {
+        if (protocol == null)
+            protocol = run.getProtocol();
+        if (protocol == null)
+            throw new ExperimentException("No protocol found for run");
+
+        ExpExperiment batch = AssayService.get().findBatch(run);
+        Collection<ObjectProperty> properties = new ArrayList<ObjectProperty>(run.getObjectProperties().values());
+        if (batch != null)
+        {
+            properties.addAll(batch.getObjectProperties().values());
+        }
+
+        return properties;
+    }
+
+    public ParticipantVisitResolver createResolver(User user, ExpRun run, @Nullable ExpProtocol protocol, @Nullable AssayProvider provider, Container targetStudyContainer)
+            throws IOException, ExperimentException
+    {
+        if (provider == null)
+            provider = AssayService.get().getProvider(protocol);
+        if (provider == null)
+            throw new ExperimentException("No assay provider found for protocol");
+
+        Collection<ObjectProperty> properties = batchAndRunProperties(run, protocol);
+
+        if (targetStudyContainer == null)
+        {
+            for (ObjectProperty property : properties)
+            {
+                if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equalsIgnoreCase(property.getName()))
+                {
+                    String targetStudy = property.getStringValue();
+                    targetStudyContainer = ContainerManager.getForId(targetStudy);
+                    break;
+                }
+            }
+        }
+
+        ParticipantVisitResolverType resolverType = null;
+        for (ObjectProperty property : properties)
+        {
+            if (AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equals(property.getName()))
+            {
+                resolverType = AbstractAssayProvider.findType(property.getStringValue(), provider.getParticipantVisitResolverTypes());
+                if (resolverType != null)
+                    break;
+            }
+        }
+
+        if (resolverType == null)
+            resolverType = new StudyParticipantVisitResolverType();
+
+        return resolverType.createResolver(run, targetStudyContainer, user);
     }
 }
