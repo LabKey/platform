@@ -4025,21 +4025,6 @@ public class AdminController extends SpringActionController
                         }
                     }
 
-                    if (c.isProject())
-                    {
-                        SecurityManager.createNewProjectGroups(c);
-                    }
-                    else
-                    {
-                        //If current user is NOT a site or folder admin, or the project has been explicitly set to have
-                        // new subfolders inherit permissions, we'll inherit permissions (otherwise they would not be able to see the folder)
-                        Integer adminGroupId = null;
-                        if (null != c.getProject())
-                            adminGroupId = SecurityManager.getGroupId(c.getProject(), "Administrators", false);
-                        boolean isProjectAdmin = (null != adminGroupId) && getUser().isInGroup(adminGroupId.intValue());
-                        if (!isProjectAdmin && !getUser().isAdministrator() || SecurityManager.shouldNewSubfoldersInheritPermissions(c.getProject()))
-                            SecurityManager.setInheritPermissions(c);
-                    }
                     _successURL = new AdminUrlsImpl().getSetFolderPermissionsURL(c);
                     _successURL.addParameter("wizard", Boolean.TRUE.toString());
 
