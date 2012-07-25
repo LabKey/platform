@@ -3239,8 +3239,11 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                     if(recIdx != -1)
                         records.push(recIdx);
                     else {
-                        error = true;
-                        return false;
+                        // Issue 14710: if the record isnt found, we wont be able to select it, so should reject. if it's null/empty, ignore silently
+                        if(!Ext.isEmpty(val)){
+                            error = true;
+                            return false;
+                        }
                     }
                 }, this);
 
