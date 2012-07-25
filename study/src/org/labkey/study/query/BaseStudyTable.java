@@ -132,7 +132,8 @@ public abstract class BaseStudyTable extends FilteredTable
 
         if (DemoMode.isDemoMode(_schema.getContainer(), _schema.getUser()))
         {
-            participantColumn.setDisplayColumnFactory(new DisplayColumnFactory() {
+            participantColumn.setDisplayColumnFactory(new DisplayColumnFactory()
+            {
                 @Override
                 public DisplayColumn createRenderer(ColumnInfo column)
                 {
@@ -144,6 +145,7 @@ public abstract class BaseStudyTable extends FilteredTable
         return addColumn(participantColumn);
     }
 
+
     @Override
     protected ColumnInfo resolveColumn(String name)
     {
@@ -152,9 +154,14 @@ public abstract class BaseStudyTable extends FilteredTable
         // in all containers.  This is 'ParticipantId', since this was the column name before
         // customization was possible:
         if ("ParticipantId".equalsIgnoreCase(name))
-            return getColumn(StudyService.get().getSubjectColumnName(getContainer()));
+        {
+            String alt = StudyService.get().getSubjectColumnName(getContainer());
+            if (!"ParticipantId".equalsIgnoreCase(alt))
+                return getColumn(alt);
+        }
         return null;
     }
+
 
     protected ColumnInfo addWrapLocationColumn(String wrappedName, String rootTableColumnName)
     {
