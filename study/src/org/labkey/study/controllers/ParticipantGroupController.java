@@ -696,15 +696,31 @@ public class ParticipantGroupController extends BaseStudyController
             form.setContainer(getContainer().getId());
 
             ParticipantCategoryImpl category;
+            ParticipantCategoryImpl oldCategory;
             ParticipantGroup group;
 
             if (form.getCategoryId() == 0)
             {
                 if (form.getCategoryType().equals("list"))
                 {
-                    // No category selected, create new category with type 'list' and create new participant group.
-                    category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form.getParticipantCategorySpecification(), form.getParticipantIds(), form.getFilters(), form.getDescription());
-                    group = category.getGroups()[0];
+                    // No category selected, create new category with type 'list'.
+                    if (form.isNew())
+                    {
+                        category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form.getParticipantCategorySpecification(), form.getParticipantIds(), form.getFilters(), form.getDescription());
+                        group = category.getGroups()[0];
+                    }
+                    else
+                    {
+                        DbScope scope = StudySchema.getInstance().getSchema().getScope();
+
+                        scope.ensureTransaction();
+
+                        category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form.getParticipantCategorySpecification());
+                        form.setCategoryId(category.getRowId());
+                        group = ParticipantGroupManager.getInstance().setParticipantGroup(getContainer(), getUser(), form);
+
+                        scope.commitTransaction();
+                    }
                 }
                 else
                 {
@@ -712,18 +728,52 @@ public class ParticipantGroupController extends BaseStudyController
                     DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
                     scope.ensureTransaction();
+                    Integer oldCategoryId = null;
+                    if (!form.isNew())
+                    {
+                        oldCategoryId = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), getUser(), form.getRowId()).getCategoryId();
+                    }
 
                     category = ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), form.getParticipantCategorySpecification());
                     form.setCategoryId(category.getRowId());
                     group = ParticipantGroupManager.getInstance().setParticipantGroup(getContainer(), getUser(), form);
+
+                    if (oldCategoryId != null)
+                    {
+                        oldCategory = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), oldCategoryId);
+                        if (oldCategory != null && oldCategory.getType().equals("list") && !category.getType().equals("list"))
+                        {
+                            ParticipantGroupManager.getInstance().deleteParticipantCategory(getContainer(), getUser(), oldCategory);
+                        }
+                    }
 
                     scope.commitTransaction();
                 }
             }
             else
             {
+                DbScope scope = StudySchema.getInstance().getSchema().getScope();
+
+                scope.ensureTransaction();
+                Integer oldCategoryId = null;
+                if (!form.isNew())
+                {
+                    oldCategoryId = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), getUser(), form.getRowId()).getCategoryId();
+                }
+
                 group = ParticipantGroupManager.getInstance().setParticipantGroup(getContainer(), getUser(), form);
                 category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), group.getCategoryId());
+
+                if (oldCategoryId != null)
+                {
+                    oldCategory = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), oldCategoryId);
+                    if (oldCategory.getType().equals("list") && !category.getType().equals("list"))
+                    {
+                        ParticipantGroupManager.getInstance().deleteParticipantCategory(getContainer(), getUser(), oldCategory);
+                    }
+                }
+                
+                scope.commitTransaction();
             }
             
             resp.put("success", true);
