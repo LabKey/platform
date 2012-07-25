@@ -801,7 +801,10 @@ public class ParticipantGroupManager
                 return groups;
 
             SQLFragment sql = new SQLFragment("SELECT * FROM (");
-            sql.append("SELECT pg.label, pg.rowId, pg.filters, pg.description FROM ").append(StudySchema.getInstance().getTableInfoParticipantCategory(), "pc");
+
+            // TODO, refactor this so that we initialize the participantGroup bean using a select on rowId from the participantGroupTable
+            sql.append("SELECT pg.label, pg.rowId, pg.filters, pg.description, pg.created, pg.createdBy, pg.modified, pg.modifiedBy FROM ");
+            sql.append(StudySchema.getInstance().getTableInfoParticipantCategory(), "pc");
             sql.append(" JOIN ").append(getTableInfoParticipantGroup(), "pg").append(" ON pc.rowId = pg.categoryId WHERE pg.categoryId = ?) jr ");
             sql.append(" JOIN ").append(getTableInfoParticipantGroupMap(), "gm").append(" ON jr.rowId = gm.groupId");
             sql.append(" ORDER BY gm.groupId, gm.ParticipantId;");
@@ -829,6 +832,10 @@ public class ParticipantGroupManager
                     group.setRowId(pg.getRowId());
                     group.setFilters(pg.getFilters());
                     group.setDescription(pg.getDescription());
+                    group.setModified(pg.getModified());
+                    group.setModifiedBy(pg.getModifiedBy());
+                    group.setCreated(pg.getCreated());
+                    group.setCreatedBy(pg.getCreatedBy());
 
                     groupMap.put(pg.getGroupId(), group);
                 }

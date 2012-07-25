@@ -1621,6 +1621,10 @@
     <ns:columns>
         <ns:column columnName="RowId"/>
         <ns:column columnName="Container"/>
+        <ns:column columnName="CreatedBy"/>
+        <ns:column columnName="Created"/>
+        <ns:column columnName="ModifiedBy"/>
+        <ns:column columnName="Modified"/>
         <ns:column columnName="Label"/>
         <ns:column columnName="CategoryId"/>
         <ns:column columnName="Filters"/>
