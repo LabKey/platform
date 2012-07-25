@@ -606,8 +606,6 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                         listeners : {
                             click : function(col, grid, idx) {
                                 this.gridFieldStore.removeAt(idx);
-                                if (this.measuresDialog)
-                                    this.onMeasuresStoreLoaded(this.measuresDialog.measurePanel);
                                 this.generateTemplateConfig();
                             },
                             scope : this
@@ -1357,6 +1355,11 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 scope : this
             });
         }
+        else
+        {
+            // if the measures dialog already exists, call the on load function to re-select the measures (for cancel button or measure deletion) 
+            this.onMeasuresStoreLoaded(this.measuresDialog.measurePanel.dataView);
+        }
         this.measuresDialog.addListener('measuresSelected', function(recs) {
             if (handler) handler.call(scope || this, recs);
         }, this, {single : true});
@@ -1401,6 +1404,8 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             
             if (mp.getSelectionModel()) // might not be initialized yet
             {
+                mp.getSelectionModel().deselectAll();
+
                 Ext4.each(idArray, function(id) {
                     mp.getSelectionModel().select(id, true);    
                 });
