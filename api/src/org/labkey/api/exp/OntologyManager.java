@@ -425,9 +425,12 @@ public class OntologyManager
                     else
                     {
                         // TODO does validateProperty handle MvFieldWrapper?
-                        if (null != pd && validatorMap.containsKey(propertyURI))
+                        if (null != pd)
                         {
-                            validateProperty(validatorMap.get(propertyURI), pd, value, errors, validatorCache);
+                            if (!validateProperty(validatorMap.get(propertyURI), pd, value, errors, validatorCache))
+                            {
+                                throw new ValidationException(errors);
+                            }
                         }
                     }
                     try
@@ -511,6 +514,15 @@ public class OntologyManager
         if (prop.isRequired() && value == null)
         {
             errors.add(new PropertyValidationError("Field '" + prop.getName() + "' is required", prop.getName()));
+            ret = false;
+        }
+
+        // Check if the string is too long. We're currently using VARCHAR(4000) for all ontology manager values
+        int stringLengthLimit = getTinfoObjectProperty().getColumn("StringValue").getScale();
+        int stringLength = value == null ? 0 : value.toString().length();
+        if (prop.isStringType() && stringLength > stringLengthLimit)
+        {
+            errors.add(new PropertyValidationError("Field '" + prop.getName() + "' is limited to " + stringLengthLimit + " characters, but the value is " + stringLength + " characters. (The value starts with '" + value.toString().substring(0, 100) + "...')", prop.getName()));
             ret = false;
         }
 
