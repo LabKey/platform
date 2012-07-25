@@ -60,35 +60,7 @@
 
     <filter-mapping>
         <filter-name>Module Loader</filter-name>
-        <url-pattern>*.jsp</url-pattern>
-    </filter-mapping>
-    <filter-mapping>
-        <filter-name>Module Loader</filter-name>
-        <url-pattern>*.jpf</url-pattern>
-    </filter-mapping>
-    <filter-mapping>
-        <filter-name>Module Loader</filter-name>
-        <url-pattern>*.do</url-pattern>
-    </filter-mapping>
-    <filter-mapping>
-        <filter-name>Module Loader</filter-name>
-        <url-pattern>*.view</url-pattern>
-    </filter-mapping>
-    <filter-mapping>
-        <filter-name>Module Loader</filter-name>
-        <url-pattern>*.api</url-pattern>
-    </filter-mapping>
-    <filter-mapping>
-        <filter-name>Module Loader</filter-name>
-        <url-pattern>*.post</url-pattern>
-    </filter-mapping>
-    <filter-mapping>
-        <filter-name>Module Loader</filter-name>
-        <url-pattern>/services/*</url-pattern>
-    </filter-mapping>
-    <filter-mapping>
-        <filter-name>Module Loader</filter-name>
-        <url-pattern>/_webdav/*</url-pattern>
+        <url-pattern>/*</url-pattern>
     </filter-mapping>
 
     <filter-mapping>
