@@ -109,6 +109,7 @@ abstract public class UserSchema extends AbstractSchema
         Object o = _getTableOrQuery(name, includeExtraMetadata, forWrite, errors);
         if (o instanceof TableInfo)
         {
+            assert validateTableInfo((TableInfo)o);
             return (TableInfo)o;
         }
         if (o instanceof QueryDefinition)
@@ -116,9 +117,22 @@ abstract public class UserSchema extends AbstractSchema
             TableInfo t = ((QueryDefinition)o).getTable(this, errors, true);
             if (!errors.isEmpty())
                 throw errors.get(0);
+            assert validateTableInfo(t);
             return t;
         }
         return null;
+    }
+
+
+    private boolean validateTableInfo(TableInfo t)
+    {
+        if (null == t)
+            return true;
+        // see https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=15584
+        assert null != t.getSchema();
+        assert null != t.getName();
+        assert t.getColumns().size() > 0;
+        return true;
     }
 
 

@@ -123,15 +123,21 @@ public abstract class DataView extends WebPartView<RenderContext>
         getRenderContext().setContainer(c);
     }
 
+
     public TableInfo getTable()
     {
+        TableInfo t = null;
         if (null != _dataRegion)
-            return _dataRegion.getTable();
+            t = _dataRegion.getTable();
         else if (null != getRenderContext().getForm())
-            return getRenderContext().getForm().getTable();
-        else
-            return null;
+            t = getRenderContext().getForm().getTable();
+
+        // see https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=15584
+        if (null != t && null == t.getSchema())
+            throw new NullPointerException("getSchema() returned null: " + t.getName() + " " + t.getClass().getName() );
+        return t;
     }
+
 
     protected abstract void _renderDataRegion(RenderContext ctx, Writer out) throws IOException, SQLException;
 
