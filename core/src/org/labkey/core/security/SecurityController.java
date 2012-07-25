@@ -1401,6 +1401,7 @@ public class SecurityController extends SpringActionController
         private String newUsers;
         private String _cloneUser;
         private boolean _skipProfile;
+        private String _message = null;
 
         public void setNewUsers(String newUsers)
         {
@@ -1433,6 +1434,19 @@ public class SecurityController extends SpringActionController
         public void setSkipProfile(boolean skipProfile)
         {
             _skipProfile = skipProfile;
+        }
+
+        public void addMessage(String message)
+        {
+            if (_message == null)
+                _message = message;
+            else
+                _message += "<br/>" + message;
+        }
+
+        public String getMessage()
+        {
+            return _message;
         }
     }
 
@@ -1513,7 +1527,7 @@ public class SecurityController extends SpringActionController
                 {
                     clonePermissions(userToClone, email);
                 }
-                errors.addError(new FormattedError(result));
+                form.addMessage(result);
             }
 
             return false;

@@ -72,6 +72,10 @@
             { %>
         <tr><td colspan="3"><labkey:errors /></td></tr><%
             }
+            if (form.getMessage() != null)
+            {
+                %><tr><td colspan="3"><div class="labkey-message"><%=form.getMessage()%></div></td></tr><%
+            }
         %>
         <tr>
             <td valign="top">Add new users.<br><br>Enter one or more email addresses,&nbsp;<br>each on its own line.</td>
