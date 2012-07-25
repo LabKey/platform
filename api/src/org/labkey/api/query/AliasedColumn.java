@@ -69,4 +69,10 @@ public class AliasedColumn extends ColumnInfo
     {
         return _column.getTableAlias(baseAlias);
     }
+
+    @Override
+    public String getConceptURI()
+    {
+        return _column.getConceptURI();
+    }
 }

@@ -426,7 +426,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         return conceptURI;
     }
 
-    protected void setConceptURI(String conceptURI)
+    public void setConceptURI(String conceptURI)
     {
         checkLocked();
         this.conceptURI = conceptURI;

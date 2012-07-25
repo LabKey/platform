@@ -112,6 +112,7 @@ public class PropertyColumn extends LookupColumn
         to.setConditionalFormats(PropertyService.get().getConditionalFormats(pd));
 
         to.setPropertyURI(pd.getPropertyURI());
+        to.setConceptURI(pd.getConceptURI());
     }
 
 
