@@ -159,6 +159,22 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
             handler.@org.labkey.api.gwt.client.ui.property.ConditionalFormatItem::filterDialogCallback(Ljava/lang/Object;)(s3);
         };
 
+        var validatorFn = function(filters)
+        {
+            if(!filters || !filters.length)
+            {
+                alert('Must choose a filter.');
+                return false;
+            }
+
+            for (var i=0;i<filters.length;i++){
+                if(!filters[i][0]){
+                    alert('Must choose a filter type.  Hit cancel to exit.');
+                    return false;
+                }
+            }
+        };
+
         new $wnd.LABKEY.FilterDialog({
             dataRegionName: dataRegionName,
             boundColumn: {
@@ -169,6 +185,7 @@ public class ConditionalFormatItem<DomainType extends GWTDomain<FieldType>, Fiel
                 mvEnabled: mvEnabled
             },
             title: "Apply Conditional Format Where " + caption,
+            validatorFn: validatorFn,
             confirmCallback: callback,
             queryString: filter
         }).show();

@@ -3001,11 +3001,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             });
         }
 
-        if(this.filterType == 'include' && !paramValPairs.length){
-            inputFields[0].selectAll();
-            return;
-        }
-
+        var effectiveFilters = 0;
         Ext.each(paramValPairs, function(pair, idx){
             var combo = combos[filterIndex];
             if(!combo){
@@ -3057,6 +3053,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                             input.setValue(values.join(';'));
                         }
                     }
+                    effectiveFilters++;
                 }
             }
             else if(idx > 0) {
@@ -3065,6 +3062,11 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
             filterIndex++;
         }, this);
+
+        if(this.filterType == 'include' && !effectiveFilters){
+            inputFields[0].selectAll();
+            return;
+        }
     },
 
     getInverse: function(store, values){
@@ -3089,6 +3091,8 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
     savedSearchString : null,
 
     changeFilterCallback : null,
+
+    validatorFn: Ext.emptyFn,
 
     getSkipPrefixes: function()
     {
@@ -3530,10 +3534,13 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                     filterArray = this.optimizeFilter(filter, value, allowable);
                 }
 
-                if(filterArray)
+                if(filterArray && (!Ext.isEmpty(filterArray[0]))) //ignore filters where both operator can value are blank
                     filters.push(filterArray);
             }
         }, this);
+
+        if(this.validatorFn(filters) === false)
+            return;
 
         if(isValid){
             this.setFilter(filters);
