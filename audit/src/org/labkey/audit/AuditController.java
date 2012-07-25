@@ -18,6 +18,7 @@ package org.labkey.audit;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.security.ActionNames;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.view.*;
@@ -56,6 +57,7 @@ public class AuditController extends SpringActionController
     }
 
 
+    @ActionNames("begin, showAuditLog")
     @RequiresPermissionClass(AdminReadPermission.class)
     public class ShowAuditLogAction extends QueryViewAction<ShowAuditLogForm, QueryView>
     {
