@@ -168,8 +168,13 @@ public class TableInfoWriter
 
         if (column.getFacetingBehaviorType() != null)
         {
-            FacetingBehaviorType.Enum type = FacetingBehaviorType.Enum.forString(column.getFacetingBehaviorType().name());
-            columnXml.setFacetingBehavior(type);
+            // issue 14809: only export faceting behavior if not set to AUTOMATIC
+            String typeName = column.getFacetingBehaviorType().name();
+            if (!FacetingBehaviorType.AUTOMATIC.toString().equals(typeName))
+            {
+                FacetingBehaviorType.Enum type = FacetingBehaviorType.Enum.forString(typeName);
+                columnXml.setFacetingBehavior(type);
+            }
         }
     }
 
