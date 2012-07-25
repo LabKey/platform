@@ -40,8 +40,8 @@ public class GWTList implements IsSerializable
     public BooleanProperty allowUpload = new BooleanProperty(true);
     public BooleanProperty allowExport = new BooleanProperty(true);
 
-    public BooleanProperty entireListIndex = new BooleanProperty(false);
-    public IntegerProperty entireListIndexSetting = new IntegerProperty(0);
+    public BooleanProperty entireListIndex = new BooleanProperty(true);     // Enable entire list as a single document indexing by default
+    public IntegerProperty entireListIndexSetting = new IntegerProperty(2); // Index data and metadata
     public IntegerProperty entireListTitleSetting = new IntegerProperty(0); // TitleSetting.Standard
     public StringProperty entireListTitleTemplate = new StringProperty();
     public IntegerProperty entireListBodySetting = new IntegerProperty(0); // BodySetting.TextOnly
