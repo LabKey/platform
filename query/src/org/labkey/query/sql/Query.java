@@ -211,6 +211,11 @@ public class Query
     {
 		try
 		{
+            // see https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=15562
+            if (null == getSchema())
+                throw new NullPointerException("getSchema() returned null");
+            if (null == getSchema().getDbSchema())
+                throw new NullPointerException("getDbSchema() returned null: " + getSchema().getName() + " " + getSchema().getClass().getName());
             SqlParser parser = new SqlParser(getSchema().getDbSchema().getSqlDialect());
             parser.parseQuery(queryText, _parseErrors);
             _parameters = parser.getParameters();
