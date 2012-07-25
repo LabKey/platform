@@ -396,8 +396,16 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
 
         this.loaderFn = this.renderLineChart;  // default is to show the chart
         this.loaderName = 'renderLineChart';
-        this.viewGridBtn = Ext4.create('Ext.button.Button', {text: "View Data", handler: this.viewDataGrid, scope: this, disabled: true});
-        this.viewChartBtn = Ext4.create('Ext.button.Button', {text: "View Chart(s)", handler: this.renderLineChart, scope: this, hidden: true});
+        this.viewGridBtn = Ext4.create('Ext.button.Button', {text: "View Data", handler: function(){
+            // hide/show the appropriate buttons in the top toolbar
+            this.toggleButtonsForGrid(false);
+            this.viewDataGrid();
+        }, scope: this, disabled: true});
+        this.viewChartBtn = Ext4.create('Ext.button.Button', {text: "View Chart(s)", handler: function(){
+            // hide/show the appropriate buttons in the top toolbar
+            this.toggleButtonsForGrid(true);
+            this.renderLineChart();
+        }, scope: this, hidden: true});
         this.refreshChart = new Ext4.util.DelayedTask(function(){
             this.getChartData();
         }, this);
@@ -721,6 +729,41 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.saveAsButton.setDisabled(disable);
     },
 
+    toggleButtonsForGrid: function(show)
+    {
+        if (show && this.buttonsToShow)
+        {
+            this.viewGridBtn.show();
+            this.viewChartBtn.hide();
+
+            while (this.buttonsToShow.length > 0)
+            {
+                var btn = this.buttonsToShow.pop();
+                btn.show();
+            }
+        }
+        else if (!show)
+        {
+            this.viewGridBtn.hide();
+            this.viewChartBtn.disable();
+            this.viewChartBtn.show();
+
+            this.buttonsToShow = [];
+            if (!this.developerButton.isHidden())
+                this.buttonsToShow.push(this.developerButton.hide());
+            if (!this.aestheticsButton.isHidden())
+                this.buttonsToShow.push(this.aestheticsButton.hide());
+            if (!this.groupingButton.isHidden())
+                this.buttonsToShow.push(this.groupingButton.hide());
+            if (!this.measuresButton.isHidden())
+                this.buttonsToShow.push(this.measuresButton.hide());
+            if (!this.exportPdfSingleBtn.isHidden())
+                this.buttonsToShow.push(this.exportPdfSingleBtn.hide());
+            if (!this.exportPdfMenuBtn.isHidden())
+                this.buttonsToShow.push(this.exportPdfMenuBtn.hide());
+        }
+    },
+
     disableNonMeasureOptionButtons: function(){
         this.groupingButton.disable();
         this.aestheticsButton.disable();
@@ -852,9 +895,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     };
 
                     // now that we have the temp grid info, enable the View Data button
-                    // and make sure that the view charts button is hidden
                     this.viewGridBtn.enable();
-                    this.viewChartBtn.hide();
 
                     // ready to render the chart or grid
                     this.loaderCount--;
@@ -1112,9 +1153,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
            return;
         }
 
-        // show the viewGrid button and hide the viewCharts button
-        this.viewChartBtn.hide();
-        this.viewGridBtn.show();
         this.loaderFn = this.renderLineChart;
         this.loaderName = 'renderLineChart';
 
@@ -1931,11 +1969,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             this.maskAndRemoveCharts();
             this.loaderFn = this.viewDataGrid;
             this.loaderName = 'viewDataGrid';
-
-            // hide the viewGrid button and show the viewCharts button
-            this.viewChartBtn.disable();
-            this.viewChartBtn.show();
-            this.viewGridBtn.hide();
 
             // add a panel to put the queryWebpart in
             var qwpPanelDiv = Ext4.create('Ext.container.Container', {
