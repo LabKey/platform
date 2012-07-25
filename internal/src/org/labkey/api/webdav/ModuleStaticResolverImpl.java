@@ -31,22 +31,17 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ViewServlet;
 
-import javax.servlet.ServletContext;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -83,8 +78,9 @@ public class ModuleStaticResolverImpl implements WebdavResolver
 
 
     // DavController has a per request cache, but we want to aggressively cache static file resources
+    // Do we really need the _allStaticFiles and CHILDREN_CACHE, it seems like we should be able to combine these
     StaticResource _root = null;
-    Map<Path, WebdavResource> _allStaticFiles = new ConcurrentHashMap<Path, WebdavResource>();
+    Cache<Path, WebdavResource> _allStaticFiles = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.DAY, "webdav static files");
 
 
     public boolean requiresLogin()
@@ -479,6 +475,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
     }
 
 
+/*
     class ServletResource extends _PublicResource
     {
         URL _url;
@@ -553,6 +550,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             return _url.openConnection().getContentLength();
         }
     }
+*/
 
 
     public class SymbolicLink extends AbstractWebdavResourceCollection
@@ -590,12 +588,15 @@ public class ModuleStaticResolverImpl implements WebdavResolver
 
         public Collection<String> listNames()
         {
-            return getResolver().lookup(getPath()).listNames();
+            WebdavResource r = getResolver().lookup(getPath());
+            if (null == r)
+                return Collections.emptyList();
+            return r.listNames();
         }
     }
 
 
-    // should get the WebdavServlet context somehow
+    /*
     URL getResource(Path path)
     {
         ServletContext c = ViewServlet.getViewServletContext();
@@ -607,11 +608,12 @@ public class ModuleStaticResolverImpl implements WebdavResolver
             }
             catch (MalformedURLException x)
             {
-                /* */
+                ;
             }
         }
         return null;
     }
+    */
 
 
     public static class TestCase extends Assert
