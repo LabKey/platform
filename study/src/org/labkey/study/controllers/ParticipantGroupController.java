@@ -764,6 +764,11 @@ public class ParticipantGroupController extends BaseStudyController
                 group = ParticipantGroupManager.getInstance().setParticipantGroup(getContainer(), getUser(), form);
                 category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), group.getCategoryId());
 
+                if(form.getCategoryShared() != category.isShared()){
+                    category.setShared(form.getCategoryShared());
+                    ParticipantGroupManager.getInstance().setParticipantCategory(getContainer(), getUser(), category);
+                }
+
                 if (oldCategoryId != null)
                 {
                     oldCategory = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), oldCategoryId);

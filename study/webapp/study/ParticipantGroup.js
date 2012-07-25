@@ -216,12 +216,12 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
         var sharedTip = '' +
             '<div>' +
                 '<div class=\'g-tip-subheader\'>' +
-                    'Share this ' + Ext.util.Format.htmlEncode(this.subject.nounSingular) + ' group with all users' +
+                    'Share this ' + Ext.util.Format.htmlEncode(this.subject.nounSingular).toLowerCase() + ' category with all users' +
                 '</div>' +
             '</div>';
 
         this.sharedfield = new Ext.form.Checkbox({
-            fieldLabel     : 'Shared',
+            fieldLabel     : 'Share Category?',
             name           : 'Shared',
             labelSeparator : '',
             hidden         : !this.canShare,
