@@ -2866,6 +2866,7 @@ public class DavController extends SpringActionController
 
     private static final Map<Path, Boolean> hasZipMap = new ConcurrentHashMap<Path, Boolean>();
 
+/*
     InputStream getGzipStream(WebdavResource r) throws DavException, IOException
     {
         // kinda hacky, but good enough for now
@@ -2899,7 +2900,7 @@ public class DavController extends SpringActionController
         hasZipMap.put(r.getPath(), Boolean.FALSE);
         return null;
     }
-
+*/
 
     WebdavResource getGzipResource(WebdavResource r) throws DavException, IOException
     {
@@ -2911,12 +2912,24 @@ public class DavController extends SpringActionController
         if (Boolean.FALSE == hasZip)
             return null;
 
+        // hasZip could be null or TRUE, either way look for .gz
+        // NOTE if hasZip ever becomes false, it stays that way. which is only weird for extrawebapp
         WebdavResource gz = (WebdavResource)r.parent().find(r.getName() + ".gz");
         if (null != gz && gz.exists())
         {
-            if (null == hasZip)
-                hasZipMap.put(r.getPath(), Boolean.TRUE);
-            return gz;
+            File rFile = r.getFile();
+            File gzFile = gz.getFile();
+            if (null != rFile && null != gzFile)
+            {
+                String rParent = rFile.getParent();
+                String gzParent = gzFile.getParent();
+                if (null != rParent && null != gzParent && rParent.equals(gzParent))
+                {
+                    if (null == hasZip)
+                        hasZipMap.put(r.getPath(), Boolean.TRUE);
+                    return gz;
+                }
+            }
         }
 
         hasZipMap.put(r.getPath(), Boolean.FALSE);
@@ -3455,6 +3468,7 @@ public class DavController extends SpringActionController
         // check for version info in name e.g. stylesheet{47}.css
         if (isStaticContent(path))
         {
+            // TODO 12.3  path = ResourceURL.stripVersion(path);
             Matcher m = nameVersionExtension.matcher(path.getName());
             if (m.matches())
                 path = path.getParent().append(m.group(1) + m.group(2));
