@@ -53,12 +53,12 @@
                 return v;
             },
             sortType: function(v) {
-                return v.label;
+                return v.type == "list" ? "" : v.label;
             },
             type: 'ParticpantCategory'
         };
 
-       this.groupStore = new Ext.data.JsonStore({
+        this.groupStore = new Ext.data.JsonStore({
             proxy: new Ext.data.HttpProxy({
                 url : LABKEY.ActionURL.buildURL("participant-group", "browseParticipantGroups"),
                 method : 'POST'
@@ -78,9 +78,10 @@
                 {name: 'categoryLabel', type: 'string', mapping: 'category.label'},
                 {name: 'category', type: Ext.data.Types.PARTICIPANTCATEGORY}
             ],
-            sortInfo: {
-                field: 'categoryLabel',
-                direction: 'ASC'
+            listeners: {
+                'load': function(store){
+                    store.sort([{field: 'category', direction: 'ASC'}, {field:'label', direction: 'ASC'}]);
+                }
             },
             autoLoad: true
         });

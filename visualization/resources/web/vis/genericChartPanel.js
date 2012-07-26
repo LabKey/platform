@@ -902,6 +902,24 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 }
             });
 
+            queryStore.addListener('beforeload', function(){
+                saveQuerySettingsBtn.setDisabled(true);
+            }, this);
+
+            var saveQuerySettingsBtn = Ext4.create('Ext.button.Button', {
+                text : 'Save',
+                formBind: true,
+                handler : function(btn) {
+                    var form = btn.up('form').getForm();
+                    if (form.isValid())
+                    {
+                        dialog.hide();
+                        this.updateChartTask.delay(500);
+                    }
+                },
+                scope   : this
+            });
+
             var formPanel = Ext4.create('Ext.form.Panel', {
                 border  : false,
                 frame   : false,
@@ -913,19 +931,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 },
                 items   : formItems,
                 buttonAlign : 'right',
-                buttons     : [{
-                    text : 'Save',
-                    formBind: true,
-                    handler : function(btn) {
-                        var form = btn.up('form').getForm();
-                        if (form.isValid())
-                        {
-                            dialog.hide();
-                            this.updateChartTask.delay(500);
-                        }
-                    },
-                    scope   : this
-                },{
+                buttons     : [ saveQuerySettingsBtn, {
                     text : 'Cancel',
                     handler : function(btn) {window.history.back()}
                 }]

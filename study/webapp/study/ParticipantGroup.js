@@ -128,6 +128,14 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
                     if(e.getKey() == e.ENTER){
                         this.saveCategory();
                     }
+                },
+                change: function(combo, newValue, oldValue){
+                    var shared = false;
+                    var index = this.categoryStore.find('rowId', newValue);
+                    if(index > -1){
+                       shared = this.categoryStore.getAt(index).data.shared;
+                    }
+                    this.sharedField.setValue(shared);
                 }
             }
         });
@@ -220,7 +228,7 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
                 '</div>' +
             '</div>';
 
-        this.sharedfield = new Ext.form.Checkbox({
+        this.sharedField = new Ext.form.Checkbox({
             fieldLabel     : 'Share Category?',
             name           : 'Shared',
             labelSeparator : '',
@@ -230,16 +238,16 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
         });
 
         Ext.QuickTips.register({
-            target : this.sharedfield,
+            target : this.sharedField,
             text   : 'Share this ' + Ext.util.Format.htmlEncode(this.subject.nounSingular) + ' group with all users'
         });
 
         if (!this.categoryShared || this.categoryShared == "false")
-            this.sharedfield.setValue(false);
+            this.sharedField.setValue(false);
         else
-            this.sharedfield.setValue(true);
+            this.sharedField.setValue(true);
 
-        var categoryItems = [this.sharedfield];
+        var categoryItems = [this.sharedField];
         if (this.demoCombobox)
             categoryItems.push(this.demoCombobox);
 
@@ -348,7 +356,7 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
             participantIds: ptids,
             categoryLabel: categoryLabel,
             categoryType: categoryType,
-            categoryShared : this.sharedfield.getValue()
+            categoryShared : this.sharedField.getValue()
         };
 
         if(categoryId !== null && categoryId != undefined){
