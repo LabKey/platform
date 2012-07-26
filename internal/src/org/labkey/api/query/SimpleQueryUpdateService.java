@@ -15,10 +15,10 @@
  */
 package org.labkey.api.query;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.query.*;
 import org.labkey.api.query.SimpleUserSchema.SimpleTable;
 
 /**
