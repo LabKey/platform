@@ -23,15 +23,49 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 
-public abstract class Crypt
+public enum Crypt
 {
-    public abstract boolean matches(String credentials, String digest);
-    public abstract String digest(String credentials);
+    MD5(new _md5(), "md5"),
+    SaltMD5(new _saltmd5(), "salt"),
+    BCrypt(new _bcrypt(), "bc");
+
+    final _Crypt _crypt;
+    final String _prefix;
+
+    Crypt(_Crypt crypt, String prefix)
+    {
+        _crypt = crypt;
+        _prefix = prefix + ":";
+    }
+
+    public boolean matches(String credentials, String digest)
+    {
+        return _crypt.matches(credentials, digest);
+    }
+    public String digest(String credentials)
+    {
+        return _crypt.digest(credentials);
+    }
+    public String digestWithPrefix(String credentials)
+    {
+        return _prefix + _crypt.digest(credentials);
+    }
+    public boolean acceptPrefix(String prefix)
+    {
+        return prefix.startsWith(_prefix);
+    }
+    public boolean matchesWithPrefix(String credentials, String digest)
+    {
+        return _crypt.matches(credentials, digest.substring(_prefix.length()));
+    }
 
 
-    public static final Crypt MD5 = new _md5();
-    public static final Crypt SaltMD5 = new _saltmd5();
-    public static final Crypt BCrypt = new _bcrypt();
+
+    private interface _Crypt
+    {
+        public abstract boolean matches(String credentials, String digest);
+        public abstract String digest(String credentials);
+    }
 
 
     private static final MessageDigest md;
@@ -53,7 +87,7 @@ public abstract class Crypt
 
 
 
-    public static class _md5 extends Crypt
+    public static class _md5 implements _Crypt
     {
         public boolean matches(String credentials, String digest)
         {
@@ -76,7 +110,7 @@ public abstract class Crypt
     }
 
 
-    public static class _saltmd5 extends Crypt
+    public static class _saltmd5 implements _Crypt
     {
         public boolean matches(String credentials, String digest)
         {
@@ -104,7 +138,7 @@ public abstract class Crypt
         }
     }
 
-    public static class _bcrypt extends Crypt
+    public static class _bcrypt  implements _Crypt
     {
         @Override
         public boolean matches(String credentials, String digest)

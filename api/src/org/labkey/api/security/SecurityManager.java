@@ -81,7 +81,6 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.wiki.WikiService;
 import org.springframework.dao.DataIntegrityViolationException;
-import sun.rmi.runtime.Log;
 
 import javax.mail.Address;
 import javax.mail.Message;
@@ -895,7 +894,7 @@ public class SecurityManager
 
         try
         {
-            String crypt = "md5:" + Crypt.MD5.digest(tempPassword);
+            String crypt = Crypt.MD5.digestWithPrefix(tempPassword);
 
             // Don't need to set LastChanged -- it defaults to current date/time.
             int rowCount = Table.execute(core.getSchema(), "INSERT INTO " + core.getTableInfoLogins() +
@@ -918,8 +917,7 @@ public class SecurityManager
     {
         try
         {
-            String crypt = "salt:" + Crypt.SaltMD5.digest(password);
-//            String crypt = "b:" + Crypt.BCrypt.digest(password);
+            String crypt = Crypt.SaltMD5.digestWithPrefix(password);
             List<String> history = new ArrayList<String>(getCryptHistory(email.getEmailAddress()));
             history.add(crypt);
 
@@ -1000,12 +998,12 @@ public class SecurityManager
 
     public static boolean matchPassword(String password, String hash)
     {
-        if (hash.startsWith("b:"))
-            return Crypt.BCrypt.matches(password, hash.substring(2));
-        else if (hash.startsWith("salt:"))
-            return Crypt.SaltMD5.matches(password, hash.substring(5));
-        else if (hash.startsWith("md5:"))
-            return Crypt.MD5.matches(password, hash.substring(4));
+        if (Crypt.BCrypt.acceptPrefix(hash))
+            return Crypt.BCrypt.matchesWithPrefix(password, hash);
+        else if (Crypt.SaltMD5.acceptPrefix(hash))
+            return Crypt.SaltMD5.matchesWithPrefix(password, hash);
+        else if (Crypt.MD5.acceptPrefix(hash))
+            return Crypt.MD5.matchesWithPrefix(password, hash);
         else
             return Crypt.MD5.matches(password, hash);
     }
