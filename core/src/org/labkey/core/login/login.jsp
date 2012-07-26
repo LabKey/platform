@@ -64,7 +64,7 @@
     }
     else
     {
-        %><form name="login" method="POST" action=<%=buildURL(LoginController.LoginAction.class)%>"><%
+        %><form name="login" method="POST" action="<%=buildURL(LoginController.LoginAction.class)%>"><%
     } %>
     <labkey:csrf/>
     <table><%
