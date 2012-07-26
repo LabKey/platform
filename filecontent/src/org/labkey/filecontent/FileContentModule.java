@@ -51,7 +51,7 @@ public class FileContentModule extends DefaultModule
 
     public double getVersion()
     {
-        return 12.10;
+        return 12.20;
     }
 
     protected void init()

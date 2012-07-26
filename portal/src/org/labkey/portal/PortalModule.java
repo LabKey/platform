@@ -56,7 +56,7 @@ public class PortalModule extends DefaultModule
     // portal schema.  Bump the core module version number to cause a portal-xxx.sql script to run
     public double getVersion()
     {
-        return 12.10;
+        return 12.20;
     }
 
     protected void init()

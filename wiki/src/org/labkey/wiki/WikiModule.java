@@ -80,7 +80,7 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
 
     public double getVersion()
     {
-        return 12.11;
+        return 12.20;
     }
 
     protected void init()
