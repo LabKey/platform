@@ -110,6 +110,7 @@ public class OntologyManager
 	private static final DatabaseCache<DomainDescriptor> domainDescCache = new DatabaseCache<DomainDescriptor>(getExpSchema().getScope(), 2000, "Domain descriptors");
 	private static final DatabaseCache<List<Pair<String, Boolean>>> domainPropertiesCache = new DatabaseCache<List<Pair<String, Boolean>>>(getExpSchema().getScope(), 2000, "Domain properties");
     private static final Container _sharedContainer = ContainerManager.getSharedContainer();
+    public static final String MV_INDICATOR_SUFFIX = "mvindicator";
 
     static
 	{
@@ -3601,6 +3602,13 @@ public class OntologyManager
         validateValue(pd.getConceptURI(), "ConceptURI", null);
         validateValue(pd.getSemanticType(), "SemanticType", null);
         validateValue(pd.getRangeURI(), "RangeURI", null);
+
+        // Issue 15484: adding a column ending in 'mvIndicator' is problematic if another column w/ the same
+        // root exists, or if you later enable mvIndicators on a column w/ the same root
+        if (pd.getName() != null && pd.getName().toLowerCase().endsWith(MV_INDICATOR_SUFFIX))
+        {
+            throw new ChangePropertyDescriptorException("Field name cannot end with the suffix 'mvIndicator': " + pd.getName());
+        }
     }
 
     private static void validateValue(String value, String columnName, String extraMessage) throws ChangePropertyDescriptorException

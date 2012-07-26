@@ -329,6 +329,13 @@ public class DomainUtil
                 }
             }
 
+            //Issue 15484: because the server will auto-generate MV indicator columns, which can result in naming conflicts we disallow any user-defined field w/ this suffix
+            String name = pd.getName();
+            if (name != null && name.toLowerCase().endsWith(OntologyManager.MV_INDICATOR_SUFFIX))
+            {
+                errors.add("Field name cannot end with the suffix '" + OntologyManager.MV_INDICATOR_SUFFIX + "': " + pd.getName());
+            }
+
             s.remove(pd.getPropertyId());
         }
         for (int id : s)
