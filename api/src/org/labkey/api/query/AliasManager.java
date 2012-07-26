@@ -211,7 +211,7 @@ public class AliasManager
         if (column.isAliasSet())
         {
             if (_aliases.get(column.getAlias()) != null)
-                throw new IllegalStateException("alias '" + column.getAlias() + "' is already in use!"); // SEE BUG 13682
+                throw new IllegalStateException("alias '" + column.getAlias() + "' is already in use!  the column name and alias are: " + column.getName() + " / " + column.getAlias() + ".  The full set of aliases are: " + _aliases.toString()); // SEE BUG 13682 and 15475
             claimAlias(column.getAlias(), column.getName());
         }
         else
