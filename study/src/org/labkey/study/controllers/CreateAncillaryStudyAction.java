@@ -152,7 +152,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
 
                 MemoryVirtualFile vf = new MemoryVirtualFile();
 
-                // export objects from the parent study, then import then into the new study
+                // export objects from the parent study, then import them into the new study
                 exportFromParentStudy(form, errors, vf);
                 importToDestinationStudy(form, errors, newStudy, vf);
 
