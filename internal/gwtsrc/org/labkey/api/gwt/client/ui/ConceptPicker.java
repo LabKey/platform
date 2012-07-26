@@ -382,7 +382,11 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
                             return;
                         }
                         String range = key.getRangeURI();
-                        if (!_current.isRangeEditable && null!=_current.getValue() && PropertyType.fromName(range) != _current.getValue().getPropertyType())
+                        PropertyType selectedType = PropertyType.fromName(range);
+                        // Allow multi-line <-> string lookups, since they're really the same underneath
+                        if (!_current.isRangeEditable && null!=_current.getValue() && selectedType != _current.getValue().getPropertyType() &&
+                                !((selectedType == PropertyType.xsdString && _current.getValue().getPropertyType() == PropertyType.expMultiLine) ||
+                                    (selectedType == PropertyType.expMultiLine && _current.getValue().getPropertyType() == PropertyType.xsdString)))
                         {
                             Window.alert("Lookup primary key does not match: " + _current.getValue().getPropertyType().getShortName());
                             return;

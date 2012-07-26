@@ -27,7 +27,8 @@ import java.util.Map;
 */
 public enum PropertyType
 {
-    expMultiLine("http://www.w3.org/2001/XMLSchema#multiLine", false, "Multi-Line Text", "VARCHAR", "String", "string"),
+    // Treat expMultiLine the same as xsdString for lookup purposes, since it's really just a formatting distiction 
+    expMultiLine("http://www.w3.org/2001/XMLSchema#multiLine", true, "Multi-Line Text", "VARCHAR", "String", "string"),
     xsdString("http://www.w3.org/2001/XMLSchema#string", true, "Text (String)", "VARCHAR", "String", "string"),
     xsdBoolean("http://www.w3.org/2001/XMLSchema#boolean", false, "Boolean", "BOOLEAN", null, "boolean"),
     xsdInt("http://www.w3.org/2001/XMLSchema#int", true, "Integer", "INT", null, "int"),

@@ -21,6 +21,7 @@ import com.extjs.gxt.ui.client.data.BaseModelData;
 import com.extjs.gxt.ui.client.event.BaseEvent;
 import com.extjs.gxt.ui.client.event.ComponentEvent;
 import com.extjs.gxt.ui.client.event.Events;
+import com.extjs.gxt.ui.client.event.FieldEvent;
 import com.extjs.gxt.ui.client.event.Listener;
 import com.extjs.gxt.ui.client.store.ListStore;
 import com.extjs.gxt.ui.client.widget.LayoutContainer;
@@ -124,7 +125,7 @@ public class LookupEditorPanel extends LayoutContainer
         String schema = getSchemaName();
 
         //Issue 15485: prevent query if the user enters an invalid container
-        if (folder != null && !"".equals(folder) && _comboContainer.getStore().findModel("text", folder) == null)
+        if (folder != null && !"".equals(folder) && _comboContainer.getStore().getCount() > 0 && _comboContainer.getStore().findModel("text", folder) == null)
         {
             Window.alert("Container not found: " + folder);
             _comboContainer.reset();
@@ -230,7 +231,10 @@ public class LookupEditorPanel extends LayoutContainer
 
         // If it's the same target folder and schema, and the same key as last time, we don't need to requery
         if (folder.equals(lastFolderTableStore) && schema.equals(lastSchemaTableStore) && PropertyUtil.nullSafeEquals(_keyType, lastKeyType))
+        {
+            checkForMissingTargetQuery();
             return;
+        }
 
         lastFolderTableStore = folder;
         lastSchemaTableStore = schema;
@@ -252,20 +256,44 @@ public class LookupEditorPanel extends LayoutContainer
                 {
                     GWTPropertyDescriptor _pd = m.get(table);
                     PropertyType tableKeyType = PropertyType.fromName( _pd.getRangeURI());
-                    if (null != _keyType)
+                    // Allow it as an option if we haven't already set our field's type, or they match exactly,
+                    // or it's a mix of string and multi-line strings
+
+                    // CONSIDER: how to you do disabled items in an Ext ComboBox?
+                    if (null == _keyType ||
+                            _keyType == tableKeyType ||
+                            (_keyType == PropertyType.expMultiLine && tableKeyType == PropertyType.xsdString) ||
+                            (_keyType == PropertyType.xsdString && tableKeyType == PropertyType.expMultiLine))
                     {
-                        // CONSIDER: how to you do disabled items in an Ext ComboBox?
-                        if (_keyType != tableKeyType)
-                            continue;
+                        store.add(new ComboModelData(table, table + " (" +  tableKeyType.getShortName() + ")"));
                     }
-                    store.add(new ComboModelData(table, table + " (" +  tableKeyType.getShortName() + ")"));
                 }
+
+                checkForMissingTargetQuery();
+
                 if (store.getCount()==0)
                     _comboTableName.setEmptyText(m.size()==0?"No tables found":"No matching tables found");
                 else
                     updateEmptyText();
             }
         });
+    }
+
+    private void checkForMissingTargetQuery()
+    {
+        boolean matchExisting = false;
+        for (ComboModelData comboModelData : _comboTableName.getStore().getModels())
+        {
+            if (comboModelData.<String>get("value").equalsIgnoreCase(_comboTableName.getStringValue()))
+            {
+                matchExisting = true;
+            }
+        }
+
+        if (!matchExisting)
+        {
+            _comboTableName.setStringValue(null);
+        }
     }
 
 
@@ -368,20 +396,20 @@ public class LookupEditorPanel extends LayoutContainer
 //            setForceSelection(true);
             setTriggerAction(TriggerAction.ALL);
             setStore(new ComboStore());
-            addListener(Events.Change,new Listener(){
-                public void handleEvent(BaseEvent be)
+            addListener(Events.Change,new Listener<FieldEvent>(){
+                public void handleEvent(FieldEvent fe)
                 {
                     _widgetChange();
                 }
             });
-            addListener(Events.Select,new Listener(){
-                public void handleEvent(BaseEvent be)
+            addListener(Events.Select,new Listener<FieldEvent>(){
+                public void handleEvent(FieldEvent be)
                 {
                     _widgetChange();
                 }
             });
-            addListener(Events.Expand,new Listener(){
-                public void handleEvent(BaseEvent be)
+            addListener(Events.Expand,new Listener<FieldEvent>(){
+                public void handleEvent(FieldEvent fe) 
                 {
                     _listExpand();
                 }
