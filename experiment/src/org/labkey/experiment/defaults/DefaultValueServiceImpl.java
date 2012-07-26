@@ -15,6 +15,8 @@
  */
 package org.labkey.experiment.defaults;
 
+import org.apache.commons.beanutils.ConversionException;
+import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -144,9 +146,16 @@ public class DefaultValueServiceImpl extends DefaultValueService
                 // Leave it out if it's null, which will prevent it from failing validators
                 if (value != null)
                 {
-                    ObjectProperty prop = new ObjectProperty(objectLSID, container, property.getPropertyURI(), value,
-                            property.getPropertyDescriptor().getPropertyType(), property.getName());
-                    objectProperties.add(prop);
+                    try
+                    {
+                        ObjectProperty prop = new ObjectProperty(objectLSID, container, property.getPropertyURI(), value,
+                                property.getPropertyDescriptor().getPropertyType(), property.getName());
+                        objectProperties.add(prop);
+                    }
+                    catch (ConversionException e)
+                    {
+                        Logger.getLogger(DefaultValueServiceImpl.class).warn("Unable to convert default value '" + value + "' for property " + property.getName() + ", dropping it");
+                    }
                 }
             }
             OntologyManager.insertProperties(container, objectLSID, objectProperties.toArray(new ObjectProperty[objectProperties.size()]));
