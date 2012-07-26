@@ -16,6 +16,7 @@
 
 package org.labkey.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
@@ -201,7 +202,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     }
 
 
-    public TableInfo getTable(UserSchema schema, List<QueryException> errors, boolean includeMetadata)
+    public TableInfo getTable(@NotNull UserSchema schema, List<QueryException> errors, boolean includeMetadata)
     {
         if (schema == getSchema())
         {
