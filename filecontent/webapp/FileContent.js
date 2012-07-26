@@ -346,7 +346,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.ext.FileBrowser, {
         }
         else
         {
-            el.removeClass('labkey-import-enabled');
+            el.removeClass('labkey-admin-enabled');
             this.actions.customize.disable();
         }
     },
