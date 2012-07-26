@@ -29,7 +29,9 @@ import org.labkey.study.xml.participantGroups.ParticipantGroupsType;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -42,7 +44,7 @@ public class ParticipantGroupWriter implements InternalStudyWriter
     public static final String FILE_NAME = "participant_groups.xml";
     public static final String DATA_TYPE = "Participant Groups";
 
-    private List<ParticipantCategoryImpl> _categoriesToCopy = Collections.emptyList();
+    private List<ParticipantGroup> _groupsToCopy = Collections.emptyList();
 
     @Override
     public String getSelectionText()
@@ -56,9 +58,9 @@ public class ParticipantGroupWriter implements InternalStudyWriter
         serialize(ctx.getUser(), ctx.getContainer(), vf);
     }
 
-    public void setCategoriesToCopy(List<ParticipantCategoryImpl> categoriesToCopy)
+    public void setGroupsToCopy(List<ParticipantGroup> groupsToCopy)
     {
-        _categoriesToCopy = categoriesToCopy;
+        _groupsToCopy = groupsToCopy;
     }
 
     /**
@@ -67,6 +69,14 @@ public class ParticipantGroupWriter implements InternalStudyWriter
     private void serialize(User user, Container container, VirtualFile vf) throws IOException
     {
         ParticipantCategoryImpl[] categories = ParticipantGroupManager.getInstance().getParticipantCategories(container, user);
+        Set<ParticipantCategoryImpl> categoriesToCopy = new HashSet<ParticipantCategoryImpl>();
+
+        for (ParticipantGroup pg : _groupsToCopy)
+        {
+            ParticipantCategoryImpl pc = ParticipantGroupManager.getInstance().getParticipantCategory(container, user, pg.getCategoryId());
+            if (pc != null)
+                categoriesToCopy.add(pc);
+        }
 
         if (categories.length > 0)
         {
@@ -75,7 +85,7 @@ public class ParticipantGroupWriter implements InternalStudyWriter
 
             for (ParticipantCategoryImpl category : categories)
             {
-                if (_categoriesToCopy.isEmpty() || _categoriesToCopy.contains(category))
+                if (categoriesToCopy.isEmpty() || categoriesToCopy.contains(category))
                 {
                     CategoryType pc = groups.addNewParticipantCategory();
 
@@ -97,11 +107,14 @@ public class ParticipantGroupWriter implements InternalStudyWriter
 
                     for (ParticipantGroup group : category.getGroups())
                     {
-                        GroupType pg = pc.addNewGroup();
+                        if (_groupsToCopy.contains(group))
+                        {
+                            GroupType pg = pc.addNewGroup();
 
-                        pg.setLabel(group.getLabel());
-                        pg.setCategoryLabel(group.getCategoryLabel());
-                        pg.setParticipantIdArray(group.getParticipantIds());
+                            pg.setLabel(group.getLabel());
+                            pg.setCategoryLabel(group.getCategoryLabel());
+                            pg.setParticipantIdArray(group.getParticipantIds());
+                        }
                     }
                 }
             }

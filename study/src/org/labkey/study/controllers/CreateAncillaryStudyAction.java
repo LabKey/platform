@@ -93,7 +93,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
     private Container _dstContainer;
     private StudyImpl _sourceStudy;
     private Set<DataSetDefinition> _datasets = new HashSet<DataSetDefinition>();
-    private List<ParticipantCategoryImpl> _participantCategories = new ArrayList<ParticipantCategoryImpl>();
+    private List<ParticipantGroup> _participantGroups = new ArrayList<ParticipantGroup>();
     private boolean _destFolderCreated;
 
     public CreateAncillaryStudyAction()
@@ -131,11 +131,11 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
                         _datasets.add(def);
                 }
 
-                for (int rowId : form.getCategories())
+                for (int rowId : form.getGroups())
                 {
-                    ParticipantCategoryImpl pc = ParticipantGroupManager.getInstance().getParticipantCategory(_sourceStudy.getContainer(), getViewContext().getUser(), rowId);
-                    if (pc != null)
-                        _participantCategories.add(pc);
+                    ParticipantGroup pg = ParticipantGroupManager.getInstance().getParticipantGroup(_sourceStudy.getContainer(), getViewContext().getUser(), rowId);
+                    if(pg !=null)
+                        _participantGroups.add(pg);
                 }
 
                 // Force snapshots for datasets referenced by the parent study's visit map.  This ensures that
@@ -260,12 +260,15 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
         QuerySnapshotService.I svc = QuerySnapshotService.get(StudyManager.getSchemaName());
 
         List<Integer> participantGroups = new ArrayList<Integer>();
-        if (!_participantCategories.isEmpty())
+        if (!_participantGroups.isEmpty())
         {
             // get the participant categories that were copied to the ancillary study
             for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(_dstContainer, user))
             {
-                participantGroups.add(category.getRowId());
+                for(ParticipantGroup group : category.getGroups())
+                {
+                    participantGroups.add(group.getRowId());
+                }
             }
         }
 
@@ -309,9 +312,9 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
     {
         User user = getViewContext().getUser();
 
-        List<ParticipantCategoryImpl> categoriesToCopy = new ArrayList<ParticipantCategoryImpl>();
+        List<ParticipantGroup> groupsToCopy = new ArrayList<ParticipantGroup>();
         if (form.isCopyParticipantGroups())
-            categoriesToCopy.addAll(_participantCategories);
+            groupsToCopy.addAll(_participantGroups);
 
 /*
         for (ParticipantGroupController.ParticipantCategorySpecification category : form.getCategories())
@@ -331,7 +334,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
         }
 */
 
-        if (!categoriesToCopy.isEmpty())
+        if (!groupsToCopy.isEmpty())
         {
             ensureGroupParticipants();
             
@@ -341,7 +344,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
 
             ParticipantGroupWriter groupWriter = new ParticipantGroupWriter();
 
-            groupWriter.setCategoriesToCopy(categoriesToCopy);
+            groupWriter.setGroupsToCopy(groupsToCopy);
             groupWriter.write(_sourceStudy, ctx, vf);
 
             XmlObject studyXml = vf.getXmlBean("study.xml");
@@ -368,7 +371,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
     private void ensureGroupParticipants()
     {
         try {
-            if (!_participantCategories.isEmpty())
+            if (!_participantGroups.isEmpty())
             {
                 StudySchema schema = StudySchema.getInstance();
 
@@ -376,22 +379,19 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
                 String delim = "";
 
                 groupInClause.append("(");
-                for (ParticipantCategoryImpl category : _participantCategories)
+                for (ParticipantGroup group : _participantGroups)
                 {
-                    for (ParticipantGroup group : category.getGroups())
-                    {
-                        groupInClause.append(delim);
-                        groupInClause.append(group.getRowId());
+                    groupInClause.append(delim);
+                    groupInClause.append(group.getRowId());
 
-                        delim = ",";
-                    }
+                    delim = ",";
                 }
                 groupInClause.append(")");
 
                 SQLFragment sql = new SQLFragment();
 
                 sql.append("INSERT INTO ").append(schema.getTableInfoParticipant()).append(" (ParticipantId, Container)");
-                sql.append(" SELECT DISTINCT(ParticipantId), ? FROM ").append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap());
+                sql.append(" SELECT DISTINCT(ParticipantId), ? FROM ").append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), "");
                 sql.append(" WHERE GroupId IN ").append(groupInClause).append(" AND Container = ?");
 
                 Table.execute(schema.getSchema(), sql.getSQL(), _dstContainer.getId(), _sourceStudy.getContainer().getId());

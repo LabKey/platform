@@ -202,6 +202,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         var measure = this.yMeasureStore.findRecord('name', this.yAxisMeasure.name);
                         if(measure){
                             this.yMeasureGrid.getSelectionModel().select(measure, false, true);
+                            this.yMeasureChoice = this.yMeasureGrid.getSelectionModel().getSelection()[0].data;
                             this.yMeasurePanel.selectionChange(true);
                         }
                     }
@@ -228,6 +229,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         var measure = this.xMeasureStore.findRecord('name', this.xAxisMeasure.name);
                         if(measure){
                             this.xMeasureGrid.getSelectionModel().select(measure, false, true);
+                            this.xMeasureChoice = this.xMeasureGrid.getSelectionModel().getSelection()[0].data;
                             this.xMeasurePanel.selectionChange(true);
                         }
                     }

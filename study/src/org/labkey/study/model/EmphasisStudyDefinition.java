@@ -42,7 +42,7 @@ public class EmphasisStudyDefinition implements HasViewContext
     private ViewContext _context;
     private int _updateDelay;
 
-    private int[] _categories = new int[0];
+    private int[] _groups = new int[0];
     private boolean _copyParticipantGroups;
 
     @Override
@@ -107,14 +107,14 @@ public class EmphasisStudyDefinition implements HasViewContext
         _datasets = datasets;
     }
 
-    public int[] getCategories()
+    public int[] getGroups()
     {
-        return _categories;
+        return _groups;
     }
 
-    public void setCategories(int[] categories)
+    public void setGroups(int[] groups)
     {
-        _categories = categories;
+        _groups = groups;
     }
 
     public int getUpdateDelay()

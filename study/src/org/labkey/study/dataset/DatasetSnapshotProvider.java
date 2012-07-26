@@ -171,12 +171,10 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
             for (Integer groupId : groups)
             {
-                ParticipantCategoryImpl category = ParticipantGroupManager.getInstance().getParticipantCategory(qsDef.getContainer(), context.getUser(), groupId);
-
-                if (category != null)
+                ParticipantGroup group = ParticipantGroupManager.getInstance().getParticipantGroup(qsDef.getContainer(), context.getUser(), groupId);
+                if (group != null)
                 {
-                    for (ParticipantGroup group : category.getGroups())
-                        ptids.addAll(Arrays.asList(group.getParticipantIds()));
+                    ptids.addAll(Arrays.asList(group.getParticipantIds()));
                 }
             }
             SimpleFilter.InClause inClause = new SimpleFilter.InClause(StudyService.get().getSubjectColumnName(qsDef.getContainer()), ptids);

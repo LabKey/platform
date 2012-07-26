@@ -440,18 +440,26 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 }
         );
 
-        this.store = new Ext.data.Store({
-            url : LABKEY.ActionURL.buildURL("participant-group", "getParticipantCategories"),
-            reader: new Ext.data.JsonReader({root:'categories',id:'rowId'},
-                    [
-                        {name:'label'},
-                        {name:'createdBy'},
-                        {name:'created'},
-                        {name:'modifiedBy'},
-                        {name:'modified'},
-                        {name:'participantIds'}
-                    ]),
-            autoLoad: true,
+        this.store = new Ext.data.JsonStore({
+            proxy: new Ext.data.HttpProxy({
+                url : LABKEY.ActionURL.buildURL("participant-group", "browseParticipantGroups"),
+                method : 'POST'
+            }),
+            baseParams: { type : 'participantGroup', includeParticipantIds: true},
+            root: 'groups',
+            fields: [
+                {name: 'id', type: 'integer'},
+                {name: 'label', type: 'string'},
+                {name: 'type', type: 'string'},
+                {name: 'createdBy', type: 'string', convert: function(v, record){return (v.displayValue ? v.displayValue : v.value)}},
+                {name: 'modifiedBy', type: 'string', convert: function(v, record){return (v.displayValue ? v.displayValue : v.value)}},
+                {name: 'shared', type: 'boolean', mapping: 'category.shared'},
+                {name: 'participantIds', type: 'array'}
+            ],
+            sortInfo: {
+                field: 'label',
+                direction: 'ASC'
+            },
             listeners: {
                 load: function(store, records, options){
                     if(records.length > 0){
@@ -462,7 +470,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     }
                 },
                 scope: this
-            }
+            },
+            autoLoad: true
         });
 
         var selModel = new Ext.grid.CheckboxSelectionModel({checkOnly:true});
@@ -679,7 +688,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 var category = this.selectedParticipantGroups[i];
                 var id = Ext.id();
                 hiddenFields.push(id);
-                this.nameFormPanel.add({xtype:'hidden', id: id, name: 'categories', value: category.id});
+                this.nameFormPanel.add({xtype:'hidden', id: id, name: 'groups', value: category.id});
             }
         }
         params.copyParticipantGroups = true;//this.copyParticipantGroups.checked;
