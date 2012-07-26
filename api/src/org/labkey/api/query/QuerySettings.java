@@ -67,6 +67,7 @@ public class QuerySettings
 
     private SimpleFilter _baseFilter;
     private Sort _baseSort;
+    private QueryDefinition _queryDef;
 
     protected QuerySettings(String dataRegionName)
     {
@@ -430,7 +431,16 @@ public class QuerySettings
         return getDataRegionName() + "." + param;
     }
 
-    public QueryDefinition getQueryDef(UserSchema schema)
+    public final QueryDefinition getQueryDef(UserSchema schema)
+    {
+        if (_queryDef == null)
+        {
+            _queryDef = createQueryDef(schema);
+        }
+        return _queryDef;
+    }
+
+    protected QueryDefinition createQueryDef(UserSchema schema)
     {
         String queryName = getQueryName();
         if (queryName == null)

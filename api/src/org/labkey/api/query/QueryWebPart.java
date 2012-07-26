@@ -118,7 +118,7 @@ public class QueryWebPart extends WebPartView
                 QueryDefinition qd = _settings.getQueryDef(_schema);
                 if (null != qd)
                 {
-                    td = qd.getTable(_schema, errors, false);
+                    td = qd.getTable(_schema, errors, true);
                     if (_metadata != null && !_hasSql && td != null)
                     {
                         TableType type = QueryService.get().parseMetadata(_metadata, errors);
@@ -244,9 +244,6 @@ public class QueryWebPart extends WebPartView
                 out.write("Schema '" + PageFlowUtil.filter(_schemaName) + "' does not exist.");
             }
         }
-
-        if (_metadata != null && !_hasSql)
-            out.write("<div class='labkey-error'>Configuration error : specifying column metadata is only available if the query is specified through the 'sql' config option.</div><br/>");
 
         if (_schema != null && _settings != null)
         {

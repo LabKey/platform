@@ -52,7 +52,6 @@ public interface QueryDefinition
 
     /**
      * Return a tableInfo representing this query.
-     * @param includeMetadata
      */
     TableInfo getTable(List<QueryException> errors, boolean includeMetadata);
     TableInfo getTable(UserSchema schema, List<QueryException> errors, boolean includeMetadata);

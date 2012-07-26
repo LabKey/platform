@@ -424,7 +424,7 @@ abstract public class UserSchema extends AbstractSchema
         QueryDefinition qdef = settings.getQueryDef(this);
         if (qdef != null)
         {
-            TableInfo tableInfo = qdef.getTable(this, new ArrayList<QueryException>(), false);
+            TableInfo tableInfo = qdef.getTable(this, new ArrayList<QueryException>(), true);
             if (tableInfo instanceof CrosstabTableInfo)
                 return new CrosstabView(this, settings, errors);
         }
