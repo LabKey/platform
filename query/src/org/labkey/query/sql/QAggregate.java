@@ -166,7 +166,12 @@ public class QAggregate extends QExpr
             {
                 QField field = (QField) children.get(0);
                 field.getRelationColumn().copyColumnAttributesTo(ret);
+                // but not these attributes, maybe I should have a white-list instead of a black-list
                 ret.setLabel(null);
+                ret.setURL(null);
+                ret.setMvColumnName(null);
+                ret.setDisplayColumnFactory(ColumnInfo.DEFAULT_FACTORY);
+                ret.setFk(null);
             }
         }
         if (getType() == Type.GROUP_CONCAT)
