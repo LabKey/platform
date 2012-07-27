@@ -55,9 +55,9 @@ public interface PipelineStatusFile
 
         void storeJob(PipelineJob job) throws SQLException;
 
-        PipelineJob getJob(String jobId) throws SQLException;
+        PipelineJob getJob(String jobId);
 
-        PipelineJob getJob(int rowId) throws SQLException;
+        PipelineJob getJob(int rowId);
 
         void retry(String jobId) throws IOException, SQLException;
 
