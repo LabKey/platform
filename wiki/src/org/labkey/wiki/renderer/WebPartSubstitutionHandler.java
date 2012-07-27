@@ -16,6 +16,7 @@
 
 package org.labkey.wiki.renderer;
 
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.*;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.wiki.FormattedHtml;
@@ -91,6 +92,16 @@ public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHand
 
             try
             {
+                //Issue 15609: we need to include client dependencies for embedded webparts
+                if (view.getClientDependencies().size() > 0)
+                {
+                    StringBuilder sb = new StringBuilder();
+                    PageFlowUtil.writeCss(sb, view.getClientDependencies());
+                    sb.append(PageFlowUtil.getJavaScriptIncludes(view.getClientDependencies(), false));
+
+                    if (sb.length() > 0)
+                        sw.write(sb.toString());
+                }
                 view.include(view, sw);
             }
             catch (Throwable e)
