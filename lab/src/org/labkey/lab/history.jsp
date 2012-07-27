@@ -32,7 +32,6 @@
 <script type="text/javascript">
 
     LABKEY.requiresExt4ClientAPI(true);
-//    LABKEY.requiresCss('study/DataViewsPanel.css');
 
 </script>
 <script type="text/javascript">

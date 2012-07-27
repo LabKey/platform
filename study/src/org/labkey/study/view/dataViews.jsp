@@ -28,7 +28,7 @@
     int webPartId = me.getModelBean().getRowId();
 %>
 <div>
-    <div id='dataset-browsing-<%=me.getModelBean().getIndex()%>' class="data-views-container"></div>
+    <div id='dataset-browsing-<%=me.getModelBean().getIndex()%>' class="dvc"></div>
 </div>
 <script type="text/javascript">
 

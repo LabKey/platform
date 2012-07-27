@@ -1,77 +1,49 @@
-/* Data Views */
-.x4-reset .x4-tip {
-    background-color: white;
-    border-width: 2px;
-}
-
-.x4-reset .x4-tip-anchor {
-    border-width: 8px;
-}
-
 /* Grid */
-.data-views-container .x4-reset .x4-grid-header-ct {
+.dvc .x4-reset .x4-grid-header-ct,
+.dvc .x4-reset .x4-toolbar-default,
+.dvc .x4-reset .x4-column-header,
+.dvc .x4-reset .x4-column-header-over,
+.dvc .x4-reset .x4-column-header-sort-ASC,
+.dvc .x4-reset .x4-column-header-sort-DESC {
     background-image: none;
     background-color: transparent;
     border: 0 none;
-}
-.data-views-container .x4-reset .x4-toolbar-default,
-.data-views-container .x4-reset .x4-column-header {
-    background-image: none;
-    background-color: transparent;
-    border: 0 none;
-}
-
-.normalwrap-gridcell {
-  white-space: normal !important;
-  word-wrap: break-word;
 }
 
 /* Specific to Data Views Panel */
 /* Border Layout */
-.data-views-container .x4-reset .x4-border-layout-ct {
+.dvc .x4-reset .x4-border-layout-ct {
     background-color: transparent;
 }
 
-.data-views-container .x4-reset .x4-region-collapsed-placeholder {
+.dvc .x4-reset .x4-region-collapsed-placeholder {
     display: none;
     height : 0px !important;
 }
 
-.data-views-container .x4-reset .x4-panel .x4-grid-body {
+.dvc .x4-reset .x4-panel .x4-grid-body {
     background-color: transparent;
 }
 
-.data-views-container .x4-grid-cell-first {
+.dvc .x4-grid-cell-first,
+.dvc .x4-name-column-cell {
     border-left: 1px solid #C5C5C5 !important;
 }
 
-.data-views-container .x4-name-column-cell {
-    border-left: 1px solid #C5C5C5 !important;
-}
-
-.data-views-container .x4-reset .x4-grid-row .x4-grid-cell {
+.dvc .x4-reset .x4-grid-row .x4-grid-cell {
     border-right: 1px solid #C5C5C5 !important;
 }
 
-.data-views-container .x4-reset .x4-grid-view {
+.dvc .x4-reset .x4-grid-view {
     border-bottom: 1px solid #C5C5C5;
 }
 
-.data-views-container td.type-column div {
+.dvc td.type-column div {
     text-align: center !important;
 }
 
-/* column hover */
-.data-views-container .x4-reset .x4-column-header-over,
-.data-views-container .x4-reset .x4-column-header-sort-ASC,
-.data-views-container .x4-reset .x4-column-header-sort-DESC {
-    background-image: none;
-    background-color: transparent;
-    border:  0 none;
-}
-
 /* Grid column title */
-.data-views-container .x4-reset .x4-column-header-inner .x4-column-header-text {
+.dvc .x4-reset .x4-column-header-inner .x4-column-header-text {
     font-weight: bold;
 }
 
@@ -84,16 +56,6 @@
 }
 
 /* Popup */
-.x4-reset .x4-tip {
-    padding-left: 0px !important;
-}
-
-#tip-tbar {
-    width: 196px !important;
-    left : 0px !important;
-    bottom: -1px !important;
-}
-
 .edit-views-link
 {
     background: url("../_images/pencil2.png") left top no-repeat;
@@ -104,45 +66,8 @@
 
 .edit-views-link:hover
 {
-    background: url("../_images/pencil2.png") center top no-repeat !important;
+    background: url("../_images/pencil2.png") center top no-repeat;
     cursor: pointer;
-}
-
-.iScroll ::-webkit-scrollbar
-{
-    width: 7px;
-    height: 9px;
-}
-
-.iScroll ::-webkit-scrollbar-button:start:decrement,
-.iScroll ::-webkit-scrollbar-button:end:increment
-{
-    display: block;
-    height: 0;
-    background-color: transparent;
-}
-
-.iScroll ::-webkit-scrollbar-track-piece
-{
-    -webkit-border-radius: 0;
-    -webkit-border-bottom-right-radius: 4px;
-    -webkit-border-bottom-left-radius: 4px;
-}
-
-.iScroll ::-webkit-scrollbar-thumb
-{
-    background-color: rgba(0, 0, 0, 0.3);
-    -webkit-border-radius: 4px;
-}
-
-.iScroll ::-webkit-scrollbar-thumb:vertical
-{
-    height: 50px;
-}
-
-.iScroll ::-webkit-scrollbar-thumb:horizontal
-{
-    width: 50px;
 }
 
 /* Ext4 Windows */
@@ -163,34 +88,15 @@
 }
 
 /* Ext4 Forms */
-.x4-reset .x4-form-text
-{
-    height : 24px;
-}
-
 .x4-reset .data-window .x4-form-cb-label-after
 {
     position: absolute;
 }
 
-.x4-reset .x4-form-checkbox, .x4-reset .x4-form-radio
-{
-    float : left;
-}
-
-.x4-action-col-icon
-{
-    cursor: pointer;
-}
-
 /* Hover Tip */
 div.data-views-tip-panel
 {
-  box-shadow: rgb(220, 220, 220) 4px 5px 5px;
-}
-
-div.data-views-tip-content
-{
+    box-shadow: rgb(220, 220, 220) 4px 5px 5px;
 }
 
 div.data-views-tip-content table
@@ -222,6 +128,11 @@ div.thumbnail svg
 }
 
 /* Report Filter Panel */
+.normalwrap-gridcell {
+  white-space: normal !important;
+  word-wrap: break-word;
+}
+
 .x4-reset .report-filter-panel .x4-grid-row .x4-grid-cell,
 .x4-reset .report-filter-panel .x4-grid-body,
 .x4-reset .report-filter-panel .x4-column-header {

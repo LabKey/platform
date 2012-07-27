@@ -131,5 +131,5 @@
 </script>
 
 <div id="<%=filterRenderId%>" class="report-filter-window-outer" style="position:<%=bean.isAllowOverflow() ? "absolute" : "absolute"%>;"></div>
-<div id="<%= renderId%>" class="data-views-container" style="width:100%"></div>
+<div id="<%= renderId%>" class="dvc" style="width:100%"></div>
 
