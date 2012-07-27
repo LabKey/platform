@@ -348,6 +348,11 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                 {
                     protocol = ExperimentService.get().getExpProtocol(assay.getProtocolId().intValue());
 
+                    if (protocol == null)
+                    {
+                        throw new AssayException("Assay design has been deleted");
+                    }
+
                     //ensure that the user has edit perms in this container
                     if (!canUpdateProtocols())
                         throw new AssayException("You do not have sufficient permissions to update this Assay");
