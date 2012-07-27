@@ -661,6 +661,8 @@ public class ParticipantGroupController extends BaseStudyController
     @RequiresPermissionClass(ReadPermission.class)
     public class SaveParticipantGroup extends MutatingApiAction<ParticipantGroupSpecification>
     {
+        ParticipantGroup _prevGroup;
+
         @Override
         public void validateForm(ParticipantGroupSpecification form, Errors errors)
         {
@@ -683,8 +685,16 @@ public class ParticipantGroupController extends BaseStudyController
                             }
                         }
                     }
-
                 }
+            }
+
+            if (form.getRowId() != 0)
+            {
+                // updating an existing group
+                //                
+                _prevGroup = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), getUser(), form.getRowId());
+                if (_prevGroup == null)
+                    errors.reject(ERROR_MSG, "The group " + form.getLabel() + " no longer exists in the sytem, update failed.");
             }
         }
 
@@ -698,6 +708,9 @@ public class ParticipantGroupController extends BaseStudyController
             ParticipantCategoryImpl category;
             ParticipantCategoryImpl oldCategory;
             ParticipantGroup group;
+
+            if (!form.isNew())
+                form.copySpecialFields(_prevGroup);
 
             if (form.getCategoryId() == 0)
             {

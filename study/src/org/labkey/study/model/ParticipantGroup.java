@@ -245,4 +245,16 @@ public class ParticipantGroup extends Entity
 
         return json;
     }
+
+    public void copySpecialFields(ParticipantGroup copy)
+    {
+        if (getEntityId() == null)
+            setEntityId(copy.getEntityId());
+        if (getCreatedBy() == 0)
+            setCreatedBy(copy.getCreatedBy());
+        if (getCreated() == null)
+            setCreated(copy.getCreated());
+        if (getContainerId() == null)
+            setContainer(copy.getContainerId());
+    }
 }

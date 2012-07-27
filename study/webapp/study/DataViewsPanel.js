@@ -59,7 +59,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             {name : 'shared',               type : 'boolean'},
             {name : 'visible',              type : 'boolean'},
             {name : 'icon'},
-            {name : 'modified',             type : 'date'},
+            {name : 'modified',             type : 'string'},
             {name : 'modifiedBy'},
             {name : 'refreshDate',          type : 'date'},
             {name : 'name'},
