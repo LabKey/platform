@@ -193,7 +193,7 @@ public class GroupedResultSet extends Table.ResultSetImpl
             }
             currentValue = getObject(_columnIndex);
         }
-        while (currentValue.equals(previousValue));
+        while (ObjectUtils.equals(currentValue, previousValue));
 
         if (_lastRow != 0)
         {
