@@ -766,7 +766,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     // The set of allowed extra key lookup types that we can join across.
     private static final EnumSet<PropertyType> LOOKUP_KEY_TYPES = EnumSet.of(
             PropertyType.DATE_TIME,
-            PropertyType.DOUBLE, // Attempting to allow this
+            // Disallow DOUBLE extra key for DataSetAutoJoin.  See Issue 14860.
+            //PropertyType.DOUBLE,
             PropertyType.STRING,
             PropertyType.INTEGER);
 
@@ -1499,20 +1500,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         {
             StringBuilder error = new StringBuilder();
             error.append("Only one row is allowed for each ").append(StudyService.get().getSubjectNounSingular(getContainer()));
-
-            if (!isDemographicData())
-            {
-                error.append(_study.getTimepointType().isVisitBased() ? "/Visit" : "/Date");
-
-                if (getKeyPropertyName() != null)
-                    error.append("/").append(getKeyPropertyName()).append(" combination");
-                else
-                    error.append(" combination");
-            }
-            else if (getKeyPropertyName() != null)
-            {
-                error.append("/").append(getKeyPropertyName()).append(" combination");
-            }
+            error.append(getKeyTypeDescription());
             error.append(".  ");
 
             error.append("Duplicates were found in the database or imported data.");
