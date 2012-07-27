@@ -15,16 +15,13 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.TSVWriter" %>
+<%@ page import="org.labkey.api.util.GUID" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.query.QueryView" %>
-<%@ page import="org.labkey.api.util.GUID" %>
-<%@ page import="org.labkey.api.data.TSVWriter" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="java.util.EnumMap" %>
 <%@ page import="java.util.LinkedHashMap" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -47,12 +44,7 @@
 %>
 <table class="labkey-export-tab-contents">
     <tr>
-        <td colspan=2>
-            <table class="labkey-export-tab-layout"><tr><td>Export as text-delimited values:</td></tr></table>
-        </td>
-    </tr>
-    <tr>
-        <td>&nbsp;&nbsp;Separator:</td>
+        <td>Separator:</td>
         <td>
             <select id="<%=delimGUID%>" name="delim">
                 <labkey:options value="<%=TSVWriter.DELIM.TAB%>" map="<%=delimiterMap%>" />
@@ -60,7 +52,7 @@
         </td>
     </tr>
     <tr>
-        <td>&nbsp;&nbsp;Quote:</td>
+        <td>Quote:</td>
         <td>
             <select id="<%=quoteGUID%>" name="quote">
                 <labkey:options value="<%=TSVWriter.QUOTE.DOUBLE%>" map="<%=quoteMap%>" />
