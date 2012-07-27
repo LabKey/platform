@@ -78,6 +78,7 @@ Ext4.define('LABKEY.ext.SampleSearchPanel', {
                 style: 'padding-top: 15px;',
                 items: [{
                     layout: 'hbox',
+                    bodyStyle: 'background-color: transparent;',
                     border: false,
                     items: [{
                         xtype: 'labkey-linkbutton',

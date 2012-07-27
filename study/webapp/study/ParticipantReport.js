@@ -381,22 +381,27 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
                 this.subjectGroupMap = {};
                 this.pendingRequests++;
-                LABKEY.Query.selectRows({
-                    schemaName: 'study',
-                    queryName: this.subjectNoun.singular + 'GroupMap',
-                    columns: 'GroupId,GroupId/Label,' + this.subjectColumn + ',' + this.subjectColumn + '/Cohort' + ',' + this.subjectColumn + '/Cohort/label',
-                    success: function(response){
-                        var row;
-                        for (var i=0;i<response.rows.length;i++){
-                            row = response.rows[i];
+                Ext4.Ajax.request({
+                    url     : LABKEY.ActionURL.buildURL('participant-group', 'browseParticipantGroups.api', null, {type: ['participantGroup', 'cohort'], includeParticipantIds: true}),
+                    method  : 'GET',
+                    success : function(response){
+                        var response = Ext4.decode(response.responseText);
+                        for (var i=0;i<response.groups.length;i++){
+                            var row = response.groups[i];
+                            for (var j=0;j<row.participantIds.length;j++){
+                                var id = row.participantIds[j];
 
-                            if(!this.subjectGroupMap[row[this.subjectColumn]]){
-                                this.subjectGroupMap[row[this.subjectColumn]] = {
-                                    cohort: row[this.subjectColumn + '/Cohort/label'],
-                                    groups: []
+                                if(!this.subjectGroupMap[id]){
+                                    this.subjectGroupMap[id] = {
+                                        cohort: null,
+                                        groups: []
+                                    }
                                 }
+                                if (row.type == 'participantGroup')
+                                    this.subjectGroupMap[id].cohort = row.label;
+                                else if (row.type == 'cohort')
+                                    this.subjectGroupMap[id].groups.push(row.label);
                             }
-                            this.subjectGroupMap[row[this.subjectColumn]].groups.push(row['GroupId/Label']);
                         }
                         onLoad.call(this);
                     },
