@@ -1654,7 +1654,6 @@ public class PageFlowUtil
 
         CoreUrls coreUrls = urlProvider(CoreUrls.class);
         StringBuilder sb = new StringBuilder();
-        Set<String> cssFiles = new HashSet<String>();
 
         Formatter F = new Formatter(sb);
         String link = useLESS ? "    <link href=\"%s\" type=\"text/x-less\" rel=\"stylesheet\">\n" : "    <link href=\"%s\" type=\"text/css\" rel=\"stylesheet\">\n";
@@ -1704,6 +1703,15 @@ public class PageFlowUtil
         sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\">\n");
 
         if (resources != null)
+            writeCss(sb, resources);
+
+        return sb.toString();
+    }
+
+    public static void writeCss(StringBuilder sb, LinkedHashSet<ClientDependency> resources)
+    {
+        Set<String> cssFiles = new HashSet<String>();
+        if (resources != null)
         {
             for (ClientDependency r : resources)
             {
@@ -1720,17 +1728,18 @@ public class PageFlowUtil
         }
 
         //cache list of CSS files to prevent double-loading
-        sb.append("    <script type=\"text/javascript\">\n        LABKEY.requestedCssFiles(");
-        String comma = "";
-        for (String s : cssFiles)
+        if (cssFiles.size() > 0)
         {
-            sb.append(comma).append(jsString(s));
-            comma = ",";
+            sb.append("    <script type=\"text/javascript\">\n        LABKEY.requestedCssFiles(");
+            String comma = "";
+            for (String s : cssFiles)
+            {
+                sb.append(comma).append(jsString(s));
+                comma = ",";
+            }
+            sb.append(");\n");
+            sb.append("    </script>\n");
         }
-        sb.append(");\n");
-        sb.append("    </script>\n");
-
-        return sb.toString();
     }
 
     static final String extJsRoot = "ext-3.4.0";
