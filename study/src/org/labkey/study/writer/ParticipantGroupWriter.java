@@ -85,6 +85,8 @@ public class ParticipantGroupWriter implements InternalStudyWriter
 
             for (ParticipantCategoryImpl category : categories)
             {
+                // categoriesToCopy will be empty for a folder/study export
+                // categoriesToCopy will contain a list of categories for creating an ancillary study                
                 if (categoriesToCopy.isEmpty() || categoriesToCopy.contains(category))
                 {
                     CategoryType pc = groups.addNewParticipantCategory();
@@ -107,7 +109,9 @@ public class ParticipantGroupWriter implements InternalStudyWriter
 
                     for (ParticipantGroup group : category.getGroups())
                     {
-                        if (_groupsToCopy.contains(group))
+                        // _groupsToCopy will be empty for a folder/study export
+                        // _groupsToCopy will contain a list of groups for creating an ancillary study
+                        if (_groupsToCopy.isEmpty() || _groupsToCopy.contains(group))
                         {
                             GroupType pg = pc.addNewGroup();
 
