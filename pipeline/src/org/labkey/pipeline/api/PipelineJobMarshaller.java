@@ -79,12 +79,12 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
         throw new UnsupportedOperationException("Method supported only on web server");
     }
 
-    public PipelineJob getJob(String jobId) throws SQLException
+    public PipelineJob getJob(String jobId)
     {
         throw new UnsupportedOperationException("Method supported only on web server");
     }
 
-    public PipelineJob getJob(int rowId) throws SQLException
+    public PipelineJob getJob(int rowId)
     {
         throw new UnsupportedOperationException("Method supported only on web server");
     }

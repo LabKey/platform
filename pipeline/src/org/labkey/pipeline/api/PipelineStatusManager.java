@@ -21,6 +21,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.*;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -56,14 +57,7 @@ public class PipelineStatusManager
      */
     public static PipelineStatusFileImpl getStatusFile(int rowId)
     {
-        try
-        {
-            return getStatusFile(new SimpleFilter("RowId", rowId));
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return getStatusFile(new SimpleFilter(FieldKey.fromParts("RowId"), rowId));
     }
 
     /**
@@ -77,7 +71,7 @@ public class PipelineStatusManager
     public static PipelineStatusFileImpl getStatusFile(String path) throws SQLException
     {
         return (path == null ? null :
-                getStatusFile(new SimpleFilter("FilePath", PipelineJobService.statusPathOf(path))));
+                getStatusFile(new SimpleFilter(FieldKey.fromParts("FilePath"), PipelineJobService.statusPathOf(path))));
     }
 
     /**
@@ -85,24 +79,11 @@ public class PipelineStatusManager
      *
      * @param jobId the job id for the associated job
      * @return the corresponding <code>PipelineStatusFileImpl</code>
-     * @throws SQLException database error
      */
-    public static PipelineStatusFileImpl getJobStatusFile(String jobId) throws SQLException
+    public static PipelineStatusFileImpl getJobStatusFile(String jobId)
     {
         return (jobId == null ? null :
-                getStatusFile(new SimpleFilter("Job", jobId)));
-    }
-
-    /**
-     * Get a <code>PipelineStatusFileImpl</code> by the Job's row id.
-     *
-     * @param rowId the row id for the associated job
-     * @return the corresponding <code>PipelineStatusFileImpl</code>
-     * @throws SQLException database error
-     */
-    public static PipelineStatusFileImpl getJobStatusFile(int rowId) throws SQLException
-    {
-        return getStatusFile(new SimpleFilter("RowId", rowId));
+                getStatusFile(new SimpleFilter(FieldKey.fromParts("Job"), jobId)));
     }
 
     /**
@@ -110,17 +91,23 @@ public class PipelineStatusManager
      *
      * @param filter the filter to use in the select statement
      * @return the corresponding <code>PipelineStatusFileImpl</code>
-     * @throws SQLException database error
      */
-    private static PipelineStatusFileImpl getStatusFile(Filter filter) throws SQLException
+    private static PipelineStatusFileImpl getStatusFile(Filter filter)
     {
-        PipelineStatusFileImpl[] asf =
-                Table.select(_schema.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
+        try
+        {
+            PipelineStatusFileImpl[] asf =
+                    Table.select(_schema.getTableInfoStatusFiles(), Table.ALL_COLUMNS, filter, null, PipelineStatusFileImpl.class);
 
-        if (asf.length == 0)
-            return null;
+            if (asf.length == 0)
+                return null;
 
-        return asf[0];
+            return asf[0];
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public static boolean setStatusFile(PipelineJob job, User user, String status, String info, boolean allowInsert)
@@ -301,34 +288,41 @@ public class PipelineStatusManager
         Table.execute(_schema.getSchema(), sql.toString(), xml, sfExist.getRowId());
     }
 
-    public static String retrieveJob(int rowId) throws SQLException
+    public static String retrieveJob(int rowId)
     {
-        PipelineStatusFileImpl sfExist = getJobStatusFile(rowId);
+        PipelineStatusFileImpl sfExist = getStatusFile(rowId);
         if (sfExist == null)
             return null;
 
         return retrieveJob(sfExist);
     }
 
-    public static String retrieveJob(String jobId) throws SQLException
+    public static String retrieveJob(String jobId)
     {
         PipelineStatusFileImpl sfExist = getJobStatusFile(jobId);
         if (sfExist == null)
-            throw new SQLException("Status for the job " + jobId + " was not found.");
+            throw new RuntimeSQLException(new SQLException("Status for the job " + jobId + " was not found."));
         
         return retrieveJob(sfExist);
     }
 
-    private static String retrieveJob(PipelineStatusFileImpl sfExist) throws SQLException
+    private static String retrieveJob(PipelineStatusFileImpl sfExist)
     {
         StringBuffer sql = new StringBuffer();
         sql.append("UPDATE ").append(_schema.getTableInfoStatusFiles())
                 .append(" SET JobStore = NULL")
                 .append(" WHERE RowId = ?");
 
-        Table.execute(_schema.getSchema(), sql.toString(), sfExist.getRowId());
+        try
+        {
+            Table.execute(_schema.getSchema(), sql.toString(), sfExist.getRowId());
 
-        return sfExist.getJobStore();
+            return sfExist.getJobStore();
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
     }
 
     public static PipelineStatusFileImpl[] getSplitStatusFiles(String parentId, Container container)
@@ -465,25 +459,18 @@ public class PipelineStatusManager
             for (int rowId : rowIds)
             {
                 boolean statusSet = false;
-                try
-                {
-                    PipelineJob job = PipelineJobService.get().getJobStore().getJob(rowId);
+                PipelineJob job = PipelineJobService.get().getJobStore().getJob(rowId);
 
-                    if (job != null)
+                if (job != null)
+                {
+                    job.info("Job " + job + " was marked as complete by " + user);
+                    if (!job.getContainer().hasPermission(user, UpdatePermission.class))
                     {
-                        job.info("Job " + job + " was marked as complete by " + user);
-                        if (!job.getContainer().hasPermission(user, UpdatePermission.class))
-                        {
-                            throw new UnauthorizedException();
-                        }
-
-                        setStatusFile(job, user, PipelineJob.COMPLETE_STATUS, null, false);
-                        statusSet = true;
+                        throw new UnauthorizedException();
                     }
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeSQLException(e);
+
+                    setStatusFile(job, user, PipelineJob.COMPLETE_STATUS, null, false);
+                    statusSet = true;
                 }
 
                 if (!statusSet)

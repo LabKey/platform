@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.sql.SQLException;
 
 /**
  * SplitDisplayColumn class
@@ -99,30 +98,23 @@ public class JobDisplayColumn extends SimpleDisplayColumn
     {
         if (_jobStatus == null)
         {
-            try
+            if (_split)
             {
-                if (_split)
+                String jobId = (String) ctx.get("Job");
+                if (jobId != null)
                 {
-                    String jobId = (String) ctx.get("Job");
-                    if (jobId != null)
-                    {
-                        // If we're being rendered from the Admin Console, we won't be in the right container,
-                        // so don't specify one
-                        _jobStatus = getSplitStatusFiles(jobId, null);
-                    }
-                }
-                else if (ctx.get("JobParent") != null)
-                {
-                    PipelineStatusFileImpl parent = getJobStatusFile((String) ctx.get("JobParent"));
-                    if (parent != null)
-                    {
-                        _jobStatus = new PipelineStatusFile[] {parent};
-                    }
+                    // If we're being rendered from the Admin Console, we won't be in the right container,
+                    // so don't specify one
+                    _jobStatus = getSplitStatusFiles(jobId, null);
                 }
             }
-            catch (SQLException e)
+            else if (ctx.get("JobParent") != null)
             {
-                throw new RuntimeSQLException(e);
+                PipelineStatusFileImpl parent = getJobStatusFile((String) ctx.get("JobParent"));
+                if (parent != null)
+                {
+                    _jobStatus = new PipelineStatusFile[] {parent};
+                }
             }
             if (_jobStatus == null)
                 _jobStatus = new PipelineStatusFile[0];

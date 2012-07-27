@@ -41,12 +41,12 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
         return job;
     }
 
-    public PipelineJob getJob(String jobId) throws SQLException
+    public PipelineJob getJob(String jobId)
     {
         return fromStatus(PipelineStatusManager.retrieveJob(jobId));
     }
 
-    public PipelineJob getJob(int rowId) throws SQLException
+    public PipelineJob getJob(int rowId)
     {
         return fromStatus(PipelineStatusManager.retrieveJob(rowId));
     }
@@ -265,7 +265,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
         _splitRecord.set(null);
     }
 
-    private PipelineJob getJoinJob(String parentJobId) throws SQLException
+    private PipelineJob getJoinJob(String parentJobId)
     {
         SplitRecord rec = _splitRecord.get();
         if (rec != null && rec.isJoinJob(parentJobId))

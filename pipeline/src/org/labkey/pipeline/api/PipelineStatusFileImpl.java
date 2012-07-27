@@ -16,6 +16,7 @@
 
 package org.labkey.pipeline.api;
 
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Entity;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.pipeline.PipelineJob;
@@ -175,21 +176,24 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
             // is still in the database. The "new" value may have been persisted through XML files for submitting
             // to the cluster. If the parent was reset, its GUID will have changed and we don't want to use the one
             // from the XML file anymore.
-            try
+            PipelineStatusFileImpl parentStatusFile = PipelineStatusManager.getJobStatusFile(getJobParent());
+            if (parentStatusFile == null)
             {
-                PipelineStatusFileImpl parentStatusFile = PipelineStatusManager.getJobStatusFile(getJobParent());
-                if (parentStatusFile == null)
-                {
-                    // Can't find that parent anymore, so revert the parent GUID that's currently in the database
-                    setJobParent(curSF.getJobParent());
-                }
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
+                // Can't find that parent anymore, so revert the parent GUID that's currently in the database
+                setJobParent(curSF.getJobParent());
             }
         }
 
+        // Check if child jobs still reference the job by an older job ID
+        if (curSF.getJob() != null && !curSF.getJob().equals(getJob()))
+        {
+            PipelineStatusFileImpl[] childrenOfOldId = PipelineStatusManager.getSplitStatusFiles(curSF.getJobId(), ContainerManager.getForId(curSF.getContainerId()));
+            if (childrenOfOldId.length > 0)
+            {
+                // Children still reference old job ID, so don't reset it (or let it revert to some older value)
+                setJob(curSF.getJob());
+            }
+        }
 
         // Clear any stored job, if the status is complete.
         if (PipelineJob.COMPLETE_STATUS.equals(_status))
