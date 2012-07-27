@@ -109,7 +109,16 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                 ForeignKey fk = columnInfo.getFk();
                 if (fk.getLookupSchemaName() == null || fk.getLookupTableName() == null)
                 {
-                    gwtColumnInfo.setLookupCustom(true);
+                    TableInfo lookupTarget = fk.getLookupTableInfo();
+                    if (lookupTarget != null && lookupTarget.isPublic() && lookupTarget.getPublicSchemaName() != null && lookupTarget.getPublicName() != null)
+                    {
+                        gwtColumnInfo.setLookupSchema(lookupTarget.getPublicSchemaName());
+                        gwtColumnInfo.setLookupQuery(lookupTarget.getPublicName());
+                    }
+                    else
+                    {
+                        gwtColumnInfo.setLookupCustom(true);
+                    }
                 }
                 else
                 {
