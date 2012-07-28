@@ -43,6 +43,8 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -63,6 +65,9 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
     public ExpDataTableImpl(String name, UserSchema schema)
     {
         super(name, ExperimentServiceImpl.get().getTinfoData(), schema, new ExpDataImpl(new Data()));
+
+        addAllowablePermission(UpdatePermission.class);
+        addAllowablePermission(InsertPermission.class);
     }
 
     public void populate()

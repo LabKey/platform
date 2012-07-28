@@ -453,14 +453,17 @@ public class ParticipantGroupController extends BaseStudyController
                     case participantGroup:
                         for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser()))
                         {
-                            JSONObject jsonCategory = category.toJSON();
-
-                            for (ParticipantGroup group : category.getGroups())
+                            if (form.isIncludePrivateGroups() || category.isShared())
                             {
-                                if (form.includeParticipantIds())
-                                    groups.add(createGroup(jsonCategory, group.getRowId(), group.getLabel(), groupType, group.getRowId(), group.getFilters(), group.getDescription(), group.getCreatedBy(), group.getModifiedBy(), group.getParticipantSet()));
-                                else
-                                    groups.add(createGroup(jsonCategory, group.getRowId(), group.getLabel(), groupType, group.getRowId(), group.getFilters(), group.getDescription(), group.getCreatedBy(), group.getModifiedBy()));
+                                JSONObject jsonCategory = category.toJSON();
+
+                                for (ParticipantGroup group : category.getGroups())
+                                {
+                                    if (form.includeParticipantIds())
+                                        groups.add(createGroup(jsonCategory, group.getRowId(), group.getLabel(), groupType, group.getRowId(), group.getFilters(), group.getDescription(), group.getCreatedBy(), group.getModifiedBy(), group.getParticipantSet()));
+                                    else
+                                        groups.add(createGroup(jsonCategory, group.getRowId(), group.getLabel(), groupType, group.getRowId(), group.getFilters(), group.getDescription(), group.getCreatedBy(), group.getModifiedBy()));
+                                }
                             }
                         }
 
@@ -527,6 +530,17 @@ public class ParticipantGroupController extends BaseStudyController
     {
         private String[] _type;
         private boolean _includeParticipantIds = false;
+        private boolean _includePrivateGroups = true;
+
+        public boolean isIncludePrivateGroups()
+        {
+            return _includePrivateGroups;
+        }
+
+        public void setIncludePrivateGroups(boolean includePrivateGroups)
+        {
+            _includePrivateGroups = includePrivateGroups;
+        }
 
         public String[] getType()
         {

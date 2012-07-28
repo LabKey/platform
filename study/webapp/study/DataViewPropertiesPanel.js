@@ -77,7 +77,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
                 name        : 'author',
                 store       : this.initializeUserStore(),
                 editable    : false,
-                value       : this.data.authorUserId,
+                value       : this.data.authorUserId ? this.data.authorUserId : null,
                 queryMode      : 'local',
                 displayField   : 'DisplayName',
                 valueField     : 'UserId',
@@ -265,7 +265,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
             formItems.push({
                 xtype      : 'displayfield',
                 fieldLabel : 'Created On',
-                value      : this.data.created,
+                value      : Ext4.util.Format.date(this.data.created, 'Y-m-d H:i'),
                 readOnly   : true
             });
         }
@@ -275,7 +275,7 @@ Ext4.define('LABKEY.study.DataViewPropertiesPanel', {
             formItems.push({
                 xtype      : 'displayfield',
                 fieldLabel : 'Last Modified',
-                value      : this.data.modified,
+                value      : Ext4.util.Format.date(this.data.modified, 'Y-m-d H:i'),
                 readOnly   : true
             });
         }

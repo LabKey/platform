@@ -87,7 +87,7 @@ public class ParticipantGroupWriter implements InternalStudyWriter
             {
                 // categoriesToCopy will be empty for a folder/study export
                 // categoriesToCopy will contain a list of categories for creating an ancillary study                
-                if (categoriesToCopy.isEmpty() || categoriesToCopy.contains(category))
+                if ((categoriesToCopy.isEmpty() || categoriesToCopy.contains(category)) && category.isShared())
                 {
                     CategoryType pc = groups.addNewParticipantCategory();
 

@@ -442,7 +442,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         this.store = new Ext.data.JsonStore({
             proxy: new Ext.data.HttpProxy({
-                url : LABKEY.ActionURL.buildURL("participant-group", "browseParticipantGroups"),
+                url : LABKEY.ActionURL.buildURL("participant-group", "browseParticipantGroups", null, {includePrivateGroups : false}),
                 method : 'POST'
             }),
             baseParams: { type : 'participantGroup', includeParticipantIds: true},
