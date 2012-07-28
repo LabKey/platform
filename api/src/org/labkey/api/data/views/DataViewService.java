@@ -206,9 +206,9 @@ public class DataViewService
             o.put("author", info.getAuthor().getDisplayName(user));
 
         if (info.getCreated() != null)
-            o.put("created",  DateUtil.formatDateTime(info.getCreated()));
+            o.put("created",  info.getCreated());
         if (info.getModified() != null)
-            o.put("modified", DateUtil.formatDateTime(info.getModified()));
+            o.put("modified", info.getModified());
 
         if (info.getRunUrl() != null)
             o.put("runUrl", info.getRunUrl().getLocalURIString());

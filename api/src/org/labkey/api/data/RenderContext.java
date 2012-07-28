@@ -429,7 +429,8 @@ public class RenderContext implements Map<String, Object>, Serializable
 
     public void setRow(Map<String, Object> row)
     {
-        _row = Collections.unmodifiableMap(row);
+        if (row != null)
+            _row = Collections.unmodifiableMap(row);
     }
 
     public int getMode()
