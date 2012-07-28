@@ -206,7 +206,7 @@ LABKEY.vis.Geom.Path.prototype.render = function(paper, grid, scales, data, laye
         if(this.sizeMap){
             size = this.sizeMap.getValue(data); // This would allow a user to look at all of the rows in a group and calculate size (i.e. a user could average the CD4 in every group and make a line based on that average.)
         }
-        var path = LABKEY.vis.makePath(groupData, xAccessor, yAccessor);
+        var path = LABKEY.vis.makePath(data, xAccessor, yAccessor);
         if(path != ''){
             paper.path(path).attr('stroke-width', size).attr('opacity', this.opacity).attr('stroke', this.color);
         }

@@ -360,7 +360,7 @@ LABKEY.vis.Plot = function(config){
 
 		if(this.scales.yRight && this.scales.yRight.scale){
             var rightTicks;
-            if(this.scales.yLeft.scaleType == 'continuous'){
+            if(this.scales.yRight.scaleType == 'continuous'){
                 rightTicks = this.scales.yRight.scale.ticks(10);
             } else {
                 rightTicks = this.scales.yRight.scale.domain();
@@ -443,7 +443,7 @@ LABKEY.vis.Plot = function(config){
                 geomX = this.grid.rightEdge + 50;
                 y = -(this.grid.topEdge - legendY) +.5;
                 for(var i = 0; i < series[s].layers.length; i++){
-                    this.paper.text(textX, y, s).attr('text-anchor', 'start');
+                    this.paper.text(textX, y, s).attr('text-anchor', 'start').attr('title', s);
 
                     if(series[s].layers[i].geom.type == "Point"){
                         this.paper.circle(geomX + 10, y, 5).attr('stroke', color).attr('fill', color);
@@ -464,7 +464,7 @@ LABKEY.vis.Plot = function(config){
                 y = -(this.grid.topEdge - legendY) +.5;
                 for(var s in series){
                     if(legendRows[i].indexOf(s) != -1){
-                        this.paper.text(textX, y, legendRows[i]).attr('text-anchor', 'start');
+                        this.paper.text(textX, y, legendRows[i]).attr('text-anchor', 'start').attr('title', legendRows[i]);
                         color = "#000000";
                         if(colorRows && colorRows.indexOf(legendRows[i]) != -1){
                             color = this.scales.color.scale(colorRows[colorRows.indexOf(legendRows[i])]);
@@ -764,7 +764,9 @@ LABKEY.vis.Plot = function(config){
 	};
 
     this.clearGrid = function(){
-        gridSet.remove();
+        if(gridSet){
+            gridSet.remove();
+        }
     };
 
     this.setMargins = function(newMargins){

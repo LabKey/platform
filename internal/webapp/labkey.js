@@ -328,8 +328,7 @@ LABKEY.requiresExt4Sandbox = function(immediate)
 {
     if (arguments.length < 1) immediate = true;
 
-    LABKEY.requiresScript(LABKEY.extJsRoot_41 + "/ext-all-sandbox" + (LABKEY.devMode ?  "-debug.js" : ".js"), immediate);
-    LABKEY.requiresScript(LABKEY.extJsRoot_41 + "/ext-patches.js", immediate);
+    LABKEY.requiresScript([LABKEY.extJsRoot_41 + "/ext-all-sandbox" + (LABKEY.devMode ?  "-debug.js" : ".js"), LABKEY.extJsRoot_41 + "/ext-patches.js"], immediate, null, null, true);
 };
 
 // adds the compatibility layer to be used on the Ext4 sandbox components
