@@ -23,6 +23,8 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.reports.model.ReportPropsManager" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.Collections" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -30,6 +32,10 @@
     ViewContext context = getViewContext();
 
     String url = report.getUrl(context.getContainer());
+    Map<String, String> reportURLAttributes =  report.getRunReportTarget() != null ?
+            Collections.singletonMap("target", report.getRunReportTarget()) :
+            Collections.<String, String>emptyMap();
+
     ActionURL thumbnailURL = PageFlowUtil.urlProvider(ReportUrls.class).urlThumbnail(context.getContainer(), report);
 
     String name = report.getDescriptor().getReportName();
@@ -50,7 +56,7 @@
     String category = null;
     if (report.getDescriptor().getCategory() != null)
         category = report.getDescriptor().getCategory().getLabel();
-    else
+
 %>
 <a href='<%=h(url)%>'>
 <img style='width:100px; height: auto; float: left;' src='<%=h(thumbnailURL)%>'>
@@ -61,7 +67,9 @@
     <% if (category != null) { %> <tr><td><b>Category:</b></td><td><%=category%></td></tr> <% } %>
     <% if (type != null) { %> <tr><td><b>Type:</b></td><td><%=type%></td></tr> <% } %>
     <% if (description != null) { %> <tr><td><b>Description:</b></td><td><%=description%></td></tr> <% } %>
-    <tr><td colspan=2><labkey:link href="<%=url%>" text="view report"/></td></tr>
+    <tr><td colspan=2>
+        <%=PageFlowUtil.textLink("view report", url, null, null, reportURLAttributes)%>
+    </td></tr>
 </table>
 <div style='clear: both;'></div>
 

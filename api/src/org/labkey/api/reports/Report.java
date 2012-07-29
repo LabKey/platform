@@ -97,6 +97,13 @@ public interface Report extends AttachmentParent, StaticThumbnailProvider
     void beforeDelete(ContainerUser context);
 
     ActionURL getRunReportURL(ViewContext context);
+
+    /**
+     * Anchor target (e.g., "_blank") use when rendering run report href.
+     * @return
+     */
+    String getRunReportTarget();
+
     ActionURL getEditReportURL(ViewContext context);
 
     /**

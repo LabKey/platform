@@ -70,6 +70,8 @@ public interface DataViewInfo
     @Nullable
     ActionURL getRunUrl();              // the action to render or display this view
     @Nullable
+    String    getRunTarget();           // Anchor target (e.g., "_blank") use when rendering run report href.
+    @Nullable
     ActionURL getThumbnailUrl();        // the url to display a thumbnail image
     @Nullable
     ActionURL getDetailsUrl();          // the url to display extra details about a view

@@ -56,6 +56,7 @@ public class ViewInfo
     private ActionURL _runUrl;
     private ActionURL _infoUrl;
     private ActionURL _detailsUrl;
+    private String _runTarget;
 
     private String _description;
     private Container _container;
@@ -244,6 +245,16 @@ public class ViewInfo
     public void setRunUrl(ActionURL runUrl)
     {
         _runUrl = runUrl;
+    }
+
+    public String getRunTarget()
+    {
+        return _runTarget;
+    }
+
+    public void setRunTarget(String target)
+    {
+        _runTarget = target;
     }
 
     public ActionURL getDetailsUrl()
@@ -469,6 +480,8 @@ public class ViewInfo
             o.put("editUrl", getEditUrl().getLocalURIString());
         if (getRunUrl() != null)
             o.put("runUrl", getRunUrl().getLocalURIString());
+        if (getRunTarget() != null)
+            o.put("runTarget", getRunTarget());
         if (getInfoUrl() != null)
             o.put("infoUrl", getInfoUrl().getLocalURIString());
         if (getDetailsUrl() != null)

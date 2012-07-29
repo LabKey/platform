@@ -36,6 +36,7 @@ public abstract class RedirectReport extends AbstractReport
     private static final Logger LOG = Logger.getLogger(RedirectReport.class);
 
     public static final String REDIRECT_URL = ReportDescriptor.Prop.redirectUrl.name();
+    public static final String TARGET = "target";
 
     public RedirectReport()
     {
@@ -50,6 +51,19 @@ public abstract class RedirectReport extends AbstractReport
             return new JspView<RedirectReport>("/org/labkey/api/reports/report/view/redirectReportWebPart.jsp", this);
 
         return HttpView.redirect(url);
+    }
+
+    @Override
+    public String getRunReportTarget()
+    {
+        return getDescriptor().getProperty(TARGET);
+    }
+
+    public void setRunReportTarget(String target)
+    {
+        if (!(target == null || "_blank".equals(target)))
+            throw new IllegalArgumentException("target must either be '_blank' or null");
+        getDescriptor().setProperty(TARGET, target);
     }
 
     public void setUrl(URLHelper url)

@@ -48,6 +48,7 @@ public class DefaultViewInfo implements DataViewInfo
     private Date _modified;
 
     private ActionURL _runUrl;
+    private String _runTarget;
     private ActionURL _thumbnailUrl;
     private ActionURL _detailsUrl;
 
@@ -156,6 +157,16 @@ public class DefaultViewInfo implements DataViewInfo
     public void setRunUrl(ActionURL runUrl)
     {
         _runUrl = runUrl;
+    }
+
+    public String getRunTarget()
+    {
+        return _runTarget;
+    }
+
+    public void setRunTarget(String target)
+    {
+        _runTarget = target;
     }
 
     public ActionURL getThumbnailUrl()

@@ -212,6 +212,8 @@ public class DataViewService
 
         if (info.getRunUrl() != null)
             o.put("runUrl", info.getRunUrl().getLocalURIString());
+        if (info.getRunTarget() != null)
+            o.put("runTarget", info.getRunTarget());
         if (info.getThumbnailUrl() != null)
             o.put("thumbnail", info.getThumbnailUrl().getLocalURIString());
         if (info.getDetailsUrl() != null)

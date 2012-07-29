@@ -117,6 +117,12 @@ public abstract class AbstractReport implements Report
         return ReportUtil.getRunReportURL(context, this);
     }
 
+    @Override
+    public String getRunReportTarget()
+    {
+        return null;
+    }
+
     public ActionURL getEditReportURL(ViewContext context)
     {
         return null;

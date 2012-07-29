@@ -44,6 +44,7 @@ import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.model.ViewInfo;
 import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.ModuleRReportDescriptor;
+import org.labkey.api.reports.report.RedirectReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
@@ -549,6 +550,9 @@ public class ReportUtil
                             else
                                 continue;
                         }
+
+                        info.setRunTarget(r.getRunReportTarget());
+
                         if (c.hasPermission(user, AdminPermission.class))
                             info.setInfoUrl(PageFlowUtil.urlProvider(ReportUrls.class).urlReportInfo(c).addParameter("reportId", descriptor.getReportId().toString()));
                         info.setDescription(descriptor.getReportDescription());
