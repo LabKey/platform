@@ -655,7 +655,7 @@ public class ModuleLoader implements Filter
             _startupFailure = t;
     }
 
-    public void setModuleFailure(String moduleName, Throwable t)
+    public void addModuleFailure(String moduleName, Throwable t)
     {
         //noinspection ThrowableResultOfMethodCallIgnored
         _moduleFailures.put(moduleName, t);
@@ -1253,7 +1253,7 @@ public class ModuleLoader implements Filter
                 ".  A folder type with this name has already been registered ";
                 Throwable ex = new IllegalStateException(msg);
                 _log.error(msg, ex);
-                setModuleFailure(sourceModule.getName(), ex);
+                addModuleFailure(sourceModule.getName(), ex);
             }
             else
                 _folderTypes.put(folderType.getName(), folderType);

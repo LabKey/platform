@@ -16,6 +16,7 @@
 
 package org.labkey.api.util;
 
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -88,18 +89,29 @@ public class MothershipReport implements Runnable
 
     public MothershipReport(Type type) throws MalformedURLException, URISyntaxException
     {
-        URLHelper url = type.getURL();
+        URLHelper urlHelper = type.getURL();
+        URL url;
 
         if (AppProps.getInstance().isDevMode())
         {
             // Don't submit to the mothership server, go to the local machine
-            url.setContextPath(AppProps.getInstance().getContextPath());
-            _url = new URL(AppProps.getInstance().getScheme(), "localhost", AppProps.getInstance().getServerPort(), url.toString());
+            try
+            {
+                urlHelper.setContextPath(AppProps.getInstance().getContextPath());
+                url = new URL(AppProps.getInstance().getScheme(), "localhost", AppProps.getInstance().getServerPort(), urlHelper.toString());
+            }
+            catch (IllegalStateException e)
+            {
+                // Forget about local mothership report... we're probably installing, upgrading, or starting up
+                url = null;
+            }
+
+            _url = url;
         }
         else
         {
-            url.setContextPath("/");
-            _url = new URL("https", "www.labkey.org", 443, url.toString());
+            urlHelper.setContextPath("/");
+            _url = new URL("https", "www.labkey.org", 443, urlHelper.toString());
         }
     }
 
@@ -259,7 +271,15 @@ public class MothershipReport implements Runnable
             addParam("databaseDriverVersion", scope.getDriverVersion());
         }
         addParam("serverSessionGUID", AppProps.getInstance().getServerSessionGUID());
-        addParam("serverGUID", AppProps.getInstance().getServerGUID());
+
+        try
+        {
+            addParam("serverGUID", AppProps.getInstance().getServerGUID());
+        }
+        catch (ContainerManager.RootContainerException e)
+        {
+            // Must be very early in the install process... better to send a report with no GUID
+        }
 
         ServletContext context = ModuleLoader.getServletContext();
         String servletContainer = context == null ? null : context.getServerInfo();

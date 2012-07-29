@@ -20,7 +20,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.security.*;
 import org.labkey.api.util.ExceptionReportingLevel;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;

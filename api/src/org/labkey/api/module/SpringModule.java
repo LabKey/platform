@@ -229,7 +229,7 @@ public abstract class SpringModule extends DefaultModule
             catch (Exception x)
             {
                 _log.error("Failed to load spring application context for module: " + getName(), x);
-                ModuleLoader.getInstance().setModuleFailure(getName(), x);
+                ModuleLoader.getInstance().addModuleFailure(getName(), x);
             }
         }
     }

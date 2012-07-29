@@ -26,6 +26,7 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.User;
@@ -180,7 +181,15 @@ public class ExceptionUtil
             return new ErrorRenderer(responseStatus, message, ex, isStartupFailure);
     }
 
-    /** request may be null if this is coming from a background thread */
+    private static ExceptionReportingLevel getExceptionReportingLevel()
+    {
+        // Assume reporting level HIGH during initial install. Admin hasn't made a choice yet plus early exceptions
+        // (e.g., before root container is created) will cause AppProps to throw.
+        boolean installing = ModuleLoader.getInstance().isUpgradeRequired() && ModuleLoader.getInstance().isNewInstall();
+        return installing ? ExceptionReportingLevel.HIGH : AppProps.getInstance().getExceptionReportingLevel();
+    }
+
+    /** request may be null if this is coming from a background thread or init */
     public static void logExceptionToMothership(@Nullable HttpServletRequest request, Throwable ex)
     {
         Map<Enum, String> decorations = getExceptionDecorations(ex);
@@ -191,7 +200,7 @@ public class ExceptionUtil
             return;
 
         String originalURL = request == null ? null : (String) request.getAttribute(ViewServlet.ORIGINAL_URL_STRING);
-        ExceptionReportingLevel level = AppProps.getInstance().getExceptionReportingLevel();
+        ExceptionReportingLevel level = getExceptionReportingLevel();
 
         if (level == ExceptionReportingLevel.NONE)
             return;
@@ -282,7 +291,7 @@ public class ExceptionUtil
 
         _logStatic.error("Exception detected and logged to mothership:\n" + stackTrace);
 
-        ExceptionReportingLevel level = AppProps.getInstance().getExceptionReportingLevel();
+        ExceptionReportingLevel level = getExceptionReportingLevel();
         if (level == ExceptionReportingLevel.NONE)
             return;
 
