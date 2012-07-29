@@ -106,7 +106,7 @@
                         }
                         %>
                     </td>
-                <td><a href="<%=h(view.getRunUrl().getLocalURIString())%>"><%=h(view.getName())%></a></td></tr>
+                <td><a href="<%=h(view.getRunUrl().getLocalURIString())%>" <%=view.getRunTarget() != null ? " target=\"" + view.getRunTarget() + "\"" : ""%>><%=h(view.getName())%></a></td></tr>
          <% } else { %>
                 <tr><td><%=h(view.getName())%></td></tr>
          <% }

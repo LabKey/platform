@@ -48,6 +48,20 @@
 
     Ext4.onReady(function(){
 
+        var targetNewWindowField = {
+            id: "targetNewWindow",
+            xtype: "checkbox",
+            name: "targetNewWindow",
+            fieldLabel: "Target",
+            boxLabel: "Open link report in new window?",
+            checked: true
+        };
+
+        var hiddenTargetNewWindowField = {
+            xtype: "hidden",
+            name: "@targetNewWindow"
+        };
+
         var urlTextField = Ext4.create('Ext.form.field.Text', {
             name: "linkUrl",
             fieldLabel: "Link URL",
@@ -83,6 +97,8 @@
                 shared      : true
             },
             extraItems : [
+                targetNewWindowField,
+                hiddenTargetNewWindowField,
                 urlTextField
             ],
             renderTo    : 'linkReportForm',

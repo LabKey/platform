@@ -1363,6 +1363,7 @@ public class ReportsController extends SpringActionController
     public static class LinkReportForm extends DataViewEditForm
     {
         private String linkUrl;
+        private boolean targetNewWindow = true;
 
         public String getLinkUrl()
         {
@@ -1372,6 +1373,16 @@ public class ReportsController extends SpringActionController
         public void setLinkUrl(String linkUrl)
         {
             this.linkUrl = linkUrl;
+        }
+
+        public boolean isTargetNewWindow()
+        {
+            return targetNewWindow;
+        }
+
+        public void setTargetNewWindow(boolean b)
+        {
+            this.targetNewWindow = b;
         }
     }
 
@@ -1424,6 +1435,9 @@ public class ReportsController extends SpringActionController
         protected LinkReport createReport(LinkReportForm form)
         {
             LinkReport report = (LinkReport)ReportService.get().createReportInstance(LinkReport.TYPE);
+
+            if (form.isTargetNewWindow())
+                report.setRunReportTarget("_blank");
 
             try
             {

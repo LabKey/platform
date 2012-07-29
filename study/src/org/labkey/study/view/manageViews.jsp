@@ -210,14 +210,22 @@
                             '<tpl if="schema != undefined"><tr><td><b>schema name</b></td><td>{schema}</td></tr></tpl>',
                             '<tr><td><b>permissions</b></td><td>{permissions}</td>',
                             '<tr><td></td><td>',
-                                '<tpl if="runUrl != undefined">&nbsp;<a href="{runUrl}" class="labkey-text-link">view</a></tpl>',
+                                '<tpl if="runUrl != undefined">&nbsp;<a href="{runUrl}" {[ this.getTarget(values.runTarget) ]} class="labkey-text-link">view</a></tpl>',
                                 '<tpl if="editUrl != undefined">&nbsp;<a href="{editUrl}" class="labkey-text-link">edit</a></tpl>',
                                 '<tpl if="detailsUrl != undefined">&nbsp;<a href="{detailsUrl}" class="labkey-text-link">details</a></tpl>',
                             <% if (context.hasPermission(AdminPermission.class)) { %>
                                 '<tpl if="!queryView && !inherited">&nbsp;<a class="labkey-text-link" href="<%=permissionURL.getLocalURIString()%>reportId={reportId}">permissions</a></tpl>',
                             <% } %>
                                 '<tpl if="queryView && !inherited">&nbsp;<a class="labkey-text-link" href=\'#\' onclick=\'panel.convertQuery("{schema}","{query}","{name}");return false;\'>make top-level view</a></tpl></td></tr>',
-                        '</table>')
+                        '</table>',
+                        {
+                            getTarget : function (target) {
+                                if (target)
+                                    return "target=\"" + target + "\"";
+                                else
+                                    return "";
+                            }
+                        })
                 }),
             createMenu : <%=reportButtons%>,
 

@@ -68,11 +68,19 @@ LABKEY.ViewsPanel.prototype = {
                     '<tr><td><b>permissions</b></td><td>{permissions}</td>',
                     '<tpl if="runUrl != undefined || editUrl != undefined">',
                         '<tr><td></td><td>',
-                            '<tpl if="runUrl != undefined">&nbsp;<a href="{runUrl}" class="labkey-text-link">view</a></tpl>',
+                            '<tpl if="runUrl != undefined">&nbsp;<a href="{runUrl}" {[ this.getTarget(values.runTarget) ]} class="labkey-text-link">view</a></tpl>',
                             '<tpl if="editUrl != undefined">&nbsp;<a href="{editUrl}" class="labkey-text-link">source</a></tpl>',
                             '<tpl if="detailsUrl != undefined">&nbsp;<a href="{detailsUrl}" class="labkey-text-link">details</a></tpl></td></tr>',
                     '</tpl>',
-                '</table>')
+                '</table>',
+                {
+                    getTarget : function (target) {
+                        if (target)
+                            return "target=\"" + target + "\"";
+                        else
+                            return "";
+                    }
+                })
         }),
 
     /**
@@ -96,6 +104,7 @@ LABKEY.ViewsPanel.prototype = {
                         {name:'inherited', type:'bool'},
                         {name:'icon', defaultValue:undefined},
                         {name:'runUrl', defaultValue:undefined},
+                        {name:'runTarget', defaultValue:undefined},
                         {name:'editUrl', defaultValue:undefined},
                         {name:'reportId', defaultValue:undefined},
                         {name:'infoUrl', defaultValue:undefined},

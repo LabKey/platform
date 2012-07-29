@@ -27,6 +27,8 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.Date" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.Collections" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ReportDesignBean> me = (JspView<ReportDesignBean>) HttpView.currentView();
@@ -43,6 +45,10 @@
     Date modifiedDate = reportDescriptor.getModified();
     Date refreshDate = null;
     ActionURL reportURL = bean.getReport().getRunReportURL(context);
+    Map<String, String> reportURLAttributes =  bean.getReport().getRunReportTarget() != null ?
+            Collections.singletonMap("target", bean.getReport().getRunReportTarget()) :
+            Collections.<String, String>emptyMap();
+
     ActionURL thumbnailUrl = PageFlowUtil.urlProvider(ReportUrls.class).urlThumbnail(bean.getContainer(), bean.getReport());
     String type = bean.getReport().getTypeDescription();
     String category = "";
@@ -183,7 +189,7 @@
             Report URL:
         </td>
         <td>
-            <a href="<%=h(reportURL)%>">View Report</a>
+            <%=PageFlowUtil.textLink("View Report", reportURL, null, null, reportURLAttributes)%>
         </td>
     </tr>
 </table>

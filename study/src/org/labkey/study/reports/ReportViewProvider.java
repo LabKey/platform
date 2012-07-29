@@ -181,6 +181,9 @@ public class ReportViewProvider implements DataViewProvider
                         else
                             continue;
                     }
+
+                    info.setRunTarget(r.getRunReportTarget());
+
                     info.setType(r.getTypeDescription());
                     info.setDescription(descriptor.getReportDescription());
 
