@@ -95,7 +95,14 @@ public class CoreUpgradeCode implements UpgradeCode
         }
         catch (Throwable t)
         {
-            throw new RuntimeException(t);
+            // The GROUP_CONCAT install script can fail for a variety of reasons, e.g., the database user lacks sufficient
+            // permissions. If the automatic install fails then log and display the exception to admins, but continue
+            // upgrading. Not having GROUP_CONCAT is not a disaster; admin can install the function manually later.
+
+            // Wrap the exception to provide an explanation to the admin
+            Exception wrap = new Exception("Failure installing GROUP_CONCAT aggregate function. This function is required for optimal operation of this server. Contact LabKey if you need assistance installing this function.", t);
+            ExceptionUtil.logExceptionToMothership(null, wrap);
+            ModuleLoader.getInstance().addModuleFailure("Core", wrap);
         }
     }
 }
