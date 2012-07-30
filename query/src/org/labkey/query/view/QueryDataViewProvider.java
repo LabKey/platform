@@ -93,7 +93,16 @@ public class QueryDataViewProvider implements DataViewProvider
             info.setDetailsUrl(runUrl);
 
             if (!StringUtils.isEmpty(view.getCustomIconUrl()))
-                info.setIcon(AppProps.getInstance().getContextPath() + "/" + view.getCustomIconUrl());
+            {
+                StringBuffer sb = new StringBuffer(AppProps.getInstance().getContextPath());
+                String url = view.getCustomIconUrl();
+
+                if (!url.startsWith("/"))
+                    sb.append('/');
+
+                sb.append(url);
+                info.setIcon(sb.toString());
+            }
 
             info.setThumbnailUrl(PageFlowUtil.urlProvider(QueryUrls.class).urlThumbnail(context.getContainer()));
 
