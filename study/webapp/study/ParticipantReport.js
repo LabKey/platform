@@ -397,9 +397,9 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                                         groups: []
                                     }
                                 }
-                                if (row.type == 'participantGroup')
+                                if (row.type == 'cohort')
                                     this.subjectGroupMap[id].cohort = row.label;
-                                else if (row.type == 'cohort')
+                                else if (row.type == 'participantGroup')
                                     this.subjectGroupMap[id].groups.push(row.label);
                             }
                         }
