@@ -4205,7 +4205,7 @@ public class StudyController extends BaseStudyController
 
             if (map.isEmpty())
             {
-                errors.reject("studyImport", "You must select a .study.zip or a .folder.zip file to import.");
+                errors.reject("studyImport", "You must select a .study.zip file to import.");
             }
             else if (map.size() > 1)
             {
@@ -4217,7 +4217,11 @@ public class StudyController extends BaseStudyController
 
                 if (0 == file.getSize() || StringUtils.isBlank(file.getOriginalFilename()))
                 {
-                    errors.reject("studyImport", "You must select a .study.zip or a .folder.zip file to import.");
+                    errors.reject("studyImport", "You must select a .study.zip file to import.");
+                }
+                else if (file.getOriginalFilename().endsWith(".folder.zip"))
+                {
+                    errors.reject("studyImport", "Unable to import folder archive from this page. To import a folder archive, please use the import folder archive link below.");
                 }
                 else
                 {

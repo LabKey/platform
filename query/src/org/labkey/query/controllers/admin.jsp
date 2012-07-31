@@ -63,7 +63,7 @@ else
     if (null != reloadedSchema)
     {
         %>
-        <div class="labkey-error"><%
+        <div class="labkey-message"><%
 
         if ("ALL".equals(reloadedSchema))
         { %>

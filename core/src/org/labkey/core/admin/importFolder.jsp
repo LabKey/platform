@@ -32,14 +32,14 @@ You can import a folder archive to create and populate a new folder.  A folder a
 individual files that comforms to the LabKey folder export conventions and formats.  In most cases, a folder archive is created
 using the folder export feature.  Using export and import, a folder can be moved from one server to another or a new folder can
 be created using a standard template. You can also populate a new folder from a template folder on the current server using the "Create
-Folder From Template" option.
+Folder From Template" option from the folder creation page.
 
 <%--<p>For more information about exporting, importing, and reloading folders, see <%=helpLink("importExportFolder", "the folder documentation")%>.</p>--%>
 </td></tr>
 <tr><td class="labkey-announcement-title" align=left><span>Import Folder From Local Zip Archive</span></td></tr>
 <tr><td class="labkey-title-area-line"></td></tr>
 <tr><td>To import a folder from a zip archive on your local machine (for example, a folder that you have exported and saved
-        to your local hard drive), browse to a .folder.zip file, open it, and click the "Import Folder From Local Zip Archive" button below.</td></tr>
+        to your local hard drive), browse to a .folder.zip archive, open it, and click the "Import Folder From Local Zip Archive" button below.</td></tr>
 <tr><td><input type="file" name="folderZip" size="50"></td></tr>
 <tr>
     <td><%=generateSubmitButton("Import Folder From Local Zip Archive")%></td>
