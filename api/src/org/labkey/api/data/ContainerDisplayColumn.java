@@ -16,12 +16,32 @@
 
 package org.labkey.api.data;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.labkey.api.action.ApiJsonWriter;
+import org.labkey.api.action.ApiResponseWriter;
+import org.labkey.api.action.ExtendedApiQueryResponse;
+import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
+import org.springframework.beans.MutablePropertyValues;
+import org.springframework.validation.BindException;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
@@ -220,5 +240,138 @@ public class ContainerDisplayColumn extends DataColumn
     public boolean isFilterable()
     {
         return !_showPath;
+    }
+
+    public static class TestCase extends Assert
+    {
+        private TestContext _ctx;
+        private User _user;
+        String PROJECT_NAME = "__ContainerDisplayColumnTestProject";
+
+        @Before
+        public void setUp()
+        {
+            _ctx = TestContext.get();
+            User loggedIn = _ctx.getUser();
+            assertTrue("login before running this test", null != loggedIn);
+            assertFalse("login before running this test", loggedIn.isGuest());
+            _user = _ctx.getUser().cloneUser();
+        }
+
+        @Test
+        public void testDisplayColumn() throws Exception
+        {
+            if (ContainerManager.getForPath(PROJECT_NAME) != null)
+            {
+                ContainerManager.deleteAll(ContainerManager.getForPath(PROJECT_NAME), _user);
+            }
+
+            Container project = ContainerManager.createContainer(ContainerManager.getRoot(), PROJECT_NAME, null, null, false, _user);
+            Container subFolder1 = ContainerManager.createContainer(project, "subfolder1");
+            Container subFolder2 = ContainerManager.createContainer(subFolder1, "subfolder2");
+
+            //create and delete containers to give audit events
+            Container workbook1 = ContainerManager.createContainer(subFolder2, "Workbook1", "Workbook1", "", true, _user);
+            ContainerManager.delete(workbook1, _user);
+            ContainerManager.deleteAll(subFolder2, _user);
+
+            UserSchema us = QueryService.get().getUserSchema(_user, ContainerManager.getRoot(), "auditLog");
+            MutablePropertyValues mpv = new MutablePropertyValues();
+            mpv.addPropertyValue("schemaName", "auditLog");
+            mpv.addPropertyValue("query.queryName", "ContainerAuditEvent");
+            mpv.addPropertyValue("query.containerFilterName", "AllFolders");
+
+            List<FieldKey> fieldKeys = new ArrayList<FieldKey>();
+            fieldKeys.add(FieldKey.fromString("ProjectId"));
+            fieldKeys.add(FieldKey.fromString("ProjectId/Name"));
+            fieldKeys.add(FieldKey.fromString("ProjectId/Parent/Name"));
+            fieldKeys.add(FieldKey.fromString("ContainerId"));
+            fieldKeys.add(FieldKey.fromString("ContainerId/Name"));
+            fieldKeys.add(FieldKey.fromString("Comment"));
+            mpv.addPropertyValue("query.columns", StringUtils.join(fieldKeys, ","));
+
+            BindException errors = new NullSafeBindException(new Object(), "command");
+            QuerySettings qs = us.getSettings(mpv, "query");
+            qs.setBaseFilter(new SimpleFilter(FieldKey.fromString("projectId"), project.getEntityId()));
+
+            QueryView view = new QueryView(us, qs, errors);
+            ViewContext vc = new ViewContext();
+            ExtendedApiQueryResponse resp = new ExtendedApiQueryResponse(view, vc, false, false, "auditLog", "ContainerAuditEvent", 0, fieldKeys, false);
+            Writer writer = new StringWriter();
+            ApiResponseWriter apiWriter = new ApiJsonWriter(writer);
+            resp.render(apiWriter);
+            JSONObject json = new JSONObject(writer.toString());
+            JSONArray rows = json.getJSONArray("rows");
+            assertEquals("Wrong number of rows returned", 4, rows.length());
+            for (JSONObject row : rows.toJSONObjectArray())
+            {
+                String comment = row.getJSONObject("Comment").getString("value");
+                if (comment.contains(project.getName() + " was created"))
+                {
+                    assertEquals("Incorrect display value for ProjectId column", row.getJSONObject("ProjectId").getString("displayValue"), project.getName());
+                    assertEquals("Incorrect json value for for ProjectId column", row.getJSONObject("ProjectId").getString("value"), project.getEntityId().toString());
+                    assertEquals("Incorrect json value for ProjectId/Name column", row.getJSONObject("ProjectId/Name").getString("value"), project.getName().toString());
+
+                    assertEquals("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId").getString("value"), project.getEntityId().toString());
+                    assertEquals("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId").getString("displayValue"), project.getName());
+
+                    assertEquals("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId/Name").getString("value"), project.getName());
+
+                    assertEquals("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("value"), null);
+                    assertEquals("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("displayValue"), "");
+
+                }
+                else if (comment.contains(subFolder1.getName() + " was created"))
+                {
+                    assertEquals("Incorrect display value for ProjectId column", row.getJSONObject("ProjectId").getString("displayValue"), subFolder1.getName());
+                    assertEquals("Incorrect json value for for ProjectId column", row.getJSONObject("ProjectId").getString("value"), subFolder1.getEntityId().toString());
+                    assertEquals("Incorrect json value for ProjectId/Name column", row.getJSONObject("ProjectId/Name").getString("value"), subFolder1.getName().toString());
+
+                    assertEquals("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId").getString("value"), subFolder1.getEntityId().toString());
+                    assertEquals("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId").getString("displayValue"), subFolder1.getName());
+
+                    assertEquals("Incorrect json value for ContainerId column", row.getJSONObject("ContainerId/Name").getString("value"), subFolder1.getName());
+
+                    assertEquals("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("value"), null);
+                    assertEquals("Incorrect json value for ContainerId column", row.getJSONObject("ProjectId/Parent/Name").getString("displayValue"), "");
+
+                }
+                else if (comment.contains(workbook1.getName() + " was created") || comment.contains(workbook1.getName() + " was deleted"))
+                {
+                    assertEquals("Incorrect display value for ProjectId column", project.getName(), row.getJSONObject("ProjectId").getString("displayValue"));
+                    assertEquals("Incorrect json value for for ProjectId column", project.getEntityId().toString(), row.getJSONObject("ProjectId").getString("value"));
+                    assertEquals("Incorrect json value for ProjectId/Name column", project.getName().toString(), row.getJSONObject("ProjectId/Name").getString("value"));
+
+                    assertEquals("Incorrect json value for ContainerId column", null, row.getJSONObject("ContainerId").getString("value"));
+                    assertEquals("Incorrect json value for ContainerId column", "<deleted>", row.getJSONObject("ContainerId").getString("displayValue"));
+
+                    assertEquals("Incorrect json value for ContainerId column", null, row.getJSONObject("ContainerId/Name").getString("value"));
+                    assertEquals("Incorrect json value for ContainerId column", "", row.getJSONObject("ContainerId/Name").getString("displayValue"));
+
+                    assertEquals("Incorrect json value for ContainerId column", null, row.getJSONObject("ProjectId/Parent/Name").getString("value"));
+                    assertEquals("Incorrect json value for ContainerId column", "", row.getJSONObject("ProjectId/Parent/Name").getString("displayValue"));
+                }
+                else if (comment.contains(subFolder2.getName() + " was deleted"))
+                {
+                    assertEquals("Incorrect display value for ProjectId column", project.getName(), row.getJSONObject("ProjectId").getString("displayValue"));
+                    assertEquals("Incorrect json value for for ProjectId column", project.getEntityId().toString(), row.getJSONObject("ProjectId").getString("value"));
+                    assertEquals("Incorrect json value for ProjectId/Name column", project.getName().toString(), row.getJSONObject("ProjectId/Name").getString("value"));
+
+                    assertEquals("Incorrect json value for ContainerId column", null, row.getJSONObject("ContainerId").getString("value"));
+                    assertEquals("Incorrect json value for ContainerId column", "<deleted>", row.getJSONObject("ContainerId").getString("displayValue"));
+
+                    assertEquals("Incorrect json value for ContainerId column", null, row.getJSONObject("ContainerId/Name").getString("value"));
+                    assertEquals("Incorrect json value for ContainerId column", "", row.getJSONObject("ContainerId/Name").getString("displayValue"));
+
+                    assertEquals("Incorrect json value for ContainerId column", null, row.getJSONObject("ProjectId/Parent/Name").getString("value"));
+                    assertEquals("Incorrect json value for ContainerId column", "", row.getJSONObject("ProjectId/Parent/Name").getString("displayValue"));
+                }
+                else
+                {
+                    throw new Exception("Row not expected.  The comment was: " + comment);
+                }
+            }
+            ContainerManager.deleteAll(project, _user);
+        }
     }
 }
