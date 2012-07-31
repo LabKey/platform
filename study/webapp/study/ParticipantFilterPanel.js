@@ -215,11 +215,15 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
             this.groupSectionCfg = [{
                 normalWrap  : this.normalWrap,
                 store       : Ext4.create('Ext.data.Store', cohortConfig),
+                sectionName : 'cohort',
+                noSelection : this.getIsEmptySelection('cohort'),
                 selection   : this.getInitialSelection('cohort'),
                 description : '<b class="filter-description">Cohorts</b>'
             },{
                 normalWrap  : this.normalWrap,
                 store       : Ext4.create('Ext.data.Store', groupConfig),
+                sectionName : 'participantGroup',
+                noSelection : this.getIsEmptySelection('participantGroup'),
                 selection   : this.getInitialSelection('participantGroup'),
                 description : '<b class="filter-description">Groups</b>'
             }];
@@ -249,6 +253,8 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
             this.participantSectionCfg = [{
                 store       : store,
                 selection   : selections,
+                sectionName : 'participant',
+                noSelection : this.getIsEmptySelection('participant'),
                 maxInitSelection : this.maxInitSelection,
                 description : '<b class="filter-description">' + this.subjectNoun.plural + '</b>'
             }]
@@ -257,6 +263,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
         return {
             xtype    : 'labkey-filterselectpanel',
             itemId   : 'filterPanel',
+            panelName: 'participant',
             border   : false, frame : false,
             allowAll : true,
             sections : this.participantSectionCfg,
@@ -297,6 +304,13 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
             }, this);
             return selections;
         }
+    },
+
+    getIsEmptySelection : function(type) {
+
+        if (this.noneSelected)
+            return this.noneSelected[type] !== undefined;
+        return false;
     },
 
     getFilterPanel : function() {

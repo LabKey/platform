@@ -192,37 +192,39 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
             this.maxInitSelection = target.store.getCount();
 
         target.suspendEvents(); // queueing of events id depended on
-        if (!this.selection || !this.selection.length) {
-            if (this.maxInitSelection >= target.store.getCount()) {
-                target.getSelectionModel().selectAll();
-                if(this.allowAll){
-                    this.getSelectAllToogle().select(-1, true);
+        if (!this.noSelection) {
+
+            if (!this.selection || !this.selection.length) {
+                if (this.maxInitSelection >= target.store.getCount()) {
+                    target.getSelectionModel().selectAll();
+                    if(this.allowAll){
+                        this.getSelectAllToogle().select(-1, true);
+                    }
+                }
+                else {
+                    for (var i = 0; i < this.maxInitSelection; i++)
+                        target.getSelectionModel().select(i, true);
                 }
             }
             else {
-                for (var i = 0; i < this.maxInitSelection; i++)
-                    target.getSelectionModel().select(i, true);
-            }
-        }
-        else {
-            target.getSelectionModel().deselectAll();
-            for (var s=0; s < this.selection.length; s++) {
-                var rec = target.getStore().findRecord('id', this.selection[s].id);
+                target.getSelectionModel().deselectAll();
+                for (var s=0; s < this.selection.length; s++) {
+                    var rec = target.getStore().findRecord('id', this.selection[s].id);
 
-                // if no matching record by id, try to find a matching record by label (just for initial selection)
-                if (!rec && this.selection[s].label)
-                    rec = target.getStore().findRecord('label', this.selection[s].label);
+                    // if no matching record by id, try to find a matching record by label (just for initial selection)
+                    if (!rec && this.selection[s].label)
+                        rec = target.getStore().findRecord('label', this.selection[s].label);
 
-                if (rec)
-                {
-                    // Compare ID && Label if dealing with virtual groups (e.g. not in cohorts, etc)
-                    if (this.selection[s].id < 0 && (rec.data.label != this.selection[s].label))
-                        continue;
-                    target.getSelectionModel().select(rec, true);
+                    if (rec)
+                    {
+                        // Compare ID && Label if dealing with virtual groups (e.g. not in cohorts, etc)
+                        if (this.selection[s].id < 0 && (rec.data.label != this.selection[s].label))
+                            continue;
+                        target.getSelectionModel().select(rec, true);
+                    }
                 }
             }
         }
-
         target.resumeEvents();
 
         // fire event to tell the panel the initial selection is compelete, return the number of selected records
@@ -257,6 +259,18 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
         if (target)
             return target.getSelectionModel().getSelection();
         // return undefined -- same as getSelection()
+    },
+
+    isSelectionEmpty : function() {
+
+        var target = this.getGrid();
+        if (target)
+        {
+            var selections = target.getSelectionModel().getSelection();
+            return selections && selections.length == 0;
+        }
+
+        return true;
     },
 
     select : function(id, stopEvents) {
@@ -464,6 +478,16 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
                 return false;
         }
         return true;
+    },
+
+    getNoSelectionSections : function() {
+        var filterPanels = this.getFilterPanels();
+        var empty = [];
+        for (var i=0; i < filterPanels.length; i++) {
+            if(filterPanels[i].isSelectionEmpty())
+                empty.push(filterPanels[i].sectionName);
+        }
+        return empty;
     }
 });
 

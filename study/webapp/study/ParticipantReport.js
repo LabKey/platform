@@ -757,10 +757,15 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             }
             this.gridFieldStore.loadRawData({measures : rawData});
 
-            if (!this.filterSet && config.groups)
+            if (config.groups)
                 this.filterSet = config.groups;
 
-            if (this.initialRender && this.filterSet)
+            var noneSelected = config.noneSelected || [];
+            this.noneSelected = {};
+            for (i=0; i < noneSelected.length; i++)
+                this.noneSelected[noneSelected[i]] = noneSelected[i];
+
+            if (this.filterSet)
                 this.runFilterSet(this.filterSet);
             else
                 this.generateTemplateConfig();
@@ -1000,7 +1005,10 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             };
 
             if (!this.isNew())
+            {
                 pConfig.selection = selection;
+                pConfig.noneSelected = this.noneSelected;
+            }
 
             panel = Ext4.create('LABKEY.study.ParticipantFilterPanel', pConfig);
             this.filterPanel = panel;
@@ -1116,7 +1124,10 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
             if (this.filteredSubjects.length > 0)
                 this.generateTemplateConfig(0);
             else
+            {
                 this.empty();
+                this.showFilter(this.filterSet ? this.filterSet : []);
+            }
         });
     },
 
@@ -1130,7 +1141,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         else {
             var json = [];
             var participants = [];
-            var filters = this.filterPanel.getSelection(true, true);
+            var filters = this.filterPanel.getSelection(true, false);
 
             if (filters.length == 0)
                 return this.empty();
@@ -1262,6 +1273,9 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
         // persist filters
         if (this.filterPanel) {
             var groups = [];
+
+            // need to distinguish between all selected and none selected
+            config.noneSelected = this.filterPanel.getFilterPanel().getNoSelectionSections();
             var filters = this.filterPanel.getSelection(true, true);
             for (var f=0; f < filters.length; f++) {
                 groups.push(filters[f].data);

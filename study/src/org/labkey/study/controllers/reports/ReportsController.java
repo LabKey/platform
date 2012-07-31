@@ -2157,6 +2157,8 @@ public class ReportsController extends BaseStudyController
                     descriptor.setProperty(ReportDescriptor.Prop.queryName, form.getQueryName());
                 if (form.getMeasures() != null)
                     descriptor.setProperty(ParticipantReport.MEASURES_PROP, form.getMeasures());
+                if (form.getNoneSelected() != null)
+                    descriptor.setProperty(ParticipantReport.NONE_SELECTED, form.getNoneSelected());
 
                 //Issue 15078: always set the groups.  null in groups indicates all participants should be displayed
                 descriptor.setProperty(ParticipantReport.GROUPS_PROP, form.getGroups());
@@ -2200,6 +2202,7 @@ public class ReportsController extends BaseStudyController
         private boolean _expanded;
         private String _groups;
         private boolean _allowOverflow = true;
+        private String _noneSelected;
 
         public boolean isExpanded()
         {
@@ -2241,6 +2244,16 @@ public class ReportsController extends BaseStudyController
             _allowOverflow = allowOverflow;
         }
 
+        public String getNoneSelected()
+        {
+            return _noneSelected;
+        }
+
+        public void setNoneSelected(String noneSelected)
+        {
+            _noneSelected = noneSelected;
+        }
+
         @Override
         public void bindProperties(Map<String, Object> props)
         {
@@ -2255,6 +2268,12 @@ public class ReportsController extends BaseStudyController
             if (groups instanceof JSONArray)
             {
                 _groups = ((JSONArray)groups).toString();
+            }
+
+            Object noneSelected = props.get(ParticipantReport.NONE_SELECTED);
+            if (noneSelected instanceof JSONArray)
+            {
+                _noneSelected = ((JSONArray)noneSelected).toString();
             }
         }
     }
