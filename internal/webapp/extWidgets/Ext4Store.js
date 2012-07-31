@@ -169,6 +169,24 @@ LABKEY.ext4.Store = Ext4.define('LABKEY.ext4.Store', {
          * @param {Object} metadata The metadata object that will be supplied to the Ext.data.Model.
          */
 
+        /**
+         * @memberOf LABKEY.ext4.Store#
+         * @name exception
+         * @event
+         * @description Fired when there is an exception loading or saving data.
+         * @param {Object} store A reference to the LABKEY store
+         * @param {String} message The error message
+         * @param {Object} response The response object
+         * @param {Object} operation The Ext.data.Operation object
+         */
+
+        /**
+         * @memberOf LABKEY.ext4.Store#
+         * @name synccomplete
+         * @event
+         * @description Fired when a sync operation is complete, which can include insert/update/delete events
+         * @param {Object} store A reference to the LABKEY store
+         */
         this.addEvents('beforemetachange', 'exception', 'synccomplete');
     },
     //private
