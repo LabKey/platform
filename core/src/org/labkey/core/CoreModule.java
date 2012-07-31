@@ -619,7 +619,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 ViewCategoryManager.TestCase.class,
                 TableSelectorTestCase.class,
                 NestedGroupsTest.class,
-                CoreModule.TestCase.class
+                CoreModule.TestCase.class,
+                ContainerDisplayColumn.TestCase.class
                 //,RateLimiter.TestCase.class
         ));
 
