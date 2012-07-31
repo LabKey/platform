@@ -160,7 +160,7 @@
                     canShare: <%=canShare%>,
                     isDeveloper: <%=isDeveloper%>,
                     defaultNumberFormat: eval("<%=numberFormatFn%>"),
-                    allowEditMode: <%=report != null && !ctx.getUser().isGuest() && form.allowToggleMode()%>
+                    allowEditMode: <%=!ctx.getUser().isGuest() && form.allowToggleMode()%>
                 })
             ]
         });

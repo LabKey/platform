@@ -213,10 +213,17 @@ public class VisualizationController extends SpringActionController
             return url;
         }
 
+        private ActionURL getBaseGenericChartURL(Container container, boolean editMode)
+        {
+            ActionURL url = new ActionURL(GenericChartWizardAction.class, container);
+            url.addParameter(VISUALIZATION_EDIT_PARAM, editMode);
+            return url;
+        }
+
         @Override
         public ActionURL getGenericChartDesignerURL(Container container, User user, QuerySettings settings, GenericChartReport.RenderType type)
         {
-            ActionURL url = new ActionURL(GenericChartWizardAction.class, container);
+            ActionURL url = getBaseGenericChartURL(container, true);
 
             if (settings != null)
             {
@@ -1395,6 +1402,7 @@ public class VisualizationController extends SpringActionController
         @Override
         public ModelAndView getView(GenericReportForm form, BindException errors) throws Exception
         {
+            form.setAllowToggleMode(true);
             _renderType = GenericChartReport.getRenderType(form.getRenderType());
 
             if (_renderType != null)
@@ -1654,6 +1662,7 @@ public class VisualizationController extends SpringActionController
         private String _jsonData;
         private String _autoColumnYName;
         private String _autoColumnXName;
+        private boolean _allowToggleMode = false; // view vs. edit mode
 
         public String getRenderType()
         {
@@ -1704,6 +1713,16 @@ public class VisualizationController extends SpringActionController
         {
             _autoColumnXName = autoColumnXName;
         }
+
+        public boolean allowToggleMode()
+        {
+            return _allowToggleMode;
+        }
+
+        public void setAllowToggleMode(boolean allowToggleMode)
+        {
+            _allowToggleMode = allowToggleMode;
+        }        
 
         @Override
         public void bindProperties(Map<String, Object> props)

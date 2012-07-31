@@ -38,6 +38,7 @@ public class GenericChartReportImpl extends GenericChartReport
     public HttpView renderReport(ViewContext context) throws Exception
     {
         VisualizationController.GenericReportForm form = new VisualizationController.GenericReportForm();
+        form.setAllowToggleMode("reports".equals(context.getActionURL().getController()));
 
         form.setReportId(getReportId());
         form.setComponentId("generic-report-panel-" + UniqueID.getRequestScopedUID(context.getRequest()));

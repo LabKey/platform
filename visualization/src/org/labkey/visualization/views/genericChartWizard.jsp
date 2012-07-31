@@ -69,7 +69,8 @@
             hideSave        : <%=ctx.getUser().isGuest()%>,
             autoColumnYName  : <%=form.getAutoColumnYName() != null ? q(form.getAutoColumnYName()) : null%>,
             autoColumnXName  : <%=form.getAutoColumnXName() != null ? q(form.getAutoColumnXName()) : null%>,
-            defaultNumberFormat: eval("<%=numberFormatFn%>")
+            defaultNumberFormat: eval("<%=numberFormatFn%>"),
+            allowEditMode: <%=!ctx.getUser().isGuest() && form.allowToggleMode()%>
         });
 
         var _resize = function(w,h) {

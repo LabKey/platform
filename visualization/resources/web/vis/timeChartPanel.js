@@ -122,8 +122,6 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         if(this.viewInfo.type != "line")
             return;
         
-        this.editMode = LABKEY.ActionURL.getParameter("edit") == "true";
-
         // chartInfo will be all of the information needed to render the line chart (axis info and data)
         if(typeof this.chartInfo != "object") {
             this.chartInfo = this.getInitializedChartInfo();
@@ -496,13 +494,14 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         };
 
         // if edit mode, then add the editor panel buttons and save buttons
+        this.editMode = (LABKEY.ActionURL.getParameter("edit") == "true" || !this.editorSavePanel.isSavedReport()) && this.allowEditMode;
         var toolbarButtons = [
             this.viewGridBtn,
             this.viewChartBtn,
             this.exportPdfSingleBtn,
             this.exportPdfMenuBtn
         ];
-        if ((this.editMode && this.allowEditMode) || !this.editorSavePanel.isSavedReport())
+        if (this.editMode)
         {
             toolbarButtons.push(this.measuresButton);
             toolbarButtons.push(this.groupingButton);
@@ -524,7 +523,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     Ext4.apply(params, {edit: "true"});
                     window.location = LABKEY.ActionURL.buildURL(LABKEY.ActionURL.getController(), LABKEY.ActionURL.getAction(), null, params);
                 }
-            })
+            });
         }
 
         this.chart = Ext4.create('Ext.panel.Panel', {
