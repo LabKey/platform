@@ -442,7 +442,6 @@ public class SpecimenController extends BaseStudyController
             if (form.getSelectedRequest() >= 0)
             {
                 bean.setSelectedRequest(form.getSelectedRequest());
-                bean.setSelectedRequestTime(form.getSelectedRequestTime());
             }
             JspView<SpecimenHeaderBean> header = new JspView<SpecimenHeaderBean>("/org/labkey/study/view/samples/samplesHeader.jsp", bean);
             return new VBox(header, view);
@@ -462,7 +461,6 @@ public class SpecimenController extends BaseStudyController
         private ViewContext _viewContext;
         private boolean _showingVials;
         private Integer _selectedRequest;
-        private String _selectedRequestTime;
         private Set<Pair<String, String>> _filteredPtidVisits;
 
         public SpecimenHeaderBean(ViewContext context, SpecimenQueryView view)
@@ -542,16 +540,6 @@ public class SpecimenController extends BaseStudyController
             _selectedRequest = selectedRequest;
         }
 
-        public String getSelectedRequestTime()
-        {
-            return _selectedRequestTime;
-        }
-
-        public void setSelectedRequestTime(String selectedRequestTime)
-        {
-            _selectedRequestTime = selectedRequestTime;
-        }
-
         public ActionURL getOtherViewURL()
         {
             return _otherViewURL;
@@ -597,7 +585,6 @@ public class SpecimenController extends BaseStudyController
 
         private boolean _showVials;
         private int _selectedRequest = -1;
-        private String _selectedRequestTime;
         private SpecimenQueryView.Mode _viewMode = SpecimenQueryView.Mode.DEFAULT;
 
         public boolean isShowVials()
@@ -634,16 +621,6 @@ public class SpecimenController extends BaseStudyController
         public void setSelectedRequest(int selectedRequest)
         {
             _selectedRequest = selectedRequest;
-        }
-
-        public String getSelectedRequestTime()
-        {
-            return _selectedRequestTime;
-        }
-
-        public void setSelectedRequestTime(String selectedRequestTime)
-        {
-            _selectedRequestTime = selectedRequestTime;
         }
     }
 
@@ -1830,11 +1807,6 @@ public class SpecimenController extends BaseStudyController
             if (createSampleRequestForm.getReturnUrl() != null)
             {
                 modifiedReturnURL = createSampleRequestForm.getReturnUrl().getActionURL();
-                if (modifiedReturnURL != null)
-                {
-                    modifiedReturnURL.replaceParameter("selectedRequest", Integer.toString(_sampleRequest.getRowId()));
-                    modifiedReturnURL.replaceParameter("selectedRequestTime", DateUtil.formatDateTime(_sampleRequest.getCreated()));
-                }
             }
             if (modifiedReturnURL != null && !createSampleRequestForm.isIgnoreReturnUrl())
                 return modifiedReturnURL;

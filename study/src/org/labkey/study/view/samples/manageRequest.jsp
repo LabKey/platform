@@ -73,6 +73,8 @@
         }
     }
 %>];
+    setCookieToRequestId(<%= bean.getSampleRequest().getRowId()%>);
+
 
     function getSelectedActor()
     {
@@ -148,6 +150,11 @@
         {
             siteSelect.disabled = false;
         }
+    }
+
+    function setCookieToRequestId(requestId)
+    {
+        LABKEY.Utils.setCookie("selectedRequest", requestId, true);
     }
 </script>
 <labkey:errors/>
