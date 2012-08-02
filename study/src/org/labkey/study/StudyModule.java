@@ -531,7 +531,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             view.setFrame(WebPartView.FrameType.PORTAL);
             Container c = portalCtx.getContainer();
             String timepointMenuName = null;
-            if (StudyManager.getInstance().getStudy(c) != null && StudyManager.getInstance().getStudy(c).getTimepointType().equals("DATE"))
+            if (StudyManager.getInstance().getStudy(c) != null && StudyManager.getInstance().getStudy(c).getTimepointType() == TimepointType.DATE)
             {
                 timepointMenuName = "Manage Timepoints";
             }

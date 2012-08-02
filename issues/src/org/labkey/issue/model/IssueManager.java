@@ -373,6 +373,17 @@ public class IssueManager
                     initialAssignedTo.addAll(SecurityManager.getProjectUsers(c.getProject()));
                 }
 
+                Iterator it = initialAssignedTo.iterator();
+
+                while (it.hasNext())
+                {
+                    User user = (User)it.next();
+                    if (!user.isActive())
+                    {
+                        it.remove();
+                    }
+                }
+
                 // Cache an unmodifiable version
                 return Collections.unmodifiableSet(initialAssignedTo);
             }

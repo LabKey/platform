@@ -2018,7 +2018,8 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("");
+            _appendManageStudy(root);
+            return root.addChild("Study Schedule");
         }
     }
 
