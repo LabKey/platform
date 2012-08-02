@@ -222,7 +222,7 @@ public class QueryWebPart extends WebPartView
         errorResponse.put("parseErrors", errorArray);
         errorResponse.put("success", false);
 
-        response.setStatus(500);
+        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         ApiJsonWriter jsonOut = new ApiJsonWriter(response);
 
         jsonOut.write(errorResponse);

@@ -609,7 +609,7 @@ public final class CGIServlet extends HttpServlet {
         }
 
         if (!cgiEnv.isValid()) {
-            res.setStatus(404);
+            res.setStatus(HttpServletResponse.SC_NOT_FOUND);
         }
  
         if (debug >= 10) {
