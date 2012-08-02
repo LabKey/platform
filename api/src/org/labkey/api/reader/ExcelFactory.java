@@ -40,12 +40,15 @@ import org.junit.Test;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.reader.jxl.JxlWorkbook;
 import org.labkey.api.settings.AppProps;
+import org.omg.CORBA.DynAnyPackage.Invalid;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.text.DecimalFormat;
 import java.text.Format;
 import java.text.SimpleDateFormat;
@@ -602,6 +605,40 @@ public class ExcelFactory
         }
 
         @Test
+        //Issue 15478: IllegalStateException from org.labkey.api.reader.ExcelFactory.getCellStringValue
+        public void testExcelFileImportShouldSucceed()  throws Exception
+        {
+
+           JSONArray jsonArray = startImportFile("Formulas.xlsx");
+           assertEquals("#VALUE!", jsonArray.getJSONObject(0).getJSONArray("data").getJSONArray(1).getJSONObject(0).getString("value"));
+        }
+
+        @Test
+        public void testExcelFileImportShouldFail() throws Exception
+        {
+            attemptImportExpectError("doesntexist.xls", FileNotFoundException.class, "The system cannot find the file specified");
+            attemptImportExpectError("", FileNotFoundException.class, "Access is denied");
+            attemptImportExpectError("notreallyexcel.xls", InvalidFormatException.class, "Your InputStream was neither an OLE2 stream, nor an OOXML stream");
+        }
+
+
+
+        private void attemptImportExpectError(String filename, Class exceptionClass, String partialErrorMessage)
+        {
+
+            try
+            {
+                startImportFile(filename);
+                fail("Should have failed before this point");
+            }
+            catch(Exception e)
+            {
+                assertEquals(exceptionClass, e.getClass());
+                assertTrue("Error message \"" + e.getMessage() + "\" did not contain expected string: \"" + partialErrorMessage + "\"", e.getMessage().contains(partialErrorMessage));
+            }
+        }
+
+        @Test
         public void testColumnDescription()
         {
             assertEquals("A", getCellColumnDescription(0));
@@ -616,17 +653,25 @@ public class ExcelFactory
             assertEquals("SIR", getCellColumnDescription(13095));
         }
 
-        private void validateSimpleExcel(String filename) throws Exception
+        private JSONArray startImportFile (String filename) throws Exception
         {
             AppProps.Interface props = AppProps.getInstance();
             if (!props.isDevMode()) // We can only run the excel tests if we're in dev mode and have access to our samples
-                return;
+                return null;
 
             String projectRootPath =  props.getProjectRoot();
             File projectRoot = new File(projectRootPath);
             File excelFile = new File(projectRoot, "sampledata/dataLoading/excel/" + filename);
 
             JSONArray jsonArray = ExcelFactory.convertExcelToJSON(excelFile, true);
+            return jsonArray;
+
+        }
+        private void validateSimpleExcel(String filename) throws Exception
+        {
+            JSONArray jsonArray = startImportFile(filename);
+            if(jsonArray == null)
+                return;
             assertEquals("Wrong number of sheets", 3, jsonArray.length());
             JSONObject sheet1 = jsonArray.getJSONObject(0);
             assertEquals("Sheet name", "SheetA", sheet1.getString("name"));
