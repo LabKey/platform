@@ -42,16 +42,6 @@ LABKEY.vis.Geom.XY.prototype.initAesthetics = function(scales, layerAes, parentA
 
     this.colorMap = layerAes.color ? layerAes.color : parentAes.color;
 
-    if(layerAes.size){
-        this.sizeMap = layerAes.size;
-    } else if(parentAes.size){
-        if(typeof parentAes.size.value != 'function'){
-            // We only want to accept a size aesthetic from the parent if it isn't a function becuase the point geom
-            // and path geoms take different parameters for size functions which could result in failures.
-            this.sizeMap = parentAes.size;
-        }
-    }
-
     return true;
 };
 
@@ -104,6 +94,7 @@ LABKEY.vis.Geom.Point.prototype.render = function(paper, grid, scales, data, lay
         return false;
     }
     var hoverText = layerAes.hoverText ? layerAes.hoverText : parentAes.hoverText;
+    var sizeMap = layerAes.size ? layerAes.size : parentAes.size;
     var yScale = this.yMap.side == "left" ? scales.yLeft : scales.yRight;
     var xBinWidth = null, yBinWidth = null;
     if(scales.x.scaleType == 'discrete'){
@@ -136,7 +127,7 @@ LABKEY.vis.Geom.Point.prototype.render = function(paper, grid, scales, data, lay
         }
 
         var color = this.colorMap ? scales.color.scale(this.colorMap.getValue(data[i]) + ' ' + name) : this.color;
-        var size = this.sizeMap ? this.sizeMap.getValue(data[i]) : this.size;
+        var size = sizeMap ? scales.size.scale(sizeMap.getValue(data[i])) : this.size;
         var shapeFunction = this.shapeMap ? scales.shape.scale(this.shapeMap.getValue(data[i]) + ' ' + name) : function(paper, x, y, r){return paper.circle(x, y, r)};
         var point = shapeFunction(paper, x, -y, size).attr('fill', color).attr('stroke', color).attr('stroke-opacity', this.opacity/2).attr('fill-opacity', this.opacity);
 

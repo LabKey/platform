@@ -32,6 +32,7 @@ LABKEY.vis.Plot = function(config){
             scales[newScaleName].scaleType = origScales[scale].scaleType ? origScales[scale].scaleType : 'continuous';
             scales[newScaleName].trans = origScales[scale].trans ? origScales[scale].trans : 'linear';
             scales[newScaleName].tickFormat = origScales[scale].tickFormat ? origScales[scale].tickFormat : null;
+            scales[newScaleName].range = origScales[scale].range ? origScales[scale].range : null;
         }
         return scales;
     };
@@ -147,7 +148,8 @@ LABKEY.vis.Plot = function(config){
         var setupDefaultScales = function(scales, aes){
             for(aesthetic in aes){
                 if(!scales[aesthetic]){
-                    if(aesthetic == 'x' || aesthetic == 'yLeft' || aesthetic == 'yRight'){
+                    // Not all aesthetics get a scale (like hoverText), so we have to be pretty specific.
+                    if(aesthetic === 'x' || aesthetic === 'yLeft' || aesthetic === 'yRight' || aesthetic === 'size'){
                         scales[aesthetic] = {scaleType: 'continuous', trans: 'linear'};
                     } else if(aesthetic == 'color' || aesthetic == 'shape'){
                         scales[aesthetic] = {scaleType: 'discrete'};
@@ -254,6 +256,12 @@ LABKEY.vis.Plot = function(config){
                 if(!scale.scaleType || scale.scaleType == 'discrete') {
                     scale.scale = LABKEY.vis.Scale.Shape();
                 }
+            } else if(scaleName == 'size'){
+                if(!scale.range){
+                    scale.range = [1, 5];
+                }
+                domain = [scale.min, scale.max];
+                scale.scale = LABKEY.vis.Scale.Continuous(scale.trans, null, null, domain, scale.range)
             }
         }
 

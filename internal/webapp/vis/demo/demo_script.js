@@ -388,8 +388,9 @@ var discreteScatter = new LABKEY.vis.Plot({
 var scatterData = [];
 for(var i = 0; i < 1000; i++){
     var point = {
-        x: i % 9 == 0 ? null : parseInt((Math.random()*(150))),
-        y: parseInt((Math.random()*(150)))
+        x: i % 9 == 0 ? null : parseInt(Math.random()*150),
+        y: parseInt(Math.random()*150),
+        z: parseInt(Math.random()*125)
     };
     scatterData.push(point);
 }
@@ -417,10 +418,6 @@ var scatterPlot = new LABKEY.vis.Plot({
         y: {
             value:"Y Axis",
             lookClickable: true
-        },
-        yRight: {
-            value:"Y Axis",
-            lookClickable: true
         }
     },
     layers: [new LABKEY.vis.Layer({
@@ -431,10 +428,11 @@ var scatterPlot = new LABKEY.vis.Plot({
             opacity: .5,
             color: '#FF33FF'
         }),
-        aes: {x:'x', y: 'y'}
+        aes: {x:'x', y: 'y', size: 'z'}
     })],
     scales: {
-        y: {scaleType: 'continuous', trans: 'log', min: 1}
+        y: {scaleType: 'continuous', trans: 'log', min: 1},
+        size: {scaleType: 'continuous', trans: 'linear', range: [1, 10]}
     }
 });
 
