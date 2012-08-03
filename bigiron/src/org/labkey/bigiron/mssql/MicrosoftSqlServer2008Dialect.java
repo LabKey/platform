@@ -46,7 +46,7 @@ public class MicrosoftSqlServer2008Dialect extends MicrosoftSqlServer2005Dialect
 
     // Uses custom CLR aggregate function defined in group_concat_install.sql
     @Override
-    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull String delimiter)
+    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull String delimiterSQL)
     {
         // SQL Server does not support aggregates on sub-queries; return a string constant in that case to keep from
         // blowing up. TODO: Don't pass sub-selects into group_contact.
@@ -68,9 +68,8 @@ public class MicrosoftSqlServer2008Dialect extends MicrosoftSqlServer2005Dialect
         }
 
         result.append(sql);
-        result.append(", '");
-        result.append(delimiter);
-        result.append("'");
+        result.append(", ");
+        result.append(delimiterSQL);
 
         if (sorted)
         {

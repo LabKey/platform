@@ -474,7 +474,10 @@ public class ParticipantGroupController extends BaseStudyController
                     case cohort:
                         for (CohortImpl cohort : StudyManager.getInstance().getCohorts(getContainer(), getUser()))
                         {
-                            groups.add(createGroup(null, cohort.getRowId(), cohort.getLabel(), groupType));
+                            if (form.includeParticipantIds())
+                                groups.add(createGroup(null, cohort.getRowId(), cohort.getLabel(), groupType, cohort.getRowId(), null, null, 0, 0, cohort.getParticipantSet()));
+                            else
+                                groups.add(createGroup(null, cohort.getRowId(), cohort.getLabel(), groupType));
                         }
                         groups.add(createGroup(null, -1, "Not in any cohort", groupType));
                         break;

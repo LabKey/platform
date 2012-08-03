@@ -21,8 +21,10 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedDisplayColumn;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
 
+import java.util.Iterator;
 import java.util.List;
 
 public class QAggregate extends QExpr
@@ -60,7 +62,6 @@ public class QAggregate extends QExpr
 
     private Type _type;
     private boolean _distinct;
-    private String _delimiter = null;
 
     public QAggregate()
     {
@@ -86,11 +87,23 @@ public class QAggregate extends QExpr
         if (type == Type.GROUP_CONCAT)
         {
             SqlBuilder nestedBuilder = new SqlBuilder(builder.getDbSchema());
-            for (QNode child : children())
+            Iterator<QNode> iter = children().iterator();
+            ((QExpr)iter.next()).appendSql(nestedBuilder);
+
+            SQLFragment gcSql;
+
+            if (iter.hasNext())
             {
-                ((QExpr)child).appendSql(nestedBuilder);
+                SqlBuilder delimiter = new SqlBuilder(builder.getDbSchema());
+                ((QExpr)iter.next()).appendSql(delimiter);
+                gcSql = builder.getDialect().getGroupConcat(nestedBuilder, _distinct, true, delimiter.getSQL());
             }
-            builder.append(builder.getDialect().getGroupConcat(nestedBuilder, _distinct, true, null == _delimiter ? "," : _delimiter));
+            else
+            {
+                gcSql = builder.getDialect().getGroupConcat(nestedBuilder, _distinct, true);
+            }
+
+            builder.append(gcSql);
         }
         else if (type == Type.STDERR)
         {
@@ -192,11 +205,6 @@ public class QAggregate extends QExpr
     public void setDistinct(boolean distinct)
     {
         _distinct = distinct;
-    }
-
-    public void setDelimiter(String delimiter)
-    {
-        _delimiter = delimiter;
     }
 
     @Override

@@ -449,7 +449,7 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
     }
 
     @Override
-    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull String delimiter)
+    public SQLFragment getGroupConcat(SQLFragment sql, boolean distinct, boolean sorted, @NotNull String delimiterSQL)
     {
         throw new UnsupportedOperationException("GroupConcat aggregate function is not supported on SQL Server 2005");
     }

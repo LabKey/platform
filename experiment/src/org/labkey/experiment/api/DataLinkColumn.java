@@ -43,7 +43,13 @@ abstract class DataLinkColumn extends DataColumn
     }
 
     protected abstract ActionURL getURL(ExpData data);
-    
+
+    @Override
+    public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
+    {
+        renderGridCellContents(ctx, out);
+    }
+
     @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {

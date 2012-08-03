@@ -408,6 +408,9 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             this.getChartData();
         }, this);
 
+        // boolean to check if we should allow things like export to PDF and the developer panel 
+        this.supportedBrowser = !(Ext4.isIE6 || Ext4.isIE7 || Ext4.isIE8); // issue 15372
+
         // setup exportPDF button and menu (items to be added later)
         // the single button will be used for "single" chart layout
         // and the menu button will be used for multi-chart layouts
@@ -434,11 +437,16 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.aestheticsButton = Ext4.create('Ext.button.Button', {text: 'Options',
                                 handler: function(btn){this.optionsButtonClicked(btn, this.editorAestheticsPanel, 300, 125, 'center');}, scope: this});
 
-        this.supportsDeveloper = !(Ext4.isIE6 || Ext4.isIE7 || Ext4.isIE8); // issue 15372
         this.developerButton = Ext4.create('Ext.button.Button', {text: 'Developer', hidden: !this.isDeveloper,
                                 handler: function(btn){this.optionsButtonClicked(btn, this.editorDeveloperPanel, 800, 500, 'center');}, scope: this,
-                                disabled: !this.supportsDeveloper});
-        if (!this.supportsDeveloper) this.developerButton.setTooltip("Developer options not supported for IE6, IE7, or IE8."); 
+                                disabled: !this.supportedBrowser});
+
+        if (!this.supportedBrowser)
+        {
+            this.developerButton.setTooltip("Developer options not supported for IE6, IE7, or IE8.");
+            this.exportPdfSingleBtn.setTooltip("Export to PDF not supported for IE6, IE7, or IE8.");
+            this.exportPdfMenuBtn.setTooltip("Export to PDF not supported for IE6, IE7, or IE8.");
+        }
 
         this.saveButton = Ext4.create('Ext.button.Button', {text: 'Save', hidden: !this.canEdit,
                         handler: function(btn){
@@ -717,7 +725,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         this.measuresButton.setDisabled(disable);
         this.groupingButton.setDisabled(disable);
         this.aestheticsButton.setDisabled(disable);
-        this.developerButton.setDisabled(!this.supportsDeveloper || disable);
+        this.developerButton.setDisabled(!this.supportedBrowser || disable);
         this.saveButton.setDisabled(disable);
         this.saveAsButton.setDisabled(disable);
     },
@@ -1950,7 +1958,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
     toggleExportPdfBtns: function(showSingle) {
         if(showSingle){
             this.exportPdfSingleBtn.show();
-            this.exportPdfSingleBtn.setDisabled(false);
+            this.exportPdfSingleBtn.setDisabled(!this.supportedBrowser);
             this.exportPdfMenuBtn.hide();
             this.exportPdfMenuBtn.setDisabled(true);
         }
@@ -1958,7 +1966,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
             this.exportPdfSingleBtn.hide();
             this.exportPdfSingleBtn.setDisabled(true);
             this.exportPdfMenuBtn.show();
-            this.exportPdfMenuBtn.setDisabled(false);
+            this.exportPdfMenuBtn.setDisabled(!this.supportedBrowser);
         }
     },
 

@@ -125,7 +125,12 @@ LABKEY.ext.QueryDetailsCache = Ext.extend(Ext.util.Observable,
                 if (callback)
                     callback.call(scope || this, json);
             },
-            errorCallback: LABKEY.Utils.getCallbackWrapper(errorCallback, (scope || this), true),
+            //Issue 15674: if a query is not found, provide a more informative error message
+            errorCallback: function(response){
+                if (errorCallback){
+                    errorCallback.call(scope || this, response);
+                }
+            },
             scope: this
         });
     },
@@ -1777,13 +1782,24 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
             //look for the query node under both built-in and user-defined
             var queryNode;
             if (schemaNode.childNodes.length > 0)
-                queryNode = schemaNode.childNodes[0].findChildBy(function(node){return node.attributes.queryName.toLowerCase() == queryName.toLowerCase();});
+                queryNode = schemaNode.childNodes[0].findChildBy(function(node){
+                    //Issue 15674: if more than 100 queries are present, we include a placeholder node saying 'More..', which lacks queryName
+                    if (!node.attributes.queryName)
+                        return false;
+
+                    return node.attributes.queryName.toLowerCase() == queryName.toLowerCase();
+                });
             if (!queryNode && schemaNode.childNodes.length > 1)
-                queryNode = schemaNode.childNodes[1].findChildBy(function(node){return node.attributes.queryName.toLowerCase() == queryName.toLowerCase();});
+                queryNode = schemaNode.childNodes[1].findChildBy(function(node){
+                    if (!node.attributes.queryName)
+                        return false;
+
+                    return node.attributes.queryName.toLowerCase() == queryName.toLowerCase();
+                });
 
             if (!queryNode)
             {
-                Ext.Msg.alert("Missing Query", "The query " +  Ext.util.Format.htmlEncode(schemaName + "." + queryName) + " was not found! It may not be publicly accessible.");
+                //Issue 15674: if there are more than 100 queries, some queries will not appear in the list.  therefore this is a legitimate case
                 return;
             }
 

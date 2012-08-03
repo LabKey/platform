@@ -18,6 +18,9 @@ package org.labkey.study.model;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.exp.Lsid;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * User: brittp
  * Created: Jan 15, 2008 4:27:38 PM
@@ -78,5 +81,16 @@ public class CohortImpl extends ExtensibleStudyEntity<CohortImpl> implements Coh
     public boolean isInUse()
     {
         return StudyManager.getInstance().isCohortInUse(this);
+    }
+
+    public Set<String> getParticipantSet()
+    {
+        Participant[] participants = CohortManager.getInstance().getParticipantsForCohort(getContainer(), _rowId);
+        Set<String> ptids = new HashSet<String>();
+        for (Participant p : participants)
+        {
+            ptids.add(p.getParticipantId());
+        }
+        return ptids;
     }
 }

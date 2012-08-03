@@ -25,8 +25,12 @@ import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Cohort;
@@ -536,6 +540,15 @@ public class CohortManager
             parameters.add(cohortId);
         else
             parameters.add(Parameter.nullParameter(JdbcType.INTEGER));
+    }
+
+    public Participant[] getParticipantsForCohort(Container c, int cohortId)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromString("CurrentCohortId"), cohortId);
+        TableInfo ti = StudySchema.getInstance().getTableInfoParticipant();
+        Set<String> pks = new HashSet(ti.getPkColumnNames());
+        TableSelector ts = new TableSelector(ti, pks, filter, new Sort("ParticipantId"));
+        return ts.getArray(Participant.class);
     }
 }
 

@@ -147,7 +147,7 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
                         cols : 80,
                         style: 'width: 100%; height: 100%;',
                         wrap : 'off',
-                        html : this.query.queryText
+                        html : Ext.util.Format.htmlEncode(this.query.queryText)
                     }
                 }
             ],
@@ -381,7 +381,7 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
                         cols : 80,
                         wrap : 'off',
                         style: 'width: 100%; height: 100%;',
-                        html : this.query.metadataText
+                        html : Ext.util.Format.htmlEncode(this.query.metadataText)
                     }
                 }
             ],

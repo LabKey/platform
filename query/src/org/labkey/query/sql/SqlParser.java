@@ -733,7 +733,6 @@ public class SqlParser
                 if (QAggregate.GROUP_CONCAT.equalsIgnoreCase(node.getText()) || QAggregate.COUNT.equalsIgnoreCase(node.getText()))
                 {
                     boolean distinct = false;
-                    String delimiter = null;
 
                     if (children.size() > 1 && first(children) instanceof QDistinct)
                     {
@@ -741,16 +740,8 @@ public class SqlParser
                         distinct = true;
                     }
 
-                    // Delimiter parameter is optional... handle it if specified.
-                    if (QAggregate.GROUP_CONCAT.equalsIgnoreCase(node.getText()) && children.size() == 2)
-                    {
-                        QString delim = (QString)children.remove(1);
-                        delimiter = delim.getValue();
-                    }
-
                     QAggregate result = (QAggregate)qnode(node, children);
                     result.setDistinct(distinct);
-                    result.setDelimiter(delimiter);
 
                     return result;
                 }
@@ -1162,7 +1153,9 @@ public class SqlParser
         "SELECT a, GROUP_CONCAT(b) FROM R GROUP BY a",
         "SELECT a, GROUP_CONCAT(DISTINCT b) FROM R GROUP BY a",
         "SELECT a, GROUP_CONCAT(b, '%$') FROM R GROUP BY a",
+        "SELECT a, GROUP_CONCAT(b, CHR(10)) FROM R GROUP BY a",
         "SELECT a, GROUP_CONCAT(DISTINCT b, '%$') FROM R GROUP BY a",
+        "SELECT a, GROUP_CONCAT(DISTINCT b, CHR(10)) FROM R GROUP BY a",
         "SELECT GROUP_CONCAT(b) FROM R GROUP BY a",
 
         "BROKEN",
@@ -1188,7 +1181,6 @@ public class SqlParser
         "SELECT \"a\",\"b\",AVG(x),COUNT(x),MIN(x),MAX(x),SUM(x),STDDEV(x) FROM R WHERE R.x='key' HAVING SUM(x)>100 ORDER BY a ASC, b DESC, SUM(x)",
         "SELECT SUM(*) FROM R",
         "SELECT a, GROUP_CONCAT(b, '%$', 'STUPID') FROM R GROUP BY a",
-        "SELECT a, GROUP_CONCAT(b, 2) FROM R GROUP BY a",
         "SELECT a, GROUP_CONCAT() FROM R GROUP BY a",
 
         "BROKEN",

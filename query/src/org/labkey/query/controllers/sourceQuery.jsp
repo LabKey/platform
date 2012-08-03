@@ -144,8 +144,8 @@
             builtIn   : <%= builtIn %>,
             metadataEdit : <%= form.canEditMetaData() %>,
             propEdit     : <%= form.canEditMetaData() && !builtIn %>,
-            queryText    : <%=PageFlowUtil.qh(form.ff_queryText)%>,
-            metadataText : <%=PageFlowUtil.qh(form.ff_metadataText)%>,
+            queryText    : <%=PageFlowUtil.jsString(form.ff_queryText)%>,
+            metadataText : <%=PageFlowUtil.jsString(form.ff_metadataText)%>,
             help         : <%=PageFlowUtil.qh(new HelpTopic(sqlHelpTopic).toString())%>,
             metadataHelp : <%=PageFlowUtil.qh(new HelpTopic(metadataHelpTopic).toString())%>
         };

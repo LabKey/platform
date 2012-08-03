@@ -623,7 +623,7 @@ aggregate
     @after {$aggregate.tree.getToken().setType(AGGREGATE);}
 	: (( SUM^ | AVG^ | MAX^ | MIN^ | STDDEV^ | STDERR^ ) OPEN! expr=(additiveExpression) CLOSE!)
 	| (COUNT^ OPEN! d=DISTINCT? expr=(additiveExpression | starAtom) CLOSE!)
-	| (GROUP_CONCAT^ OPEN! d=DISTINCT? expr=(additiveExpression) (COMMA! QUOTED_STRING)? CLOSE!)
+	| (GROUP_CONCAT^ OPEN! d=DISTINCT? expr=(additiveExpression) (COMMA! primaryExpression)? CLOSE!)
 	;
 
 

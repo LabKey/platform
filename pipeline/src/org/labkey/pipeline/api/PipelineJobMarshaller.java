@@ -17,6 +17,7 @@ package org.labkey.pipeline.api;
 
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.security.impersonation.ImpersonateUserContextFactory;
 import org.labkey.pipeline.xstream.TaskIdXStreamConverter;
 import org.labkey.pipeline.xstream.FileXStreamConverter;
 import org.labkey.pipeline.xstream.URIXStreamConverter;
@@ -51,6 +52,9 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
                 instance.registerConverter(new TaskIdXStreamConverter());
                 instance.registerConverter(new FileXStreamConverter());
                 instance.registerConverter(new URIXStreamConverter());
+                // Don't need to remember HTTP session attributes in serialized jobs. They can be quite large.
+                // We do want to make sure that we keep tracking other impersonation details for auditing, etc
+                instance.omitField(ImpersonateUserContextFactory.class, "_adminSessionAttributes");
                 if (!_xstream.compareAndSet(null, instance))
                     instance = _xstream.get();
             }

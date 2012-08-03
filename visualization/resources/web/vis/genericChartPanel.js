@@ -82,6 +82,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         this.editMode = (LABKEY.ActionURL.getParameter("edit") == "true" || !this.reportId) && this.allowEditMode;
 
+        // boolean to check if we should allow things like export to PDF
+        this.supportedBrowser = !(Ext4.isIE6 || Ext4.isIE7 || Ext4.isIE8);
+
         this.items = [];
         this.showOptionsBtn = Ext4.create('Ext.button.Button', {
             text: 'Options',
@@ -94,6 +97,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.exportPdfBtn = Ext4.create('Ext.button.Button', {
             text: 'Export PDF',
             disabled: true,
+            tooltip: !this.supportedBrowser ? "Export to PDF not supported for IE6, IE7, or IE8." : null, 
             scope: this
         });
 
@@ -267,7 +271,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             sortableColumns: false,
             enableColumnHide: false,
             columns: [
-                {header: 'Measure', dataIndex: 'label', flex: 1}
+                {header: 'Measure', dataIndex: 'label', flex: 1, renderer: function(value){return Ext4.util.Format.htmlEncode(value)}}
             ],
             listeners: {
                 select: function(selModel, record, index){
@@ -286,7 +290,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             sortableColumns: false,
             enableColumnHide: false,
             columns: [
-                {header: 'Measure', dataIndex: 'label', flex: 1}
+                {header: 'Measure', dataIndex: 'label', flex: 1, renderer: function(value){return Ext4.util.Format.htmlEncode(value)}}
             ],
             listeners: {
                 select: function(selModel, record, index){
@@ -1525,7 +1529,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (!forExport)
         {
             this.exportPdfBtn.addListener('click', this.exportChartToPdf, this);
-            this.exportPdfBtn.enable();
+            this.exportPdfBtn.setDisabled(!this.supportedBrowser);
             this.viewPanel.getEl().unmask();
         }
         else

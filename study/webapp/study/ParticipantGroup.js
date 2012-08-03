@@ -101,7 +101,7 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
             ],
             listeners:{
                 load: function(){
-                    if(this.categoryStore.find('rowId', this.category.rowId) > -1){
+                    if(this.category && this.categoryStore.find('rowId', this.category.rowId) > -1){
                         this.categoryCombo.setValue(this.category.rowId);
                     }
                 },
