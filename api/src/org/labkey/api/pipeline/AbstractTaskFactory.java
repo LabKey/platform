@@ -127,7 +127,15 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
             {
                 // Globus can't submit jobs that have a space in the path to the logs for stdout or stderr.
                 // See issue 15254
-                String clusterPath = globusClientProperties.getPathMapper().remoteToLocal(job.getLogFile().toURI().toString());
+                String clusterPath;
+                if (globusClientProperties.getPathMapper() == null)
+                {
+                    clusterPath = job.getLogFile().toURI().toString();
+                }
+                else
+                {
+                    clusterPath = globusClientProperties.getPathMapper().remoteToLocal(job.getLogFile().toURI().toString());
+                }
                 if (clusterPath.contains(" ") || clusterPath.contains("%20"))
                 {
                     throw new PipelineValidationException("Paths cannot contain spaces when submitting a cluster job via Globus:" + job.getLogFile());

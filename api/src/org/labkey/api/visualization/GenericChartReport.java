@@ -173,7 +173,7 @@ public abstract class GenericChartReport extends AbstractReport
             {
                 if (col.getFk() == null)
                 {
-                    Class cls = col.getJavaClass();
+                    Class cls = col.getJavaObjectClass();
 
                     if (Integer.class.equals(cls) || Double.class.equals(cls))
                     {

@@ -93,6 +93,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
         if(buttons){
             this.dockedItems = {
                 xtype: 'toolbar',
+                dock: 'bottom',
                 ui: 'footer',
                 style: 'background-color: transparent;',
                 items: buttons

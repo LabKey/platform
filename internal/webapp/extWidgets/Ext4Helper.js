@@ -417,8 +417,11 @@ LABKEY.ext.Ext4Helper = new function(){
                 if(!col)
                     col = {dataIndex: field.dataIndex};
 
-                cols.push(LABKEY.ext.Ext4Helper.getColumnConfig(store, col, config, grid));
-
+                //NOTE: In Ext4.1 if your store does not provide a key field, Ext will create a new column called 'id'
+                //this is somewhat of a problem, since it is difficult to differentiate this as automatically generated
+                var cfg = LABKEY.ext.Ext4Helper.getColumnConfig(store, col, config, grid);
+                if (cfg)
+                    cols.push(cfg);
             }, this);
 
             return cols;
@@ -429,6 +432,10 @@ LABKEY.ext.Ext4Helper = new function(){
             col = col || {};
 
             var meta = store.findFieldMetadata(col.dataIndex);
+            if(!meta){
+                return;
+            }
+
             col.customized = true;
 
             col.hidden = meta.hidden;

@@ -941,6 +941,13 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
         {
             saveAsync(new ErrorDialogAsyncCallback<GWTProtocol>("Save failed")
             {
+                @Override
+                protected void handleFailure(String message, Throwable caught)
+                {
+                    _saveInProgress = false;
+                    setDirty(true);
+                }
+                
                 public void onSuccess(GWTProtocol protocol)
                 {
                     if (_closeHandlerManager != null)

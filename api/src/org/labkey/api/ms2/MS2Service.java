@@ -21,6 +21,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.query.FieldKey;
 
@@ -37,6 +38,8 @@ public class MS2Service
         public String getRunsTableName();
 
         SearchClient createSearchClient(String server, String url, Logger instanceLogger, String userAccount, String userPassword);
+
+        UserSchema createSchema(User user, Container container);
 
         TableInfo createPeptidesTableInfo(User user, Container container);
         TableInfo createSequencesTableInfo(User user, Container container);

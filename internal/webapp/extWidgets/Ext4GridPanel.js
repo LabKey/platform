@@ -220,11 +220,18 @@ Ext4.define('LABKEY.ext4.GridPanel', {
 
         for (var idx=0;idx<columns.length;idx++){
             var col = columns[idx];
-            var meta = this.store.findFieldMetadata(col.dataIndex);
 
             //remember the first editable column (used during add record)
             if(!this.firstEditableColumn && col.editable)
                 this.firstEditableColumn = idx;
+
+            if (this.hideNonEditableColumns && !col.editable) {
+                col.hidden = true;
+            }
+
+            var meta = this.store.findFieldMetadata(col.dataIndex);
+            if(!meta)
+                continue;
 
             if(meta.isAutoExpandColumn && !col.hidden){
                 this.autoExpandColumn = idx;
@@ -238,10 +245,6 @@ Ext4.define('LABKEY.ext4.GridPanel', {
                 if(lookupStore){
                     this.mon(lookupStore, 'load', this.onLookupStoreLoad, this, {delay: 100});
                 }
-            }
-
-            if (this.hideNonEditableColumns && !col.editable) {
-                col.hidden = true;
             }
         }
 
@@ -275,7 +278,7 @@ Ext4.define('LABKEY.ext4.GridPanel', {
             col = columns[i];
             meta = this.store.findFieldMetadata(col.dataIndex);
 
-            if(!meta.fixedWidthCol){
+            if(meta && !meta.fixedWidthCol){
                 values = [];
                 var records = this.store.getRange();
                 for (var j=0;j<records.length;j++){

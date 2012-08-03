@@ -30,6 +30,7 @@
  */
 package org.labkey.api.pipeline;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Appender;
 import org.apache.log4j.Category;
@@ -46,6 +47,7 @@ import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileType;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Job;
 import org.labkey.api.util.NetworkDrive;
@@ -399,13 +401,14 @@ abstract public class PipelineJob extends Job implements Serializable
 
         if (NetworkDrive.exists(file))
         {
-            file.renameTo(origFile);
-            newFile.renameTo(file);
+            // Don't use File.renameTo() because it doesn't always work depending on the underlying file system
+            FileUtils.moveFile(file, origFile);
+            FileUtils.moveFile(newFile, file);
             origFile.delete();
         }
         else
         {
-            newFile.renameTo(file);
+            FileUtils.moveFile(newFile, file);
         }
         PipelineJobService.get().getWorkDirFactory().setPermissions(file);
     }

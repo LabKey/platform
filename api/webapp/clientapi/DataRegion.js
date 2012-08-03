@@ -2666,6 +2666,9 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 itemId: 'filterArea'
             });
             this.add(cfg);
+            //Issue 15658: if the field is not a facet candidate, be sure to populate filters on load
+            var filterArray = this.getParamsForField(this._fieldKey);
+            this.setValuesFromParams(null, filterArray);
         }
         else {
             this.add({
