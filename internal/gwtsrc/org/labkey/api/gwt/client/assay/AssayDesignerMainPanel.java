@@ -846,13 +846,22 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
                 _assay = result;
                 _copy = false;
                 show(_assay);
+
+                if (_designerURL.indexOf("?") == -1)
+                {
+                    _designerURL = _designerURL + "?";
+                }
                 if (_designerURL.indexOf("&rowId=") == -1)
                 {
-                    if (_designerURL.indexOf("?") == -1)
-                    {
-                        _designerURL = _designerURL + "?";
-                    }
                     _designerURL = _designerURL + "&rowId=" + result.getProtocolId();
+                }
+
+                // issue 14853 : if we are coming from the copy assay page, remove the copy param and old assay design rowId
+                if (_designerURL.indexOf("&copy=true") > -1)
+                {
+                    _designerURL = _designerURL.substring(0, _designerURL.indexOf("?")+1);
+                    _designerURL = _designerURL + "rowId=" + result.getProtocolId();
+                    _designerURL = _designerURL + "&providerName=" + result.getProviderName();
                 }
 
                 if (listener != null)
