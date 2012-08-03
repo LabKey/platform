@@ -180,7 +180,7 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
             + "   var queryHref = LABKEY.ActionURL.buildURL('query', 'executeQuery', LABKEY.container.path, \n"
             + "                      {schemaName: measureInfo[\"schemaName\"], \"query.queryName\": measureInfo[\"queryName\"]});\n\n"
             + "   // display an Ext message box with some information from the function parameters\n"
-            + "   Ext.Msg.alert('Data Point Information',\n"
+            + "   Ext4.Msg.alert('Data Point Information',\n"
             + "       'Participant: <a href=\"' + ptidHref + '\">' + data[columnMap[\"participant\"]].value + '</a>'\n"
             + "       + '<br/> Interval: ' + data[columnMap[\"interval\"]].value\n"
             + "       + '<br/> Value: ' + data[columnMap[\"measure\"]].value\n"
