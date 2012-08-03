@@ -436,10 +436,38 @@ var scatterPlot = new LABKEY.vis.Plot({
     }
 });
 
+var colorScatter = LABKEY.vis.Plot({
+    renderTo: 'colorScatter',
+    width: 900,
+    height: 700,
+    clipRect: false,
+    labels: {
+        main: {
+            value:'Scatter With Continuous Color Scale'
+        },
+        x: {
+            value: "X Axis"
+        },
+        y: {
+            value:"Y Axis"
+        }
+    },
+    layers: [new LABKEY.vis.Layer({
+        data: scatterData,
+        geom: new LABKEY.vis.Geom.Point(),
+        aes: {x:'x', y: 'y', color: 'y'}
+    })],
+    scales: {
+        y: {scaleType: 'continuous', trans: 'linear'},
+        color: {scaleType: 'continuous', trans: 'linear', range: ['#660000', '#FF6666']}
+    }
+});
+
 plot.render();
 errorPlot.render();
 coffeePlot.render();
 boxPlot.render();
 discreteScatter.render();
 scatterPlot.render();
+colorScatter.render();
 renderStats();

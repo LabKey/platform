@@ -37,13 +37,13 @@ LABKEY.vis.Plot = function(config){
         return scales;
     };
 
-    var setDefaultMargins = function(margins, legendPos, allAes){
+    var setDefaultMargins = function(margins, legendPos, allAes, scales){
         var top = 75, right = 75, bottom = 50, left = 75; // Defaults.
         var foundLegendScale = false, foundYRight = false;
 
         for(var i = 0; i < allAes.length; i++){
             var aes = allAes[i];
-            if(!foundLegendScale && (aes.shape || aes.color) && legendPos != 'none'){
+            if(!foundLegendScale && (aes.shape || (aes.color && scales.color && scales.color.scaleType == 'discrete')) && legendPos != 'none'){
                 foundLegendScale = true;
                 right = right + 150;
             }
@@ -103,7 +103,7 @@ LABKEY.vis.Plot = function(config){
         }
     }
 
-    var margins = setDefaultMargins(config.margins, this.legendPos, allAes);
+    var margins = setDefaultMargins(config.margins, this.legendPos, allAes, this.scales);
 
     if(this.labels.y){
         this.labels.yLeft = this.labels.y;
@@ -251,6 +251,11 @@ LABKEY.vis.Plot = function(config){
             } else if(scaleName == 'color'){
                 if(!scale.scaleType || scale.scaleType == 'discrete') {
                     scale.scale = LABKEY.vis.Scale.ColorDiscrete();
+                } else {
+                    if(!scale.range){
+                        scale.range = ['#222222', '#EEEEEE'];
+                    }
+                    scale.scale = LABKEY.vis.Scale.Continuous(scale.trans, null, null, [scale.min, scale.max], scale.range);
                 }
             } else if(scaleName == 'shape'){
                 if(!scale.scaleType || scale.scaleType == 'discrete') {
@@ -409,7 +414,7 @@ LABKEY.vis.Plot = function(config){
         var y = null;
         var color = null;
 
-        if(this.legendPos && this.legendPos == "none"){
+        if((this.legendPos && this.legendPos == "none") || (!this.scales.shape && (!this.scales.color || (this.scales.color.scaleType == 'continuous')))){
             return;
         }
 
@@ -778,7 +783,7 @@ LABKEY.vis.Plot = function(config){
     };
 
     this.setMargins = function(newMargins){
-        margins = setDefaultMargins(newMargins, this.scales, allAes);
+        margins = setDefaultMargins(newMargins, this.legendPos, allAes, this.scales);
     };
 
 	return this;

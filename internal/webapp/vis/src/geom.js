@@ -126,7 +126,14 @@ LABKEY.vis.Geom.Point.prototype.render = function(paper, grid, scales, data, lay
             y = (y - (yBinWidth / 2)) +(Math.random()*(yBinWidth));
         }
 
-        var color = this.colorMap ? scales.color.scale(this.colorMap.getValue(data[i]) + ' ' + name) : this.color;
+        var color = this.color;
+        if(this.colorMap){
+            if(scales.color.scaleType == 'continuous'){
+                color = scales.color.scale(this.colorMap.getValue(data[i]));
+            } else {
+                color = scales.color.scale(this.colorMap.getValue(data[i]) + ' ' + name);
+            }
+        }
         var size = sizeMap ? scales.size.scale(sizeMap.getValue(data[i])) : this.size;
         var shapeFunction = this.shapeMap ? scales.shape.scale(this.shapeMap.getValue(data[i]) + ' ' + name) : function(paper, x, y, r){return paper.circle(x, y, r)};
         var point = shapeFunction(paper, x, -y, size).attr('fill', color).attr('stroke', color).attr('stroke-opacity', this.opacity/2).attr('fill-opacity', this.opacity);
