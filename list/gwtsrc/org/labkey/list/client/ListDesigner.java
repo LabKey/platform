@@ -89,7 +89,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         @Override
         public String getCurrentURL()
         {
-            return PropertyUtil.getCurrentURL();
+            return getEditorURL();
         }
 
         public void save()
