@@ -129,6 +129,8 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     {
         try
         {
+            if (response.getContentType() != null && !response.getContentType().contains("charset"))
+                response.setContentType(response.getContentType()+"; charset=UTF-8");
             HttpView.pushView(this, request, response);
             initViewContext(getViewContext(), request, response);
 

@@ -102,7 +102,8 @@ public abstract class TextWriter
         // Specify attachment and foil caching
         if (_exportAsWebPage)
         {
-           response.setHeader("Content-disposition", "inline; filename=\"" + getFilename() + "\"");
+            response.setContentType("text/plain; charset=UTF-8");
+            response.setHeader("Content-disposition", "inline; filename=\"" + getFilename() + "\"");
         }
         else
         {
