@@ -188,7 +188,7 @@ if (supportsDavMount) {%><%=generateButton("davmount","?davmount")%><br><%}
 if (supportsDavScheme) {%><%=generateButton("dav", href.replace("http:","dav:"))%><br><%}
 if (supportsWebdavScheme) {%><%=generateButton("webdav", href.replace("http:","webdav:"))%><br><%}
 %><%=generateButton("Standard View","?listing=ext")%><br>
-<!--<%=request.getHeader("user-agent")%>-->
+<!--<%=h(request.getHeader("user-agent"))%>-->
 <%
 } // end plainHtml
 else
