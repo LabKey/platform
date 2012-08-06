@@ -85,7 +85,7 @@ public class TempTableInfo extends SchemaTableInfo
     {
         try
         {
-            Table.isEmpty(this);
+            new LegacyTableSelector(this).getRowCount();
             return true;
         }
         catch (SQLException e)

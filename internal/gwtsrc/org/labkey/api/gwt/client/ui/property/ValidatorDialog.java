@@ -88,7 +88,7 @@ abstract public class ValidatorDialog extends DialogBox
         {
             super(label);
 
-            setChecked(checked);
+            setValue(checked);
 
             addFocusListener(new FocusListenerAdapter()
             {

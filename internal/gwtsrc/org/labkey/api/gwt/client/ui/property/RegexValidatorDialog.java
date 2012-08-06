@@ -129,7 +129,7 @@ public class RegexValidatorDialog extends ValidatorDialog
         {
             public void update(Widget widget)
             {
-                prop.getProperties().put(FAIL_ON_MATCH, Boolean.toString(((CheckBox)widget).isChecked()));
+                prop.getProperties().put(FAIL_ON_MATCH, Boolean.toString(((CheckBox)widget).getValue()));
             }
         });
 

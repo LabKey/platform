@@ -18,6 +18,10 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
 
+import java.util.EnumSet;
+import java.util.Map;
+import java.util.Set;
+
 /**
  * Converts a string to an enum. Each enum type
  * needs to be explicitly registered
@@ -28,13 +32,25 @@ import org.apache.commons.beanutils.Converter;
  * Date: Jul 15, 2008
  * Time: 1:17:23 PM
  */
-public class EnumConverter implements Converter
+public class EnumConverter<E extends Enum> implements Converter
 {
-    private static final EnumConverter CONVERTER = new EnumConverter();
+    private Class<E> _enumClass;
+    private E[] _ordinals;
+
+    public EnumConverter(Class<E> enumClass)
+    {
+        _enumClass = enumClass;
+        Set<E> enumValues = EnumSet.allOf(enumClass);
+        _ordinals = (E[])new Enum[enumValues.size()];
+        for (E anEnum : enumValues)
+        {
+            _ordinals[anEnum.ordinal()] = anEnum;
+        }
+    }
 
     public static void registerEnum(Class<? extends Enum> clazz)
     {
-        ConvertUtils.register(CONVERTER, clazz);
+        ConvertUtils.register(new EnumConverter(clazz), clazz);
     }
 
     @SuppressWarnings("unchecked")
@@ -42,6 +58,23 @@ public class EnumConverter implements Converter
     {
         if (value == null)
             return null;
-        return Enum.valueOf(type, value.toString());
+        try
+        {
+            return Enum.valueOf(type, value.toString());
+        }
+        catch (IllegalArgumentException e)
+        {
+            try
+            {
+                int ordinal = Integer.parseInt(value.toString());
+                if (ordinal >= 0 && ordinal <= _ordinals.length)
+                {
+                    return _ordinals[ordinal];
+                }
+            }
+            // That's OK, not an ordinal value for the enum
+            catch (NumberFormatException ignored) {}
+            throw e;
+        }
     }
 }

@@ -115,12 +115,12 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new StringExpressionFactory.Converter(), StringExpression.class);
         _register(new LenientTimeOnlyConverter(), TimeOnlyDate.class);
         _register(new ShowRowsConverter(), ShowRows.class);
-        _register(new EnumConverter(), DataSet.KeyManagementType.class);
         _register(new UserConverter(), User.class);
         _register(new ExpDataFileConverter(), File.class);
         _register(new FacetingBehaviorTypeConverter(), FacetingBehaviorType.class);
-        _register(new EnumConverter(), TSVWriter.DELIM.class);
-        _register(new EnumConverter(), TSVWriter.QUOTE.class);
+        EnumConverter.registerEnum(DataSet.KeyManagementType.class);
+        EnumConverter.registerEnum(TSVWriter.DELIM.class);
+        EnumConverter.registerEnum(TSVWriter.QUOTE.class);
     }
 
 

@@ -852,7 +852,7 @@ public class Table
 //                    throw new SQLException("The column '" + column.getName() + "' has a maximum length of " + column.getScale() + " but the value '" + value + "' is " + value.toString().length() + " characters long.");
 //                }
                 valueSQL.append('?');
-                parameters.add(value);
+                parameters.add(new Parameter.TypedValue(value, column.getJdbcType()));
             }
             comma = ", ";
         }
@@ -1027,7 +1027,7 @@ public class Table
 //                }
 
                 setSQL.append("=?");
-                parametersSet.add(value);
+                parametersSet.add(new Parameter.TypedValue(value, column.getJdbcType()));
             }
 
             comma = ", ";
@@ -1458,19 +1458,6 @@ public class Table
         sqlSelectInto.append(") _from_");
 
         Table.execute(tinfo.getSchema(), sqlSelectInto);
-    }
-
-
-    public static boolean isEmpty(TableInfo tinfo) throws SQLException
-    {
-        return rowCount(tinfo) == 0;
-    }
-
-
-    @Deprecated  // Use TableSelector.getRowCount() directly
-    public static long rowCount(TableInfo tinfo) throws SQLException
-    {
-        return new LegacyTableSelector(tinfo).getRowCount();
     }
 
 

@@ -33,6 +33,7 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
     private final EnumValueGetter<EnumType> _getter;
     @Nullable private String _schemaName;
     @Nullable private String _queryName;
+    private final boolean _ordinalPK;
 
     /**
      * Turns an enum value into a string to expose in the virtual table
@@ -48,7 +49,7 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
      * @param schema parent DBSchema
      * @param description a description of this table and its uses for display in the schema browser
      */
-    public EnumTableInfo(Class<EnumType> e, DbSchema schema, String description)
+    public EnumTableInfo(Class<EnumType> e, DbSchema schema, String description, boolean ordinalPK)
     {
         this(e, schema, new EnumValueGetter<EnumType>()
         {
@@ -56,7 +57,7 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
             {
                 return e.toString();
             }
-        }, description);
+        }, ordinalPK, description);
     }
 
     /**
@@ -66,18 +67,24 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
      * @param getter callback to determine the String value of each item in the enum
      * @param description a description of this table and its uses for display in the schema browser
      */
-    public EnumTableInfo(Class<EnumType> e, DbSchema schema, EnumValueGetter<EnumType> getter, String description)
+    public EnumTableInfo(Class<EnumType> e, DbSchema schema, EnumValueGetter<EnumType> getter, boolean ordinalPK, String description)
     {
         super(schema);
         setDescription(description);
         _enum = e;
         _getter = getter;
+        _ordinalPK = ordinalPK;
 
         ExprColumn column = new ExprColumn(this, "Value", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".Value"), JdbcType.VARCHAR);
-        column.setKeyField(true);
+        column.setKeyField(!ordinalPK);
         setTitleColumn(column.getName());
         addColumn(column);
         setName(e.getSimpleName());
+
+        ExprColumn rowIdColumn = new ExprColumn(this, "RowId", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".RowId"), JdbcType.INTEGER);
+        rowIdColumn.setKeyField(ordinalPK);
+        rowIdColumn.setHidden(true);
+        addColumn(rowIdColumn);
     }
 
     @Override @NotNull
@@ -90,8 +97,9 @@ public class EnumTableInfo<EnumType extends Enum<EnumType>> extends VirtualTable
         {
             sql.append(separator);
             separator = " UNION ";
-            sql.append("SELECT ? AS VALUE");
+            sql.append("SELECT ? AS VALUE, ? AS RowId");
             sql.add(_getter.getValue(e));
+            sql.add(e.ordinal());
         }
         return sql;
     }

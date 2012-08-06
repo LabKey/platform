@@ -195,18 +195,19 @@ public class Parameter
         if (_constant)
             throw new IllegalStateException("Can't set constant parameter");
 
-        Object value = getValueToBind(in);
         JdbcType type = _type;
+        if (null == type)
+        {
+            if (in instanceof TypedValue)
+                type = ((TypedValue)in)._type;
+            else if (in instanceof StringExpression)
+                type = JdbcType.VARCHAR;
+        }
+
+        Object value = getValueToBind(in, type);
 
         try
         {
-            if (null == type)
-            {
-                if (in instanceof TypedValue)
-                    type = ((TypedValue)in)._type;
-                else if (in instanceof StringExpression)
-                    type = JdbcType.VARCHAR;
-            }
 
             if (null == value)
             {
@@ -263,7 +264,7 @@ public class Parameter
     }
 
     
-    public static Object getValueToBind(@Nullable Object value) throws SQLException
+    public static Object getValueToBind(@Nullable Object value, @Nullable JdbcType type) throws SQLException
     {
         if (value instanceof Callable)
         {
@@ -316,6 +317,8 @@ public class Parameter
             return ((StringExpression)value).getSource();
         else if (value.getClass() == Container.class)
             return ((Container) value).getId();
+        else if (value instanceof Enum && type != null && type.isNumeric())
+            return ((Enum)value).ordinal();
         else if (value instanceof Enum)
             return ((Enum)value).name();
         else if (value instanceof UserPrincipal)

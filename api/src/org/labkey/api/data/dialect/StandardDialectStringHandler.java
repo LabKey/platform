@@ -127,7 +127,7 @@ public class StandardDialectStringHandler implements DialectStringHandler
 
         try
         {
-            value = Parameter.getValueToBind(o);
+            value = Parameter.getValueToBind(o, null);
         }
         catch (SQLException x)
         {
