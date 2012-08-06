@@ -2308,7 +2308,7 @@ public class SpecimenImporter
 
         if (col.getMaxSize() >= 0)
         {
-            Object valueToBind = Parameter.getValueToBind(typed);
+            Object valueToBind = Parameter.getValueToBind(typed, col.getSQLType());
             if (valueToBind != null)
             {
                 if (valueToBind.toString().length() > col.getMaxSize())
