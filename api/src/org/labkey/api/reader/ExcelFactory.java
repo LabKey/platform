@@ -41,6 +41,7 @@ import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.reader.jxl.JxlWorkbook;
 import org.labkey.api.settings.AppProps;
 import org.omg.CORBA.DynAnyPackage.Invalid;
+import org.systemsbiology.jrap.Base64;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -616,14 +617,24 @@ public class ExcelFactory
         @Test
         public void testExcelFileImportShouldFail() throws Exception
         {
-            attemptImportExpectError("doesntexist.xls", FileNotFoundException.class, "The system cannot find the file specified");
-            attemptImportExpectError("", FileNotFoundException.class, "Access is denied");
-            attemptImportExpectError("notreallyexcel.xls", InvalidFormatException.class, "Your InputStream was neither an OLE2 stream, nor an OOXML stream");
+            String fileNotFoundError = null;
+            System.out.println("OS: " + System.getProperty("os.name"));
+            if(System.getProperty("os.name").contains("indow"))
+            {
+                fileNotFoundError = "The system cannot find the file specified";
+            }
+            else
+            {
+                fileNotFoundError = "No such file or directory";
+            }
+            attemptImportExpectError("doesntexist.xls", FileNotFoundException.class, "The system cannot find the file specified", "No such file or directory");
+            attemptImportExpectError("", FileNotFoundException.class, "Access is denied", "Access is denied");
+            attemptImportExpectError("notreallyexcel.xls", InvalidFormatException.class, "Your InputStream was neither an OLE2 stream, nor an OOXML stream", "Your InputStream was neither an OLE2 stream, nor an OOXML stream");
         }
 
 
 
-        private void attemptImportExpectError(String filename, Class exceptionClass, String partialErrorMessage)
+        private void attemptImportExpectError(String filename, Class exceptionClass, String partialErrorMessageWin, String partialErrorMessageLinux)
         {
 
             try
@@ -634,7 +645,8 @@ public class ExcelFactory
             catch(Exception e)
             {
                 assertEquals(exceptionClass, e.getClass());
-                assertTrue("Error message \"" + e.getMessage() + "\" did not contain expected string: \"" + partialErrorMessage + "\"", e.getMessage().contains(partialErrorMessage));
+                assertTrue("Error message \"" + e.getMessage() + "\" did not contain expected string: \"" + partialErrorMessageWin + "\" or \"" +
+                        partialErrorMessageLinux + "\"", (e.getMessage().contains(partialErrorMessageWin) || e.getMessage().contains(partialErrorMessageLinux)));
             }
         }
 
