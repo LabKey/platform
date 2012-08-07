@@ -48,25 +48,6 @@ public class ListWebPart extends WebPartView<ViewContext>
 
     protected void renderView(ViewContext model, PrintWriter out) throws Exception
     {
-        Map<String, ListDefinition> lists = ListService.get().getLists(model.getContainer());
-        out.write("<table>");
-        if (lists.isEmpty())
-        {
-            out.write("<tr><td>There are no user-defined lists in this folder.</td></tr>");
-        }
-        else
-        {
-            for (ListDefinition list : new TreeSet<ListDefinition>(lists.values()))
-            {
-                out.write("<tr><td><a href=\"");
-                out.write(PageFlowUtil.filter(list.urlShowData()));
-                out.write("\">");
-                out.write(PageFlowUtil.filter(list.getName()));
-                out.write("</a></td></tr>");
-            }
-        }
-        out.write("</table>");
-        if (model.getContainer().hasPermission(model.getUser(), DesignListPermission.class))
-            out.write(PageFlowUtil.textLink("manage lists", ListController.getBeginURL(model.getContainer())) + "<br>");
+        include(new JspView<Object>(this.getClass(), "begin.jsp", model));
     }
 }
