@@ -257,6 +257,10 @@ public class Table
     {
         for (Object value : parameters)
         {
+            if (value instanceof Parameter.TypedValue)
+            {
+                value = ((Parameter.TypedValue)value)._value;
+            }
             if (value instanceof AttachmentFile)
             {
                 try
