@@ -655,18 +655,18 @@ function setDisabled(checkbox, label, disabled)
                 if (!ctx.getUser().isGuest())
                 { %>
             <tr><td>
-                <input type="hidden" name="<%=ReportDescriptor.Prop.reportType%>" value="<%=bean.getReportType()%>">
-                <input type="hidden" name="queryName" value="<%=StringUtils.trimToEmpty(bean.getQueryName())%>">
-                <input type="hidden" name="viewName" value="<%=StringUtils.trimToEmpty(bean.getViewName())%>">
-                <input type="hidden" name="schemaName" value="<%=StringUtils.trimToEmpty(bean.getSchemaName())%>">
-                <input type="hidden" name="dataRegionName" value="<%=StringUtils.trimToEmpty(bean.getDataRegionName())%>">
+                <input type="hidden" name="<%=ReportDescriptor.Prop.reportType%>" value="<%=h(bean.getReportType())%>">
+                <input type="hidden" name="queryName" value="<%=h(StringUtils.trimToEmpty(bean.getQueryName()))%>">
+                <input type="hidden" name="viewName" value="<%=h(StringUtils.trimToEmpty(bean.getViewName()))%>">
+                <input type="hidden" name="schemaName" value="<%=h(StringUtils.trimToEmpty(bean.getSchemaName()))%>">
+                <input type="hidden" name="dataRegionName" value="<%=h(StringUtils.trimToEmpty(bean.getDataRegionName()))%>">
                 <input type="hidden" name="redirectUrl" value="<%=h(bean.getRedirectUrl())%>"><%
                 if (null != bean.getReportId()) { %>
-                <input type="hidden" name="reportId" value="<%=bean.getReportId()%>">
+                <input type="hidden" name="reportId" value="<%=h(bean.getReportId())%>">
                 <% } %>
                 <input type="hidden" name="showDebug" value="true">
-                <input type="hidden" name="<%=ScriptReportDescriptor.Prop.scriptExtension%>" value="<%=StringUtils.trimToEmpty(bean.getScriptExtension())%>">
-                <input type="hidden" name="reportName" id="reportName" value="<%=StringUtils.trimToEmpty(bean.getReportName())%>">
+                <input type="hidden" name="<%=ScriptReportDescriptor.Prop.scriptExtension%>" value="<%=h(StringUtils.trimToEmpty(bean.getScriptExtension()))%>">
+                <input type="hidden" name="reportName" id="reportName" value="<%=h(StringUtils.trimToEmpty(bean.getReportName()))%>">
                 <% if (inherited || readOnly) { %>
                 <a class="labkey-disabled-button">Save</a>
                 <% } else { %>
