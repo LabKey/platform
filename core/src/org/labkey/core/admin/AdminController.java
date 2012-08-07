@@ -17,6 +17,7 @@ package org.labkey.core.admin;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LoggingEvent;
 import org.apache.xmlbeans.XmlObject;
@@ -221,6 +222,7 @@ public class AdminController extends SpringActionController
     private static final NumberFormat _formatInteger = DecimalFormat.getIntegerInstance();
 
     private static final Logger LOG = Logger.getLogger(AdminController.class);
+    private static final Logger CLIENT_LOG = Logger.getLogger(LogAction.class);
 
     private static long _errorMark = 0;
 
@@ -4723,6 +4725,7 @@ public class AdminController extends SpringActionController
     public static class LogForm
     {
         private String _message;
+        String _level;
 
         public String getMessage()
         {
@@ -4733,12 +4736,22 @@ public class AdminController extends SpringActionController
         {
             _message = message;
         }
+
+        public String getLevel()
+        {
+            return _level;
+        }
+
+        public void setLevel(String level)
+        {
+            _level = level;
+        }
     }
 
 
     // Simple action that writes "message" parameter to the labkey log. Used by the test harness to indicate when
     // each test begins and ends. Message parameter is output as sent, except that \n is translated to newline.
-    @RequiresSiteAdmin
+    @RequiresLogin
     public class LogAction extends SimpleViewAction<LogForm>
     {
         @Override
@@ -4746,9 +4759,11 @@ public class AdminController extends SpringActionController
         {
             // Could use %A0 for newline in the middle of the message, however, parameter values get trimmed so translate
             // \n to newlines to allow them at the beginning or end of the message as well.
-            String message = StringUtils.replace(logForm.getMessage(), "\\n", "\n");
+            StringBuilder message = new StringBuilder();
+            message.append(StringUtils.replace(logForm.getMessage(), "\\n", "\n"));
 
-            LOG.info(message);
+            Level level = Level.toLevel(logForm.getLevel(), Level.INFO);
+            CLIENT_LOG.log(level, message);
             return null;
         }
 
