@@ -32,7 +32,7 @@
     if (request.getParameter("error") != null)
     {
 %>
-        <font class="labkey-error"><%=request.getParameter("error")%></font><br/>
+        <font class="labkey-error"><%=h(request.getParameter("error"))%></font><br/>
 <%
     }
 %>
