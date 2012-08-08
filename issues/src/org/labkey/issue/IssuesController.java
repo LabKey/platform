@@ -718,7 +718,7 @@ public class IssuesController extends SpringActionController
             String change = ReopenAction.class.equals(form.getAction()) ? "reopened" : getActionName(form.getAction()) + "d";
             if ("resolved".equalsIgnoreCase(change) && issue.getResolution() != null)
             {
-                change += " as " + issue.getResolution();
+                change += " as " + issue.getResolution().getSource(); // Issue 12273
             }
             sendUpdateEmail(issue, prevIssue, changeSummary.getTextChanges(), changeSummary.getSummary(), form.getComment(), detailsUrl, change, getAttachmentFileList(), form.getAction());
             return true;
@@ -735,8 +735,6 @@ public class IssuesController extends SpringActionController
             return form.getForwardURL();
         }
     }
-
-
 
     // SAME as AttachmentForm, just to demonstrate GuidString
     public static class _AttachmentForm
@@ -768,8 +766,6 @@ public class IssuesController extends SpringActionController
             _name = name;
         }
     }
-
-    
 
 
     @RequiresPermissionClass(ReadPermission.class)
