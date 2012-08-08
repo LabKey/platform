@@ -381,7 +381,7 @@ public class ObjectProperty extends OntologyManager.PropertyRow
         _childProperties = childProperties;
     }
 
-    public Map<String, ObjectProperty> retrieveChildProperties() throws SQLException
+    public Map<String, ObjectProperty> retrieveChildProperties()
     {
         if (_childProperties == null)
         {

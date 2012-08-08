@@ -17,6 +17,8 @@ package org.labkey.api.module;
 
 import org.apache.commons.collections15.Closure;
 import org.apache.commons.collections15.CollectionUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
@@ -282,8 +284,8 @@ public class SimpleModule extends SpringModule implements ContainerManager.Conta
         {
             SQLFragment objectIds = domain.getDomainKind().sqlObjectIdsInDomain(domain);
 
-            Integer[] ids = Table.executeArray(table.getSchema(), objectIds, Integer.class);
-            OntologyManager.deleteOntologyObjects(ids, c, true);
+            Integer[] ids = new SqlSelector(table.getSchema(), objectIds).getArray(int.class);
+            OntologyManager.deleteOntologyObjects(c, true, ArrayUtils.toPrimitive(ids));
         }
     }
 

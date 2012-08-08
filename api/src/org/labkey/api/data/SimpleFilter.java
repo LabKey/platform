@@ -859,7 +859,7 @@ public class SimpleFilter implements Filter
         _clauses = (ArrayList<FilterClause>) src._clauses.clone();
     }
 
-    @Deprecated // Use FieldKey version instead.
+    @Deprecated /** Use FieldKey version instead. */
     public SimpleFilter(String colName, Object value)
     {
         addCondition(colName, value);
@@ -870,7 +870,7 @@ public class SimpleFilter implements Filter
         addCondition(fieldKey, value);
     }
 
-    @Deprecated // Use FieldKey version instead.
+    @Deprecated /** Use FieldKey version instead. */
     public SimpleFilter(String colName, Object value, CompareType compare)
     {
         addCondition(colName, value, compare);

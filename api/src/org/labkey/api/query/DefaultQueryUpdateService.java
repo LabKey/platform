@@ -439,7 +439,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             if (lsid != null)
             {
                 OntologyObject oo = OntologyManager.getOntologyObject(c, lsid);
-                OntologyManager.deleteProperties(oo.getObjectId(), c);
+                OntologyManager.deleteProperties(c, oo.getObjectId());
             }
         }
 

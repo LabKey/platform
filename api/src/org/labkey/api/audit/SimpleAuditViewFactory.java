@@ -235,15 +235,8 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
             // remove orphaned properties
             for (DomainProperty dp : existingProps.values())
             {
-                try
-                {
-                    dirty = true;
-                    OntologyManager.deletePropertyDescriptor(dp.getPropertyDescriptor());
-                }
-                catch (SQLException se)
-                {
-                    throw new RuntimeSQLException(se);
-                }
+                dirty = true;
+                OntologyManager.deletePropertyDescriptor(dp.getPropertyDescriptor());
             }
 
             if (dirty)

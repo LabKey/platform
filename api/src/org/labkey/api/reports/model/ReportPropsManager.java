@@ -173,22 +173,15 @@ public class ReportPropsManager implements ContainerManager.ContainerListener
     {
         Map<String, DomainProperty> propMap = getPropertyMap(container);
 
-        try
+        if (propMap.containsKey(propName))
         {
-            if (propMap.containsKey(propName))
+            String rowLsid = makeLsid(entityId);
+            DomainProperty prop = propMap.get(propName);
+            Map<String, ObjectProperty> props = OntologyManager.getPropertyObjects(container, rowLsid);
+            if (props.containsKey(prop.getPropertyURI()))
             {
-                String rowLsid = makeLsid(entityId);
-                DomainProperty prop = propMap.get(propName);
-                Map<String, ObjectProperty> props = OntologyManager.getPropertyObjects(container, rowLsid);
-                if (props.containsKey(prop.getPropertyURI()))
-                {
-                    return props.get(prop.getPropertyURI()).getObjectValue();
-                }
+                return props.get(prop.getPropertyURI()).getObjectValue();
             }
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
         }
         return null;
     }

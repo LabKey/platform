@@ -620,15 +620,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
         if (source != null)
         {
-            Map<String, Object> properties;
-            try
-            {
-                properties = OntologyManager.getProperties(source.getContainer(), source.getLSID());
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            Map<String, Object> properties = OntologyManager.getProperties(source.getContainer(), source.getLSID());
             String targetStudyId = (String) properties.get(targetStudyColumn.getPropertyURI());
 
             if (targetStudyId != null)
@@ -1021,14 +1013,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             PropertyDescriptor prop = OntologyManager.getPropertyDescriptor(domain.getTypeURI(), domain.getContainer());
             if (prop != null)
             {
-                try
-                {
-                    OntologyManager.deletePropertyDescriptor(prop);
-                }
-                catch (SQLException e)
-                {
-                    throw new RuntimeSQLException(e);
-                }
+                OntologyManager.deletePropertyDescriptor(prop);
             }
         }
 
@@ -1040,14 +1025,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 PropertyDescriptor prop = OntologyManager.getPropertyDescriptor(entry.getKey(), protocol.getContainer());
                 if (prop != null)
                 {
-                    try
-                    {
-                        OntologyManager.deletePropertyDescriptor(prop);
-                    }
-                    catch (SQLException e)
-                    {
-                        throw new RuntimeSQLException(e);
-                    }
+                    OntologyManager.deletePropertyDescriptor(prop);
                 }
             }
         }

@@ -132,6 +132,8 @@ public class ExpSchema extends AbstractExpSchema
     {
         ExpExperimentTable ret = ExperimentService.get().createExperimentTable(EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME, this);
         setupTable(ret);
+        // Don't include exp.experiment rows that are assay batches
+        ret.setBatchProtocol(null);
         if (_containerFilter != null)
             ret.setContainerFilter(_containerFilter);
         ret.getColumn(ExpExperimentTable.Column.RunCount).setHidden(true);
