@@ -48,6 +48,16 @@ public class ReturnUrlForm
 
     public void setReturnUrl(ReturnURLString returnUrl)
     {
+        if (null == returnUrl || returnUrl.isEmpty())
+        {
+            _returnUrl = null;
+            return;
+        }
+
+        // silently ignore non http urls
+        if (!URLHelper.isHttpURL(returnUrl.getSource()))
+            return;
+
         _returnUrl = returnUrl;
     }
 
@@ -110,6 +120,6 @@ public class ReturnUrlForm
     @Deprecated
     public void setReturnURL(ReturnURLString returnUrl)
     {
-        _returnUrl = returnUrl;
+        setReturnUrl(returnUrl);
     }
 }

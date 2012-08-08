@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.view.ViewServlet;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
@@ -839,4 +840,37 @@ public class URLHelper implements Cloneable, Serializable, Taintable
         key.append(ct.getPreferredUrlKey());
         addParameter(key.toString(), value == null ? "" : value.toString());
     }
+
+
+    public static boolean isHttpURL(String url)
+    {
+        if (StringUtils.isEmpty(url))
+            return false;
+        try
+        {
+            URLHelper h = new URLHelper(url);
+            if (null == h.getScheme() && null == h.getHost())
+                return true;
+            if (null == h.getScheme() || null == h.getHost())
+                return false;
+            String scheme = h.getScheme().toLowerCase();
+            if ("https".equals(scheme) || "http".equals(scheme))
+                return true;
+            return false;
+        }
+        catch (URISyntaxException x)
+        {
+            return false;
+        }
+    }
+
+
+/*  public static boolean isLegalInputName(String s)
+    {
+        if (!ViewServlet.validChars(s))
+            return false;
+        if (StringUtils.containsAny(s, '"', '\'', '`'))
+            return false;
+        return true;
+    } */
 }
