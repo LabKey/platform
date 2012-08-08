@@ -4,11 +4,10 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 LABKEY.requiresScript("study/ReportFilterPanel.js"); // needed for xtype:'labkey-filterselectpanel'
-//LABKEY.requiresScript("extWidgets/FilterPanel.js");
 
 /**
- * @cfg displayMode Determines what type of filtering is supported, either 'PARTICIPANT', 'GROUP' or 'BOTH'.  If BOTH is used, a radiogroup will allow toggling between
- * participants and groups.  Defaults to GROUP.
+ * @cfg displayMode Determines what type of filtering is supported, either 'PARTICIPANT', 'GROUP' or 'BOTH'.
+ * If BOTH is used, a radiogroup will allow toggling between participants and groups.  Defaults to GROUP.
  */
 Ext4.define('LABKEY.study.ParticipantFilterPanel', {
 
@@ -45,7 +44,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
     initComponent : function() {
         this.items = this.getItems();
 
-        this.callParent([arguments]);
+        this.callParent();
     },
 
     //the purpose of this method is to support config to filter on either participants or groups only, or provide a toggle between them
@@ -248,7 +247,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
             });
 
             var selections = this.getInitialSelection('participant');
-            this.participantSelectionChanged = selections && selections.length > 0;
+            this.setParticipantSelectionDirty(selections && selections.length > 0);
 
             this.participantSectionCfg = [{
                 store       : store,
@@ -281,7 +280,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
             },
             listeners : {
                 selectionchange : function(){
-                    this.participantSelectionChanged = true;},
+                    this.setParticipantSelectionDirty(true);},
                 scope : this
             }
         }
@@ -322,6 +321,6 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
     },
 
     getFilterType: function(){
-        return this.filterType
+        return this.filterType;
     }
 });

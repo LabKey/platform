@@ -27,6 +27,10 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
     frame  : false,
     bubbleEvents : ['select', 'selectionchange', 'itemmouseenter', 'itemmouseleave', 'initSelectionComplete'],
 
+    statics : {
+        groupSelCache : {} // 15505
+    },
+
     initComponent : function() {
         Ext4.applyIf(this, {
             labelField: 'label',
@@ -34,6 +38,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
             bodyStyle: 'padding-bottom: 10px;'
         });
 
+        this.registerSelectionCache(this.sectionName);
         this.addEvents('initSelectionComplete');
 
         this.items = [];
@@ -71,23 +76,20 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
             cfg.width = 75;
             this.items.push(cfg);
 
-            this.on('selectionchange', function(){
+            this.on('selectionchange', function() {
                 this.allSelected();
                 return true;
             }, this, {stopPropogation: false});
         }
 
         if (this.store) {
-            //TODO: investigate how this is used
-            if (this.fn)
-                this.store.filterBy(this.fn);
 
             this.mon(this.store, 'load', this.allSelected, this, {single: true});
 
             this.items.push(this.getGridCfg());
         }
 
-        this.callParent([arguments]);
+        this.callParent();
 
         if(this.store){
             //perhaps should be {single: true}?
@@ -179,12 +181,30 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
         }
     },
 
+    registerSelectionCache : function(key, value) {
+        if (!LABKEY.ext4.filter.SelectList.groupSelCache[key]) {
+            LABKEY.ext4.filter.SelectList.groupSelCache[key] = value ? value : [];
+        }
+        else if (value) {
+            LABKEY.ext4.filter.SelectList.groupSelCache[key] = value;
+        }
+    },
+
+    inSelectionCache : function(key) {
+        return LABKEY.ext4.filter.SelectList.groupSelCache[key];
+    },
+
     initSelection: function() {
         var target = this.getGrid();
 
         if(!target.store.getCount() || !target.getView().viewReady){
             this.initSelection.defer(10, this);
             return;
+        }
+
+        var cachedSelection = this.inSelectionCache(this.sectionName);
+        if (cachedSelection && cachedSelection.length > 0) {
+            this.selection = cachedSelection;
         }
 
         // if there is not a default number of selection to make initially, set it to select all
@@ -208,12 +228,13 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
             }
             else {
                 target.getSelectionModel().deselectAll();
+                var rec;
                 for (var s=0; s < this.selection.length; s++) {
-                    var rec = target.getStore().findRecord('id', this.selection[s].id);
+                    rec = null;
 
                     // if no matching record by id, try to find a matching record by label (just for initial selection)
-                    if (!rec && this.selection[s].label)
-                        rec = target.getStore().findRecord('label', this.selection[s].label);
+                    if (!rec && this.selection[s].data.label)
+                        rec = target.getStore().findRecord('label', this.selection[s].data.label);
 
                     if (rec)
                     {
@@ -223,6 +244,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
                         target.getSelectionModel().select(rec, true);
                     }
                 }
+                this.registerSelectionCache(this.sectionName, []); // clear cache
             }
         }
         target.resumeEvents();
@@ -321,6 +343,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
                 this.getSelectAllToogle().deselect(-1, true);
             }
 
+            this.registerSelectionCache(this.sectionName, target.getSelectionModel().getSelection());
             return false;
         }
 
@@ -373,7 +396,7 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
 
     initComponent : function() {
         this.items = [this.initSelectionPanel()];
-        this.callParent([arguments]);
+        this.callParent();
     },
 
     initSelectionPanel : function() {
@@ -526,11 +549,12 @@ Ext4.define('LABKEY.ext4.ReportFilterWindow', {
             this.items = [this.filterPanel];
         }
 
-        if (this.relative)
+        if (this.relative) {
             this.relative.on('resize', this.calculatePosition, this);
+        }
         this.on('show', this.calculatePosition, this);
 
-        this.callParent([arguments]);
+        this.callParent();
     },
 
     calculatePosition : function() {
@@ -541,7 +565,8 @@ Ext4.define('LABKEY.ext4.ReportFilterWindow', {
         }
 
         // elements topleft to targets topright
-        if (this.el)
+        if (this.el) {
             this.alignTo(this.relative, this.alignConfig.position, this.alignConfig.offsets);
+        }
     }
 });
