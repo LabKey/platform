@@ -18,9 +18,9 @@ package org.labkey.api.attachments;
 
 import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.data.ContainerManager.RootContainer;
+import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.settings.TemplateResourceHandler;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.NotFoundException;
 
 import javax.servlet.ServletException;
@@ -47,16 +47,25 @@ public class ImageServlet extends HttpServlet
 
     protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
     {
-        String imageName = "";
-        String uri = request.getRequestURI();
-        String file = uri.substring(uri.lastIndexOf('/') + 1);
-        if (file.lastIndexOf('.') > 0)
-        {
-            String name = file.substring(0, file.lastIndexOf('.'));
-            imageName = PageFlowUtil.decode(name);
-        }
         try
         {
+            String imageName = "";
+            ResourceURL url;
+
+            try
+            {
+                url = new ResourceURL(request);
+            }
+            catch (Exception x)
+            {
+                throw new NotFoundException();
+            }
+
+            String file = url.getParsedPath().getName();
+            if (file.lastIndexOf('.') > 0)
+            {
+                imageName = file.substring(0, file.lastIndexOf('.'));
+            }
             if ("logo".equals(imageName))
             {
                 TemplateResourceHandler.LOGO.sendResource(request, response);
