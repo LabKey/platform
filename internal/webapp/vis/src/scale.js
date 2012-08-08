@@ -53,7 +53,24 @@ LABKEY.vis.Scale.Continuous = function(trans, data, value, domain, range){
         };
         logScale.domain = scale.domain;
         logScale.range = scale.range;
-        logScale.ticks = scale.ticks;
+        logScale.ticks = function(){
+            var allTicks = scale.ticks();
+            var ticksToShow = [];
+
+            console.log(allTicks.length);
+            console.log(allTicks);
+
+            if(allTicks.length < 10){
+                return allTicks;
+            } else {
+                for(var i = 0; i < allTicks.length; i++){
+                    if(i % 9 == 0){
+                        ticksToShow.push(allTicks[i]);
+                    }
+                }
+                return ticksToShow;
+            }
+        };
 
         return logScale;
 	}
