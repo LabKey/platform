@@ -111,20 +111,13 @@ public class PropertyServiceImpl implements PropertyService.Interface
 
     public Domain[] getDomains(Container container)
     {
-        try
+        List<DomainDescriptor> dds = new ArrayList<DomainDescriptor>(OntologyManager.getDomainDescriptors(container));
+        Domain[] ret = new Domain[dds.size()];
+        for (int i = 0; i < dds.size(); i ++)
         {
-            List<DomainDescriptor> dds = new ArrayList<DomainDescriptor>(OntologyManager.getDomainDescriptors(container));
-            Domain[] ret = new Domain[dds.size()];
-            for (int i = 0; i < dds.size(); i ++)
-            {
-                ret[i] = new DomainImpl(dds.get(i));
-            }
-            return ret;
+            ret[i] = new DomainImpl(dds.get(i));
         }
-        catch(SQLException e)
-        {
-            return new Domain[0];
-        }
+        return ret;
     }
 
     public void registerValidatorKind(ValidatorKind validatorKind)

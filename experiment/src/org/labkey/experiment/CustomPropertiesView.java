@@ -19,6 +19,7 @@ package org.labkey.experiment;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ActionURL;
 
@@ -75,16 +76,19 @@ public class CustomPropertiesView extends JspView<CustomPropertiesView.CustomPro
         }
     }
 
-    public CustomPropertiesView(String parentLSID, Container c) throws SQLException
+    public CustomPropertiesView(String parentLSID, Container c)
     {
         super("/org/labkey/experiment/CustomProperties.jsp");
         setTitle("Custom Properties");
         Map<String, ObjectProperty> props = OntologyManager.getPropertyObjects(c, parentLSID);
         Map<String, ObjectProperty> map = new TreeMap<String, ObjectProperty>();
-        for (String uri : props.keySet())
+        for (Map.Entry<String, ObjectProperty> entry : props.entrySet())
         {
-            String name = OntologyManager.getPropertyName(uri, c);
-            map.put(name, props.get(uri));
+            PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(entry.getKey(), c);
+            if (pd != null && pd.isShownInDetailsView())
+            {
+                map.put(pd.getName(), entry.getValue());
+            }
         }
         setModelBean(new CustomPropertiesBean(map, _renderers));
     }

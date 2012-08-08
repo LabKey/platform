@@ -246,7 +246,7 @@ public class PlateManager implements PlateService.Service
     }
 
 
-    private void setProperties(Container container, PropertySetImpl propertySet) throws SQLException
+    private void setProperties(Container container, PropertySetImpl propertySet)
     {
         Map<String, ObjectProperty> props = OntologyManager.getPropertyObjects(container, propertySet.getLSID());
         for (ObjectProperty prop : props.values())

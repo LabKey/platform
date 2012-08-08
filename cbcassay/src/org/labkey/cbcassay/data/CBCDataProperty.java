@@ -70,14 +70,7 @@ public class CBCDataProperty
     {
         if (properties == null)
         {
-            try
-            {
-                properties = OntologyManager.getProperties(getContainer(), pd.getPropertyURI());
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            properties = OntologyManager.getProperties(getContainer(), pd.getPropertyURI());
         }
         if (properties == null)
             properties = Collections.emptyMap();

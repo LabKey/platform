@@ -54,14 +54,7 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
      */
     public Map<String, Object> getProperties()
     {
-        try
-        {
-            return OntologyManager.getProperties(getContainer(), getLSID());
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return OntologyManager.getProperties(getContainer(), getLSID());
     }
 
     /**
@@ -69,14 +62,7 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
      */
     public Map<String, ObjectProperty> getObjectProperties()
     {
-        try
-        {
-            return OntologyManager.getPropertyObjects(getContainer(), getLSID());
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return OntologyManager.getPropertyObjects(getContainer(), getLSID());
     }
 
     public void setComment(User user, String comment) throws ValidationException
@@ -154,22 +140,16 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
     {
         if (pd == null)
             return null;
-        try
+
+        Map<String, Object> properties = OntologyManager.getProperties(getContainer(), getLSID());
+        Object value = properties.get(pd.getPropertyURI());
+        if (value == null)
+            return null;
+        if (pd.getPropertyType() == PropertyType.RESOURCE)
         {
-            Map<String, Object> properties = OntologyManager.getProperties(getContainer(), getLSID());
-            Object value = properties.get(pd.getPropertyURI());
-            if (value == null)
-                return null;
-            if (pd.getPropertyType() == PropertyType.RESOURCE)
-            {
-                return new ExpChildObjectImpl(getOwnerObject(), this, pd, (String) value);
-            }
-            return value;
+            return new ExpChildObjectImpl(getOwnerObject(), this, pd, (String) value);
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return value;
     }
 
     public boolean equals(Object obj)

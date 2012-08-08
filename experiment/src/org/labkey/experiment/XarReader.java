@@ -1172,7 +1172,7 @@ public class XarReader extends AbstractXarImporter
     }
 
     private Map<String, ObjectProperty> readPropertyCollection(PropertyCollectionType xbValues,
-                                                               String parentLSID, boolean checkForDuplicates) throws SQLException, XarFormatException
+                                                               String parentLSID, boolean checkForDuplicates) throws XarFormatException
     {
         Map<String, ObjectProperty> existingProps = OntologyManager.getPropertyObjects(getContainer(), parentLSID);
         Map<String, ObjectProperty> result = new HashMap<String, ObjectProperty>();

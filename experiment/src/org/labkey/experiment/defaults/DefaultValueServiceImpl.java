@@ -172,31 +172,24 @@ public class DefaultValueServiceImpl extends DefaultValueService
 
     private Map<DomainProperty, Object> getObjectValues(Container container, Domain domain, String objectLSID)
     {
-        try
-        {
-            Map<String, ObjectProperty> properties = OntologyManager.getPropertyObjects(container, objectLSID);
-            Map<String, DomainProperty> propertyURIToProperty = new HashMap<String, DomainProperty>();
-            for (DomainProperty dp : domain.getProperties())
-                propertyURIToProperty.put(dp.getPropertyDescriptor().getPropertyURI(), dp);
+        Map<String, ObjectProperty> properties = OntologyManager.getPropertyObjects(container, objectLSID);
+        Map<String, DomainProperty> propertyURIToProperty = new HashMap<String, DomainProperty>();
+        for (DomainProperty dp : domain.getProperties())
+            propertyURIToProperty.put(dp.getPropertyDescriptor().getPropertyURI(), dp);
 
-            Map<DomainProperty, Object> values = new HashMap<DomainProperty, Object>();
-            for (Map.Entry<String, ObjectProperty> entry : properties.entrySet())
-            {
-                DomainProperty property = propertyURIToProperty.get(entry.getValue().getPropertyURI());
-                // We won't find the domain property if it has been removed (via user edit) since we last saved default values
-                if (property != null)
-                {
-                    Object value = entry.getValue().value();
-                    if (value != null)
-                        values.put(property, value);
-                }
-            }
-            return values;
-        }
-        catch (SQLException e)
+        Map<DomainProperty, Object> values = new HashMap<DomainProperty, Object>();
+        for (Map.Entry<String, ObjectProperty> entry : properties.entrySet())
         {
-            throw new RuntimeSQLException(e);
+            DomainProperty property = propertyURIToProperty.get(entry.getValue().getPropertyURI());
+            // We won't find the domain property if it has been removed (via user edit) since we last saved default values
+            if (property != null)
+            {
+                Object value = entry.getValue().value();
+                if (value != null)
+                    values.put(property, value);
+            }
         }
+        return values;
     }
 
     private Map<DomainProperty, Object> getMergedValues(Domain domain, Map<DomainProperty, Object> userValues, Map<DomainProperty, Object> globalValues)
@@ -286,14 +279,7 @@ public class DefaultValueServiceImpl extends DefaultValueService
 
     private void clearDefaultValues(Container container, String lsid)
     {
-        try
-        {
-            OntologyManager.deleteOntologyObject(lsid, container, true);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        OntologyManager.deleteOntologyObject(lsid, container, true);
     }
 
     public void clearDefaultValues(Container container, Domain domain)
@@ -302,16 +288,9 @@ public class DefaultValueServiceImpl extends DefaultValueService
         // get two expressions to delete all user-based defaults in this container:
         String userParentLsid = getUserDefaultsWildcardLSID(container, domain, true);
         String userScopesLsid = getUserDefaultsWildcardLSID(container, domain, false);
-        try
-        {
-            StringBuilder sql = new StringBuilder("SELECT ObjectURI FROM " + OntologyManager.getTinfoObject() + " WHERE ObjectURI LIKE ?");
-            OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), new SQLFragment(sql, userParentLsid), container, false);
-            OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), new SQLFragment(sql, userScopesLsid), container, false);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        StringBuilder sql = new StringBuilder("SELECT ObjectURI FROM " + OntologyManager.getTinfoObject() + " WHERE ObjectURI LIKE ?");
+        OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), new SQLFragment(sql, userParentLsid), container, false);
+        OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), new SQLFragment(sql, userScopesLsid), container, false);
     }
 
     public void clearDefaultValues(Container container, Domain domain, User user)

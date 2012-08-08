@@ -900,14 +900,7 @@ public class XarExporter
 
     private Map<String, ObjectProperty> getObjectProperties(Container container, String lsid)
     {
-        try
-        {
-            return OntologyManager.getPropertyObjects(container, lsid);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return OntologyManager.getPropertyObjects(container, lsid);
     }
 
     public void dumpXML(OutputStream out) throws IOException, ExperimentException
@@ -1031,14 +1024,7 @@ public class XarExporter
 
     private Map<String, Object> getProperties(Container container, String contactLSID)
     {
-        try
-        {
-            return OntologyManager.getProperties(container, contactLSID);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return OntologyManager.getProperties(container, contactLSID);
     }
 
     public Document getDOMDocument()

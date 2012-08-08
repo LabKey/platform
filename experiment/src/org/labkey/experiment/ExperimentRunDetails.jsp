@@ -38,8 +38,12 @@
         <td><a href="<%=h(buildURL(ExperimentController.ProtocolDetailsAction.class, "rowId=" + protocol.getRowId()))%>"><%= h(protocol.getName()) %></a></td>
     </tr>
     <tr>
-        <td class="labkey-form-label">Created on</td>
+        <td class="labkey-form-label">Created</td>
         <td><%=h(DateUtil.formatDateTime(run.getCreated())) %></td>
+    </tr>
+    <tr>
+        <td class="labkey-form-label">Modified</td>
+        <td><%=h(DateUtil.formatDateTime(run.getModified())) %></td>
     </tr>
     <tr>
         <td class="labkey-form-label">Comments</td>

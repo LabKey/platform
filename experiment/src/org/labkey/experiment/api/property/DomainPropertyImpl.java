@@ -426,7 +426,7 @@ public class DomainPropertyImpl implements DomainProperty
         return false;
     }
 
-    public void delete(User user) throws SQLException
+    public void delete(User user)
     {
         for (IPropertyValidator validator : getValidators())
             DomainPropertyManager.get().removePropertyValidator(user, this, validator);

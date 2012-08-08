@@ -350,14 +350,7 @@ public class Protocol extends IdentifiableEntity
     {
         if (_objectProperties == null)
         {
-            try
-            {
-                _objectProperties = Collections.unmodifiableMap(OntologyManager.getPropertyObjects(getContainer(), getLSID()));
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
+            _objectProperties = Collections.unmodifiableMap(OntologyManager.getPropertyObjects(getContainer(), getLSID()));
         }
         return _objectProperties;
     }
