@@ -16,18 +16,13 @@
 
 package org.labkey.api.view.menu;
 
-import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.util.FolderDisplayMode;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.WebPartView;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,67 +42,6 @@ public class MenuView extends VBox
     @Override
     public void renderView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
-        boolean showFolders = getViewContext().isShowFolders();
-        FolderDisplayMode displayMode = LookAndFeelProperties.getInstance(getViewContext().getContainer()).getFolderDisplayMode();
-        boolean renderFolderExpander = false;
-
-        PrintWriter out = response.getWriter();
-
-        out.println("<div class=\"menu-wrapper\">");
-        out.println("<table class=\"labkey-expandable-nav-panel\">");
-        if (showFolders)
-        {
-            List<HttpView> nonNullViews = new ArrayList<HttpView>();
-            for (ModelAndView possibleView : _views)
-            {
-                if (possibleView instanceof HttpView && ((HttpView)possibleView).isVisible())
-                    nonNullViews.add((HttpView)possibleView);
-            }
-            boolean expanderRendered = false;
-            for (HttpView view : nonNullViews)
-            {
-                if (renderFolderExpander && ! expanderRendered)
-                {
-                    out.println("<tr><td><!-- menuview element -->");
-                    include(view);
-                    out.println("<!--/ menuview element --></td>");
-                    renderExpandCollapseTD(request, out, showFolders);
-                    out.println("</tr>");
-                    expanderRendered = true;
-                }
-                else
-                {
-                    out.println("<tr><td colspan=" + (renderFolderExpander ? "2" : "1") + "><!-- menuview element -->");
-                    include(view);
-                    out.println("<!--/ menuview element --></td></tr>");
-                }
-            }
-        }
-        else if(renderFolderExpander) 
-        {
-            out.println("<tr>");
-            renderExpandCollapseTD(request, out, showFolders);
-            out.println("</tr>");
-        }
-        out.print("</table></div>");
-    }
-
-    private void renderExpandCollapseTD(HttpServletRequest request, PrintWriter out, boolean showFolders)
-    {
-        ActionURL hideShowLink = HttpView.currentContext().cloneActionURL();
-        hideShowLink.deleteParameters();
-        hideShowLink.setPageFlow("admin");
-        hideShowLink.setAction("setShowFolders.view");
-        hideShowLink.addParameter("showFolders", Boolean.toString(!showFolders));
-        hideShowLink.addParameter("redir", HttpView.currentContext().getActionURL().toString());
-
-        out.print("<td id=\"expandCollapseFolders\" style=\"padding-top:5px;\">\n");
-        out.print("<a href=\"" + hideShowLink.getEncodedLocalURIString() + "\">");
-        String img = (showFolders ? "collapse_" : "expand_") + "folders.gif";
-        String title = "Click to " + (showFolders ? "hide" : "show") + " folders.";
-        out.print("<img src=\"" + request.getContextPath() + "/_images/" + img + "\" title=\"");
-        out.print(PageFlowUtil.filter(title));
-        out.print("\">");
-        out.print("</a></td>");
+        include(new JspView<Object>(this.getClass(), "menuView.jsp", _views));
     }
 }
