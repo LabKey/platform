@@ -193,11 +193,28 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
             + "}";
     },
 
+    removeLeadingComments: function(fnText) {
+        // issue 15679: allow comments before function definition
+        fnText = fnText.trim();
+        while (fnText.indexOf("//") == 0 || fnText.indexOf("/*") == 0)
+        {
+            var start = 0;
+            if (fnText.indexOf("//") == 0)
+                start = fnText.indexOf("\n") + 1;
+            else
+                start = fnText.indexOf("*/") + 2;
+            fnText = fnText.substring(start).trim();
+        }
+        return fnText;
+    },
+
     applyChangesButtonClicked: function() {
         // verify the pointClickFn for JS errors
         if (!this.pointClickTextAreaHtml.isDisabled())
         {
-            var fnText = editAreaLoader.getValue(this.pointClickTextAreaId).trim();
+            var fnText = editAreaLoader.getValue(this.pointClickTextAreaId);
+            fnText = this.removeLeadingComments(fnText);
+
             if (fnText == null || fnText.length == 0 || fnText.indexOf("function") != 0)
             {
                 Ext4.getDom(this.fnErrorDiv).innerHTML = '<span class="labkey-error">Error: the value provided does not begin with a function declaration.</span>';
