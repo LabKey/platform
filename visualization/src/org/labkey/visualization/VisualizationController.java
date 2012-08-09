@@ -1421,7 +1421,7 @@ public class VisualizationController extends SpringActionController
                 return view;
             }
             else
-                return new HtmlView("No renderer for specified type: " + form.getRenderType());
+                return new HtmlView("No renderer for specified type: " + PageFlowUtil.filter(form.getRenderType()));
 /*
             Report report = getReport(form);
 
