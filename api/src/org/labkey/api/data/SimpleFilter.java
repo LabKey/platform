@@ -42,7 +42,7 @@ public class SimpleFilter implements Filter
     public static abstract class FilterClause
     {
         protected boolean _urlClause = false;
-        protected Object[] _paramVals = new Object[0];
+        protected Object[] _paramVals = new Object[0];   // TODO: _paramVals, getter, and callers should all be @NotNull. Consider List<?> as well
         protected boolean _includeNull = false;
         protected boolean _negated = false;
 
@@ -599,7 +599,7 @@ public class SimpleFilter implements Filter
         {
             Object[] params = getParamVals();
 
-            ColumnInfo colInfo = columnMap != null ? columnMap.get(getFieldKey()) : null;
+            @Nullable ColumnInfo colInfo = columnMap != null ? columnMap.get(getFieldKey()) : null;
             String name = colInfo != null ? colInfo.getAlias() : getFieldKey().getName();
             String alias = dialect.getColumnSelectName(name);
 
@@ -607,7 +607,7 @@ public class SimpleFilter implements Filter
 
             if (params.length == 0)
             {
-                if(isIncludeNull())
+                if (isIncludeNull())
                     in.append(alias + " IS " + (isNegated() ? " NOT " : "") + "NULL");
                 else if (!isNegated())
                     in.append(alias + " IN (NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
@@ -617,42 +617,8 @@ public class SimpleFilter implements Filter
                 return in;
             }
 
-            in.append("((" + alias);
-            in.append(" " + (isNegated() ? "NOT " : "") + "IN (");
-
-            String questionMarks = StringUtils.repeat("?, ", params.length);
-            in.append(questionMarks.substring(0, questionMarks.length() - 2));
-
-            in.append(")");
-
-            if (colInfo == null || !isUrlClause() || getParamVals() == null)
-            {
-                in.addAll(getParamVals());
-            }
-            else
-            {
-                for (Object paramVal : getParamVals())
-                {
-                    in.add(CompareType.convertParamValue(colInfo, paramVal));
-                }
-            }
-
-            if(isIncludeNull())
-            {
-                if(isNegated())
-                    in.append(") AND " + alias + " IS NOT NULL)");
-                else
-                    in.append(") OR " + alias + " IS NULL)");
-            }
-            else
-            {
-                if(isNegated())
-                    in.append(") OR " + alias + " IS NULL)");
-                else
-                    in.append("))");
-            }
-
-            return in;
+            // Dialect may want to generate database-specific SQL, especially for very large IN clauses
+            return dialect.appendInClauseSql(in, getParamVals(), colInfo, alias, isNegated(), isIncludeNull(), isUrlClause());
         }
 
         public void addInValue(Object... values)

@@ -24,11 +24,14 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.InClauseGenerator;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.ParameterMarkerInClauseGenerator;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -338,6 +341,13 @@ public abstract class SqlDialect
 
     // Note: SQLFragment and StringBuilder both implement Appendable
     public abstract void appendSelectAutoIncrement(Appendable sql, TableInfo table, String columnName);
+
+    private static InClauseGenerator GENERATOR = new ParameterMarkerInClauseGenerator();
+
+    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Object[] params, @Nullable ColumnInfo colInfo, String alias, boolean negated, boolean includeNull, boolean urlClause)
+    {
+        return GENERATOR.appendInClauseSql(sql, params, colInfo, alias, negated, includeNull, urlClause);
+    }
 
     public abstract @Nullable ResultSet executeInsertWithResults(@NotNull PreparedStatement stmt) throws SQLException;
 
