@@ -742,7 +742,7 @@ public class OntologyManager
                 sqlDeleteOwnedObjects.append("DELETE FROM ").append(getTinfoObject()).append(" WHERE Container = '").append(c.getId()).append("' AND OwnerObjectId IN (");
                 sqlDeleteOwnedObjects.append(in);
                 sqlDeleteOwnedObjects.append(")");
-                new SqlExecutor(getExpSchema().getScope(), sqlDeleteOwnedObjects.toString());
+                new SqlExecutor(getExpSchema().getScope(), sqlDeleteOwnedObjects.toString()).execute();
             }
 
             if (deleteObjects)
