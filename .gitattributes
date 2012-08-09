@@ -1123,7 +1123,6 @@ experiment/src/org/labkey/experiment/api/ExpMaterialInputTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpMaterialRunInputImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpMaterialTableImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpObjectImpl.java -text
-experiment/src/org/labkey/experiment/api/ExpPropertyCache.java -text
 experiment/src/org/labkey/experiment/api/ExpProtocolActionImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpProtocolApplicationImpl.java -text
 experiment/src/org/labkey/experiment/api/ExpProtocolApplicationTableImpl.java -text

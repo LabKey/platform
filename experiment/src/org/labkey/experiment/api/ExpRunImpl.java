@@ -80,19 +80,12 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
     public ExpExperimentImpl[] getExperiments()
     {
-        try
-        {
-            final String sql= " SELECT E.* FROM " + ExperimentServiceImpl.get().getTinfoExperiment() + " E "
-                            + " INNER JOIN " + ExperimentServiceImpl.get().getTinfoRunList() + " RL ON (E.RowId = RL.ExperimentId) "
-                            + " INNER JOIN " + ExperimentServiceImpl.get().getTinfoExperimentRun() + " ER ON (ER.RowId = RL.ExperimentRunId) "
-                            + " WHERE ER.LSID = ? AND E.Hidden = ?;"  ;
+        final String sql= " SELECT E.* FROM " + ExperimentServiceImpl.get().getTinfoExperiment() + " E "
+                        + " INNER JOIN " + ExperimentServiceImpl.get().getTinfoRunList() + " RL ON (E.RowId = RL.ExperimentId) "
+                        + " INNER JOIN " + ExperimentServiceImpl.get().getTinfoExperimentRun() + " ER ON (ER.RowId = RL.ExperimentRunId) "
+                        + " WHERE ER.LSID = ? AND E.Hidden = ?;"  ;
 
-            return ExpExperimentImpl.fromExperiments(Table.executeQuery(ExperimentServiceImpl.get().getExpSchema(), sql, new Object[]{_object.getLSID(), Boolean.FALSE}, Experiment.class));
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return ExpExperimentImpl.fromExperiments(new SqlSelector(ExperimentServiceImpl.get().getExpSchema(), sql, _object.getLSID(), Boolean.FALSE).getArray(Experiment.class));
     }
 
     public ExpProtocolImpl getProtocol()
@@ -102,49 +95,35 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
     public ExpData[] getOutputDatas(@Nullable DataType type)
     {
-        try
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts("RunId"), getRowId());
+        if (type != null)
         {
-            SimpleFilter filter = new SimpleFilter();
-            filter.addCondition(FieldKey.fromParts("RunId"), getRowId());
-            if (type != null)
-            {
-                filter.addWhereClause(Lsid.namespaceFilter("LSID", type.getNamespacePrefix()), null);
-            }
-            return ExpDataImpl.fromDatas(Table.select(ExperimentServiceImpl.get().getTinfoData(), Table.ALL_COLUMNS, filter, null, Data.class));
+            filter.addWhereClause(Lsid.namespaceFilter("LSID", type.getNamespacePrefix()), null);
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return ExpDataImpl.fromDatas(new TableSelector(ExperimentServiceImpl.get().getTinfoData(), Table.ALL_COLUMNS, filter, null).getArray(Data.class));
     }
 
     public ExpData[] getInputDatas(@Nullable String inputRole, @Nullable ExpProtocol.ApplicationType applicationType)
     {
-        try
+        SQLFragment sql = new SQLFragment();
+        sql.append("SELECT exp.Data.* FROM exp.Data WHERE exp.Data.RowId IN ");
+        sql.append("\n(SELECT exp.DataInput.DataId FROM exp.DataInput ");
+        sql.append("\nINNER JOIN exp.ProtocolApplication ON exp.DataInput.TargetApplicationId = exp.ProtocolApplication.RowId");
+        sql.append("\nWHERE exp.ProtocolApplication.RunId = ?");
+        sql.add(getRowId());
+        if (inputRole != null)
         {
-            SQLFragment sql = new SQLFragment();
-            sql.append("SELECT exp.Data.* FROM exp.Data WHERE exp.Data.RowId IN ");
-            sql.append("\n(SELECT exp.DataInput.DataId FROM exp.DataInput ");
-            sql.append("\nINNER JOIN exp.ProtocolApplication ON exp.DataInput.TargetApplicationId = exp.ProtocolApplication.RowId");
-            sql.append("\nWHERE exp.ProtocolApplication.RunId = ?");
-            sql.add(getRowId());
-            if (inputRole != null)
-            {
-                sql.append("\nAND exp.DataInput.Role = ? ");
-                sql.add(inputRole);
-            }
-            if (applicationType != null)
-            {
-                sql.append("\nAND exp.ProtocolApplication.CpasType = ");
-                sql.appendStringLiteral(applicationType.toString());
-            }
-            sql.append(")");
-            return ExpDataImpl.fromDatas(Table.executeQuery(ExperimentService.get().getSchema(), sql.getSQL(), sql.getParamsArray(), Data.class));
+            sql.append("\nAND exp.DataInput.Role = ? ");
+            sql.add(inputRole);
         }
-        catch (SQLException e)
+        if (applicationType != null)
         {
-            throw new RuntimeSQLException(e);
+            sql.append("\nAND exp.ProtocolApplication.CpasType = ");
+            sql.appendStringLiteral(applicationType.toString());
         }
+        sql.append(")");
+        return ExpDataImpl.fromDatas(new SqlSelector(ExperimentService.get().getSchema(), sql).getArray(Data.class));
     }
 
     public File getFilePathRoot()
@@ -631,22 +610,16 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
     public ExpDataImpl[] getAllDataUsedByRun()
     {
-        try
-        {
-            StringBuilder sql = new StringBuilder();
-            sql.append("select d.* from ");
-            sql.append(ExperimentServiceImpl.get().getTinfoDataInput());
-            sql.append(" di, ");
-            sql.append(ExperimentServiceImpl.get().getTinfoData());
-            sql.append(" d, ");
-            sql.append(ExperimentServiceImpl.get().getTinfoProtocolApplication());
-            sql.append(" pa where di.targetapplicationid=pa.rowid and pa.runid=? and di.dataid=d.rowid");
-            return ExpDataImpl.fromDatas(Table.executeQuery(ExperimentServiceImpl.get().getSchema(), sql.toString(), new Object[] { getRowId() }, Data.class));
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        SQLFragment sql = new SQLFragment();
+        sql.append("select d.* from ");
+        sql.append(ExperimentServiceImpl.get().getTinfoDataInput(), "di");
+        sql.append(", ");
+        sql.append(ExperimentServiceImpl.get().getTinfoData(), "d");
+        sql.append(", ");
+        sql.append(ExperimentServiceImpl.get().getTinfoProtocolApplication(), "pa");
+        sql.append(" where di.targetapplicationid=pa.rowid and pa.runid=? and di.dataid=d.rowid");
+        sql.add(getRowId());
+        return ExpDataImpl.fromDatas(new SqlSelector(ExperimentServiceImpl.get().getSchema(), sql).getArray(Data.class));
     }
 
 

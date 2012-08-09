@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpExperiment;
@@ -60,49 +61,35 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
 
     public ExpRunImpl[] getRuns()
     {
-        try
-        {
-            String sql = "SELECT ER.* FROM " + ExperimentServiceImpl.get().getTinfoExperiment() + " E "
-                    + " INNER JOIN " + ExperimentServiceImpl.get().getTinfoRunList()  + " RL ON (E.RowId = RL.ExperimentId) "
-                    + " INNER JOIN " + ExperimentServiceImpl.get().getTinfoExperimentRun()  + " ER ON (ER.RowId = RL.ExperimentRunId) "
-                    + " WHERE E.LSID = ? ORDER BY ER.RowId" ;
+        String sql = "SELECT ER.* FROM " + ExperimentServiceImpl.get().getTinfoExperiment() + " E "
+                + " INNER JOIN " + ExperimentServiceImpl.get().getTinfoRunList()  + " RL ON (E.RowId = RL.ExperimentId) "
+                + " INNER JOIN " + ExperimentServiceImpl.get().getTinfoExperimentRun()  + " ER ON (ER.RowId = RL.ExperimentRunId) "
+                + " WHERE E.LSID = ? ORDER BY ER.RowId" ;
 
-            return ExpRunImpl.fromRuns(Table.executeQuery(ExperimentServiceImpl.get().getExpSchema(), sql, new Object[] { getLSID() }, ExperimentRun.class));
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return ExpRunImpl.fromRuns(new SqlSelector(ExperimentServiceImpl.get().getExpSchema(), sql, getLSID()).getArray(ExperimentRun.class));
     }
 
     public ExpRun[] getRuns(@Nullable ExpProtocol parentProtocol, ExpProtocol childProtocol)
     {
-        try
+        SQLFragment sql = new SQLFragment(" SELECT ER.* "
+                    + " FROM exp.ExperimentRun ER "
+                    + " INNER JOIN exp.RunList RL ON ( ER.RowId = RL.ExperimentRunId ) "
+                    + " WHERE RL.ExperimentId = ? ");
+        sql.add(getRowId());
+        if (parentProtocol != null)
         {
-            SQLFragment sql = new SQLFragment(" SELECT ER.* "
-                        + " FROM exp.ExperimentRun ER "
-                        + " INNER JOIN exp.RunList RL ON ( ER.RowId = RL.ExperimentRunId ) "
-                        + " WHERE RL.ExperimentId = ? ");
-            sql.add(getRowId());
-            if (parentProtocol != null)
-            {
-                sql.append("\nAND ER.ProtocolLSID = ?");
-                sql.add(parentProtocol.getLSID());
-            }
-            if (childProtocol != null)
-            {
-                sql.append("\nAND ER.RowId IN (SELECT PA.RunId "
-                    + " FROM exp.ProtocolApplication PA "
-                    + " WHERE PA.ProtocolLSID = ? ) ");
-                sql.add(childProtocol.getLSID());
-            }
-            ExperimentRun[] runs = Table.executeQuery(ExperimentService.get().getSchema(), sql.getSQL(), sql.getParams().toArray(new Object[sql.getParams().size()]), ExperimentRun.class);
-            return ExpRunImpl.fromRuns(runs);
+            sql.append("\nAND ER.ProtocolLSID = ?");
+            sql.add(parentProtocol.getLSID());
         }
-        catch (SQLException e)
+        if (childProtocol != null)
         {
-            throw new RuntimeSQLException(e);
+            sql.append("\nAND ER.RowId IN (SELECT PA.RunId "
+                + " FROM exp.ProtocolApplication PA "
+                + " WHERE PA.ProtocolLSID = ? ) ");
+            sql.add(childProtocol.getLSID());
         }
+        ExperimentRun[] runs = new SqlSelector(ExperimentService.get().getSchema(), sql).getArray(ExperimentRun.class);
+        return ExpRunImpl.fromRuns(runs);
     }
 
     public ExpProtocol getBatchProtocol()
@@ -121,15 +108,8 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
 
     public List<ExpProtocol> getAllProtocols()
     {
-        try
-        {
-            String sql = "SELECT p.* FROM " + ExperimentServiceImpl.get().getTinfoProtocol() + " p, " + ExperimentServiceImpl.get().getTinfoExperimentRun() + " r WHERE p.LSID = r.ProtocolLSID AND r.RowId IN (SELECT ExperimentRunId FROM " + ExperimentServiceImpl.get().getTinfoRunList() + " WHERE ExperimentId = ?)";
-            return Arrays.<ExpProtocol>asList(ExpProtocolImpl.fromProtocols(Table.executeQuery(ExperimentServiceImpl.get().getSchema(), sql, new Object[] { getRowId() }, Protocol.class)));
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        String sql = "SELECT p.* FROM " + ExperimentServiceImpl.get().getTinfoProtocol() + " p, " + ExperimentServiceImpl.get().getTinfoExperimentRun() + " r WHERE p.LSID = r.ProtocolLSID AND r.RowId IN (SELECT ExperimentRunId FROM " + ExperimentServiceImpl.get().getTinfoRunList() + " WHERE ExperimentId = ?)";
+        return Arrays.<ExpProtocol>asList(ExpProtocolImpl.fromProtocols(new SqlSelector(ExperimentServiceImpl.get().getSchema(), sql, getRowId()).getArray(Protocol.class)));
     }
 
     public void removeRun(User user, ExpRun run) throws Exception

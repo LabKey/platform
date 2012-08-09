@@ -259,23 +259,17 @@ public class ReportViewProvider implements DataViewProvider
         @Override
         public void validateProperties(Container container, User user, String id, Map<String, Object> props) throws ValidationException
         {
-            try {
-                Report report = ReportService.get().getReportByEntityId(container, id);
+            Report report = ReportService.get().getReportByEntityId(container, id);
 
-                if (report != null)
-                {
-                    List<ValidationError> errors = new ArrayList<ValidationError>();
-
-                    if (!report.canEdit(user, container, errors))
-                    {
-                        String errorMsg = ReportUtil.getErrors(errors);
-                        throw new ValidationException(errorMsg);
-                    }
-                }
-            }
-            catch (SQLException e)
+            if (report != null)
             {
-                throw new ValidationException("Unable to find the specified report view");
+                List<ValidationError> errors = new ArrayList<ValidationError>();
+
+                if (!report.canEdit(user, container, errors))
+                {
+                    String errorMsg = ReportUtil.getErrors(errors);
+                    throw new ValidationException(errorMsg);
+                }
             }
         }
 

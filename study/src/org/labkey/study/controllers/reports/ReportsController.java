@@ -696,22 +696,16 @@ public class ReportsController extends BaseStudyController
 
         public ActionURL getSuccessURL(SaveReportViewForm form)
         {
-            try {
-                if (!StringUtils.isBlank(form.getRedirectUrl()))
-                    return new ActionURL(form.getRedirectUrl());
+            if (!StringUtils.isBlank(form.getRedirectUrl()))
+                return new ActionURL(form.getRedirectUrl());
 
-                // after the save just redirect to the newly created view, ask the report for it's run URL
-                Report r = ReportService.get().getReport(_savedReportId);
-                if (r != null)
-                    return r.getRunReportURL(getViewContext());
-                else
-                    return getViewContext().cloneActionURL().deleteParameters().setAction("begin.view");
+            // after the save just redirect to the newly created view, ask the report for it's run URL
+            Report r = ReportService.get().getReport(_savedReportId);
+            if (r != null)
+                return r.getRunReportURL(getViewContext());
+            else
+                return getViewContext().cloneActionURL().deleteParameters().setAction("begin.view");
 
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeException(e);
-            }
         }
 
         public NavTree appendNavTrail(NavTree root)

@@ -63,13 +63,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
 
     private boolean hasViews(User user, Container c)
     {
-        try {
-            return ReportService.get().getReports(user, c).length > 0;
-        }
-        catch (SQLException e)
-        {
-            return false;
-        }
+        return ReportService.get().getReports(user, c).length > 0;
     }
 
     static class ViewProviderResource extends AbstractWebdavResourceCollection
@@ -108,21 +102,15 @@ public class ReportWebdavProvider implements WebdavService.Provider
 
         private Map<String, Report> getReportMap()
         {
-            try {
-                if (_map == null)
-                {
-                    _map = new HashMap<String, Report>();
-                    for (Report report : ReportService.get().getReports(null, _c))
-                    {
-                        _map.put(report.getDescriptor().getReportName() + ".xml", report);
-                    }
-                }
-                return _map;
-            }
-            catch (SQLException e)
+            if (_map == null)
             {
-                return Collections.emptyMap();
+                _map = new HashMap<String, Report>();
+                for (Report report : ReportService.get().getReports(null, _c))
+                {
+                    _map.put(report.getDescriptor().getReportName() + ".xml", report);
+                }
             }
+            return _map;
         }
 
         public boolean exists()

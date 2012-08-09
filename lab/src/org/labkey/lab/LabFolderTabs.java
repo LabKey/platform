@@ -101,7 +101,7 @@ public class LabFolderTabs
         @Override
         public boolean isSelectedPage(ViewContext viewContext)
         {
-            return super.isSelectedPage(viewContext) || viewContext.getActionURL().getPageFlow().equals("assay");
+            return super.isSelectedPage(viewContext) || viewContext.getActionURL().getController().equals("assay");
         }
 
         @Override

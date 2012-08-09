@@ -136,39 +136,25 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
 
         FolderType collaborationType = ModuleLoader.getInstance().getFolderType(CollaborationFolderType.TYPE_NAME);
 
-        try
-        {
-            supportContainer.setFolderType(collaborationType, moduleContext.getUpgradeUser());
-            homeContainer.setFolderType(collaborationType, moduleContext.getUpgradeUser());
-        }
-        catch (SQLException e)
-        {
-            _log.error("Error setting folder type", e);
-        }
+        supportContainer.setFolderType(collaborationType, moduleContext.getUpgradeUser());
+        homeContainer.setFolderType(collaborationType, moduleContext.getUpgradeUser());
 
         String defaultPageName = "default";
 
         loadWikiContent(homeContainer, moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Server", "/org/labkey/wiki/welcomeWiki.txt", WikiRendererType.HTML);
         loadWikiContent(supportContainer,  moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey support", "/org/labkey/wiki/supportWiki.txt", WikiRendererType.RADEOX);
 
-        try
-        {
-            Map<String, String> homeProps = new HashMap<String, String>();
-            homeProps.put("webPartContainer", homeContainer.getId());
-            homeProps.put("name", defaultPageName);
-            addWebPart(WEB_PART_NAME, homeContainer, HttpView.BODY, homeProps);
+        Map<String, String> homeProps = new HashMap<String, String>();
+        homeProps.put("webPartContainer", homeContainer.getId());
+        homeProps.put("name", defaultPageName);
+        addWebPart(WEB_PART_NAME, homeContainer, HttpView.BODY, homeProps);
 
-            addWebPart("Projects", homeContainer, HttpView.BODY, 1);
+        addWebPart("Projects", homeContainer, HttpView.BODY, 1);
 
-            Map<String, String> supportProps = new HashMap<String, String>();
-            supportProps.put("webPartContainer", supportContainer.getId());
-            supportProps.put("name", defaultPageName);
-            addWebPart(WEB_PART_NAME, supportContainer, HttpView.BODY, supportProps);
-        }
-        catch (SQLException e)
-        {
-            _log.error("Unable to set up support folder", e);
-        }
+        Map<String, String> supportProps = new HashMap<String, String>();
+        supportProps.put("webPartContainer", supportContainer.getId());
+        supportProps.put("name", defaultPageName);
+        addWebPart(WEB_PART_NAME, supportContainer, HttpView.BODY, supportProps);
     }
 
     public Collection<String> getSummary(Container c)

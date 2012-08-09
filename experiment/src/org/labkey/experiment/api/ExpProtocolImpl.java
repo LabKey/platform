@@ -165,18 +165,11 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
 
     public List<ExpProtocol> getParentProtocols()
     {
-        try
-        {
-            String sql = "SELECT P.* FROM " + ExperimentServiceImpl.get().getTinfoProtocol() + " P, " + ExperimentServiceImpl.get().getTinfoProtocolAction() + " PA "
-                    + " WHERE P.RowId = PA.ParentProtocolID AND PA.ChildProtocolId = ?" ;
+        String sql = "SELECT P.* FROM " + ExperimentServiceImpl.get().getTinfoProtocol() + " P, " + ExperimentServiceImpl.get().getTinfoProtocolAction() + " PA "
+                + " WHERE P.RowId = PA.ParentProtocolID AND PA.ChildProtocolId = ?" ;
 
-            ExpProtocol[] expProtocols = fromProtocols(Table.executeQuery(ExperimentServiceImpl.get().getExpSchema(), sql, new Object[]{getRowId()}, Protocol.class));
-            return Arrays.asList(expProtocols);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        ExpProtocol[] expProtocols = fromProtocols(new SqlSelector(ExperimentServiceImpl.get().getExpSchema(), sql, getRowId()).getArray(Protocol.class));
+        return Arrays.asList(expProtocols);
     }
 
     public void setContainer(Container container)
@@ -211,32 +204,17 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
 
     public List<ExpProtocol> getChildProtocols()
     {
-        try
-        {
-            String sql = "SELECT P.* FROM " + ExperimentServiceImpl.get().getTinfoProtocol() + " P, " + ExperimentServiceImpl.get().getTinfoProtocolAction() + " PA "
-                    + " WHERE P.RowId = PA.ChildProtocolID AND PA.ParentProtocolId = ? ORDER BY PA.Sequence" ;
+        String sql = "SELECT P.* FROM " + ExperimentServiceImpl.get().getTinfoProtocol() + " P, " + ExperimentServiceImpl.get().getTinfoProtocolAction() + " PA "
+                + " WHERE P.RowId = PA.ChildProtocolID AND PA.ParentProtocolId = ? ORDER BY PA.Sequence" ;
 
-            ExpProtocolImpl[] result = fromProtocols(Table.executeQuery(ExperimentServiceImpl.get().getExpSchema(), sql, new Object[]{_object.getRowId()}, Protocol.class));
-            return Arrays.<ExpProtocol>asList(result);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-
+        ExpProtocolImpl[] result = fromProtocols(new SqlSelector(ExperimentServiceImpl.get().getExpSchema(), sql, _object.getRowId()).getArray(Protocol.class));
+        return Arrays.<ExpProtocol>asList(result);
     }
 
     public List<ExpExperimentImpl> getBatches()
     {
-        try
-        {
-            Filter filter = new SimpleFilter("BatchProtocolId", getRowId());
-            return Arrays.asList(ExpExperimentImpl.fromExperiments(Table.select(ExperimentServiceImpl.get().getTinfoExperiment(), Table.ALL_COLUMNS, filter, null, Experiment.class)));
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        Filter filter = new SimpleFilter("BatchProtocolId", getRowId());
+        return Arrays.asList(ExpExperimentImpl.fromExperiments(new TableSelector(ExperimentServiceImpl.get().getTinfoExperiment(), Table.ALL_COLUMNS, filter, null).getArray(Experiment.class)));
     }
 
     public static ExpProtocolImpl[] fromProtocols(Protocol[] protocols)
@@ -276,25 +254,13 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
 
     public ExpRun[] getExpRuns()
     {
-        try
-        {
-            SQLFragment sql = new SQLFragment(" SELECT ER.* "
-                        + " FROM exp.ExperimentRun ER "
-                        + " WHERE ER.ProtocolLSID = ?");
-            sql.add(getLSID());
+        SQLFragment sql = new SQLFragment(" SELECT ER.* "
+                    + " FROM exp.ExperimentRun ER "
+                    + " WHERE ER.ProtocolLSID = ?");
+        sql.add(getLSID());
 
-            ExperimentRun[] runs = Table.executeQuery(
-                ExperimentService.get().getSchema(),
-                sql.getSQL(),
-                sql.getParams().toArray(new Object[sql.getParams().size()]),
-                ExperimentRun.class);
-
-            return ExpRunImpl.fromRuns(runs);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        ExperimentRun[] runs = new SqlSelector(ExperimentService.get().getSchema(), sql).getArray(ExperimentRun.class);
+        return ExpRunImpl.fromRuns(runs);
     }
 
     public Set<Container> getExpRunContainers()

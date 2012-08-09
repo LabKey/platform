@@ -255,10 +255,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                     {
                         ExperimentService.get().moveContainer(c, cOldParent, cNewParent);
                     }
-                    catch (SQLException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
                     catch (ExperimentException e)
                     {
                         throw new RuntimeException(e);

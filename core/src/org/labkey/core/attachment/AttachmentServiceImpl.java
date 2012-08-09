@@ -43,6 +43,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.MissingRootDirectoryException;
@@ -402,7 +403,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
 
     @Override
-    public void deleteAttachments(AttachmentParent... parents) throws SQLException
+    public void deleteAttachments(AttachmentParent... parents)
     {
         for(AttachmentParent parent : parents)
         {
@@ -412,7 +413,7 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             for (Attachment att : atts)
                 ss.deleteResource(makeDocId(parent, att.getName()));
 
-            Table.execute(coreTables().getSchema(), sqlCascadeDelete(), parent.getEntityId());
+            new SqlExecutor(coreTables().getSchema(), new SQLFragment(sqlCascadeDelete(), parent.getEntityId())).execute();
             if (parent instanceof AttachmentDirectory)
                 ((AttachmentDirectory)parent).deleteAttachment(HttpView.currentContext().getUser(), null);
             AttachmentCache.removeAttachments(parent);

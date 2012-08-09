@@ -299,6 +299,6 @@ public class WikiTOC extends NavTreeMenu
     private boolean isInWebPart(ViewContext context)
     {
         //is page being rendered in web part or in module?
-        return context.getActionURL().getPageFlow().equalsIgnoreCase("Project");
+        return context.getActionURL().getController().equalsIgnoreCase("Project");
     }
 }

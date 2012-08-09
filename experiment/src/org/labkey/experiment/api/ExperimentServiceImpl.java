@@ -17,6 +17,7 @@
 package org.labkey.experiment.api;
 
 import org.apache.commons.collections15.iterators.ArrayIterator;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
@@ -39,6 +40,8 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -114,6 +117,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
@@ -229,18 +233,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     @Override
     public ExpExperiment[] getMatchingBatches(String name, Container container, ExpProtocol protocol)
     {
-        try
-        {
-            SimpleFilter filter = new SimpleFilter("Name", name);
-            filter.addCondition("Container", container.getId());
-            filter.addCondition("BatchProtocolId", protocol.getRowId());
-            Experiment[] experiment = Table.select(getTinfoExperiment(), Table.ALL_COLUMNS, filter, null, Experiment.class);
-            return ExpExperimentImpl.fromExperiments(experiment);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        SimpleFilter filter = new SimpleFilter("Name", name);
+        filter.addCondition("Container", container.getId());
+        filter.addCondition("BatchProtocolId", protocol.getRowId());
+        Experiment[] experiment = new TableSelector(getTinfoExperiment(), Table.ALL_COLUMNS, filter, null).getArray(Experiment.class);
+        return ExpExperimentImpl.fromExperiments(experiment);
     }
 
     public ExpRunImpl getExpRun(String lsid)
@@ -253,32 +250,24 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpRun[] getExpRuns(Container container, ExpProtocol parentProtocol, ExpProtocol childProtocol)
     {
-        try
+        SQLFragment sql = new SQLFragment(" SELECT ER.* "
+                    + " FROM exp.ExperimentRun ER "
+                    + " WHERE ER.Container = ? ");
+        sql.add(container.getId());
+        if (parentProtocol != null)
         {
-            SQLFragment sql = new SQLFragment(" SELECT ER.* "
-                        + " FROM exp.ExperimentRun ER "
-                        + " WHERE ER.Container = ? ");
-            sql.add(container.getId());
-            if (parentProtocol != null)
-            {
-                sql.append("\nAND ER.ProtocolLSID = ?");
-                sql.add(parentProtocol.getLSID());
-            }
-            if (childProtocol != null)
-            {
-                sql.append("\nAND ER.RowId IN (SELECT PA.RunId "
-                    + " FROM exp.ProtocolApplication PA "
-                    + " WHERE PA.ProtocolLSID = ? ) ");
-                sql.add(childProtocol.getLSID());
-            }
-            ExperimentRun[] runs = Table.executeQuery(getSchema(), sql.getSQL(), sql.getParams().toArray(new Object[sql.getParams().size()]), ExperimentRun.class);
-            return ExpRunImpl.fromRuns(runs);
+            sql.append("\nAND ER.ProtocolLSID = ?");
+            sql.add(parentProtocol.getLSID());
         }
-        catch (SQLException e)
+        if (childProtocol != null)
         {
-            throw new RuntimeSQLException(e);
+            sql.append("\nAND ER.RowId IN (SELECT PA.RunId "
+                + " FROM exp.ProtocolApplication PA "
+                + " WHERE PA.ProtocolLSID = ? ) ");
+            sql.add(childProtocol.getLSID());
         }
-
+        ExperimentRun[] runs = new SqlSelector(getSchema(), sql).getArray(ExperimentRun.class);
+        return ExpRunImpl.fromRuns(runs);
     }
 
     public ExpRunImpl createExperimentRun(Container container, String name)
@@ -308,18 +297,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpData[] getExpDatas(Container container, DataType type)
     {
-        try
-        {
-            SimpleFilter filter = new SimpleFilter();
-            filter.addCondition("Container", container.getId());
-            if (type != null)
-                filter.addWhereClause(Lsid.namespaceFilter("LSID", type.getNamespacePrefix()), null);
-            return ExpDataImpl.fromDatas(Table.select(getTinfoData(), Table.ALL_COLUMNS, filter, null, Data.class));
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition("Container", container.getId());
+        if (type != null)
+            filter.addWhereClause(Lsid.namespaceFilter("LSID", type.getNamespacePrefix()), null);
+        return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), Table.ALL_COLUMNS, filter, null).getArray(Data.class));
     }
 
     public ExpDataImpl createData(URI uri, XarSource source) throws XarFormatException
@@ -437,22 +419,15 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpMaterialImpl[] getIndexableMaterials(Container container, @Nullable Date modifiedSince)
     {
-        try
-        {
-            // Big hack to prevent indexing study specimens. Also in ExpMaterialImpl.index()
-            SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoMaterial() + " WHERE Container = ? AND LSID NOT LIKE '%:"
-                    + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%'");
-            sql.add(container.getId());
-            SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoMaterial(), modifiedSince, null).toSQLFragment(null, null);
-            if (!modifiedSQL.isEmpty())
-                sql.append(" AND ").append(modifiedSQL);
-            Material[] result = Table.executeQuery(getSchema(), sql, Material.class);
-            return ExpMaterialImpl.fromMaterials(result);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        // Big hack to prevent indexing study specimens. Also in ExpMaterialImpl.index()
+        SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoMaterial() + " WHERE Container = ? AND LSID NOT LIKE '%:"
+                + StudyService.SPECIMEN_NAMESPACE_PREFIX + "%'");
+        sql.add(container.getId());
+        SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoMaterial(), modifiedSince, null).toSQLFragment(null, null);
+        if (!modifiedSQL.isEmpty())
+            sql.append(" AND ").append(modifiedSQL);
+        Material[] result = new SqlSelector(getSchema(), sql).getArray(Material.class);
+        return ExpMaterialImpl.fromMaterials(result);
     }
 
     private static final MaterialSource MISS_MARKER = new MaterialSource();
@@ -487,90 +462,76 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public Map<String, ExpSampleSet> getSampleSetsForRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type)
     {
-        try
+        SQLFragment sql = new SQLFragment();
+        sql.append("SELECT mi.Role, MAX(m.CpasType) AS SampleSetLSID, COUNT (DISTINCT m.CpasType) AS SampleSetCount FROM ");
+        sql.append(getTinfoMaterial(), "m");
+        sql.append(", ");
+        sql.append(getTinfoMaterialInput(), "mi");
+        sql.append(", ");
+        sql.append(getTinfoProtocolApplication(), "pa");
+        sql.append(", ");
+        sql.append(getTinfoExperimentRun(), "r");
+
+        if (type != null)
         {
-            SQLFragment sql = new SQLFragment();
-            sql.append("SELECT mi.Role, MAX(m.CpasType) AS SampleSetLSID, COUNT (DISTINCT m.CpasType) AS SampleSetCount FROM ");
-            sql.append(getTinfoMaterial(), "m");
             sql.append(", ");
-            sql.append(getTinfoMaterialInput(), "mi");
-            sql.append(", ");
-            sql.append(getTinfoProtocolApplication(), "pa");
-            sql.append(", ");
-            sql.append(getTinfoExperimentRun(), "r");
-
-            if (type != null)
-            {
-                sql.append(", ");
-                sql.append(getTinfoProtocol(), "p");
-                sql.append(" WHERE p.lsid = pa.protocollsid AND p.applicationtype = ? AND ");
-                sql.add(type.toString());
-            }
-            else
-            {
-                sql.append(" WHERE ");
-            }
-
-            sql.append(" m.RowId = mi.MaterialId AND mi.TargetApplicationId = pa.RowId AND " +
-                    "pa.RunId = r.RowId AND ");
-            sql.append(filter.getSQLFragment(getSchema(), new SQLFragment("r.Container"), container));
-            sql.append(" GROUP BY mi.Role ORDER BY mi.Role");
-
-            Map<String, Object>[] queryResults = Table.executeQuery(getSchema(), sql, Map.class);
-            Map<String, ExpSampleSet> lsidToSampleSet = new HashMap<String, ExpSampleSet>();
-            ExpSampleSet defaultSampleSet = lookupActiveSampleSet(container);
-            if (defaultSampleSet != null)
-            {
-                lsidToSampleSet.put(defaultSampleSet.getLSID(), defaultSampleSet);
-            }
-
-            Map<String, ExpSampleSet> result = new LinkedHashMap<String, ExpSampleSet>();
-            for (Map<String, Object> queryResult : queryResults)
-            {
-                ExpSampleSet sampleSet = null;
-                Number sampleSetCount = (Number)queryResult.get("SampleSetCount");
-                if (sampleSetCount.intValue() == 1)
-                {
-                    String sampleSetLSID = (String)queryResult.get("SampleSetLSID");
-                    if (!lsidToSampleSet.containsKey(sampleSetLSID))
-                    {
-                        sampleSet = getSampleSet(sampleSetLSID);
-                        lsidToSampleSet.put(sampleSetLSID, sampleSet);
-                    }
-                    else
-                    {
-                        sampleSet = lsidToSampleSet.get(sampleSetLSID);
-                    }
-                }
-                if (sampleSet == null)
-                {
-                    sampleSet = defaultSampleSet;
-                }
-                result.put((String)queryResult.get("Role"), sampleSet);
-            }
-            return result;
+            sql.append(getTinfoProtocol(), "p");
+            sql.append(" WHERE p.lsid = pa.protocollsid AND p.applicationtype = ? AND ");
+            sql.add(type.toString());
         }
-        catch (SQLException e)
+        else
         {
-            throw new RuntimeSQLException(e);
+            sql.append(" WHERE ");
         }
+
+        sql.append(" m.RowId = mi.MaterialId AND mi.TargetApplicationId = pa.RowId AND " +
+                "pa.RunId = r.RowId AND ");
+        sql.append(filter.getSQLFragment(getSchema(), new SQLFragment("r.Container"), container));
+        sql.append(" GROUP BY mi.Role ORDER BY mi.Role");
+
+        Map<String, Object>[] queryResults = new SqlSelector(getSchema(), sql).getArray(Map.class);
+        Map<String, ExpSampleSet> lsidToSampleSet = new HashMap<String, ExpSampleSet>();
+        ExpSampleSet defaultSampleSet = lookupActiveSampleSet(container);
+        if (defaultSampleSet != null)
+        {
+            lsidToSampleSet.put(defaultSampleSet.getLSID(), defaultSampleSet);
+        }
+
+        Map<String, ExpSampleSet> result = new LinkedHashMap<String, ExpSampleSet>();
+        for (Map<String, Object> queryResult : queryResults)
+        {
+            ExpSampleSet sampleSet = null;
+            Number sampleSetCount = (Number)queryResult.get("SampleSetCount");
+            if (sampleSetCount.intValue() == 1)
+            {
+                String sampleSetLSID = (String)queryResult.get("SampleSetLSID");
+                if (!lsidToSampleSet.containsKey(sampleSetLSID))
+                {
+                    sampleSet = getSampleSet(sampleSetLSID);
+                    lsidToSampleSet.put(sampleSetLSID, sampleSet);
+                }
+                else
+                {
+                    sampleSet = lsidToSampleSet.get(sampleSetLSID);
+                }
+            }
+            if (sampleSet == null)
+            {
+                sampleSet = defaultSampleSet;
+            }
+            result.put((String)queryResult.get("Role"), sampleSet);
+        }
+        return result;
     }
 
     public ExpSampleSetImpl[] getSampleSets(Container container, User user, boolean includeOtherContainers)
     {
-        try
-        {
-            SimpleFilter filter = createContainerFilter(container, user, includeOtherContainers);
-            MaterialSource[] materialSources = Table.select(getTinfoMaterialSource(), Table.ALL_COLUMNS, filter, null, MaterialSource.class);
-            ExpSampleSetImpl[] result = ExpSampleSetImpl.fromMaterialSources(materialSources);
-            // Do the sort on the Java side to make sure it's always case-insensitive
-            Arrays.sort(result);
-            return result;
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        SimpleFilter filter = createContainerFilter(container, user, includeOtherContainers);
+        MaterialSource[] materialSources = new TableSelector(getTinfoMaterialSource(), Table.ALL_COLUMNS, filter, null).getArray(MaterialSource.class);
+        ExpSampleSetImpl[] result = ExpSampleSetImpl.fromMaterialSources(materialSources);
+        // Do the sort on the Java side to make sure it's always case-insensitive
+        Arrays.sort(result);
+        return result;
     }
 
     public ExpExperimentImpl getExpExperiment(int rowid)
@@ -594,23 +555,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpExperiment getExpExperiment(String lsid)
     {
-        if (null==lsid)
-            return null;
-        try
-        {
-            Experiment[] experiments =
-                    Table.select(getTinfoExperiment(), Table.ALL_COLUMNS, new SimpleFilter("LSID", lsid), null, Experiment.class);
-            if (experiments.length != 1)
-                return null;
-            else
-            {
-                return new ExpExperimentImpl(experiments[0]);
-            }
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        Experiment experiment =
+                new TableSelector(getTinfoExperiment(), Table.ALL_COLUMNS, new SimpleFilter("LSID", lsid), null).getObject(Experiment.class);
+        return experiment == null ? null : new ExpExperimentImpl(experiment);
     }
 
     public ExpProtocolImpl getExpProtocol(int rowid)
@@ -787,44 +734,37 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public void setActiveSampleSet(Container container, ExpSampleSet sampleSet)
     {
-        try
+        String materialSourceLSID = sampleSet.getLSID();
+        MaterialSource current = lookupActiveMaterialSource(container);
+        if (current == null)
         {
-            String materialSourceLSID = sampleSet.getLSID();
-            MaterialSource current = lookupActiveMaterialSource(container);
-            if (current == null)
+            if (materialSourceLSID == null)
             {
-                if (materialSourceLSID == null)
-                {
-                    // No current value, no new value
-                    return;
-                }
-                else
-                {
-                    // No current value, so need to insert a new row
-                    String sql = "INSERT INTO " + getTinfoActiveMaterialSource() + " (Container, MaterialSourceLSID) " +
-                        "VALUES (?, ?)";
-                    Table.execute(getExpSchema(), sql, container.getId(), materialSourceLSID);
-                }
+                // No current value, no new value
+                return;
             }
             else
             {
-                if (materialSourceLSID == null)
-                {
-                    // Current value exists, needs to be deleted
-                    String sql = "DELETE FROM " + getTinfoActiveMaterialSource() + " WHERE Container = ?";
-                    Table.execute(getExpSchema(), sql, container.getId());
-                }
-                else
-                {
-                    // Current value exists, needs to be changed
-                    String sql = "UPDATE " + getTinfoActiveMaterialSource() + " SET MaterialSourceLSID = ? WHERE Container = ?";
-                    Table.execute(getExpSchema(), sql, materialSourceLSID, container.getId());
-                }
+                // No current value, so need to insert a new row
+                String sql = "INSERT INTO " + getTinfoActiveMaterialSource() + " (Container, MaterialSourceLSID) " +
+                    "VALUES (?, ?)";
+                new SqlExecutor(getExpSchema(), new SQLFragment(sql, container.getId(), materialSourceLSID)).execute();
             }
         }
-        catch (SQLException e)
+        else
         {
-            throw new RuntimeSQLException(e);
+            if (materialSourceLSID == null)
+            {
+                // Current value exists, needs to be deleted
+                String sql = "DELETE FROM " + getTinfoActiveMaterialSource() + " WHERE Container = ?";
+                new SqlExecutor(getExpSchema(), new SQLFragment(sql, container.getId())).execute();
+            }
+            else
+            {
+                // Current value exists, needs to be changed
+                String sql = "UPDATE " + getTinfoActiveMaterialSource() + " SET MaterialSourceLSID = ? WHERE Container = ?";
+                new SqlExecutor(getExpSchema(), new SQLFragment(sql, materialSourceLSID, container.getId())).execute();
+            }
         }
     }
 
@@ -859,28 +799,21 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         sql.add(container);
         sql.add(Boolean.TRUE);
 
-        try
+        Experiment[] exp = new SqlSelector(getSchema(), sql).getArray(Experiment.class);
+        if (exp.length > 0)
         {
-            Experiment[] exp = Table.executeQuery(getSchema(), sql, Experiment.class);
-            if (exp.length > 0)
-            {
-                return new ExpExperimentImpl(exp[0]);
-            }
-            else
-            {
-                ExpExperimentImpl result = createExpExperiment(container, GUID.makeGUID());
-                result.setHidden(true);
-                result.save(user);
-                for (ExpRun run : runs)
-                {
-                    result.addRuns(user, run);
-                }
-                return result;
-            }
+            return new ExpExperimentImpl(exp[0]);
         }
-        catch (SQLException e)
+        else
         {
-            throw new RuntimeSQLException(e);
+            ExpExperimentImpl result = createExpExperiment(container, GUID.makeGUID());
+            result.setHidden(true);
+            result.save(user);
+            for (ExpRun run : runs)
+            {
+                result.addRuns(user, run);
+            }
+            return result;
         }
     }
 
@@ -954,50 +887,42 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     private Set<String> getInputRoles(Container container, ContainerFilter filter, TableInfo table, ExpProtocol.ApplicationType... types)
     {
-        try
+        SQLFragment sql = new SQLFragment("SELECT role FROM ");
+        sql.append(table, "t");
+        sql.append(" WHERE targetapplicationid IN (SELECT pa.rowid FROM ");
+        sql.append(getTinfoProtocolApplication(), "pa");
+        if (types != null && types.length > 0)
         {
-            SQLFragment sql = new SQLFragment("SELECT role FROM ");
-            sql.append(table);
-            sql.append(" WHERE targetapplicationid IN (SELECT pa.rowid FROM ");
-            sql.append(getTinfoProtocolApplication(), "pa");
-            if (types != null && types.length > 0)
+            sql.append(", ");
+            sql.append(getTinfoProtocol(), "p");
+            sql.append(" WHERE p.lsid = pa.protocollsid AND p.applicationtype IN (");
+            String separator = "";
+            for (ExpProtocol.ApplicationType type : types)
             {
-                sql.append(", ");
-                sql.append(getTinfoProtocol(), "p");
-                sql.append(" WHERE p.lsid = pa.protocollsid AND p.applicationtype IN (");
-                String separator = "";
-                for (ExpProtocol.ApplicationType type : types)
-                {
-                    sql.append(separator);
-                    separator = ", ";
-                    sql.append("?");
-                    sql.add(type.toString());
-                }
-                sql.append(") AND ");
+                sql.append(separator);
+                separator = ", ";
+                sql.append("?");
+                sql.add(type.toString());
             }
-            else
-            {
-                sql.append(" WHERE ");
-            }
-            sql.append(" pa.runid IN (SELECT rowid FROM ");
-            sql.append(getTinfoExperimentRun());
+            sql.append(") AND ");
+        }
+        else
+        {
             sql.append(" WHERE ");
-            sql.append(filter.getSQLFragment(getSchema(), new SQLFragment("Container"), container));
-            sql.append("))");
-            String[] result = Table.executeArray(getSchema(), sql, String.class);
-            return new TreeSet<String>(Arrays.asList(result));
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        sql.append(" pa.runid IN (SELECT rowid FROM ");
+        sql.append(getTinfoExperimentRun(), "er");
+        sql.append(" WHERE ");
+        sql.append(filter.getSQLFragment(getSchema(), new SQLFragment("Container"), container));
+        sql.append("))");
+        return new TreeSet<String>(new SqlSelector(getSchema(), sql).getCollection(String.class));
     }
 
 
     /**
      * @return the data objects that were attached to the run that should be attached to the run in its new folder
      */
-    public ExpDataImpl[] deleteExperimentRunForMove(int runId, User user) throws SQLException, ExperimentException
+    public ExpDataImpl[] deleteExperimentRunForMove(int runId, User user)
     {
         ExpDataImpl[] datasToDelete = getAllDataOwnedByRun(runId);
 
@@ -1007,7 +932,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
 
     private void deleteRun(int runId, ExpData[] datasToDelete, User user)
-        throws SQLException
     {
         ExpRunImpl run = getExpRun(runId);
         if (run == null)
@@ -1025,7 +949,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         String sql = "DELETE FROM exp.RunList WHERE ExperimentRunId = " + runId + ";\n";
         sql += "DELETE FROM exp.ExperimentRun WHERE RowId = " + runId + ";\n";
 
-        Table.execute(getExpSchema(), sql);
+        new SqlExecutor(getExpSchema(), new SQLFragment(sql)).execute();
 
         auditRunEvent(user, run.getProtocol(), run, "Run deleted");
     }
@@ -1218,25 +1142,18 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpExperimentImpl[] getExperiments(Container container, User user, boolean includeOtherContainers, boolean includeBatches, boolean includeHidden)
     {
-        try
+        SimpleFilter filter = createContainerFilter(container, user, includeOtherContainers);
+        if (!includeHidden)
         {
-            SimpleFilter filter = createContainerFilter(container, user, includeOtherContainers);
-            if (!includeHidden)
-            {
-                filter.addCondition("Hidden", Boolean.FALSE);
-            }
-            if (!includeBatches)
-            {
-                filter.addCondition("BatchProtocolId", null, CompareType.ISBLANK);
-            }
-            Sort sort = new Sort("RowId");
-            sort.insertSort(new Sort("Name"));
-            return ExpExperimentImpl.fromExperiments(Table.select(getTinfoExperiment(), Table.ALL_COLUMNS, filter, sort, Experiment.class));
+            filter.addCondition("Hidden", Boolean.FALSE);
         }
-        catch (SQLException x)
+        if (!includeBatches)
         {
-            throw new RuntimeSQLException(x);
+            filter.addCondition("BatchProtocolId", null, CompareType.ISBLANK);
         }
+        Sort sort = new Sort("RowId");
+        sort.insertSort(new Sort("Name"));
+        return ExpExperimentImpl.fromExperiments(new TableSelector(getTinfoExperiment(), Table.ALL_COLUMNS, filter, sort).getArray(Experiment.class));
     }
 
     public ExperimentRun getExperimentRun(String LSID)
@@ -1272,35 +1189,21 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ProtocolAction[] getProtocolActions(int parentProtocolRowId)
     {
-        try
-        {
-            SimpleFilter filter = new SimpleFilter("ParentProtocolId", parentProtocolRowId);
-            return Table.select(getTinfoProtocolAction(), Table.ALL_COLUMNS, filter, new Sort("+Sequence"), ProtocolAction.class);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        SimpleFilter filter = new SimpleFilter("ParentProtocolId", parentProtocolRowId);
+        return new TableSelector(getTinfoProtocolAction(), Table.ALL_COLUMNS, filter, new Sort("+Sequence")).getArray(ProtocolAction.class);
     }
 
     public List<Material> getRunInputMaterial(String runLSID)
     {
-        try
+        final String sql = "SELECT * FROM " + getTinfoExperimentRunMaterialInputs() + " Where RunLSID = ?";
+        Map<String, Object>[] maps = new SqlSelector(getExpSchema(), new SQLFragment(sql, runLSID)).getArray(Map.class);
+        Map<String, List<Material>> material = getRunInputMaterial(maps);
+        List<Material> result = material.get(runLSID);
+        if (result == null)
         {
-            final String sql = "SELECT * FROM " + getTinfoExperimentRunMaterialInputs() + " Where RunLSID = ?";
-            Map<String, Object>[] maps = Table.executeQuery(getExpSchema(), sql, new Object[]{runLSID}, Map.class);
-            Map<String, List<Material>> material = getRunInputMaterial(maps);
-            List<Material> result = material.get(runLSID);
-            if (result == null)
-            {
-                result = Collections.emptyList();
-            }
-            return result;
+            result = Collections.emptyList();
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return result;
     }
 
 
@@ -1329,26 +1232,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             "FROM " + getTinfoMaterialSource() + " ms, " + getTinfoActiveMaterialSource() + " ams " +
             "WHERE ms.lsid = ams.materialsourcelsid AND ams.container = ?";
 
-        try
-        {
-            MaterialSource[] result = Table.executeQuery(getExpSchema(), sql, new Object[] {c.getId()}, MaterialSource.class);
-            if (result.length == 1)
-            {
-                return result[0];
-            }
-            else if (result.length == 0)
-            {
-                return null;
-            }
-            else
-            {
-                throw new IllegalStateException("More than one active material source is set for container " + c);
-            }
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return new SqlSelector(getExpSchema(), new SQLFragment(sql, c.getId())).getObject(MaterialSource.class);
     }
 
     public ExpSampleSet ensureActiveSampleSet(Container c)
@@ -1393,20 +1277,13 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
      */
     public Map<String, ProtocolParameter> getProtocolParameters(int protocolRowId)
     {
-        try
+        ProtocolParameter[] params = new TableSelector(getTinfoProtocolParameter(), Table.ALL_COLUMNS, new SimpleFilter("ProtocolId", protocolRowId), null).getArray(ProtocolParameter.class);
+        Map<String, ProtocolParameter> result = new HashMap<String, ProtocolParameter>();
+        for (ProtocolParameter param : params)
         {
-            ProtocolParameter[] params = Table.select(getTinfoProtocolParameter(), Table.ALL_COLUMNS, new SimpleFilter("ProtocolId", protocolRowId), null, ProtocolParameter.class);
-            Map<String, ProtocolParameter> result = new HashMap<String, ProtocolParameter>();
-            for (ProtocolParameter param : params)
-            {
-                result.put(param.getOntologyEntryURI(), param);
-            }
-            return result;
+            result.put(param.getOntologyEntryURI(), param);
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return result;
     }
 
     public ExpDataImpl getExpDataByURL(File file, @Nullable Container c)
@@ -1425,25 +1302,18 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpDataImpl getExpDataByURL(String url, @Nullable Container c)
     {
-        try
+        SimpleFilter filter = new SimpleFilter("DataFileUrl", url);
+        if (c != null)
         {
-            SimpleFilter filter = new SimpleFilter("DataFileUrl", url);
-            if (c != null)
-            {
-                filter.addCondition("Container", c.getId());
-            }
-            Sort sort = new Sort("-Created");
-            Data[] data = Table.select(getTinfoData(), Table.ALL_COLUMNS, filter, sort, Data.class);
-            if (data.length > 0)
-            {
-                return new ExpDataImpl(data[0]);
-            }
-            return null;
+            filter.addCondition("Container", c.getId());
         }
-        catch (SQLException e)
+        Sort sort = new Sort("-Created");
+        Data[] data = new TableSelector(getTinfoData(), Table.ALL_COLUMNS, filter, sort).getArray(Data.class);
+        if (data.length > 0)
         {
-            throw new RuntimeSQLException(e);
+            return new ExpDataImpl(data[0]);
         }
+        return null;
     }
 
     public Lsid getSampleSetLsid(String sourceName, Container container)
@@ -1451,32 +1321,32 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new Lsid(generateLSID(container, ExpSampleSet.class, sourceName));
     }
 
-    public void dropRunsFromExperiment(String expLSID, int... selectedRunIds) throws SQLException
+    public void dropRunsFromExperiment(String expLSID, int... selectedRunIds)
     {
         if (selectedRunIds.length == 0)
             return;
         ExpExperiment exp = getExpExperiment(expLSID);
         if (exp == null)
         {
-            throw new SQLException("Attempting to remove Runs from an Experiment that does not exist");
+            throw new NotFoundException("Attempting to remove Runs from an Experiment that does not exist");
         }
 
-        String runIds = StringUtils.join(toIntegers(selectedRunIds), ",");
+        String runIds = StringUtils.join(ArrayUtils.toObject(selectedRunIds), ",");
 
         String sql = " DELETE FROM " + getTinfoRunList() + " WHERE ExperimentId = ? "
                     + " AND ExperimentRunId IN ( " + runIds + " ) ; ";
 
         try
         {
-            getExpSchema().getScope().ensureTransaction();
+            ensureTransaction();
 
-            Table.execute(getExpSchema(), sql, exp.getRowId());
+            new SqlExecutor(getExpSchema(), new SQLFragment(sql, exp.getRowId())).execute();
 
-            getExpSchema().getScope().commitTransaction();
+            commitTransaction();
         }
         finally
         {
-            getExpSchema().getScope().closeConnection();
+            closeTransaction();
         }
     }
 
@@ -1490,7 +1360,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             for (int runId : selectedRunIds)
             {
-                getExpSchema().getScope().ensureTransaction();
+                ensureTransaction();
 
                 ExpRunImpl run = getExpRun(runId);
                 if (run != null)
@@ -1518,7 +1388,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                         protocolImpl.onRunDeleted(container, user);
                 }
 
-                getExpSchema().getScope().commitTransaction();
+                commitTransaction();
             }
         }
         catch (SQLException e)
@@ -1527,11 +1397,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
         finally
         {
-            getExpSchema().getScope().closeConnection();
+            closeTransaction();
         }
     }
 
-    private int[] getRelatedProtocolIds(int[] selectedProtocolIds) throws SQLException
+    private int[] getRelatedProtocolIds(int[] selectedProtocolIds)
     {
         Set<Integer> allIds = new HashSet<Integer>();
         for (int selectedProtocolId : selectedProtocolIds)
@@ -1549,7 +1419,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             sb.append("SELECT ParentProtocolId FROM exp.ProtocolAction WHERE ChildProtocolId IN (");
             sb.append(idsString);
             sb.append(");");
-            Integer[] newIds = Table.executeArray(getExpSchema(), sb.toString(), new Object[]{}, Integer.class);
+            Integer[] newIds = new SqlSelector(getExpSchema(), sb.toString()).getArray(Integer.class);
 
             idsToCheck.addAll(Arrays.asList(newIds));
 
@@ -1557,17 +1427,17 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             sb.append("SELECT ChildProtocolId FROM exp.ProtocolAction WHERE ParentProtocolId IN (");
             sb.append(idsString);
             sb.append(");");
-            newIds = Table.executeArray(getExpSchema(), sb.toString(), new Object[]{}, Integer.class);
+            newIds = new SqlSelector(getExpSchema(), sb.toString()).getArray(Integer.class);
 
             idsToCheck.addAll(Arrays.asList(newIds));
             idsToCheck.removeAll(allIds);
             allIds.addAll(idsToCheck);
         }
 
-        return toInts(allIds);
+        return ArrayUtils.toPrimitive(allIds.toArray(new Integer[allIds.size()]));
     }
 
-    public List<ExpRunImpl> getExpRunsForProtocolIds(boolean includeRelated, int... protocolIds) throws SQLException
+    public List<ExpRunImpl> getExpRunsForProtocolIds(boolean includeRelated, int... protocolIds)
     {
         if (protocolIds.length == 0)
         {
@@ -1594,122 +1464,88 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         sb.append(getTinfoExperimentRun().getSelectName());
         sb.append(" WHERE ProtocolLSID IN (");
         sb.append("SELECT LSID FROM exp.Protocol WHERE RowId IN (");
-        sb.append(StringUtils.join(toIntegers(allProtocolIds), ","));
+        sb.append(StringUtils.join(ArrayUtils.toObject(allProtocolIds), ","));
         sb.append("))");
-        return Arrays.asList(ExpRunImpl.fromRuns(Table.executeQuery(getExpSchema(), sb.toString(), new Object[]{}, ExperimentRun.class)));
+        return Arrays.asList(ExpRunImpl.fromRuns(new SqlSelector(getExpSchema(), sb.toString()).getArray(ExperimentRun.class)));
     }
 
     public void deleteProtocolByRowIds(Container c, User user, int... selectedProtocolIds) throws ExperimentException
     {
+        if (selectedProtocolIds.length == 0)
+            return;
+
+        List<ExpRunImpl> runs = getExpRunsForProtocolIds(false, selectedProtocolIds);
+        for (ExpRun run : runs)
+        {
+            run.delete(user);
+        }
+
+        String protocolIds = StringUtils.join(ArrayUtils.toObject(selectedProtocolIds), ",");
+
+        SQLFragment sql = new SQLFragment("SELECT * FROM exp.Protocol WHERE RowId IN (" + protocolIds + ");");
+        Protocol[] protocols = new SqlSelector(getExpSchema(), sql).getArray(Protocol.class);
+
+        sql = new SQLFragment("SELECT RowId FROM exp.ProtocolAction ");
+        sql.append(" WHERE (ChildProtocolId IN (" + protocolIds + ")");
+        sql.append(" OR ParentProtocolId IN (" + protocolIds + ") );");
+        Integer[] actionIds = new SqlSelector(getExpSchema(), sql).getArray(Integer.class);
+
         try
         {
-            if (selectedProtocolIds.length == 0)
-                return;
+            ensureTransaction();
 
-            List<ExpRunImpl> runs = getExpRunsForProtocolIds(false, selectedProtocolIds);
-            for (ExpRun run : runs)
+            for (Protocol protocol : protocols)
             {
-                run.delete(user);
+                ExpProtocol protocolToDelete = new ExpProtocolImpl(protocol);
+                for (ExpExperiment batch : protocolToDelete.getBatches())
+                {
+                    batch.delete(user);
+                }
             }
 
-            String protocolIds = StringUtils.join(toIntegers(selectedProtocolIds), ",");
-
-            SQLFragment sql = new SQLFragment("SELECT * FROM exp.Protocol WHERE RowId IN (" + protocolIds + ");");
-            Protocol[] protocols = Table.executeQuery(getExpSchema(), sql, Protocol.class);
-
-            sql = new SQLFragment("SELECT RowId FROM exp.ProtocolAction ");
-            sql.append(" WHERE (ChildProtocolId IN (" + protocolIds + ")");
-            sql.append(" OR ParentProtocolId IN (" + protocolIds + ") );");
-            Integer[] actionIds = Table.executeArray(getExpSchema(), sql, Integer.class);
-
-            try
+            if (actionIds.length > 0)
             {
-                getExpSchema().getScope().ensureTransaction();
-
                 for (Protocol protocol : protocols)
                 {
                     ExpProtocol protocolToDelete = new ExpProtocolImpl(protocol);
-                    for (ExpExperiment batch : protocolToDelete.getBatches())
+                    AssayProvider provider = AssayService.get().getProvider(protocolToDelete);
+                    if (provider != null)
                     {
-                        batch.delete(user);
+                        provider.deleteProtocol(protocolToDelete, user);
                     }
                 }
 
-                if (actionIds.length > 0)
-                {
-                    for (Protocol protocol : protocols)
-                    {
-                        ExpProtocol protocolToDelete = new ExpProtocolImpl(protocol);
-                        AssayProvider provider = AssayService.get().getProvider(protocolToDelete);
-                        if (provider != null)
-                        {
-                            provider.deleteProtocol(protocolToDelete, user);
-                        }
-                    }
+                String actionIdsJoined = "(" + StringUtils.join(actionIds, ",") + ")";
+                new SqlExecutor(getExpSchema(), new SQLFragment("DELETE FROM exp.ProtocolActionPredecessor WHERE ActionId IN " + actionIdsJoined + " OR PredecessorId IN " + actionIdsJoined + ";")).execute();
 
-                    String actionIdsJoined = "(" + StringUtils.join(actionIds, ",") + ")";
-                    Table.execute(getExpSchema(), "DELETE FROM exp.ProtocolActionPredecessor WHERE ActionId IN " + actionIdsJoined + " OR PredecessorId IN " + actionIdsJoined + ";");
-
-                    Table.execute(getExpSchema(), "DELETE FROM exp.ProtocolAction WHERE RowId IN " + actionIdsJoined + ";");
-                }
-
-                Table.execute(getExpSchema(), "DELETE FROM exp.ProtocolParameter WHERE ProtocolId IN (" + protocolIds + ");");
-
-                for (Protocol protocol : protocols)
-                {
-                    if (!protocol.getContainer().equals(c))
-                    {
-                        throw new SQLException("Attempting to delete a Protocol from another container");
-                    }
-                    DbCache.remove(getTinfoProtocol(), getCacheKey(protocol.getLSID()));
-                    OntologyManager.deleteOntologyObjects(c, protocol.getLSID());
-                }
-
-                Table.execute(getExpSchema(), "DELETE FROM exp.Protocol WHERE RowId IN (" + protocolIds + ");");
-
-                sql = new SQLFragment("SELECT RowId FROM exp.Protocol Where RowId NOT IN (SELECT ParentProtocolId from exp.ProtocolAction UNION SELECT ChildProtocolId FROM exp.ProtocolAction) AND Container = ?");
-                sql.add(c.getId());
-                int[] orphanedProtocolIds = toInts(Table.executeArray(getExpSchema(), sql, Integer.class));
-                deleteProtocolByRowIds(c, user, orphanedProtocolIds);
-
-                getExpSchema().getScope().commitTransaction();
+                new SqlExecutor(getExpSchema(), new SQLFragment("DELETE FROM exp.ProtocolAction WHERE RowId IN " + actionIdsJoined)).execute();
             }
-            finally
+
+            new SqlExecutor(getExpSchema(), new SQLFragment("DELETE FROM exp.ProtocolParameter WHERE ProtocolId IN (" + protocolIds + ")")).execute();
+
+            for (Protocol protocol : protocols)
             {
-                getExpSchema().getScope().closeConnection();
+                if (!protocol.getContainer().equals(c))
+                {
+                    throw new IllegalArgumentException("Attempting to delete a Protocol from another container");
+                }
+                DbCache.remove(getTinfoProtocol(), getCacheKey(protocol.getLSID()));
+                OntologyManager.deleteOntologyObjects(c, protocol.getLSID());
             }
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-    }
 
-    private Integer[] toIntegers(int[] ints)
-    {
-        Integer[] result = new Integer[ints.length];
-        for (int i = 0; i < ints.length; i++)
-        {
-            result[i] = new Integer(ints[i]);
-        }
-        return result;
-    }
+            new SqlExecutor(getExpSchema(), new SQLFragment("DELETE FROM exp.Protocol WHERE RowId IN (" + protocolIds + ")")).execute();
 
-    private int[] toInts(Integer[] integers)
-    {
-        return toInts(Arrays.asList(integers));
-    }
+            sql = new SQLFragment("SELECT RowId FROM exp.Protocol Where RowId NOT IN (SELECT ParentProtocolId from exp.ProtocolAction UNION SELECT ChildProtocolId FROM exp.ProtocolAction) AND Container = ?");
+            sql.add(c.getId());
+            int[] orphanedProtocolIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql).getArray(Integer.class));
+            deleteProtocolByRowIds(c, user, orphanedProtocolIds);
 
-    private int[] toInts(Collection<Integer> integers)
-    {
-        int[] result = new int[integers.size()];
-        int i = 0;
-        for (Integer integer : integers)
-        {
-            result[i] = integer.intValue();
-            i++;
+            commitTransaction();
         }
-        return result;
+        finally
+        {
+            closeTransaction();
+        }
     }
 
     public void deleteMaterialByRowIds(User user, Container container, int... selectedMaterialIds)
@@ -1835,13 +1671,13 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         try
         {
             String sql = "SELECT RowId FROM " + getTinfoExperimentRun() + " WHERE Container = ? ;";
-            int[] runIds = toInts(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
+            int[] runIds = ArrayUtils.toPrimitive(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
 
             ExpExperimentImpl[] exps = getExperiments(c, user, false, true, true);
             ExpSampleSet[] sampleSets = getSampleSets(c, user, false);
 
             sql = "SELECT RowId FROM " + getTinfoProtocol() + " WHERE Container = ? ;";
-            int[] protIds = toInts(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
+            int[] protIds = ArrayUtils.toPrimitive(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
 
             getExpSchema().getScope().ensureTransaction();
             
@@ -1881,12 +1717,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             // we get this list now so that it doesn't include all of the run-scoped Materials that were
             // deleted already
             sql = "SELECT RowId FROM exp.Material WHERE Container = ? ;";
-            int[] matIds = toInts(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
+            int[] matIds = ArrayUtils.toPrimitive(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
             deleteMaterialByRowIds(user, c, matIds);
 
             // same drill for data objects
             sql = "SELECT RowId FROM exp.Data WHERE Container = ? ;";
-            int[] dataIds = toInts(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
+            int[] dataIds = ArrayUtils.toPrimitive(Table.executeArray(getExpSchema(), sql, new Object[]{c.getId()}, Integer.class));
             deleteDataByRowIds(c, dataIds);
 
             getExpSchema().getScope().commitTransaction();
@@ -1901,7 +1737,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public void moveContainer(Container c, Container oldParent, Container newParent) throws SQLException, ExperimentException
+    public void moveContainer(Container c, Container oldParent, Container newParent) throws ExperimentException
     {
         if (null == c)
             return;
@@ -1921,16 +1757,20 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             getExpSchema().getScope().commitTransaction();
         }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
         finally
         {
             getExpSchema().getScope().closeConnection();
         }
     }
 
-    public ExpDataImpl[] getAllDataOwnedByRun(int runId) throws SQLException
+    public ExpDataImpl[] getAllDataOwnedByRun(int runId)
     {
         Filter filter = new SimpleFilter("RunId", runId);
-        return ExpDataImpl.fromDatas(Table.select(getTinfoData(), Table.ALL_COLUMNS, filter, null, Data.class));
+        return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), Table.ALL_COLUMNS, filter, null).getArray(Data.class));
     }
 
     public void moveRuns(ViewBackgroundInfo info, Container sourceContainer, List<ExpRun> runs) throws IOException
@@ -2018,18 +1858,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         sql.append(in2.toSQLFragment(Collections.<FieldKey, ColumnInfo>emptyMap(), getExpSchema().getSqlDialect()));
         sql.append(")) ORDER BY Created DESC");
 
-        try
-        {
-            ExperimentRun[] runs = Table.executeQuery(getExpSchema(), sql, ExperimentRun.class);
-            return Arrays.asList(ExpRunImpl.fromRuns(runs));
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        ExperimentRun[] runs = new SqlSelector(getExpSchema(), sql).getArray(ExperimentRun.class);
+        return Arrays.asList(ExpRunImpl.fromRuns(runs));
     }
 
-    public ExpRun[] getRunsUsingMaterials(List<ExpMaterial> materials) throws SQLException
+    public ExpRun[] getRunsUsingMaterials(List<ExpMaterial> materials)
     {
         int[] ids = new int[materials.size()];
         for (int i = 0; i < materials.size(); i++)
@@ -2038,17 +1871,17 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return getRunsUsingMaterials(ids);
     }
 
-    public ExpRun[] getRunsUsingMaterials(int... ids) throws SQLException
+    public ExpRun[] getRunsUsingMaterials(int... ids)
     {
         if (ids.length == 0)
         {
             return new ExpRun[0];
         }
-        String materialRowIdSQL = StringUtils.join(toIntegers(ids), ", ");
+        String materialRowIdSQL = StringUtils.join(ArrayUtils.toObject(ids), ", ");
         return ExpRunImpl.fromRuns(getRunsForMaterialList(materialRowIdSQL));
     }
 
-    public List<ExpRun> runsDeletedWithInput(ExpRun[] runs) throws SQLException
+    public List<ExpRun> runsDeletedWithInput(ExpRun[] runs)
     {
         List<ExpRun> ret = new ArrayList<ExpRun>();
         for (ExpRun run : runs)
@@ -2070,7 +1903,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return ret;
     }
 
-    public ExpRun[] getRunsUsingSampleSets(ExpSampleSet... source) throws SQLException
+    public ExpRun[] getRunsUsingSampleSets(ExpSampleSet... source)
     {
         Object[] params = new Object[source.length];
         StringBuilder sb = new StringBuilder();
@@ -2086,18 +1919,18 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return ExpRunImpl.fromRuns(getRunsForMaterialList(materialRowIdSQL, params));
     }
 
-    private ExperimentRun[] getRunsForMaterialList(String materialRowIdSQL, Object... params) throws SQLException
+    private ExperimentRun[] getRunsForMaterialList(String materialRowIdSQL, Object... params)
     {
         Object[] doubledParams = new Object[params.length * 2];
         System.arraycopy(params, 0, doubledParams, 0, params.length);
         System.arraycopy(params, 0, doubledParams, params.length, params.length);
-        return Table.executeQuery(getExpSchema(), "SELECT * FROM " + getTinfoExperimentRun() + " WHERE \n" +
+        return new SqlSelector(getExpSchema(), "SELECT * FROM " + getTinfoExperimentRun() + " WHERE \n" +
             "RowId IN (SELECT RowId FROM " + getTinfoExperimentRun() + " WHERE RowId IN " +
                 "(SELECT pa.RunId FROM " + getTinfoProtocolApplication() + " pa, " + getTinfoMaterialInput() + " mi " +
                 "WHERE mi.TargetApplicationId = pa.RowId AND mi.MaterialID IN (" + materialRowIdSQL + ")) \n" +
             "UNION " +
                 "(SELECT pa.RunId FROM " + getTinfoProtocolApplication() + " pa, " + getTinfoMaterial() + " m " +
-                "WHERE m.SourceApplicationId = pa.RowId AND m.RowId IN (" + materialRowIdSQL + ")))", doubledParams, ExperimentRun.class);
+                "WHERE m.SourceApplicationId = pa.RowId AND m.RowId IN (" + materialRowIdSQL + ")))", doubledParams).getArray(ExperimentRun.class);
     }
 
     public void deleteSampleSet(int rowId, Container c, User user) throws ExperimentException
@@ -2115,7 +1948,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             // Delete all Materials from the SampleSet
             SimpleFilter materialFilter = new SimpleFilter("CpasType", source.getLSID());
-            int[] materialIds = toInts(Table.executeArray(ExperimentServiceImpl.get().getTinfoMaterial(), "RowId", materialFilter, null, Integer.class));
+            int[] materialIds = ArrayUtils.toPrimitive(Table.executeArray(ExperimentServiceImpl.get().getTinfoMaterial(), "RowId", materialFilter, null, Integer.class));
             deleteMaterialByRowIds(user, c, materialIds);
 
             //Delete everything the ontology knows about this
@@ -2422,116 +2255,60 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ProtocolActionPredecessor[] getProtocolActionPredecessors(String parentProtocolLSID, String childProtocolLSID)
     {
-        try
-        {
-            SimpleFilter filter = new SimpleFilter("ChildProtocolLSID", childProtocolLSID);
-            filter.addCondition("ParentProtocolLSID", parentProtocolLSID);
-            return Table.select(getTinfoProtocolActionPredecessorLSIDView(), Table.ALL_COLUMNS, filter, new Sort("+PredecessorSequence"), ProtocolActionPredecessor.class);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        SimpleFilter filter = new SimpleFilter("ChildProtocolLSID", childProtocolLSID);
+        filter.addCondition("ParentProtocolLSID", parentProtocolLSID);
+        return new TableSelector(getTinfoProtocolActionPredecessorLSIDView(), Table.ALL_COLUMNS, filter, new Sort("+PredecessorSequence")).getArray(ProtocolActionPredecessor.class);
     }
 
     public Data[] getOutputDataForApplication(int applicationId)
     {
-        try
-        {
-            SimpleFilter filter = new SimpleFilter("SourceApplicationId", applicationId);
-            return Table.select(getTinfoData(), Table.ALL_COLUMNS, filter, null, Data.class);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        SimpleFilter filter = new SimpleFilter("SourceApplicationId", applicationId);
+        return new TableSelector(getTinfoData(), Table.ALL_COLUMNS, filter, null).getArray(Data.class);
     }
 
     public Material[] getOutputMaterialForApplication(int applicationId)
     {
-        try
-        {
-            SimpleFilter filter = new SimpleFilter("SourceApplicationId", applicationId);
-            return Table.select(getTinfoMaterial(), Table.ALL_COLUMNS, filter, null, Material.class);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        SimpleFilter filter = new SimpleFilter("SourceApplicationId", applicationId);
+        return new TableSelector(getTinfoMaterial(), Table.ALL_COLUMNS, filter, null).getArray(Material.class);
     }
 
-    public ExpData[] getExpData(Container c) throws SQLException
+    public ExpData[] getExpData(Container c)
     {
-        return ExpDataImpl.fromDatas(Table.select(getTinfoData(), Table.ALL_COLUMNS, new SimpleFilter("Container", c.getId()), null, Data.class));
+        return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), Table.ALL_COLUMNS, new SimpleFilter("Container", c.getId()), null).getArray(Data.class));
     }
 
     public Data[] getDataInputReferencesForApplication(int rowId)
     {
-        try
-        {
-            String outputSQL = "SELECT exp.Data.* from exp.Data, exp.DataInput " +
-                    "WHERE exp.Data.RowId = exp.DataInput.DataId " +
-                    "AND exp.DataInput.TargetApplicationId = ?";
-            return Table.executeQuery(getExpSchema(), outputSQL, new Object[]{rowId}, Data.class);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        String outputSQL = "SELECT exp.Data.* from exp.Data, exp.DataInput " +
+                "WHERE exp.Data.RowId = exp.DataInput.DataId " +
+                "AND exp.DataInput.TargetApplicationId = ?";
+        return new SqlSelector(getExpSchema(), outputSQL, rowId).getArray(Data.class);
     }
 
     public DataInput[] getDataInputsForApplication(int applicationId)
     {
-        try
-        {
-            SimpleFilter filter = new SimpleFilter("TargetApplicationId", applicationId);
-            return Table.select(getTinfoDataInput(), Table.ALL_COLUMNS, filter, null, DataInput.class);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        SimpleFilter filter = new SimpleFilter("TargetApplicationId", applicationId);
+        return new TableSelector(getTinfoDataInput(), Table.ALL_COLUMNS, filter, null).getArray(DataInput.class);
     }
 
     public Material[] getMaterialInputReferencesForApplication(int rowId)
     {
-        try
-        {
-            String outputSQL = "SELECT exp.Material.* from exp.Material, exp.MaterialInput " +
-                    "WHERE exp.Material.RowId = exp.MaterialInput.MaterialId " +
-                    "AND exp.MaterialInput.TargetApplicationId = ?";
-            return Table.executeQuery(getExpSchema(), outputSQL, new Object[]{rowId}, Material.class);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        String outputSQL = "SELECT exp.Material.* from exp.Material, exp.MaterialInput " +
+                "WHERE exp.Material.RowId = exp.MaterialInput.MaterialId " +
+                "AND exp.MaterialInput.TargetApplicationId = ?";
+        return new SqlSelector(getExpSchema(), outputSQL, rowId).getArray(Material.class);
     }
 
     public MaterialInput[] getMaterialInputsForApplication(int applicationId)
     {
-        try
-        {
-            SimpleFilter filter = new SimpleFilter("TargetApplicationId", applicationId);
-            return Table.select(getTinfoMaterialInput(), Table.ALL_COLUMNS, filter, null, MaterialInput.class);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        SimpleFilter filter = new SimpleFilter("TargetApplicationId", applicationId);
+        return new TableSelector(getTinfoMaterialInput(), Table.ALL_COLUMNS, filter, null).getArray(MaterialInput.class);
     }
 
     public ProtocolApplicationParameter[] getProtocolApplicationParameters(int rowId)
     {
-        try
-        {
-            SimpleFilter filter = new SimpleFilter("ProtocolApplicationId", rowId);
-            return Table.select(getTinfoProtocolApplicationParameter(), Table.ALL_COLUMNS, filter, null, ProtocolApplicationParameter.class);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        SimpleFilter filter = new SimpleFilter("ProtocolApplicationId", rowId);
+        return new TableSelector(getTinfoProtocolApplicationParameter(), Table.ALL_COLUMNS, filter, null).getArray(ProtocolApplicationParameter.class);
     }
 
     public ProtocolActionStepDetail getProtocolActionStepDetail(String parentProtocolLSID, Integer actionSequence) throws XarFormatException, SQLException
@@ -2551,10 +2328,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return details[0];
     }
 
-    public ExpProtocolApplication[] getExpProtocolApplicationsForProtocolLSID(String protocolLSID) throws SQLException
+    public ExpProtocolApplication[] getExpProtocolApplicationsForProtocolLSID(String protocolLSID)
     {
         SimpleFilter filter = new SimpleFilter("ProtocolLSID", protocolLSID);
-        return ExpProtocolApplicationImpl.fromProtocolApplications(Table.select(getTinfoProtocolApplication(), Table.ALL_COLUMNS, filter, null, ProtocolApplication.class));
+        return ExpProtocolApplicationImpl.fromProtocolApplications(new TableSelector(getTinfoProtocolApplication(), Table.ALL_COLUMNS, filter, null).getArray(ProtocolApplication.class));
     }
 
     public Protocol saveProtocol(User user, Protocol protocol)
@@ -3047,16 +2824,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpProtocolApplication[] getExpProtocolApplicationsForRun(int runId)
     {
-        try
-        {
-            SimpleFilter filter = new SimpleFilter("RunId", runId);
-            Sort sort = new Sort("ActionSequence, RowId");
-            return ExpProtocolApplicationImpl.fromProtocolApplications(Table.select(getTinfoProtocolApplication(), Table.ALL_COLUMNS, filter, sort, ProtocolApplication.class));
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        SimpleFilter filter = new SimpleFilter("RunId", runId);
+        Sort sort = new Sort("ActionSequence, RowId");
+        return ExpProtocolApplicationImpl.fromProtocolApplications(new TableSelector(getTinfoProtocolApplication(), Table.ALL_COLUMNS, filter, sort).getArray(ProtocolApplication.class));
     }
 
     public ExpSampleSetImpl createSampleSet()
@@ -3171,45 +2941,24 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpProtocol[] getExpProtocols(Container... containers)
     {
-        try
-        {
-            SimpleFilter filter = new SimpleFilter(new SimpleFilter.InClause("Container", Arrays.asList(containers)));
-            return ExpProtocolImpl.fromProtocols(Table.select(getTinfoProtocol(), Table.ALL_COLUMNS, filter, null, Protocol.class));
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        SimpleFilter filter = new SimpleFilter(new SimpleFilter.InClause("Container", Arrays.asList(containers)));
+        return ExpProtocolImpl.fromProtocols(new TableSelector(getTinfoProtocol(), Table.ALL_COLUMNS, filter, null).getArray(Protocol.class));
     }
 
     public ExpProtocolImpl[] getExpProtocolsForRunsInContainer(Container container)
     {
-        try
-        {
-            SQLFragment sql = new SQLFragment("SELECT p.* FROM ");
-            sql.append(getTinfoProtocol(), "p");
-            sql.append(" WHERE LSID IN (SELECT ProtocolLSID FROM ");
-            sql.append(getTinfoExperimentRun(), "er");
-            sql.append(" WHERE er.Container = ?)");
-            sql.add(container.getId());
-            return ExpProtocolImpl.fromProtocols(Table.executeQuery(getSchema(), sql, Protocol.class));
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        SQLFragment sql = new SQLFragment("SELECT p.* FROM ");
+        sql.append(getTinfoProtocol(), "p");
+        sql.append(" WHERE LSID IN (SELECT ProtocolLSID FROM ");
+        sql.append(getTinfoExperimentRun(), "er");
+        sql.append(" WHERE er.Container = ?)");
+        sql.add(container.getId());
+        return ExpProtocolImpl.fromProtocols(new SqlSelector(getSchema(), sql).getArray(Protocol.class));
     }
 
     public ExpProtocol[] getAllExpProtocols()
     {
-        try
-        {
-            return ExpProtocolImpl.fromProtocols(Table.select(getTinfoProtocol(), Table.ALL_COLUMNS, null, null, Protocol.class));
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        return ExpProtocolImpl.fromProtocols(new TableSelector(getTinfoProtocol(), Table.ALL_COLUMNS, null, null).getArray(Protocol.class));
     }
 
     public PipelineJob importXarAsync(ViewBackgroundInfo info, File file, String description, PipeRoot root) throws IOException
@@ -3335,20 +3084,13 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpData[] getChildren(File file, Container c)
     {
-        try
-        {
-            SimpleFilter filter = new SimpleFilter();
-            filter.addCondition("Container", c.getId());
-            String prefix = file.toURI().toString() + "/";
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition("Container", c.getId());
+        String prefix = file.toURI().toString() + "/";
 
-            filter.addCondition("datafileurl", prefix, CompareType.STARTS_WITH);
-            filter.addCondition("datafileurl", file.toURI().toString(), CompareType.NEQ);
-            return ExpDataImpl.fromDatas(Table.select(getTinfoData(), Table.ALL_COLUMNS, filter, null, Data.class));
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        filter.addCondition("datafileurl", prefix, CompareType.STARTS_WITH);
+        filter.addCondition("datafileurl", file.toURI().toString(), CompareType.NEQ);
+        return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), Table.ALL_COLUMNS, filter, null).getArray(Data.class));
     }
 
     public ExpProtocol insertSimpleProtocol(ExpProtocol wrappedProtocol, User user) throws ExperimentException
@@ -3474,14 +3216,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpMaterial[] getExpMaterialsForRun(int runId)
     {
-        try
-        {
-            return ExpMaterialImpl.fromMaterials(Table.executeQuery(getExpSchema(),  "SELECT * FROM " + getTinfoMaterial() + " WHERE RunId = ?", new Object[] { runId }, Material.class));
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return ExpMaterialImpl.fromMaterials(new SqlSelector(getExpSchema(), new SQLFragment("SELECT * FROM " + getTinfoMaterial() + " WHERE RunId = ?", runId)).getArray(Material.class));
     }
 
     /**

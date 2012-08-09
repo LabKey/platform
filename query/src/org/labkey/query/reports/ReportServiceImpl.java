@@ -31,6 +31,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
@@ -359,18 +360,18 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         return null;
     }
 
-    public Report getReportByEntityId(Container c, String entityId) throws SQLException
+    public Report getReportByEntityId(Container c, String entityId)
     {
         SimpleFilter filter = new SimpleFilter("ContainerId", c.getId());
         filter.addCondition("EntityId", entityId);
 
-        ReportDB report = Table.selectObject(getTable(), filter, null, ReportDB.class);
+        ReportDB report = new TableSelector(getTable(), filter, null).getObject(ReportDB.class);
         return _getInstance(report);
     }
 
-    public Report getReport(int reportId) throws SQLException
+    public Report getReport(int reportId)
     {
-        ReportDB report = Table.selectObject(getTable(), new SimpleFilter("RowId", reportId), null, ReportDB.class);
+        ReportDB report = new TableSelector(getTable(), new SimpleFilter("RowId", reportId), null).getObject(ReportDB.class);
         return _getInstance(report);
     }
 
@@ -379,7 +380,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         return AbstractReportIdentifier.fromString(reportId);
     }
 
-    private Report[] _getReports(User user, SimpleFilter filter) throws SQLException
+    private Report[] _getReports(User user, SimpleFilter filter)
     {
         if (filter != null && user != null)
             filter.addWhereClause("ReportOwner IS NULL OR CreatedBy = ?", new Object[]{user.getUserId()});
@@ -405,18 +406,18 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         return EMPTY_REPORT;
     }
 
-    public Report[] getReports(User user) throws SQLException
+    public Report[] getReports(User user)
     {
         return _getReports(user, new SimpleFilter());
     }
 
-    public Report[] getReports(User user, Container c) throws SQLException
+    public Report[] getReports(User user, Container c)
     {
         SimpleFilter filter = new SimpleFilter("ContainerId", c.getId());
         return _getReports(user, filter);
     }
 
-    public Report[] getReports(User user, Container c, String key) throws SQLException
+    public Report[] getReports(User user, Container c, String key)
     {
         List<ReportDescriptor> moduleReportDescriptors = new ArrayList<ReportDescriptor>();
 
@@ -458,7 +459,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         return reports.toArray(new Report[reports.size()]);
     }
 
-    public Report[] getReports(User user, Container c, String key, int flagMask, int flagValue) throws SQLException
+    public Report[] getReports(User user, Container c, String key, int flagMask, int flagValue)
     {
         SimpleFilter filter = new SimpleFilter("ContainerId", c.getId());
 
@@ -476,9 +477,9 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         return _getReports(user, filter);
     }
 
-    public Report[] getReports(Filter filter) throws SQLException
+    public Report[] getReports(Filter filter)
     {
-        ReportDB[] reports = Table.select(getTable(), Table.ALL_COLUMNS, filter, null, ReportDB.class);
+        ReportDB[] reports = new TableSelector(getTable(), Table.ALL_COLUMNS, filter, null).getArray(ReportDB.class);
         return _createReports(reports);
     }
 
@@ -685,20 +686,13 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
         private Report[] getReportsForCategory(ViewCategory category)
         {
-            try
+            if (category != null)
             {
-                if (category != null)
-                {
-                    SimpleFilter filter = new SimpleFilter("ContainerId", category.getContainerId());
-                    filter.addCondition("CategoryId", category.getRowId());
-                    return _instance.getReports(filter);
-                }
-                return new Report[0];
+                SimpleFilter filter = new SimpleFilter("ContainerId", category.getContainerId());
+                filter.addCondition("CategoryId", category.getRowId());
+                return _instance.getReports(filter);
             }
-            catch (SQLException x)
-            {
-                throw new RuntimeSQLException(x);
-            }
+            return new Report[0];
         }
     }
 

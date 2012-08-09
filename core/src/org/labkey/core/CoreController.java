@@ -684,7 +684,7 @@ public class CoreController extends SpringActionController
             url.deleteParameter("action");
             url.deleteParameter("pageflow");
             url.deleteParameter("containerId");
-            url.setPageFlow(form.getPageflow());
+            url.setController(form.getPageflow());
             url.setAction(form.getAction());
             url.setContainer(targetContainer);
             return url;
