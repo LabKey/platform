@@ -18,6 +18,10 @@ LABKEY.Internal.Utils = new function(){
             if(!config || !config.message){
                 alert('ERROR: Must provide a message to log');
             }
+            if (LABKEY.Security.currentUser.isGuest){
+                console.log('Guests cannot write to the server log');
+                return;
+            }
 
             if(config.includeContext){
                 config.message += '\n' + [
