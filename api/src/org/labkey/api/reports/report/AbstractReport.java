@@ -87,14 +87,7 @@ public abstract class AbstractReport implements Report
         if (null == getEntityId())
             return;
 
-        try
-        {
-            AttachmentService.get().deleteAttachments(this);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        AttachmentService.get().deleteAttachments(this);
     }
 
     public ReportDescriptor getDescriptor()

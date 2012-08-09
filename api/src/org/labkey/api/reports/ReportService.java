@@ -82,14 +82,14 @@ public class ReportService
 
         public int saveReport(ContainerUser context, String key, Report report) throws SQLException;
 
-        public Report getReport(int reportId) throws SQLException;
-        public Report getReportByEntityId(Container c, String entityId) throws SQLException;
+        public Report getReport(int reportId);
+        public Report getReportByEntityId(Container c, String entityId);
         public ReportIdentifier getReportIdentifier(String reportId);
-        public Report[] getReports(User user) throws SQLException;
-        public Report[] getReports(User user, Container c) throws SQLException;
-        public Report[] getReports(User user, Container c, String key) throws SQLException;
-        public Report[] getReports(User user, Container c, String key, int flagMask, int flagValue) throws SQLException;
-        public Report[] getReports(Filter filter) throws SQLException;
+        public Report[] getReports(User user);
+        public Report[] getReports(User user, Container c);
+        public Report[] getReports(User user, Container c, String key);
+        public Report[] getReports(User user, Container c, String key, int flagMask, int flagValue);
+        public Report[] getReports(Filter filter);
 
         /**
          * Provides a module specific way to add ui to the report designers.

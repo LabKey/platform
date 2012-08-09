@@ -32,7 +32,7 @@ public class NavTrailConfig extends PageConfig
 
     public NavTrailConfig(ViewContext context)
     {
-        super(context.getActionURL().getPageFlow());
+        super(context.getActionURL().getController());
     }
 
     public NavTrailConfig()

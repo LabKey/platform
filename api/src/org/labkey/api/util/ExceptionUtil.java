@@ -313,7 +313,7 @@ public class ExceptionUtil
                 try
                 {
                     ActionURL url = new ActionURL(requestURL);
-                    report.addParam("pageflowName", url.getPageFlow());
+                    report.addParam("pageflowName", url.getController());
                     report.addParam("pageflowAction", url.getAction());
                 }
                 catch (IllegalArgumentException x)

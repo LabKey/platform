@@ -31,5 +31,5 @@ import java.util.Comparator;
  */
 public interface ReportIdentifier
 {
-    public @Nullable Report getReport() throws Exception;
+    public @Nullable Report getReport();
 }

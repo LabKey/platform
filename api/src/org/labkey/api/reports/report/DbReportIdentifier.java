@@ -78,7 +78,7 @@ public class DbReportIdentifier extends AbstractReportIdentifier
         return _id;
     }
 
-    public Report getReport() throws Exception
+    public Report getReport()
     {
         if(_id == -1)
             return null;

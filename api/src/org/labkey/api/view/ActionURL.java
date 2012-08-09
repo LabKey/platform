@@ -271,7 +271,7 @@ public class ActionURL extends URLHelper implements Cloneable
         }
         paramStr = sb.toString();
 
-        return relativeUrl(action, paramStr, pageFlow != null ? pageFlow : getPageFlow());
+        return relativeUrl(action, paramStr, pageFlow != null ? pageFlow : getController());
     }
 
 
@@ -285,7 +285,7 @@ public class ActionURL extends URLHelper implements Cloneable
     @Deprecated
     public String relativeUrl(String action, String params)
     {
-        return relativeUrl(action, params, getPageFlow());
+        return relativeUrl(action, params, getController());
     }
 
 
@@ -539,27 +539,16 @@ public class ActionURL extends URLHelper implements Cloneable
 
 
     @Deprecated
-    public ActionURL setPageFlow(String pageFlow)
+    public ActionURL setController(String pageFlow)
     {
         if (_readOnly) throw new java.lang.IllegalStateException();
         _controller = pageFlow;
         return this;
     }
 
-    /**
-     *
-     * @deprecated use getController() instead
-     */
-    @Deprecated
-    public String getPageFlow()
-    {
-        return getController();
-    }
-
-
     public ActionURL setAction(Class<? extends Controller> actionClass)
     {
-        setPageFlow(SpringActionController.getPageFlowName(actionClass));
+        setController(SpringActionController.getPageFlowName(actionClass));
         setAction(SpringActionController.getActionName(actionClass));
         return this;
     }

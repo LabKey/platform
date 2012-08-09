@@ -330,7 +330,7 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
     {
         if (null != _urlSource)
             return _urlSource;
-        String controller = _url.getPageFlow();
+        String controller = _url.getController();
         String action = _url.getAction();
         if (!action.endsWith(".view"))
             action = action + ".view";

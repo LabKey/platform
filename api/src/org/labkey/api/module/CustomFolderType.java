@@ -108,14 +108,14 @@ public class CustomFolderType implements FolderType
         {
             Set<Module> containerModules = container.getActiveModules();
             Module activeModule = pageConfig.getModuleOwner();
-            String currentPageflow = context.getActionURL().getPageFlow();
+            String currentController = context.getActionURL().getController();
             if (activeModule == null)
             {
-                activeModule = ModuleLoader.getInstance().getModuleForController(currentPageflow);
+                activeModule = ModuleLoader.getInstance().getModuleForController(currentController);
             }
 
-            assert activeModule != null : "Pageflow '" + currentPageflow + "' is not claimed by any module.  " +
-                    "This pageflow name must be added to the list of names returned by 'getPageFlowNameToClass' " +
+            assert activeModule != null : "Controller '" + currentController + "' is not claimed by any module.  " +
+                    "This controller name must be added to the list of names returned by 'getController()' " +
                     "from at least one module.";
             List<Module> moduleList = getSortedModuleList();
             for (Module module : moduleList)

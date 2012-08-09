@@ -384,23 +384,22 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return Module.TabDisplayMode.DISPLAY_USER_PREFERENCE;
     }
 
-    protected void addWebPart(String name, Container c, @Nullable String location) throws SQLException
+    protected void addWebPart(String name, Container c, @Nullable String location)
     {
         addWebPart(name, c, location, -1, new HashMap<String, String>());
     }
 
-    protected void addWebPart(String name, Container c, String location, Map<String, String> properties) throws SQLException
+    protected void addWebPart(String name, Container c, String location, Map<String, String> properties)
     {
         addWebPart(name, c, location, -1, properties);
     }
 
-    protected void addWebPart(String name, Container c, String location, int partIndex) throws SQLException
+    protected void addWebPart(String name, Container c, String location, int partIndex)
     {
         addWebPart(name, c, location, partIndex, new HashMap<String, String>());
     }
 
     protected void addWebPart(String name, Container c, @Nullable String location, int partIndex, Map<String, String> properties)
-            throws SQLException
     {
         boolean foundPart = false;
 

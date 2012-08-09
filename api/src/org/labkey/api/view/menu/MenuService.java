@@ -19,7 +19,6 @@ package org.labkey.api.view.menu;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.api.data.Container;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -80,7 +79,7 @@ public class MenuService
         public ActionURL getSwitchAdminModeURL(ViewContext context)
         {
             ActionURL url = context.cloneActionURL();
-            url.deleteParameters().setAction("setAdminMode").setPageFlow("admin");
+            url.deleteParameters().setAction("setAdminMode").setController("admin");
             url.replaceParameter("adminMode", String.valueOf(!context.isAdminMode()));
             ActionURL redir = context.getActionURL().clone();
             redir.replaceParameter("_dc", GUID.makeHash());

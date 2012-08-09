@@ -94,7 +94,7 @@ public class ModuleReportIdentifier extends AbstractReportIdentifier
         return _reportPath;
     }
 
-    public Report getReport() throws Exception
+    public Report getReport()
     {
         if (null == getModule())
             return null;

@@ -42,7 +42,7 @@
     // TOOD: disable start button?
     // TODO: Fix these URLs
     ActionURL startReportURL = context.cloneActionURL().
-                setPageFlow("reports").
+            setController("reports").
                 setAction("startBackgroundRReport").
                 replaceParameter(ReportDescriptor.Prop.reportId, String.valueOf(bean.getReportId()));
 

@@ -50,7 +50,7 @@
 
     boolean hasWarnings = me.getWarningMessages().size() > 0;
     boolean showSearchForm = bean.pageConfig.getTemplate() == PageConfig.Template.Home || bean.pageConfig.getTemplate() == PageConfig.Template.None;
-    if ("search".equalsIgnoreCase(currentURL.getPageFlow()) && "search".equalsIgnoreCase(currentURL.getAction()))
+    if ("search".equalsIgnoreCase(currentURL.getController()) && "search".equalsIgnoreCase(currentURL.getAction()))
         showSearchForm = false;
 if ("true".equals(request.getParameter("testFont"))) {
 %><script>

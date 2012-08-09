@@ -74,7 +74,7 @@ public class ContainerTable extends FilteredTable
         });
 
         ActionURL projBegin = PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(ContainerManager.getRoot());
-        String wbURL = AppProps.getInstance().getContextPath() + "/" + projBegin.getPageFlow()
+        String wbURL = AppProps.getInstance().getContextPath() + "/" + projBegin.getController()
                 + "/__r${ID}/" + projBegin.getAction() + ".view";
         StringExpression webURLExp = StringExpressionFactory.create(wbURL, true);
 

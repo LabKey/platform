@@ -322,7 +322,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             action = resolveAction(url.getAction());
             if (null == action)
             {
-                throw new NotFoundException("Unable to find action '" + url.getAction() + "' to handle request in controller '" + url.getPageFlow() + "'");
+                throw new NotFoundException("Unable to find action '" + url.getAction() + "' to handle request in controller '" + url.getController() + "'");
             }
 
             ActionURL redirectURL = getUpgradeMaintenanceRedirect(request, action);
@@ -630,7 +630,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             }
 
             ViewContext ctx = HttpView.getRootContext();
-            String controllerName = ctx.getActionURL().getPageFlow();
+            String controllerName = ctx.getActionURL().getController();
             Module module = ModuleLoader.getInstance().getModuleForController(controllerName);
 
             Resource r = (module == null) ? null : module.getModuleResource("/" + VIEWS_DIRECTORY + "/" + actionName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);

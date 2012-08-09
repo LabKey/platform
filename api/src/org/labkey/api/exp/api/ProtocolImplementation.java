@@ -57,7 +57,7 @@ public class ProtocolImplementation
      * @param user The user who deleted the run.
      * @throws SQLException
      */
-    public void onRunDeleted(Container container, User user) throws SQLException
+    public void onRunDeleted(Container container, User user)
     {
     }
 }

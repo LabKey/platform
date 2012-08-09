@@ -187,7 +187,7 @@ public class ReportUtil
 
                 if (returnUrlString != null)
                     url.addParameter(ReportDescriptor.Prop.redirectUrl, returnUrlString.toString());
-                else if (context.getActionURL().getPageFlow().equals(ajaxAction.getPageFlow()))
+                else if (context.getActionURL().getController().equals(ajaxAction.getController()))
                     url.addParameter(ReportDescriptor.Prop.redirectUrl, PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(context.getContainer()).getLocalURIString());
                 else
                     url.addParameter(ReportDescriptor.Prop.redirectUrl, context.getActionURL().getLocalURIString());
@@ -287,29 +287,22 @@ public class ReportUtil
 
     public static List<Report> getReports(Container c, User user, String reportKey, boolean inherited)
     {
-        try
-        {
-            List<Report> reports = new ArrayList<Report>();
-            reports.addAll(Arrays.asList(ReportService.get().getReports(user, c, reportKey)));
+        List<Report> reports = new ArrayList<Report>();
+        reports.addAll(Arrays.asList(ReportService.get().getReports(user, c, reportKey)));
 
-            if (inherited)
+        if (inherited)
+        {
+            while (!c.isRoot())
             {
-                while (!c.isRoot())
-                {
-                    c = c.getParent();
-                    reports.addAll(Arrays.asList(ReportService.get().getReports(user, c, reportKey, ReportDescriptor.FLAG_INHERITABLE, 1)));
-                }
-
-                // look for any reports in the shared project
-                if (!ContainerManager.getSharedContainer().equals(c))
-                    reports.addAll(Arrays.asList(ReportService.get().getReports(user, ContainerManager.getSharedContainer(), reportKey)));
+                c = c.getParent();
+                reports.addAll(Arrays.asList(ReportService.get().getReports(user, c, reportKey, ReportDescriptor.FLAG_INHERITABLE, 1)));
             }
-            return reports;
+
+            // look for any reports in the shared project
+            if (!ContainerManager.getSharedContainer().equals(c))
+                reports.addAll(Arrays.asList(ReportService.get().getReports(user, ContainerManager.getSharedContainer(), reportKey)));
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeException(e);
-        }
+        return reports;
     }
 
     public static boolean canReadReport(Report report, User user)
@@ -662,7 +655,7 @@ public class ReportUtil
         }
 
         @Override
-        public Report getReport() throws Exception
+        public Report getReport()
         {
             throw new UnsupportedOperationException("No report bound to this id");
         }

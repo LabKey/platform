@@ -166,9 +166,9 @@ public class ExperimentService
         public DbSchema getSchema();
 
         ExpProtocolApplication getExpProtocolApplication(String lsid);
-        ExpProtocolApplication[] getExpProtocolApplicationsForProtocolLSID(String protocolLSID) throws SQLException;
+        ExpProtocolApplication[] getExpProtocolApplicationsForProtocolLSID(String protocolLSID);
 
-        ExpData[] getExpData(Container c) throws SQLException;
+        ExpData[] getExpData(Container c);
         ExpData getExpDataByURL(String canonicalURL, @Nullable Container container);
         ExpData getExpDataByURL(File f, @Nullable Container c);
         
@@ -187,18 +187,18 @@ public class ExperimentService
         ExpSampleSet ensureActiveSampleSet(Container container);
         public String getDefaultSampleSetLsid();
 
-        ExpRun[] getRunsUsingMaterials(List<ExpMaterial> materials) throws SQLException;
-        ExpRun[] getRunsUsingMaterials(int... materialIds) throws SQLException;
+        ExpRun[] getRunsUsingMaterials(List<ExpMaterial> materials);
+        ExpRun[] getRunsUsingMaterials(int... materialIds);
         List<? extends ExpRun> getRunsUsingDatas(List<ExpData> datas);
 
         ExpRun getCreatingRun(File file, Container c);
-        List<? extends ExpRun> getExpRunsForProtocolIds(boolean includeRelated, int... rowIds) throws SQLException;
-        ExpRun[] getRunsUsingSampleSets(ExpSampleSet... sampleSets) throws SQLException;
+        List<? extends ExpRun> getExpRunsForProtocolIds(boolean includeRelated, int... rowIds);
+        ExpRun[] getRunsUsingSampleSets(ExpSampleSet... sampleSets);
 
         /**
          * @return the subset of these runs which are supposed to be deleted when one of their inputs is deleted.
          */
-        List<ExpRun> runsDeletedWithInput(ExpRun[] runs) throws SQLException;
+        List<ExpRun> runsDeletedWithInput(ExpRun[] runs);
 
         void deleteAllExpObjInContainer(Container container, User user) throws ExperimentException;
 
@@ -208,13 +208,13 @@ public class ExperimentService
 
         ProtocolApplicationParameter[] getProtocolApplicationParameters(int rowId);
 
-        void moveContainer(Container c, Container cOldParent, Container cNewParent) throws SQLException, ExperimentException;
+        void moveContainer(Container c, Container cOldParent, Container cNewParent) throws ExperimentException;
 
         LsidType findType(Lsid lsid);
 
         Identifiable getObject(Lsid lsid);
 
-        ExpData[] deleteExperimentRunForMove(int runId, User user) throws SQLException, ExperimentException;
+        ExpData[] deleteExperimentRunForMove(int runId, User user);
 
         /** Kicks off an asynchronous move - a PipelineJob is submitted to the queue to perform the move */
         void moveRuns(ViewBackgroundInfo targetInfo, Container sourceContainer, List<ExpRun> runs) throws IOException;

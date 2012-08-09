@@ -438,19 +438,12 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
         //add report descriptors
         //this seems much more cumbersome than it should be
-        try
+        Report[] reports = ReportService.get().getReports(user, this);
+        for(Report report : reports)
         {
-            Report[] reports = ReportService.get().getReports(user, this);
-            for(Report report : reports)
-            {
-                SecurityPolicy policy = SecurityPolicyManager.getPolicy(report.getDescriptor());
-                if (policy.hasPermission(user, AdminPermission.class))
-                    ret.add(report.getDescriptor());
-            }
-        }
-        catch(SQLException e)
-        {
-            throw new RuntimeSQLException(e);
+            SecurityPolicy policy = SecurityPolicyManager.getPolicy(report.getDescriptor());
+            if (policy.hasPermission(user, AdminPermission.class))
+                ret.add(report.getDescriptor());
         }
 
         //add pipeline root
@@ -681,7 +674,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return _defaultModule;
     }
 
-    public void setFolderType(FolderType folderType, Set<Module> ensureModules) throws SQLException
+    public void setFolderType(FolderType folderType, Set<Module> ensureModules)
     {
         setFolderType(folderType, ModuleLoader.getInstance().getUpgradeUser());
         Set<Module> modules = new HashSet<Module>(folderType.getActiveModules());
@@ -689,7 +682,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         setActiveModules(modules);
     }
 
-    public void setFolderType(FolderType folderType, User user) throws SQLException
+    public void setFolderType(FolderType folderType, User user)
     {
         ContainerManager.setFolderType(this, folderType, user);
 

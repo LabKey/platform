@@ -65,7 +65,7 @@ public class GWTView extends JspView<GWTView.GWTViewBean>
         public void init(ViewContext context)
         {
             _properties.put("container", context.getContainer().getPath());
-            _properties.put("controller", context.getActionURL().getPageFlow());
+            _properties.put("controller", context.getActionURL().getController());
             _properties.put("action", context.getActionURL().getAction());
             _properties.put("queryString", context.getActionURL().getQueryString());
             _properties.put("contextPath", context.getContextPath());

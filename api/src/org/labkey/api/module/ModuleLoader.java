@@ -1212,7 +1212,7 @@ public class ModuleLoader implements Filter
 
     public Module getCurrentModule()
     {
-        return ModuleLoader.getInstance().getModuleForController(HttpView.getRootContext().getActionURL().getPageFlow());
+        return ModuleLoader.getInstance().getModuleForController(HttpView.getRootContext().getActionURL().getController());
     }
 
     public FolderType getFolderType(String name)

@@ -302,7 +302,7 @@ public class ContainerManager
     }
 
 
-    public static void setFolderType(Container c, FolderType folderType, User user) throws SQLException
+    public static void setFolderType(Container c, FolderType folderType, User user)
     {
         FolderType oldType = c.getFolderType();
 
@@ -418,19 +418,13 @@ public class ContainerManager
 
     public static void updateDescription(Container container, String description, User user)
     {
-        try
-        {
-            //For some reason there is no primary key defined on core.containers
-            //so we can't use Table.update here
-            StringBuilder sql = new StringBuilder("UPDATE ");
-            sql.append(CORE.getTableInfoContainers());
-            sql.append(" SET Description=? WHERE RowID=?");
-            Table.execute(CORE.getSchema(), sql.toString(), description, container.getRowId());
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        //For some reason there is no primary key defined on core.containers
+        //so we can't use Table.update here
+        StringBuilder sql = new StringBuilder("UPDATE ");
+        sql.append(CORE.getTableInfoContainers());
+        sql.append(" SET Description=? WHERE RowID=?");
+        new SqlExecutor(CORE.getSchema(), new SQLFragment(sql.toString(), description, container.getRowId())).execute();
+        
         String oldValue = container.getDescription();
         _removeFromCache(container);
         container = getForRowId(container.getRowId());
@@ -440,38 +434,24 @@ public class ContainerManager
 
     public static void updateSearchable(Container container, boolean searchable, User user)
     {
-        try
-        {
-            //For some reason there is no primary key defined on core.containers
-            //so we can't use Table.update here
-            StringBuilder sql = new StringBuilder("UPDATE ");
-            sql.append(CORE.getTableInfoContainers());
-            sql.append(" SET Searchable=? WHERE RowID=?");
-            Table.execute(CORE.getSchema(), sql.toString(), searchable, container.getRowId());
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        //For some reason there is no primary key defined on core.containers
+        //so we can't use Table.update here
+        StringBuilder sql = new StringBuilder("UPDATE ");
+        sql.append(CORE.getTableInfoContainers());
+        sql.append(" SET Searchable=? WHERE RowID=?");
+        new SqlExecutor(CORE.getSchema(), new SQLFragment(sql.toString(), searchable, container.getRowId())).execute();
 
         _removeFromCache(container);
     }
 
     public static void updateTitle(Container container, String title, User user)
     {
-        try
-        {
-            //For some reason there is no primary key defined on core.containers
-            //so we can't use Table.update here
-            StringBuilder sql = new StringBuilder("UPDATE ");
-            sql.append(CORE.getTableInfoContainers());
-            sql.append(" SET Title=? WHERE RowID=?");
-            Table.execute(CORE.getSchema(), sql.toString(), title, container.getRowId());
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        //For some reason there is no primary key defined on core.containers
+        //so we can't use Table.update here
+        StringBuilder sql = new StringBuilder("UPDATE ");
+        sql.append(CORE.getTableInfoContainers());
+        sql.append(" SET Title=? WHERE RowID=?");
+        new SqlExecutor(CORE.getSchema(), new SQLFragment(sql.toString(), title, container.getRowId())).execute();
 
         _removeFromCache(container);
         String oldValue = container.getTitle();
@@ -1659,14 +1639,7 @@ public class ContainerManager
 
     public static String[] getAliasesForContainer(Container c)
     {
-        try
-        {
-            return Table.executeArray(CORE.getSchema(), "SELECT Path FROM " + CORE.getTableInfoContainerAliases() + " WHERE ContainerId = ? ORDER BY LOWER(Path)", new Object[] { c.getId() }, String.class);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return new SqlSelector(CORE.getSchema(), new SQLFragment("SELECT Path FROM " + CORE.getTableInfoContainerAliases() + " WHERE ContainerId = ? ORDER BY LOWER(Path)", c.getId())).getArray(String.class);
     }
 
     @Nullable

@@ -54,7 +54,7 @@ public class SimpleController extends SpringActionController implements SpringAc
 
     public Controller resolveActionName(Controller actionController, String actionName)
     {
-        String controllerName = getViewContext().getActionURL().getPageFlow();
+        String controllerName = getViewContext().getActionURL().getController();
         Module module = ModuleLoader.getInstance().getModuleForController(controllerName);
 
         Resource r = getViewResource(module, actionName);

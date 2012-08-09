@@ -383,7 +383,7 @@ public class DefaultFolderType implements FolderType
     {
         ActionURL startURL = getStartURL(context.getContainer(), context.getUser());
         NavTree startPage = new NavTree(getStartPageLabel(context), startURL);
-        String controllerName = context.getActionURL().getPageFlow();
+        String controllerName = context.getActionURL().getController();
         Module currentModule = ModuleLoader.getInstance().getModuleForController(controllerName);
         startPage.setSelected(currentModule == getDefaultModule());
         String title = context.getContainer().isWorkbook() ? context.getContainer().getTitle() : context.getContainer().getName();

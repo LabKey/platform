@@ -39,7 +39,7 @@ public class ProjectsMenu extends NavTreeMenu
         ActionURL url = context.getActionURL();
         Container homeContainer = ContainerManager.getHomeContainer();
         boolean isHomeContainer = context.getContainer().equals(homeContainer);
-        return isHomeContainer && "project".equalsIgnoreCase(url.getPageFlow()) && "begin".equalsIgnoreCase(url.getAction());
+        return isHomeContainer && "project".equalsIgnoreCase(url.getController()) && "begin".equalsIgnoreCase(url.getAction());
     }
     
     private static NavTree[] getNavTree(ViewContext context)

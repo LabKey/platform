@@ -43,7 +43,7 @@ public class HomeTemplate extends PrintTemplate
 {
     public HomeTemplate(ViewContext context, Container c, ModelAndView body)
     {
-        this(context, c, body, new PageConfig(context.getActionURL().getPageFlow()), new NavTree[0]);
+        this(context, c, body, new PageConfig(context.getActionURL().getController()), new NavTree[0]);
     }
 
 
