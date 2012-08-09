@@ -131,6 +131,8 @@ public class QueryServiceImpl extends QueryService
 
     public UserSchema getUserSchema(User user, Container container, String schemaName)
     {
+        if (StringUtils.isEmpty(schemaName))
+            return null;
         QuerySchema ret = DefaultSchema.get(user, container).getSchema(schemaName);
         if (ret instanceof UserSchema)
         {
