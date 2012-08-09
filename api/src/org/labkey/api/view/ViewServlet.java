@@ -690,7 +690,7 @@ public class ViewServlet extends HttpServlet
     }
 
 
-    private boolean validChars(HttpServletRequest r)
+    public static boolean validChars(HttpServletRequest r)
     {
         try
         {
@@ -703,6 +703,23 @@ public class ViewServlet extends HttpServlet
                 return false;
             if (!validChars(PageFlowUtil.decode(r.getQueryString())))
                 return false;
+
+            if ("GET".equals(r.getMethod()))
+                return true;
+
+            // NOTE: this doesn't work for multipart/form-data
+            // SpringActionController.handleRequest() will call validChars() again if necessary
+            for (Map.Entry<String,String[]> e : ((Map<String,String[]>)r.getParameterMap()).entrySet())
+            {
+                if (!ViewServlet.validChars(e.getKey()))
+                    return false;
+                String[] a = e.getValue();
+                if (null == a)
+                    continue;
+                for (String s : a)
+                    if (!ViewServlet.validChars(s))
+                        return false;
+            }
         }
         catch (IllegalArgumentException x)
         {

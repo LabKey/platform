@@ -290,7 +290,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
    }
 
 
-    public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws MultipartException
+    public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception
     {
         request.setAttribute(DispatcherServlet.WEB_APPLICATION_CONTEXT_ATTRIBUTE, getApplicationContext());
         _viewContext.setApplicationContext(_applicationContext);
@@ -299,11 +299,19 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
         String contentType = request.getContentType();
         if (null != contentType && contentType.startsWith("multipart"))
+        {
             request = (new CommonsMultipartResolver()).resolveMultipart(request);
+            // ViewServlet doesn't check validChars for parameters in a multipart request, so check again
+            if (!ViewServlet.validChars(request))
+            {
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Illegal characters in request body");
+                return null;
+            }
+        }
 
         ViewContext context = getViewContext();
         context.setRequest(request);
-        context.setResponse(response);
+            context.setResponse(response);
 
         ActionURL url = context.getActionURL();
         long startTime = System.currentTimeMillis();
@@ -361,6 +369,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         catch (Throwable x)
         {
             handleException(request, response, x);
+            throwable = x;
         }
         finally
         {
