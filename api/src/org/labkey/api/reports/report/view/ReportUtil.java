@@ -63,6 +63,7 @@ import org.labkey.api.study.DataSet;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.ViewContext;
@@ -455,9 +456,9 @@ public class ReportUtil
 
         List<ViewInfo> views = new ArrayList<ViewInfo>();
 
-        if (includeReports)
+        try
         {
-            try
+            if (includeReports)
             {
                 ReportPropsManager.get().ensureProperty(c, user, "status", "Status", PropertyType.STRING);
                 ReportPropsManager.get().ensureProperty(c, user, "author", "Author", PropertyType.INTEGER);
@@ -559,7 +560,7 @@ public class ReportUtil
                             security = "custom"; // 13571: Explicit is a bad name for custom permissions
                         else
                             security = "public";
-                        
+
                         info.setShared(descriptor.getOwner() == null);
                         info.setPermissions(security);
 
@@ -575,71 +576,75 @@ public class ReportUtil
                     }
                 }
             }
-            catch (Exception e)
+
+            if (includeQueries)
             {
-                throw new RuntimeException(e);
+                for (CustomViewInfo view : QueryService.get().getCustomViewInfos(user, c, schemaName, queryName))
+                {
+                    if (view.isHidden())
+                        continue;
+
+                    if (view.getName() == null)
+                        continue;
+
+                    ViewInfo info = new ViewInfo(view.getName(), "query view");
+
+                    User createdBy = view.getCreatedBy();
+
+                    // create a fake report id to reference the custom views by (would be nice if this could be a rowId)
+                    Map<String, String> viewId = PageFlowUtil.map(QueryParam.schemaName.name(), view.getSchemaName(),
+                            QueryParam.queryName.name(), view.getQueryName(),
+                            QueryParam.viewName.name(), view.getName());
+
+                    info.setQueryView(true);
+
+                    ViewCategory vc = getDefaultCategory(c, view.getSchemaName(), view.getQueryName());
+                    info.setCategory(vc.getLabel());
+                    info.setCategoryDisplayOrder(vc.getDisplayOrder());
+
+                    info.setReportId(new QueryViewReportId(viewId));
+                    info.setQuery(view.getQueryName());
+                    info.setSchema(view.getSchemaName());
+                    info.setEditable(view.isEditable());
+                    info.setCreatedBy(createdBy);
+                    info.setPermissions(view.isShared() ? "public" : "private");
+
+                    boolean inherited = isInherited(view, c);
+
+                    if (!inherited)
+                    {
+                        ActionURL url = filter.getViewEditURL(c, view, user);
+                        if (url != null)
+                        {
+                            url.addParameter(QueryParam.srcURL, PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(c).getLocalURIString());
+                            info.setEditUrl(url);
+                        }
+                    }
+
+                    // run url and details url are the same for now
+                    ActionURL runUrl = filter.getViewRunURL(user, c, view);
+                    info.setRunUrl(runUrl);
+                    info.setDetailsUrl(runUrl);
+                    // FIXME: see 10473: ModuleCustomViewInfo has no Container or Owner.
+                    info.setContainer(view.getContainer());
+                    info.setInherited(inherited);
+
+                    if (!StringUtils.isEmpty(view.getCustomIconUrl()))
+                    {
+                        URLHelper url = new URLHelper(view.getCustomIconUrl());
+                        url.setContextPath(AppProps.getInstance().getContextPath());
+
+                        info.setIcon(url.toString());
+                    }
+                    info.setThumbnailUrl(PageFlowUtil.urlProvider(QueryUrls.class).urlThumbnail(c));
+
+                    views.add(info);
+                }
             }
         }
-
-        if (includeQueries)
+        catch (Exception e)
         {
-            for (CustomViewInfo view : QueryService.get().getCustomViewInfos(user, c, schemaName, queryName))
-            {
-                if (view.isHidden())
-                    continue;
-
-                if (view.getName() == null)
-                    continue;
-
-                ViewInfo info = new ViewInfo(view.getName(), "query view");
-
-                User createdBy = view.getCreatedBy();
-
-                // create a fake report id to reference the custom views by (would be nice if this could be a rowId)
-                Map<String, String> viewId = PageFlowUtil.map(QueryParam.schemaName.name(), view.getSchemaName(),
-                        QueryParam.queryName.name(), view.getQueryName(),
-                        QueryParam.viewName.name(), view.getName());
-
-                info.setQueryView(true);
-
-                ViewCategory vc = getDefaultCategory(c, view.getSchemaName(), view.getQueryName());
-                info.setCategory(vc.getLabel());
-                info.setCategoryDisplayOrder(vc.getDisplayOrder());
-
-                info.setReportId(new QueryViewReportId(viewId));
-                info.setQuery(view.getQueryName());
-                info.setSchema(view.getSchemaName());
-                info.setEditable(view.isEditable());
-                info.setCreatedBy(createdBy);
-                info.setPermissions(view.isShared() ? "public" : "private");
-
-                boolean inherited = isInherited(view, c);
-
-                if (!inherited)
-                {
-                    ActionURL url = filter.getViewEditURL(c, view, user);
-                    if (url != null)
-                    {
-                        url.addParameter(QueryParam.srcURL, PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(c).getLocalURIString());
-                        info.setEditUrl(url);
-                    }
-                }
-
-                // run url and details url are the same for now
-                ActionURL runUrl = filter.getViewRunURL(user, c, view);
-                info.setRunUrl(runUrl);
-                info.setDetailsUrl(runUrl);
-                // FIXME: see 10473: ModuleCustomViewInfo has no Container or Owner.
-                info.setContainer(view.getContainer());
-                info.setInherited(inherited);
-
-                if (!StringUtils.isEmpty(view.getCustomIconUrl()))
-                    info.setIcon(AppProps.getInstance().getContextPath() + "/" + view.getCustomIconUrl());
-
-                info.setThumbnailUrl(PageFlowUtil.urlProvider(QueryUrls.class).urlThumbnail(c));
-
-                views.add(info);
-            }
+            throw new RuntimeException(e);
         }
 
         return views;

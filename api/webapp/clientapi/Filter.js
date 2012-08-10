@@ -107,6 +107,8 @@ LABKEY.Filter = new function()
 
     var singleValueToMultiMap = {
         eq : 'in',
+        neq : 'notin',
+        neqornull: 'notin',
         doesnotcontain : 'containsnoneof',
         contains : 'containsoneof'
     };

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp.property;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.query.ValidationError;
 
@@ -35,5 +36,5 @@ public interface ValidatorKind
 
     IPropertyValidator createInstance();
     boolean isValid(IPropertyValidator validator, List<ValidationError> errors);
-    boolean validate(IPropertyValidator validator, PropertyDescriptor field, Object value, List<ValidationError> errors, ValidatorContext validatorCache);
+    boolean validate(IPropertyValidator validator, PropertyDescriptor field, @NotNull Object value, List<ValidationError> errors, ValidatorContext validatorCache);
 }

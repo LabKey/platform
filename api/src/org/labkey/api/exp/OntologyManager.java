@@ -512,7 +512,8 @@ public class OntologyManager
             ret = false;
         }
 
-        if (validators != null)
+        // Don't validate null values, #15683
+        if (null != value && validators != null)
         {
             for (IPropertyValidator validator : validators)
                 if (!validator.validate(prop, value, errors, validatorCache)) ret = false;

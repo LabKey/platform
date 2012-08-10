@@ -3567,11 +3567,10 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 value = newValues;
             }
 
-            //NOTE: removed b/c null makes this tricky
-            //switch to single filter option correctly
-//            if(value.length == 1){
-//                filter = filter.getSingleValueFilter();
-//            }
+            //Issue 15657: switch to single filter option correctly
+            if(value.length == 1 && filter.getSingleValueFilter()){
+                filter = filter.getSingleValueFilter();
+            }
         }
 
         //b/c empty strings will be ignored, we add a second to force a delimiter.

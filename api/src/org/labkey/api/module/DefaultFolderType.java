@@ -372,6 +372,8 @@ public class DefaultFolderType implements FolderType
         // for now study has a slightly different version of manage views
         if (StudyService.get().getStudy(container) == null)
             adminNavTree.addChild(new NavTree("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(container)));
+        else
+            adminNavTree.addChild(new NavTree("Manage Views", PageFlowUtil.urlProvider(StudyUrls.class).getManageViewsURL(container)));
     }
 
     public void addManageLinks(NavTree adminNavTree, Container container)

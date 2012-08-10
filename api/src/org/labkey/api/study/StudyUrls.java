@@ -27,6 +27,7 @@ public interface StudyUrls extends UrlProvider
 {
     ActionURL getCreateStudyURL(Container container);
     ActionURL getManageStudyURL(Container container);
+    ActionURL getManageViewsURL(Container container);
     ActionURL getStudyOverviewURL(Container container);
     ActionURL getDatasetURL(Container container, int datasetId);
     ActionURL getDatasetsURL(Container container);
