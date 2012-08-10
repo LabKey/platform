@@ -619,22 +619,22 @@ public class ExcelFactory
         {
             String fileNotFoundError = null;
             System.out.println("OS: " + System.getProperty("os.name"));
-            if(System.getProperty("os.name").contains("indow"))
-            {
-                fileNotFoundError = "The system cannot find the file specified";
-            }
-            else
-            {
-                fileNotFoundError = "No such file or directory";
-            }
-            attemptImportExpectError("doesntexist.xls", FileNotFoundException.class, "The system cannot find the file specified", "No such file or directory");
-            attemptImportExpectError("", FileNotFoundException.class, "Access is denied", "Access is denied");
-            attemptImportExpectError("notreallyexcel.xls", InvalidFormatException.class, "Your InputStream was neither an OLE2 stream, nor an OOXML stream", "Your InputStream was neither an OLE2 stream, nor an OOXML stream");
+//            if(System.getProperty("os.name").contains("indow"))
+//            {
+//                fileNotFoundError = "The system cannot find the file specified";
+//            }
+//            else
+//            {
+//                fileNotFoundError = "No such file or directory";
+//            }
+            attemptImportExpectError("doesntexist.xls", FileNotFoundException.class);
+            attemptImportExpectError("", FileNotFoundException.class);
+            attemptImportExpectError("notreallyexcel.xls", InvalidFormatException.class);
         }
 
 
 
-        private void attemptImportExpectError(String filename, Class exceptionClass, String partialErrorMessageWin, String partialErrorMessageLinux)
+        private void attemptImportExpectError(String filename, Class exceptionClass)
         {
 
             try
@@ -644,9 +644,7 @@ public class ExcelFactory
             }
             catch(Exception e)
             {
-                assertEquals(exceptionClass, e.getClass());
-                assertTrue("Error message \"" + e.getMessage() + "\" did not contain expected string: \"" + partialErrorMessageWin + "\" or \"" +
-                        partialErrorMessageLinux + "\"", (e.getMessage().contains(partialErrorMessageWin) || e.getMessage().contains(partialErrorMessageLinux)));
+                assertEquals("Unexpected exception type", exceptionClass, e.getClass());
             }
         }
 
