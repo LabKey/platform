@@ -20,10 +20,11 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.view.ViewServlet;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
@@ -33,7 +34,16 @@ import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 
 public class URLHelper implements Cloneable, Serializable, Taintable
@@ -865,12 +875,40 @@ public class URLHelper implements Cloneable, Serializable, Taintable
     }
 
 
-/*  public static boolean isLegalInputName(String s)
+    public static class TestCase extends Assert
     {
-        if (!ViewServlet.validChars(s))
-            return false;
-        if (StringUtils.containsAny(s, '"', '\'', '`'))
-            return false;
-        return true;
-    } */
+        @Test
+        public void testHtmlSafety() throws URISyntaxException
+        {
+            // urls are included in many jsp w/o additional html encoding
+            // so you might ask... is it safe?
+            URLHelper h;
+            try
+            {
+                new URLHelper("http://server/<script>hi</script>");
+                fail("Should fail with illegal character");
+            }
+            catch (URISyntaxException x)
+            {
+            }
+            try
+            {
+                new URLHelper("http://server/\"file");
+                fail("Should fail with illegal character");
+            }
+            catch (URISyntaxException x)
+            {
+            }
+            h = new URLHelper("http://server/'%22%3Cscript%3Ehi%3C/script%3E");
+            assertFalse(StringUtils.containsAny(h.toString(), "'\"<>"));
+            assertFalse(StringUtils.containsAny(h.getLocalURIString(), "'\"<>"));
+            h = new URLHelper("http://server/index.html?'%22<script>hi</script>=x");
+            assertFalse(StringUtils.containsAny(h.toString(), "'\"<>"));
+            assertFalse(StringUtils.containsAny(h.getLocalURIString(), "'\"<>"));
+            h = new URLHelper("http://server/index.html?x='%22<script>hi</script>");
+            assertFalse(StringUtils.containsAny(h.toString(), "'\"<>"));
+            assertFalse(StringUtils.containsAny(h.getLocalURIString(), "'\"<>"));
+        }
+    }
+
 }
