@@ -389,8 +389,7 @@ public class DataSetQueryView extends QueryView
 
                 if (canWrite && _study instanceof StudyImpl)
                 {
-                    TableInfo tableInfo = new StudyQuerySchema((StudyImpl)_study, getUser(), false).getTable(_dataset.getLabel());
-                    ActionURL deleteRowsURL = tableInfo.getDeleteURL(getContainer());
+                    ActionURL deleteRowsURL = urlFor(QueryAction.deleteQueryRows);
                     if (deleteRowsURL != AbstractTableInfo.LINK_DISABLER_ACTION_URL)
                     {
                         if (deleteRowsURL == null)
