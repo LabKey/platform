@@ -1029,6 +1029,12 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 //                })
 //        );
 
+        //Issue 15668: In IE7 the floating filter window does not render properly
+        if (Ext4.isIE7){
+            var filterDivEl = Ext4.get(this.filterDiv);
+            filterDivEl.position('absolute', 11001);
+        }
+
         if (this.filterWindow)
             this.filterWindow.calculatePosition();
         else {
@@ -1036,6 +1042,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                 title    : 'Filter Report',
                 layout   : 'form',              // strange workaround to make sure content renders after expand
                 items    : [panel],
+                shadow: Ext4.isIE7 ? false : "sides",
                 bodyStyle: 'overflow-y: auto; overflow-x: hidden;',
                 relative : this.centerPanel,
                 alignConfig : {
@@ -1064,12 +1071,12 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
 
             if (this.fitted) {
                 this.filterWindow.show();
-                this.filterWindow.collapse();                
+                this.filterWindow.collapse();
             }
 
 /*
             this.filterWindow.on('show', function(cmp){
-                
+
                 var e = cmp.getEl();
                 if ((e.getBottom() - 7) > window.outerHeight) {
 

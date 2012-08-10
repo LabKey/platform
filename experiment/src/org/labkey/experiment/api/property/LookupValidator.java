@@ -15,19 +15,30 @@
  */
 package org.labkey.experiment.api.property;
 
-import org.labkey.api.data.*;
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.DefaultPropertyValidator;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.exp.property.ValidatorKind;
-import org.labkey.api.gwt.client.model.GWTPropertyValidator;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
-import org.labkey.api.query.*;
+import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.security.User;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
 
 /**
  * User: jeckels
@@ -168,8 +179,11 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
         }
     }
 
-    public boolean validate(IPropertyValidator validator, PropertyDescriptor field, Object value, List<ValidationError> errors, ValidatorContext validatorCache)
+    public boolean validate(IPropertyValidator validator, PropertyDescriptor field, @NotNull Object value, List<ValidationError> errors, ValidatorContext validatorCache)
     {
+        //noinspection ConstantConditions
+        assert value != null : "Shouldn't be validating a null value";
+
         if (field.getLookupQuery() != null && field.getLookupSchema() != null)
         {
             LookupKey key = new LookupKey(field);

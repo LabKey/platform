@@ -174,12 +174,17 @@ public class PropertyValidatorImpl implements IPropertyValidator
 
     public boolean validate(PropertyDescriptor prop, Object value, List<ValidationError> errors, ValidatorContext validatorCache)
     {
+        // Don't validate null values, #15683
+        if (null == value)
+            return true;
+
         ValidatorKind kind = getType();
 
         if (kind != null)
             return kind.validate(this, prop, value, errors, validatorCache);
         else
             errors.add(new SimpleValidationError("Validator type : " + getTypeURI() + " does not exist."));
+
         return false;
     }
 

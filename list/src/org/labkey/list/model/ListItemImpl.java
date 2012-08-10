@@ -387,6 +387,8 @@ public class ListItemImpl implements ListItem
     {
         boolean ret = true;
 
+        // TODO: Get value and mvIndicator once (not once per loop iteration, etc.)
+
         //check for isRequired
         if (prop.isRequired())
         {
@@ -403,7 +405,7 @@ public class ListItemImpl implements ListItem
         {
             if (value instanceof ObjectProperty)
                 value = ((ObjectProperty)value).value();
-            if (!validator.validate(prop.getPropertyDescriptor(), value, errors, validatorCache)) ret = false;
+            if (null != value && !validator.validate(prop.getPropertyDescriptor(), value, errors, validatorCache)) ret = false;
         }
         return ret;
     }

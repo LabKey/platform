@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.*;
 import org.labkey.api.pipeline.PipeRoot;
@@ -33,6 +34,7 @@ import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.folder.xml.FolderDocument;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyImpl;
@@ -401,6 +403,21 @@ public class StudyReload
                     LOG.info("Handling " + c.getPath());
 
                     File studyXml = root.resolvePath("study.xml");
+
+                    // issue 15681: if there is a folder acrhive instead of a study archive, see if the folder.xml exists to point to the study root dir
+                    if (!studyXml.exists())
+                    {
+                        File folderXml = root.resolvePath("folder.xml");
+                        if (folderXml.exists())
+                        {
+                            FolderImportContext folderCtx = new FolderImportContext(reloadUser, c, folderXml, LOG, null);
+                            FolderDocument folderDoc = folderCtx.getDocument();
+                            if (folderDoc.getFolder().getStudy() != null && folderDoc.getFolder().getStudy().getDir() != null)
+                            {
+                                studyXml = root.resolvePath("/" + folderDoc.getFolder().getStudy().getDir() + "/study.xml");
+                            }
+                        }
+                    }
 
                     PipelineService.get().queueJob(new StudyImportJob(c, reloadUser, manageStudyURL, studyXml, studyXml.getName(), errors, root));
                 }

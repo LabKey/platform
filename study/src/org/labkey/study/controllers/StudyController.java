@@ -290,6 +290,12 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
+        public ActionURL getManageViewsURL(Container container)
+        {
+            return new ActionURL(ReportsController.ManageReportsAction.class, container);
+        }
+
+        @Override
         public ActionURL getStudyOverviewURL(Container container)
         {
             return new ActionURL(OverviewAction.class, container);

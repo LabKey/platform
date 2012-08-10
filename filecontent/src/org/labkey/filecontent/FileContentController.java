@@ -1197,7 +1197,12 @@ public class FileContentController extends SpringActionController
 
         private boolean validateProperty(DomainProperty prop, Object value, List<ValidationError> errors, ValidatorContext validatorCache)
         {
+            // Don't validate null values, #15683
+            if (null == value)
+                return true;
+
             boolean ret = true;
+
             for (IPropertyValidator validator : prop.getValidators())
             {
                 if (!validator.validate(prop.getPropertyDescriptor(), value, errors, validatorCache)) ret = false;
@@ -1273,6 +1278,10 @@ public class FileContentController extends SpringActionController
                 errors.add(new PropertyValidationError("The field '" + prop.getName() + "' is required.", prop.getName()));
                 return false;
             }
+
+            // Don't validate null values, #15683
+            if (null == value)
+                return ret;
 
             for (IPropertyValidator validator : prop.getValidators())
             {

@@ -72,8 +72,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
                 deselect: this.deselect,
                 getGrid: function(){return this;}
             });
-            cfg.height = 22;
-            cfg.width = 75;
+
             this.items.push(cfg);
 
             this.on('selectionchange', function() {

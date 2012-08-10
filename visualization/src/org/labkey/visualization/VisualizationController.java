@@ -1358,6 +1358,8 @@ public class VisualizationController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class TimeChartWizardAction extends SimpleViewAction<GetVisualizationForm>
     {
+        String _navTitle = TITLE;
+
         @Override
         public ModelAndView getView(GetVisualizationForm form, BindException errors) throws Exception
         {
@@ -1373,6 +1375,8 @@ public class VisualizationController extends SpringActionController
 
             if (report != null)
             {
+                _navTitle = report.getDescriptor().getReportName();
+
                 // check if the report is shared and if not, whether the user has access to the report
                 if (report.getDescriptor().getOwner() == null || (report.getDescriptor().getOwner() != null && report.getDescriptor().getOwner() == getUser().getUserId()))
                 {
@@ -1389,7 +1393,7 @@ public class VisualizationController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild(TITLE);
+            return root.addChild(_navTitle);
         }
     }
 
