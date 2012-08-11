@@ -35,24 +35,7 @@ import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.RowMapFactory;
-import org.labkey.api.data.ActionButton;
-import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.CachedResultSet;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.ExcelWriter;
-import org.labkey.api.data.SchemaTableInfo;
-import org.labkey.api.data.ShowRows;
-import org.labkey.api.data.TSVWriter;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.query.*;
@@ -2636,7 +2619,66 @@ public class QueryController extends SpringActionController
         }
     }
 
+    @RequiresPermissionClass(ReadPermission.class)
+    @ApiVersion(9.1)
+    public class SelectDistinctAction extends ApiAction<QueryForm>
+    {
+        @Override
+        public ApiResponse execute(QueryForm form, BindException errors) throws Exception
+        {
+            ensureQueryExists(form);
 
+            SQLFragment sql = getDistinctSql(form);
+
+            ApiResponseWriter writer = new ApiJsonWriter(getViewContext().getResponse());
+            writer.startResponse();
+
+            writer.writeProperty("schemaName", form.getSchemaName().toString());
+            writer.writeProperty("queryName", form.getQueryName());
+            writer.startList("rows");
+
+            ResultSet rs = null;
+            try
+            {
+                rs = Table.executeQuery(form.getSchema().getDbSchema(), sql);
+
+                while (rs.next())
+                {
+                    writer.writeListEntry(((CachedResultSet) rs).getRowMap().get("value"));
+                }
+            }
+            catch (SQLException x)
+            {
+                throw new RuntimeSQLException(x);
+            }
+            finally
+            {
+                ResultSetUtil.close(rs);
+            }
+            writer.endList();
+            writer.endResponse();
+
+            return null;
+        }
+
+        private SQLFragment getDistinctSql(QueryForm form)
+        {
+            TableInfo table = form.getSchema().getTable(form.getQueryName());
+            QuerySettings settings = form.getQuerySettings();
+            QueryService service = QueryService.get();
+
+            SimpleFilter filter = new SimpleFilter(settings.getBaseFilter());
+            filter.addUrlFilters(getViewContext().getActionURL(), "query");
+
+            ColumnInfo col = table.getColumn(settings.getFieldKeys().get(0));
+
+            SQLFragment sql = new SQLFragment("SELECT DISTINCT " + col.getAlias() + " AS value FROM(");
+            sql.append(service.getSelectSQL(table, service.getColumns(table, settings.getFieldKeys()).values(), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false));
+            sql.append(") AS S");
+
+            return sql;
+        }
+    }
 
     @RequiresPermissionClass(ReadPermission.class)
     public class ImportAction extends AbstractQueryImportAction<QueryForm>
