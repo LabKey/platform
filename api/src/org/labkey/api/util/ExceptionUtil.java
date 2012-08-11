@@ -637,12 +637,13 @@ public class ExceptionUtil
         response.setDateHeader("Expires", 0);
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Location", url);
+        response.setContentType("text/html; charset=UTF-8");
 
         // backup strategy!
         try
         {
             PrintWriter out = response.getWriter();
-            out.println("\"> --></script><script type=\"text/javascript\">");
+            out.println("\"'>--></script><script type=\"text/javascript\">");
             out.println("window.location = '" + url + "';");
             out.println("</script>");
         }
