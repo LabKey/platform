@@ -490,6 +490,48 @@ LABKEY.Query = new function()
         },
 
         /**
+         * Select Distinct Rows
+         * @param {Object} config An object which contains the following configuration properties.
+         * @param {String} config.schemaName Name of a schema defined within the current container. See also: <a class="link"
+                        href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+                        How To Find schemaName, queryName &amp; viewName</a>.
+         * @param {String} config.queryName Name of a query table associated with the chosen schema.  See also: <a class="link"
+                        href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
+                        How To Find schemaName, queryName &amp; viewName</a>.
+         * @param {String} [config.column] A single column for which the distinct results will be requested. This column
+         *              must exist within the specified query.
+         * @param {Array} [config.filterArray] Array of objects created by {@link LABKEY.Filter.create}.
+         * @param {Function} config.success
+         * @param {Function} config.failure
+         * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
+         */
+        selectDistinctRows : function(config)
+        {
+            if (!config.schemaName)
+                throw "You must specify a schemaName!";
+            if (!config.queryName)
+                throw "You must specify a queryName!";
+            if (!config.column)
+                throw "You must specify a column!";
+
+            var dataObject = LABKEY.Query.buildQueryParams(
+                    config.schemaName,
+                    config.queryName,
+                    config.filterArray
+            );
+
+            dataObject['query.columns'] = config.column;
+
+            return LABKEY.Ajax.request({
+                url : LABKEY.ActionURL.buildURL('query', 'selectDistinct', config.containerPath),
+                method : 'GET',
+                success: getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), false, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
+                params : dataObject
+            });
+        },
+
+        /**
         * Update rows.
         * @param {Object} config An object which contains the following configuration properties.
         * @param {String} config.schemaName Name of a schema defined within the current container. See also: <a class="link"

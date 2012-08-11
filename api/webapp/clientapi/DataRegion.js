@@ -3128,8 +3128,6 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
     getCheckboxGroupConfig: function(idx)
     {
-        //var dataRegion = LABKEY.DataRegions[this.dataRegionName];
-
         var sm = new Ext.grid.CheckboxSelectionModel({
             listeners: {
                 selectionchange: {
@@ -3158,7 +3156,6 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
             border : true,
             bodyBorder: true,
             frame : false,
-            //bodyStyle   : 'border: none;',
             autoHeight: true,
             itemId: 'inputField' + (idx || 0),
             filterIndex: idx,
