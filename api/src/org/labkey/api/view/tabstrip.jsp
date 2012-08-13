@@ -45,12 +45,12 @@
             }
             else if (tab.getScript() == null)
             {
-                %><a href="<%=h(tab.getHref())%>"><%=h(tab.getText())%>&nbsp;</a><%
+                %><a href="<%=h(tab.getHref())%>"><%=h(tab.getText())%></a><%
             }
             else
             {
                 String href = StringUtils.defaultString(tab.getHref(), "javascript:void(0);");
-                %><a href="<%=h(href)%>" onclick="<%=h(tab.getScript())%>"><%=h(tab.getText())%>&nbsp;</a><%
+                %><a href="<%=h(href)%>" onclick="<%=h(tab.getScript())%>"><%=h(tab.getText())%></a><%
             }
             %></li><%
         }
