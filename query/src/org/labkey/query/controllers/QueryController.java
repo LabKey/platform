@@ -2620,7 +2620,6 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    @ApiVersion(9.1)
     public class SelectDistinctAction extends ApiAction<QueryForm>
     {
         @Override
@@ -2628,14 +2627,17 @@ public class QueryController extends SpringActionController
         {
             ensureQueryExists(form);
 
-            SQLFragment sql = getDistinctSql(form);
+            SQLFragment sql = getDistinctSql(form, errors);
+
+            if (errors.hasErrors())
+                return null;
 
             ApiResponseWriter writer = new ApiJsonWriter(getViewContext().getResponse());
             writer.startResponse();
 
             writer.writeProperty("schemaName", form.getSchemaName().toString());
             writer.writeProperty("queryName", form.getQueryName());
-            writer.startList("rows");
+            writer.startList("values");
 
             ResultSet rs = null;
             try
@@ -2644,7 +2646,7 @@ public class QueryController extends SpringActionController
 
                 while (rs.next())
                 {
-                    writer.writeListEntry(((CachedResultSet) rs).getRowMap().get("value"));
+                    writer.writeListEntry(rs.getObject("value"));
                 }
             }
             catch (SQLException x)
@@ -2661,20 +2663,39 @@ public class QueryController extends SpringActionController
             return null;
         }
 
-        private SQLFragment getDistinctSql(QueryForm form)
+        @Nullable
+        private SQLFragment getDistinctSql(QueryForm form, BindException errors)
         {
             TableInfo table = form.getSchema().getTable(form.getQueryName());
             QuerySettings settings = form.getQuerySettings();
             QueryService service = QueryService.get();
 
+            Map<FieldKey, ColumnInfo> columns = service.getColumns(table, settings.getFieldKeys());
+            if (columns.size() != 1)
+            {
+                errors.reject(ERROR_MSG, "Select Distinct requires that only one column be requested.");
+                return null;
+            }
+
+            ColumnInfo col = table.getColumn(settings.getFieldKeys().get(0));
+            if (col == null)
+            {
+                errors.reject(ERROR_MSG, "\"" + settings.getFieldKeys().get(0).getName() + "\" is not a valid column.");
+                return null;
+            }
+
+            // Attach any URL-based filters. This would apply to 'filterArray' from the JavaScript API.
             SimpleFilter filter = new SimpleFilter(settings.getBaseFilter());
             filter.addUrlFilters(getViewContext().getActionURL(), "query");
 
-            ColumnInfo col = table.getColumn(settings.getFieldKeys().get(0));
+            SQLFragment selectSql = service.getSelectSQL(table, columns.values(), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
+
+            // Regenerate the column since the alias may have changed after call to getSelectSQL()
+            col = table.getColumn(settings.getFieldKeys().get(0));
 
             SQLFragment sql = new SQLFragment("SELECT DISTINCT " + col.getAlias() + " AS value FROM(");
-            sql.append(service.getSelectSQL(table, service.getColumns(table, settings.getFieldKeys()).values(), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false));
-            sql.append(") AS S");
+            sql.append(selectSql);
+            sql.append(") AS S ORDER BY value");
 
             return sql;
         }
