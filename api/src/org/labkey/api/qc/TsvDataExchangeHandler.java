@@ -654,6 +654,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                         data.save(context.getUser());
                     }
                     result = new DefaultTransformResult(dataMap);
+                    result.setBatchProperties(mergeResult.getBatchProperties());
+                    result.setRunProperties(mergeResult.getRunProperties());
                 }
 
                 if (transformedRunProps != null && transformedRunProps.exists())

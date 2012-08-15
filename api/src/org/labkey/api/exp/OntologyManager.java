@@ -2532,6 +2532,8 @@ public class OntologyManager
                     facetingBehavior = type;
             }
 
+            boolean isProtected = m.get("Protected") != null && ((Boolean)m.get("Protected")).booleanValue();
+
             PropertyType pt = PropertyType.getFromURI(conceptURI, rangeURI, null);
             if (null == pt)
             {
@@ -2598,6 +2600,7 @@ public class OntologyManager
             pd.setLookupSchema(lookupSchema);
             pd.setLookupQuery(lookupQuery);
             pd.setFacetingBehaviorType(facetingBehavior);
+            pd.setProtected(isProtected);
         }
         return pd;
     }

@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2008-2012 LabKey Corporation
  *
@@ -213,6 +214,7 @@ public class DomainUtil
         gwtProp.setMeasure(prop.isMeasure());
         gwtProp.setMvEnabled(prop.isMvEnabled());
         gwtProp.setFacetingBehaviorType(prop.getFacetingBehavior().name());
+        gwtProp.setProtected(prop.isProtected());
         gwtProp.setDefaultValueType(prop.getDefaultValueTypeEnum());
         gwtProp.setImportAliases(prop.getPropertyDescriptor().getImportAliases());
         StringExpression url = prop.getPropertyDescriptor().getURL();
@@ -544,6 +546,9 @@ public class DomainUtil
             FacetingBehaviorType type = FacetingBehaviorType.valueOf(from.getFacetingBehaviorType());
             to.setFacetingBehavior(type);
         }
+
+        if (from.isProtected())
+            to.setProtected(from.isProtected());
     }
 
     @SuppressWarnings("unchecked")

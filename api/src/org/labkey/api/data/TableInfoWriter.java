@@ -176,6 +176,9 @@ public class TableInfoWriter
                 columnXml.setFacetingBehavior(type);
             }
         }
+
+        if (column.isProtected())
+            columnXml.setProtected(true);
     }
 
     protected String getConceptURI(ColumnInfo column)

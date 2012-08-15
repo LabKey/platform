@@ -336,6 +336,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         advancedPane.addItem(new ImportAliasesItem<DomainType, FieldType>(advancedPane));
         advancedPane.addItem(new MeasureItem<DomainType, FieldType>(advancedPane));
         advancedPane.addItem(new DimensionItem<DomainType, FieldType>(advancedPane));
+        advancedPane.addItem(new ProtectedItem<DomainType, FieldType>(advancedPane));
         advancedPane.addItem(new FacetingBehaviorItem<DomainType, FieldType>(advancedPane));
         addChangeHandler(advancedPane.getChangeListener());
 

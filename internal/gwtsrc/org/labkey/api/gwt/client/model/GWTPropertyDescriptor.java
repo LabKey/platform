@@ -65,6 +65,7 @@ public class GWTPropertyDescriptor implements IsSerializable
     private BooleanProperty measure = new BooleanProperty();
     private BooleanProperty dimension = new BooleanProperty();
     private StringProperty facetingBehaviorType = new StringProperty();
+    private BooleanProperty isProtected = new BooleanProperty();
 
     // for controlling the property editor (not persisted or user settable)
 //    private boolean isEditable = true;
@@ -116,6 +117,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         setImportAliases(s.getImportAliases());
         setURL(s.getURL());
         setFacetingBehaviorType(s.getFacetingBehaviorType());
+        setProtected(s.isProtected());
 
         for (GWTPropertyValidator v : s.getPropertyValidators())
         {
@@ -424,6 +426,16 @@ public class GWTPropertyDescriptor implements IsSerializable
         this.facetingBehaviorType.set(facetingBehavior);
     }
 
+    public boolean isProtected()
+    {
+        return isProtected.booleanValue();
+    }
+
+    public void setProtected(boolean isProtected)
+    {
+        this.isProtected.setBool(isProtected);
+    }
+
     public String debugString()
     {
         return getName() + " " + getLabel() + " " + getRangeURI() + " " + isRequired() + " " + getDescription();
@@ -469,6 +481,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         if (isMeasure() != that.isMeasure()) return false;
         if (isDimension() != that.isDimension()) return false;
         if (getFacetingBehaviorType() != that.getFacetingBehaviorType()) return false;
+        if (isProtected() != that.isProtected()) return false;
 
         if (!getPropertyValidators().equals(that.getPropertyValidators())) return false;
         if (!getConditionalFormats().equals(that.getConditionalFormats()))
@@ -511,6 +524,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         result = 31 * result + (dimension.getBoolean() != null ? dimension.getBoolean().hashCode() : 0);
         result = 31 * result + (measure.getBoolean() != null ? measure.getBoolean().hashCode() : 0);
         result = 31 * result + (facetingBehaviorType.getString() != null ? facetingBehaviorType.getString().hashCode() : 0);
+        result = 31 * result + (isProtected.getBoolean() != null ? isProtected.getBoolean().hashCode() : 0);
 
         for (GWTPropertyValidator gwtPropertyValidator : getPropertyValidators())
         {
@@ -550,6 +564,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         if ("defaultValue".equals(prop)) throw new IllegalStateException("defaultValue cannot be bound.");
         if ("defaultDisplayValue".equals(prop)) throw new IllegalStateException("defaultDisplayValue cannot be bound.");
         if ("facetingBehaviorType".equals(prop)) return facetingBehaviorType;
+        if ("protected".equals(prop)) return isProtected;
         return null;
     }
 

@@ -175,7 +175,7 @@ public abstract class GenericChartReport extends AbstractReport
                 {
                     Class cls = col.getJavaObjectClass();
 
-                    if (Integer.class.equals(cls) || Double.class.equals(cls))
+                    if (Number.class.isAssignableFrom(cls))
                     {
                         RenderType type = RenderType.AUTO_PLOT;
 

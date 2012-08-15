@@ -131,6 +131,8 @@ public class JsonWriter
         props.put("dimension", cinfo != null && cinfo.isDimension());
         props.put("measure", cinfo != null && cinfo.isMeasure());
 
+        props.put("protected", cinfo != null && cinfo.isProtected());
+
         ColumnInfo displayField = cinfo != null ? cinfo.getDisplayField() : null;
         if (displayField != null && displayField != cinfo)
         {

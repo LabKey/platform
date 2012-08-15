@@ -129,4 +129,22 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     {
         return "new";
     }
+
+    @Override
+    public boolean isRemoveProtected()
+    {
+        return false;
+    }
+
+    @Override
+    public boolean isShiftDates()
+    {
+        return false;
+    }
+
+    @Override
+    public boolean isAlternateIds()
+    {
+        return false;
+    }
 }
