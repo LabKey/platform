@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.reports.ExternalScriptEngine" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -41,6 +42,7 @@
     Ext.QuickTips.init();
     var R_EXTENSIONS = 'R,r';
     var PERL_EXTENSIONS = 'pl';
+    var R_ENGINE_NAME = 'R Scripting Engine';
 
     function renderNameColumn(value, p, record)
     {
@@ -76,22 +78,26 @@
     function showEngines()
     {
         // pre defined engine templates
-        
+
         var rEngineItem = new Ext.menu.Item({
             id: 'add_rEngine',
             text:'New R Engine',
             listeners:{click:function(button, event) {editRecord(button, grid,{
-                name:'R Scripting Engine',
+                name: R_ENGINE_NAME,
                 extensions: R_EXTENSIONS,
-                exeCommand:'<%=RReport.DEFAULT_R_CMD%>',
+                <% if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING)) { %>
+                    machine:'<%=RReport.DEFAULT_R_MACHINE%>',
+                    port:<%=RReport.DEFAULT_R_PORT%>,
+                <% } else { %>
+                    exeCommand:'<%=RReport.DEFAULT_R_CMD%>',
+                    <% if (!StringUtils.isEmpty(RReport.getDefaultRPath())) { %>
+                        exePath: '<%=RReport.getDefaultRPath()%>',
+                    <% } %>
+                <% }%>
                 outputFileName: <%= org.labkey.api.util.PageFlowUtil.jsString(ExternalScriptEngine.SCRIPT_NAME_REPLACEMENT + ".Rout") %>,
                 external: true,
-                <% if (!StringUtils.isEmpty(RReport.getDefaultRPath())) { %>
-                    exePath: '<%=RReport.getDefaultRPath()%>',
-                <% } %>
                 enabled: true,
                 languageName:'R'});}}}
-
             );
 
         var perlEngineItem = new Ext.menu.Item({
@@ -120,6 +126,12 @@
                         {name:'name'},
                         {name:'exePath'},
                         {name:'exeCommand'},
+                        {name:'machine'},
+                        {name:'port'},
+                        {name:'reportShare'},
+                        {name:'pipelineShare'},
+                        {name:'user'},
+                        {name:'password'},
                         {name:'extensions'},
                         {name:'languageName'},
                         {name:'languageVersion'},
@@ -253,89 +265,233 @@
 
     function editRecord(button, grid, record)
     {
-        var formPanel = new Ext.FormPanel({
-            bodyStyle:'padding:5px 5px 0',
-            defaultType: 'textfield',
-            items: [{
-                fieldLabel: "Name",
-                name: 'name',
-                id: 'editEngine_name',
-                allowBlank:false,
-                readOnly:!record.external,
-                value: record.name
-            },{
-                fieldLabel: 'Language',
-                name: 'languageName',
-                id: 'editEngine_languageName',
-                allowBlank:false,
-                readOnly:!record.external,
-                value: record.languageName
-            },{
-                fieldLabel: 'Language Version',
-                name: 'languageVersion',
-                id: 'editEngine_languageVersion',
-                readOnly:!record.external,
-                value: record.languageVersion
-            },{
-                fieldLabel: 'File Extensions',
-                name: 'extensions',
-                id: 'editEngine_extensions',
-                allowBlank:false,
-                tooltip: {text:'The list of file extensions (separated by commas) that this engine is associated with', title:'File Extensions'},
-                listeners: {render: setFormFieldTooltip},
-                readOnly:!record.external,
-                value: record.extensions
-            },{
-                fieldLabel: 'Program Path',
-                name: 'exePath',
-                id: 'editEngine_exePath',
-                allowBlank:false,
-                value: record.exePath,
-                tooltip: {text:'Specify the absolute path to the program including the program itself', title:'Program Path'},
-                listeners: {render: setFormFieldTooltip},
-                disabled:!record.external,
-                width: 275
-            },{
-                fieldLabel: 'Program Command',
-                name: 'exeCommand',
-                id: 'editEngine_exeCommand',
-                tooltip: {text:'The command used when the program is invoked', title:'Program Command'},
-                listeners: {render: setFormFieldTooltip},
-                disabled:!record.external,
-                value: record.exeCommand,
-                width: 275
-            },{
-                fieldLabel: 'Output File Name',
-                name: 'outputFileName',
-                id: 'editEngine_outputFileName',
-                value: record.outputFileName,
-                tooltip: {text:'If the console output is written to a file, the name should be specified here. The substitution syntax \\${scriptName} will be replaced with the name (minus the extension) of the script being executed.', title:'Output File Name'},
-                disabled:!record.external,
-                listeners: {render: setFormFieldTooltip}
-            },{
-                fieldLabel: 'Enabled',
-                name: 'enabled',
-                id: 'editEngine_enabled',
-                xtype: 'checkbox',
-                checked: record.enabled,
-                tooltip: {text:'If a script engine is disabled, it cannot be used to run reports and scripts', title:'Enable Engine'},
-                listeners: {render: setFormFieldTooltip}
-            },{
-                name: 'external',
-                xtype: 'hidden',
-                value: record.external
-            },{
-                name: 'key',
-                xtype: 'hidden',
-                value: record.key
-            }]
-        });
+        var itemPath = {
+            fieldLabel: 'Program Path',
+            name: 'exePath',
+            id: 'editEngine_exePath',
+            allowBlank:false,
+            value: record.exePath,
+            tooltip: {text: 'Specify the absolute path to the program including the program itself', title: 'Program Path'},
+            listeners: {render: setFormFieldTooltip},
+            disabled:!record.external,
+            width: 275
+        };
+
+        var itemMachine = {
+            fieldLabel: 'Machine Name',
+            name: 'machine',
+            id: 'editEngine_machine',
+            allowBlank:false,
+            value: record.machine,
+            tooltip: {text: 'Specify the machine name or IP address that Rserve is running on', title: 'Machine Name'},
+            listeners: {render: setFormFieldTooltip},
+            disabled:!record.external,
+            width: 275
+        };
+
+        var itemCmd = {
+            fieldLabel: 'Program Command',
+            name: 'exeCommand',
+            id: 'editEngine_exeCommand',
+            tooltip: {text: 'The command used when the program is invoked', title: 'Program Command'},
+            listeners: {render: setFormFieldTooltip},
+            disabled:!record.external,
+            value: record.exeCommand,
+            width: 275
+        };
+
+        var itemPort = {
+            fieldLabel: 'Port',
+            name: 'port',
+            id: 'editEngine_port',
+            tooltip: {text: 'The port used to connect to Rserve', title: 'Port'},
+            listeners: {render: setFormFieldTooltip},
+            disabled:!record.external,
+            value: record.port,
+            width: 275
+        };
+
+        var itemReportShare = {
+            fieldLabel: 'Remote Report Share',
+            name: 'reportShare',
+            id: 'editEngine_reportShare',
+            tooltip: {text: 'The share used on the remote machine to reference the report share on the LabKey machine', title: 'Remote Report Share'},
+            listeners: {render: setFormFieldTooltip},
+            disabled:!record.external,
+            value: record.reportShare,
+            width: 275
+        };
+
+        var itemPipelineShare = {
+            fieldLabel: 'Remote Pipeline Share',
+            name: 'pipelineShare',
+            id: 'editEngine_pipelineShare',
+            tooltip: {text: 'The share used on the remote machine to reference the pipeline override root', title: 'Remote Pipeline Share'},
+            listeners: {render: setFormFieldTooltip},
+            disabled:!record.external,
+            value: record.pipelineShare,
+            width: 275
+        };
+
+        var itemUser = {
+            fieldLabel: 'Remote User',
+            name: 'user',
+            id: 'editEngine_user',
+            tooltip: {text: 'The user for the remote service login', title: 'Remote User'},
+            listeners: {render: setFormFieldTooltip},
+            disabled:!record.external,
+            value: record.user,
+            width: 275
+        };
+
+        var itemPassword = {
+            fieldLabel: 'Remote Password',
+            name: 'password',
+            id: 'editEngine_password',
+            tooltip: {text: 'The password for the remote service login account', title: 'Remote Password'},
+            listeners: {render: setFormFieldTooltip},
+            inputType: 'password',
+            disabled:!record.external,
+            value: record.password,
+            width: 275
+        };
+
+        var itemName = {
+            fieldLabel: "Name",
+            name: 'name',
+            id: 'editEngine_name',
+            allowBlank:false,
+            readOnly:!record.external,
+            value: record.name
+        };
+
+        var itemLanguageName = {
+            fieldLabel: 'Language',
+            name: 'languageName',
+            id: 'editEngine_languageName',
+            allowBlank:false,
+            readOnly:!record.external,
+            value: record.languageName
+        };
+
+        var itemLanguageVersion = {
+            fieldLabel: 'Language Version',
+            name: 'languageVersion',
+            id: 'editEngine_languageVersion',
+            readOnly:!record.external,
+            value: record.languageVersion
+        };
+
+        var itemExtensions = {
+            fieldLabel: 'File Extensions',
+            name: 'extensions',
+            id: 'editEngine_extensions',
+            allowBlank:false,
+            tooltip: {text:'The list of file extensions (separated by commas) that this engine is associated with', title:'File Extensions'},
+            listeners: {render: setFormFieldTooltip},
+            readOnly:!record.external,
+            value: record.extensions
+        };
+
+        var itemOutputFileName = {
+            fieldLabel: 'Output File Name',
+            name: 'outputFileName',
+            id: 'editEngine_outputFileName',
+            value: record.outputFileName,
+            tooltip: {text:'If the console output is written to a file, the name should be specified here. The substitution syntax \\${scriptName} will be replaced with the name (minus the extension) of the script being executed.', title:'Output File Name'},
+            disabled:!record.external,
+            listeners: {render: setFormFieldTooltip}
+        };
+
+        var itemEnabled = {
+            fieldLabel: 'Enabled',
+            name: 'enabled',
+            id: 'editEngine_enabled',
+            xtype: 'checkbox',
+            checked: record.enabled,
+            tooltip: {text:'If a script engine is disabled, it cannot be used to run reports and scripts', title:'Enable Engine'},
+            listeners: {render: setFormFieldTooltip}
+        };
+
+        var itemExternal = {
+            name: 'external',
+            xtype: 'hidden',
+            value: record.external
+        };
+
+        var itemKey = {
+            name: 'key',
+            xtype: 'hidden',
+            value: record.key
+        };
+
+
+        var useRserve = false;
+
+        //
+        // if we are adding an R scripting engine and the user turned on the
+        // experimental Rserve feature then configure machine name and port
+        // instead of the command name and args since we aren't controlling how the
+        // rserve executable is invoked on the server
+        //
+        if (record.name == R_ENGINE_NAME)
+        {
+            <% if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING)) { %>
+                useRserve = true;
+            <% } %>
+        }
+
+        var formPanel;
+
+        if (useRserve)
+        {
+            formPanel = new Ext.FormPanel({
+                bodyStyle:'padding:5px 5px 0',
+                defaultType: 'textfield',
+                items: [
+                    itemName,
+                    itemLanguageName,
+                    itemLanguageVersion,
+                    itemExtensions,
+                    itemMachine,
+                    itemPort,
+                    itemReportShare,
+                    itemPipelineShare,
+                    itemUser,
+                    itemPassword,
+                    itemOutputFileName,
+                    itemEnabled,
+                    itemExternal,
+                    itemKey
+                ]
+            });
+        }
+        else
+        {
+            formPanel = new Ext.FormPanel({
+                bodyStyle:'padding:5px 5px 0',
+                defaultType: 'textfield',
+                items: [
+                    itemName,
+                    itemLanguageName,
+                    itemLanguageVersion,
+                    itemExtensions,
+                    itemPath,
+                    itemCmd,
+                    itemOutputFileName,
+                    itemEnabled,
+                    itemExternal,
+                    itemKey
+                ]
+            });
+        }
+
         var win = new Ext.Window({
             title: 'Edit Engine Configuration',
             layout:'form',
             border: false,
             width: 475,
-            height: 345,
+            autoHeight : true,
             closeAction:'close',
             modal: false,
             items: formPanel,

@@ -100,6 +100,7 @@ import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AdminConsole.SettingsLinkType;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.thumbnail.BaseThumbnailAction;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
@@ -458,7 +459,6 @@ public class ReportsController extends SpringActionController
         }
     }
 
-
     @RequiresPermissionClass(AdminPermission.class)
     public class ScriptEnginesSummaryAction extends ApiAction
     {
@@ -491,6 +491,16 @@ public class ReportsController extends SpringActionController
                     record.put("exePath", def.getExePath());
                     record.put("exeCommand", def.getExeCommand());
                     record.put("outputFileName", def.getOutputFileName());
+
+                    if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+                    {
+                        record.put("machine", def.getMachine());
+                        record.put("port", String.valueOf(def.getPort()));
+                        record.put("reportShare", def.getReportShare());
+                        record.put("pipelineShare", def.getPipelineShare());
+                        record.put("user", def.getUser());
+                        record.put("password", def.getPassword());
+                    }
                 }
                 views.add(record);
             }
@@ -511,11 +521,21 @@ public class ReportsController extends SpringActionController
 
             if (def.isExternal())
             {
-                File rexe = new File(def.getExePath());
-                if (!rexe.exists())
-                    errors.rejectValue("exePath", ERROR_MSG, "The program location: '" + def.getExePath() + "' does not exist");
-                if (rexe.isDirectory())
-                    errors.rejectValue("exePath", ERROR_MSG, "Please specify the entire path to the program, not just the directory (e.g., 'c:/Program Files/R/R-2.7.1/bin/R.exe)");
+                //
+                // If we are using Rserve for the R script engine instead of a local shell command then
+                // don't validate the exe and command line values.
+                //
+                boolean ignoreExePath = AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING) &&
+                        Arrays.asList(def.getExtensions()).contains("R,r");
+
+                if (!ignoreExePath)
+                {
+                    File rexe = new File(def.getExePath());
+                    if (!rexe.exists())
+                        errors.rejectValue("exePath", ERROR_MSG, "The program location: '" + def.getExePath() + "' does not exist");
+                    if (rexe.isDirectory())
+                        errors.rejectValue("exePath", ERROR_MSG, "Please specify the entire path to the program, not just the directory (e.g., 'c:/Program Files/R/R-2.7.1/bin/R.exe)");
+                }
             }
         }
 
