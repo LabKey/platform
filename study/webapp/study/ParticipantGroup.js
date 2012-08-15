@@ -275,6 +275,8 @@ LABKEY.study.ParticipantGroupPanel = Ext.extend(Ext.Panel, {
             this.items.push({xtype: 'panel', id: 'demoQueryWebPartPanel', border: false});
 
         LABKEY.study.ParticipantGroupPanel.superclass.initComponent.call(this);
+
+        this.cls = 'doneLoadingTestMarker';
     },
 
     validate: function() {

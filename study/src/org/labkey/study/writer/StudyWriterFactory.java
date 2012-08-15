@@ -76,7 +76,8 @@ public class StudyWriterFactory implements FolderWriterFactory
                 VirtualFile studyDir = vf.getDir(DEFAULT_DIRECTORY);
 
                 StudyWriter writer = new StudyWriter();
-                StudyExportContext exportCtx = new StudyExportContext(study, ctx.getUser(), c, "old".equals(ctx.getFormat()), ctx.getDataTypes(), ctx.getLogger());
+                StudyExportContext exportCtx = new StudyExportContext(study, ctx.getUser(), c, "old".equals(ctx.getFormat()), ctx.getDataTypes(),
+                        ctx.isRemoveProtected(), ctx.isShiftDates(), ctx.isAlternateIds(), ctx.getLogger());
                 writer.write(study, exportCtx, studyDir);
             }
         }

@@ -210,7 +210,7 @@ public class ListImporter
         RowMapFactory<Object> mapFactory = new RowMapFactory<Object>(TYPE_NAME_COLUMN, "Property", "PropertyURI", "Label", "Description",
                 "RangeURI", "NotNull", "ConceptURI", "Format", "InputType", "HiddenColumn", "MvEnabled", "LookupFolderPath",
                 "LookupSchema", "LookupQuery", "URL", "ImportAliases", "ShownInInsertView", "ShownInUpdateView",
-                "ShownInDetailsView", "Measure", "Dimension", "ConditionalFormats", "FacetingBehaviorType");
+                "ShownInDetailsView", "Measure", "Dimension", "ConditionalFormats", "FacetingBehaviorType", "Protected");
         List<Map<String, Object>> importMaps = new LinkedList<Map<String, Object>>();
 
         for (ColumnType columnXml : listXml.getColumns().getColumnArray())
@@ -252,6 +252,8 @@ public class ListImporter
             if (type != null)
                 facetingBehaviorType = type.toString();
 
+            boolean isProtected = columnXml.isSetProtected() && columnXml.getProtected();
+
             Set<String> importAliases = new LinkedHashSet<String>();
             if (columnXml.isSetImportAliases())
             {
@@ -284,7 +286,8 @@ public class ListImporter
                 measure,
                 dimension,
                 ConditionalFormat.convertFromXML(columnXml.getConditionalFormats()),
-                facetingBehaviorType
+                facetingBehaviorType,
+                isProtected
             });
 
             importMaps.add(map);

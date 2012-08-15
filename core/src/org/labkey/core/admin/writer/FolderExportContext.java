@@ -30,12 +30,23 @@ public class FolderExportContext extends AbstractFolderContext
 {
     private final Set<String> _dataTypes;
     private String _format = "new";
+    private boolean _removeProtected = false;
+    private boolean _shiftDates = false;
+    private boolean _alternateIds = false;
 
     public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, Logger logger)
+    {
+        this(user, c, dataTypes, format, false, false, false, logger);
+    }
+
+    public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, boolean removeProtected, boolean shiftDates, boolean alternateIds, Logger logger)
     {
         super(user, c, FolderXmlWriter.getFolderDocument(), logger, null);
         _dataTypes = dataTypes;
         _format = format;
+        _removeProtected = removeProtected;
+        _shiftDates = shiftDates;
+        _alternateIds = alternateIds;
     }
 
     public Set<String> getDataTypes()
@@ -46,5 +57,20 @@ public class FolderExportContext extends AbstractFolderContext
     public String getFormat()
     {
         return _format;
+    }
+
+    public boolean isRemoveProtected()
+    {
+        return _removeProtected;
+    }
+
+    public boolean isShiftDates()
+    {
+        return _shiftDates;
+    }
+
+    public boolean isAlternateIds()
+    {
+        return _alternateIds;
     }
 }

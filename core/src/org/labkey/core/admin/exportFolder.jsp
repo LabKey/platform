@@ -89,6 +89,12 @@ var formatRadios = new Ext.form.RadioGroup({
 formItems.push(formatRadios);
 
 formItems.push({xtype: "spacer", height: 20});
+formItems.push({xtype: "label", text: "Options:"});
+formItems.push({xtype: 'checkbox', hideLabel: true, boxLabel: 'Remove All Columns Tagged as Protected<%=PageFlowUtil.helpPopup("Remove Protected Columns", "Selecting this option will exclude all dataset and list columns that have been tagged as protected columns.")%>', name: 'removeProtected'});
+formItems.push({xtype: 'checkbox', hideLabel: true, boxLabel: 'Shift All Participant Dates<%=PageFlowUtil.helpPopup("Shift Date Columns", "Selecting this option will shift all date values associated with a participant by a random, participant specific, offset (from 1 to 365 days).")%>', name: 'shiftDates'});
+formItems.push({xtype: 'checkbox', hideLabel: true, boxLabel: 'Export Alternate Participant IDs in Datasets<%=PageFlowUtil.helpPopup("Export Alternate Participant IDs", "Selecting this option will replace each participant id by an alternate randomly generated id.")%>', name: 'alternateIds'});
+
+formItems.push({xtype: "spacer", height: 20});
 formItems.push({xtype: "label", text: "Export to:"});
 var locationRadios = new Ext.form.RadioGroup({
     hideLabel: true, 

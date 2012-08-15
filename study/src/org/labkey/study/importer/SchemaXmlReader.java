@@ -112,7 +112,7 @@ public class SchemaXmlReader implements SchemaReader
             RowMapFactory<Object> mapFactory = new RowMapFactory<Object>(NAME_KEY, "Property", "PropertyURI", "Label", "Description",
                     "RangeURI", "NotNull", "ConceptURI", "Format", "InputType", "HiddenColumn", "MvEnabled", "LookupFolderPath",
                     "LookupSchema", "LookupQuery", "URL", "ImportAliases", "ShownInInsertView", "ShownInUpdateView",
-                    "ShownInDetailsView", "Measure", "Dimension", "ConditionalFormats", "FacetingBehaviorType");
+                    "ShownInDetailsView", "Measure", "Dimension", "ConditionalFormats", "FacetingBehaviorType", "Protected");
 
             if (tableXml.getColumns() != null)
             {
@@ -168,6 +168,8 @@ public class SchemaXmlReader implements SchemaReader
                     if (type != null)
                         facetingBehaviorType = type.toString();
 
+                    boolean isProtected = columnXml.isSetProtected() && columnXml.getProtected();
+
                     ColumnType.Fk fk = columnXml.getFk();
                     List<ConditionalFormat> conditionalFormats = ConditionalFormat.convertFromXML(columnXml.getConditionalFormats());
                     Map<String, Object> map = mapFactory.getRowMap(new Object[]{
@@ -194,7 +196,8 @@ public class SchemaXmlReader implements SchemaReader
                         measure,
                         dimension,
                         conditionalFormats,
-                        facetingBehaviorType
+                        facetingBehaviorType,
+                        isProtected
                     });
 
                     _importMaps.add(map);

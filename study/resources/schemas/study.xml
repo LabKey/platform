@@ -412,6 +412,12 @@
       <ns:column columnName="InitialCohortId">
         <ns:description>The initial cohort assignment of each subject.  For studies with advanced cohort support enabled, this corresponds to the cohort assignment from the first chronological visit.  For studies without advanced cohort support, this will be equal to the current cohort assignment.</ns:description>
       </ns:column>
+      <ns:column columnName="DateOffset">
+        <ns:description>A randomly generated date offset for this participant. This can be used to shift each participant's date values when publishing a study.</ns:description>
+      </ns:column>
+      <ns:column columnName="AlternateId">
+        <ns:description>A randomly generated alternate participant ID. This can be used in place of internal particiapnt IDs when publishing a study.</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SampleRequestActor" tableDbType="TABLE">

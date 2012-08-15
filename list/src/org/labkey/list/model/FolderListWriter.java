@@ -48,7 +48,7 @@ public class FolderListWriter extends BaseFolderWriter
 
         ListWriter listWriter = new ListWriter();
 
-        if (listWriter.write(c, ctx.getUser(), listsDir))
+        if (listWriter.write(c, ctx.getUser(), listsDir, ctx))
             ctx.getXml().addNewLists().setDir(DEFAULT_DIRECTORY);
     }
 

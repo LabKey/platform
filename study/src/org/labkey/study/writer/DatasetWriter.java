@@ -18,14 +18,17 @@ package org.labkey.study.writer;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.Results;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.reports.model.ReportPropsManager;
@@ -36,6 +39,7 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.reportProps.PropertyList;
+import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
@@ -52,6 +56,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -186,7 +191,7 @@ public class DatasetWriter implements InternalStudyWriter
         for (DataSetDefinition def : datasets)
         {
             TableInfo ti = schema.createDataSetTableInternal(def);
-            Collection<ColumnInfo> columns = getColumnsToExport(ti, def, false);
+            Collection<ColumnInfo> columns = getColumnsToExport(ti, def, false, ctx.isRemoveProtected());
             // Sort the data rows by PTID & sequence, #11261
             Sort sort = new Sort(StudyService.get().getSubjectColumnName(ctx.getContainer()) + ", SequenceNum");
 
@@ -206,23 +211,118 @@ public class DatasetWriter implements InternalStudyWriter
                     }
                 }
             }
-            
+
+            if (ctx.isShiftDates())
+            {
+                createDateShiftColumns(ti, columns, ctx.getContainer());
+            }
+            if (ctx.isAlternateIds())
+            {
+                createAlternateIdColumns(ti, columns, ctx.getContainer());
+            }
+
             Results rs = QueryService.get().select(ti, columns, filter, sort);
-            TSVGridWriter tsvWriter = new TSVGridWriter(rs);
-            tsvWriter.setApplyFormats(false);
-            tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
-            PrintWriter out = vf.getPrintWriter(def.getFileName());
-            tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
+            writeResultsToTSV(rs, vf, def.getFileName());
+        }
+
+        // write out the date offset and alternate id data from the study.participant table for reference
+        if (ctx.isShiftDates() || ctx.isAlternateIds())
+        {
+            TableInfo participantTableInfo = StudySchema.getInstance().getTableInfoParticipant();
+            List<ColumnInfo> cols = new ArrayList<ColumnInfo>();
+            cols.add(participantTableInfo.getColumn("participantid"));
+            cols.add(participantTableInfo.getColumn("dateoffset"));
+            cols.add(participantTableInfo.getColumn("alternateid"));
+            SimpleFilter containerFilter = new SimpleFilter();
+            containerFilter.addCondition(participantTableInfo.getColumn("container"), ctx.getContainer());
+            Sort participantSort = new Sort(StudyService.get().getSubjectColumnName(ctx.getContainer()));
+            Results participantResults = QueryService.get().select(participantTableInfo, cols, containerFilter, participantSort);
+            writeResultsToTSV(participantResults, vf, "participant.tsv");
         }
     }
 
-    private static boolean shouldExport(ColumnInfo column, boolean metaData)
+    private void writeResultsToTSV(Results rs, VirtualFile vf, String fileName) throws SQLException, IOException
     {
-        return (column.isUserEditable() || (!metaData && column.getPropertyURI().equals(DataSetDefinition.getQCStateURI()))) &&
-                !(column.getFk() instanceof ContainerForeignKey);
+        TSVGridWriter tsvWriter = new TSVGridWriter(rs);
+        tsvWriter.setApplyFormats(false);
+        tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
+        PrintWriter out = vf.getPrintWriter(fileName);
+        tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
     }
 
-    public static Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, DataSetDefinition def, boolean metaData)
+    private void createDateShiftColumns(TableInfo ti, Collection<ColumnInfo> columns, Container c)
+    {
+        Map<ColumnInfo, ExprColumn> exprColumnMap = new HashMap<ColumnInfo, ExprColumn>();
+        for (ColumnInfo column : columns)
+        {
+            if (column.isDateTimeType())
+            {
+                SQLFragment sql = generateSqlForShiftDateCol(c, column);
+                exprColumnMap.put(column, new ExprColumn(ti, column.getName(), sql, column.getJdbcType(), column));
+            }
+        }
+
+        // replace the original date/timestamp column with the expression column
+        for (Map.Entry<ColumnInfo, ExprColumn> entry : exprColumnMap.entrySet())
+        {
+            columns.remove(entry.getKey());
+            columns.add(entry.getValue());
+        }
+    }
+
+    private void createAlternateIdColumns(TableInfo ti, Collection<ColumnInfo> columns, Container c)
+    {
+        String participantIdColumnName = StudyService.get().getSubjectColumnName(c);
+        for (ColumnInfo column : columns)
+        {
+            if (column.getColumnName().equalsIgnoreCase(participantIdColumnName))
+            {
+                // join to the study.participant table to get the participant's alternateId
+                SQLFragment sql = new SQLFragment();
+                sql.append("(SELECT p.AlternateId FROM ");
+                sql.append(StudySchema.getInstance().getTableInfoParticipant());
+                sql.append(" p  WHERE p.participantid = ");
+                sql.append(column.getValueSql(ExprColumn.STR_TABLE_ALIAS));
+                sql.append(" AND p.container = ?)");
+                sql.add(c);
+
+                ColumnInfo newColumn = new ExprColumn(ti, column.getName(), sql, column.getJdbcType(), column);
+                columns.remove(column);
+                columns.add(newColumn);
+                break;
+            }
+        }
+    }
+
+    private SQLFragment generateSqlForShiftDateCol(Container c, ColumnInfo col)
+    {
+        // join to the study.participant table to get the participant's date offset number
+        SQLFragment dateOffsetJoin = new SQLFragment();
+        dateOffsetJoin.append("(SELECT p.DateOffset FROM ");
+        dateOffsetJoin.append(StudySchema.getInstance().getTableInfoParticipant());
+        dateOffsetJoin.append(" p  WHERE p.participantid = ");
+        dateOffsetJoin.append(ExprColumn.STR_TABLE_ALIAS);
+        dateOffsetJoin.append(".participantid  AND p.container = ?)");
+        dateOffsetJoin.add(c);
+
+        // use the timestampadd function to apply the date offset (subtracting the offset)
+        SQLFragment sql = new SQLFragment ();
+        sql.append("{fn timestampadd(SQL_TSI_DAY, -");
+        sql.append(dateOffsetJoin);
+        sql.append(", ");
+        sql.append(col.getValueSql(ExprColumn.STR_TABLE_ALIAS));
+        sql.append(")}");
+
+        return sql;
+    }
+
+    private static boolean shouldExport(ColumnInfo column, boolean metaData, boolean removeProtected)
+    {
+        return (column.isUserEditable() || (!metaData && column.getPropertyURI().equals(DataSetDefinition.getQCStateURI()))) &&
+                !(column.getFk() instanceof ContainerForeignKey) && (!removeProtected || !column.isProtected());
+    }
+
+    public static Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, DataSetDefinition def, boolean metaData, boolean removeProtected)
     {
         List<ColumnInfo> inColumns = tinfo.getColumns();
         Collection<ColumnInfo> outColumns = new LinkedHashSet<ColumnInfo>(inColumns.size());
@@ -276,7 +376,7 @@ public class DatasetWriter implements InternalStudyWriter
 
         for (ColumnInfo in : inColumns)
         {
-            if (shouldExport(in, metaData) || (metaData && in.getName().equals(def.getKeyPropertyName())))
+            if (shouldExport(in, metaData, removeProtected) || (metaData && in.getName().equals(def.getKeyPropertyName())))
             {
                 if ("visit".equalsIgnoreCase(in.getName()) && !in.equals(sequenceColumn))
                     continue;

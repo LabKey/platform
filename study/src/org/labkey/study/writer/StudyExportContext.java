@@ -38,12 +38,23 @@ public class StudyExportContext extends AbstractContext
     private final Set<String> _dataTypes;
     private final List<DataSetDefinition> _datasets = new LinkedList<DataSetDefinition>();
     private final Set<Integer> _datasetIds = new HashSet<Integer>();
+    private final boolean _removeProtected;
+    private final boolean _shiftDates;
+    private final boolean _alternateIds;
 
     public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes, Logger logger)
+    {
+        this(study, user, c, oldFormats, dataTypes, false, false, false, logger);
+    }
+
+    public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes, boolean removeProtected, boolean shiftDates, boolean alternateIds, Logger logger)
     {
         super(user, c, StudyXmlWriter.getStudyDocument(), logger, null);
         _oldFormats = oldFormats;
         _dataTypes = dataTypes;
+        _removeProtected = removeProtected;
+        _shiftDates = shiftDates;
+        _alternateIds = alternateIds;
         initializeDatasets(study);
     }
 
@@ -55,6 +66,24 @@ public class StudyExportContext extends AbstractContext
     public Set<String> getDataTypes()
     {
         return _dataTypes;
+    }
+
+    @Override
+    public boolean isRemoveProtected()
+    {
+        return _removeProtected;
+    }
+
+    @Override
+    public boolean isShiftDates()
+    {
+        return _shiftDates;
+    }
+
+    @Override
+    public boolean isAlternateIds()
+    {
+        return _alternateIds;
     }
 
     private void initializeDatasets(StudyImpl study)

@@ -18,6 +18,7 @@ package org.labkey.pipeline.api;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.data.*;
+import org.labkey.api.util.ContainerContext;
 
 import java.util.*;
 
@@ -60,7 +61,14 @@ public class PipelineQuerySchema extends UserSchema
     {
         if (JOB_TABLE_NAME.equalsIgnoreCase(name))
         {
-            FilteredTable table = new FilteredTable(PipelineSchema.getInstance().getTableInfoStatusFiles(), getContainer());
+            FilteredTable table = new FilteredTable(PipelineSchema.getInstance().getTableInfoStatusFiles(), getContainer())
+            {
+                @Override
+                public FieldKey getContainerFieldKey()
+                {
+                    return FieldKey.fromParts("Folder");
+                }
+            };
             table.wrapAllColumns(true);
             table.removeColumn(table.getColumn("Container"));
             table.setName(JOB_TABLE_NAME);

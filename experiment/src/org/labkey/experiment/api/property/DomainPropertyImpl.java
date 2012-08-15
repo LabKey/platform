@@ -155,6 +155,12 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.isDimension();
     }
 
+    @Override
+    public boolean isProtected()
+    {
+        return _pd.isProtected();
+    }
+
     public boolean isMvEnabled()
     {
         return _pd.isMvEnabled();
@@ -261,6 +267,15 @@ public class DomainPropertyImpl implements DomainProperty
         if (!isEdited() && isDimension == isDimension())
             return;
         edit().setDimension(isDimension);
+    }
+
+    @Override
+    public void setProtected(boolean isProtected)
+    {
+        // UNDONE: isProtected() has side-effect due to calling isNumeric()->getSqlTypeInt() which relies on rangeURI which might not be set yet.
+        if (!isEdited() && isProtected == isProtected())
+            return;
+        edit().setProtected(isProtected);
     }
 
     public void setMvEnabled(boolean mv)

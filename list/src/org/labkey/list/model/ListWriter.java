@@ -16,6 +16,7 @@
 
 package org.labkey.list.model;
 
+import org.labkey.api.admin.ImportContext;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.ColumnInfo;
@@ -75,7 +76,13 @@ public class ListWriter
 
     public boolean write(Container c, User user, VirtualFile listsDir) throws Exception
     {
+        return write(c, user, listsDir, null);
+    }
+
+    public boolean write(Container c, User user, VirtualFile listsDir, ImportContext ctx) throws Exception
+    {
         Map<String, ListDefinition> lists = ListService.get().getLists(c);
+        boolean removeProtected = ctx != null && ctx.isRemoveProtected();
 
         if (!lists.isEmpty())
         {
@@ -97,7 +104,7 @@ public class ListWriter
 
                 // Write meta data
                 TableType tableXml = tablesXml.addNewTable();
-                ListTableInfoWriter xmlWriter = new ListTableInfoWriter(ti, def, getColumnsToExport(ti, true));
+                ListTableInfoWriter xmlWriter = new ListTableInfoWriter(ti, def, getColumnsToExport(ti, true, removeProtected));
                 xmlWriter.writeTable(tableXml);
 
                 // Write settings
@@ -105,7 +112,7 @@ public class ListWriter
                 writeSettings(settings, def);
 
                 // Write data
-                Collection<ColumnInfo> columns = getColumnsToExport(ti, false);
+                Collection<ColumnInfo> columns = getColumnsToExport(ti, false, removeProtected);
 
                 if (!columns.isEmpty())
                 {
@@ -238,7 +245,7 @@ public class ListWriter
         }
     }
 
-    private Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, boolean metaData)
+    private Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, boolean metaData, boolean removeProtected)
     {
         Collection<ColumnInfo> columns = new LinkedHashSet<ColumnInfo>();
         Set<ColumnInfo> pks = new HashSet<ColumnInfo>(tinfo.getPkColumns());
@@ -252,9 +259,10 @@ public class ListWriter
 
                 - All user-editable columns (meta data & values)
                 - All primary keys, including the values of auto-increment key columns (meta data & values)
-                - Other key columns (meta data only) 
+                - Other key columns (meta data only)
+                - Exclude columns marked as Protected, if removeProtected is true
              */
-            if (column.isUserEditable() || pks.contains(column) || (metaData && column.isKeyField()))
+            if ((column.isUserEditable() || pks.contains(column) || (metaData && column.isKeyField())) && (!removeProtected || !column.isProtected()))
             {
                 columns.add(column);
 

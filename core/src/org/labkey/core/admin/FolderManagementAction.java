@@ -248,7 +248,8 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         }
 
         FolderWriterImpl writer = new FolderWriterImpl();
-        FolderExportContext ctx = new FolderExportContext(getUser(), getContainer(), PageFlowUtil.set(form.getTypes()), form.getFormat(), Logger.getLogger(FolderWriterImpl.class));
+        FolderExportContext ctx = new FolderExportContext(getUser(), getContainer(), PageFlowUtil.set(form.getTypes()),
+                form.getFormat(), form.isRemoveProtected(), form.isShiftDates(), form.isAlternateIds(), Logger.getLogger(FolderWriterImpl.class));
 
         switch(form.getLocation())
         {
@@ -395,6 +396,9 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         private int location;
         private String format;
         private String exportType;
+        private boolean removeProtected;
+        private boolean shiftDates;
+        private boolean alternateIds;
 
         public String[] getActiveModules()
         {
@@ -577,6 +581,36 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         public void setExportType(String exportType)
         {
             this.exportType = exportType;
+        }
+
+        public boolean isRemoveProtected()
+        {
+            return removeProtected;
+        }
+
+        public void setRemoveProtected(boolean removeProtected)
+        {
+            this.removeProtected = removeProtected;
+        }
+
+        public boolean isShiftDates()
+        {
+            return shiftDates;
+        }
+
+        public void setShiftDates(boolean shiftDates)
+        {
+            this.shiftDates = shiftDates;
+        }
+
+        public boolean isAlternateIds()
+        {
+            return alternateIds;
+        }
+
+        public void setAlternateIds(boolean alternateIds)
+        {
+            this.alternateIds = alternateIds;
         }
     }
 

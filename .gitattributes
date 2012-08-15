@@ -814,6 +814,7 @@ experiment/resources/schemas/dbscripts/postgresql/exp-12.13-12.14.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-12.14-12.15.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-12.15-12.16.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-12.16-12.17.sql -text
+experiment/resources/schemas/dbscripts/postgresql/exp-12.20-12.21.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-create.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-drop.sql -text
 experiment/resources/schemas/dbscripts/postgresql/obsolete/deleteOrphans.sql -text
@@ -940,6 +941,7 @@ experiment/resources/schemas/dbscripts/sqlserver/exp-12.13-12.14.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-12.14-12.15.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-12.15-12.16.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-12.16-12.17.sql -text
+experiment/resources/schemas/dbscripts/sqlserver/exp-12.20-12.21.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-create.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-drop.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/obsolete/deleteOrphans.sql -text
@@ -2628,6 +2630,8 @@ study/resources/schemas/dbscripts/postgresql/study-12.14-12.15.sql -text
 study/resources/schemas/dbscripts/postgresql/study-12.15-12.16.sql -text
 study/resources/schemas/dbscripts/postgresql/study-12.16-12.17.sql -text
 study/resources/schemas/dbscripts/postgresql/study-12.17-12.18.sql -text
+study/resources/schemas/dbscripts/postgresql/study-12.20-12.21.sql -text
+study/resources/schemas/dbscripts/postgresql/study-12.21-12.22.sql -text
 study/resources/schemas/dbscripts/postgresql/study-create.sql -text
 study/resources/schemas/dbscripts/postgresql/study-drop.sql -text
 study/resources/schemas/dbscripts/sqlserver/obsolete/study-0.00-1.11.sql -text
@@ -2807,6 +2811,8 @@ study/resources/schemas/dbscripts/sqlserver/study-12.14-12.15.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-12.15-12.16.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-12.16-12.17.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-12.17-12.18.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-12.20-12.21.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-12.21-12.22.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-create.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-drop.sql -text
 study/resources/schemas/study.xml -text

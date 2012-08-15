@@ -447,6 +447,7 @@
       <ns:column columnName="Dimension"/>
       <ns:column columnName="Measure"/>
       <ns:column columnName="FacetingBehaviorType"/>
+      <ns:column columnName="Protected"/>  
       <ns:column columnName="Created"/>
       <ns:column columnName="CreatedBy"/>
       <ns:column columnName="Modified"/>

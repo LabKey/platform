@@ -83,7 +83,7 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, ImportCo
         {
             TableInfo ti = schema.createDataSetTableInternal(def);
             TableType tableXml = tablesXml.addNewTable();
-            DatasetTableInfoWriter w = new DatasetTableInfoWriter(ti, def, _defaultDateFormat);
+            DatasetTableInfoWriter w = new DatasetTableInfoWriter(ti, def, _defaultDateFormat, ctx.isRemoveProtected());
             w.writeTable(tableXml);
         }
 
@@ -95,9 +95,9 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, ImportCo
     {
         private final DataSetDefinition _def;
 
-        private DatasetTableInfoWriter(TableInfo ti, DataSetDefinition def, String defaultDateFormat)
+        private DatasetTableInfoWriter(TableInfo ti, DataSetDefinition def, String defaultDateFormat, boolean removeProtected)
         {
-            super(ti, DatasetWriter.getColumnsToExport(ti, def, true), defaultDateFormat);
+            super(ti, DatasetWriter.getColumnsToExport(ti, def, true, removeProtected), defaultDateFormat);
             _def = def;
         }
 

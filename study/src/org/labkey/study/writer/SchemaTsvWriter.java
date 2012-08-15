@@ -80,7 +80,7 @@ public class SchemaTsvWriter implements Writer<List<DataSetDefinition>, ImportCo
             TableInfo tinfo = schema.createDataSetTableInternal(def);
             String visitDatePropertyName = def.getVisitDateColumnName();
 
-            for (ColumnInfo col : DatasetWriter.getColumnsToExport(tinfo, def, true))
+            for (ColumnInfo col : DatasetWriter.getColumnsToExport(tinfo, def, true, ctx.isRemoveProtected()))
             {
                 writer.print(prefix);
                 writer.print(col.getColumnName() + '\t');

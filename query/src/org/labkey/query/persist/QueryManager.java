@@ -623,18 +623,8 @@ public class QueryManager
             return queryErrors;
         }
 
-        String queryName;
-        String schemaName;
-        if (isPublic)
-        {
-            queryName = lookupTable.getPublicName();
-            schemaName = lookupTable.getPublicSchemaName();
-        }
-        else
-        {
-            queryName = lookupTable.getName();
-            schemaName = lookupTable.getSchema().getName();
-        }
+        String queryName = lookupTable.getPublicName();
+        String schemaName = lookupTable.getPublicSchemaName();
 
         Container lookupContainer = col.getFk().getLookupContainerId() == null ? container : ContainerManager.getForId(col.getFk().getLookupContainerId());
         UserSchema userSchema = QueryService.get().getUserSchema(user, lookupContainer, schemaName);
@@ -657,7 +647,7 @@ public class QueryManager
 
             try
             {
-                QueryManager.get().validateQuery(schemaName, queryName, user, container);
+                QueryManager.get().validateQuery(schemaName, queryName, user, lookupContainer);
             }
             catch (Exception e){
                 queryErrors.add("ERROR: " + errorBase + " has a foreign key to a table that fails query validation: " + fkt + ". The error was: " + e.getMessage());

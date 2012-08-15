@@ -102,6 +102,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             gwtColumnInfo.setShownInUpdateView(columnInfo.isShownInUpdateView());
             gwtColumnInfo.setDimension(columnInfo.isDimension());
             gwtColumnInfo.setMeasure(columnInfo.isMeasure());
+            gwtColumnInfo.setProtected(columnInfo.isProtected());
             gwtColumnInfo.setURL(columnInfo.getURL() == null ? null : columnInfo.getURL().toString());
             gwtColumnInfo.setRangeURI(PropertyType.getFromClass(columnInfo.getJavaObjectClass()).getTypeUri());
             if (columnInfo.getFk() != null)
@@ -198,6 +199,10 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                         if (column.isSetMeasure())
                         {
                             gwtColumnInfo.setMeasure(column.getMeasure());
+                        }
+                        if (column.isSetProtected())
+                        {
+                            gwtColumnInfo.setProtected(column.getProtected());
                         }
                         if (column.isSetIsHidden())
                         {
@@ -459,6 +464,10 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             if (gwtColumnInfo.isDimension() != rawColumnInfo.isDimension())
             {
                 xmlColumn.setDimension(gwtColumnInfo.isDimension());
+            }
+            if (gwtColumnInfo.isProtected() != rawColumnInfo.isProtected())
+            {
+                xmlColumn.setProtected(gwtColumnInfo.isProtected());
             }
 
             // Set the label

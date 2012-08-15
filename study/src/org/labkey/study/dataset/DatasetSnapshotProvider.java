@@ -254,7 +254,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         SimpleFilter filter = createParticipantGroupFilter(context, qsDef);
         Map<FieldKey, ColumnInfo> colMap = new HashMap<FieldKey, ColumnInfo>();
 
-        for (ColumnInfo column : DatasetWriter.getColumnsToExport(tinfo, def, false))
+        for (ColumnInfo column : DatasetWriter.getColumnsToExport(tinfo, def, false, false))
         {
             colMap.put(column.getFieldKey(), column);
         }
