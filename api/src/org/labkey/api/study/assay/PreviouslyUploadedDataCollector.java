@@ -81,7 +81,7 @@ public class PreviouslyUploadedDataCollector extends AbstractAssayDataCollector
 
     public String getDescription(AssayRunUploadContext context)
     {
-        return "Use the data that was already uploaded to the server";
+        return "Use the data file that was already uploaded to the server";
     }
 
     @NotNull

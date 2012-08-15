@@ -48,6 +48,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
@@ -531,6 +532,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     public List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles, AssayRunUploadForm context)
     {
+        return getDataCollectors(uploadedFiles, context, true);
+    }
+
+    public List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles, AssayRunUploadForm context, boolean allowFileReuseOnReRun)
+    {
         List<AssayDataCollector> result = new ArrayList<AssayDataCollector>();
         if (!PipelineDataCollector.getFileQueue(context).isEmpty())
         {
@@ -538,8 +544,31 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
         else
         {
-            if (uploadedFiles != null)
+            if (allowFileReuseOnReRun && supportsReRun() && context.getReRun() != null)
+            {
+                if (uploadedFiles != null && !uploadedFiles.isEmpty())
+                {
+                    result.add(new PreviouslyUploadedDataCollector(uploadedFiles));
+                }
+                else
+                {
+                    ExpData[] inputDatas = context.getReRun().getInputDatas(ExpDataRunInput.DEFAULT_ROLE, ExpProtocol.ApplicationType.ExperimentRunOutput);
+                    if (inputDatas.length == 1)
+                    {
+                        Map<String, File> oldFiles = new HashMap<String, File>();
+                        oldFiles.put(AssayDataCollector.PRIMARY_FILE, inputDatas[0].getFile());
+                        result.add(new PreviouslyUploadedDataCollector(oldFiles));
+                    }
+                    else if (inputDatas.length > 1)
+                    {
+                        throw new IllegalStateException("More than one primary data file associated with run: " + context.getReRun().getRowId());
+                    }
+                }
+            }
+            else if (uploadedFiles != null)
+            {
                 result.add(new PreviouslyUploadedDataCollector(uploadedFiles));
+            }
             result.add(new FileUploadDataCollector(getMaxFileInputs()));
         }
         return result;
@@ -1292,6 +1321,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     @Override
     public boolean supportsBackgroundUpload()
+    {
+        return false;
+    }
+
+    @Override
+    public boolean supportsReRun()
     {
         return false;
     }

@@ -205,6 +205,10 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         view.getDataRegion().addHiddenFormField("resetDefaultValues", "false");
         view.getDataRegion().addHiddenFormField("rowId", Integer.toString(_protocol.getRowId()));
         view.getDataRegion().addHiddenFormField("uploadAttemptID", form.getUploadAttemptID());
+        if (form.getReRunId() != null)
+        {
+            view.getDataRegion().addHiddenFormField("reRunId", form.getReRunId().toString());
+        }
 
         DisplayColumn targetStudyCol = view.getDataRegion().getDisplayColumn(AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME);
         if (targetStudyCol != null)
@@ -489,47 +493,6 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         for (ValidationError error : DefaultAssayRunCreator.validateProperties(properties))
             errors.reject(SpringActionController.ERROR_MSG, error.getMessage());
 
-/*
-        for (Map.Entry<DomainProperty, String> entry : properties.entrySet())
-        {
-            DomainProperty dp = entry.getKey();
-            String value = entry.getValue();
-            String label = dp.getPropertyDescriptor().getNonBlankCaption();
-            PropertyType type = dp.getPropertyDescriptor().getPropertyType();
-            boolean missing = (value == null || value.length() == 0);
-            if (dp.isRequired() && missing)
-            {
-                errors.reject(SpringActionController.ERROR_MSG,
-                        label + " is required and must be of type " + ColumnInfo.getFriendlyTypeName(type.getJavaType()) + ".");
-            }
-            else if (!missing)
-            {
-                try
-                {
-                    ConvertUtils.convert(value, type.getJavaType());
-                }
-                catch (ConversionException e)
-                {
-                    String message = label + " must be of type " + ColumnInfo.getFriendlyTypeName(type.getJavaType()) + ".";
-                    message +=  "  Value \"" + value + "\" could not be converted";
-                    if (e.getCause() instanceof ArithmeticException)
-                        message +=  ": " + e.getCause().getLocalizedMessage();
-                    else
-                        message += ".";
-
-                    errors.reject(SpringActionController.ERROR_MSG, message);
-                }
-            }
-            List<ValidationError> validationErrors = new ArrayList<ValidationError>();
-            for (IPropertyValidator validator : PropertyService.get().getPropertyValidators(dp.getPropertyDescriptor()))
-            {
-                //validator.validate(dp.getLabel() != null ? dp.getLabel() : dp.getName(), value, validationErrors);
-            }
-
-            for (ValidationError ve : validationErrors)
-                errors.reject(SpringActionController.ERROR_MSG, ve.getMessage());
-        }
-*/
         return errors.getErrorCount() == 0;
     }
 

@@ -297,6 +297,12 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         {
             data = ExperimentService.get().getExpDataByURL(file, c);
         }
+        if (data != null && data.getRun() != null)
+        {
+            // There's an existing data, but it's already marked as being created by another run, so create a new one
+            // for the same path so the new run claim it as its own
+            data = null;
+        }
         if (data == null)
         {
             data = ExperimentService.get().createData(c, dataType, name);

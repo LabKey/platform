@@ -21,12 +21,14 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
 import java.util.Collections;
@@ -106,6 +108,19 @@ public class ResultsQueryView extends AssayBaseQueryView
                 bar.add(publishButton);
 
                 bar.addAll(AssayService.get().getImportButtons(_protocol, getViewContext().getUser(), getViewContext().getContainer(), false));
+
+                FieldKey runFK = _provider.getTableMetadata(_protocol).getRunRowIdFieldKeyFromResults();
+
+                String runId = getViewContext().getRequest().getParameter(view.getDataRegion().getName() + "." + runFK + "~eq");
+
+                if (runId != null && getViewContext().hasPermission(InsertPermission.class) &&
+                        getViewContext().hasPermission(DeletePermission.class) &&
+                        _provider.supportsReRun())
+                {
+                    ActionURL reRunURL = _provider.getImportURL(getViewContext().getContainer(), _protocol);
+                    reRunURL.addParameter("reRunId", runId);
+                    bar.add(new ActionButton("Re-import run", reRunURL));
+                }
             }
         }
     }

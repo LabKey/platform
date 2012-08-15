@@ -80,4 +80,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider>
     TransformResult getTransformResult();
 
     void setTransformResult(TransformResult result);
+
+    /** The RowId for the run that is being deleted and reuploaded, or null if this is a new run */
+    Integer getReRunId();
 }

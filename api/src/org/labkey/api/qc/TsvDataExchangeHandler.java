@@ -846,6 +846,12 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             throw new UnsupportedOperationException("Not Supported");
         }
 
+        @Override
+        public Integer getReRunId()
+        {
+            throw new UnsupportedOperationException("Not Supported");
+        }
+
         public String getTargetStudy()
         {
             return null;

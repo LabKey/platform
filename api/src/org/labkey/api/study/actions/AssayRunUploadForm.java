@@ -20,6 +20,10 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exp.*;
+import org.labkey.api.exp.api.ExpExperiment;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.study.Study;
@@ -34,6 +38,7 @@ import org.labkey.api.qc.TransformResult;
 import org.labkey.api.qc.DefaultTransformResult;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.labkey.api.view.NotFoundException;
 
 import java.util.*;
 import java.io.File;
@@ -62,9 +67,11 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     private String _uploadAttemptID = GUID.makeGUID();
     private Map<DomainProperty, File> _additionalFiles;
     private Integer _batchId;
+    private Integer _reRunId;
     protected BindException _errors;
     private List<AssayDataCollector> _collectors;
     private TransformResult _transformResult = DefaultTransformResult.createEmptyResult();
+    private ExpRun _reRun;
 
     public DomainProperty[] getRunDataProperties()
     {
@@ -431,6 +438,50 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
 
     public Map<DomainProperty, Object> getDefaultValues(Domain domain) throws ExperimentException
     {
+        ExpRun reRun = getReRun();
+        if (reRun != null)
+        {
+            Map<DomainProperty, Object> ret = new HashMap<DomainProperty, Object>();
+            String batchDomainURI = AbstractAssayProvider.getDomainURIForPrefix(getProtocol(), ExpProtocol.ASSAY_DOMAIN_BATCH);
+            String runDomainURI = AbstractAssayProvider.getDomainURIForPrefix(getProtocol(), ExpProtocol.ASSAY_DOMAIN_RUN);
+            if (batchDomainURI.equals(domain.getTypeURI()))
+            {
+                // we're getting batch values
+                ExpExperiment batch = AssayService.get().findBatch(reRun);
+                if (batch != null)
+                {
+                    Map<String, ObjectProperty> batchProperties = batch.getObjectProperties();
+                    for (DomainProperty property : domain.getProperties())
+                    {
+                        ObjectProperty value = batchProperties.get(property.getPropertyURI());
+                        ret.put(property, value != null ? value.value() : null);
+                    }
+                }
+            }
+            else if (runDomainURI.equals(domain.getTypeURI()))
+            {
+                // we're getting run values
+                Map<String, Object> values = OntologyManager.getProperties(getContainer(), reRun.getLSID());
+                for (DomainProperty property : domain.getProperties())
+                    ret.put(property, values.get(property.getPropertyURI()));
+
+                // bad hack here to temporarily create domain properties for name and comments.  These need to be
+                // repopulated just like the rest of the domain properties, but they aren't actually part of the
+                // domain- they're hard columns on the ExperimentRun table.  Since the DomainProperty objects are
+                // just used to calculate the input form element names, this hack works to pre-populate the values.
+                DomainProperty nameProperty = domain.addProperty();
+                nameProperty.setName("Name");
+                ret.put(nameProperty, reRun.getName());
+                nameProperty.delete();
+
+                DomainProperty commentsProperty = domain.addProperty();
+                commentsProperty.setName("Comments");
+                ret.put(commentsProperty, reRun.getComments());
+                commentsProperty.delete();
+            }
+            return ret;
+        }
+
         return getDefaultValues(domain, null);
     }
 
@@ -448,4 +499,28 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     {
         _transformResult = transformResult;
     }
+
+    public Integer getReRunId()
+    {
+        return _reRunId;
+    }
+
+    public void setReRunId(Integer reRunId)
+    {
+        _reRunId = reRunId;
+    }
+
+    public ExpRun getReRun()
+    {
+        if (_reRunId != null && _reRun == null)
+        {
+            _reRun = ExperimentService.get().getExpRun(_reRunId);
+            if (_reRun == null)
+            {
+                throw new NotFoundException("Existing run " + _reRunId + " could not be found.");
+            }
+        }
+        return _reRun;
+    }
+
 }

@@ -62,6 +62,7 @@
         var id = _prefix + _fileUploadIndex;
         var name = _prefix + (_fileUploadIndex > 0 ? _fileUploadIndex : "");
         cell.innerHTML = "<input type='file' size='40' id='" + id + "' name='" + name + "' onChange='checkForDuplicateFileName(this);' />";
+        var currentIndex = _fileUploadIndex;
 
         // if the given assay type allows for multiple file uploads, add the add and remove buttons
         if (_maxFileInputs > 1)
@@ -82,6 +83,9 @@
         // add a cell to show the file name after selection
         cell = row.insertCell(-1);
         cell.innerHTML = '<label id="label' + id + '"></label>'; 
+
+        cell = row.insertCell(-1);
+        cell.innerHTML = "<span class='labkey-error' id='file-upload-warning" + currentIndex + "'></span>";
     }
 
     /**
@@ -201,13 +205,48 @@
     }
 
     /**
+     * Check if a file of the same name has already been uploaded to the server
+     */
+    function checkServerForDuplicateFileName(currFileInput, index)
+    {
+        // Fire off an AJAX request
+        var duplicateCheckURL = LABKEY.ActionURL.buildURL("assay", "assayFileDuplicateCheck.api");
+        var fileName = currFileInput.value;
+        var slashIndex = Math.max(fileName.lastIndexOf("/"), fileName.lastIndexOf("\\"));
+        if (slashIndex != -1)
+        {
+            fileName = fileName.substring(slashIndex + 1);
+        }
+        Ext.Ajax.request({
+            url: duplicateCheckURL,
+            jsonData: {fileName: fileName},
+            success: function(response, options)
+            {
+                var jsonResponse = Ext.decode(response.responseText);
+                // Show or clear the warning
+                var element = Ext.get("file-upload-warning" + index);
+                if (jsonResponse.duplicate)
+                {
+                    element.update("Warning: A file with that name has already been uploaded. This file will be saved with a different name.");
+                }
+                else
+                {
+                    element.update("");
+                }
+            },
+            failure: LABKEY.Utils.getCallbackWrapper(null, this, true)
+        });
+    }
+    
+    /**
      * Check if the selected file name is already in the list of selected files
-     * @param currFileInput
      */
     function checkForDuplicateFileName(currFileInput)
     {
         // get the file index from the input id
         var index = parseInt(currFileInput.id.replace(_prefix, ""));
+
+        checkServerForDuplicateFileName(currFileInput, index);
 
         // loop through the other selected files to see if they are all unique
         var dupFound = false;

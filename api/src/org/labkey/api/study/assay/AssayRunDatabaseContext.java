@@ -220,4 +220,10 @@ public class AssayRunDatabaseContext<ProviderType extends AssayProvider> impleme
     {
         _transformResult = result;
     }
+
+    @Override
+    public Integer getReRunId()
+    {
+        throw new UnsupportedOperationException();
+    }
 }

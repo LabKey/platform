@@ -28,6 +28,4 @@ public interface PlateUploadForm<ProviderType extends PlateBasedAssayProvider> e
     public PlateSamplePropertyHelper getSamplePropertyHelper();
 
     public void setSamplePropertyHelper(PlateSamplePropertyHelper helper);
-
-    public Integer getReRunId();
 }

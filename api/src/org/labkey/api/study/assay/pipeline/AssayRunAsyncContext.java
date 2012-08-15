@@ -64,6 +64,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     private Map<Integer, String> _batchPropertiesById;
     /** RowIds for all the domains associated with properties we need to remember */
     private Set<Integer> _domainIds = new HashSet<Integer>();
+    private Integer _reRunId;
 
     // Cached values that aren't serializable
     private transient User _user;
@@ -90,6 +91,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
         _containerId = _container.getId();
         _actionURL = originalContext.getActionURL();
         _uploadedData = originalContext.getUploadedData();
+        _reRunId = originalContext.getReRunId();
 
         _batchProperties = originalContext.getBatchProperties();
         _batchPropertiesById = convertPropertiesToIds(_batchProperties);
@@ -308,5 +310,11 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     public void setTransformResult(TransformResult result)
     {
         _transformResult = result;
+    }
+
+    @Override
+    public Integer getReRunId()
+    {
+        return _reRunId;
     }
 }
