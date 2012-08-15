@@ -347,7 +347,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
                 FileUtil.deleteDir(dir);
         }
     }
-    
+
     public static File getTempRoot(ReportDescriptor descriptor)
     {
         File tempRoot;
@@ -584,9 +584,9 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
      * @return
      * @throws Exception
      */
-    protected String createScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv) throws Exception
+    protected String createScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv) throws Exception
     {
-        return processScript(context, getDescriptor().getProperty(ScriptReportDescriptor.Prop.script), inputDataTsv, outputSubst);
+        return processScript(engine, context, getDescriptor().getProperty(ScriptReportDescriptor.Prop.script), inputDataTsv, outputSubst);
     }
 
     public abstract String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv) throws ScriptException;
@@ -598,32 +598,32 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
      * @param outputSubst
      * @throws Exception
      */
-    protected String processScript(ViewContext context, String script, File inputFile, List<ParamReplacement> outputSubst) throws Exception
+    protected String processScript(ScriptEngine engine, ViewContext context, String script, File inputFile, List<ParamReplacement> outputSubst) throws Exception
     {
         if (!StringUtils.isEmpty(script))
         {
-            script = StringUtils.defaultString(getScriptProlog(context, inputFile)) + script;
+            script = StringUtils.defaultString(getScriptProlog(engine, context, inputFile)) + script;
 
             if (inputFile != null)
-                script = processInputReplacement(script, inputFile);
-            script = processOutputReplacements(script, outputSubst);
+                script = processInputReplacement(engine, script, inputFile);
+            script = processOutputReplacements(engine, script, outputSubst);
         }
         return script;
     }
 
-    protected String getScriptProlog(ViewContext context, File inputFile)
+    protected String getScriptProlog(ScriptEngine engine, ViewContext context, File inputFile)
     {
         return null;
     }
 
-    protected String processInputReplacement(String script, File inputFile) throws Exception
+    protected String processInputReplacement(ScriptEngine engine, String script, File inputFile) throws Exception
     {
         return ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, inputFile.getAbsolutePath().replaceAll("\\\\", "/"));
     }
 
-    protected String processOutputReplacements(String script, List<ParamReplacement> replacements) throws Exception
+    protected String processOutputReplacements(ScriptEngine engine, String script, List<ParamReplacement> replacements) throws Exception
     {
-        return ParamReplacementSvc.get().processParamReplacement(script, getReportDir(), replacements);
+        return ParamReplacementSvc.get().processParamReplacement(script, getReportDir(), null, replacements);
     }
 
     @Override

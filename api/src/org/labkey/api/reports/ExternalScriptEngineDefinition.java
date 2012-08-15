@@ -30,6 +30,16 @@ public interface ExternalScriptEngineDefinition
     public String getExePath();
     public String getExeCommand();
 
+    //
+    // consider:  move these to RemoteScriptEngineDefinition?
+    //
+    public String getMachine();
+    public int getPort();
+    public String getUser();
+    public String getPassword();
+    public String getReportShare();
+    public String getPipelineShare();
+
     public void setName(String name);
     public void setExtensions(String[] extensions);
     public void setLanguageName(String name);

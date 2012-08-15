@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.script.ScriptService;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
@@ -51,6 +52,12 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
         exeCommand,
         outputFileName,
         disabled,
+        machine,
+        port,
+        reportShare,
+        pipelineShare,
+        user,
+        password
     }
 
     ScriptEngineFactory rhino = null;
@@ -125,7 +132,21 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
                 {
                     if (def.isEnabled() && Arrays.asList(def.getExtensions()).contains(extension))
                     {
-                        ScriptEngineFactory factory = new ExternalScriptEngineFactory(def);
+                        ScriptEngineFactory factory;
+
+                        //
+                        // if enabled, use Rserve for evaluating R scripts
+                        //
+                        if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING) &&
+                            "r".equalsIgnoreCase(extension))
+                        {
+                            factory = new RserveScriptEngineFactory(def);
+                        }
+                        else
+                        {
+                            factory = new ExternalScriptEngineFactory(def);
+                        }
+
                         return factory.getScriptEngine();
                     }
                 }
@@ -211,17 +232,31 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
                     setProp(key, key, SCRIPT_ENGINE_MAP);
                 }
                 if (getProp(key, SCRIPT_ENGINE_MAP) != null)
-
                 {
                     setProp(Props.key.name(), key, key);
                     setProp(Props.name.name(), def.getName(), key);
                     setProp(Props.extensions.name(), StringUtils.join(def.getExtensions(), ','), key);
                     setProp(Props.languageName.name(), def.getLanguageName(), key);
                     setProp(Props.languageVersion.name(), def.getLanguageVersion(), key);
-                    setProp(Props.exePath.name(), def.getExePath(), key);
-                    setProp(Props.exeCommand.name(), def.getExeCommand(), key);
+
+                    if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+                    {
+                        setProp(Props.machine.name(), def.getMachine(), key);
+                        setProp(Props.port.name(), String.valueOf(def.getPort()), key);
+                        setProp(Props.reportShare.name(), def.getReportShare(), key);
+                        setProp(Props.pipelineShare.name(), def.getPipelineShare(), key);
+                        setProp(Props.user.name(), def.getUser(), key);
+                        setProp(Props.password.name(), def.getPassword(), key);
+                    }
+                    else
+                    {
+                        setProp(Props.exePath.name(), def.getExePath(), key);
+                        setProp(Props.exeCommand.name(), def.getExeCommand(), key);
+                    }
+
                     setProp(Props.outputFileName.name(), def.getOutputFileName(), key);
                     setProp(Props.disabled.name(), String.valueOf(!def.isEnabled()), key);
+
                 }
                 else
                     throw new IllegalArgumentException("Existing definition does not exist in the DB");
@@ -265,7 +300,12 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
         String exePath = props.get(Props.exePath.name());
         String extensionStr = props.get(Props.extensions.name());
 
-        if (key != null && name != null && exePath != null && extensionStr != null)
+        //
+        // if using Rserve then it's okay for the exePath to be null
+        //
+        boolean useRserve = AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING);
+
+        if (key != null && name != null && extensionStr != null && (useRserve || (exePath!=null)))
         {
             try
             {
@@ -315,6 +355,12 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
         String _exePath;
         String _exeCommand;
         String _outputFileName;
+        String _machine;
+        int    _port;
+        String _user;
+        String _password;
+        String _reportShare;
+        String _pipelineShare;
         boolean _enabled;
         boolean _external;
 
@@ -362,6 +408,36 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
         public String getOutputFileName()
         {
             return _outputFileName;
+        }
+
+        public String getMachine()
+        {
+            return _machine;
+        }
+
+        public int getPort()
+        {
+            return _port;
+        }
+
+        public String getReportShare()
+        {
+            return _reportShare;
+        }
+
+        public String getPipelineShare()
+        {
+            return _pipelineShare;
+        }
+
+        public String getUser()
+        {
+            return _user;
+        }
+
+        public String getPassword()
+        {
+            return _password;
         }
 
         public void setOutputFileName(String outputFileName)

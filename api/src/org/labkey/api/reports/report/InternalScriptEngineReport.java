@@ -110,7 +110,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
                 bindings.put("consoleOut", consolePw);
 
                 bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDir().getAbsolutePath());
-                Object output = engine.eval(createScript(context, outputSubst, inputDataTsv));
+                Object output = engine.eval(createScript(engine, context, outputSubst, inputDataTsv));
                 consolePw.flush();
                 String consoleString = consoleOut.toString();
 

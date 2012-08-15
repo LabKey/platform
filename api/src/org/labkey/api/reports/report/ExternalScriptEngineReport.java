@@ -18,13 +18,17 @@ package org.labkey.api.reports.report;
 import org.apache.commons.lang3.BooleanUtils;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngine;
+import org.labkey.api.reports.RserveScriptEngine;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.r.view.ConsoleOutput;
 import org.labkey.api.reports.report.view.RunReportView;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -200,7 +204,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
             cacheResults(context, outputSubst);
         }
 
-        return renderer.render(outputSubst);
+            return renderer.render(outputSubst);
     }
 
     private HttpView handleException(Exception e)
@@ -223,9 +227,56 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
             {
                 Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
                 bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDir().getAbsolutePath());
-                Object output = engine.eval(createScript(context, outputSubst, inputDataTsv));
 
-                // render the output into the console
+                if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+                {
+                    //
+                    // pass along the report temp directory and the pipeline root to the script engine for
+                    // replacement of the file share directories with their remote representation.
+                    //
+                    // for example:  c:\data\fcs -> /volumes/fcs
+                    //
+                    bindings.put(RserveScriptEngine.TEMP_ROOT, getTempRoot(getDescriptor()));
+
+                    PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(context.getContainer());
+                    bindings.put(RserveScriptEngine.PIPELINE_ROOT, pipelineRoot.getRootPath());
+                    /*
+
+                    todo: code in progress for session sharing
+
+                    //
+                    // pass along the connection id for reuse
+                    //
+                    RConnectionHolder rh = (RConnectionHolder) context.getSession().getAttribute(RserveScriptEngine.R_CONNECTION_ID);
+                    if (rh != null)
+                    {
+                        bindings.put(RserveScriptEngine.R_CONNECTION_ID, rh.getConnectionId());
+                    }
+
+                    */
+                }
+
+                Object output = engine.eval(createScript(engine, context, outputSubst, inputDataTsv));
+
+
+                /*
+                if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+                {
+                    //
+                    // todo: if the caller requested a connection id then store this away
+                    //
+                    RConnectionHolder rh = (RConnectionHolder) context.getSession().getAttribute(RserveScriptEngine.R_CONNECTION_ID);
+                    if (rh == null)
+                    {
+                        //
+                        // todo: in the real implementation the caller will pass in the connection id here
+                        //
+                        rh = new RConnectionHolder("shazam", (RserveScriptEngine)engine);
+                        context.getSession().setAttribute(RserveScriptEngine.R_CONNECTION_ID, rh);
+                    }
+                }
+                */
+                    // render the output into the console
                 if (output != null)
                 {
                     File console = new File(getReportDir(), CONSOLE_OUTPUT);

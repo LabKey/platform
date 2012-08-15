@@ -20,17 +20,23 @@ import org.jetbrains.annotations.Nullable;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.RserveScriptEngine;
 import org.labkey.api.reports.report.r.ParamReplacement;
+import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -54,8 +60,11 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
 {
     public static final String TYPE = "ReportService.rReport";
     private static String DEFAULT_APP_PATH;
-
     public static final String DEFAULT_R_CMD = "CMD BATCH --slave";
+
+    // consider:  move these Rserve specific items to a separate RserveRReport class
+    public static final String DEFAULT_R_MACHINE = "127.0.0.1";
+    public static final int DEFAULT_R_PORT = 6311;
 
     public String getType()
     {
@@ -108,7 +117,7 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
         return "\"" + StringUtils.strip(r, "'") + "\"";
     }
 
-    protected String getScriptProlog(ViewContext context, File inputFile)
+    protected String getScriptProlog(ScriptEngine engine, ViewContext context, File inputFile)
     {
         StringBuilder labkey = new StringBuilder();
 
@@ -151,6 +160,19 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
         // Root path to resolve system files in reports
         labkey.append("labkey.file.root <- \"" + ServiceRegistry.get(FileContentService.class).getSiteDefaultRoot().getPath().replaceAll("\\\\", "/") +"\"\n");
 
+        // pipeline path to resolve data files in reports
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+        {
+            RserveScriptEngine rengine = (RserveScriptEngine) engine;
+
+            String localPath = getLocalPath(getPipelineRoot(context));
+            labkey.append("labkey.pipeline.root <- \"" + localPath + "\"\n");
+
+            // include remote paths so that the client can fixup any file references
+            String remotePath = rengine.getRemotePipelinePath(localPath);
+            labkey.append("labkey.remote.pipeline.root <- \"" + remotePath + "\"\n");
+        }
+
         // session information
         if (context.getRequest() != null)
         {
@@ -163,16 +185,76 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
         return labkey.toString();
     }
 
+    // append the pipeline roots to the prolog
+    public File getPipelineRoot(ViewContext context)
+    {
+        //
+        // currently we ignore the supplemental directory and only return the primary directory/override
+        // if the supplemental directory is important then consider making this a list
+        //
+        PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(context.getContainer());
+        return pipelineRoot.getRootPath();
+    }
 
     public void setScriptSource(String script)
     {
         getDescriptor().setProperty(ScriptReportDescriptor.Prop.script, script);
     }
 
-
-    protected String createScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv) throws Exception
+    public static String getLocalPath(File f)
     {
-        String script = super.createScript(context, outputSubst, inputDataTsv);
+        File fAbsolute = FileUtil.getAbsoluteCaseSensitiveFile(f);
+        return fAbsolute.getAbsolutePath().replaceAll("\\\\", "/");
+    }
+
+    @Override
+    protected String processInputReplacement(ScriptEngine engine, String script, File inputFile) throws Exception
+    {
+        String localPath = getLocalPath(inputFile);
+        String scriptOut = null;
+
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+        {
+            //
+            // if we are using Rserve then we need to replace the input parameters with the remote
+            // path to the input file created on the labkey machine
+            //
+            RserveScriptEngine rengine = (RserveScriptEngine) engine;
+            String remotePath = rengine.getRemoteReportPath(localPath);
+            scriptOut = ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, remotePath);
+        }
+        else
+        {
+            scriptOut = ParamReplacementSvc.get().processInputReplacement(script, INPUT_FILE_TSV, localPath);
+        }
+
+        return scriptOut;
+    }
+
+    @Override
+    protected String processOutputReplacements(ScriptEngine engine, String script, List<ParamReplacement> replacements) throws Exception
+    {
+        File reportDir = getReportDir();
+        String scriptOut = null;
+
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+        {
+            RserveScriptEngine rengine = (RserveScriptEngine)engine;
+            String localPath = getLocalPath(reportDir);
+            String remoteRoot = rengine.getRemoteReportPath(localPath);
+            scriptOut = ParamReplacementSvc.get().processParamReplacement(script, reportDir, remoteRoot, replacements);
+        }
+        else
+        {
+            scriptOut = ParamReplacementSvc.get().processParamReplacement(script, reportDir, null, replacements);
+        }
+
+        return scriptOut;
+    }
+
+    protected String createScript(ScriptEngine engine, ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv) throws Exception
+    {
+        String script = super.createScript(engine, context, outputSubst, inputDataTsv);
         File inputData = new File(getReportDir(), DATA_INPUT);
 
         /**
@@ -193,7 +275,7 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
                     final String rScript = report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
                     final File rScriptFile = new File(getReportDir(), rName + ".R");
 
-                    String includedScript = processScript(context, rScript, inputData, outputSubst);
+                    String includedScript = processScript(engine, context, rScript, inputData, outputSubst);
 
                     try
                     {

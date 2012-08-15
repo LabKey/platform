@@ -641,6 +641,7 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" name="Rserve" level="project" />
   </component>
 </module>
 

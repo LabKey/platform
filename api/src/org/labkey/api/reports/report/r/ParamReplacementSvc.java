@@ -17,6 +17,7 @@
 package org.labkey.api.reports.report.r;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.util.PageFlowUtil;
 
 import java.io.*;
@@ -190,9 +191,9 @@ public class ParamReplacementSvc
      * @param parentDirectory - the parent directory to create the output files for each param replacement.
      * @param outputReplacements - the list of processed replacements found in the source script.
      */
-    public String processParamReplacement(String script, File parentDirectory, List<ParamReplacement> outputReplacements) throws Exception
+    public String processParamReplacement(String script, File parentDirectory, String remoteParentDirectoryPath, List<ParamReplacement> outputReplacements) throws Exception
     {
-        return processParamReplacement(script, parentDirectory, outputReplacements, defaultScriptPattern);
+        return processParamReplacement(script, parentDirectory, remoteParentDirectoryPath, outputReplacements, defaultScriptPattern);
     }
 
     /**
@@ -200,9 +201,10 @@ public class ParamReplacementSvc
      * returned string will have all valid replacement references converted.
      *
      * @param parentDirectory - the parent directory to create the output files for each param replacement.
+     * @param remoteParentDirectoryPath - the remote reference to this path if specified; may be null
      * @param outputReplacements - the list of processed replacements found in the source script.
      */
-    public String processParamReplacement(String script, File parentDirectory, List<ParamReplacement> outputReplacements, Pattern pattern) throws Exception
+    public String processParamReplacement(String script, File parentDirectory, String remoteParentDirectoryPath, List<ParamReplacement> outputReplacements, Pattern pattern) throws Exception
     {
         Matcher m = pattern.matcher(script);
         StringBuffer sb = new StringBuffer();
@@ -213,9 +215,20 @@ public class ParamReplacementSvc
             if (param != null)
             {
                 File resultFile = param.convertSubstitution(parentDirectory);
-                String resultFileName = resultFile.getAbsolutePath();
-                resultFileName = resultFileName.replaceAll("\\\\", "/");
+                String resultFileName = null;
 
+                if (!StringUtils.isEmpty(remoteParentDirectoryPath))
+                {
+                    //
+                    // now that we've created the resultFile locally, replace the parameter with the remote
+                    // machines view of it
+                    //
+                    resultFileName = remoteParentDirectoryPath + "/" + resultFile.getName();
+                }
+                else
+                {
+                    resultFileName = resultFile.getAbsolutePath().replaceAll("\\\\", "/");
+                }
                 outputReplacements.add(param);
                 m.appendReplacement(sb, resultFileName);
             }

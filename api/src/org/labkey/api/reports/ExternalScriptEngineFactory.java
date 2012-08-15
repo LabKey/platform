@@ -27,7 +27,7 @@ import java.util.List;
 */
 public class ExternalScriptEngineFactory implements ScriptEngineFactory
 {
-    private ExternalScriptEngineDefinition _def;
+    protected ExternalScriptEngineDefinition _def;
 
     public ExternalScriptEngineFactory(ExternalScriptEngineDefinition def)
     {

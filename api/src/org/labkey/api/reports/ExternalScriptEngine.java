@@ -51,7 +51,7 @@ public class ExternalScriptEngine extends AbstractScriptEngine
 
     private File _workingDirectory;
 
-    private ExternalScriptEngineDefinition _def;
+    protected ExternalScriptEngineDefinition _def;
 
     public ExternalScriptEngine(ExternalScriptEngineDefinition def)
     {
@@ -76,53 +76,12 @@ public class ExternalScriptEngine extends AbstractScriptEngine
 
     public Object eval(String script, ScriptContext context) throws ScriptException
     {
-        Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
         List<String> extensions = getFactory().getExtensions();
 
         if (!extensions.isEmpty())
         {
             // write out the script file to disk using the first extension as the default
-            File scriptFile;
-            boolean isBinaryScript = false;
-
-            if (bindings.containsKey(ExternalScriptEngine.SCRIPT_PATH))
-            {
-                File path = new File((String)bindings.get(ExternalScriptEngine.SCRIPT_PATH));
-                isBinaryScript = isBinary(path);
-
-                // if the script is a binary file, no parameter replacement can be performed on the script, so we
-                // just execute it in place instead of moving to the temp folder
-                if (isBinaryScript)
-                    scriptFile = path;
-                else
-                    scriptFile = new File(getWorkingDir(context), path.getName());
-            }
-            else
-                scriptFile = new File(getWorkingDir(context), "script." + extensions.get(0));
-
-            bindings.put(REWRITTEN_SCRIPT_FILE, scriptFile);
-
-            try {
-                if (!isBinaryScript)
-                {
-                    // process any replacements specified in the script context
-                    if (bindings.containsKey(PARAM_REPLACEMENT_MAP))
-                    {
-                        for (Map.Entry<String, String> param : ((Map<String, String>)bindings.get(PARAM_REPLACEMENT_MAP)).entrySet())
-                        {
-                            script = ParamReplacementSvc.get().processInputReplacement(script, param.getKey(), param.getValue());
-                        }
-                    }
-                    PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(scriptFile)));
-                    pw.write(script);
-                    pw.close();
-                }
-            }
-            catch(Exception e)
-            {
-                ExceptionUtil.logExceptionToMothership(null, e);
-            }
-
+            File scriptFile = writeScriptFile(script, context, extensions);
             String[] params = formatCommand(scriptFile, context);
             ProcessBuilder pb = new ProcessBuilder(params);
             pb = pb.directory(getWorkingDir(context));
@@ -324,6 +283,55 @@ public class ExternalScriptEngine extends AbstractScriptEngine
         {
             throw new RuntimeException("Interrupted process for '" + pb.command() + " in " + pb.directory() + "'.", ei);
         }
+    }
+
+    protected File writeScriptFile(String script, ScriptContext context, List<String> extensions)
+    {
+        // write out the script file to disk using the first extension as the default
+        File scriptFile;
+        boolean isBinaryScript = false;
+
+        Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
+
+        if (bindings.containsKey(ExternalScriptEngine.SCRIPT_PATH))
+        {
+            File path = new File((String)bindings.get(ExternalScriptEngine.SCRIPT_PATH));
+            isBinaryScript = isBinary(path);
+
+            // if the script is a binary file, no parameter replacement can be performed on the script, so we
+            // just execute it in place instead of moving to the temp folder
+            if (isBinaryScript)
+                scriptFile = path;
+            else
+                scriptFile = new File(getWorkingDir(context), path.getName());
+        }
+        else
+            scriptFile = new File(getWorkingDir(context), "script." + extensions.get(0));
+
+        bindings.put(REWRITTEN_SCRIPT_FILE, scriptFile);
+
+        try {
+            if (!isBinaryScript)
+            {
+                // process any replacements specified in the script context
+                if (bindings.containsKey(PARAM_REPLACEMENT_MAP))
+                {
+                    for (Map.Entry<String, String> param : ((Map<String, String>)bindings.get(PARAM_REPLACEMENT_MAP)).entrySet())
+                    {
+                        script = ParamReplacementSvc.get().processInputReplacement(script, param.getKey(), param.getValue());
+                    }
+                }
+                PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(scriptFile)));
+                pw.write(script);
+                pw.close();
+            }
+        }
+        catch(Exception e)
+        {
+            ExceptionUtil.logExceptionToMothership(null, e);
+        }
+
+        return scriptFile;
     }
 
     protected void appendConsoleOutput(ScriptContext context, StringBuffer sb)
