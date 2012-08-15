@@ -515,7 +515,7 @@ public class UploadSamplesHelper
         Container c = getContainer();
 
         //Parent object is the MaterialSet type
-        int ownerObjectId = OntologyManager.ensureObject(c, source.getLSID());
+        int ownerObjectId = OntologyManager.ensureObject(source.getContainer(), source.getLSID());
         MaterialImportHelper helper = new MaterialImportHelper(c, source, _form.getUser(), reusedMaterialLSIDs);
 
         OntologyManager.insertTabDelimited(c, _form.getUser(), ownerObjectId, helper, descriptors, rows, true);

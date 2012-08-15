@@ -60,6 +60,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishKey;
 import org.labkey.api.study.assay.AssayPublishService;
@@ -660,14 +661,13 @@ public class AssayPublishManager implements AssayPublishService.Service
         return name;
     }
 
-    static final String DIR_NAME = "assaydata";
     public UploadLog saveUploadData(User user, DataSet dsd, FileStream tsv, String filename) throws IOException
     {
         PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(dsd.getContainer());
         if (null == pipelineRoot || !pipelineRoot.isValid())
             throw new IOException("Please have your administrator set up a pipeline root for this folder.");
 
-        File dir = pipelineRoot.resolvePath(DIR_NAME);
+        File dir = pipelineRoot.resolvePath(AssayFileWriter.DIR_NAME);
         if (!dir.exists())
         {
             boolean success = dir.mkdir();

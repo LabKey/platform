@@ -25,6 +25,7 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.LabkeyError;
+import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ColumnInfo;
@@ -590,6 +591,31 @@ public class AssayController extends SpringActionController
         {
             return root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer())).addChild(_protocol.getName(),
                     new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId())).addChild("Copy-to-Study History");
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class AssayFileDuplicateCheckAction extends ApiAction<SimpleApiJsonForm>
+    {
+        @Override
+        public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
+        {
+            AssayFileWriter writer = new AssayFileWriter();
+            try
+            {
+                File targetDirectory = writer.ensureUploadDirectory(getContainer());
+                String fileName = form.getJsonObject().getString("fileName");
+                File f = new File(targetDirectory, fileName);
+                if (f.exists())
+                {
+                    return new ApiSimpleResponse("duplicate", true);
+                }
+            }
+            catch (ExperimentException e)
+            {
+                throw new AbstractFileUploadAction.UploadException(e.getMessage(), HttpServletResponse.SC_NOT_FOUND);
+            }
+            return new ApiSimpleResponse("duplicate", false);
         }
     }
 
