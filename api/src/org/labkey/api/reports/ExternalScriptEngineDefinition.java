@@ -56,4 +56,14 @@ public interface ExternalScriptEngineDefinition
 
     public void setExternal(boolean external);
     public boolean isExternal();
+
+    //
+    // consider:  move these to RemoteScriptEngineDefinition?
+    //
+    public void setMachine(String name);
+    public void setPort(int port);
+    public void setUser(String user);
+    public void setPassword(String password);
+    public void setReportShare(String reportShare);
+    public void setPipelineShare(String pipelineShare);
 }

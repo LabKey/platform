@@ -494,5 +494,34 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
         {
             _external = external;
         }
+
+        public void setPort(int port)
+        {
+            _port = port;
+        }
+
+        public void setMachine(String machine)
+        {
+            _machine = machine;
+        }
+
+        public void setUser(String user)
+        {
+            _user = user;
+        }
+
+        public void setPassword(String password)
+        {
+            _password = password;
+        }
+
+        public void setReportShare(String reportShare)
+        {
+            _reportShare = reportShare;
+        }
+        public void setPipelineShare(String pipelineShare)
+        {
+            _pipelineShare = pipelineShare;
+        }
     }
 }
