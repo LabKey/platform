@@ -16,7 +16,12 @@
 
 package org.labkey.api.study.assay;
 
+import junit.framework.Assert;
 import org.jetbrains.annotations.Nullable;
+import org.jmock.Expectations;
+import org.jmock.Mockery;
+import org.jmock.lib.legacy.ClassImposteriser;
+import org.junit.Test;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
@@ -69,6 +74,7 @@ import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -168,7 +174,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
         _dataType = dataType;
         _protocolLSIDPrefix = protocolLSIDPrefix;
         _runLSIDPrefix = runLSIDPrefix;
-        registerLsidHandler();
     }
 
     public AssaySchema getProviderSchema(User user, Container container, ExpProtocol protocol)
@@ -316,7 +321,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return runLSID;
     }
 
-    protected void registerLsidHandler()
+    public void registerLsidHandler()
     {
         LsidManager.get().registerHandler(_runLSIDPrefix, new LsidManager.ExpRunLsidHandler());
     }
@@ -677,14 +682,25 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return table;
     }
 
-    public ExpRunTable createRunTable(AssaySchema schema, ExpProtocol protocol)
+    public ExpRunTable createRunTable(final AssaySchema schema, ExpProtocol protocol)
     {
-        ExpRunTable runTable = ExperimentService.get().createRunTable(AssaySchema.getRunsTableName(protocol), schema);
+        final String tableName = AssaySchema.getRunsTableName(protocol);
+        ExpRunTable runTable = ExperimentService.get().createRunTable(tableName, schema);
         if (isEditableRuns(protocol))
         {
             runTable.addAllowablePermission(UpdatePermission.class);
         }
         runTable.populate();
+        LookupForeignKey assayRunFK = new LookupForeignKey()
+        {
+            @Override
+            public TableInfo getLookupTableInfo()
+            {
+                return schema.getTable(tableName);
+            }
+        };
+        runTable.getColumn(ExpRunTable.Column.ReplacedByRun).setFk(assayRunFK);
+        runTable.getColumn(ExpRunTable.Column.ReplacesRun).setFk(assayRunFK);
 
         runTable.addColumn(new AssayQCFlagColumn(runTable, protocol.getName()));
         ColumnInfo qcEnabled = runTable.addColumn(new ExprColumn(runTable, "QCFlagsEnabled", AssayQCFlagColumn.createSQLFragment(runTable.getSqlDialect(), "Enabled"), JdbcType.VARCHAR));

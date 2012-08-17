@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.Pair;
@@ -59,19 +60,25 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
         _titleColumn = titleColumn;
     }
 
-    public LookupForeignKey(String tableName, String pkColumnName, String titleColumn)
+    public LookupForeignKey(String tableName, @Nullable String pkColumnName, String titleColumn)
     {
          this(null, null, tableName, pkColumnName, titleColumn);
     }
 
-    public LookupForeignKey(String pkColumnName, String titleColumn)
+    public LookupForeignKey(@Nullable String pkColumnName, @Nullable String titleColumn)
     {
          this(null, null, null, pkColumnName, titleColumn);
     }
 
-    public LookupForeignKey(String pkColumnName)
+    public LookupForeignKey(@Nullable String pkColumnName)
     {
         this(null, null, null, pkColumnName, null);
+    }
+
+    /** Use the table's (single) PK column as the lookup target */
+    public LookupForeignKey()
+    {
+        this(null);
     }
 
     public void setPrefixColumnCaption(boolean prefix)
@@ -130,7 +137,7 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
      */
     protected ColumnInfo getPkColumn(TableInfo table)
     {
-        return table.getColumn(_columnName);
+        return table.getColumn(getLookupColumnName());
     }
 
 
@@ -154,10 +161,10 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
             return null;
 
         TableInfo lookupTable = getLookupTableInfo();
-        if (lookupTable == null || _columnName == null)
+        if (lookupTable == null || getLookupColumnName() == null)
             return null;
 
-        return getDetailsURL(parent, lookupTable, _columnName);
+        return getDetailsURL(parent, lookupTable, getLookupColumnName());
     }
 
 

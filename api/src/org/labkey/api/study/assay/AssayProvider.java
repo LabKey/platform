@@ -216,4 +216,5 @@ public interface AssayProvider extends Handler<ExpProtocol>
     /** Make a context that knows how to do the import in the background, on a separate thread from the final HTTP step in the wizard */
     AssayRunAsyncContext createRunAsyncContext(AssayRunUploadContext context) throws IOException, ExperimentException;
     String getRunLSIDPrefix();
+    void registerLsidHandler();
 }

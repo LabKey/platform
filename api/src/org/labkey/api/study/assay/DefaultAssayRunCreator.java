@@ -48,6 +48,7 @@ import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -125,37 +126,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         addOutputMaterials(context, outputMaterials, resolverType);
         addOutputDatas(context, outputDatas, resolverType);
 
-        try
-        {
-            ParticipantVisitResolver resolver = null;
-            if (resolverType != null)
-            {
-                String targetStudyId = null;
-                for (Map.Entry<DomainProperty, String> property : allProperties.entrySet())
-                {
-                    if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(property.getKey().getName()))
-                    {
-                        targetStudyId = property.getValue();
-                        break;
-                    }
-                }
-                Container targetStudy = null;
-                if (targetStudyId != null && targetStudyId.length() > 0)
-                    targetStudy = ContainerManager.getForId(targetStudyId);
-
-                resolver = resolverType.createResolver(Collections.unmodifiableCollection(inputMaterials.keySet()),
-                        Collections.unmodifiableCollection(inputDatas.keySet()),
-                        Collections.unmodifiableCollection(outputMaterials.keySet()),
-                        Collections.unmodifiableCollection(outputDatas.keySet()),
-                        context.getContainer(),
-                        targetStudy, context.getUser());
-            }
-            resolveExtraRunData(resolver, context, inputMaterials, inputDatas, outputMaterials, outputDatas);
-        }
-        catch (IOException e)
-        {
-            throw new ExperimentException(e);
-        }
+        resolveParticipantVisits(context, inputMaterials, inputDatas, outputMaterials, outputDatas, allProperties, resolverType);
 
         DbScope scope = ExperimentService.get().getSchema().getScope();
         try
@@ -188,6 +159,17 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     LOG,
                     false);
 
+            if (context.getReRunId() != null)
+            {
+                ExpRun replacedRun = ExperimentService.get().getExpRun(context.getReRunId().intValue());
+                if (replacedRun != null && replacedRun.getContainer().hasPermission(context.getUser(), UpdatePermission.class))
+                {
+                    replacedRun.setReplacedByRun(run);
+                    replacedRun.save(context.getUser());
+                }
+                ExperimentService.get().auditRunEvent(context.getUser(), context.getProtocol(), replacedRun, "Run id " + replacedRun.getRowId() + " was replaced by run id " + run.getRowId());
+            }
+
             // handle data transformation
             TransformResult transformResult = transform(context, run);
             List<ExpData> insertedDatas = new ArrayList<ExpData>();
@@ -217,42 +199,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             else
                 savePropertyObject(run, runProperties, context.getUser());
 
-            if (transformResult.getTransformedData().isEmpty())
-            {
-                insertedDatas.addAll(inputDatas.keySet());
-                insertedDatas.addAll(outputDatas.keySet());
-
-                for (ExpData insertedData : insertedDatas)
-                {
-                    insertedData.findDataHandler().importFile(insertedData, insertedData.getFile(), info, LOG, xarContext);
-                }
-            }
-            else
-            {
-                ExpData data = ExperimentService.get().createData(context.getContainer(), getProvider().getDataType());
-                ExperimentDataHandler handler = data.findDataHandler();
-
-                // this should assert to always be true
-                if (handler instanceof TransformDataHandler)
-                {
-                    for (Map.Entry<ExpData, List<Map<String, Object>>> entry : transformResult.getTransformedData().entrySet())
-                    {
-                        ExpData expData = entry.getKey();
-                        // The object may have already been claimed by 
-                        if (expData.getSourceApplication() == null)
-                        {
-                            expData.setSourceApplication(run.getOutputProtocolApplication());
-                        }
-                        expData.save(context.getUser());
-
-                        run.getOutputProtocolApplication().addDataInput(context.getUser(), expData, ExpDataRunInput.DEFAULT_ROLE);
-                        // Add to the cached list of outputs
-                        run.getDataOutputs().add(expData);
-
-                        ((TransformDataHandler)handler).importTransformDataMap(expData, context, run, entry.getValue());
-                    }
-                }
-            }
+            importResultData(context, run, inputDatas, outputDatas, info, xarContext, transformResult, insertedDatas);
 
             scope.commitTransaction();
 
@@ -279,6 +226,81 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         finally
         {
             scope.closeConnection();
+        }
+    }
+
+    private void resolveParticipantVisits(AssayRunUploadContext<ProviderType> context, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, Map<DomainProperty, String> allProperties, ParticipantVisitResolverType resolverType) throws ExperimentException
+    {
+        try
+        {
+            ParticipantVisitResolver resolver = null;
+            if (resolverType != null)
+            {
+                String targetStudyId = null;
+                for (Map.Entry<DomainProperty, String> property : allProperties.entrySet())
+                {
+                    if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(property.getKey().getName()))
+                    {
+                        targetStudyId = property.getValue();
+                        break;
+                    }
+                }
+                Container targetStudy = null;
+                if (targetStudyId != null && targetStudyId.length() > 0)
+                    targetStudy = ContainerManager.getForId(targetStudyId);
+
+                resolver = resolverType.createResolver(Collections.unmodifiableCollection(inputMaterials.keySet()),
+                        Collections.unmodifiableCollection(inputDatas.keySet()),
+                        Collections.unmodifiableCollection(outputMaterials.keySet()),
+                        Collections.unmodifiableCollection(outputDatas.keySet()),
+                        context.getContainer(),
+                        targetStudy, context.getUser());
+            }
+            resolveExtraRunData(resolver, context, inputMaterials, inputDatas, outputMaterials, outputDatas);
+        }
+        catch (IOException e)
+        {
+            throw new ExperimentException(e);
+        }
+    }
+
+    private void importResultData(AssayRunUploadContext<ProviderType> context, ExpRun run, Map<ExpData, String> inputDatas, Map<ExpData, String> outputDatas, ViewBackgroundInfo info, XarContext xarContext, TransformResult transformResult, List<ExpData> insertedDatas) throws ExperimentException
+    {
+        if (transformResult.getTransformedData().isEmpty())
+        {
+            insertedDatas.addAll(inputDatas.keySet());
+            insertedDatas.addAll(outputDatas.keySet());
+
+            for (ExpData insertedData : insertedDatas)
+            {
+                insertedData.findDataHandler().importFile(insertedData, insertedData.getFile(), info, LOG, xarContext);
+            }
+        }
+        else
+        {
+            ExpData data = ExperimentService.get().createData(context.getContainer(), getProvider().getDataType());
+            ExperimentDataHandler handler = data.findDataHandler();
+
+            // this should assert to always be true
+            if (handler instanceof TransformDataHandler)
+            {
+                for (Map.Entry<ExpData, List<Map<String, Object>>> entry : transformResult.getTransformedData().entrySet())
+                {
+                    ExpData expData = entry.getKey();
+                    // The object may have already been claimed by
+                    if (expData.getSourceApplication() == null)
+                    {
+                        expData.setSourceApplication(run.getOutputProtocolApplication());
+                    }
+                    expData.save(context.getUser());
+
+                    run.getOutputProtocolApplication().addDataInput(context.getUser(), expData, ExpDataRunInput.DEFAULT_ROLE);
+                    // Add to the cached list of outputs
+                    run.getDataOutputs().add(expData);
+
+                    ((TransformDataHandler)handler).importTransformDataMap(expData, context, run, entry.getValue());
+                }
+            }
         }
     }
 

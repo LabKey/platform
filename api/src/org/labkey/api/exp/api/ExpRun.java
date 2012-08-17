@@ -71,4 +71,9 @@ public interface ExpRun extends ExpObject
     ExpProtocolApplication getOutputProtocolApplication();
 
     void deleteProtocolApplications(User user);
+
+    void setReplacedByRun(ExpRun run);
+    ExpRun getReplacedByRun();
+
+    List<? extends ExpRun> getReplacesRuns();
 }
