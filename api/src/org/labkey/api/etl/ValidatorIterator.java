@@ -19,6 +19,7 @@ package org.labkey.api.etl;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.MvFieldWrapper;
@@ -35,7 +36,9 @@ import org.labkey.api.util.GUID;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -168,6 +171,36 @@ checkRequired:
     }
 
 
+    // validate that there are no in-coming duplicates for unique key
+    // does not validate against DB, just the import data
+    class DuplicateSingleKeyValidator extends ColumnValidator
+    {
+        final boolean caseInsensitive;
+        Set _keys = null;
+
+        DuplicateSingleKeyValidator(int col, boolean caseInsensitive)
+        {
+            super(col);
+            this.caseInsensitive = caseInsensitive;
+        }
+
+        @Override
+        public String validate(Object key)
+        {
+            if (null == _keys)
+            {
+                if (caseInsensitive && _data.getColumnInfo(index).getJdbcType().isText())
+                    _keys = new CaseInsensitiveHashSet();
+                else
+                    _keys = new HashSet();
+            }
+            if (_keys.size() > 10000 || _keys.add(key))
+                return null;
+            return "Row " + _data.get(0) + ": " + "The key field \"" + _data.getColumnInfo(index).getName() + "\" cannot have duplicate values.  The duplicate is: \"" + key + "\"";
+        }
+    }
+
+
     private void addValidator(int i, Validator v)
     {
         while (_validators.size() <= i)
@@ -197,6 +230,13 @@ checkRequired:
         }
     }
 
+
+    public void addUniqueValidator(int i, boolean caseSensitive)
+    {
+        addValidator(i, new DuplicateSingleKeyValidator(i, caseSensitive));
+    }
+
+
     public boolean hasValidators()
     {
         for (ArrayList<Validator> a : _validators)
@@ -206,6 +246,7 @@ checkRequired:
         }
         return false;
     }
+
 
     /* DataIterator */
 

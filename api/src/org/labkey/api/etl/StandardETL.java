@@ -88,7 +88,7 @@ public class StandardETL implements DataIteratorBuilder
     }
 
 
-    public void setUseImportAliases(boolean forImport)
+    public void setForImport(boolean forImport)
     {
         _useImportAliases = forImport;
     }
@@ -233,7 +233,7 @@ public class StandardETL implements DataIteratorBuilder
             else
                 indexConvert = convert.addConvertColumn(pair.target.getName(), pair.indexFrom, pair.indexMv, pair.dp.getPropertyDescriptor(), pair.dp.getPropertyDescriptor().getPropertyType());
 
-            if (null != pair.target && !pair.target.isNullable())
+            if (null != pair.target && !pair.target.isNullable() && !pair.target.isAutoIncrement())
                 validate.addRequired(indexConvert, false);
             else if (null != pair.dp && pair.dp.isRequired())
                 validate.addRequired(indexConvert, true);

@@ -107,7 +107,7 @@ public interface UpdateableTableInfo
      *
      * This method is _NOT_ usually called directly. See TableInfo.getUpdateService(), and StandardETL.
      */
-    DataIteratorBuilder persistRows(DataIteratorBuilder data, BatchValidationException errors);
+    DataIteratorBuilder persistRows(DataIteratorBuilder data, boolean forImport, BatchValidationException errors);
 
 
     /** persist one row in the database

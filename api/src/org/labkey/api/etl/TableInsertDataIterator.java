@@ -42,9 +42,10 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         return it;
     }
 
-    public static TableInsertDataIterator create(DataIteratorBuilder data, TableInfo table, BatchValidationException errors)
+    public static TableInsertDataIterator create(DataIteratorBuilder data, TableInfo table, boolean forImport, BatchValidationException errors)
     {
         TableInsertDataIterator it = new TableInsertDataIterator(data.getDataIterator(errors), table, errors);
+        it.setForImport(forImport);
         return it;
     }
 
@@ -88,6 +89,11 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         if (null != errors)
             _errors = errors;
         return this;
+    }
+
+    @Override
+    public void setForImport(boolean forImport)
+    {
     }
 
     @Override

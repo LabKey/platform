@@ -323,9 +323,6 @@ public class StatementUtils
 
         if (selectIds && null != objectIdVar)
         {
-            if (true)
-                throw new UnsupportedOperationException("Re-selecting object ID should work but has not been tested; remove this throw and test carefully");
-
             sqlfSelectIds = new SQLFragment("SELECT ");
             sqlfSelectIds.append(objectIdVar);
             selectObjectIdIndex = ++countReturnIds;
@@ -506,8 +503,9 @@ public class StatementUtils
             fn.appendStatement(sqlfObjectProperty, d);
             if (null != sqlfSelectIds)
             {
-                sqlfSelectIds.insert(0, "RETURN QUERY ");
-                fn.appendStatement(sqlfSelectIds, d);
+                fn.append("RETURN QUERY ");
+                fn.append(sqlfSelectIds);
+                fn.append(";\n");
             }
             fn.append("END;\n$$ LANGUAGE plpgsql;\n");
 

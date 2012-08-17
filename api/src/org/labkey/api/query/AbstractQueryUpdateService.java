@@ -100,8 +100,9 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     protected DataIteratorBuilder createImportETL(User user, Container container, DataIteratorBuilder data, BatchValidationException errors, boolean forImport)
     {
         StandardETL etl = StandardETL.forInsert(getQueryTable(), data, container, user, errors);
-        etl.setUseImportAliases(forImport);
-        DataIteratorBuilder insert = ((UpdateableTableInfo)getQueryTable()).persistRows(etl, errors);
+        etl.setForImport(forImport);
+        DataIteratorBuilder insert = ((UpdateableTableInfo)getQueryTable()).persistRows(etl, forImport, errors);
+        insert.setForImport(forImport);
         return insert;
     }
 

@@ -28,6 +28,7 @@ import org.labkey.api.query.ValidationException;
 
 public interface DataIteratorBuilder
 {
+    void setForImport(boolean forImport);
     DataIterator getDataIterator(BatchValidationException x);
 
 
@@ -44,6 +45,11 @@ public interface DataIteratorBuilder
         public DataIterator getDataIterator(BatchValidationException x)
         {
             return di;
+        }
+
+        @Override
+        public void setForImport(boolean forImport)
+        {
         }
     }
 }

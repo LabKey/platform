@@ -132,5 +132,10 @@ public class BeanDataIterator<K> extends AbstractDataIterator implements DataIte
         {
             return new BeanDataIterator<K>(errors, cls, rows);
         }
+
+        @Override
+        public void setForImport(boolean forImport)
+        {
+        }
     }
 }

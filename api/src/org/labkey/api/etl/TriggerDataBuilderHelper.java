@@ -75,6 +75,11 @@ public class TriggerDataBuilderHelper
             coerce = LoggingDataIterator.wrap(coerce);
             return LoggingDataIterator.wrap(new BeforeIterator(coerce, errors));
         }
+
+        @Override
+        public void setForImport(boolean forImport)
+        {
+        }
     }
 
 
@@ -163,6 +168,11 @@ public class TriggerDataBuilderHelper
             if (!_target.hasTriggers(_c))
                 return it;
             return new AfterIterator(LoggingDataIterator.wrap(it), errors);
+        }
+
+        @Override
+        public void setForImport(boolean forImport)
+        {
         }
     }
 

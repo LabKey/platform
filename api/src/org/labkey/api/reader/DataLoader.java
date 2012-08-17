@@ -38,6 +38,7 @@ import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.iterator.IteratorUtil;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.webdav.WebdavResource;
 import org.springframework.web.multipart.MultipartFile;
@@ -836,20 +837,36 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     public DataIterator getDataIterator(final BatchValidationException errors)
     {
         setInferTypes(false);
-        return LoggingDataIterator.wrap(new _DataIterator(errors));
+        try
+        {
+            return LoggingDataIterator.wrap(new _DataIterator(errors, getColumns()));
+        }
+        catch (IOException x)
+        {
+            errors.addRowError(new ValidationException(x.getMessage()));
+            return null;
+        }
+    }
+
+
+    @Override
+    public void setForImport(boolean forImport)
+    {
     }
 
 
     private class _DataIterator implements ScrollableDataIterator, MapDataIterator
     {
         final BatchValidationException _errors;
-        DataLoaderIterator _it = null;
+        CloseableIterator<Map<String, Object>> _it = null;
         ArrayListMap<String,Object> _row = null;
         int _rowNumber = 0;
+        ColumnDescriptor[] _columns;
 
-        _DataIterator(BatchValidationException errors)
+        _DataIterator(BatchValidationException errors, ColumnDescriptor[] columns)
         {
             _errors = errors;
+            _columns = columns;
             beforeFirst();
         }
 
@@ -870,13 +887,13 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         {
             if (null != _it)
                 IOUtils.closeQuietly(_it);
-            _it = (DataLoaderIterator)iterator();
+            _it = iterator();
         }
 
         @Override
         public int getColumnCount()
         {
-            return _it._activeColumns.length;
+            return _columns.length;
         }
 
         @Override
@@ -884,7 +901,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
         {
             if (i == 0)
                 return new ColumnInfo("_rowNumber", JdbcType.INTEGER);
-            ColumnDescriptor d = _it._activeColumns[i-1];
+            ColumnDescriptor d = _columns[i-1];
             JdbcType type = JdbcType.valueOf(d.clazz);
             if (null == type)
                 type = JdbcType.VARCHAR;

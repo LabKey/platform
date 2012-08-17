@@ -778,9 +778,9 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     }
 
     @Override
-    public DataIteratorBuilder persistRows(DataIteratorBuilder data, BatchValidationException errors)
+    public DataIteratorBuilder persistRows(DataIteratorBuilder data, boolean forImport, BatchValidationException errors)
     {
-        return TableInsertDataIterator.create(data, this, errors);
+        return TableInsertDataIterator.create(data, this, forImport, errors);
     }
 
     @Override

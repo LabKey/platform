@@ -16,6 +16,7 @@
 
 package org.labkey.api.etl;
 
+import com.sun.corba.se.spi.legacy.connection.Connection;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -264,6 +265,23 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         public Object call() throws Exception
         {
             return GUID.makeGUID();
+        }
+    }
+
+
+    public static class ConstantColumn implements Callable
+    {
+        final Object k;
+
+        public ConstantColumn(Object k)
+        {
+            this.k = k;
+        }
+
+        @Override
+        public Object call() throws Exception
+        {
+            return k;
         }
     }
 
@@ -730,6 +748,12 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     public Object get(int i)
     {
         return _row[i];
+    }
+
+    // use carefully!  Mostly for implementing classes used for addColumn(Callable)
+    public Object getInputColumnValue(int i)
+    {
+        return _data.get(i);
     }
 
     @Override

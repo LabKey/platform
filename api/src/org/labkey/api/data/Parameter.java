@@ -453,37 +453,46 @@ public class Parameter
         public boolean execute() throws SQLException
         {
             ResultSet rs = null;
-
-            if (_selectRowId)
-                rs = _dialect.executeInsertWithResults(_stmt);
-            else
-                _stmt.execute();
-
-            if (null != rs)
-            {
-                rs.next();
-                _rowId = rs.getInt(1);
-            }
-
-            if (null == _selectObjectIdIndex)
-                return true;
-
-            _stmt.getMoreResults();
+            _rowId = null;
+            _objectId = null;
 
             try
             {
-                _objectId = null;
+                if (_selectRowId || _selectObjectIdIndex != null)
+                    rs = _dialect.executeInsertWithResults(_stmt);
+                else
+                    _stmt.execute();
 
-                rs = _stmt.getResultSet();
+                Integer firstInt = null, secondInt = null;
 
-                if (!rs.next())
-                    return false;
-
-                if (null != _selectObjectIdIndex)
+                if (null != rs)
                 {
-                    int id = rs.getInt(_selectObjectIdIndex);
-                    _objectId = rs.wasNull() ? null : id;
+                    rs.next();
+                    firstInt = rs.getInt(1);
+                    if (rs.wasNull())
+                        firstInt = null;
+                    if (rs.getMetaData().getColumnCount() >= 2)
+                    {
+                        secondInt = rs.getInt(2);
+                        if (rs.wasNull())
+                            secondInt = null;
+                    }
                 }
+
+                if (null == _selectObjectIdIndex)
+                {}
+                else if (_selectObjectIdIndex == 2)
+                {
+                    _objectId = secondInt;
+                }
+                else if (_selectObjectIdIndex == 1)
+                {
+                    _objectId = firstInt;
+                    firstInt = secondInt;
+                }
+
+                if (_selectRowId)
+                    _rowId = firstInt;
             }
             finally
             {
