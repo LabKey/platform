@@ -709,7 +709,7 @@ public class ViewServlet extends HttpServlet
 
             // NOTE: this doesn't work for multipart/form-data
             // SpringActionController.handleRequest() will call validChars() again if necessary
-            for (Map.Entry<String,String[]> e : ((Map<String,String[]>)r.getParameterMap()).entrySet())
+/*            for (Map.Entry<String,String[]> e : ((Map<String,String[]>)r.getParameterMap()).entrySet())
             {
                 if (!ViewServlet.validChars(e.getKey()))
                     return false;
@@ -720,6 +720,7 @@ public class ViewServlet extends HttpServlet
                     if (!ViewServlet.validChars(s))
                         return false;
             }
+*/
         }
         catch (IllegalArgumentException x)
         {
