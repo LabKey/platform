@@ -48,6 +48,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     private Map<ExpData, String> _dataInputs = new HashMap<ExpData, String>();
     private List<ExpMaterial> _materialOutputs = new ArrayList<ExpMaterial>();
     private List<ExpData> _dataOutputs = new ArrayList<ExpData>();
+    private ExpRunImpl _replacedByRun;
 
     static public ExpRunImpl[] fromRuns(ExperimentRun[] runs)
     {
@@ -294,6 +295,37 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     public void deleteProtocolApplications(User user)
     {
         deleteProtocolApplications(getOutputDatas(null), user);
+    }
+
+    @Override
+    public void setReplacedByRun(ExpRun run)
+    {
+        if (run != null && run.getRowId() < 1)
+        {
+            throw new IllegalArgumentException("Run must have already been saved to the database");
+        }
+        _object.setReplacedByRunId(run == null ? null : run.getRowId());
+    }
+
+    @Override
+    public ExpRun getReplacedByRun()
+    {
+        Integer id = _object.getReplacedByRunId();
+        if (id == null)
+        {
+            return null;
+        }
+        if (_replacedByRun == null || _replacedByRun.getRowId() != id.intValue())
+        {
+            _replacedByRun = ExperimentServiceImpl.get().getExpRun(id.intValue());
+        }
+        return _replacedByRun;
+    }
+
+    @Override
+    public List<ExpRunImpl> getReplacesRuns()
+    {
+        return Arrays.asList(fromRuns(new TableSelector(ExperimentServiceImpl.get().getTinfoExperimentRun(), new SimpleFilter(FieldKey.fromParts("ReplacedByRunId"), getRowId()), new Sort("Name")).getArray(ExperimentRun.class)));
     }
 
     public void deleteProtocolApplications(ExpData[] datasToDelete, User user)

@@ -22,31 +22,34 @@
 <%@ page import="org.labkey.api.study.assay.PipelineDataCollector" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.data.ColumnRenderProperties" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AssayRunUploadForm> me = (JspView<AssayRunUploadForm>) HttpView.currentView();
     AssayRunUploadForm bean = me.getModelBean();
 %>
 
-<table>
+<strong>Expected Data Fields</strong>
+<table class="labkey-show-borders" cellpadding="3" cellspacing="0">
     <tr>
-        <td colspan="2">Expected Columns:
-            <table>
-        <%
-            for (DomainProperty pd : bean.getRunDataProperties())
-            {
-        %>
-            <tr><td><strong><%= pd.getName() %><%= (pd.isRequired() ? " (Required)" : "") %></strong>:</td><td><%= pd.getPropertyDescriptor().getPropertyType().getXarName() %></td><td><%=h(pd.getDescription())%></td></tr>
-        <%
-            }
-        %>
-            </table>
-            <% if (PipelineDataCollector.getFileQueue(bean).isEmpty())
-            { %>
-                <%= textLink("download spreadsheet template",
-                    urlProvider(AssayUrls.class).getProtocolURL(bean.getContainer(), bean.getProtocol(), TemplateAction.class))%>
-                <br>After downloading and editing the spreadsheet template, paste it into the text area below or save the spreadsheet and upload it as a file.
-            <% }%>
-        </td>
+        <td><strong>Name</strong></td>
+        <td><strong>Type</strong></td>
+        <td><strong>Required</strong></td>
+        <td><strong>Description</strong></td>
     </tr>
+<%
+for (DomainProperty pd : bean.getRunDataProperties()) { %>
+<tr>
+    <td><%= h(pd.getName()) %></td>
+    <td><%= h(ColumnRenderProperties.getFriendlyTypeName(pd.getPropertyDescriptor().getPropertyType().getJavaType())) %></td>
+    <td><%= text(pd.isRequired() ? "yes" : "no") %></td>
+    <td><%=h(pd.getDescription())%></td></tr>
+<% } %>
 </table>
+<% if (PipelineDataCollector.getFileQueue(bean).isEmpty())
+{ %>
+    <%= textLink("download spreadsheet template",
+        urlProvider(AssayUrls.class).getProtocolURL(bean.getContainer(), bean.getProtocol(), TemplateAction.class))%>
+    <br>After downloading and editing the spreadsheet template, paste it into the text area below or save the spreadsheet and upload it as a file.
+<% }%>
+<p></p>

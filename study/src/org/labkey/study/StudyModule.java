@@ -716,6 +716,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     {
         Set<Class> set = new HashSet<Class>();
         set.add(SampleMindedTransformTask.TestCase.class);
+        set.add(TsvAssayProvider.TestCase.class);
         return set;
     }
 

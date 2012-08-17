@@ -108,6 +108,7 @@ public class AssayManager implements AssayService.Interface
         {
             PipelineService.get().registerPipelineProvider(pipelineProvider);
         }
+        provider.registerLsidHandler();
     }
 
     public AssayProvider getProvider(String providerName)

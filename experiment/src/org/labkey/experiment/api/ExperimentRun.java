@@ -28,6 +28,7 @@ public class ExperimentRun extends IdentifiableEntity
     private String filePathRoot;
     private String comments;
     private Integer jobId;
+    private Integer _replacedByRunId;
 
     public String getProtocolLSID()
     {
@@ -77,6 +78,16 @@ public class ExperimentRun extends IdentifiableEntity
             name = name.substring(0, maxLength - "...".length()) + "...";
         }
         super.setName(name);
+    }
+
+    public Integer getReplacedByRunId()
+    {
+        return _replacedByRunId;
+    }
+
+    public void setReplacedByRunId(Integer replacedByRunId)
+    {
+        _replacedByRunId = replacedByRunId;
     }
 
     public boolean equals(Object o)

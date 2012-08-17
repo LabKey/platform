@@ -369,6 +369,24 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 ret.setShownInInsertView(false);
                 ret.setShownInUpdateView(false);
                 return ret;
+            case ReplacedByRun:
+                ColumnInfo replacedByRunCol = wrapColumn(alias, _rootTable.getColumn("ReplacedByRunId"));
+                replacedByRunCol.setFk(getExpSchema().getRunIdForeignKey());
+                replacedByRunCol.setLabel("Replaced By");
+                replacedByRunCol.setShownInInsertView(false);
+                replacedByRunCol.setShownInUpdateView(false);
+                return replacedByRunCol;
+            case ReplacesRun:
+                SQLFragment replacesSQL = new SQLFragment("(SELECT MIN(er.RowId) FROM ");
+                replacesSQL.append(ExperimentServiceImpl.get().getTinfoExperimentRun(), "er");
+                replacesSQL.append(" WHERE er.ReplacedByRunId = ");
+                replacesSQL.append(ExprColumn.STR_TABLE_ALIAS);
+                replacesSQL.append(".RowId)");
+                ColumnInfo replacesRunCol = new ExprColumn(this, "ReplacesRun", replacesSQL, JdbcType.INTEGER);
+                replacesRunCol.setFk(getExpSchema().getRunIdForeignKey());
+                replacesRunCol.setLabel("Replaces");
+                replacesRunCol.setDescription("The run that this run replaces, usually with updated or corrected information");
+                return replacesRunCol;
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -454,6 +472,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         addContainerColumn(Column.Folder, null);
         addColumn(Column.FilePathRoot).setHidden(true);
         addColumn(Column.JobId).setFk(schema.getJobForeignKey());
+        addColumn(Column.ReplacedByRun);
+        addColumn(Column.ReplacesRun);
         addColumn(Column.LSID).setHidden(true);
         addColumn(Column.Protocol).setFk(schema.getProtocolForeignKey("LSID"));
         addColumn(Column.RunGroups);
@@ -467,7 +487,10 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
 
         List<FieldKey> defaultVisibleColumns = new ArrayList<FieldKey>(getDefaultVisibleColumns());
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.Comments));
+        defaultVisibleColumns.remove(FieldKey.fromParts(Column.JobId));
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.Folder));
+        defaultVisibleColumns.remove(FieldKey.fromParts(Column.ReplacedByRun));
+        defaultVisibleColumns.remove(FieldKey.fromParts(Column.ReplacesRun));
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.DataOutputs));
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.Modified));
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.ModifiedBy));

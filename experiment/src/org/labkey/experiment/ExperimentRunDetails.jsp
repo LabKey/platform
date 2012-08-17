@@ -21,11 +21,16 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.exp.api.ExperimentUrls" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ExpRun> me = (JspView<ExpRun>) HttpView.currentView();
     ExpRun run = me.getModelBean();
     ExpProtocol protocol = run.getProtocol();
+    ExpRun replacedByRun = run.getReplacedByRun();
+    List<? extends ExpRun> replacesRuns = run.getReplacesRuns();
 %>
 
 <table>
@@ -48,6 +53,18 @@
     <tr>
         <td class="labkey-form-label">Comments</td>
         <td><%= h(run.getComments()) %></td>
+    </tr>
+    <tr>
+        <td class="labkey-form-label">Replaced By</td>
+        <% if(replacedByRun != null) { %>
+            <td><a href="<%= h(PageFlowUtil.urlProvider(ExperimentUrls.class).getRunGraphURL(replacedByRun)) %>"><%= h(replacedByRun.getName()) %></a></td>
+        <% } %>
+    </tr>
+    <tr>
+        <td class="labkey-form-label">Replaces</td>
+        <% for (ExpRun replacesRun : replacesRuns) { %>
+            <td><a href="<%= h(PageFlowUtil.urlProvider(ExperimentUrls.class).getRunGraphURL(replacesRun)) %>"><%= h(replacesRun.getName()) %></a></td>
+        <% } %>
     </tr>
 </table>
 

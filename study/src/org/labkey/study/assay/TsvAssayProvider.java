@@ -16,10 +16,20 @@
 
 package org.labkey.study.assay;
 
+import junit.framework.Assert;
+import org.jmock.Expectations;
+import org.jmock.Mockery;
+import org.jmock.lib.legacy.ClassImposteriser;
+import org.junit.Before;
+import org.junit.Test;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.XarContext;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -37,6 +47,8 @@ import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.study.StudyModule;
 import org.springframework.web.servlet.mvc.Controller;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.util.*;
 
@@ -194,5 +206,123 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     public boolean supportsReRun()
     {
         return true;
+    }
+
+    public static class TestCase extends Assert
+    {
+        private Mockery _context;
+
+        private Container _container = ContainerManager.createMockContainer();
+        private HttpServletRequest _request;
+        private HttpSession _session;
+        private ExpProtocol _protocol;
+        private ExpRun _run;
+        private ExpData _data;
+        private AssayRunUploadForm _uploadContext;
+
+        @Before
+        public void setUp()
+        {
+            _context = new Mockery();
+            _context.setImposteriser(ClassImposteriser.INSTANCE);
+            _request = _context.mock(HttpServletRequest.class);
+            _session = _context.mock(HttpSession.class);
+            _protocol = _context.mock(ExpProtocol.class);
+            _run = _context.mock(ExpRun.class);
+            _data = _context.mock(ExpData.class);
+            _uploadContext = _context.mock(AssayRunUploadForm.class);
+
+            _context.checking(new Expectations(){{
+                allowing(_uploadContext).getRequest();
+                will(returnValue(_request));
+                allowing(_uploadContext).getContainer();
+                will(returnValue(_container));
+                allowing(_uploadContext).getProtocol();
+                will(returnValue(_protocol));
+                allowing(_protocol);
+                allowing(_request).getSession(true);
+                will(returnValue(_session));
+            }});
+        }
+
+        @Test
+        public void testReRunDataCollectorList()
+        {
+            // Pretend that the user is rerunning an existing run, and should be offered the option of uploading new
+            // data or reusing the existing file
+            _context.checking(new Expectations(){{
+                allowing(_session).getAttribute(PipelineDataCollector.class.getName());
+                will(returnValue(new HashMap()));
+                allowing(_uploadContext).getReRun();
+                will(returnValue(_run));
+                allowing(_run).getInputDatas(ExpDataRunInput.DEFAULT_ROLE, ExpProtocol.ApplicationType.ExperimentRunOutput);
+                will(returnValue(new ExpData[]{_data}));
+                allowing(_data).getFile();
+                will(returnValue(new File("mockFile")));
+            }});
+
+            TsvAssayProvider provider = new TsvAssayProvider();
+            List<AssayDataCollector> dataCollectors = provider.getDataCollectors(null, _uploadContext);
+            assertEquals(3, dataCollectors.size());
+            assertEquals(TextAreaDataCollector.class, dataCollectors.get(0).getClass());
+            assertEquals(PreviouslyUploadedDataCollector.class, dataCollectors.get(1).getClass());
+            assertEquals(FileUploadDataCollector.class, dataCollectors.get(2).getClass());
+        }
+
+        @Test
+        public void testDataCollectorList()
+        {
+            // Simulate a regular upload wizard
+            _context.checking(new Expectations(){{
+                allowing(_session).getAttribute(PipelineDataCollector.class.getName());
+                will(returnValue(new HashMap()));
+                allowing(_uploadContext).getReRun();
+                will(returnValue(null));
+            }});
+
+            TsvAssayProvider provider = new TsvAssayProvider();
+            List<AssayDataCollector> dataCollectors = provider.getDataCollectors(null, _uploadContext);
+            assertEquals(2, dataCollectors.size());
+            assertEquals(TextAreaDataCollector.class, dataCollectors.get(0).getClass());
+            assertEquals(FileUploadDataCollector.class, dataCollectors.get(1).getClass());
+        }
+
+        @Test
+        public void testPipelineDataCollectorList()
+        {
+            // Pretend the user selected a file from the pipeline directory and shouldn't be given other upload options
+            _context.checking(new Expectations(){{
+                allowing(_session).getAttribute(PipelineDataCollector.class.getName());
+                Map map = new HashMap();
+                map.put(new Pair<Container, Integer>(_container, _protocol.getRowId()), Collections.singletonList(Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, new File("mockFile"))));
+                will(returnValue(map));
+                allowing(_uploadContext).getReRun();
+                will(returnValue(null));
+            }});
+
+            TsvAssayProvider provider = new TsvAssayProvider();
+            List<AssayDataCollector> dataCollectors = provider.getDataCollectors(null, _uploadContext);
+            assertEquals(1, dataCollectors.size());
+            assertEquals(PipelineDataCollector.class, dataCollectors.get(0).getClass());
+        }
+
+        @Test
+        public void testReshowDataCollectorList()
+        {
+            // Simulate an error reshow, where the user should be able to reuse the existing file or upload a replacment
+            _context.checking(new Expectations(){{
+                allowing(_session).getAttribute(PipelineDataCollector.class.getName());
+                will(returnValue(new HashMap()));
+                allowing(_uploadContext).getReRun();
+                will(returnValue(null));
+            }});
+
+            TsvAssayProvider provider = new TsvAssayProvider();
+            List<AssayDataCollector> dataCollectors = provider.getDataCollectors(Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, new File("mockFile")), _uploadContext);
+            assertEquals(3, dataCollectors.size());
+            assertEquals(TextAreaDataCollector.class, dataCollectors.get(0).getClass());
+            assertEquals(PreviouslyUploadedDataCollector.class, dataCollectors.get(1).getClass());
+            assertEquals(FileUploadDataCollector.class, dataCollectors.get(2).getClass());
+        }
     }
 }

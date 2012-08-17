@@ -182,6 +182,9 @@
       <ns:column columnName="FilePathRoot">
         <ns:description>Contains the directory on the server's file system where this run's data files come from</ns:description>
       </ns:column>
+      <ns:column columnName="ReplacedByRunId">
+        <ns:description>The run that has replaced this run, usually with updated or corrected information</ns:description>
+      </ns:column>
     </ns:columns>
     <ns:description>Contains a row per experiment run in this folder.</ns:description>
   </ns:table>

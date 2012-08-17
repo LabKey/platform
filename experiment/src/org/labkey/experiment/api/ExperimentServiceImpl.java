@@ -946,10 +946,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         //delete run properties and all children
         OntologyManager.deleteOntologyObject(run.getLSID(), run.getContainer(), true);
         
-        String sql = "DELETE FROM exp.RunList WHERE ExperimentRunId = " + runId + ";\n";
-        sql += "DELETE FROM exp.ExperimentRun WHERE RowId = " + runId + ";\n";
+        SQLFragment sql = new SQLFragment("DELETE FROM exp.RunList WHERE ExperimentRunId = ?;\n");
+        sql.add(run.getRowId());
+        sql.append("UPDATE exp.ExperimentRun SET ReplacedByRunId = NULL WHERE ReplacedByRunId = ?;\n");
+        sql.add(run.getRowId());
+        sql.append("DELETE FROM exp.ExperimentRun WHERE RowId = ?;\n");
+        sql.add(run.getRowId());
 
-        new SqlExecutor(getExpSchema(), new SQLFragment(sql)).execute();
+        new SqlExecutor(getExpSchema(), sql).execute();
 
         auditRunEvent(user, run.getProtocol(), run, "Run deleted");
     }
