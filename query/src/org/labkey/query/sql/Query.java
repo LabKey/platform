@@ -41,6 +41,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
@@ -49,7 +50,9 @@ import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
@@ -665,8 +668,9 @@ public class Query
 	//
     private static class TestDataLoader extends DataLoader
     {
-        private static final String[] COLUMNS = new String[] {"d", "seven", "twelve", "day", "month", "date", "duration", "guid", "createduser", "createddate"};
-        private static final String[] TYPES = new String[] {"double", "int", "int", "string", "string", "dateTime", "string", "string", "int", "dateTime"};
+        private static final String[] COLUMNS = new String[] {"d", "seven", "twelve", "day", "month", "date", "duration", "guid"};
+        private static final String[] TYPES = new String[] {"double", "int", "int", "string", "string", "dateTime", "string", "string"};
+        private static final Class[] CLASSES = new Class[] {Double.class, Integer.class, Integer.class, String.class, String.class, Date.class, String.class, String.class};
         private static final String[] days = new String[] {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
         private static final String[] months = new String[] {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
 
@@ -677,7 +681,6 @@ public class Query
         @SuppressWarnings({"UnusedAssignment"})
         TestDataLoader(String propertyPrefix, int len)
         {
-            String now = DateUtil.toISO(new Date());
             data = new String[len+1][];
             data[0] = COLUMNS;
             for (String c : data[0])
@@ -694,9 +697,10 @@ public class Query
                 row[c++] = DateUtil.toISO(DateUtil.parseDateTime("2010-01-01") + ((long)i)*12*60*60*1000L);
                 row[c++] = DateUtil.formatDuration(i*1000);
                 row[c++] = GUID.makeGUID();
-                row[c++] = "" + TestContext.get().getUser().getUserId();
-                row[c++] = now;
             }
+            _columns = new ColumnDescriptor[COLUMNS.length];
+            for (int i=0 ; i<_columns.length ; i++)
+                _columns[i] = new ColumnDescriptor(COLUMNS[i], CLASSES[i]);
         }
 
         public String[][] getFirstNLines(int n) throws IOException
@@ -876,7 +880,7 @@ public class Query
         new SqlTest("SELECT R.d, seven, R.twelve AS TWE, R.day DOM, LCASE(GUID) FROM lists.R", 5, Rsize),
         new SqlTest("SELECT true as T, false as F FROM R", 2, Rsize),
         new SqlTest("SELECT COUNT(*) AS _count FROM R", 1, 1),
-        new SqlTest("SELECT R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.guid, R.createddate, R.createduser, R.createduser.displayname FROM R", 11, Rsize),
+        new SqlTest("SELECT R.d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.guid, R.created, R.createdby, R.createdby.displayname FROM R", 11, Rsize),
         new SqlTest("SELECT R.duration AS elapsed FROM R WHERE R.rowid=1", 1, 1),
 		new SqlTest("SELECT R.rowid, R.seven, R.day FROM R WHERE R.day LIKE '%ues%'", 3, 12),
 		new SqlTest("SELECT R.rowid, R.twelve, R.month FROM R WHERE R.month BETWEEN 'L' and 'O'", 3, 3*7), // March, May, Nov
@@ -912,7 +916,7 @@ public class Query
 		new SqlTest("SELECT R.day, R.month, R.date FROM R ORDER BY R.date LIMIT 5", 3, 5),
 
         // quoted identifiers
-        new SqlTest("SELECT T.\"count\", T.\"Opened By\", T.Seven, T.MonthName FROM (SELECT R.d as \"count\", R.seven as \"Seven\", R.twelve, R.day, R.month, R.date, R.duration, R.guid, R.createddate, R.createduser as \"Opened By\", R.month as MonthName FROM R) T", 4, Rsize),
+        new SqlTest("SELECT T.\"count\", T.\"Opened By\", T.Seven, T.MonthName FROM (SELECT R.d as \"count\", R.seven as \"Seven\", R.twelve, R.day, R.month, R.date, R.duration, R.guid, R.created, R.createdby as \"Opened By\", R.month as MonthName FROM R) T", 4, Rsize),
 
         // PIVOT
         new SqlTest("SELECT seven, twelve, COUNT(*) as C FROM R GROUP BY seven, twelve PIVOT C BY seven", 9, 12),
@@ -1039,7 +1043,7 @@ public class Query
                 p.setPropertyURI(d.getName() + hash + "#" + TestDataLoader.COLUMNS[i]);
                 p.setName(TestDataLoader.COLUMNS[i]);
                 p.setRangeURI(TestDataLoader.TYPES[i]);
-                if ("createduser".equals(TestDataLoader.COLUMNS[i]))
+                if ("createdby".equals(TestDataLoader.COLUMNS[i]))
                 {
                     p.setLookup(new Lookup(l.getContainer(), "core", "SiteUsers"));
                 }
@@ -1059,20 +1063,31 @@ public class Query
             Container c = JunitUtil.getTestContainer();
 			Container qtest = getSubfolder();
             ListService.Interface s = ListService.get();
+            QueryUpdateService qus;
 
             ListDefinition R = s.createList(c, "R");
             R.setKeyType(ListDefinition.KeyType.AutoIncrementInteger);
             R.setKeyName("rowid");
             addProperties(R);
             R.save(user);
-            R.insertListItems(user, new TestDataLoader(R.getName() + hash, Rsize), null, null);
+//            R.insertListItems(user, new TestDataLoader(R.getName() + hash, Rsize), null, null);
+            TableInfo rTableInfo = DefaultSchema.get(user,c).getSchema("lists").getTable("R");
+            BatchValidationException errors = new BatchValidationException();
+            rTableInfo.getUpdateService().importRows(user, c, new TestDataLoader(R.getName() + hash, Rsize).getDataIterator(errors), errors, null);
+            if (errors.hasErrors())
+                fail(errors.getRowErrors().get(0).toString());
 
             ListDefinition S = s.createList(qtest, "S");
             S.setKeyType(ListDefinition.KeyType.AutoIncrementInteger);
             S.setKeyName("rowid");
             addProperties(S);
             S.save(user);
-            S.insertListItems(user, new TestDataLoader(S.getName() + hash, Ssize), null, null);
+//            S.insertListItems(user, new TestDataLoader(S.getName() + hash, Ssize), null, null);
+            TableInfo sTableInfo = DefaultSchema.get(user,qtest).getSchema("lists").getTable("S");
+            errors = new BatchValidationException();
+            sTableInfo.getUpdateService().importRows(user, qtest, new TestDataLoader(S.getName() + hash, Rsize).getDataIterator(errors), errors, null);
+            if (errors.hasErrors())
+                fail(errors.getRowErrors().get(0).toString());
 
             if (0==1)
             {
@@ -1180,7 +1195,7 @@ public class Query
 
             // custom tests
             SqlDialect dialect = lists.getDbSchema().getSqlDialect();
-            String sql = "SELECT d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.createddate, R.createduser FROM R";
+            String sql = "SELECT d, R.seven, R.twelve, R.day, R.month, R.date, R.duration, R.created, R.createdby FROM R";
             CachedResultSet rs = null;
 
 
@@ -1194,8 +1209,8 @@ public class Query
                 assertTrue(sql, 0 < rs.findColumn(AliasManager.makeLegalName("day", dialect)));
                 assertTrue(sql, 0 < rs.findColumn(AliasManager.makeLegalName("month", dialect)));
                 assertTrue(sql, 0 < rs.findColumn(AliasManager.makeLegalName("date", dialect)));
-                assertTrue(sql, 0 < rs.findColumn(AliasManager.makeLegalName("createddate", dialect)));
-                assertTrue(sql, 0 < rs.findColumn(AliasManager.makeLegalName("createduser", dialect)));
+                assertTrue(sql, 0 < rs.findColumn(AliasManager.makeLegalName("created", dialect)));
+                assertTrue(sql, 0 < rs.findColumn(AliasManager.makeLegalName("createdby", dialect)));
                 assertEquals(sql, 9, md.getColumnCount());
                 assertEquals(sql, Rsize, rs.getSize());
                 rs.next();

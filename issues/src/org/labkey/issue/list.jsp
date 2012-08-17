@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.security.permissions.InsertPermission"%>
+<%@page import="org.labkey.api.security.permissions.InsertPermission"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
@@ -32,7 +32,7 @@
     if (request.getParameter("error") != null)
     {
 %>
-        <font class="labkey-error"><%=h(request.getParameter("error"))%></font><br/>
+        <font class="labkey-error"><%=request.getParameter("error")%></font><br/>
 <%
     }
 %>

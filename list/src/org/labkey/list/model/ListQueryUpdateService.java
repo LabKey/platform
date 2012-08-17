@@ -19,20 +19,24 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.Converter;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.etl.DataIterator;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
+import org.labkey.api.view.NotFoundException;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 
 /*
@@ -44,7 +48,7 @@ import java.util.Map;
 /**
  * Implementation of QueryUpdateService for Lists
  */
-public class ListQueryUpdateService extends AbstractBeanQueryUpdateService<ListItem, Object>
+public class ListQueryUpdateService extends AbstractQueryUpdateService
 {
     ListDefinition _list = null;
 
@@ -59,34 +63,80 @@ public class ListQueryUpdateService extends AbstractBeanQueryUpdateService<ListI
         return _list;
     }
 
+
+    @Override
+    protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    {
+        throw new IllegalStateException("method not used by ListQueryUpdateService");
+    }
+
+
+    @Override
+    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
+            throws DuplicateKeyException, QueryUpdateServiceException, SQLException
+    {
+        List<Map<String, Object>> result = super._insertRowsUsingETL(user, container, rows, errors, extraScriptContext);
+        return result;
+    }
+
+    @Override
+    public int importRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
+    {
+        int count = super._importRowsUsingETL(user, container, rows, null, errors, extraScriptContext, true);
+        return count;
+    }
+
+
+    /*
+     * ListItem oriented stuff still used by update/delete
+     */
+
+    @Override
+    protected final Map<String, Object> getRow(User user, Container container, Map<String, Object> keys)
+            throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    {
+        ListItem bean = get(user, container, keyFromMap(keys));
+        return null == bean ? null : mapFromBean(bean);
+    }
+
+
     public ListItem createNewBean()
     {
         return getList().createListItem();
     }
+
 
     public ListItem get(User user, Container container, Object key) throws QueryUpdateServiceException, SQLException
     {
         return getList().getListItem(key);
     }
 
-    public ListItem insert(User user, Container container, ListItem bean) throws ValidationException, DuplicateKeyException, QueryUpdateServiceException, SQLException
+
+    @Override
+    protected final Map<String, Object> updateRow(User user, Container container,
+            Map<String, Object> row, @NotNull Map<String, Object> oldRow)
+            throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
+        Object oldKey = null != oldRow ? keyFromMap(oldRow) : keyFromMap(row);
+        ListItem bean = get(user, container, oldKey);
+        if (null == bean)
+            throw new NotFoundException("The object you are trying to update was not found in the database."); //CONSIDER: maybe we should return null for 0 rows affected instead?
+        populateBean(bean, row, user);
         saveItem(user, bean);
-        return bean;
+        return mapFromBean(bean);
     }
 
-    public ListItem update(User user, Container container, ListItem bean, Object oldKey) throws ValidationException, QueryUpdateServiceException, SQLException
-    {
-        saveItem(user, bean);
-        return bean;
-    }
 
-    public void delete(User user, Container container, Object key) throws QueryUpdateServiceException, SQLException
+    @Override
+    protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
+        Object key = keyFromMap(oldRow);
         ListItem item = get(user, container, key);
-        if(null != item)
+        if (null != item)
             item.delete(user, container, isBulkLoad());
+        return oldRow;
     }
+
 
     public Object keyFromMap(Map<String, Object> map) throws InvalidKeyException
     {

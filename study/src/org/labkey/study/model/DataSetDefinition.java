@@ -1600,6 +1600,13 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         }
 
         @Override
+        public void setForImport(boolean forImport)
+        {
+            setUseImportAliases(true);
+        }
+
+
+        @Override
         public DataIterator getDataIterator(BatchValidationException errors)
         {
             // might want to make allow importManagedKey an explicit option, for now allow for GUID
@@ -2303,7 +2310,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         b.setKeyList(lsids);
 
         StandardETL etl = StandardETL.forInsert(table, b, getContainer(), user, errors);
-        DataIteratorBuilder insert = ((UpdateableTableInfo)table).persistRows(etl, errors);
+        DataIteratorBuilder insert = ((UpdateableTableInfo)table).persistRows(etl, false, errors);
         return insert;
     }
 

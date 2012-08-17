@@ -16,19 +16,27 @@
 
 package org.labkey.list.model;
 
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MVDisplayColumnFactory;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.LoggingDataIterator;
+import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.etl.TableInsertDataIterator;
+import org.labkey.api.etl.ValidatorIterator;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyType;
@@ -55,6 +63,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 public class ListTable extends FilteredTable implements UpdateableTableInfo
 {
@@ -287,13 +296,13 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
 
     public ObjectUriType getObjectUriType()
     {
-        return ObjectUriType.generateUrn;
+        return UpdateableTableInfo.ObjectUriType.schemaColumn;
     }
 
     @Override
     public String getObjectURIColumnName()
     {
-        return null;
+        return "entityid";
     }
 
     @Override
@@ -322,11 +331,94 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
         return null;
     }
 
+
     @Override
-    public DataIteratorBuilder persistRows(DataIteratorBuilder data, BatchValidationException errors)
+    public DataIteratorBuilder persistRows(DataIteratorBuilder data, boolean forImport, BatchValidationException errors)
     {
-        return TableInsertDataIterator.create(data, this, errors);
+        data = new _DataIteratorBuilder(data);
+        data.setForImport(forImport);
+        DataIteratorBuilder ins = TableInsertDataIterator.create(data, this, forImport, errors);
+        // TODO handle attachments?
+        // attach = new AddAttachmentDataIterator.create(ins, this, errors);
+        return ins;
     }
+
+
+    public class _DataIteratorBuilder implements DataIteratorBuilder
+    {
+        final DataIteratorBuilder _in;
+        final ListItemImpl.KeyIncrementer _keyIncrementer = ListItemImpl._keyIncrementer;
+        boolean _forImport = false;
+
+        _DataIteratorBuilder(@NotNull DataIteratorBuilder in)
+        {
+            _in = in;
+        }
+
+        @Override
+        public void setForImport(boolean forImport)
+        {
+            _forImport = forImport;
+        }
+
+        @Override
+        public DataIterator getDataIterator(BatchValidationException x)
+        {
+            DataIterator input = _in.getDataIterator(x);
+            final SimpleTranslator it = new SimpleTranslator(input, x);
+
+            int keyColumnInput = 0;
+            int keyColumnOutput = 0;
+            for (int c=1 ; c<=input.getColumnCount() ; c++)
+            {
+                ColumnInfo col = input.getColumnInfo(c);
+                if (StringUtils.equalsIgnoreCase(_list.getKeyName(), col.getName()))
+                {
+                    keyColumnInput = c;
+                    keyColumnOutput = c;
+                    if (_list.getKeyType() == ListDefinition.KeyType.AutoIncrementInteger)
+                        continue;
+                }
+                if (StringUtils.equalsIgnoreCase("container", col.getName()))
+                    continue;
+                if (StringUtils.equalsIgnoreCase("listid", col.getName()))
+                    continue;
+                it.addColumn(c);
+            }
+
+            if (_list.getKeyType() == ListDefinition.KeyType.AutoIncrementInteger)
+            {
+                ColumnInfo keyCol = new ColumnInfo(_list.getKeyName(), JdbcType.INTEGER);
+                final int inputKeyColumn = keyColumnInput;
+                keyColumnOutput = it.addColumn(keyCol, new Callable()
+                {
+                    @Override
+                    public Object call() throws Exception
+                    {
+                        Object keyValue = (_forImport && inputKeyColumn != 0) ? it.getInputColumnValue(inputKeyColumn) : null;
+                        return null != keyValue ? keyValue : _keyIncrementer.getNextKey((ListDefinitionImpl)_list);
+                    }
+                });
+            }
+
+            ColumnInfo containerCol = new ColumnInfo("container", JdbcType.GUID);
+            it.addColumn(containerCol, new SimpleTranslator.ConstantColumn(_list.getContainer().getId()));
+
+            ColumnInfo listIdCol = new ColumnInfo("listid", JdbcType.INTEGER);
+            it.addColumn(listIdCol, new SimpleTranslator.ConstantColumn(_list.getListId()));
+
+            DataIterator ret = LoggingDataIterator.wrap(it);
+
+            if (0 != keyColumnOutput && (_forImport || _list.getKeyType() != ListDefinition.KeyType.AutoIncrementInteger))
+            {
+                ValidatorIterator vi = new ValidatorIterator(ret, x, _list.getContainer(), null);
+                vi.addUniqueValidator(keyColumnOutput, DbSchema.get("lists").getSqlDialect().isCaseSensitive());
+                ret = vi;
+            }
+            return ret;
+        }
+    }
+
 
     @Override
     public Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException

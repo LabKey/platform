@@ -770,7 +770,7 @@ public class StudyManager
 
             BatchValidationException errors = new BatchValidationException();
             StandardETL etl = StandardETL.forInsert(tinfo, loader, study.getContainer(), user, errors);
-            DataIteratorBuilder insert = ((UpdateableTableInfo)tinfo).persistRows(etl, errors);
+            DataIteratorBuilder insert = ((UpdateableTableInfo)tinfo).persistRows(etl, true, errors);
             Pump p = new Pump(insert, errors);
             p.run();
 

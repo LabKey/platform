@@ -25,6 +25,7 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.DbReportIdentifier;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
@@ -42,6 +43,7 @@ import java.util.Map;
 public class ReportsWebPart extends WebPartView
 {
     Portal.WebPart _webPart;
+    Report _report;
 
     public ReportsWebPart(ViewContext context, Portal.WebPart part)
     {
@@ -49,17 +51,28 @@ public class ReportsWebPart extends WebPartView
 
         _webPart = part;
         Map<String, String> properties = part.getPropertyMap();
-        String title = properties.get("title");
-        if (title == null)
-            title = "Reports";
 
+        String title = StringUtils.defaultString(properties.get("title"), "Reports");
         setTitle(title);
+
+        try
+        {
+            _report = getReport(properties);
+            if (null != _report)
+                setTitleHref(_report.getRunReportURL(context));
+        }
+        catch (Exception x)
+        {
+        }
     }
+
 
     protected void renderView(Object model, PrintWriter out) throws Exception
     {
         Map<String, String> properties = _webPart.getPropertyMap();
-        Report report = getReport(properties);
+
+        if (null == _report)
+            _report = getReport(properties);
 
         boolean showTabs = BooleanUtils.toBoolean(properties.get(Report.renderParam.showTabs.name()));
         getViewContext().put(Report.renderParam.reportWebPart.name(), "true");
@@ -67,11 +80,11 @@ public class ReportsWebPart extends WebPartView
         if (properties.containsKey(Report.renderParam.showSection.name()))
             getViewContext().put(Report.renderParam.showSection.name(), properties.get(Report.renderParam.showSection.name()));
 
-        if (report != null)
+        if (_report != null)
         {
             HttpView view = showTabs ?
-                    report.getRunReportView(getViewContext()) :
-                    report.renderReport(getViewContext());
+                    _report.getRunReportView(getViewContext()) :
+                    _report.renderReport(getViewContext());
             if (view != null)
             {
                 include(view);
@@ -80,6 +93,7 @@ public class ReportsWebPart extends WebPartView
         }
         include(new HtmlView("Unable to display the specified report."));        
     }
+
 
     private Report getReport(Map<String, String> props) throws Exception
     {
