@@ -598,7 +598,7 @@ public abstract class VisitManager
             if (null == sti)
                 continue;
             f.append(union);
-            f.append("SELECT participantid FROM ").append(sti.toString());
+            f.append("SELECT DISTINCT participantid FROM ").append(sti.toString());
             union = " UNION\n";
         }
         return f.isEmpty() ? null : f;
@@ -674,7 +674,7 @@ public abstract class VisitManager
                 ptids.append(studyDataPtids);
                 ptids.append(" UNION\n");
             }
-            ptids.append("SELECT ptid FROM ");
+            ptids.append("SELECT DISTINCT ptid FROM ");
             ptids.append(tableSpecimen, "spec");
             ptids.append(" WHERE spec.container=?");
             ptids.add(study.getContainer().getId());
