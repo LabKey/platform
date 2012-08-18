@@ -21,7 +21,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
@@ -32,7 +31,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
@@ -168,13 +166,6 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
     {
         return PageFlowUtil.set(IssuesSchema.getInstance().getSchemaName());
     }
-
-    @Override
-    public UpgradeCode getUpgradeCode()
-    {
-        return new IssueUpgradeCode();
-    }
-
 
     public void enumerateDocuments(final SearchService.IndexTask task, final Container c, final Date modifiedSince)
     {

@@ -21,7 +21,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.Table;
-import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ExperimentRunType;
@@ -316,12 +315,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     public Set<DbSchema> getSchemasToTest()
     {
         return PageFlowUtil.set(ExperimentService.get().getSchema());
-    }
-
-    @Override
-    public UpgradeCode getUpgradeCode()
-    {
-        return new ExperimentUpgradeCode();
     }
 
     public void enumerateDocuments(final @NotNull SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)

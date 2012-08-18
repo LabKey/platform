@@ -234,6 +234,17 @@ public class SqlScriptController extends SpringActionController
 
             html.append("</tr></table>");
 
+            // In dev mode, check for some special scripts that need to remain, even though they appear to be incremental
+            // and don't run during bootstrap.
+            if (AppProps.getInstance().isDevMode())
+            {
+                for (String name : new String[]{"luminex-11.31-12.10.sql", "study-11.101-11.20.sql"})
+                {
+                    if (-1 == html.indexOf(name))
+                        html.insert(0, "<span class=\"labkey-error\">Warning: " + PageFlowUtil.filter(name) + " did not appear!</span><br>\n");
+                }
+            }
+
             return new HtmlView(html.toString());
         }
 
@@ -725,7 +736,7 @@ public class SqlScriptController extends SpringActionController
             }
             else
             {
-                out.print("Error: " + PageFlowUtil.filter(errorMessage));
+                out.print(PageFlowUtil.filter("Error: " + errorMessage));
             }
         }
 
