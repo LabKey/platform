@@ -255,13 +255,8 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
     private boolean handleMenuPost(Container c, AdminController.ProjectSettingsForm form, BindException errors) throws SQLException
     {
-        WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(c);
-
-        props.setMenuUIEnabled(form.isEnableMenuBar());
-        props.writeAuditLogEvent(getViewContext().getUser(), props.getOldProperties());
-        props.save();
+        ContainerManager.setMenuEnabled(c, getViewContext().getUser(), form.isEnableMenuBar());
         return true;
-
     }
 
     private boolean handleFilesPost(Container c, AdminController.ProjectSettingsForm form, BindException errors) throws Exception
@@ -429,7 +424,9 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                         throw new NotFoundException("Menu bar must be configured for each project separately.");
                     WebPartView v = new JspView<Object>(AdminController.class, "editMenuBar.jsp", null);
                     v.setView("menubar", new VBox());
+                    //TODO: propagate ClientDependencies
                     Portal.populatePortalView(getViewContext(), Portal.DEFAULT_PORTAL_PAGE_ID, v, true);
+
                     return v;
                 }
                 else if ("files".equals(tabId))

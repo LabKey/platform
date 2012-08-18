@@ -34,7 +34,7 @@
 <div>
     <form action="" method="POST">
         <div class="section">
-            <span>The menu bar is a beta feature of labkey server that can be customized to provide quick access to LabKey features.</span>
+            <span>The menu bar can be customized to provide quick access to LabKey features.</span>
             <br/><br/>
             <span>The menu bar is currently <%=menuEnabled ? "on" : "off"%>.</span>
         </div>
