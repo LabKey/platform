@@ -50,6 +50,8 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.security.roles.SiteAdminRole;
+import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
@@ -309,6 +311,12 @@ public class ContainerManager
         if (folderType.equals(oldType))
             return;
 
+        //only toggle the menu bar if it was not already set
+        if (folderType.isMenubarEnabled() && !LookAndFeelProperties.getInstance(c).isShowMenuBar())
+        {
+            setMenuEnabled(c, user, true);
+        }
+
         oldType.unconfigureContainer(c, user);
         folderType.configureContainer(c, user);
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, FOLDER_TYPE_PROPERTY_SET_NAME, true);
@@ -319,6 +327,26 @@ public class ContainerManager
         _removeFromCache(c);
     }
 
+    public static boolean setMenuEnabled(Container c, User u, boolean enabled)
+    {
+        //currently we also allow setting the menu at the project level
+        if (!c.isProject())
+            return false;
+
+        try
+        {
+            WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(c);
+
+            props.setMenuUIEnabled(enabled);
+            props.writeAuditLogEvent(u, props.getOldProperties());
+            props.save();
+            return true;
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
 
     private static final Set<Container> containersWithBadFolderTypes = new ConcurrentHashSet<Container>();
 

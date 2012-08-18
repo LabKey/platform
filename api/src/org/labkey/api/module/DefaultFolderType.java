@@ -59,6 +59,7 @@ public class DefaultFolderType implements FolderType
     protected boolean workbookType = false;
     protected String folderIconPath = "_icons/icon_folder2.png";
     protected boolean forceAssayUploadIntoWorkbooks = false;
+    protected boolean menubarEnabled = false;
 
     public DefaultFolderType(String name, String description)
     {
@@ -413,5 +414,10 @@ public class DefaultFolderType implements FolderType
             }
         }
         return null;
+    }
+
+    public boolean isMenubarEnabled()
+    {
+        return menubarEnabled;
     }
 }

@@ -203,4 +203,11 @@ public class CustomFolderType implements FolderType
     {
         throw new UnsupportedOperationException();
     }
+
+    @Override
+    public boolean isMenubarEnabled()
+    {
+        return false;
+    }
+
 }

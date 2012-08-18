@@ -21,6 +21,8 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.PageFlowUtil;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -45,6 +47,8 @@ public abstract class FolderTab
 
     /** Controllers and their child actions (both are Spring Controller classes) claimed by this tab */
     private Set<Class<? extends Controller>> _controllersAndActions = new HashSet<Class<? extends Controller>>();
+
+    protected List<Class<? extends Permission>> _permissions;
 
     protected FolderTab(String name)
     {
@@ -154,7 +158,7 @@ public abstract class FolderTab
 
     public boolean isVisible(ViewContext context)
     {
-        return true;
+        return canRead(context.getUser(), context.getContainer());
     }
 
     public String getName()
@@ -170,5 +174,19 @@ public abstract class FolderTab
     public Set<String> getLegacyNames()
     {
         return Collections.emptySet();
+    }
+
+    public boolean canRead(User u, Container c)
+    {
+        if (_permissions != null)
+        {
+            for (Class<? extends Permission> p : _permissions)
+            {
+                if (!c.hasPermission(u, p))
+                    return false;
+            }
+        }
+
+        return true;
     }
 }

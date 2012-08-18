@@ -19,8 +19,13 @@ import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.Portal;
+import org.labkey.api.view.SimpleFolderTab;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.data.xml.folderType.FolderTabDocument;
 import org.labkey.data.xml.folderType.FolderType;
 import org.labkey.data.xml.folderType.FolderTypeDocument;
 import org.labkey.data.xml.folderType.Property;
@@ -28,6 +33,7 @@ import org.labkey.data.xml.folderType.WebPartDocument;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -39,21 +45,20 @@ import java.util.Set;
  * Date: Apr 19, 2010
  * Time: 4:20:27 PM
  */
-public class SimpleFolderType extends DefaultFolderType
+public class SimpleFolderType extends MultiPortalFolderType
 {
     private Resource _folderTypeFile;
     private long _lastModified = 0;
     private String _name;
     private String _description;
-    private List<Portal.WebPart> _requiredParts;
-    private List<Portal.WebPart> _preferredParts;
+    private List<FolderTab> _folderTabs;
     private Set<Module> _activeModules;
     private Module _defaultModule;
     public static final String FILE_EXTENSION = ".foldertype.xml";
 
     public SimpleFolderType(Resource folderTypeFile, FolderType folderType)
     {
-        super(folderType.getName(), folderType.getDescription());
+        super(folderType.getName(), folderType.getDescription(), null, null, null, null);
         _folderTypeFile = folderTypeFile;
         reload();
     }
@@ -114,7 +119,38 @@ public class SimpleFolderType extends DefaultFolderType
         return doc.getFolderType();
     }
 
-    private List<Portal.WebPart> createWebParts(WebPartDocument.WebPart[] references, Logger log)
+    private List<FolderTab> createDefaultTab(FolderType type)
+    {
+        FolderTab tab = new FolderTab(type.getName() + " Dashboard")
+        {
+            @Override
+            public boolean isSelectedPage(ViewContext viewContext)
+            {
+                return true;
+            }
+
+            @Override
+            public ActionURL getURL(ViewContext context)
+            {
+                return getStartURL(context.getContainer(), context.getUser());
+            }
+        };
+        return Collections.singletonList(tab);
+    }
+
+    private List<FolderTab> createFolderTabs(FolderTabDocument.FolderTab[] references, Logger log)
+    {
+        ArrayList<FolderTab> tabs = new ArrayList<FolderTab>();
+
+        for (FolderTabDocument.FolderTab tab : references)
+        {
+            tabs.add(new SimpleFolderTab(tab, log));
+        }
+
+        return tabs;
+    }
+
+    public static List<Portal.WebPart> createWebParts(WebPartDocument.WebPart[] references, Logger log)
     {
         List<Portal.WebPart> parts = new ArrayList<Portal.WebPart>();
         for (WebPartDocument.WebPart reference : references)
@@ -153,8 +189,20 @@ public class SimpleFolderType extends DefaultFolderType
         FolderType type = parseFile(_folderTypeFile);
         _name = type.getName();
         _description = type.getDescription();
-        _preferredParts = createWebParts(type.getPreferredWebParts().getWebPartArray(), log);
-        _requiredParts = createWebParts(type.getRequiredWebParts().getWebPartArray(), log);
+
+        if (type.isSetMenubarEnabled())
+            menubarEnabled = type.getMenubarEnabled();
+
+        if (type.getPreferredWebParts() != null)
+            preferredParts = createWebParts(type.getPreferredWebParts().getWebPartArray(), log);
+        if (type.getRequiredWebParts() != null)
+            requiredParts = createWebParts(type.getRequiredWebParts().getWebPartArray(), log);
+
+        if (type.getFolderTabs() != null)
+            _folderTabs = createFolderTabs(type.getFolderTabs().getFolderTabArray(), log);
+        else
+            _folderTabs = createDefaultTab(type);
+
         setWorkbookType(type.isSetWorkbookType() && type.getWorkbookType());
         setForceAssayUploadIntoWorkbooks(type.getForceAssayUploadIntoWorkbooks());
         String _iconPath = type.getFolderIconPath();
@@ -191,14 +239,14 @@ public class SimpleFolderType extends DefaultFolderType
     public List<Portal.WebPart> getRequiredWebParts()
     {
         reloadIfStale();
-        return _requiredParts;
+        return super.getRequiredWebParts();
     }
 
     @Override
     public List<Portal.WebPart> getPreferredWebParts()
     {
         reloadIfStale();
-        return _preferredParts;
+        return super.getPreferredWebParts();
     }
 
     @Override
@@ -227,5 +275,18 @@ public class SimpleFolderType extends DefaultFolderType
     {
         reloadIfStale();
         return _activeModules;
+    }
+
+    @Override
+    public List<FolderTab> getDefaultTabs()
+    {
+        return _folderTabs;
+    }
+
+
+    @Override
+    protected String getFolderTitle(ViewContext context)
+    {
+        return context.getContainer().getName();
     }
 }
