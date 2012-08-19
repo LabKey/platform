@@ -16,9 +16,6 @@
 
 package org.labkey.api.reports.report;
 
-import org.labkey.api.reports.report.view.ReportUtil;
-import org.labkey.api.view.ViewContext;
-
 import java.util.Collections;
 import java.util.List;
 

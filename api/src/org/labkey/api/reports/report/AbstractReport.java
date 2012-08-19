@@ -15,6 +15,7 @@
  */
 package org.labkey.api.reports.report;
 
+import org.labkey.api.admin.ImportContext;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
@@ -152,17 +153,17 @@ public abstract class AbstractReport implements Report
     {
     }
 
-    public void serialize(ContainerUser context, VirtualFile dir, String filename) throws IOException
+    public void serialize(ImportContext context, VirtualFile dir, String filename) throws IOException
     {
         ReportDescriptor descriptor = getDescriptor();
 
         if (descriptor.getReportId() != null)
-            descriptor.serialize(context.getContainer(), dir, filename);
+            descriptor.serialize(context, dir, filename);
         else
             throw new IllegalArgumentException("Cannot serialize a report that hasn't been saved yet");
     }
 
-    public void serializeToFolder(ContainerUser context, VirtualFile dir) throws IOException
+    public void serializeToFolder(ImportContext context, VirtualFile dir) throws IOException
     {
         ReportDescriptor descriptor = getDescriptor();
 

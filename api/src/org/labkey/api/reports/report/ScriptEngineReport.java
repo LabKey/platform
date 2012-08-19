@@ -19,6 +19,7 @@ import org.apache.commons.collections15.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.admin.ImportContext;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
@@ -60,7 +61,6 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.VirtualFile;
 
 import javax.script.ScriptEngine;
@@ -627,7 +627,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
     }
 
     @Override
-    public void serializeToFolder(ContainerUser ctx, VirtualFile directory) throws IOException
+    public void serializeToFolder(ImportContext ctx, VirtualFile directory) throws IOException
     {
         ReportDescriptor descriptor = getDescriptor();
 

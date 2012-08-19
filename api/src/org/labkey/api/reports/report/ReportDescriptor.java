@@ -24,6 +24,7 @@ import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Entity;
@@ -61,7 +62,6 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by IntelliJ IDEA.
  * User: Karl Lum
  * Date: Oct 4, 2006
  */
@@ -360,11 +360,21 @@ public class ReportDescriptor extends Entity implements SecurableResource
         return false;
     }
 
+    private ReportDescriptorDocument getDescriptorDocument(Container c)
+    {
+        return getDescriptorDocument(c, null);
+    }
+
+    private ReportDescriptorDocument getDescriptorDocument(ImportContext context)
+    {
+        return getDescriptorDocument(context.getContainer(), context);
+    }
+
     /**
      * Builds an XML representation of this descriptor
      * @return
      */
-    private ReportDescriptorDocument getDescriptorDocument(Container c)
+    private ReportDescriptorDocument getDescriptorDocument(Container c, @Nullable ImportContext context)
     {
         ReportDescriptorDocument doc = ReportDescriptorDocument.Factory.newInstance();
         ReportDescriptorDocument.ReportDescriptor descriptor = doc.addNewReportDescriptor();
@@ -384,18 +394,12 @@ public class ReportDescriptor extends Entity implements SecurableResource
             {
                 for (Object item : ((List)value))
                 {
-                    ReportPropertyList.Prop prop = props.addNewProp();
-
-                    prop.setName(entry.getKey());
-                    prop.setStringValue(String.valueOf(item));
+                    addProperty(context, props, entry.getKey(), item);
                 }
             }
             else if (value != null)
             {
-                ReportPropertyList.Prop prop = props.addNewProp();
-
-                prop.setName(entry.getKey());
-                prop.setStringValue(String.valueOf(value));
+                addProperty(context, props, entry.getKey(), value);
             }
         }
 
@@ -406,9 +410,23 @@ public class ReportDescriptor extends Entity implements SecurableResource
         return doc;
     }
 
-    public void serialize(Container container, VirtualFile dir, String filename) throws IOException
+    private void addProperty(@Nullable ImportContext context, ReportPropertyList props, String key, Object value)
     {
-        ReportDescriptorDocument doc = getDescriptorDocument(container);
+        ReportPropertyList.Prop prop = props.addNewProp();
+        prop.setName(key);
+        prop.setStringValue(adjustPropertyValue(context, key, value));
+    }
+
+    // Let subclasses transform the property value based on the current context. For example, time charts
+    // and participant reports need to map participant IDs to alternate IDs, if that's been requested.
+    protected String adjustPropertyValue(@Nullable ImportContext context, String key, Object value)
+    {
+        return String.valueOf(value);
+    }
+
+    public void serialize(ImportContext context, VirtualFile dir, String filename) throws IOException
+    {
+        ReportDescriptorDocument doc = getDescriptorDocument(context);
         dir.saveXmlBean(filename, doc);
     }
 

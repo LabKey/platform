@@ -16,12 +16,10 @@
 
 package org.labkey.api.visualization;
 
-import org.labkey.api.module.SimpleAction;
 import org.labkey.api.reports.report.AbstractReport;
-import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 
 /*
 * User: brittp

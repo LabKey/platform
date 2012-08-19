@@ -61,4 +61,10 @@ public class BaseFolderWriter implements FolderWriter
     {
         return false;
     }
+
+    @Override
+    public void initialize(ImportContext<FolderDocument.Folder> context)
+    {
+        // Do nothing
+    }
 }

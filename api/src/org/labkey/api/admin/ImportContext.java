@@ -20,7 +20,6 @@ import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.VirtualFile;
 
-import java.io.File;
 import java.util.Set;
 
 /**
@@ -37,4 +36,8 @@ public interface ImportContext<XmlType extends XmlObject> extends ContainerUser
     public boolean isRemoveProtected();
     public boolean isShiftDates();
     public boolean isAlternateIds();
+
+    // These methods let writers add and get module-specific context information
+    public <K extends ImportContext> void addContext(Class<K> contextClass, K context);
+    public <K extends ImportContext> K getContext(Class<K> contextClass);
 }

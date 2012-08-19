@@ -98,4 +98,8 @@ public interface Study extends StudyEntity
     /** For date-based studies, the default duration for timepoints, in days */
     int getDefaultTimepointDuration();
 
+    String getAlternateIdPrefix();
+
+    int getAlternateIdDigits();
+
 }

@@ -16,6 +16,7 @@
 
 package org.labkey.api.reports;
 
+import org.labkey.api.admin.ImportContext;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Results;
@@ -120,7 +121,7 @@ public interface Report extends AttachmentParent, StaticThumbnailProvider
     /**
      * Generic method to allow serialization of a report.
      */
-    void serialize(ContainerUser context, VirtualFile dir, String filename) throws IOException;
+    void serialize(ImportContext context, VirtualFile dir, String filename) throws IOException;
 
     /**
      * Serializes a report to a file(s) in the specified directory. Reports will auto-generate
@@ -128,7 +129,7 @@ public interface Report extends AttachmentParent, StaticThumbnailProvider
      *
      * @param directory - the folder to serialize the report to
      */
-    void serializeToFolder(ContainerUser context, VirtualFile directory) throws IOException;
+    void serializeToFolder(ImportContext context, VirtualFile directory) throws IOException;
 
     /**
      * Called after import to perform report-specific processing after deserialization from a virtual file.

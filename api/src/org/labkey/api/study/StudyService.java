@@ -188,6 +188,8 @@ public class StudyService
         boolean isValidSubjectNounSingular(Container container, String subjectNounSingular);
 
         DataSet.KeyType getDatasetKeyType(Container container, String datasetName);
+
+        Map<String, String> getAlternateIdMap(Container container);
     }
 
     public static void register(Service serviceImpl)

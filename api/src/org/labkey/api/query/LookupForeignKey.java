@@ -198,7 +198,7 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
     {
         ContainerContext cc = lookupTable.getContainerContext();
         if (cc != null)
-            url.setContainerContext(cc);
+            url.setContainerContext(cc, false);
         return url;
     }
 

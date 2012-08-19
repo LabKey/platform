@@ -26,6 +26,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -37,7 +39,8 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     private final User _user;
     private final Container _c;
     private final Logger _logger;
-    @Nullable private final VirtualFile _root;
+    private final @Nullable VirtualFile _root;
+    private final Map<Class<? extends ImportContext>, ImportContext> _contextMap = new HashMap<Class<? extends ImportContext>, ImportContext>();
 
     private transient XmlDocument _xmlDocument;
 
@@ -146,5 +149,18 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
     public boolean isAlternateIds()
     {
         return false;
+    }
+
+    @Override
+    public <K extends ImportContext> void addContext(Class<K> contextClass, K context)
+    {
+        _contextMap.put(contextClass, context);
+    }
+
+    @Override
+    public <K extends ImportContext> K getContext(Class<K> contextClass)
+    {
+        //noinspection unchecked
+        return (K)_contextMap.get(contextClass);
     }
 }
