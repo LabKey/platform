@@ -109,6 +109,7 @@ window.document = document = {
     getElementByName: function () { return undefined; },
     getElementByTagName: function () { return undefined; },
     getElementByTagNameNS: function () { return undefined; },
+    getElementsByTagName: function () { return undefined; },
 
     createElement: function () {
         throw new Error("Can't create elements in server-side script");
@@ -120,7 +121,11 @@ Object.freeze(window.document);
 Object.freeze(window);
 
 function setTimeout() { throw new Error("setTimeout not supported in server-side script"); }
-function setInterval() { throw new Error("setInterval not supported in server-side script"); }
+//function setInterval() { throw new Error("setInterval not supported in server-side script"); }
+function setInterval() {
+    //ignore
+}
+
 function clearTimeout() { throw new Error("clearTimeout not supported in server-side script"); }
 function clearInterval() { throw new Error("clearInterval not supported in server-side script"); }
 

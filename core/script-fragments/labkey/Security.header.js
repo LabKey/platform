@@ -7,8 +7,6 @@
 var LABKEY = require("./init");
 LABKEY.ActionURL = require("./ActionURL").ActionURL;
 LABKEY.Ajax = require("./Ajax").Ajax;
-LABKEY.SecurityPolicy = require("./SecurityPolicy").SecurityPolicy;
+LABKEY.ExtAdapter = require("ExtAdapter").Adapter;
+LABKEY.SecurityPolicy = {}; //NYI
 LABKEY.Utils = require("./Utils").Utils;
-
-var Ext = require("Ext").Ext;
-

@@ -1,4 +1,5 @@
 core/resources/scripts/Ext.js
+core/resources/scripts/Ext4.js
 core/resources/scripts/labkey/ActionURL.js
 core/resources/scripts/labkey/Ajax.js
 core/resources/scripts/labkey/Filter.js

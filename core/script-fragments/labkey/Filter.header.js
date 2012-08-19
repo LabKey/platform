@@ -6,12 +6,10 @@
 
 var LABKEY = require("./init");
 LABKEY.ActionURL = require("./ActionURL").ActionURL;
+LABKEY.ExtAdapter = require("ExtAdapter").Adapter;
 
 LABKEY.ext = {
     FormHelper: {
         validate: function () { throw Error("Not yet implemented"); }
     }
 };
-
-var Ext = require("Ext").Ext;
-

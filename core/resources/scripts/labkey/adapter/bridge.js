@@ -12,7 +12,8 @@ var {
 } = org.labkey.api.view;
 
 var console = require("console");
-var Ext = require("Ext").Ext;
+var LABKEY = {};
+LABKEY.ExtAdapter = require("ExtAdapter").Adapter;
 
 const CONTENTTYPE = "Content-Type";
 
@@ -79,7 +80,7 @@ exports.request = function (method, uri, cb, data, options)
             if (!hs || !hs[CONTENTTYPE]) {
                 hs[CONTENTTYPE] = xmlData ? "text/xml" : "application/json";
             }
-            data = xmlData || (!Ext.isPrimitive(jsonData) ? Ext.encode(jsonData) : jsonData);
+            data = xmlData || (!LABKEY.ExtAdapter.isPrimitive(jsonData) ? LABKEY.ExtAdapter.encode(jsonData) : jsonData);
         }
     }
     return mockRequest(method || options.method || "POST", uri, hs, cb, data);

@@ -570,10 +570,12 @@ core/resources/schemas/dbscripts/sqlserver/prop-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/prop-drop.sql -text
 core/resources/schemas/dbscripts/sqlserver/test-0.00-1.00.sql -text
 core/resources/schemas/dbscripts/sqlserver/test-11.30-12.10.sql -text
+core/resources/scripts/ExtAdapter.js -text
 core/resources/scripts/console.js -text
 core/resources/scripts/global.js -text
 core/resources/scripts/labkey.js -text
 core/resources/scripts/labkey/adapter/bridge.js -text
+core/resources/scripts/labkey/adapter/ext4Bridge.js -text
 core/resources/scripts/labkey/init.js -text
 core/resources/views/ModulePropertyAdmin.html -text
 core/resources/views/ModulePropertyAdmin.view.xml -text
@@ -583,6 +585,9 @@ core/resources/views/ext4Test.html -text
 core/script-fragments/Ext.footer.js -text
 core/script-fragments/Ext.header.js -text
 core/script-fragments/Ext.middle.js -text
+core/script-fragments/Ext4.footer.js -text
+core/script-fragments/Ext4.header.js -text
+core/script-fragments/Ext4.middle.js -text
 core/script-fragments/labkey/ActionURL.footer.js -text
 core/script-fragments/labkey/ActionURL.header.js -text
 core/script-fragments/labkey/Ajax.footer.js -text
@@ -595,8 +600,6 @@ core/script-fragments/labkey/Query.footer.js -text
 core/script-fragments/labkey/Query.header.js -text
 core/script-fragments/labkey/Security.footer.js -text
 core/script-fragments/labkey/Security.header.js -text
-core/script-fragments/labkey/SecurityPolicy.footer.js -text
-core/script-fragments/labkey/SecurityPolicy.header.js -text
 core/script-fragments/labkey/Utils.footer.js -text
 core/script-fragments/labkey/Utils.header.js -text
 core/src/META-INF/core/common_jars.txt -text

@@ -6,5 +6,4 @@
 
 var LABKEY = require("./init");
 LABKEY.ActionURL = require("./ActionURL").ActionURL;
-
-var Ext = require("Ext").Ext;
+LABKEY.ExtAdapter = require("ExtAdapter").Adapter;

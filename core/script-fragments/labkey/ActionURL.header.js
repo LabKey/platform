@@ -5,5 +5,5 @@
  */
 
 var LABKEY = require("./init");
-var Ext = require("Ext").Ext;
+LABKEY.ExtAdapter = require("ExtAdapter").Adapter;
 
