@@ -97,6 +97,7 @@ LABKEY.ext.PersistentToolTip = Ext.extend(Ext.ToolTip,{
         }
     },
 
+    //NOTE: Ext tooltips should support constrain: true, which would probably accomplish the same thing as ensureBoxVisible()
     show: function () {
         LABKEY.ext.PersistentToolTip.superclass.show.call(this);
         if (this.el)

@@ -36,7 +36,7 @@ LABKEY.Specimen = new function()
     }
 
     function sendJsonQueryRequest(config) {
-        Ext.Ajax.request({
+        LABKEY.Ajax.request({
             url : config.url,
             method : config.method || 'POST',
             success : config.success,
@@ -63,7 +63,7 @@ LABKEY.Specimen = new function()
          */
         getRepositories : function(config)
         {
-            if (config && (Ext.isFunction(config) || arguments.length > 1)){
+            if (config && (LABKEY.ExtAdapter.isFunction(config) || arguments.length > 1)){
                 config = {
                     success : arguments[0],
                     failure : arguments[1],
@@ -93,7 +93,7 @@ LABKEY.Specimen = new function()
          */
         getVialsByRowId : function(config)
         {
-            if (config && (Ext.isFunction(config) || arguments.length > 1)){
+            if (config && (LABKEY.ExtAdapter.isFunction(config) || arguments.length > 1)){
                 config = {
                     success : arguments[0],
                     vialRowIdArray : arguments[1],
@@ -128,7 +128,7 @@ LABKEY.Specimen = new function()
          */
         getOpenRequests : function(config)
         {
-            if (config && (Ext.isFunction(config) || arguments.length > 1)){
+            if (config && (LABKEY.ExtAdapter.isFunction(config) || arguments.length > 1)){
                 config = {
                     success : arguments[0],
                     allUsers: arguments[1],
@@ -172,7 +172,7 @@ LABKEY.Specimen = new function()
          */
         getProvidingLocations : function(config)
         {
-            if (config && (Ext.isFunction(config) || arguments.length > 1)){
+            if (config && (LABKEY.ExtAdapter.isFunction(config) || arguments.length > 1)){
                 config = {
                     success : arguments[0],
                     specimenHashArray : arguments[1],
@@ -245,7 +245,7 @@ LABKEY.Specimen = new function()
          */
         getRequest : function(config)
         {
-            if (config && Ext.isFunction(config) || arguments.length > 1){
+            if (config && LABKEY.ExtAdapter.isFunction(config) || arguments.length > 1){
                 config = {
                     success : arguments[0],
                     requestId : arguments[1],
@@ -283,7 +283,7 @@ LABKEY.Specimen = new function()
          */
         cancelRequest : function(config)
         {
-            if (config && (Ext.isFunction(config) || arguments.length > 1)){
+            if (config && (LABKEY.ExtAdapter.isFunction(config) || arguments.length > 1)){
                 config = {
                     success : arguments[0],
                     requestId : arguments[1],
@@ -324,7 +324,7 @@ LABKEY.Specimen = new function()
          */
         addVialsToRequest : function(config)
         {
-            if (config && (Ext.isFunction(config) || arguments.length > 1)){
+            if (config && (LABKEY.ExtAdapter.isFunction(config) || arguments.length > 1)){
                 config = {
                     success : arguments[0],
                     requestId : arguments[1],
@@ -371,7 +371,7 @@ LABKEY.Specimen = new function()
          */
         addSamplesToRequest : function(config)
         {
-            if (config && (Ext.isFunction(config) || arguments.length > 1)){
+            if (config && (LABKEY.ExtAdapter.isFunction(config) || arguments.length > 1)){
                 config = {
                     success : arguments[0],
                     requestId : arguments[1],
@@ -422,7 +422,7 @@ LABKEY.Specimen = new function()
          */
         removeVialsFromRequest : function(config)
         {
-            if (config && (Ext.isFunction(config) || arguments.length > 1)){
+            if (config && (LABKEY.ExtAdapter.isFunction(config) || arguments.length > 1)){
                 config = {
                     success : arguments[0],
                     requestId : arguments[1],

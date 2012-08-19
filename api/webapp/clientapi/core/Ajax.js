@@ -40,8 +40,8 @@ LABKEY.Ajax = new function ()
          */
         request : function (config)
         {
-            var o = Ext.Ajax.request(config);
-            if (Ext.isObject(o))
+            var o = LABKEY.ExtAdapter.Ajax.request(config);
+            if (LABKEY.ExtAdapter.isObject(o))
                 return o.responseJSON || o.responseXML || o.responseText;
             return o;
         }

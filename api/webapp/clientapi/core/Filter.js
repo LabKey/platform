@@ -229,7 +229,7 @@ LABKEY.Filter = new function()
                     }
                     else
                     {
-                        if (Ext.isArray(currentValue))
+                        if (LABKEY.ExtAdapter.isArray(currentValue))
                             currentValue.push(paramValue);
                         else
                             currentValue = [ currentValue, paramValue ];
@@ -339,7 +339,7 @@ LABKEY.Filter = new function()
                 {
                     var filterType = paramName.substring(paramName.indexOf("~") + 1);
                     var values = params[paramName];
-                    if (!Ext.isArray(values))
+                    if (!LABKEY.ExtAdapter.isArray(values))
                     {
                         values = [values];
                     }
@@ -390,7 +390,7 @@ LABKEY.Filter = new function()
                         var filterName = paramName.substring(tilde + 1);
                         var filterType = LABKEY.Filter.getFilterTypeForURLSuffix(filterName);
                         var values = params[paramName];
-                        if (!Ext.isArray(values))
+                        if (!LABKEY.ExtAdapter.isArray(values))
                         {
                             values = [values];
                         }

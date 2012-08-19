@@ -37,7 +37,7 @@ LABKEY.Domain = new function()
 
     function createDomain(success, failure, parameters, containerPath)
     {
-        Ext.Ajax.request({
+        LABKEY.Ajax.request({
             url : LABKEY.ActionURL.buildURL("property", "createDomain", containerPath),
             method : 'POST',
             success: LABKEY.Utils.getCallbackWrapper(success),
@@ -51,7 +51,7 @@ LABKEY.Domain = new function()
 
     function getDomain(success, failure, parameters, containerPath)
     {
-        Ext.Ajax.request({
+        LABKEY.Ajax.request({
             url : LABKEY.ActionURL.buildURL("property", "getDomain", containerPath),
             method : 'GET',
             success: LABKEY.Utils.getCallbackWrapper(success),
@@ -62,7 +62,7 @@ LABKEY.Domain = new function()
 
     function saveDomain(success, failure, parameters, containerPath)
     {
-        Ext.Ajax.request({
+        LABKEY.Ajax.request({
             url : LABKEY.ActionURL.buildURL("property", "saveDomain", containerPath),
             method : 'POST',
             success: LABKEY.Utils.getCallbackWrapper(success),

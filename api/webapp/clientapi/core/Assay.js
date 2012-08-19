@@ -44,7 +44,7 @@ LABKEY.Assay = new function()
         moveParameter(config, "type");
         moveParameter(config, "name");
 
-        Ext.Ajax.request({
+        LABKEY.Ajax.request({
             url : LABKEY.ActionURL.buildURL("assay", "assayList", config.containerPath),
             method : 'POST',
             success: LABKEY.Utils.getOnSuccess(config),
@@ -267,7 +267,7 @@ LABKEY.Assay = new function()
         {
             var dataObject = {};
 
-            Ext.apply(dataObject, config);
+            LABKEY.ExtAdapter.apply(dataObject, config);
             if (config.sort)
                 dataObject['query.sort'] = config.sort;
             if(config.offset)
@@ -282,12 +282,9 @@ LABKEY.Assay = new function()
 
             LABKEY.Filter.appendFilterParams(dataObject, config.filterArray);
 
-            if(Ext.isDefined(config.timeout))
-                Ext.Ajax.timeout = config.timeout;
-
             var successCallback = LABKEY.Utils.getOnSuccess(config);
 
-            Ext.Ajax.request({
+            var requestConfig = {
                 url : LABKEY.ActionURL.buildURL('nabassay', 'getNabRuns', config.containerPath),
                 method : 'GET',
                 success: LABKEY.Utils.getCallbackWrapper(function(data, response){
@@ -296,7 +293,12 @@ LABKEY.Assay = new function()
                 }, this),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 params : dataObject
-            });
+            }
+
+            if(LABKEY.ExtAdapter.IsDefined(config.timeout))
+                requestConfig.timeout = config.timeout;
+
+            LABKEY.Ajax.request(requestConfig);
         },
 
 
@@ -332,14 +334,11 @@ LABKEY.Assay = new function()
         {
             var dataObject = {};
 
-            Ext.apply(dataObject, config);
-
-            if(Ext.isDefined(config.timeout))
-                Ext.Ajax.timeout = config.timeout;
+            LABKEY.ExtAdapter.apply(dataObject, config);
 
             var successCallback = LABKEY.Utils.getOnSuccess(config);
 
-            Ext.Ajax.request({
+            var requestConfig = {
                 url : LABKEY.ActionURL.buildURL('nabassay', 'getStudyNabRuns', config.containerPath),
                 method : 'GET',
                 success: LABKEY.Utils.getCallbackWrapper(function(data, response){
@@ -348,7 +347,12 @@ LABKEY.Assay = new function()
                 }, this),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config) || LABKEY.Utils.displayAjaxErrorResponse, config.scope, true),
                 params : dataObject
-            });
+            }
+
+            if(LABKEY.ExtAdapter.isDefined(config.timeout))
+                requestConfig.timeout = config.timeout;
+
+            LABKEY.Ajax.request(requestConfig);
         },
 
         /**
@@ -425,16 +429,18 @@ LABKEY.Assay = new function()
 
             LABKEY.Utils.applyTranslated(parameters, config, {objectIds: 'id'}, true, false);
 
-            if(Ext.isDefined(config.timeout))
-                Ext.Ajax.timeout = config.timeout;
-
-            Ext.Ajax.request({
+            var requestConfig = {
                 url : LABKEY.ActionURL.buildURL('nabassay', 'getStudyNabGraphURL', config.containerPath),
                 method : 'GET',
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope, false),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config) || LABKEY.Utils.displayAjaxErrorResponse, config.scope, true),
                 params : parameters
-            });
+            }
+
+            if(LABKEY.ExtAdapter.isDefined(config.timeout))
+                requestConfig.timeout = config.timeout;
+
+            LABKEY.Ajax.request(requestConfig);
         }
     };
 };

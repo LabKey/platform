@@ -14,6 +14,7 @@ if (typeof LABKEY == "undefined")
      * @singleton
      */
     var LABKEY = {};
+    LABKEY.Internal = {};
     LABKEY.contextPath = (typeof __contextPath == "undefined") ? "UNDEFINED" : __contextPath;
     LABKEY.imagePath = (typeof __contextPath == "undefined") ? "UNDEFINED" : __contextPath + "/_images";
     LABKEY.devMode = false;
@@ -345,47 +346,73 @@ LABKEY.requiresExtSandboxCompat = function(immediate)
 LABKEY.requiresClientAPI = function(immediate)
 {
     if (arguments.length < 1) immediate = true;
+    LABKEY.requiresCoreClientAPI();
+    LABKEY.requiresExt3ClientAPI();
+}
+
+LABKEY.requiresCoreClientAPI = function(immediate)
+{
+    if (arguments.length < 1) immediate = true;
+    if (LABKEY.devMode)
+    {
+        LABKEY.requiresScript("clientapi/core/ExtAdapter.js", immediate);
+        LABKEY.requiresScript("clientapi/core/Ajax.js", immediate);
+        LABKEY.requiresScript("clientapi/core/ActionURL.js", immediate);
+        LABKEY.requiresScript("clientapi/core/Assay.js", immediate);
+        LABKEY.requiresScript("clientapi/core/Ajax.js", immediate);
+        LABKEY.requiresScript("clientapi/core/Chart.js", immediate);
+        LABKEY.requiresScript("clientapi/core/Domain.js", immediate);
+        LABKEY.requiresScript("clientapi/core/Experiment.js", immediate);
+        LABKEY.requiresScript("clientapi/core/FieldKey.js", immediate);
+        LABKEY.requiresScript("clientapi/core/Filter.js", immediate);
+        LABKEY.requiresScript("clientapi/core/NavTrail.js", immediate);
+        LABKEY.requiresScript("clientapi/core/Query.js", immediate);
+        LABKEY.requiresScript("clientapi/core/Utils.js", immediate);
+        LABKEY.requiresScript("clientapi/core/WebPart.js", immediate);
+        LABKEY.requiresScript("clientapi/core/Security.js", immediate);
+        LABKEY.requiresScript("clientapi/core/Specimen.js", immediate);
+        LABKEY.requiresScript("clientapi/core/MultiRequest.js", immediate);
+        LABKEY.requiresScript("clientapi/core/Form.js", immediate);
+        LABKEY.requiresScript("clientapi/core/Message.js", immediate);
+        LABKEY.requiresScript("clientapi/core/Pipeline.js", immediate);
+        LABKEY.requiresScript("clientapi/core/FileSystem.js", immediate);
+        LABKEY.requiresScript("clientapi/core/Portal.js", immediate);
+        LABKEY.requiresScript("clientapi/core/Visualization.js", immediate);
+    }
+    else
+    {
+        LABKEY.requiresScript('clientapi/core.min.js', immediate);
+    }
+}
+
+LABKEY.requiresExt3ClientAPI = function(immediate)
+{
+    if (arguments.length < 1) immediate = true;
+
     if (LABKEY.devMode)
     {
         //load individual scripts so that they get loaded from source tree
-        LABKEY.requiresScript("clientapi/ExtJsConfig.js", immediate);
-        LABKEY.requiresScript("clientapi/ActionURL.js", immediate);
-        LABKEY.requiresScript("clientapi/Ajax.js", immediate);
-        LABKEY.requiresScript("clientapi/Assay.js", immediate);
-        LABKEY.requiresScript("clientapi/Chart.js", immediate);
-        LABKEY.requiresScript("clientapi/DataRegion.js", immediate);
-        LABKEY.requiresScript("clientapi/Domain.js", immediate);
-        LABKEY.requiresScript("clientapi/Experiment.js", immediate);
-        LABKEY.requiresScript("clientapi/LongTextEditor.js", immediate);
-        LABKEY.requiresScript("clientapi/EditorGridPanel.js", immediate);
-        LABKEY.requiresScript("clientapi/FieldKey.js", immediate);
-        LABKEY.requiresScript("clientapi/Filter.js", immediate);
-        LABKEY.requiresScript("clientapi/GridView.js", immediate);
-        LABKEY.requiresScript("clientapi/NavTrail.js", immediate);
-        LABKEY.requiresScript("clientapi/Query.js", immediate);
-        LABKEY.requiresScript("clientapi/ExtendedJsonReader.js", immediate);
-        LABKEY.requiresScript("clientapi/Store.js", immediate);
-        LABKEY.requiresScript("clientapi/Utils.js", immediate);
-        LABKEY.requiresScript("clientapi/WebPart.js", immediate);
-        LABKEY.requiresScript("clientapi/QueryWebPart.js", immediate);
-        LABKEY.requiresScript("clientapi/Security.js", immediate);
-        LABKEY.requiresScript("clientapi/SecurityPolicy.js", immediate);
-        LABKEY.requiresScript("clientapi/Specimen.js", immediate);
-        LABKEY.requiresScript("clientapi/MultiRequest.js", immediate);
-        LABKEY.requiresScript("clientapi/HoverPopup.js", immediate);
-        LABKEY.requiresScript("clientapi/Form.js", immediate);
-        LABKEY.requiresScript("clientapi/PersistentToolTip.js", immediate);
-        LABKEY.requiresScript("clientapi/Message.js", immediate);
-        LABKEY.requiresScript("clientapi/FormPanel.js", immediate);
-        LABKEY.requiresScript("clientapi/Pipeline.js", immediate);
-        LABKEY.requiresScript("clientapi/FileSystem.js", immediate);
-        LABKEY.requiresScript("clientapi/Portal.js", immediate);
-        LABKEY.requiresScript("clientapi/Visualization.js", immediate);
+        LABKEY.requiresScript("clientapi/ext3/ExtJsConfig.js", immediate);
+        LABKEY.requiresScript("clientapi/ext3/DataRegion.js", immediate);
+        LABKEY.requiresScript("clientapi/ext3/EditorGridPanel.js", immediate);
+        LABKEY.requiresScript("clientapi/ext3/ExtendedJsonReader.js", immediate);
+        LABKEY.requiresScript("clientapi/ext3/FieldKey.js", immediate);
+        LABKEY.requiresScript("clientapi/ext3/FileSystem.js", immediate);
+        LABKEY.requiresScript("clientapi/ext3/FormPanel.js", immediate);
+        LABKEY.requiresScript("clientapi/ext3/GridView.js", immediate);
+        LABKEY.requiresScript("clientapi/ext3/HoverPopup.js", immediate);
+        LABKEY.requiresScript("clientapi/ext3/LongTextEditor.js", immediate);
+        LABKEY.requiresScript("clientapi/ext3/PersistentToolTip.js", immediate);
+        LABKEY.requiresScript("clientapi/ext3/QueryWebPart.js", immediate);
+        LABKEY.requiresScript("clientapi/ext3/SecurityPolicy.js", immediate);
+        LABKEY.requiresScript("clientapi/ext3/Store.js", immediate);
+        LABKEY.requiresScript("clientapi/ext3/Utils.js", immediate);
     }
     else
-        LABKEY.requiresScript('clientapi.min.js', immediate);
+    {
+        LABKEY.requiresScript('clientapi/ext3.min.js', immediate);
+    }
 };
-
 
 LABKEY.requiresExt4ClientAPI = function(immediate)
 {

@@ -155,19 +155,19 @@ LABKEY.Chart = function(config)
 
     var renderChartInternal = function(response, config)
     {
-        var data = Ext.util.JSON.decode(response.responseText);
+        var data = LABKEY.ExtAdapter.decode(response.responseText);
 
         // render the image tag inside the chart div
         if (imageDivName && data.imageMap)
         {
-            Ext.DomHelper.append(chartDivName, {
+            LABKEY.ExtAdapter.domAppend(chartDivName, {
                 tag: 'img', src: data.imageURL, usemap: imageDivName});
 
-            Ext.DomHelper.append(imageDivName, data.imageMap);
+            LABKEY.ExtAdapter.domAppend(imageDivName, data.imageMap);
         }
         else
         {
-            Ext.DomHelper.append(chartDivName, {
+            LABKEY.ExtAdapter.domAppend(chartDivName, {
                 tag: 'img', src: data.imageURL});
         }
     };
@@ -182,12 +182,12 @@ LABKEY.Chart = function(config)
         {
             if (!config.schemaName || !config.queryName)
             {
-                Ext.Msg.alert("Configuration Error", "config.schemaName and config.queryName are required parameters");
+                console.error("Configuration Error: config.schemaName and config.queryName are required parameters");
                 return;
             }
             if (!chartDivName)
             {
-                Ext.Msg.alert("Configuration Error", "config.renderTo is a required parameter.");
+                config.error("Configuration Error: config.renderTo is a required parameter.");
                 return;
             }
             if (imageDivName)
@@ -195,7 +195,7 @@ LABKEY.Chart = function(config)
                 config.imageMapName = imageDivName;
             }
 
-            Ext.Ajax.request({
+            LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("reports", "plotChartApi", containerPath),
                 success: renderChartInternal,
                 failure: LABKEY.Utils.getOnFailure(config) || handleLoadError,

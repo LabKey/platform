@@ -38,7 +38,7 @@ LABKEY.Experiment = new function()
             if (response && response.getResponseHeader && response.getResponseHeader('Content-Type')
                     && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
             {
-                json = Ext.util.JSON.decode(response.responseText);
+                json = LABKEY.ExtAdapter.decode(response.responseText);
                 experiment = createExpFn(json);
             }
 
@@ -76,7 +76,7 @@ LABKEY.Experiment = new function()
         {
             if(!LABKEY.Utils.getOnSuccess(config))
             {
-                Ext.Msg.alert("Programming Error", "You must specify a callback function in config.success when calling LABKEY.Exp.createHiddenRunGroup()!");
+                alert("You must specify a callback function in config.success when calling LABKEY.Exp.createHiddenRunGroup()!");
                 return;
             }
 
@@ -85,7 +85,7 @@ LABKEY.Experiment = new function()
                 return new LABKEY.Exp.RunGroup(json);
             }
 
-            Ext.Ajax.request(
+            LABKEY.Ajax.request(
             {
                 url : LABKEY.ActionURL.buildURL("experiment", "createHiddenRunGroup", config.containerPath),
                 method : 'POST',
@@ -122,7 +122,7 @@ LABKEY.Experiment = new function()
         loadBatch : function (config)
         {
             if (!LABKEY.Utils.getOnSuccess(config)) {
-                Ext.Msg.alert("Programming Error", "You must specify a callback function in config.success when calling LABKEY.Exp.loadBatch()!");
+                console.error("You must specify a callback function in config.success when calling LABKEY.Exp.loadBatch()!");
                 return;
             }
 
@@ -131,7 +131,7 @@ LABKEY.Experiment = new function()
                 return new LABKEY.Exp.RunGroup(json.batch);
             }
 
-            Ext.Ajax.request({
+            LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("assay", "getAssayBatch", LABKEY.ActionURL.getContainer()),
                 method: 'POST',
                 success: getSuccessCallbackWrapper(createExp, LABKEY.Utils.getOnSuccess(config), config.scope),
@@ -171,7 +171,7 @@ LABKEY.Experiment = new function()
         saveBatch : function (config)
         {
             if (!LABKEY.Utils.getOnSuccess(config)) {
-                Ext.Msg.alert("Programming Error", "You must specify a callback function in config.success when calling LABKEY.Exp.saveBatch()!");
+                console.error("You must specify a callback function in config.success when calling LABKEY.Exp.saveBatch()!");
                 return;
             }
 
@@ -180,7 +180,7 @@ LABKEY.Experiment = new function()
                 return new LABKEY.Exp.RunGroup(json.batch);
             }
 
-            Ext.Ajax.request({
+            LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("assay", "saveAssayBatch", LABKEY.ActionURL.getContainer()),
                 method: 'POST',
                 jsonData: {
@@ -220,7 +220,7 @@ LABKEY.Experiment = new function()
         saveMaterials : function (config)
         {
             if (!LABKEY.Utils.getOnSuccess(config)) {
-                Ext.Msg.alert("Programming Error", "You must specify a callback function in config.success when calling LABKEY.Exp.saveBatch()!");
+                console.error("You must specify a callback function in config.success when calling LABKEY.Exp.saveBatch()!");
                 return;
             }
 
@@ -237,7 +237,7 @@ LABKEY.Experiment = new function()
 
 };
 
-Ext.namespace('LABKEY', 'LABKEY.Exp');
+LABKEY.ExtAdapter.namespace('LABKEY', 'LABKEY.Exp');
 
 /**
  * This constructor isn't called directly, but is used by derived classes.
@@ -382,11 +382,11 @@ LABKEY.Exp.Run = function (config) {
     {
         if(!LABKEY.Utils.getOnSuccess(config))
         {
-            Ext.Msg.alert("Programming Error", "You must specify a callback function in config.success when calling LABKEY.Exp.Run.deleteRun()!");
+            console.error("You must specify a callback function in config.success when calling LABKEY.Exp.Run.deleteRun()!");
             return;
         }
 
-        Ext.Ajax.request(
+        LABKEY.Ajax.request(
         {
             url : LABKEY.ActionURL.buildURL("experiment", "deleteRun"),
             method : 'POST',
@@ -396,7 +396,7 @@ LABKEY.Exp.Run = function (config) {
         });
     };
 };
-Ext.extend(LABKEY.Exp.Run, LABKEY.Exp.ExpObject);
+LABKEY.ExtAdapter.extend(LABKEY.Exp.Run, LABKEY.Exp.ExpObject);
 
 /**
  * The Protocol constructor is private.
@@ -426,7 +426,7 @@ LABKEY.Exp.Protocol = function (config) {
         }
     }
 };
-Ext.extend(LABKEY.Exp.Protocol, LABKEY.Exp.ExpObject);
+LABKEY.ExtAdapter.extend(LABKEY.Exp.Protocol, LABKEY.Exp.ExpObject);
 
 /**
  * The RunGroup constructor is private.  To retrieve a batch RunGroup
@@ -467,7 +467,7 @@ LABKEY.Exp.RunGroup = function (config) {
     //this.batchProtocol = config.batchProtocol;
     this.hidden = config.hidden;
 };
-Ext.extend(LABKEY.Exp.RunGroup, LABKEY.Exp.ExpObject);
+LABKEY.ExtAdapter.extend(LABKEY.Exp.RunGroup, LABKEY.Exp.ExpObject);
 
 /**
  * The ProtocolApplication constructor is private.
@@ -484,7 +484,7 @@ LABKEY.Exp.ProtocolApplication = function (config) {
     config = config || {};
 
 };
-Ext.extend(LABKEY.Exp.ProtocolApplication, LABKEY.Exp.ExpObject);
+LABKEY.ExtAdapter.extend(LABKEY.Exp.ProtocolApplication, LABKEY.Exp.ExpObject);
 
 /**
  * @class The SampleSet class describes a collection of experimental samples, which are
@@ -540,7 +540,7 @@ LABKEY.Exp.SampleSet = function (config) {
     };
 
 };
-Ext.extend(LABKEY.Exp.SampleSet, LABKEY.Exp.ExpObject);
+LABKEY.ExtAdapter.extend(LABKEY.Exp.SampleSet, LABKEY.Exp.ExpObject);
 
 /**
  * Create a new Sample Set definition.
@@ -602,7 +602,7 @@ LABKEY.Exp.ChildObject = function (config) {
     config = config || {};
     // property holder
 };
-Ext.extend(LABKEY.Exp.ChildObject, LABKEY.Exp.ExpObject);
+LABKEY.ExtAdapter.extend(LABKEY.Exp.ChildObject, LABKEY.Exp.ExpObject);
 
 /**
  * The ProtocolOutput constructor is private.
@@ -624,7 +624,7 @@ LABKEY.Exp.ProtocolOutput = function (config) {
     this.sucessorRuns = config.sucessorRuns;
     this.cpasType = config.cpasType;
 };
-Ext.extend(LABKEY.Exp.ProtocolOutput, LABKEY.Exp.ExpObject);
+LABKEY.ExtAdapter.extend(LABKEY.Exp.ProtocolOutput, LABKEY.Exp.ExpObject);
 
 /**
  * Constructs a new experiment material object.
@@ -652,7 +652,7 @@ LABKEY.Exp.Material = function (config) {
 
     this.sampleSet = config.sampleSet;
 };
-Ext.extend(LABKEY.Exp.Material, LABKEY.Exp.ProtocolOutput);
+LABKEY.ExtAdapter.extend(LABKEY.Exp.Material, LABKEY.Exp.ProtocolOutput);
 
 /**
  * The Data constructor is private.
@@ -730,7 +730,7 @@ Ext.extend(LABKEY.Exp.Material, LABKEY.Exp.ProtocolOutput);
  * // Or, to upload the contents of a JavaScript string as a file:
  * &lt;script type="text/javascript">
  * Ext.onReady(function() {
- *    Ext.Ajax.request({
+ *    LABKEY.Ajax.request({
  *      url: LABKEY.ActionURL.buildURL("assay", "assayFileUpload"),
  *      params: { fileName: 'test.txt', fileContent: 'Some text!' },
  *      success: function(response, options) {
@@ -767,7 +767,7 @@ LABKEY.Exp.Data = function (config) {
             if(response && response.getResponseHeader && response.getResponseHeader('Content-Type')
                     && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
             {
-                content = Ext.util.JSON.decode(response.responseText);
+                content = LABKEY.ExtAdapter.decode(response.responseText);
             }
             else
             {
@@ -936,11 +936,11 @@ LABKEY.Exp.Data = function (config) {
     {
         if(!LABKEY.Utils.getOnSuccess(config))
         {
-            Ext.Msg.alert("Programming Error", "You must specify a callback function in config.success when calling LABKEY.Exp.Data.getContent()!");
+            alert("You must specify a callback function in config.success when calling LABKEY.Exp.Data.getContent()!");
             return;
         }
 
-        Ext.Ajax.request(
+        LABKEY.Ajax.request(
         {
             url : LABKEY.ActionURL.buildURL("experiment", "showFile"),
             method : 'GET',
@@ -951,4 +951,4 @@ LABKEY.Exp.Data = function (config) {
 
     };
 };
-Ext.extend(LABKEY.Exp.Data, LABKEY.Exp.ProtocolOutput);
+LABKEY.ExtAdapter.extend(LABKEY.Exp.Data, LABKEY.Exp.ProtocolOutput);

@@ -81,7 +81,7 @@ LABKEY.MultiRequest = function (config) {
     this.waitQ = new Array();
 
     var requests;
-    if (Ext.isArray(config)) {
+    if (LABKEY.ExtAdapter.isArray(config)) {
         requests = config;
     } else {
         requests = config.requests;
@@ -102,7 +102,8 @@ LABKEY.MultiRequest = function (config) {
         this.send();
     }
 };
-Ext.extend(LABKEY.MultiRequest, Ext.util.Observable,
+//TODO
+LABKEY.ExtAdapter.extend(LABKEY.MultiRequest, Ext.util.Observable,
 /**
  * @lends LABKEY.MultiRequest.prototype
  */

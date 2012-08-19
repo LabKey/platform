@@ -68,24 +68,6 @@ LABKEY.Utils = new function()
             options['query.sort'] = "-" + sortCol;
         }
     }
-    
-    function createHttpProxyImpl(containerPath, errorListener)
-    {
-        var proxy = new Ext.data.HttpProxy(new Ext.data.Connection({
-                //where to retrieve data
-                url: LABKEY.ActionURL.buildURL("query", "selectRows", containerPath), //url to data object (server side script)
-                method: 'GET'
-            }));
-
-        if (errorListener)
-            proxy.on("loadexception", errorListener);
-
-        proxy.on("beforeload", mapQueryParameters);
-
-        return proxy;
-    }
-
-
 
     function isObject(v)
     {
@@ -176,7 +158,7 @@ LABKEY.Utils = new function()
                 msgPrefix: msgPrefix,
                 showExceptionClass: showExceptionClass
             });
-            Ext.Msg.alert("Error", error);
+            LABKEY.ExtAdapter.Msg.alert("Error", error);
         },
 
         /**
@@ -199,7 +181,7 @@ LABKEY.Utils = new function()
                 responseObj.getResponseHeader('Content-Type') &&
                 responseObj.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
             {
-                var jsonResponse = Ext.util.JSON.decode(responseObj.responseText);
+                var jsonResponse = LABKEY.ExtAdapter.decode(responseObj.responseText);
                 if (jsonResponse && jsonResponse.exception)
                 {
                     error = prefix + jsonResponse.exception;
@@ -213,87 +195,6 @@ LABKEY.Utils = new function()
                 error += "\n" + exceptionObj.name + ": " + exceptionObj.message;
 
             return error;
-        },
-
-        /**
-        * Creates an Ext.data.Store that queries the LabKey Server database and can be used as the data source
-        * for various components, including GridViews, ComboBoxes, and so forth.
-        *
-        * @param {Object} config Describes the GridView's properties.
-        * @param {String} config.schemaName Name of a schema defined within the current
-        *                 container.  Example: 'study'.  See also: <a class="link"
-                          href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
-                          How To Find schemaName, queryName &amp; viewName</a>.
-        * @param {String} config.queryName Name of a query defined within the specified schema
-        *                 in the current container.  Example: 'SpecimenDetail'. See also: <a class="link"
-                          href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
-                          How To Find schemaName, queryName &amp; viewName</a>.
-        * @param {String} [config.containerPath] The container path in which the schemaName and queryName are defined.
-        * @param {String} [config.viewName] Name of a custom view defined over the specified query.
-        *                 in the current container. Example: 'SpecimenDetail'.  See also: <a class="link"
-                          href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
-                          How To Find schemaName, queryName &amp; viewName</a>.
-        * @param {Object} [config.allowNull] If specified, this configuration will be used to insert a blank
-        *                 entry as the first entry in the store.
-        * @param {String} [config.allowNull.keyColumn] If specified, the name of the column in the underlying database
-        *                 that holds the key.
-        * @param {String} [config.allowNull.displayColumn] If specified, the name of the column in the underlying database
-        *                 that holds the value to be shown by default in the display component.
-        * @param {String} [config.allowNull.emptyName] If specified, what to show in the list for the blank entry.
-        *                 Defaults to '[None]'.
-        * @param {String} [config.allowNull.emptyValue] If specified, the value to be used for the blank entry.
-        *                 Defaults to the empty string.
-        *
-		* @return {Ext.data.Store} The initialized Store object
-		*/
-        createExtStore: function (storeConfig)
-        {
-            if (!storeConfig)
-                storeConfig = {};
-            if (!storeConfig.baseParams)
-                storeConfig.baseParams = {};
-            storeConfig.baseParams['query.queryName'] = storeConfig.queryName;
-            storeConfig.baseParams['schemaName'] = storeConfig.schemaName;
-            if (storeConfig.viewName)
-                storeConfig.baseParams['query.viewName'] = storeConfig.viewName;
-
-            if (!storeConfig.proxy)
-                storeConfig.proxy = createHttpProxyImpl(storeConfig.containerPath);
-
-            if (!storeConfig.remoteSort)
-                storeConfig.remoteSort = true;
-
-            if (!storeConfig.listeners || !storeConfig.listeners.loadexception)
-                storeConfig.listeners = { loadexception : { fn : handleLoadError } };
-
-            storeConfig.reader = new Ext.data.JsonReader();
-
-            var result = new Ext.data.Store(storeConfig);
-
-            if (storeConfig.allowNull)
-            {
-                var emptyValue = storeConfig.allowNull.emptyValue;
-                if (!emptyValue)
-                {
-                    emptyValue = "";
-                }
-                var emptyName = storeConfig.allowNull.emptyName;
-                if (!emptyName)
-                {
-                    emptyName = "[None]";
-                }
-                result.on("load", function(store)
-                    {
-                    var emptyRecordConstructor = Ext.data.Record.create([storeConfig.allowNull.keyColumn, storeConfig.allowNull.displayColumn]);
-                    var recordData = {};
-                    recordData[storeConfig.allowNull.keyColumn] = emptyValue;
-                    recordData[storeConfig.allowNull.displayColumn] = emptyName;
-                    var emptyRecord = new emptyRecordConstructor(recordData);
-                    store.insert(0, emptyRecord);
-                    });
-            }
-
-            return result;
         },
 
         /**
@@ -329,11 +230,11 @@ LABKEY.Utils = new function()
             else
             {
 
-                var bp = Ext.get('bodypanel');
+                var bp = LABKEY.ExtAdapter.get('bodypanel');
                 if (bp) {
-                    var t  = Ext.query('table.labkey-proj');
+                    var t  = LABKEY.ExtAdapter.query('table.labkey-proj');
                     if (t && t.length > 0) {
-                        t = Ext.get(t[0]);
+                        t = LABKEY.ExtAdapter.get(t[0]);
                         padding.push((t.getWidth()-(bp.getWidth())) + offsetX);
                     }
                     else
@@ -424,9 +325,9 @@ LABKEY.Utils.convertToExcel(
         convertToExcel : function(spreadsheet) {
             // Insert a hidden <form> into to page, put the JSON into it, and submit it - the server's response
             // will make the browser pop up a dialog
-            var newForm = Ext.DomHelper.append(document.getElementsByTagName('body')[0],
+            var newForm = LABKEY.ExtAdapter.domAppend(document.getElementsByTagName('body')[0],
                 '<form method="POST" action="' + LABKEY.ActionURL.buildURL("experiment", "convertArraysToExcel") + '">' +
-                '<input type="hidden" name="json" value="' + Ext.util.Format.htmlEncode(Ext.util.JSON.encode(spreadsheet)) + '" />' +
+                '<input type="hidden" name="json" value="' + LABKEY.ExtAdapter.htmlEncode(LABKEY.ExtAdapter.encode(spreadsheet)) + '" />' +
                 '</form>');
             newForm.submit();
         },
@@ -455,9 +356,9 @@ LABKEY.Utils.convertToTable(
         convertToTable : function(config) {
             // Insert a hidden <form> into to page, put the JSON into it, and submit it - the server's response
             // will make the browser pop up a dialog
-            var newForm = Ext.DomHelper.append(document.getElementsByTagName('body')[0],
+            var newForm = LABKEY.ExtAdapter.domAppend(document.getElementsByTagName('body')[0],
                 '<form method="POST" action="' + LABKEY.ActionURL.buildURL("experiment", "convertArraysToTable") + '">' +
-                '<input type="hidden" name="json" value="' + Ext.util.Format.htmlEncode(Ext.util.JSON.encode(config)) + '" />' +
+                '<input type="hidden" name="json" value="' + LABKEY.ExtAdapter.htmlEncode(LABKEY.ExtAdapter.encode(config)) + '" />' +
                 '</form>');
             newForm.submit();
         },
@@ -480,7 +381,7 @@ LABKEY.Utils.convertToTable(
                     if(response && response.getResponseHeader && response.getResponseHeader('Content-Type')
                             && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0){
                         try {
-                            json = Ext.util.JSON.decode(response.responseText);
+                            json = LABKEY.ExtAdapter.decode(response.responseText);
                         }
                         catch (error){
                             //we still want to proceed even if we cannot decode the JSON
@@ -508,7 +409,7 @@ LABKEY.Utils.convertToTable(
                 {
                     // Don't show an error dialog if the user cancelled the request in the browser, like navigating
                     // to another page
-                    Ext.Msg.alert("Error", json.exception);
+                    LABKEY.ExtAdapter.Msg.alert("Error", json.exception);
                 }
             };
         },
@@ -543,30 +444,14 @@ LABKEY.Utils.convertToTable(
             for(var prop in source)
             {
                 //special case: Ext adds a "constructor" property to every object, which we don't want to apply
-                if (prop == "constructor" || Ext.isFunction(prop))
+                if (prop == "constructor" || LABKEY.ExtAdapter.isFunction(prop))
                     continue;
                 
                 targetPropName = translationMap[prop];
                 if(targetPropName)
                     target[translationMap[prop]] = source[prop];
-                else if(undefined === targetPropName && applyOthers && (applyFunctions || !Ext.isFunction(source[prop])))
+                else if(undefined === targetPropName && applyOthers && (applyFunctions || !LABKEY.ExtAdapter.isFunction(source[prop])))
                     target[prop] = source[prop];
-            }
-        },
-
-        /**
-         * Ensure BoxComponent is visible on the page.  
-         * @param boxComponent
-         */
-        ensureBoxVisible : function (boxComponent)
-        {
-            var box = boxComponent.getBox(true);
-            var viewportWidth = Ext.lib.Dom.getViewWidth();
-            var scrollLeft = Ext.dd.DragDropMgr.getScrollLeft();
-
-            var scrollBarWidth = 20;
-            if (viewportWidth - scrollBarWidth + scrollLeft < box.width + box.x) {
-                boxComponent.setPosition(viewportWidth + scrollLeft - box.width - scrollBarWidth);
             }
         },
 
@@ -881,13 +766,13 @@ LABKEY.Utils.convertToTable(
         // private
         enableButton : function (elem)
         {
-            return Ext.get(elem).replaceClass("labkey-disabled-button", "labkey-button");
+            return LABKEY.ExtAdapter.get(elem).replaceClass("labkey-disabled-button", "labkey-button");
         },
 
         // private
         disableButton : function (elem)
         {
-            return Ext.get(elem).replaceClass("labkey-button", "labkey-disabled-button");
+            return LABKEY.ExtAdapter.get(elem).replaceClass("labkey-button", "labkey-disabled-button");
         },
 
         /**
@@ -924,7 +809,7 @@ LABKEY.Utils.convertToTable(
         &lt;/script&gt;
         */
         onError : function(error){
-            Ext.Msg.hide();
+            LABKEY.ExtAdapter.Msg.hide();
 
             if(!error)
                 return;
@@ -943,7 +828,7 @@ LABKEY.Utils.convertToTable(
                         Key1: 'Client Error',
                         //NOTE: labkey should automatically crop these strings to the allowable length for that field
                         Key2: window.location.href,
-                        Key3: (error.stackTrace && Ext.isArray(error.stackTrace) ? error.stackTrace.join('\n') : null),
+                        Key3: (error.stackTrace && LABKEY.ExtAdapter.isArray(error.stackTrace) ? error.stackTrace.join('\n') : null),
                         Comment: (error.exception || error.statusText || error.message),
                         Date: new Date()
                      }],
@@ -1025,7 +910,7 @@ LABKEY.Utils.convertToTable(
          */
         setWebpartTitle: function(title, webPartId)
         {
-           var titleEl = Ext.query('table#webpart_'+webPartId+' span[class=labkey-wp-title-text]');//, 'webpart_' + webPartId);
+           var titleEl = LABKEY.ExtAdapter.query('table#webpart_'+webPartId+' span[class=labkey-wp-title-text]');//, 'webpart_' + webPartId);
            if (titleEl && (titleEl.length >= 1))
            {
                titleEl[0].innerHTML = LABKEY.Utils.encodeHtml(title);
@@ -1073,12 +958,12 @@ LABKEY.Utils.convertToTable(
             var callback;
             var scripts;
 
-            if (Ext.isFunction(config)){
+            if (LABKEY.ExtAdapter.isFunction(config)){
                 scope = this;
                 callback = config;
                 scripts = null;
             }
-            else if (Ext.isObject(config) && Ext.isFunction(config.callback))
+            else if (LABKEY.ExtAdapter.isObject(config) && LABKEY.ExtAdapter.isFunction(config.callback))
             {
                 scope = config.scope || this;
                 callback = config.callback;
@@ -1096,13 +981,13 @@ LABKEY.Utils.convertToTable(
             }
             else
             {
-                Ext.onReady(callback, scope);
+                LABKEY.ExtAdapter.onReady(callback, scope);
             }
         },
 
         //private
         loadAjaxContent: function(response, targetElem, success, scope){
-            var json = Ext.util.JSON.decode(response.responseText);
+            var json = LABKEY.ExtAdapter.decode(response.responseText);
             if (!json)
                 return;
 

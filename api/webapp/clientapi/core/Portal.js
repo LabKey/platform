@@ -44,7 +44,7 @@ LABKEY.Portal = new function()
         return function(webparts, responseObj, options)
         {
            updateDOM(webparts, action, webPartId, direction);
-            Ext.Msg.hide();
+            LABKEY.ExtAdapter.Msg.hide();
             // after update, call the user's success function:
             if (userSuccessCallback)
                 userSuccessCallback(webparts, responseObj, options);
@@ -200,7 +200,7 @@ LABKEY.Portal = new function()
         return function(exceptionObj, responseObj, options)
         {
             // hide the UI message box:
-            Ext.Msg.hide();
+            LABKEY.ExtAdapter.Msg.hide();
             // after update, call the user's success function:
             return userErrorCallback(exceptionObj, responseObj, options);
         }
@@ -208,7 +208,7 @@ LABKEY.Portal = new function()
 
     function startUIUpdate()
     {
-        Ext.Msg.wait("Saving...");
+        LABKEY.ExtAdapter.Msg.wait("Saving...");
     }
 
     function defaultErrorHandler(exceptionObj, responseObj, options)
@@ -290,7 +290,7 @@ LABKEY.Portal = new function()
          */
         getWebParts : function(config)
         {
-            Ext.Ajax.request({
+            LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('project', 'getWebParts', config.containerPath),
                 method : 'GET',
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
@@ -338,7 +338,7 @@ LABKEY.Portal = new function()
             if (config.updateDOM)
                 startUIUpdate();
             var callConfig = mapIndexConfigParameters(config, MOVE_ACTION, MOVE_UP);
-            Ext.Ajax.request({
+            LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('project', 'moveWebPartAsync', config.containerPath),
                 method : 'GET',
                 success: LABKEY.Utils.getOnSuccess(callConfig),
@@ -388,7 +388,7 @@ LABKEY.Portal = new function()
             if (config.updateDOM)
                 startUIUpdate();
             var callConfig = mapIndexConfigParameters(config, MOVE_ACTION, MOVE_DOWN);
-            Ext.Ajax.request({
+            LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('project', 'moveWebPartAsync', config.containerPath),
                 method : 'GET',
                 success: LABKEY.Utils.getOnSuccess(callConfig),
@@ -435,7 +435,7 @@ LABKEY.Portal = new function()
             if (config.updateDOM)
                 startUIUpdate();
             var callConfig = mapIndexConfigParameters(config, REMOVE_ACTION, undefined);
-            Ext.Ajax.request({
+            LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('project', 'deleteWebPartAsync', config.containerPath),
                 method : 'GET',
                 success: LABKEY.Utils.getOnSuccess(callConfig),

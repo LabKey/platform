@@ -123,12 +123,12 @@ LABKEY.WebPart = function(config)
     //validate config
     if(!_partName)
     {
-        Ext.Msg.alert("Configuration Error", "You must supply the name of the desired web part in the partName config property.");
+        LABKEY.ExtAdapter.Msg.alert("Configuration Error", "You must supply the name of the desired web part in the partName config property.");
         return;
     }
     if(!_renderTo)
     {
-        Ext.Msg.alert("Configuration Error", "You must supply the name of the target element in the renderTo config property.");
+        LABKEY.ExtAdapter.Msg.alert("Configuration Error", "You must supply the name of the target element in the renderTo config property.");
         return;
     }
 
@@ -138,14 +138,14 @@ LABKEY.WebPart = function(config)
         var msg = "Error getting the web part: ";
         if(response.status >= 500 && response.status < 600)
         {
-            var json = Ext.util.JSON.decode(response.responseText);
+            var json = LABKEY.ExtAdapter.decode(response.responseText);
             if(json)
                 msg += json.exception;
         }
         else
             msg += response.statusText;
 
-        Ext.Msg.alert("Error", msg);
+        LABKEY.ExtAdapter.Msg.alert("Error", msg);
     };
 
     var renderPart = function(response, partConfig)
@@ -164,7 +164,7 @@ LABKEY.WebPart = function(config)
         // render the part inside the target element
         if(_renderTo)
         {
-            var targetElem = Ext.get(_renderTo);
+            var targetElem = LABKEY.ExtAdapter.get(_renderTo);
             if(targetElem)
             {
                 LABKEY.Utils.loadAjaxContent(response, targetElem, _success, _scope);
@@ -172,13 +172,13 @@ LABKEY.WebPart = function(config)
             else
             {
                 if(!_suppressRenderErrors)
-                    Ext.Msg.alert("Rendering Error", "The element '" + _renderTo + "' does not exist in the document!");
+                    LABKEY.ExtAdapter.Msg.alert("Rendering Error", "The element '" + _renderTo + "' does not exist in the document!");
             }
         }
         else
         {
             if(!_suppressRenderErrors)
-                Ext.Msg.alert("Rendering Error", "The target element name was not set!");
+                LABKEY.ExtAdapter.Msg.alert("Rendering Error", "The target element name was not set!");
         }
     };
 
@@ -211,14 +211,14 @@ LABKEY.WebPart = function(config)
 
             //forward query string parameters
             //(for Query web parts)
-            Ext.applyIf(_partConfig, LABKEY.ActionURL.getParameters());
+            LABKEY.ExtAdapter.applyIf(_partConfig, LABKEY.ActionURL.getParameters());
 
             //Ext uses a param called _dc to defeat caching, and it may be
             //on the URL if the Query web part has done a sort or filter
             //strip it if it's there so it's not included twice (Ext always appends one)
             delete _partConfig["_dc"];
 
-            return Ext.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("project", "getWebPart", _containerPath),
                 success: renderPart,
                 failure: _errorCallback,

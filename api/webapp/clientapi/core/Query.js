@@ -38,9 +38,6 @@ LABKEY.Query = new function()
 {
     function sendJsonQueryRequest(config)
     {
-        if (Ext.isDefined(config.timeout))
-            Ext.Ajax.timeout = config.timeout;
-
         var dataObject = {
             schemaName : config.schemaName,
             queryName : config.queryName,
@@ -49,7 +46,7 @@ LABKEY.Query = new function()
             extraContext : config.extraContext
         };
 
-        return LABKEY.Ajax.request({
+        var requestConfig = {
             url : LABKEY.ActionURL.buildURL("query", config.action, config.containerPath),
             method : 'POST',
             success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
@@ -58,7 +55,12 @@ LABKEY.Query = new function()
             headers : {
                 'Content-Type' : 'application/json'
             }
-        });
+        }
+
+        if (LABKEY.ExtAdapter.isDefined(config.timeout))
+            requestConfig.timeout = config.timeout;
+
+        return LABKEY.Ajax.request(requestConfig);
     }
 
     function getContentType(response)
@@ -218,9 +220,6 @@ LABKEY.Query = new function()
          */
         executeSql : function(config)
         {
-            if (Ext.isDefined(config.timeout))
-                Ext.Ajax.timeout = config.timeout;
-
             var dataObject = {
                 schemaName: config.schemaName,
                 sql: config.sql
@@ -254,7 +253,7 @@ LABKEY.Query = new function()
                     qsParams["query.param." + n] = config.parameters[n];
             }
 
-            return LABKEY.Ajax.request({
+            var requestConfig = {
                 url : LABKEY.ActionURL.buildURL("query", "executeSql", config.containerPath, qsParams),
                 method : 'POST',
                 success: getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.stripHiddenColumns, config.scope),
@@ -263,7 +262,12 @@ LABKEY.Query = new function()
                 headers : {
                     'Content-Type' : 'application/json'
                 }
-            });
+            }
+
+            if (LABKEY.ExtAdapter.isDefined(config.timeout))
+                requestConfig.timeout = config.timeout;
+
+            return LABKEY.Ajax.request(requestConfig);
         },
 
         /**
@@ -289,15 +293,15 @@ LABKEY.Query = new function()
             // will make the browser pop up a dialog
             var html = '<form method="POST" action="' + LABKEY.ActionURL.buildURL("query", "exportSql", config.containerPath) + '">';
             if (undefined != config.sql)
-                html += '<input type="hidden" name="sql" value="' + Ext.util.Format.htmlEncode(config.sql) + '" />';
+                html += '<input type="hidden" name="sql" value="' + LABKEY.ExtAdapter.htmlEncode(config.sql) + '" />';
             if (undefined != config.schemaName)
-                html += '<input type="hidden" name="schemaName" value="' + Ext.util.Format.htmlEncode(config.schemaName) + '" />';
+                html += '<input type="hidden" name="schemaName" value="' + LABKEY.ExtAdapter.htmlEncode(config.schemaName) + '" />';
             if (undefined != config.format)
-                html += '<input type="hidden" name="format" value="' + Ext.util.Format.htmlEncode(config.format) + '" />';
+                html += '<input type="hidden" name="format" value="' + LABKEY.ExtAdapter.htmlEncode(config.format) + '" />';
             if (undefined != config.containerFilter)
-                html += '<input type="hidden" name="containerFilter" value="' + Ext.util.Format.htmlEncode(config.containerFilter) + '" />';
+                html += '<input type="hidden" name="containerFilter" value="' + LABKEY.ExtAdapter.htmlEncode(config.containerFilter) + '" />';
             html += "</form>";
-            var newForm = Ext.DomHelper.append(document.getElementsByTagName('body')[0], html);
+            var newForm = LABKEY.ExtAdapter.domAppend(document.getElementsByTagName('body')[0], html);
             newForm.submit();
         },
 
@@ -456,7 +460,7 @@ LABKEY.Query = new function()
                 dataObject['query.viewName'] = config.viewName;
 
             if (config.columns)
-                dataObject['query.columns'] = Ext.isArray(config.columns) ? config.columns.join(",") : config.columns;
+                dataObject['query.columns'] = LABKEY.ExtAdapter.isArray(config.columns) ? config.columns.join(",") : config.columns;
 
             if (config.selectionKey)
                 dataObject['query.selectionKey'] = config.selectionKey;
@@ -464,9 +468,6 @@ LABKEY.Query = new function()
             if (config.parameters)
                 for (var propName in config.parameters)
                     dataObject['query.param.' + propName] = config.parameters[propName];
-
-            if (Ext.isDefined(config.timeout))
-                Ext.Ajax.timeout = config.timeout;
 
             if (config.requiredVersion)
                 dataObject.apiVersion = config.requiredVersion;
@@ -480,13 +481,18 @@ LABKEY.Query = new function()
             if (config.includeStyle)
                 dataObject.includeStyle = config.includeStyle;
 
-            return LABKEY.Ajax.request({
+            var requestConfig = {
                 url : LABKEY.ActionURL.buildURL('query', 'getQuery', config.containerPath),
                 method : 'GET',
                 success: getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.stripHiddenColumns, config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 params : dataObject
-            });
+            }
+
+            if (LABKEY.ExtAdapter.isDefined(config.timeout))
+                requestConfig.timeout = config.timeout;
+
+            return LABKEY.Ajax.request(requestConfig);
         },
 
         /**
@@ -612,8 +618,6 @@ LABKEY.Query = new function()
         {
             if (arguments.length > 1)
                 config = configFromArgs(arguments);
-            if (Ext.isDefined(config.timeout))
-                Ext.Ajax.timeout = config.timeout;
 
             var dataObject = {
                 commands: config.commands,
@@ -622,7 +626,7 @@ LABKEY.Query = new function()
                 extraContext : config.extraContext
             };
 
-            return LABKEY.Ajax.request({
+            var requestConfig = {
                 url : LABKEY.ActionURL.buildURL("query", "saveRows", config.containerPath),
                 method : 'POST',
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
@@ -631,7 +635,13 @@ LABKEY.Query = new function()
                 headers : {
                     'Content-Type' : 'application/json'
                 }
-            });
+            }
+
+            if (LABKEY.ExtAdapter.isDefined(config.timeout))
+                requestConfig.timeout = config.timeout;
+
+            return LABKEY.Ajax.request(requestConfig);
+
         },
 
         /**

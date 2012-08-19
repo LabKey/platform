@@ -55,9 +55,9 @@ LABKEY.Visualization = new function() {
             if (data && data.getResponseHeader && data.getResponseHeader('Content-Type')
                     && data.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
             {
-                json = Ext.util.JSON.decode(data.responseText);
+                json = LABKEY.ExtAdapter.decode(data.responseText);
                 if (json.visualizationConfig)
-                    json.visualizationConfig = Ext.util.JSON.decode(json.visualizationConfig);
+                    json.visualizationConfig = LABKEY.ExtAdapter.decode(json.visualizationConfig);
             }
 
             if(successCallback)
@@ -82,7 +82,7 @@ LABKEY.Visualization = new function() {
             if (response && response.getResponseHeader && response.getResponseHeader('Content-Type')
                     && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
             {
-                json = Ext.util.JSON.decode(response.responseText);
+                json = LABKEY.ExtAdapter.decode(response.responseText);
                 measures = createMeasureFn(json);
             }
 
@@ -107,7 +107,7 @@ LABKEY.Visualization = new function() {
             }
 
 
-            Ext.Ajax.request(
+            LABKEY.Ajax.request(
             {
                 url : LABKEY.ActionURL.buildURL("visualization", "getVisualizationTypes"),
                 method : 'GET',
@@ -146,7 +146,7 @@ LABKEY.Visualization = new function() {
 
             var params = formatParams(config);
 
-            Ext.Ajax.request(
+            LABKEY.Ajax.request(
             {
                 url : LABKEY.ActionURL.buildURL("visualization", "getMeasures"),
                 method : 'GET',
@@ -230,7 +230,7 @@ LABKEY.Visualization = new function() {
                 groupBys: config.groupBys
             };
 
-            Ext.Ajax.request(
+            LABKEY.Ajax.request(
             {
                 url : LABKEY.ActionURL.buildURL("visualization", "getData"),
                 method : 'POST',
@@ -284,7 +284,7 @@ LABKEY.Visualization = new function() {
             var params = {
                 name : config.name,
                 description : config.description,
-                json : Ext.util.JSON.encode(config.visualizationConfig),
+                json : LABKEY.ExtAdapter.encode(config.visualizationConfig),
                 replace: config.replace,
                 shared: config.shared,
                 thumbnailType: config.thumbnailType,
@@ -294,7 +294,7 @@ LABKEY.Visualization = new function() {
                 queryName: config.queryName
             };
 
-            Ext.Ajax.request(
+            LABKEY.Ajax.request(
             {
                 url : LABKEY.ActionURL.buildURL("visualization", "saveVisualization"),
                 method : 'POST',
@@ -353,7 +353,7 @@ LABKEY.Visualization = new function() {
             // wrap the callback to convert the visualizationConfig property from a JSON string into a native javascript object:
             successCallback = getVisualizatonConfigConverterCallback(successCallback, config.scope);
 
-            Ext.Ajax.request(
+            LABKEY.Ajax.request(
             {
                 url : LABKEY.ActionURL.buildURL("visualization", "getVisualization"),
                 method : 'POST',
@@ -417,13 +417,13 @@ LABKEY.Visualization = new function() {
 /**
  * @namespace Visualization Measures are plottable data elements (columns).  They may be of numeric or date types.
  */
-LABKEY.Visualization.Measure = Ext.extend(Object,
+LABKEY.Visualization.Measure = LABKEY.ExtAdapter.extend(Object,
     /** @scope LABKEY.Visualization.Measure */
 {
     constructor : function(config)
     {
         LABKEY.Visualization.Measure.superclass.constructor.call(this, config);
-        Ext.apply(this, config);
+        LABKEY.ExtAdapter.apply(this, config);
     },
 
     /**
@@ -508,7 +508,7 @@ LABKEY.Visualization.Measure = Ext.extend(Object,
             return dimensions;
         }
 
-        Ext.Ajax.request(
+        LABKEY.Ajax.request(
         {
             url : LABKEY.ActionURL.buildURL("visualization", "getDimensions"),
             method : 'GET',
@@ -524,13 +524,13 @@ LABKEY.Visualization.Measure = Ext.extend(Object,
  *  can be pivoted or transformed.  For example, the 'Analyte Name' dimension may be used to pivit a single 'Result' measure
  * into one series per Analyte.
  */
-LABKEY.Visualization.Dimension = Ext.extend(Object,
+LABKEY.Visualization.Dimension = LABKEY.ExtAdapter.extend(Object,
     /** @scope LABKEY.Visualization.Dimension */
     {
     constructor : function(config)
     {
         LABKEY.Visualization.Dimension.superclass.constructor.call(this, config);
-        Ext.apply(this, config);
+        LABKEY.apply(this, config);
     },
     /**
      * Returns the name of the query associated with this dimension.
@@ -604,7 +604,7 @@ LABKEY.Visualization.Dimension = Ext.extend(Object,
             return [];
         }
 
-        Ext.Ajax.request(
+        LABKEY.Ajax.request(
         {
             url : LABKEY.ActionURL.buildURL("visualization", "getDimensionValues"),
             method : 'GET',
@@ -664,7 +664,7 @@ LABKEY.Visualization.Filter = new function()
         create : function(config)
         {
             if (!config.schemaName)
-                Ext.Msg.alert("Coding Error!", "You must supply a value for schemaName in your configuration object!");
+                LABKEY.ExtAdapter.Msg.alert("Coding Error!", "You must supply a value for schemaName in your configuration object!");
             else
                 return getURLParameterValue(config);
         }

@@ -66,7 +66,7 @@ LABKEY.ActionURL = new function()
                 else
                 {
                     var curValue = parameters[name];
-                    if (Ext.isArray(curValue))
+                    if (LABKEY.ExtAdapter.isArray(curValue))
                         curValue.push(decodeURIComponent(nameValue[1]));
                     else
                         parameters[name] = [curValue, decodeURIComponent(nameValue[1])];
@@ -181,7 +181,7 @@ LABKEY.ActionURL = new function()
         getParameter : function(parameterName)
         {
             var val = buildParameterMap()[parameterName];
-            return (val && Ext.isArray(val) && val.length > 0) ? val[0] : val;
+            return (val && LABKEY.ExtAdapter.isArray(val) && val.length > 0) ? val[0] : val;
         },
 
         /**
@@ -193,7 +193,7 @@ LABKEY.ActionURL = new function()
         getParameterArray : function(parameterName)
         {
             var val = buildParameterMap()[parameterName];
-            return (val && !Ext.isArray(val)) ? [val] : val;
+            return (val && !LABKEY.ExtAdapter.isArray(val)) ? [val] : val;
         },
 
         /**
@@ -331,7 +331,7 @@ that points back to the current page:
             for (var parameter in parameters)
             {
                 var pval = parameters[parameter];
-                if (Ext.isArray(pval))
+                if (LABKEY.ExtAdapter.isArray(pval))
                 {
                     for (var idx = 0; idx < pval.length; ++idx)
                     {

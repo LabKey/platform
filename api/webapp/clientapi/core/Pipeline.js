@@ -48,7 +48,7 @@ LABKEY.Pipeline = new function(){
          * @param {Object} [config.scope] The scope to use when calling the callbacks (defaults to this).
          */
         getPipelineContainer : function(config) {
-            Ext.Ajax.request({
+            LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("pipeline", "getPipelineContainer.api", config.containerPath),
                 method: 'GET',
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
@@ -83,7 +83,7 @@ LABKEY.Pipeline = new function(){
             var containerPath = config.containerPath ? config.containerPath : LABKEY.ActionURL.getContainer();
             var url = LABKEY.ActionURL.buildURL("pipeline-analysis", "getSavedProtocols.api", containerPath);
             var onSuccess = LABKEY.Utils.getOnSuccess(config);
-            Ext.Ajax.request({
+            LABKEY.Ajax.request({
                 url: url,
                 method: 'POST',
                 params: params,
@@ -128,7 +128,7 @@ LABKEY.Pipeline = new function(){
             var containerPath = config.containerPath ? config.containerPath : LABKEY.ActionURL.getContainer();
             var url = LABKEY.ActionURL.buildURL("pipeline-analysis", "getFileStatus.api", containerPath);
             var onSuccess = LABKEY.Utils.getOnSuccess(config);
-            Ext.Ajax.request({
+            LABKEY.Ajax.request({
                 url: url,
                 method: 'POST',
                 timeout: 60000000,
@@ -184,11 +184,11 @@ LABKEY.Pipeline = new function(){
             if (config.xmlParameters)
             {
                 // Convert from an Element to a string if needed
-                params.configureXml = Ext.DomHelper.markup(config.xmlParameters);
+                params.configureXml = LABKEY.ExtAdapter.DomHelper.markup(config.xmlParameters);
             }
             else if (config.jsonParameters)
             {
-                if (Ext.isString(config.jsonParameters))
+                if (LABKEY.ExtAdapter.isString(config.jsonParameters))
                 {
                     // We already have a string
                     params.configureJson = config.jsonParameters;
@@ -196,12 +196,12 @@ LABKEY.Pipeline = new function(){
                 else
                 {
                     // Convert from JavaScript object to a string
-                    params.configureJson = Ext.util.JSON.encode(config.jsonParameters);
+                    params.configureJson = LABKEY.ExtAdapter.encode(config.jsonParameters);
                 }
             }
             var containerPath = config.containerPath ? config.containerPath : LABKEY.ActionURL.getContainer();
             var url = LABKEY.ActionURL.buildURL("pipeline-analysis", "startAnalysis.api", containerPath);
-            Ext.Ajax.request({
+            LABKEY.Ajax.request({
                 url: url,
                 method: 'POST',
                 params: params,

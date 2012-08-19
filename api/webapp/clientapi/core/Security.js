@@ -691,7 +691,7 @@ LABKEY.Security = new function()
             config = config || {};
             if (undefined != config.container)
             {
-                if (Ext.isArray(config.container))
+                if (LABKEY.ExtAdapter.isArray(config.container))
                 {
                     params.multipleContainers = true;
                 }
@@ -979,10 +979,10 @@ LABKEY.Security = new function()
                 }
 
                 var result = {queries:{}};
-                Ext.each(studyResource.children, function (dataset) {
+                LABKEY.ExtAdapter.each(studyResource.children, function (dataset) {
                     result.queries[dataset.name] = dataset;
                     dataset.permissionMap = {};
-                    Ext.each(dataset.effectivePermissions, function (perm) {
+                    LABKEY.ExtAdapter.each(dataset.effectivePermissions, function (perm) {
                         dataset.permissionMap[perm] = true;
                     })
                 });
@@ -990,7 +990,7 @@ LABKEY.Security = new function()
                 config.success.apply(config.scope || this, [{schemas:{study:result}}, response]);
             }
 
-            var myConfig = Ext.apply({}, config);
+            var myConfig = LABKEY.ExtAdapter.apply({}, config);
             myConfig.includeEffectivePermissions = true;
             myConfig.success = successCallback;
             return LABKEY.Security.getSecurableResources(myConfig);
@@ -1343,7 +1343,7 @@ LABKEY.Security = new function()
         {
             var params = {
                 groupId: config.groupId,
-                principalIds: (Ext.isArray(config.principalIds) ? config.principalIds : [config.principalIds])
+                principalIds: (LABKEY.ExtAdapter.isArray(config.principalIds) ? config.principalIds : [config.principalIds])
             };
             return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "addGroupMember", config.containerPath),
@@ -1387,7 +1387,7 @@ LABKEY.Security = new function()
         {
             var params = {
                 groupId: config.groupId,
-                principalIds: (Ext.isArray(config.principalIds) ? config.principalIds : [config.principalIds])
+                principalIds: (LABKEY.ExtAdapter.isArray(config.principalIds) ? config.principalIds : [config.principalIds])
             };
             return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("security", "removeGroupMember", config.containerPath),
