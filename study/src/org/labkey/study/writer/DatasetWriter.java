@@ -235,7 +235,7 @@ public class DatasetWriter implements InternalStudyWriter
             cols.add(participantTableInfo.getColumn("alternateid"));
             SimpleFilter containerFilter = new SimpleFilter();
             containerFilter.addCondition(participantTableInfo.getColumn("container"), ctx.getContainer());
-            Sort participantSort = new Sort(StudyService.get().getSubjectColumnName(ctx.getContainer()));
+            Sort participantSort = new Sort("participantid");
             Results participantResults = QueryService.get().select(participantTableInfo, cols, containerFilter, participantSort);
             writeResultsToTSV(participantResults, vf, "participant.tsv");
         }
@@ -250,7 +250,7 @@ public class DatasetWriter implements InternalStudyWriter
         tsvWriter.write(out);     // NOTE: TSVGridWriter closes PrintWriter and ResultSet
     }
 
-    private void createDateShiftColumns(TableInfo ti, Collection<ColumnInfo> columns, Container c)
+    public static void createDateShiftColumns(TableInfo ti, Collection<ColumnInfo> columns, Container c)
     {
         Map<ColumnInfo, ExprColumn> exprColumnMap = new HashMap<ColumnInfo, ExprColumn>();
         for (ColumnInfo column : columns)
@@ -270,7 +270,7 @@ public class DatasetWriter implements InternalStudyWriter
         }
     }
 
-    private void createAlternateIdColumns(TableInfo ti, Collection<ColumnInfo> columns, Container c)
+    public static void createAlternateIdColumns(TableInfo ti, Collection<ColumnInfo> columns, Container c)
     {
         String participantIdColumnName = StudyService.get().getSubjectColumnName(c);
         for (ColumnInfo column : columns)
@@ -294,7 +294,7 @@ public class DatasetWriter implements InternalStudyWriter
         }
     }
 
-    private SQLFragment generateSqlForShiftDateCol(Container c, ColumnInfo col)
+    private static SQLFragment generateSqlForShiftDateCol(Container c, ColumnInfo col)
     {
         // join to the study.participant table to get the participant's date offset number
         SQLFragment dateOffsetJoin = new SQLFragment();

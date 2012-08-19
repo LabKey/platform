@@ -17,9 +17,11 @@
 package org.labkey.core.admin.writer;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.writer.VirtualFile;
 
+import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -40,9 +42,16 @@ public class FolderWriterImpl implements InternalFolderWriter
         LOG.info("Exporting folder to " + vf.getLocation());
 
         Set<String> dataTypes = ctx.getDataTypes();
+        Collection<FolderWriter> writers = FolderSerializationRegistryImpl.get().getRegisteredFolderWriters();
+
+        // Initialize all the writers first, allowing them to create module-specific context, etc.
+        for (FolderWriter writer : writers)
+        {
+            writer.initialize(ctx);
+        }
 
         // Call all the writers first -- this ensures that folder.xml is the last writer called.
-        for (org.labkey.api.admin.FolderWriter writer : FolderSerializationRegistryImpl.get().getRegisteredFolderWriters())
+        for (FolderWriter writer : writers)
         {
             String text = writer.getSelectionText();
 

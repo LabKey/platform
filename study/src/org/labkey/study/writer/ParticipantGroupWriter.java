@@ -21,6 +21,7 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.ParticipantCategoryImpl;
 import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
+import org.labkey.study.model.ParticipantMapper;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.participantGroups.CategoryType;
 import org.labkey.study.xml.participantGroups.GroupType;
@@ -55,7 +56,7 @@ public class ParticipantGroupWriter implements InternalStudyWriter
     @Override
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
-        serialize(ctx.getUser(), ctx.getContainer(), vf);
+        serialize(ctx, vf);
     }
 
     public void setGroupsToCopy(List<ParticipantGroup> groupsToCopy)
@@ -66,8 +67,10 @@ public class ParticipantGroupWriter implements InternalStudyWriter
     /**
      * Serialize participant groups to an xml bean object
      */
-    private void serialize(User user, Container container, VirtualFile vf) throws IOException
+    private void serialize(StudyExportContext ctx, VirtualFile vf) throws IOException
     {
+        User user = ctx.getUser();
+        Container container = ctx.getContainer();
         ParticipantCategoryImpl[] categories = ParticipantGroupManager.getInstance().getParticipantCategories(container, user);
         Set<ParticipantCategoryImpl> categoriesToCopy = new HashSet<ParticipantCategoryImpl>();
 
@@ -82,6 +85,8 @@ public class ParticipantGroupWriter implements InternalStudyWriter
         {
             ParticipantGroupsDocument doc = ParticipantGroupsDocument.Factory.newInstance();
             ParticipantGroupsType groups = doc.addNewParticipantGroups();
+
+            ParticipantMapper participantMapper = ctx.getParticipantMapper();
 
             for (ParticipantCategoryImpl category : categories)
             {
@@ -117,7 +122,14 @@ public class ParticipantGroupWriter implements InternalStudyWriter
 
                             pg.setLabel(group.getLabel());
                             pg.setCategoryLabel(group.getCategoryLabel());
-                            pg.setParticipantIdArray(group.getParticipantIds());
+
+                            String [] participantIds = group.getParticipantIds();
+                            if (participantMapper.isAlternateIds())
+                            {
+                                for (int i = 0; i < participantIds.length; i += 1)
+                                    participantIds[i] = participantMapper.getMappedParticipantId(participantIds[i]);
+                            }
+                            pg.setParticipantIdArray(participantIds);
                         }
                     }
                 }

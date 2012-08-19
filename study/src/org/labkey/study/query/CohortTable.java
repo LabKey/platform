@@ -58,9 +58,15 @@ public class CohortTable extends BaseStudyTable
         rowIdColumn.setUserEditable(false);
         rowIdColumn.setKeyField(true);
 
+        ColumnInfo enrolledColumn = addWrapColumn(_rootTable.getColumn("Enrolled"));
+        enrolledColumn.setNullable(false);
+
         // Add extended columns
         List<FieldKey> visibleColumns = new ArrayList<FieldKey>();
-        visibleColumns.add(FieldKey.fromParts(labelColumn.getName())); // Label is the only thing visible from the hard table
+
+        // Label and enrolled are the only things visible from the hard table
+        visibleColumns.add(FieldKey.fromParts(labelColumn.getName()));
+        visibleColumns.add(FieldKey.fromParts(enrolledColumn.getName()));
 
         String domainURI = CohortImpl.DOMAIN_INFO.getDomainURI(schema.getContainer());
 

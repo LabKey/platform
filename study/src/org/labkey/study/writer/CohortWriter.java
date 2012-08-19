@@ -20,6 +20,7 @@ import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.Participant;
+import org.labkey.study.model.ParticipantMapper;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.xml.CohortType;
@@ -57,13 +58,14 @@ public class CohortWriter implements InternalStudyWriter
 
             CohortImpl[] cohorts = study.getCohorts(ctx.getUser());
             MultiMap<Integer, String> participantsInEachCohort = new MultiHashMap<Integer, String>(cohorts.length);
+            ParticipantMapper participantMapper = ctx.getParticipantMapper();
 
             for (Participant participant : StudyManager.getInstance().getParticipants(study))
             {
                 Integer id = participant.getCurrentCohortId();
 
                 if (null != id)
-                    participantsInEachCohort.put(id, participant.getParticipantId());
+                    participantsInEachCohort.put(id, participantMapper.getMappedParticipantId(participant.getParticipantId()));
             }
 
             CohortsDocument cohortFileXml = CohortsDocument.Factory.newInstance();
@@ -73,6 +75,7 @@ public class CohortWriter implements InternalStudyWriter
             {
                 CohortsDocument.Cohorts.Cohort cohortXml = cohortAssignmentXml.addNewCohort();
                 cohortXml.setLabel(cohort.getLabel());
+                cohortXml.setEnrolled(cohort.isEnrolled());
                 Collection<String> ids = participantsInEachCohort.get(cohort.getRowId());
 
                 if (null != ids)

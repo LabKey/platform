@@ -2654,6 +2654,8 @@ study/resources/schemas/dbscripts/postgresql/study-12.16-12.17.sql -text
 study/resources/schemas/dbscripts/postgresql/study-12.17-12.18.sql -text
 study/resources/schemas/dbscripts/postgresql/study-12.20-12.21.sql -text
 study/resources/schemas/dbscripts/postgresql/study-12.21-12.22.sql -text
+study/resources/schemas/dbscripts/postgresql/study-12.22-12.23.sql -text
+study/resources/schemas/dbscripts/postgresql/study-12.23-12.24.sql -text
 study/resources/schemas/dbscripts/postgresql/study-create.sql -text
 study/resources/schemas/dbscripts/postgresql/study-drop.sql -text
 study/resources/schemas/dbscripts/sqlserver/obsolete/study-0.00-1.11.sql -text
@@ -2836,6 +2838,8 @@ study/resources/schemas/dbscripts/sqlserver/study-12.16-12.17.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-12.17-12.18.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-12.20-12.21.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-12.21-12.22.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-12.22-12.23.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-12.23-12.24.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-create.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-drop.sql -text
 study/resources/schemas/study.xml -text
@@ -2989,6 +2993,7 @@ study/src/org/labkey/study/model/ParticipantDataMapKey.java -text
 study/src/org/labkey/study/model/ParticipantDataset.java -text
 study/src/org/labkey/study/model/ParticipantGroup.java -text
 study/src/org/labkey/study/model/ParticipantGroupManager.java -text
+study/src/org/labkey/study/model/ParticipantMapper.java -text
 study/src/org/labkey/study/model/PrimaryType.java -text
 study/src/org/labkey/study/model/QCState.java -text
 study/src/org/labkey/study/model/QCStateSet.java -text
@@ -3112,6 +3117,7 @@ study/src/org/labkey/study/reports/EnrollmentReport.java -text
 study/src/org/labkey/study/reports/ExportExcelReport.java -text
 study/src/org/labkey/study/reports/ExternalReport.java -text
 study/src/org/labkey/study/reports/ParticipantReport.java -text
+study/src/org/labkey/study/reports/ParticipantReportDescriptor.java -text
 study/src/org/labkey/study/reports/ReportManager.java -text
 study/src/org/labkey/study/reports/ReportQueryViewFactory.java -text
 study/src/org/labkey/study/reports/ReportViewProvider.java -text
@@ -3246,6 +3252,7 @@ study/src/org/labkey/study/view/importDataset.jsp -text
 study/src/org/labkey/study/view/importStudy.jsp -text
 study/src/org/labkey/study/view/importStudyBatch.jsp -text
 study/src/org/labkey/study/view/importVisitAliases.jsp -text
+study/src/org/labkey/study/view/manageAlternateIds.jsp -text
 study/src/org/labkey/study/view/manageCohortsBottom.jsp -text
 study/src/org/labkey/study/view/manageCohortsTop.jsp -text
 study/src/org/labkey/study/view/manageComments.jsp -text

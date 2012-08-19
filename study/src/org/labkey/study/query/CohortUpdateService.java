@@ -111,12 +111,23 @@ public class CohortUpdateService extends AbstractQueryUpdateService
         try
         {
 
-            // label is in the hard table, so handle it separately
+            // label and enrolled are in the hard table so handle separately
             String newLabel = (String)row.get("label");
-            if (!cohort.getLabel().equals(newLabel))
+            boolean newEnrolled = (Boolean)row.get("enrolled");
+
+            if (!cohort.getLabel().equals(newLabel) || (cohort.isEnrolled() != newEnrolled))
             {
                 cohort = cohort.createMutable();
-                cohort.setLabel(newLabel);
+
+                if (cohort.isEnrolled() != newEnrolled)
+                {
+                    cohort.setEnrolled(newEnrolled);
+                }
+
+                if (!cohort.getLabel().equals(newLabel))
+                {
+                    cohort.setLabel(newLabel);
+                }
                 StudyManager.getInstance().updateCohort(user, cohort);
             }
 

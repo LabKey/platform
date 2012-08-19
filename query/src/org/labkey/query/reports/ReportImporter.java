@@ -17,20 +17,15 @@ package org.labkey.query.reports;
 
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
-import org.labkey.api.admin.FolderImporterFactory;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.reports.ReportService;
 import org.labkey.api.pipeline.PipelineJobWarning;
+import org.labkey.api.reports.ReportService;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.folder.xml.FolderDocument;
-import org.labkey.study.xml.StudyDocument;
 
-import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collection;

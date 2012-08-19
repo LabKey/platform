@@ -24,6 +24,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.folder.xml.FolderDocument;
+import org.labkey.study.model.ParticipantMapper;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
@@ -67,17 +68,33 @@ public class StudyWriterFactory implements FolderWriterFactory
         }
 
         @Override
+        public void initialize(ImportContext<FolderDocument.Folder> ctx)
+        {
+            super.initialize(ctx);
+
+            Container c = ctx.getContainer();
+            StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
+
+            if (null != study)
+            {
+                StudyExportContext exportCtx = new StudyExportContext(study, ctx.getUser(), c, "old".equals(ctx.getFormat()), ctx.getDataTypes(),
+                        ctx.isRemoveProtected(), new ParticipantMapper(study, ctx.isShiftDates(), ctx.isAlternateIds()), ctx.getLogger());
+                ctx.addContext(StudyExportContext.class, exportCtx);
+            }
+        }
+
+        @Override
         public void write(Container c, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
         {
-            StudyImpl study = StudyManager.getInstance().getStudy(c);
-            if (null != study)
+            StudyExportContext exportCtx = ctx.getContext(StudyExportContext.class);
+
+            if (null != exportCtx)
             {
                 ctx.getXml().addNewStudy().setDir(DEFAULT_DIRECTORY);
                 VirtualFile studyDir = vf.getDir(DEFAULT_DIRECTORY);
 
                 StudyWriter writer = new StudyWriter();
-                StudyExportContext exportCtx = new StudyExportContext(study, ctx.getUser(), c, "old".equals(ctx.getFormat()), ctx.getDataTypes(),
-                        ctx.isRemoveProtected(), ctx.isShiftDates(), ctx.isAlternateIds(), ctx.getLogger());
+                StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer()); // TODO: Shouldn't the StudyExportContext hold onto the study?!?
                 writer.write(study, exportCtx, studyDir);
             }
         }

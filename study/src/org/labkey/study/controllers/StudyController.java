@@ -45,7 +45,6 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.views.DataViewInfo;
 import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.data.views.DataViewService;
-import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -54,7 +53,6 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
@@ -72,7 +70,6 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
-import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
@@ -113,9 +110,6 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.roles.ReaderRole;
-import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
@@ -137,7 +131,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.ReturnURLString;
-import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.XmlBeansUtil;
@@ -6904,6 +6897,29 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ManageAlternateIdsAction extends SimpleViewAction<Object>
+    {
+        public ModelAndView getView(Object form, BindException errors) throws Exception
+        {
+            ChangeAlternateIdsForm changeAlternateIdsForm = getChangeAlternateIdForm(getStudy());
+            return new JspView<ChangeAlternateIdsForm>("/org/labkey/study/view/manageAlternateIds.jsp", changeAlternateIdsForm);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            try
+            {
+                _appendManageStudy(root);
+                root.addChild("Manage Alternate " + getStudy().getSubjectNounSingular() + " IDs");
+            }
+            catch (ServletException e)
+            {
+            }
+            return root;
+        }
+    }
+
     @RequiresPermissionClass(ReadPermission.class)
     public class SubjectListAction extends SimpleViewAction
     {
@@ -7678,4 +7694,79 @@ public class StudyController extends BaseStudyController
             _targetDataset = (Integer)props.get("targetDataset");
         }
     }
+
+    public static class ChangeAlternateIdsForm
+    {
+        private String _prefix = "";
+        private int _numDigits = StudyManager.ALTERNATEID_DEFAULT_NUM_DIGITS;;
+
+        public String getPrefix()
+        {
+            return _prefix;
+        }
+
+        public void setPrefix(String prefix)
+        {
+            _prefix = prefix;
+        }
+
+        public int getNumDigits()
+        {
+            return _numDigits;
+        }
+
+        public void setNumDigits(int numDigits)
+        {
+            _numDigits = numDigits;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ChangeAlternateIdsAction extends ApiAction<ChangeAlternateIdsForm>
+    {
+        @Override
+        public ApiResponse execute(ChangeAlternateIdsForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            Study study = StudyManager.getInstance().getStudy(getContainer());
+            if (study != null)
+            {
+                setAlternateIdProperties(getStudy(), form.getPrefix(), form.getNumDigits());
+                StudyManager.getInstance().clearAlternateParticipantIds(study);
+                response.put("success", true);
+                return response;
+            }
+            else
+                throw new IllegalStateException("A study does not exist in this folder");
+        }
+    }
+
+    private static final String ALTERNATEID_PROPERTIES = "Study.alternateIdProperties";
+    private static final String ALTERNATEID_PREFIX_PROPERTY = "alternateIdPrefixProperty";
+    private static final String ALTERNATEID_NUMDIGITS_PROPERTY = "alternateIdNumDigitsProperty";
+
+    public static ChangeAlternateIdsForm getChangeAlternateIdForm(Study study)
+    {
+        ChangeAlternateIdsForm changeAlternateIdsForm = new ChangeAlternateIdsForm();
+        changeAlternateIdsForm.setPrefix(study.getAlternateIdPrefix());
+        changeAlternateIdsForm.setNumDigits(study.getAlternateIdDigits());
+
+        return changeAlternateIdsForm;
+    }
+
+    private void setAlternateIdProperties(StudyImpl study, String prefix, int numDigits)
+    {
+        try
+        {
+            study = study.createMutable();
+            study.setAlternateIdPrefix(prefix);
+            study.setAlternateIdDigits(numDigits);
+            StudyManager.getInstance().updateStudy(getUser(), study);
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
 }

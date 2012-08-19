@@ -120,6 +120,12 @@
       <ns:column columnName="Grant">
         <ns:description>The grant for the study.</ns:description>
       </ns:column>
+      <ns:column columnName="AlternateIdPrefix">
+        <ns:description>Optional prefix to use when generating random alternate participant IDs.</ns:description>
+      </ns:column>
+      <ns:column columnName="AlternateIdDigits">
+        <ns:description>Number of digits to use when generating random alternate participant IDs.</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="Site" tableDbType="TABLE">
@@ -1491,6 +1497,7 @@
       </ns:column>
       <ns:column columnName="container"/>
       <ns:column columnName="LSID"/>
+      <ns:column columnName="enrolled"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenComment" tableDbType="TABLE">

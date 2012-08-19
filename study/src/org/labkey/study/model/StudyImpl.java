@@ -122,6 +122,8 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private String _investigator;
     private String _grant;
     private int _defaultTimepointDuration = 1;
+    private String _alternateIdPrefix;
+    private int _alternateIdDigits;
 
     public StudyImpl()
     {
@@ -694,6 +696,27 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             ss.deleteResource("attachment:/" + _protocolDocumentEntityId + "/" + PageFlowUtil.encode(name));
     }
 
+    public String getAlternateIdPrefix()
+    {
+        return _alternateIdPrefix;
+    }
+
+    public int getAlternateIdDigits()
+    {
+        return _alternateIdDigits;
+    }
+
+    public void setAlternateIdPrefix(String alternateIdPrefix)
+    {
+        verifyMutability();
+        _alternateIdPrefix = alternateIdPrefix;
+    }
+
+    public void setAlternateIdDigits(int alternateIdDigits)
+    {
+        verifyMutability();
+        _alternateIdDigits = alternateIdDigits;
+    }
 
     public static class ProtocolDocumentAttachmentParent extends AttachmentParentEntity
     {

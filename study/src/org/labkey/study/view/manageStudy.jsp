@@ -160,6 +160,11 @@
         <td><%= textLink("Manage " + h(subjectNounSingle) + " Groups", new ActionURL(StudyController.ManageParticipantCategoriesAction.class, c)) %></td>
     </tr>
     <tr>
+        <th align="left">Alternate <%= h(subjectNounSingle) %> IDs</th>
+        <td>This study defines <%=categories.length%> <%= h(subjectNounSingle.toLowerCase()) %> groups</td>
+        <td><%= textLink("Manage Alternate " + h(subjectNounSingle) + " IDs", new ActionURL(StudyController.ManageAlternateIdsAction.class, c)) %></td>
+    </tr>
+    <tr>
         <th align="left">Security</th>
         <td>Manage access to Study datasets and samples</td>
         <% ActionURL url = new ActionURL(SecurityController.BeginAction.class, c);%>

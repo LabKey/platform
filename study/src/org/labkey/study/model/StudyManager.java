@@ -134,6 +134,7 @@ import org.labkey.study.visitmanager.AbsoluteDateVisitManager;
 import org.labkey.study.visitmanager.RelativeDateVisitManager;
 import org.labkey.study.visitmanager.SequenceVisitManager;
 import org.labkey.study.visitmanager.VisitManager;
+import org.labkey.study.writer.DatasetWriter;
 import org.springframework.validation.BindException;
 
 import javax.servlet.ServletException;
@@ -149,11 +150,13 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -2379,22 +2382,79 @@ public class StudyManager
         try
         {
             DbSchema schema = StudySchema.getInstance().getSchema();
-            SQLFragment sql;
-            if (participantGroupId == -1)
-                sql = new SQLFragment("SELECT ParticipantId FROM " + _tableInfoParticipant + " WHERE Container = ? ORDER BY ParticipantId", study.getContainer().getId());
-            else
-            {
-                TableInfo table = StudySchema.getInstance().getTableInfoParticipantGroupMap();
-                sql = new SQLFragment("SELECT ParticipantId FROM " + table + " WHERE Container = ? AND GroupId = ? ORDER BY ParticipantId", study.getContainer().getId(), participantGroupId);
-            }
-            if (rowLimit > 0)
-                sql = schema.getSqlDialect().limitRows(sql, rowLimit);
+            SQLFragment sql = getSQLFragmentForParticipantIds(study, participantGroupId, rowLimit, schema, "ParticipantId");
             return Table.executeArray(schema, sql, String.class);
         }
         catch (SQLException x)
         {
             throw new RuntimeSQLException(x);
         }
+    }
+
+    private static final String ALTERNATEID_COLUMN_NAME = "AlternateId";
+    private static final String DATEOFFSET_COLUMN_NAME = "DateOffset";
+    public class ParticipantInfo
+    {
+        private final String _alternateId;
+        private final int _dateOffset;
+
+        public ParticipantInfo(String alternateId, int dateOffset)
+        {
+            _alternateId = alternateId;
+            _dateOffset = dateOffset;
+        }
+        public String getAlternateId()
+        {
+            return _alternateId;
+        }
+        public int getDateOffset()
+        {
+            return _dateOffset;
+        }
+    }
+
+    public Map<String, ParticipantInfo> getParticipantInfos(Study study, boolean isShiftDates, boolean isAlternateIds)
+    {
+        Table.TableResultSet rs = null;
+        try
+        {
+            DbSchema schema = StudySchema.getInstance().getSchema();
+            SQLFragment sql = getSQLFragmentForParticipantIds(study, -1, -1, schema, "ParticipantId," + ALTERNATEID_COLUMN_NAME + "," + DATEOFFSET_COLUMN_NAME);
+            rs = Table.executeQuery(schema, sql);
+
+            Map<String, ParticipantInfo> alternateIdMap = new HashMap<String, ParticipantInfo>();
+            while (rs.next())
+            {
+                String participantId = rs.getString("ParticipantId");
+                String alternateId = isAlternateIds ? rs.getString(ALTERNATEID_COLUMN_NAME) : participantId;     // if !isAlternateIds, use participantId
+                int dateOffset = isShiftDates ? rs.getInt(DATEOFFSET_COLUMN_NAME) : 0;                            // if !isDateShift, use 0 shift
+                alternateIdMap.put(participantId, new ParticipantInfo(alternateId, dateOffset));
+            }
+            return alternateIdMap;
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+        finally
+        {
+            ResultSetUtil.close(rs);    // TODO: Try to move population of map and RS cleanup into Table
+        }
+    }
+
+    private SQLFragment getSQLFragmentForParticipantIds(Study study, int participantGroupId, int rowLimit, DbSchema schema, String columns)
+    {
+        SQLFragment sql;
+        if (participantGroupId == -1)
+            sql = new SQLFragment("SELECT " + columns + " FROM " + _tableInfoParticipant + " WHERE Container = ? ORDER BY ParticipantId", study.getContainer().getId());
+        else
+        {
+            TableInfo table = StudySchema.getInstance().getTableInfoParticipantGroupMap();
+            sql = new SQLFragment("SELECT " + columns + " FROM " + table + " WHERE Container = ? AND GroupId = ? ORDER BY ParticipantId", study.getContainer().getId(), participantGroupId);
+        }
+        if (rowLimit > 0)
+            sql = schema.getSqlDialect().limitRows(sql, rowLimit);
+        return sql;
     }
 
     public String[] getParticipantIdsForCohort(Study study, int currentCohortId, int rowLimit)
@@ -2467,6 +2527,108 @@ public class StudyManager
         {
             throw new RuntimeSQLException(x);
         }
+    }
+
+    public static final int ALTERNATEID_DEFAULT_NUM_DIGITS = 6;
+
+    public void clearAlternateParticipantIds(Study study)
+    {
+        String [] participantIds = getParticipantIds(study);
+
+        try
+        {
+            for (String participantId : participantIds)
+            {
+                clearAlternateId(study, participantId);
+            }
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
+    public void generateNeededAlternateParticipantIds(Study study)
+    {
+        try
+        {
+            Map<String, ParticipantInfo> participantInfos = getParticipantInfos(study, false, true);
+
+            StudyController.ChangeAlternateIdsForm changeAlternateIdsForm = StudyController.getChangeAlternateIdForm(study);
+            String prefix = changeAlternateIdsForm.getPrefix();
+            if (null == prefix)
+                prefix = "";        // So we don't get the string "null" as the prefix
+            int numDigits = changeAlternateIdsForm.getNumDigits();
+            if (numDigits < ALTERNATEID_DEFAULT_NUM_DIGITS)
+                numDigits = ALTERNATEID_DEFAULT_NUM_DIGITS;       // Should not happen, but be safe
+
+            HashSet<Integer> usedNumbers = new HashSet<Integer>();
+            for (ParticipantInfo participantInfo : participantInfos.values())
+            {
+                String alternateId = participantInfo.getAlternateId();
+                if (alternateId != null)
+                {
+                    try
+                    {
+                        String alternateIdNoPrefix = alternateId.replaceFirst(prefix, "");
+                        int alternateIdInt = Integer.valueOf(alternateIdNoPrefix);
+                        usedNumbers.add(alternateIdInt);
+                    }
+                    catch (NumberFormatException x)
+                    {
+                        // very much unexpected; TODO: ignore?
+                    }
+                }
+            }
+
+            Random random = new Random();
+            int firstRandom = (int)Math.pow(10, (numDigits - 1));
+            int maxRandom = (int)Math.pow(10, numDigits) - firstRandom;
+            Iterator participantMapIter = participantInfos.entrySet().iterator();
+            while (participantMapIter.hasNext())
+            {
+                Map.Entry pair = (Map.Entry)participantMapIter.next();
+                ParticipantInfo participantInfo = (ParticipantInfo)pair.getValue();
+                String alternateId = participantInfo.getAlternateId();
+                if (null == alternateId)
+                {
+                    String participantId = (String)pair.getKey();
+                    int newId = nextRandom(random, usedNumbers, firstRandom, maxRandom);
+                    setAlternateId(study, participantId, prefix + String.valueOf(newId));
+                }
+            }
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
+    private void clearAlternateId(Study study, String participantId) throws SQLException
+    {
+        SQLFragment sql = new SQLFragment(String.format(
+                "UPDATE %s SET AlternateId=NULL WHERE Container = ? AND ParticipantId = '%s'", _tableInfoParticipant, participantId),
+                study.getContainer().getId());
+        Table.execute(StudySchema.getInstance().getSchema(), sql);
+    }
+
+    private void setAlternateId(Study study, String participantId, String alternateId) throws SQLException
+    {
+        SQLFragment sql = new SQLFragment(String.format(
+                "UPDATE %s SET AlternateId='%s' WHERE Container = ? AND ParticipantId = '%s'", _tableInfoParticipant, alternateId, participantId),
+                study.getContainer().getId());
+        Table.execute(StudySchema.getInstance().getSchema(), sql);
+    }
+
+    private int nextRandom(Random random, HashSet<Integer> usedNumbers, int firstRandom, int maxRandom)
+    {
+        int newId = 0;
+        do
+        {
+            newId = random.nextInt(maxRandom) + firstRandom;
+        } while (usedNumbers.contains(newId));
+        usedNumbers.add(newId);
+        return newId;
     }
 
     private void parseData(User user,
@@ -3792,6 +3954,8 @@ public class StudyManager
                 _testImportDemographicDatasetData(_studyVisitBased);
                 _testImportDatasetData(_studyVisitBased);
                 _testImportDatasetDataAllowImportGuid(_studyDateBased);
+                _testDatasetTransformExport(_studyDateBased);
+
 // TODO
 //                _testDatsetUpdateService(_studyVisitBased);
             }
@@ -4291,6 +4455,80 @@ public class StudyManager
             }
         }
 
+        private void _testDatasetTransformExport(Study study) throws Throwable
+        {
+            ResultSet rs = null;
+
+            try
+            {
+                // create a dataset
+                StudyQuerySchema ss = new StudyQuerySchema((StudyImpl) study, _context.getUser(), false);
+                DataSet def = createDataset(study, "DS", false);
+                TableInfo datasetTI = ss.getTable(def.getName());
+                QueryUpdateService qus = datasetTI.getUpdateService();
+                BatchValidationException errors = new BatchValidationException();
+                assertNotNull(qus);
+
+                // insert one row
+                List rows = new ArrayList();
+                Date jan1 = new Date(DateUtil.parseDateTime("1/1/2012"));
+                rows.add(PageFlowUtil.mapInsensitive("SubjectId", "DS1", "Date", jan1, "Measure", "Test" + (++this.counterRow), "Value", 0.0));
+                List<Map<String,Object>> ret = qus.insertRows(_context.getUser(), study.getContainer(), rows, errors, null);
+                assertFalse(errors.hasErrors());
+                Map<String,Object> firstRowMap = ret.get(0);
+
+                // Ensure alternateIds are generated for all participants
+                StudyManager.getInstance().generateNeededAlternateParticipantIds(study);
+
+                // query the study.participant table to verify that the dateoffset and alternateID were generated for the ptid row inserted into the dataset
+                TableInfo participantTableInfo = StudySchema.getInstance().getTableInfoParticipant();
+                List<ColumnInfo> cols = new ArrayList<ColumnInfo>();
+                cols.add(participantTableInfo.getColumn("participantid"));
+                cols.add(participantTableInfo.getColumn("dateoffset"));
+                cols.add(participantTableInfo.getColumn("alternateid"));
+                SimpleFilter filter = new SimpleFilter();
+                filter.addCondition(participantTableInfo.getColumn("participantid"), "DS1");
+                filter.addCondition(participantTableInfo.getColumn("container"), study.getContainer());
+                rs = QueryService.get().select(participantTableInfo, cols, null, null);
+
+                // store the ptid date offset and alternate ID for verification later
+                int dateOffset = -1;
+                String alternateId = null;
+                while(rs.next())
+                {
+                    if ("DS1".equals(rs.getString("participantid")))
+                    {
+                        dateOffset = rs.getInt("dateoffset");
+                        alternateId = rs.getString("alternateid");
+                        break;
+                    }
+                }
+                assertTrue("Date offset expected to be between 1 and 365", dateOffset > 0 && dateOffset < 366);
+                assertNotNull(alternateId);
+                rs.close(); rs = null;
+
+                // test "exporting" the dataset data using the date shited values and alternate IDs
+                Collection<ColumnInfo> datasetCols = new LinkedHashSet<ColumnInfo>(datasetTI.getColumns());
+                DatasetWriter.createDateShiftColumns(datasetTI, datasetCols, study.getContainer());
+                DatasetWriter.createAlternateIdColumns(datasetTI, datasetCols, study.getContainer());
+                rs = QueryService.get().select(datasetTI, datasetCols, null, null);
+
+                // verify values from the transformed dataset
+                assertTrue(rs.next());
+                assertNotNull(rs.getString("SubjectId"));
+                assertFalse("DS1".equals(rs.getString("SubjectId")));
+                assertTrue(alternateId.equals(rs.getString("SubjectID")));
+                assertTrue(rs.getDate("Date").before((Date)firstRowMap.get("Date")));
+                // TODO: calculate the date offset and verify that it matches the firstRowMap.get("Date") value
+                assertFalse(rs.next());
+
+                rs.close(); rs = null;
+            }
+            finally
+            {
+                ResultSetUtil.close(rs);
+            }
+        }
 
         // TODO
         @Test

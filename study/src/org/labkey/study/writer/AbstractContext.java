@@ -38,7 +38,7 @@ public abstract class AbstractContext extends AbstractImportContext<StudyDocumen
         super(user, c, studyDoc, logger, root);
     }
 
-    // Study node -- interesting to any top-level writer that needs to set info into study.xml
+    // Study node -- interesting to any study writer that needs to set info into study.xml
     public StudyDocument.Study getXml() throws ImportException
     {
         return getDocument().getStudy();

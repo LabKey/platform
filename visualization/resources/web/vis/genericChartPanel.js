@@ -542,7 +542,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 },
                 resetTitle: function() {
                     // need a reset title function.
-                    this.mainTitlePanel.setMainTitle(this.queryName + ' - ' + this.yAxisMeasure.label)
+                    this.mainTitlePanel.setMainTitle(this.queryName + ' - ' + Ext4.util.Format.htmlEncode(this.yAxisMeasure.label))
                 },
                 scope: this
             }
@@ -1377,8 +1377,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         var chartOptions = this.getChartOptions();
         var scales = {}, geom, plotConfig, newChartDiv, labels, yMin, yMax, yPadding;
         var xMeasureName = this.xAxisMeasure ? this.xAxisMeasure.name : this.chartData.queryName;
-        var xMeasureLabel = this.xAxisMeasure ? this.xAxisMeasure.label : this.chartData.queryName;
+        var xMeasureLabel = this.xAxisMeasure ? Ext4.util.Format.htmlEncode(this.xAxisMeasure.label) : this.chartData.queryName;
         var yMeasureName = this.yAxisMeasure.name;
+        var xAcc = null;
         var yAcc = function(row){
             var value = row[yMeasureName].value;
             if(value === false || value === true){
@@ -1386,7 +1387,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
             return value;
         };
-        var xAcc = null;
 
         // Check if y axis actually has data first, if not show error message and have user select new measure.
         var yDataIsNull = true;
@@ -1399,20 +1399,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         if(yDataIsNull){
             this.viewPanel.getEl().unmask();
-            Ext.MessageBox.alert('Error', 'All data values for ' + this.yAxisMeasure.label + ' are null. Please choose a different measure', this.showYMeasureWindow, this);
+            Ext.MessageBox.alert('Error', 'All data values for ' + Ext4.util.Format.htmlEncode(this.yAxisMeasure.label) + ' are null. Please choose a different measure', this.showYMeasureWindow, this);
             return;
-        }
-
-        if(this.xAxisMeasure){
-            xAcc = function(row){
-                var value = row[xMeasureName].displayValue ? row[xMeasureName].displayValue : row[xMeasureName].value;
-                if(value === null){
-                    value = "Not in " + xMeasureLabel;
-                }
-                return value;
-            };
-        } else {
-            xAcc = function(row){return xMeasureName};
         }
 
         var xClickHandler = function(scopedThis){
@@ -1446,6 +1434,19 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         // TODO: make line charts render if this.xAxisMeasure.type == "date"
         if(this.renderType == 'box_plot' ||
                 (this.renderType == 'auto_plot' && (!this.xAxisMeasure || this.xAxisMeasure.type == 'string' || this.xAxisMeasure.type == 'boolean'))) {
+
+            if(this.xAxisMeasure){
+                xAcc = function(row){
+                    var value = row[xMeasureName].displayValue ? row[xMeasureName].displayValue : row[xMeasureName].value;
+                    if(value === null){
+                        value = "Not in " + xMeasureLabel;
+                    }
+                    return value;
+                };
+            } else {
+                xAcc = function(row){return xMeasureName};
+            }
+
             scales.x = {scaleType: 'discrete'};
             yMin = d3.min(this.chartData.rows, yAcc);
             yMax = d3.max(this.chartData.rows, yAcc);
@@ -1459,6 +1460,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             });
         } else if(this.renderType == 'scatter_plot' ||
                 (this.renderType == 'auto_plot' && this.xAxisMeasure.type == 'int' || this.xAxisMeasure.type == 'float' || this.xAxisMeasure.type == 'date')){
+
+            xAcc = function(row){
+                return row[xMeasureName].value;
+            };
+            
             scales.x = (this.xAxisMeasure.type == 'int' || this.xAxisMeasure.type == 'float' || this.xAxisMeasure.type == 'double') ?
                 {scaleType: 'continuous', trans: chartOptions.xAxis.scaleType} :
                 {scaleType: 'discrete'};
@@ -1494,7 +1500,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 }
             },
             y: {
-                value: chartOptions.yAxis.label ? chartOptions.yAxis.label : this.yAxisMeasure.label,
+                value: chartOptions.yAxis.label ? chartOptions.yAxis.label : Ext4.util.Format.htmlEncode(this.yAxisMeasure.label),
                 lookClickable: !forExport && this.editMode,
                 listeners: {
                     click: this.editMode ? yClickHandler(this) : null

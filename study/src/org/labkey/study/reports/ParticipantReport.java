@@ -72,6 +72,12 @@ public class ParticipantReport extends AbstractReport
     }
 
     @Override
+    public String getDescriptorType()
+    {
+        return ParticipantReportDescriptor.TYPE;
+    }
+
+    @Override
     public HttpView renderReport(ViewContext context) throws Exception
     {
         ReportsController.ParticipantReportForm form = new ReportsController.ParticipantReportForm();

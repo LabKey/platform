@@ -133,6 +133,7 @@ import org.labkey.study.reports.EnrollmentReport;
 import org.labkey.study.reports.ExportExcelReport;
 import org.labkey.study.reports.ExternalReport;
 import org.labkey.study.reports.ParticipantReport;
+import org.labkey.study.reports.ParticipantReportDescriptor;
 import org.labkey.study.reports.ReportViewProvider;
 import org.labkey.study.reports.StudyChartQueryReport;
 import org.labkey.study.reports.StudyCrosstabReport;
@@ -213,7 +214,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     public double getVersion()
     {
-        return 12.22;
+        return 12.24;
     }
 
     protected void init()
@@ -365,6 +366,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         ReportService.get().registerDescriptor(new ChartReportView.ChartReportViewDescriptor());
         ReportService.get().registerDescriptor(new CrosstabReportDescriptor());
+        ReportService.get().registerDescriptor(new ParticipantReportDescriptor());
 
         ReportService.get().addViewFactory(new ReportsController.StudyRReportViewFactory());
         ReportService.get().addUIProvider(new StudyReportUIProvider());

@@ -19,6 +19,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.ParticipantMapper;
 import org.labkey.study.model.StudyImpl;
 import org.apache.log4j.Logger;
 
@@ -39,22 +40,20 @@ public class StudyExportContext extends AbstractContext
     private final List<DataSetDefinition> _datasets = new LinkedList<DataSetDefinition>();
     private final Set<Integer> _datasetIds = new HashSet<Integer>();
     private final boolean _removeProtected;
-    private final boolean _shiftDates;
-    private final boolean _alternateIds;
+    private final ParticipantMapper _participantMapper;
 
     public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes, Logger logger)
     {
-        this(study, user, c, oldFormats, dataTypes, false, false, false, logger);
+        this(study, user, c, oldFormats, dataTypes, false, new ParticipantMapper(study, false, false), logger);
     }
 
-    public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes, boolean removeProtected, boolean shiftDates, boolean alternateIds, Logger logger)
+    public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes, boolean removeProtected, ParticipantMapper participantMapper, Logger logger)
     {
         super(user, c, StudyXmlWriter.getStudyDocument(), logger, null);
         _oldFormats = oldFormats;
         _dataTypes = dataTypes;
         _removeProtected = removeProtected;
-        _shiftDates = shiftDates;
-        _alternateIds = alternateIds;
+        _participantMapper = participantMapper;
         initializeDatasets(study);
     }
 
@@ -77,13 +76,13 @@ public class StudyExportContext extends AbstractContext
     @Override
     public boolean isShiftDates()
     {
-        return _shiftDates;
+        return getParticipantMapper().isShiftDates();
     }
 
     @Override
     public boolean isAlternateIds()
     {
-        return _alternateIds;
+        return getParticipantMapper().isAlternateIds();
     }
 
     private void initializeDatasets(StudyImpl study)
@@ -109,5 +108,10 @@ public class StudyExportContext extends AbstractContext
     public List<DataSetDefinition> getDatasets()
     {
         return _datasets;
+    }
+
+    public ParticipantMapper getParticipantMapper()
+    {
+        return _participantMapper;
     }
 }

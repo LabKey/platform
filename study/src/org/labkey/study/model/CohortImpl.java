@@ -32,6 +32,7 @@ public class CohortImpl extends ExtensibleStudyEntity<CohortImpl> implements Coh
 
     private int _rowId = 0;
     private String _lsid;
+    private boolean _enrolled = true;
 
     public Object getPrimaryKey()
     {
@@ -47,6 +48,17 @@ public class CohortImpl extends ExtensibleStudyEntity<CohortImpl> implements Coh
     {
         verifyMutability();
         _rowId = rowId;
+    }
+
+    public boolean isEnrolled()
+    {
+        return _enrolled;
+    }
+
+    public void setEnrolled(boolean enrolled)
+    {
+        verifyMutability();
+        _enrolled = enrolled;
     }
 
     @Override

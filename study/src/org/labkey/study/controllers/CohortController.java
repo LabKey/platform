@@ -339,6 +339,7 @@ public class CohortController extends BaseStudyController
 
             CohortImpl cohort;
             String newLabel = (String)dataMap.remove("label"); // remove and handle label, as it isn't an ontology object
+            boolean newEnrolled = (Boolean) dataMap.remove("enrolled"); // same with enrolled
 
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
             scope.ensureTransaction();
@@ -346,7 +347,7 @@ public class CohortController extends BaseStudyController
             {
                 if (isInsert())
                 {
-                    cohort = CohortManager.getInstance().createCohort(getStudy(), getUser(), newLabel);
+                    cohort = CohortManager.getInstance().createCohort(getStudy(), getUser(), newLabel, newEnrolled);
                 }
                 else
                 {
