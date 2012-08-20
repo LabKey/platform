@@ -104,12 +104,6 @@ public class JavaScriptReport extends ScriptReport
         return view;
     }
 
-    @Override
-    public ActionURL getEditReportURL(ViewContext context)
-    {
-        return super.getEditReportURL(context);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
     public class JavaScriptReportBean
     {
         public final CreateJavaScriptModel model;

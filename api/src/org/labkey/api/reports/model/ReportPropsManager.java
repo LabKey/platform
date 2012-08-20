@@ -16,6 +16,7 @@
 package org.labkey.api.reports.model;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -201,7 +202,7 @@ public class ReportPropsManager implements ContainerManager.ContainerListener
         }
     }
 
-    private String getDomainURI(Container container)
+    private String getDomainURI(@NotNull Container container)
     {
         return new Lsid("urn:lsid:labkey.com:" + NAMESPACE_PREFIX + ".Folder-" + container.getRowId() + ':' + TYPE_PROPERTIES).toString();
     }
