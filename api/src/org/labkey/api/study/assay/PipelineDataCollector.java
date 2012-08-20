@@ -17,8 +17,10 @@
 package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.data.Container;
@@ -35,7 +37,7 @@ import java.util.*;
  * User: jeckels
  * Date: Jan 2, 2008
  */
-public class PipelineDataCollector<ContextType extends AssayRunUploadContext> extends AbstractAssayDataCollector<ContextType>
+public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? extends AssayProvider>> extends AbstractAssayDataCollector<ContextType>
 {
     public PipelineDataCollector()
     {
@@ -159,13 +161,14 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext> ex
         return true;
     }
 
-    public void uploadComplete(ContextType context)
+    public Map<String, File> uploadComplete(ContextType context, @Nullable ExpRun run) throws ExperimentException
     {
         List<Map<String, File>> files = getFileQueue(context);
         if (!files.isEmpty())
         {
             files.remove(0);
         }
+        return super.uploadComplete(context, run);
     }
 
     public AdditionalUploadType getAdditionalUploadType(ContextType context)

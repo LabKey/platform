@@ -17,7 +17,9 @@
 package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -30,13 +32,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * This data collector doesn't write any files to the assay upload temp directory, but it may reference them
+ * after an error causes the page to reshow. Therefore, it needs to subclass AbstractTempDirDataCollector so that
+ * it migrates the files to the main assay file directory after a successful import.
  * User: jeckels
  * Date: Aug 3, 2007
  */
-public class PreviouslyUploadedDataCollector extends AbstractAssayDataCollector
+public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadForm<? extends AssayProvider>> extends AbstractTempDirDataCollector<ContextType>
 {
-    private boolean _uploadComplete = false;
-
     private static final String PATH_FORM_ELEMENT_NAME = "PreviouslyUploadedFilePaths";
     private static final String NAME_FORM_ELEMENT_NAME = "PreviouslyUploadedFileNames";
     private final Map<String, File> _uploadedFiles;
@@ -51,7 +54,7 @@ public class PreviouslyUploadedDataCollector extends AbstractAssayDataCollector
         _uploadedFiles = uploadedFiles;
     }
 
-    public HttpView getView(AssayRunUploadContext context)
+    public HttpView getView(ContextType context)
     {
         StringBuilder sb = new StringBuilder();
         String separator = "";
@@ -79,13 +82,13 @@ public class PreviouslyUploadedDataCollector extends AbstractAssayDataCollector
         return "Previously uploaded files";
     }
 
-    public String getDescription(AssayRunUploadContext context)
+    public String getDescription(ContextType context)
     {
         return "Use the data file that was already uploaded to the server";
     }
 
     @NotNull
-    public Map<String, File> createData(AssayRunUploadContext context) throws IOException
+    public Map<String, File> createData(ContextType context) throws IOException
     {
         if (_uploadComplete)
             return Collections.emptyMap();
@@ -120,7 +123,7 @@ public class PreviouslyUploadedDataCollector extends AbstractAssayDataCollector
         return !_uploadedFiles.isEmpty();
     }
 
-    public void addHiddenFormFields(InsertView view, AssayRunUploadContext context)
+    public void addHiddenFormFields(InsertView view, ContextType context)
     {
         PipeRoot pipeRoot = getPipelineRoot(context.getContainer());
 
@@ -130,10 +133,5 @@ public class PreviouslyUploadedDataCollector extends AbstractAssayDataCollector
             view.getDataRegion().addHiddenFormField(NAME_FORM_ELEMENT_NAME, entry.getKey());
             view.getDataRegion().addHiddenFormField(PATH_FORM_ELEMENT_NAME, pipeRoot.relativePath(entry.getValue()));
         }
-    }
-
-    public void uploadComplete(AssayRunUploadContext context)
-    {
-        _uploadComplete = true;
     }
 }

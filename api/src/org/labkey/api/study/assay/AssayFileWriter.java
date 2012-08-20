@@ -35,14 +35,28 @@ import java.util.*;
  * User: jeckels
  * Date: Sep 21, 2007
  */
-public class AssayFileWriter
+public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends AssayProvider>>
 {
     public static final String DIR_NAME = "assaydata";
+    public static final String ARCHIVED_DIR_NAME = "archived";
+    public static final String TEMP_DIR_NAME = "uploadTemp";
 
     /** Make sure there's an assaydata subdirectory available for this container */
     public static File ensureUploadDirectory(Container container) throws ExperimentException
     {
         return ensureUploadDirectory(container, DIR_NAME);
+    }
+
+    public static File ensureSubdirectory(Container container, String subName) throws ExperimentException
+    {
+        File uploadDir = ensureUploadDirectory(container);
+        File subDir = new File(uploadDir, subName);
+        if (!NetworkDrive.exists(subDir))
+        {
+            boolean success = subDir.mkdir();
+            if (!success) throw new ExperimentException("Could not create directory: " + subDir);
+        }
+        return subDir;
     }
 
     /** Make sure there's a subdirectory of the specified name available for this container */
@@ -52,7 +66,7 @@ public class AssayFileWriter
         {
             dirName = "";
         }
-        
+
         PipeRoot root = getPipelineRoot(container);
 
         File dir = root.resolvePath(dirName);
@@ -153,24 +167,12 @@ public class AssayFileWriter
         return file;
     }
 
-    public static interface PostedFileSaveFilter
+    protected File getFileTargetDir(ContextType context) throws ExperimentException
     {
-        boolean saveFile(String parameterName);
+        return ensureUploadDirectory(context.getContainer());
     }
 
-    public Map<String, File> savePostedFiles(AssayRunUploadContext context, final Set<String> parameterNames) throws ExperimentException, IOException
-    {
-        return savePostedFiles(context, new PostedFileSaveFilter()
-        {
-            @Override
-            public boolean saveFile(String parameterName)
-            {
-                return parameterNames.contains(parameterName);
-            }
-        });
-    }
-    
-    public Map<String, File> savePostedFiles(AssayRunUploadContext context, PostedFileSaveFilter filter) throws ExperimentException, IOException
+    public Map<String, File> savePostedFiles(ContextType context, Set<String> parameterNames) throws ExperimentException, IOException
     {
         Map<String, File> files = new TreeMap<String, File>();
         Set<String> originalFileNames = new HashSet<String>();
@@ -178,11 +180,11 @@ public class AssayFileWriter
         {
             MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest)context.getRequest();
             Iterator<Map.Entry<String, MultipartFile>> iter = multipartRequest.getFileMap().entrySet().iterator();
-            File dir = ensureUploadDirectory(context.getContainer());
+            File dir = getFileTargetDir(context);
             while (iter.hasNext())
             {
                 Map.Entry<String, MultipartFile> entry = iter.next();
-                if (filter == null || filter.saveFile(entry.getKey()))
+                if (parameterNames == null || parameterNames.contains(entry.getKey()))
                 {
                     MultipartFile multipartFile = entry.getValue();
                     String fileName = multipartFile.getOriginalFilename();

@@ -523,4 +523,12 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         return _reRun;
     }
 
+    public void uploadComplete(ExpRun run) throws ExperimentException
+    {
+        AssayDataCollector collector = getSelectedDataCollector();
+        if (collector != null)
+        {
+            _uploadedData = collector.uploadComplete(this, run);
+        }
+    }
 }

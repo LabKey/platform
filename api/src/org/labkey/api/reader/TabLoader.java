@@ -413,30 +413,37 @@ public class TabLoader extends DataLoader
     {
         BufferedReader reader = getReader();
 
-        while(true)
+        try
         {
-            String s = reader.readLine();
-
-            if (null == s)
-                break;
-
-            if (s.length() == 0 || s.charAt(0) == '#')
+            while(true)
             {
-                _commentLines++;
+                String s = reader.readLine();
 
-                int eq = s.indexOf('=');
-                if (eq != -1)
+                if (null == s)
+                    break;
+
+                if (s.length() == 0 || s.charAt(0) == '#')
                 {
-                    String key = s.substring(1, eq).trim();
-                    String value = s.substring(eq + 1).trim();
-                    if (key.length() > 0 || value.length() > 0)
-                        _comments.put(key, value);
+                    _commentLines++;
+
+                    int eq = s.indexOf('=');
+                    if (eq != -1)
+                    {
+                        String key = s.substring(1, eq).trim();
+                        String value = s.substring(eq + 1).trim();
+                        if (key.length() > 0 || value.length() > 0)
+                            _comments.put(key, value);
+                    }
+                }
+                else
+                {
+                    break;
                 }
             }
-            else
-            {
-                break;
-            }
+        }
+        finally
+        {
+            try { reader.close(); } catch (IOException ignored) {}
         }
     }
 

@@ -171,7 +171,8 @@ public class ExperimentService
         ExpData[] getExpData(Container c);
         ExpData getExpDataByURL(String canonicalURL, @Nullable Container container);
         ExpData getExpDataByURL(File f, @Nullable Container c);
-        
+        List<? extends ExpData> getAllExpDataByURL(String canonicalURL);
+
         TableInfo getTinfoMaterial();
         TableInfo getTinfoMaterialSource();
         TableInfo getTinfoProtocol();

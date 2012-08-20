@@ -224,6 +224,6 @@ public class AssayRunDatabaseContext<ProviderType extends AssayProvider> impleme
     @Override
     public Integer getReRunId()
     {
-        throw new UnsupportedOperationException();
+        return null;
     }
 }

@@ -17,7 +17,9 @@
 package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.view.HttpView;
 
 import java.util.Map;
@@ -61,7 +63,7 @@ public interface AssayDataCollector<ContextType extends AssayRunUploadContext>
 
     public boolean isVisible();
 
-    void uploadComplete(ContextType context);
+    Map<String, File> uploadComplete(ContextType context, @Nullable ExpRun run) throws ExperimentException;
 
     public AdditionalUploadType getAdditionalUploadType(ContextType context);
 }

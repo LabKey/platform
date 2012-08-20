@@ -53,7 +53,7 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
     {
         super(context.getProvider().getName(), info, root);
         String baseName = primaryFile.getName();
-        if (baseName.indexOf(".") != -1)
+        if (baseName.contains("."))
         {
             baseName = baseName.substring(0, baseName.lastIndexOf("."));
         }

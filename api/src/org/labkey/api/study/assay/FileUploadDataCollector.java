@@ -16,9 +16,13 @@
 
 package org.labkey.api.study.assay;
 
+import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -35,9 +39,8 @@ import java.util.Set;
  * User: jeckels
  * Date: Jul 12, 2007
  */
-public class FileUploadDataCollector<ContextType extends AssayRunUploadContext> extends AbstractAssayDataCollector<ContextType>
+public class FileUploadDataCollector<ContextType extends AssayRunUploadForm<? extends AssayProvider>> extends AbstractTempDirDataCollector<ContextType>
 {
-    private boolean _uploadComplete = false;
     private Set<String> _validExtensions = null;
     private int _maxFileInputs = 1;
 
@@ -94,18 +97,8 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext> 
 
         Map<String, File> files = savePostedFiles(context, fileInputs);
         if (!files.containsKey(PRIMARY_FILE))
-            throw new ExperimentException("No data file was uploaded. Please enter a file name.");
+            throw new ExperimentException("No data file was uploaded. Please select a file.");
         return files;
-    }
-
-    public boolean isVisible()
-    {
-        return true;
-    }
-
-    public void uploadComplete(ContextType context)
-    {
-        _uploadComplete = true;
     }
 
     public int getMaxFileInputs()

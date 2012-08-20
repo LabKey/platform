@@ -582,16 +582,12 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             try
             {
                 Map<String, File> uploadedData = context.getUploadedData();
-                if (uploadedData.size() != 0)
-                {
-                    return uploadedData.get(AssayDataCollector.PRIMARY_FILE);
-                }
+                return uploadedData.get(AssayDataCollector.PRIMARY_FILE);
             }
             catch (IOException e)
             {
                 throw new ExperimentException(e);
             }
-            return null;
         }
         
         public ExpRun saveExperimentRun(FormType form) throws ExperimentException, ValidationException
@@ -603,15 +599,15 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             }
 
             ExpRun run;
-            File primaryFile = getPrimaryFile(form);
 
             boolean background = form.getProvider().isBackgroundUpload(form.getProtocol());
             if (!background)
             {
-                run = AssayService.get().createExperimentRun(form.getName(), getViewContext().getContainer(), form.getProtocol(), primaryFile);
+                run = AssayService.get().createExperimentRun(form.getName(), getViewContext().getContainer(), form.getProtocol(), getPrimaryFile(form));
                 run.setComments(form.getComments());
 
                 exp = form.getProvider().getRunCreator().saveExperimentRun(form, exp, run, false);
+                form.uploadComplete(run);
             }
             else
             {
@@ -630,7 +626,11 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
                     // Queue up a pipeline job to do the actual import in the background
                     ViewBackgroundInfo info = new ViewBackgroundInfo(getContainer(), getViewContext().getUser(), getViewContext().getActionURL());
-                    final AssayUploadPipelineJob<ProviderType> pipelineJob = new AssayUploadPipelineJob<ProviderType>(form.getProvider().createRunAsyncContext(form), info, exp, forceSaveBatchProps, PipelineService.get().getPipelineRootSetting(getContainer()), primaryFile);
+
+                    run = null;
+                    form.uploadComplete(run);
+
+                    final AssayUploadPipelineJob<ProviderType> pipelineJob = new AssayUploadPipelineJob<ProviderType>(form.getProvider().createRunAsyncContext(form), info, exp, forceSaveBatchProps, PipelineService.get().getPipelineRootSetting(getContainer()), getPrimaryFile(form));
                     // Don't queue the job until the transaction is committed, since otherwise the thread
                     // that's running the job might start before it can access the job's row in the database. 
                     ExperimentService.get().getSchema().getScope().addCommitTask(new Runnable()
@@ -648,7 +648,6 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                             }
                         }
                     });
-                    run = null;
                 }
                 catch (IOException e)
                 {
@@ -661,12 +660,6 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             form.saveDefaultRunValues();
 
             getCompletedUploadAttemptIDs().add(form.getUploadAttemptID());
-            
-            AssayDataCollector<FormType> collector = form.getSelectedDataCollector();
-            if (collector != null)
-            {
-                collector.uploadComplete(form);
-            }
             form.resetUploadAttemptID();
 
             return run;

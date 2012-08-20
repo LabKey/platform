@@ -19,6 +19,8 @@ package org.labkey.api.study.assay;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 
@@ -30,13 +32,11 @@ import java.io.*;
  * User: jeckels
  * Date: Jul 12, 2007
  */
-public class TextAreaDataCollector extends AbstractAssayDataCollector
+public class TextAreaDataCollector<ContextType extends AssayRunUploadForm<? extends AssayProvider>> extends AbstractTempDirDataCollector<ContextType>
 {
     private static final String FORM_ELEMENT_NAME = "TextAreaDataCollector.textArea";
 
-    private boolean _uploadComplete = false;
-
-    public HttpView getView(AssayRunUploadContext context)
+    public HttpView getView(ContextType context)
     {
         return new HtmlView("<textarea id=\"" + FORM_ELEMENT_NAME + "\" name=\"" + FORM_ELEMENT_NAME + "\" rows=\"10\" cols=\"80\"></textarea>\n" +
                 "<script type=\"text/javascript\">\n" +
@@ -49,13 +49,13 @@ public class TextAreaDataCollector extends AbstractAssayDataCollector
         return "textAreaDataProvider";
     }
 
-    public String getDescription(AssayRunUploadContext context)
+    public String getDescription(ContextType context)
     {
         return "Paste in a tab-separated set of values";
     }
 
     @NotNull
-    public Map<String, File> createData(AssayRunUploadContext context) throws IOException, ExperimentException
+    public Map<String, File> createData(ContextType context) throws IOException, ExperimentException
     {
         if (_uploadComplete)
             return Collections.emptyMap();
@@ -70,21 +70,11 @@ public class TextAreaDataCollector extends AbstractAssayDataCollector
             throw new ExperimentException("Data file contained zero data rows");
         }
 
-        File dir = ensureUploadDirectory(context.getContainer());
+        File dir = getFileTargetDir(context);
         File file = createFile(protocol, dir, "tsv");
         ByteArrayInputStream bIn = new ByteArrayInputStream(data.getBytes(context.getRequest().getCharacterEncoding()));
 
         writeFile(bIn, file);
         return Collections.singletonMap(PRIMARY_FILE, file);
-    }
-
-    public boolean isVisible()
-    {
-        return true;
-    }
-
-    public void uploadComplete(AssayRunUploadContext context)
-    {
-        _uploadComplete = true;
     }
 }

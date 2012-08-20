@@ -17,6 +17,7 @@ package org.labkey.api.study.assay;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
@@ -24,6 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
@@ -50,6 +52,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewBackgroundInfo;
 
@@ -159,17 +162,6 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     LOG,
                     false);
 
-            if (context.getReRunId() != null)
-            {
-                ExpRun replacedRun = ExperimentService.get().getExpRun(context.getReRunId().intValue());
-                if (replacedRun != null && replacedRun.getContainer().hasPermission(context.getUser(), UpdatePermission.class))
-                {
-                    replacedRun.setReplacedByRun(run);
-                    replacedRun.save(context.getUser());
-                }
-                ExperimentService.get().auditRunEvent(context.getUser(), context.getProtocol(), replacedRun, "Run id " + replacedRun.getRowId() + " was replaced by run id " + run.getRowId());
-            }
-
             // handle data transformation
             TransformResult transformResult = transform(context, run);
             List<ExpData> insertedDatas = new ArrayList<ExpData>();
@@ -201,6 +193,19 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             importResultData(context, run, inputDatas, outputDatas, info, xarContext, transformResult, insertedDatas);
 
+            if (context.getReRunId() != null)
+            {
+                ExpRun replacedRun = ExperimentService.get().getExpRun(context.getReRunId().intValue());
+                if (replacedRun != null && replacedRun.getContainer().hasPermission(context.getUser(), UpdatePermission.class))
+                {
+                    replacedRun.setReplacedByRun(run);
+                    replacedRun.save(context.getUser());
+                }
+                ExperimentService.get().auditRunEvent(context.getUser(), context.getProtocol(), replacedRun, "Run id " + replacedRun.getRowId() + " was replaced by run id " + run.getRowId());
+
+                moveFilesToArchivedDir(context, replacedRun);
+            }
+
             scope.commitTransaction();
 
             AssayService.get().ensureUniqueBatchName(batch, context.getProtocol(), context.getUser());
@@ -223,10 +228,52 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         {
             throw new RuntimeSQLException(e);
         }
+        catch (IOException e)
+        {
+            throw new ExperimentException(e);
+        }
         finally
         {
             scope.closeConnection();
         }
+    }
+
+    private void moveFilesToArchivedDir(AssayRunUploadContext<ProviderType> context, ExpRun replacedRun) throws ExperimentException, IOException
+    {
+        for (ExpData expData : replacedRun.getAllDataUsedByRun())
+        {
+            File file = expData.getFile();
+            // If we can find the file on disk, and it's in the assaydata directory, and there aren't any other
+            // usages, move it into an archived subdirectory
+            if (file != null && NetworkDrive.exists(file) && file.isFile() &&
+                file.getParentFile().equals(AssayFileWriter.ensureUploadDirectory(context.getContainer())) && !hasOtherRunUsing(expData, replacedRun))
+            {
+                File archivedDir = AssayFileWriter.ensureSubdirectory(context.getContainer(), AssayFileWriter.ARCHIVED_DIR_NAME);
+                File targetFile = AssayFileWriter.findUniqueFileName(file.getName(), archivedDir);
+                targetFile = FileUtil.getAbsoluteCaseSensitiveFile(targetFile);
+                FileUtils.moveFile(file, targetFile);
+                expData.setDataFileURI(targetFile.toURI());
+                expData.save(context.getUser());
+            }
+        }
+    }
+
+    private boolean hasOtherRunUsing(ExpData originalData, ExpRun originalRun)
+    {
+        if (originalData.getDataFileUrl() != null)
+        {
+            for (ExpData data : ExperimentService.get().getAllExpDataByURL(originalData.getDataFileUrl()))
+            {
+                for (ExpRun run : data.getTargetRuns())
+                {
+                    if (!run.equals(originalRun))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     private void resolveParticipantVisits(AssayRunUploadContext<ProviderType> context, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, Map<DomainProperty, String> allProperties, ParticipantVisitResolverType resolverType) throws ExperimentException

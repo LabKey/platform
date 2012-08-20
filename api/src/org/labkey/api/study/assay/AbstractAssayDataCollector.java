@@ -17,15 +17,30 @@
 package org.labkey.api.study.assay;
 
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.api.ExpRun;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Map;
+
 /**
  * User: jeckels
  * Date: Jul 13, 2007
  */
-public abstract class AbstractAssayDataCollector<ContextType extends AssayRunUploadContext> extends AssayFileWriter implements AssayDataCollector<ContextType>
+public abstract class AbstractAssayDataCollector<ContextType extends AssayRunUploadContext<? extends AssayProvider>> extends AssayFileWriter<ContextType> implements AssayDataCollector<ContextType>
 {
-    public void uploadComplete(ContextType context)
+    public Map<String, File> uploadComplete(ContextType context, @Nullable ExpRun run) throws ExperimentException
     {
-        
+        try
+        {
+            return context.getUploadedData();
+        }
+        catch (IOException e)
+        {
+            throw new ExperimentException(e);
+        }
     }
 
     public AdditionalUploadType getAdditionalUploadType(ContextType context)
