@@ -315,6 +315,15 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
         return false;
     }
 
+    public ActionURL getEditReportURL(ViewContext context)
+    {
+        if (canEdit(context.getUser(), context.getContainer()))
+        {
+            return ReportUtil.getRunReportURL(context, this).addParameter(TabStripView.TAB_PARAM, TAB_SOURCE);
+        }
+        return null;
+    }
+
     public List<Report> getAvailableSharedScripts(ViewContext context, ScriptReportBean bean) throws Exception
     {
         List<Report> scripts = new ArrayList<Report>();

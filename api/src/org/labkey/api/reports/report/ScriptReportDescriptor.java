@@ -57,9 +57,4 @@ abstract public class ScriptReportDescriptor extends ReportDescriptor
         }
         return true;
     }
-
-    public boolean isStale()
-    {
-        return true;
-    }
 }
