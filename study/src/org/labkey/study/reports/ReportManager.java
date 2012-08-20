@@ -426,6 +426,40 @@ public class ReportManager implements StudyManager.DataSetListener
             return policy.hasPermission(user, ReadPermission.class);
     }
 
+    // TODO: Delete this?
+    private Report createReport(StudyReport report)
+    {
+        final String type = report.getReportType();
+        String newType = null;
+
+        if ("ExportExcel".equals(type))
+            newType = ExportExcelReport.TYPE;
+        else if ("Query".equals(type))
+            newType = StudyQueryReport.TYPE;
+        else if ("External".equals(type))
+            newType = ExternalReport.TYPE;
+
+        if (newType != null)
+        {
+            Report newReport = ReportService.get().createReportInstance(newType);
+            if (newReport != null)
+            {
+                ReportDescriptor descriptor = newReport.getDescriptor();
+
+                descriptor.setEntityId(report.getEntityId());
+                descriptor.setContainerId(report.getContainerId());
+                descriptor.setCreatedBy(report.getCreatedBy());
+                descriptor.setCreated(report.getCreated());
+                descriptor.setReportName(report.getLabel());
+                descriptor.initFromQueryString(report.getParams());
+                descriptor.setReportKey(ReportUtil.getReportQueryKey(descriptor));
+
+                return newReport;
+            }
+        }
+        return null;
+    }
+
     /**
      * A variant of a report that can contain multiple individual reports.
      */
