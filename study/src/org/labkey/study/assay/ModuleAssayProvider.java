@@ -675,4 +675,10 @@ public class ModuleAssayProvider extends TsvAssayProvider
             return _description;
         }
     }
+
+    @Override
+    public boolean supportsReRun()
+    {
+        return false;
+    }
 }

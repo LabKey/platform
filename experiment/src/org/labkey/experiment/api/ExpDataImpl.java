@@ -19,6 +19,7 @@ package org.labkey.experiment.api;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.*;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.NetworkDrive;
@@ -181,6 +182,12 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
     public void setDataFileUrl(String s)
     {
         _object.setDataFileUrl(s);
+    }
+
+    @Override
+    public void setFile(File file)
+    {
+        setDataFileUrl(FileUtil.getAbsoluteCaseSensitiveFile(file).toURI().toString());
     }
 
     public String getCpasType()

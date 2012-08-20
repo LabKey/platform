@@ -1304,6 +1304,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
+    @Override
+    public List<ExpDataImpl> getAllExpDataByURL(String canonicalURL)
+    {
+        SimpleFilter filter = new SimpleFilter("DataFileUrl", canonicalURL);
+        Sort sort = new Sort("-Created");
+        return Arrays.asList(ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), Table.ALL_COLUMNS, filter, sort).getArray(Data.class)));
+    }
+
     public ExpDataImpl getExpDataByURL(String url, @Nullable Container c)
     {
         SimpleFilter filter = new SimpleFilter("DataFileUrl", url);

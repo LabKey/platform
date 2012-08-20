@@ -221,20 +221,15 @@ public abstract class AbstractProtocolOutputImpl<Type extends ProtocolOutput> ex
 
     protected ExpRun[] getTargetRuns(TableInfo inputTable, String rowIdColumnName)
     {
-        try
-        {
-            SQLFragment sql = new SQLFragment("SELECT r.* FROM " + ExperimentService.get().getTinfoExperimentRun() + " r " +
-                    "\nWHERE r.RowId IN " +
-                    "\n(SELECT pa.RunId" +
-                    "\nFROM " + ExperimentServiceImpl.get().getTinfoProtocolApplication() + " pa " +
-                    "\nINNER JOIN " + inputTable + " i ON pa.RowId = i.TargetApplicationId AND i." + rowIdColumnName + " = ?)");
-            sql.add(getRowId());
-            ExperimentRun[] runs = Table.executeQuery(ExperimentService.get().getSchema(), sql.getSQL(), sql.getParams().toArray(new Object[sql.getParams().size()]), ExperimentRun.class);
-            return ExpRunImpl.fromRuns(runs);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        SQLFragment sql = new SQLFragment("SELECT r.* FROM ");
+        sql.append(ExperimentService.get().getTinfoExperimentRun(), "r");
+        sql.append("\nWHERE r.RowId IN (SELECT pa.RunId \nFROM ");
+        sql.append(ExperimentServiceImpl.get().getTinfoProtocolApplication(), "pa");
+        sql.append("\nINNER JOIN ");
+        sql.append(inputTable, "i");
+        sql.append(" ON pa.RowId = i.TargetApplicationId AND i." + rowIdColumnName + " = ?)");
+        sql.add(getRowId());
+        ExperimentRun[] runs = new SqlSelector(ExperimentService.get().getSchema(), sql).getArray(ExperimentRun.class);
+        return ExpRunImpl.fromRuns(runs);
     }
 }
