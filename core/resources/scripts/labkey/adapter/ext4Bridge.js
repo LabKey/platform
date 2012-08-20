@@ -74,7 +74,7 @@ function setupHeaders(options) {
         xmlData = options.xmlData;
 
     if (!headers['Content-Type']) {
-        var contentType = 'application/json'; //default type
+        var contentType = 'text/plain'; //default type
         if (options.rawData) {
             contentType = 'text/plain';
         }
