@@ -18,12 +18,7 @@ package org.labkey.api.reports.report;
 
 import org.labkey.api.query.CreateJavaScriptModel;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.JspTemplate;
-import org.labkey.api.view.JspView;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.*;
 
 /*
 * User: adam
@@ -104,22 +99,18 @@ public class JavaScriptReport extends ScriptReport
         return view;
     }
 
-    @Override
-    public ActionURL getEditReportURL(ViewContext context)
-    {
-        return super.getEditReportURL(context);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
     public class JavaScriptReportBean
     {
         public final CreateJavaScriptModel model;
         public final String script;
+        public final boolean moduleBased;
 
         private JavaScriptReportBean(ViewContext context) throws Exception
         {
             QueryView qv = createQueryView(context, getDescriptor());
             model = new CreateJavaScriptModel(qv);
             script = getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
+            moduleBased = getDescriptor().isModuleBased();
         }
     }
 }

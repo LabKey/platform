@@ -792,6 +792,8 @@ api/src/org/labkey/api/reports/report/ExternalScriptEngineReport.java -text
 api/src/org/labkey/api/reports/report/InternalScriptEngineReport.java -text
 api/src/org/labkey/api/reports/report/JavaScriptReport.java -text
 api/src/org/labkey/api/reports/report/JavaScriptReportDescriptor.java -text
+api/src/org/labkey/api/reports/report/ModuleJavaScriptReportDescriptor.java -text
+api/src/org/labkey/api/reports/report/ModuleQueryJavaScriptReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/ModuleQueryRReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/ModuleRReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/ModuleReportIdentifier.java -text

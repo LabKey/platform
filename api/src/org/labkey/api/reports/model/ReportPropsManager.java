@@ -16,18 +16,13 @@
 package org.labkey.api.reports.model;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.exp.ChangePropertyDescriptorException;
-import org.labkey.api.exp.DomainDescriptor;
-import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.*;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -40,11 +35,7 @@ import org.labkey.data.xml.reportProps.PropertyList;
 
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -201,7 +192,7 @@ public class ReportPropsManager implements ContainerManager.ContainerListener
         }
     }
 
-    private String getDomainURI(Container container)
+    private String getDomainURI(@NotNull Container container)
     {
         return new Lsid("urn:lsid:labkey.com:" + NAMESPACE_PREFIX + ".Folder-" + container.getRowId() + ':' + TYPE_PROPERTIES).toString();
     }

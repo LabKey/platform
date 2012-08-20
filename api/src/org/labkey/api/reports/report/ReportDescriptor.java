@@ -629,6 +629,11 @@ public class ReportDescriptor extends Entity implements SecurableResource
         return ModuleLoader.getInstance().getCoreModule();
     }
 
+    public boolean isModuleBased()
+    {
+        return false;
+    }
+
     public SecurableResource getParentResource()
     {
         return getResourceContainer();

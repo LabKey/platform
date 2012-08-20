@@ -19,13 +19,7 @@ package org.labkey.api.reports.report;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.data.Container;
-import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.QueryParam;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.QueryView;
-import org.labkey.api.query.SimpleValidationError;
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.ValidationError;
+import org.labkey.api.query.*;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.permissions.ShareReportPermission;
 import org.labkey.api.reports.report.view.AjaxRunScriptReportView;
@@ -35,7 +29,6 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.TabStripView;
@@ -134,10 +127,19 @@ public abstract class ScriptReport extends AbstractReport
         String webpartString = (String)context.get(Report.renderParam.reportWebPart.name());
         boolean webpart = (null != webpartString && BooleanFormat.getInstance().parseObject(webpartString));
 
+        // Module-based reports are always read-only.
         // if tab == "Source" then use update mode, which lets developers edit the source
         // otherwise, if we're a webpart then use view mode
-        // otherwise, use viewAndUpdate, which means show the view tab first, but let developers edit the source 
-        Mode mode = (TAB_SOURCE.equals(tabId) ? Mode.update : (webpart ? Mode.view : Mode.viewAndUpdate));
+        // otherwise, use viewAndUpdate, which means show the view tab first, but let developers edit the source
+        Mode mode;
+        if (getDescriptor().isModuleBased())
+        {
+            mode = Mode.view;
+        }
+        else
+        {
+            mode = (TAB_SOURCE.equals(tabId) ? Mode.update : (webpart ? Mode.view : Mode.viewAndUpdate));
+        }
 
         return new AjaxRunScriptReportView(this, mode);
     }

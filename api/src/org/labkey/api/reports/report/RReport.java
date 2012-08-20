@@ -16,8 +16,8 @@
 
 package org.labkey.api.reports.report;
 
-import org.jetbrains.annotations.Nullable;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
@@ -41,18 +41,11 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspTemplate;
-import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.ViewContext;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -313,15 +306,6 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
         }
 
         return false;
-    }
-
-    public ActionURL getEditReportURL(ViewContext context)
-    {
-        if (canEdit(context.getUser(), context.getContainer()))
-        {
-            return ReportUtil.getRunReportURL(context, this).addParameter(TabStripView.TAB_PARAM, TAB_SOURCE);
-        }
-        return null;
     }
 
     public List<Report> getAvailableSharedScripts(ViewContext context, ScriptReportBean bean) throws Exception

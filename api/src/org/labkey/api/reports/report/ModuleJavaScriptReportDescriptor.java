@@ -1,18 +1,3 @@
-/*
- * Copyright (c) 2008-2012 LabKey Corporation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package org.labkey.api.reports.report;
 
 import org.apache.commons.io.IOUtils;
@@ -21,39 +6,29 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.Module;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.Path;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.util.Pair;
 
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
-import java.util.List;
-
-/*
-* User: Dave
-* Date: Dec 4, 2008
-* Time: 4:04:35 PM
-*/
 
 /**
- * Represents an R report defined within a module. This will lazy-load the report script.
+ * User: Nick
+ * Date: August 17, 2012
  */
-public class ModuleRReportDescriptor extends RReportDescriptor
+public class ModuleJavaScriptReportDescriptor extends JavaScriptReportDescriptor
 {
-    public static final String TYPE = "moduleRReportDescriptor";
-    public static final String FILE_EXTENSION = ".r";
+    public static final String TYPE = "moduleJSReportDescriptor";
+    public static final String FILE_EXTENSION = ".js";
     protected static final String REPORT_METADATA_EXTENSION = ".report.xml";
 
     private Module _module;
     private Path _reportPath;
     private Resource _sourceFile;
-    private Resource _metaDataFile;
+    // TODO: support xml metadata
+//    private Resource _metaDataFile;
     private long _sourceLastModified = 0;
-    private long _metaDataLastModified = 0;
 
-    public ModuleRReportDescriptor(Module module, String reportKey, Resource sourceFile, Path reportPath)
+    public ModuleJavaScriptReportDescriptor(Module module, String reportKey, Resource sourceFile, Path reportPath)
     {
         _module = module;
         _sourceFile = sourceFile;
@@ -66,44 +41,20 @@ public class ModuleRReportDescriptor extends RReportDescriptor
         setReportName(name);
         setDescriptorType(TYPE);
         setReportType(getDefaultReportType(reportKey));
-        Resource dir = sourceFile.parent();
-        _metaDataFile = dir.find(getReportName() + REPORT_METADATA_EXTENSION);
-        loadMetaData();
     }
 
     public String getDefaultReportType(String reportKey)
     {
-        return RReport.TYPE;
+        return JavaScriptReport.TYPE;
     }
 
+    @Override
     public boolean isStale()
     {
         //check if either source or meta-data files have changed
         //meta-data file is optional so make sure it exists before checking
-        return (_sourceLastModified != 0 && _sourceFile.getLastModified() != _sourceLastModified)
-                || (_metaDataLastModified != 0 && _metaDataFile.exists() && _metaDataFile.getLastModified() != _metaDataLastModified);
-    }
-
-    protected void loadMetaData()
-    {
-        if (null != _metaDataFile && _metaDataFile.isFile())
-        {
-            try
-            {
-                String xml = getFileContents(_metaDataFile);
-                List<Pair<String,String>> props = createPropsFromXML(xml);
-
-                if (null != props)
-                    setProperties(props);
-
-                _metaDataLastModified = _metaDataFile.getLastModified();
-            }
-            catch(IOException e)
-            {
-                Logger.getLogger(ModuleRReportDescriptor.class).warn("Unable to load report metadata from file "
-                        + _metaDataFile.getPath(), e);
-            }
-        }
+        return (_sourceLastModified != 0 && _sourceFile.getLastModified() != _sourceLastModified);
+//                || (_metaDataLastModified != 0 && _metaDataFile.exists() && _metaDataFile.getLastModified() != _metaDataLastModified);
     }
 
     @Override
@@ -177,16 +128,6 @@ public class ModuleRReportDescriptor extends RReportDescriptor
         return _reportPath;
     }
 
-    public Resource getSourceFile()
-    {
-        return _sourceFile;
-    }
-
-    public long getSourceLastModified()
-    {
-        return _sourceLastModified;
-    }
-
     @NotNull
     @Override
     public String getResourceId()
@@ -199,7 +140,7 @@ public class ModuleRReportDescriptor extends RReportDescriptor
     @Override
     public String toString()
     {
-        return "module:" + getModule().getName() + "/" + getReportPath();
+        return "module:" + getModule().getName()  + "/" + getReportPath();
     }
 
     @Override

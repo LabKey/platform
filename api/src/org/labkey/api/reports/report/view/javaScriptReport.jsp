@@ -26,19 +26,19 @@
 <script type="text/javascript">
     (function()
     {
-        if (typeof render == 'function')
+        // ========== Begin report writer's script ==========
+        <%=bean.script%>
+        // ========== End report writer's script ==========
+
+        if (render && (typeof render === 'function'))
         {
             render({
-<%=bean.model.getStandardJavaScriptParameters(16, false)%>
+               <%=bean.model.getStandardJavaScriptParameters(16, false)%>
             }, document.getElementById("<%=uniqueDivName%>"));
         }
         else
         {
             alert("Your script must define a function called 'render'");
         }
-
-// ========== Begin report writer's script ==========
-<%=bean.script%>
-// ========== End report writer's script ==========
     })();
 </script>
