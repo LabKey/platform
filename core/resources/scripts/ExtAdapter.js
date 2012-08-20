@@ -1,4 +1,4 @@
-var Ext = require("Ext").Ext;
+var Ext = require("Ext4").Ext;
 var console = require("console");
 
 exports.Adapter = {
