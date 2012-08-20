@@ -454,7 +454,7 @@ public class ConnectionWrapper implements java.sql.Connection
 
     public Array createArrayOf(String typeName, Object[] elements) throws SQLException
     {
-        throw new UnsupportedOperationException();
+        return _connection.createArrayOf(typeName, elements);
     }
 
     public Blob createBlob() throws SQLException

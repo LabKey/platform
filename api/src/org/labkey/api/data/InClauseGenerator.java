@@ -1,7 +1,9 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+
+import java.sql.SQLException;
+import java.util.Collection;
 
 /**
  * User: adam
@@ -11,9 +13,9 @@ import org.jetbrains.annotations.Nullable;
 
 // Implementors generate and append SQL that acts as an "is one of" filter. This can be an actual IN clause or a
 // database-specific implementation that scales or performs better (e.g., arrays or in-line parameter expansion)
-// TODO: Remove colInfo and urlClause; consider removing negated, includeNull, and alias as well.
 public interface InClauseGenerator
 {
-    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Object[] params, @Nullable ColumnInfo colInfo,
-                                         String alias, boolean negated, boolean includeNull, boolean urlClause);
+    // This method can choose not to append the SQL (e.g., based on number or type of paramters). Returns true if the
+    // SQL was appended and false if it wasn't
+    public boolean appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params);
 }

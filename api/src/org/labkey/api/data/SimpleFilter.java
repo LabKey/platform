@@ -30,7 +30,19 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: arauch
@@ -523,7 +535,7 @@ public class SimpleFilter implements Filter
             else
                 sb.append(" IS ONE OF (");
 
-            //TODO: if number of values > 10, dont show each one
+            //TODO: if number of values > 10, don't show each one
             if (getParamVals().length > MAX_FILTER_VALUES_TO_DISPLAY)
             {
                 sb.append("too many values to display)");
@@ -558,7 +570,7 @@ public class SimpleFilter implements Filter
 
             if (params.length == 0)
             {
-                if(isIncludeNull())
+                if (isIncludeNull())
                     in.append(alias + " IS " + (isNegated() ? " NOT " : "") + "NULL");
                 else if (!isNegated())
                     in.append(alias + " IN (NULL)");  // Empty list case; "WHERE column IN (NULL)" should always be false
@@ -569,23 +581,25 @@ public class SimpleFilter implements Filter
             in.append("((" + alias);
             in.append(" " + (isNegated() ? "NOT " : "") + "IN (");
             String sep = "";
+
             for (Object param : params)
             {
                 in.append(sep).append(escapeLabKeySqlValue(param, col.getJdbcType()));
                 sep = ", ";
             }
+
             in.append(")");
 
-            if(isIncludeNull())
+            if (isIncludeNull())
             {
-                if(isNegated())
+                if (isNegated())
                     in.append(") AND " + alias + " IS NOT NULL)");
                 else
                     in.append(") OR " + alias + " IS NULL)");
             }
             else
             {
-                if(isNegated())
+                if (isNegated())
                     in.append(") OR " + alias + " IS NULL)");
                 else
                     in.append("))");
@@ -617,8 +631,80 @@ public class SimpleFilter implements Filter
                 return in;
             }
 
+            List<Object> convertedParams;
+
+            if (null == colInfo || !isUrlClause())
+            {
+                convertedParams = Arrays.asList(params);
+            }
+            else
+            {
+                convertedParams = new LinkedList<Object>();
+
+                for (Object paramVal : params)
+                    convertedParams.add(CompareType.convertParamValue(colInfo, paramVal));
+            }
+
+            in.append("((");
+
+            if (isNegated())
+                in.append("NOT ");
+
+            in.append(alias);
+            in.append(" ");
+
             // Dialect may want to generate database-specific SQL, especially for very large IN clauses
-            return dialect.appendInClauseSql(in, getParamVals(), colInfo, alias, isNegated(), isIncludeNull(), isUrlClause());
+            if (!dialect.appendInClauseSql(in, convertedParams))
+                throw new IllegalStateException("Dialect failed to create IN clause SQL");
+
+            if (isIncludeNull())
+            {
+                if (isNegated())
+                    in.append(") AND " + alias + " IS NOT NULL)");
+                else
+                    in.append(") OR " + alias + " IS NULL)");
+            }
+            else
+            {
+                if (isNegated())
+                    in.append(") OR " + alias + " IS NULL)");
+                else
+                    in.append("))");
+            }
+
+            return in;
+        }
+
+        public static class InClauseTestCase extends org.junit.Assert
+        {
+            @Test
+            public void testInClause()
+            {
+//                Mockery _context = new Mockery();
+//                _context.setImposteriser(ClassImposteriser.INSTANCE);
+//                SqlDialect dialect = _context.mock(SqlDialect.class);
+
+                // TODO: Mock SqlDialect... above code doesn't work right now
+                SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
+                FieldKey fieldKey = FieldKey.fromParts("Foo");
+
+                // Empty parameter list
+                test("Foo IN (NULL)", new InClause(fieldKey, Collections.emptySet()), dialect);
+                test("1=1", new InClause(fieldKey, Collections.emptySet(), true, true), dialect);
+
+                // Non-null parameters only
+                test("((Foo IN (1, 2, 3)))", new InClause(fieldKey, PageFlowUtil.set(1, 2, 3)), dialect);
+                test("((NOT Foo IN (1, 2, 3)) OR Foo IS NULL)", new InClause(fieldKey, PageFlowUtil.set(1, 2, 3), true, true), dialect);
+
+                // Include null parameter
+                test("((Foo IN ('Blip', 'Bar')) OR Foo IS NULL)", new InClause(fieldKey, PageFlowUtil.set("Bar", "Blip", "")), dialect);
+                test("((NOT Foo IN ('Blip', 'Bar')) AND Foo IS NOT NULL)", new InClause(fieldKey, PageFlowUtil.set("Bar", "Blip", ""), true, true), dialect);
+            }
+
+            private void test(String expected, InClause inClause, SqlDialect dialect)
+            {
+                assertEquals(expected, inClause.toSQLFragment(Collections.<FieldKey, ColumnInfo>emptyMap(), dialect).toString());
+            }
         }
 
         public void addInValue(Object... values)
