@@ -26,6 +26,7 @@ import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.InClauseGenerator;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -81,6 +82,7 @@ class PostgreSql83Dialect extends SqlDialect
     private static final Logger _log = Logger.getLogger(PostgreSql83Dialect.class);
 
     private final Map<String, Integer> _userDefinedTypeScales = new ConcurrentHashMap<String, Integer>();
+    private InClauseGenerator _arrayInClauseGenerator = null;
 
     // Specifies if this PostgreSQL server treats backslashes in string literals as normal characters (as per the SQL
     // standard) or as escape characters (old, non-standard behavior). As of PostgreSQL 9.1, the setting
@@ -261,6 +263,15 @@ class PostgreSql83Dialect extends SqlDialect
         {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public boolean appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
+    {
+        if (_arrayInClauseGenerator.appendInClauseSql(sql, params))
+            return true;
+
+        return super.appendInClauseSql(sql, params);
     }
 
     @Override
@@ -681,6 +692,7 @@ class PostgreSql83Dialect extends SqlDialect
     public void prepareNewDbScope(DbScope scope) throws SQLException, IOException
     {
         initializeUserDefinedTypes(scope);
+        initializeInClauseGenerator(scope);
         determineSettings(scope);
         super.prepareNewDbScope(scope);
     }
@@ -692,7 +704,8 @@ class PostgreSql83Dialect extends SqlDialect
     private void initializeUserDefinedTypes(DbScope scope)
     {
         Selector selector = new SqlSelector(scope, "SELECT * FROM information_schema.domains WHERE domain_schema = 'public'");
-        selector.forEach(new Selector.ForEachBlock<ResultSet>() {
+        selector.forEach(new Selector.ForEachBlock<ResultSet>()
+        {
             @Override
             public void exec(ResultSet rs) throws SQLException
             {
@@ -704,6 +717,12 @@ class PostgreSql83Dialect extends SqlDialect
                     _userDefinedTypeScales.put(domainName, Integer.parseInt(rs.getString("character_maximum_length")));
             }
         });
+    }
+
+
+    private void initializeInClauseGenerator(DbScope scope)
+    {
+        _arrayInClauseGenerator = new ArrayParameterInClauseGenerator(scope);
     }
 
 
