@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.list;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -23,6 +24,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
@@ -317,7 +319,7 @@ public interface ListDefinition extends Comparable<ListDefinition>
     ListItem getListItemForEntityId(String entityId);
 
     int getRowCount();
-    List<String> insertListItems(User user, DataLoader loader, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress) throws IOException;
+    int insertListItems(User user, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress) throws IOException;
 
     TableInfo getTable(User user);
 

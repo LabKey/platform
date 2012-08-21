@@ -97,7 +97,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
      * construct the core ETL tranformation pipeline for this table, may be just StandardETL.
      * does NOT handle triggers or the insert/update iterator.
      */
-    protected DataIteratorBuilder createImportETL(User user, Container container, DataIteratorBuilder data, BatchValidationException errors, boolean forImport)
+    public DataIteratorBuilder createImportETL(User user, Container container, DataIteratorBuilder data, BatchValidationException errors, boolean forImport)
     {
         StandardETL etl = StandardETL.forInsert(getQueryTable(), data, container, user, errors);
         etl.setForImport(forImport);

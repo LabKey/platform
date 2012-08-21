@@ -15,6 +15,7 @@
  */
 package org.labkey.api.etl;
 
+import org.labkey.api.exp.list.ListImportProgress;
 import org.labkey.api.query.BatchValidationException;
 
 import java.io.IOException;
@@ -29,6 +30,7 @@ public class Pump implements Runnable
     BatchValidationException _errors;
     int _errorLimit = Integer.MAX_VALUE;
     int _rowCount = 0;
+    ListImportProgress _progress = null;
 
     public Pump(DataIterator it, BatchValidationException errors)
     {
@@ -40,6 +42,11 @@ public class Pump implements Runnable
     {
         this._builder = builder;
         this._errors = errors;
+    }
+
+    public void setProgress(ListImportProgress progress)
+    {
+        _progress = progress;
     }
 
     @Override
@@ -55,6 +62,8 @@ public class Pump implements Runnable
                 _rowCount++;
                 if (_errors.getRowErrors().size() > _errorLimit)
                     return;
+                if (null != _progress)
+                    _progress.setCurrentRow(_rowCount);
             }
         }
         catch (BatchValidationException x)
