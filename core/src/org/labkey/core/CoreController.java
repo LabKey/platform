@@ -848,7 +848,7 @@ public class CoreController extends SpringActionController
             String name = StringUtils.trimToNull(json.getString("name"));
             String title = StringUtils.trimToNull(json.getString("title"));
             String description = StringUtils.trimToNull(json.getString("description"));
-            boolean workbook = json.has("isWorkbook") ? json.getBoolean("isWorkbook") : false;
+            boolean workbook = json.has("isWorkbook") && !json.isNull("isWorkbook") ? json.getBoolean("isWorkbook") : false;
 
             if (!workbook)
             {
