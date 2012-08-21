@@ -832,28 +832,8 @@ public class ListController extends SpringActionController
         @Override
         protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors) throws IOException
         {
-            final int[] totalRows = new int[1];
-            ListImportProgress p = new ListImportProgress()
-            {
-                @Override
-                public void setTotalRows(int rows)
-                {
-                    totalRows[0] = rows;
-                }
-
-                @Override
-                public void setCurrentRow(int currentRow)
-                {
-                }
-            };
-            
-            List<String> errorList = _list.insertListItems(getUser(), dl, null, p);
-            if (null != errorList && !errorList.isEmpty())
-            {
-                for (String error : errorList)
-                    errors.addRowError(new ValidationException(error));
-            }
-            return totalRows[0];
+            int count = _list.insertListItems(getUser(), dl, errors, null, null);
+            return count;
         }
 
         public NavTree appendNavTrail(NavTree root)

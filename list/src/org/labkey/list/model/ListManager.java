@@ -201,29 +201,48 @@ public class ListManager implements SearchService.DocumentProvider
     // Index (or delete) a single list item after item save or delete
     public void indexItem(final ListDefinition list, final ListItem item)
     {
+        final SearchService.IndexTask task = ServiceRegistry.get(SearchService.class).defaultTask();
+
         if (list.getEachItemIndex())
         {
-            final SearchService.IndexTask task = ServiceRegistry.get(SearchService.class).defaultTask();
-
             Runnable r = new Runnable()
             {
                 public void run()
                 {
                     SimpleFilter filter = new SimpleFilter(list.getKeyName(), item.getKey());
                     int count = indexItems(task, list, filter);
-
                     if (0 == count)
                         LOG.info("I should be deleting!");
                 }
             };
-
-            task.addRunnable(r, SearchService.PRIORITY.item);
+            _addIndexTask(r, SearchService.PRIORITY.item);
         }
 
         if (list.getEntireListIndex() && list.getEntireListIndexSetting().indexItemData())
         {
-            SearchService.IndexTask task = ServiceRegistry.get(SearchService.class).defaultTask();
-            task.addRunnable(new ListIndexRunnable(task, list), SearchService.PRIORITY.item);
+            Runnable r = new ListIndexRunnable(task, list);
+            _addIndexTask(r, SearchService.PRIORITY.item);
+        }
+    }
+
+
+    private void _addIndexTask(final Runnable r, final SearchService.PRIORITY p)
+    {
+        final SearchService.IndexTask task = ServiceRegistry.get(SearchService.class).defaultTask();
+
+        if (getSchema().getScope().isTransactionActive())
+        {
+            getSchema().getScope().addCommitTask(new Runnable(){
+                @Override
+                public void run()
+                {
+                    task.addRunnable(r, p);
+                }
+            });
+        }
+        else
+        {
+            task.addRunnable(r, p);
         }
     }
 

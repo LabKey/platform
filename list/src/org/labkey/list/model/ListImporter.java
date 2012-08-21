@@ -31,6 +31,8 @@ import org.labkey.api.exp.list.ListDefinition.KeyType;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Type;
 import org.labkey.api.gwt.client.ui.domain.ImportException;
+import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
@@ -151,9 +153,11 @@ public class ListImporter
                 String legalName = FileUtil.makeLegalName(name);
                 InputStream tsv = listsDir.getInputStream(legalName + ".tsv");
                 if (null != tsv)
-                { 
-                    errors.addAll(def.insertListItems(user, DataLoader.getDataLoaderForInputStream(tsv, false), listsDir.getDir(legalName), null));
-
+                {
+                    BatchValidationException batchErrors = new BatchValidationException();
+                    int count = def.insertListItems(user, DataLoader.getDataLoaderForInputStream(tsv, false), batchErrors, listsDir.getDir(legalName), null);
+                    for (ValidationException v : batchErrors.getRowErrors())
+                        errors.add(v.getMessage());
                     // TODO: Error the entire job on import error?
                 }
             }

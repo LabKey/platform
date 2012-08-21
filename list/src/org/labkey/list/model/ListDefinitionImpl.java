@@ -17,6 +17,7 @@
 package org.labkey.list.model;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.AttachmentParent;
@@ -35,6 +36,10 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.etl.DataIterator;
+import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.Pump;
+import org.labkey.api.etl.WrapperDataIterator;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.MvColumn;
@@ -50,6 +55,7 @@ import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -534,9 +540,16 @@ public class ListDefinitionImpl implements ListDefinition
         }
     }
 
-    public List<String> insertListItems(User user, DataLoader loader, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress) throws IOException
+
+    @Override
+    public int insertListItems(User user, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress) throws IOException
     {
-        List<String> errors = new LinkedList<String>();
+        return insertListItemsOld(user, loader, errors, attachmentDir, progress);
+    }
+
+
+    public int insertListItemsOld(User user, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress) throws IOException
+    {
         Set<String> mvIndicatorColumnNames = new CaseInsensitiveHashSet();
 
         for (DomainProperty property : getDomain().getProperties())
@@ -554,9 +567,10 @@ public class ListDefinitionImpl implements ListDefinition
         // that tells the loader all the types.
         String[][] firstLine = loader.getFirstNLines(1);
 
-        if (firstLine.length == 0){
-            errors.add("The header line cannot be blank");
-            return errors;
+        if (firstLine.length == 0)
+        {
+            errors.addRowError(new ValidationException("The header line cannot be blank"));
+            return 0;
         }
 
         ArrayList<ColumnDescriptor> columnList = new ArrayList<ColumnDescriptor>(firstLine.length);
@@ -598,7 +612,7 @@ public class ListDefinitionImpl implements ListDefinition
 
             if (property == null && !isKeyField)
             {
-                errors.add((!"".equals(columnName) ? "The field '" + columnName + "' could not be matched to a field in this list." : "The import cannot have blank column headers (Column " + colIdx + ")"));
+                errors.addRowError(new ValidationException(!"".equals(columnName) ? "The field '" + columnName + "' could not be matched to a field in this list." : "The import cannot have blank column headers (Column " + colIdx + ")"));
                 continue;
             }
 
@@ -606,7 +620,7 @@ public class ListDefinitionImpl implements ListDefinition
             {
                 if (cdKey != null)
                 {
-                    errors.add("The field '" + getKeyName() + "' appears more than once.");
+                    errors.addRowError(new ValidationException("The field '" + getKeyName() + "' appears more than once."));
                 }
                 else
                 {
@@ -629,11 +643,11 @@ public class ListDefinitionImpl implements ListDefinition
 
                     if (foundProperties.containsKey(columnName))
                     {
-                        errors.add("The field '" + property.getName() + "' appears more than once.");
+                        errors.addRowError(new ValidationException("The field '" + property.getName() + "' appears more than once."));
                     }
                     if (foundProperties.containsValue(property) && !property.isMvEnabled())
                     {
-                        errors.add("The fields '" + property.getName() + "' and '" + property.getPropertyDescriptor().getNonBlankCaption() + "' refer to the same property.");
+                        errors.addRowError(new ValidationException("The fields '" + property.getName() + "' and '" + property.getPropertyDescriptor().getNonBlankCaption() + "' refer to the same property."));
                     }
                     foundProperties.put(columnName, property);
                     cd.name = property.getPropertyURI();
@@ -647,11 +661,11 @@ public class ListDefinitionImpl implements ListDefinition
 
         if (cdKey == null && getKeyType() != ListDefinition.KeyType.AutoIncrementInteger)
         {
-            errors.add("There must be a field with the name '" + getKeyName() + "'");
+            errors.addRowError(new ValidationException("There must be a field with the name '" + getKeyName() + "'"));
         }
 
-        if (!errors.isEmpty())
-            return errors;
+        if (errors.hasErrors())
+            return 0;
 
         List<Map<String, Object>> rows = loader.load();
 
@@ -694,7 +708,7 @@ public class ListDefinitionImpl implements ListDefinition
                         {
                             String columnName = domainProperty.getName() + MvColumn.MV_INDICATOR_SUFFIX;
                             wrongTypes.add(columnName);
-                            errors.add("Row " + idx + ": " + columnName + " must be a valid MV indicator.");
+                            errors.addRowError(new ValidationException("Row " + idx + ": " + columnName + " must be a valid MV indicator."));
                         }
                     }
                 }
@@ -706,17 +720,17 @@ public class ListDefinitionImpl implements ListDefinition
                 if (domainProperty.isRequired() && valueMissing && !missingValues.contains(domainProperty.getName()))
                 {
                     missingValues.add(domainProperty.getName());
-                    errors.add("Row " + idx + ": The field \"" + domainProperty.getName() + "\" is required.");
+                    errors.addRowError(new ValidationException("Row " + idx + ": The field \"" + domainProperty.getName() + "\" is required."));
                 }
                 else if (domainProperty.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT && null == attachmentDir && !valueMissing && !noUpload.contains(domainProperty.getName()))
                 {
                     noUpload.add(domainProperty.getName());
-                    errors.add("Row " + idx + ": " + "Can't upload to field " + domainProperty.getName() + " with type " + domainProperty.getType().getLabel() + ".");
+                    errors.addRowError(new ValidationException("Row " + idx + ": " + "Can't upload to field " + domainProperty.getName() + " with type " + domainProperty.getType().getLabel() + "."));
                 }
                 else if (!valueMissing && o == errorValue && !wrongTypes.contains(domainProperty.getName()))
                 {
                     wrongTypes.add(domainProperty.getName());
-                    errors.add("Row " + idx + ": The field \"" + domainProperty.getName() + "\" must be of type " + domainProperty.getType().getLabel() + ".");
+                    errors.addRowError(new ValidationException("Row " + idx + ": The field \"" + domainProperty.getName() + "\" must be of type " + domainProperty.getType().getLabel() + "."));
                 }
             }
 
@@ -725,36 +739,31 @@ public class ListDefinitionImpl implements ListDefinition
                 Object key = row.get(cdKey.name);
                 if (null == key)
                 {
-                    errors.add("Row " + idx + ": " + "Blank values are not allowed in field " + cdKey.name);
-                    return errors;
+                    errors.addRowError(new ValidationException("Row " + idx + ": " + "Blank values are not allowed in field " + cdKey.name));
+                    return 0;
                 }
                 else if (!getKeyType().isValidKey(key))
                 {
                     // Ideally, we'd display the value we failed to convert and/or the row... but key.toString() is currently "~ERROR VALUE~".  See #10475.
                     // TODO: Fix this
-                    errors.add("Row " + idx + ": " + "Could not convert values in key field \"" + cdKey.name + "\" to type " + getKeyType().getLabel());
-                    return errors;
+                    errors.addRowError(new ValidationException("Row " + idx + ": " + "Could not convert values in key field \"" + cdKey.name + "\" to type " + getKeyType().getLabel()));
+                    return 0;
                 }
                 else if (!keyValues.add(key))
                 {
-                    errors.add("Row " + idx + ": " + "The key field \"" + cdKey.name + "\" cannot have duplicate values.  The duplicate is: \"" + row.get(cdKey.name) + "\"");
-                    return errors;
+                    errors.addRowError(new ValidationException("Row " + idx + ": " + "The key field \"" + cdKey.name + "\" cannot have duplicate values.  The duplicate is: \"" + row.get(cdKey.name) + "\""));
+                    return 0;
                 }
             }
 
             idx++;
         }
 
-        if (!errors.isEmpty())
-            return errors;
+        if (errors.hasErrors())
+            return 0;
 
-        doBulkInsert(user, cdKey, getDomain(), foundProperties, rows, attachmentDir, errors, progress);
-
-        return errors;
-    }
-
-    private void doBulkInsert(User user, ColumnDescriptor cdKey, Domain domain, Map<String, DomainProperty> properties, List<Map<String, Object>> rows, @Nullable VirtualFile attachmentDir, List<String> errors, @Nullable ListImportProgress progress)
-    {
+        Domain domain = getDomain();
+        Map<String,DomainProperty> properties = foundProperties;
         try
         {
             ExperimentService.get().ensureTransaction();
@@ -778,21 +787,74 @@ public class ListDefinitionImpl implements ListDefinition
             addAuditEvent(user, "Bulk inserted " + inserted.size() + " rows to list.");
 
             ExperimentService.get().commitTransaction();
+
+            return inserted.size();
         }
         catch (ValidationException ve)
         {
-            for (ValidationError error : ve.getErrors())
-                errors.add(error.getMessage());
+            errors.addRowError(ve);
         }
         catch (SQLException se)
         {
-            errors.add(se.getMessage());
+            errors.addRowError(new ValidationException(se.getMessage()));
         }
         finally
         {
             ExperimentService.get().closeTransaction();
         }
+        return 0;
     }
+
+
+
+/* does not fire triggers!
+    public List<String> insertListItemsETL(User user, DataLoader loader, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress) throws IOException
+    {
+        List<String> messages = new ArrayList<String>();
+        BatchValidationException errors = new BatchValidationException();
+
+        // could refactor this so that we're
+        ListQueryUpdateService lqus = (ListQueryUpdateService)getTable(user).getUpdateService();
+        DataIteratorBuilder dib = lqus.createImportETL(user, getContainer(), loader, errors, true);
+
+        try
+        {
+            ExperimentService.get().ensureTransaction();
+
+            DataIterator insertIt = dib.getDataIterator(errors);
+            // if hasAttachmentColumns
+            DataIterator attach = new WrapperDataIterator(insertIt)
+            {
+                @Override
+                public boolean next() throws BatchValidationException
+                {
+                    boolean ret = super.next();
+                    if (!ret)
+                        return false;
+                    // handle attachments here
+                    return ret;
+                }
+            };
+            Pump p = new Pump(attach, errors);
+            p.run();
+            int inserted = p.getRowCount();
+
+            addAuditEvent(user, "Bulk inserted " + inserted + " rows to list.");
+
+            ExperimentService.get().commitTransaction();
+        }
+        finally
+        {
+            ExperimentService.get().closeTransaction();
+        }
+
+        for (ValidationException v : errors.getRowErrors())
+            messages.add(v.getMessage());
+        return messages;
+    }
+ */
+
+
 
     private void addAuditEvent(User user, String comment)
     {

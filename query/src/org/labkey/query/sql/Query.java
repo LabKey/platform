@@ -1089,18 +1089,18 @@ public class Query
             if (errors.hasErrors())
                 fail(errors.getRowErrors().get(0).toString());
 
-            if (0==1)
-            {
-                try
-                {
-                    ListDefinition RHOME = s.createList(ContainerManager.getForPath("/home"), "R");
-                    RHOME.setKeyType(ListDefinition.KeyType.AutoIncrementInteger);
-                    RHOME.setKeyName("rowid");
-                    addProperties(RHOME);
-                    RHOME.save(user);
-                    RHOME.insertListItems(user, new TestDataLoader(RHOME.getName() + hash, Rsize), null, null);
-                } catch (Exception x){};
-            }
+//            if (0==1)
+//            {
+//                try
+//                {
+//                    ListDefinition RHOME = s.createList(ContainerManager.getForPath("/home"), "R");
+//                    RHOME.setKeyType(ListDefinition.KeyType.AutoIncrementInteger);
+//                    RHOME.setKeyName("rowid");
+//                    addProperties(RHOME);
+//                    RHOME.save(user);
+//                    RHOME.insertListItems(user, new TestDataLoader(RHOME.getName() + hash, Rsize), null, null);
+//                } catch (Exception x){};
+//            }
         }
 
 

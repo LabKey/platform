@@ -26,6 +26,8 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.ui.domain.ImportException;
 import org.labkey.api.gwt.client.ui.domain.ImportStatus;
+import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MemTracker;
@@ -33,6 +35,7 @@ import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -134,6 +137,7 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
         return status;
     }
 
+
     private class BackgroundListImporter implements Callable<List<String>>
     {
         private final ListDefinition _def;
@@ -149,14 +153,15 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
 
         public List<String> call() throws ImportException
         {
-            List<String> errors;
+            List<String> messages = new ArrayList<String>();
+            BatchValidationException errors = new BatchValidationException();
 
             try
             {
                 // TODO: Instead of throwing a CancellationException, this method should return a status object holding
                 //  errors and cancellation status.  This will require reworking OntologyManager, so signal with an
                 //  exception for now.
-                errors = _def.insertListItems(getUser(), _loader, null, _progress);
+                _def.insertListItems(getUser(), _loader, errors, null, _progress);
             }
             catch (CancellationException ce)
             {
@@ -171,14 +176,20 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
                 _loader.close();
             }
 
-            if (errors.isEmpty())
+            if (errors.hasErrors())
+            {
+                for (ValidationException v : errors.getRowErrors())
+                    messages.add(v.getMessage());
+            }
+            else
             {
                 deleteImportFile();
             }
 
-            return errors;
+            return messages;
         }
     }
+
 
     public static class ProgressIndicator implements ListImportProgress
     {
@@ -205,6 +216,7 @@ public class ListImportServiceImpl extends DomainImporterServiceBase
             return _currentRow;
         }
     }
+
 
     private static class ImportContext
     {

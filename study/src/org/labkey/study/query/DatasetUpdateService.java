@@ -124,7 +124,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
 
     @Override
-    protected DataIteratorBuilder createImportETL(User user, Container container, DataIteratorBuilder data, BatchValidationException errors, boolean forImport)
+    public DataIteratorBuilder createImportETL(User user, Container container, DataIteratorBuilder data, BatchValidationException errors, boolean forImport)
     {
         QCState defaultQCState = StudyManager.getInstance().getDefaultQCState(_dataset.getStudy());
         DataIteratorBuilder insert = _dataset.getInsertDataIterator(user, data, null, true, errors, defaultQCState, false);
