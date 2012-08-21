@@ -1738,7 +1738,7 @@ public class SpecimenImporter
                     insertSql.append(StringUtils.repeat(", ?", availableColumns.size()));
                     insertSql.append(")");
                     stmtInsert = conn.prepareStatement(insertSql.toString());
-                    parameterMapInsert = new Parameter.ParameterMap(schema.getSqlDialect(), stmtInsert, parametersInsert);
+                    parameterMapInsert = new Parameter.ParameterMap(schema.getScope(), stmtInsert, parametersInsert);
                     if (DEBUG)
                     {
                         info(tableName + ": insert sql:");
@@ -1770,7 +1770,7 @@ public class SpecimenImporter
                         }
                     }
                     stmtUpdate = conn.prepareStatement(updateSql.toString());
-                    parameterMapUpdate = new Parameter.ParameterMap(schema.getSqlDialect(), stmtUpdate, parametersUpdate);
+                    parameterMapUpdate = new Parameter.ParameterMap(schema.getScope(), stmtUpdate, parametersUpdate);
                     if (DEBUG)
                     {
                         info(tableName + ": update sql:");
