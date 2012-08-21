@@ -658,6 +658,8 @@ public class URLHelper implements Cloneable, Serializable, Taintable
 
     public void addPropertyValues(PropertyValues pvs)
     {
+        if (null == pvs)
+            return;
         for (PropertyValue pv : pvs.getPropertyValues())
         {
             Object v = pv.getValue();
