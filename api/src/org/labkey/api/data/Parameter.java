@@ -346,22 +346,23 @@ public class Parameter
         Integer _rowId;
         Integer _objectId;
         CaseInsensitiveHashMap<Parameter> _map;
+        DbScope _scope;
         SqlDialect _dialect;
 
-        public ParameterMap(SqlDialect dialect, PreparedStatement stmt, Collection<Parameter> parameters)
+        public ParameterMap(DbScope scope, PreparedStatement stmt, Collection<Parameter> parameters)
         {
-            this(dialect, stmt, parameters, null);
+            this(scope, stmt, parameters, null);
         }
 
-        public ParameterMap(SqlDialect dialect, PreparedStatement stmt, Collection<Parameter> parameters, @Nullable Map<String, String> remap)
+        public ParameterMap(DbScope scope, PreparedStatement stmt, Collection<Parameter> parameters, @Nullable Map<String, String> remap)
         {
-            init(dialect, stmt, parameters, remap);
+            init(scope, stmt, parameters, remap);
         }
         
         /**
          *  sql bound to constants or Parameters, compute the index array for each named Parameter
          */
-        public ParameterMap(SqlDialect dialect, Connection conn, SQLFragment sql, Map<String, String> remap) throws SQLException
+        public ParameterMap(DbScope scope, Connection conn, SQLFragment sql, Map<String, String> remap) throws SQLException
         {
             PreparedStatement stmt = conn.prepareStatement(sql.getSQL());
 
@@ -389,13 +390,14 @@ public class Parameter
                 parameters.add(e.getKey());
             }
 
-            init(dialect, stmt, parameters, remap);
+            init(scope, stmt, parameters, remap);
         }
 
 
-        private void init(SqlDialect dialect, PreparedStatement stmt, Collection<Parameter> parameters, @Nullable Map<String, String> remap)
+        private void init(DbScope scope, PreparedStatement stmt, Collection<Parameter> parameters, @Nullable Map<String, String> remap)
         {
-            _dialect = dialect;
+            _scope = scope;
+            _dialect = scope.getSqlDialect();
             _map = new CaseInsensitiveHashMap<Parameter>(parameters.size() * 2);
             for (Parameter p : parameters)
             {
@@ -578,6 +580,7 @@ public class Parameter
 
 
         Runnable _onClose = null;
+        boolean _runAfterTransaction = true;
 
         public void onClose(Runnable r)
         {
@@ -589,7 +592,12 @@ public class Parameter
         protected void afterClose()
         {
             if (null != _onClose)
-                _onClose.run();
+            {
+                if (_runAfterTransaction && _scope.isTransactionActive())
+                    _scope.addCommitTask(_onClose);
+                else
+                    _onClose.run();
+            }
             _onClose = null;
         }
 

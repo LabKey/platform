@@ -70,6 +70,36 @@ public class StatementUtils
         return f;
     }
 
+    // same as appendParameterOrVariable(), but with cast handling
+    public static SQLFragment appendPropertyValue(SQLFragment f, SqlDialect d, DomainProperty dp, boolean useVariable, Parameter p, Map<Parameter, String> names)
+    {
+        String value;
+        if (!useVariable)
+        {
+            value = "?";
+            f.add(p);
+        }
+        else
+        {
+            String v = names.get(p);
+            if (null == v)
+            {
+                v =  (d.isSqlServer() ? "@p" : "_$p") + (names.size()+1);
+                names.put(p,v);
+            }
+            value = v;
+        }
+        if (JdbcType.valueOf(dp.getSqlType()) == JdbcType.BOOLEAN)
+        {
+            value = "CASE CAST(" + value + " AS "+ d.getBooleanDataType() + ")" +
+                " WHEN " + d.getBooleanTRUE() + " THEN 1.0 " +
+                " WHEN " + d.getBooleanFALSE() + " THEN 0.0" +
+                " ELSE NULL END";
+        }
+        f.append(value);
+        return f;
+    }
+
     /**
      * Create a reusable SQL Statement for inserting rows into an labkey relationship.  The relationship
      * persisted directly in the database (SchemaTableInfo), or via the OnotologyManager tables.
@@ -418,10 +448,10 @@ public class StatementUtils
                 sqlfObjectProperty.append(",'").append(propertyType.getStorageType()).append("'");
                 Parameter mv = new Parameter(dp.getName()+ MvColumn.MV_INDICATOR_SUFFIX, dp.getPropertyURI() + MvColumn.MV_INDICATOR_SUFFIX, null, JdbcType.VARCHAR);
                 sqlfObjectProperty.append(",");
-                appendParameterOrVariable(sqlfObjectProperty, d,useVariables, mv, parameterToVariable);
+                appendParameterOrVariable(sqlfObjectProperty, d, useVariables, mv, parameterToVariable);
                 Parameter v = new Parameter(dp.getName(), dp.getPropertyURI(), null, propertyType.getJdbcType());
                 sqlfObjectProperty.append(",");
-                appendParameterOrVariable(sqlfObjectProperty, d,useVariables, v, parameterToVariable);
+                appendPropertyValue(sqlfObjectProperty, d, dp, useVariables, v, parameterToVariable);
                 sqlfObjectProperty.append(");\n");
             }
         }
@@ -443,7 +473,7 @@ public class StatementUtils
             script.appendStatement(sqlfObjectProperty, d);
             script.appendStatement(sqlfSelectIds, d);
 
-            ret = new Parameter.ParameterMap(d, conn, script, updatable.remapSchemaColumns());
+            ret = new Parameter.ParameterMap(table.getSchema().getScope(), conn, script, updatable.remapSchemaColumns());
         }
         else
         {
@@ -508,9 +538,9 @@ public class StatementUtils
                 fn.append(";\n");
             }
             fn.append("END;\n$$ LANGUAGE plpgsql;\n");
-
+System.err.println(fn.toString());
             Table.execute(table.getSchema(), fn);
-            ret = new Parameter.ParameterMap(d, conn, call, updatable.remapSchemaColumns());
+            ret = new Parameter.ParameterMap(table.getSchema().getScope(), conn, call, updatable.remapSchemaColumns());
             ret.onClose(new Runnable() { @Override public void run()
             {
                 try
@@ -519,7 +549,7 @@ public class StatementUtils
                 }
                 catch (SQLException x)
                 {
-                    Logger.getLogger(Table.class).error("Error dropping temp function", x);
+                    Logger.getLogger(Table.class).error("Error dropping temp function.  SQLSTATE:" + x.getSQLState(), x);
                 }
             }});
         }

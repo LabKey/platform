@@ -2140,7 +2140,7 @@ public class Table
         }
         sqlfDelete.append(sqlfDeleteTable);
 
-        return new Parameter.ParameterMap(d, conn, sqlfDelete, updatable.remapSchemaColumns());
+        return new Parameter.ParameterMap(tableDelete.getSchema().getScope(), conn, sqlfDelete, updatable.remapSchemaColumns());
     }
 
 
