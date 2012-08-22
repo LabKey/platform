@@ -35,55 +35,6 @@ import java.util.List;
  */
 public abstract class BaseRedirectReport extends RedirectReport
 {
-    public static final String MODIFIED = "modified";
-
-    protected Container getContainer()
-    {
-        return ContainerManager.getForId(getDescriptor().getContainerId());
-    }
-
-    public void setModified(Date modified)
-    {
-        getDescriptor().setProperty(MODIFIED, DateUtil.formatDate(modified));
-    }
-
-    public void setDescription(String description)
-    {
-        getDescriptor().setReportDescription(description);
-    }
-
-    public String getDescription()
-    {
-        return getDescriptor().getReportDescription();
-    }
-
-    public void setCategory(Integer id)
-    {
-        if (id != null)
-        {
-            getDescriptor().setCategory(ViewCategoryManager.getInstance().getCategory(id));
-        }
-        else
-        {
-            getDescriptor().setCategory(null);
-        }
-    }
-
-    public ViewCategory getCategory()
-    {
-        return getDescriptor().getCategory();
-    }
-
-    public void setOwner(Integer owner)
-    {
-        getDescriptor().setOwner(owner);
-    }
-
-    public void getOwner()
-    {
-        getDescriptor().getOwner();
-    }
-
     public boolean canEdit(User user, Container container, List<ValidationError> errors)
     {
         super.canEdit(user, container, errors);

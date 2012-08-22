@@ -70,6 +70,7 @@ import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.model.ViewInfo;
+import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.ChartReport;
 import org.labkey.api.reports.report.RReport;
@@ -1140,7 +1141,7 @@ public class ReportsController extends SpringActionController
         return url;
     }
 
-    protected abstract class BaseRedirectReportAction<F extends DataViewEditForm, R extends BaseRedirectReport & DynamicThumbnailProvider> extends FormViewAction<F>
+    protected abstract class BaseReportAction<F extends DataViewEditForm, R extends AbstractReport & DynamicThumbnailProvider> extends FormViewAction<F>
     {
         public void initializeForm(F form, boolean reshow, BindException errors) throws Exception
         {
@@ -1195,21 +1196,22 @@ public class ReportsController extends SpringActionController
                     category = ViewCategoryManager.getInstance().ensureViewCategory(getContainer(), getUser(), form.getCategory());
 
                 R report = createReport(form);
+                ReportDescriptor descriptor = report.getDescriptor();
 
-                report.getDescriptor().setContainer(getContainer().getId());
-                report.getDescriptor().setReportName(form.getViewName());
+                descriptor.setContainer(getContainer().getId());
+                descriptor.setReportName(form.getViewName());
                 if (form.getModifiedDate() != null)
-                    report.setModified(form.getModifiedDate());
+                    descriptor.setModified(form.getModifiedDate());
 
-                report.setDescription(form.getDescription());
+                descriptor.setReportDescription(form.getDescription());
 
                 if (category != null)
-                    report.getDescriptor().setCategory(category);
+                    descriptor.setCategory(category);
 
                 if (!form.getShared())
-                    report.setOwner(getUser().getUserId());
+                    descriptor.setOwner(getUser().getUserId());
                 else
-                    report.setOwner(null);
+                    descriptor.setOwner(null);
 
                 int id = ReportService.get().saveReport(getViewContext(), form.getViewName(), report);
 
@@ -1258,7 +1260,7 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermissionClass(InsertPermission.class)
-    public class CreateAttachmentReportAction extends BaseRedirectReportAction<AttachmentReportForm, AttachmentReport>
+    public class CreateAttachmentReportAction extends BaseReportAction<AttachmentReportForm, AttachmentReport>
     {
         @Override
         public ModelAndView getView(AttachmentReportForm form, boolean reshow, BindException errors) throws Exception
@@ -1407,7 +1409,7 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermissionClass(InsertPermission.class)
-    public class CreateLinkReportAction extends BaseRedirectReportAction<LinkReportForm, LinkReport>
+    public class CreateLinkReportAction extends BaseReportAction<LinkReportForm, LinkReport>
     {
         public ModelAndView getView(LinkReportForm form, boolean reshow, BindException errors) throws Exception
         {
