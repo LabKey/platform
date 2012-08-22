@@ -68,6 +68,6 @@ abstract public class ScriptReportDescriptor extends ReportDescriptor
 
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
-        return (LinkedHashSet) Collections.<ClientDependency>emptySet();
+        return new LinkedHashSet<ClientDependency>();
     }
 }
