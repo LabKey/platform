@@ -40,6 +40,7 @@ import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -93,6 +94,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
         author,         // author is treated as metadata instead of a first-class field
         status,
         json,
+        modified,
     }
 
     public ReportDescriptor()
@@ -714,5 +716,10 @@ public class ReportDescriptor extends Entity implements SecurableResource
     public void setDisplayOrder(int displayOrder)
     {
         _displayOrder = displayOrder;
+    }
+
+    public void setModified(Date modified)
+    {
+        setProperty(Prop.modified, DateUtil.formatDate(modified));
     }
 }
