@@ -16,16 +16,28 @@
 
 package org.labkey.api.reports.report;
 
-import org.labkey.api.query.*;
-import org.labkey.api.reports.report.view.ReportQueryView;
-import org.labkey.api.security.permissions.AdminPermission;
+import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.validation.BindException;
+import org.springframework.validation.ObjectError;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -53,100 +65,99 @@ public class QueryReport extends AbstractReport
 
     public HttpView renderReport(ViewContext context)
     {
-        ReportDescriptor reportDescriptor = getDescriptor();
+        BindException errors = new NullSafeBindException(this, "form");
+        QueryView view = createQueryView(context, errors);
+        StringBuilder sb = new StringBuilder();
+        String delim = "";
 
-        String errorMessage = null;
-        if (reportDescriptor instanceof QueryReportDescriptor)
+        if (errors.hasErrors())
         {
-            try {
-                final QueryReportDescriptor descriptor = (QueryReportDescriptor)reportDescriptor;
-                QueryReportDescriptor.QueryViewGenerator qvGen = getQueryViewGenerator();
-                if (qvGen == null)
-                {
-                    qvGen = descriptor.getQueryViewGenerator();
-                }
-
-                if (qvGen != null)
-                {
-                    ReportQueryView qv = qvGen.generateQueryView(context, descriptor);
-                    if (qv != null)
-                    {
-                        final UserSchema schema = qv.getQueryDef().getSchema();
-                        if (schema != null)
-                        {
-                            String queryName = descriptor.getProperty("queryName");
-                            if (queryName != null)
-                            {
-                                String viewName = descriptor.getProperty(QueryParam.viewName.toString());
-                                QuerySettings qs = schema.getSettings(context, "Report", queryName);
-                                QueryDefinition queryDef = qv.getQueryDef();
-                                if (queryDef.getCustomView(null, context.getRequest(), viewName) == null)
-                                {
-                                    CustomView view = queryDef.createCustomView(null, viewName);
-                                    view.setIsHidden(true);
-                                    view.save(context.getUser(), context.getRequest());
-                                }
-                                qs.setViewName(viewName);
-                                return qv;
-                            }
-                            else
-                            {
-                                errorMessage = "Invalid report params: the queryName must be specified in the QueryReportDescriptor";
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    errorMessage = "Invalid report params: A query view generator has not been specified through the ReportDescriptor";
-                }
-            }
-            catch (Exception e)
+            for (ObjectError error : (List<ObjectError>)errors.getAllErrors())
             {
-                errorMessage = e.getMessage();
+                sb.append(delim);
+                sb.append(error.getDefaultMessage());
+                delim = "\n";
             }
         }
+
+        if (view != null && sb.length() == 0)
+            return view;
         else
         {
-            errorMessage = "Invalid report params: The ReportDescriptor must be an instance of QueryReportDescriptor";
+            sb.append(delim);
+            sb.append("Unable to render the report");
         }
 
-        if (errorMessage != null)
+        if (sb.length() > 0)
         {
-            return new VBox(ExceptionUtil.getErrorView(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, errorMessage, null, context.getRequest(), false));
+            return ExceptionUtil.getErrorView(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, sb.toString(), null, context.getRequest(), false);
         }
         return null;
     }
 
-    public static class HeaderBean
+    private QueryView createQueryView(ViewContext context, BindException errors)
     {
-        private ViewContext _viewContext;
-        private ActionURL _customizeURL;
+        String schemaName = getDescriptor().getProperty(ReportDescriptor.Prop.schemaName);
+        String queryName = getDescriptor().getProperty(ReportDescriptor.Prop.queryName);
+        String viewName = getDescriptor().getProperty(ReportDescriptor.Prop.viewName);
+        String dataRegionName = getDescriptor().getProperty(ReportDescriptor.Prop.dataRegionName);
 
-        public HeaderBean(ViewContext context, ActionURL customizeURL)
-        {
-            _viewContext = context;
-            _customizeURL = customizeURL;
-        }
+        UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), schemaName);
 
-        public ViewContext getViewContext()
+        if (schema != null)
         {
-            return _viewContext;
-        }
+            QuerySettings settings = schema.getSettings(context, dataRegionName, queryName);
+            settings.setViewName(viewName);
+            // need to reset the report id since we want to render the data grid, not the report
+            settings.setReportId(null);
+            // by default we want all rows since the data may be used for a chart, grid based reports will ask for paging
+            // at the report level.
+            settings.setMaxRows(Table.ALL_ROWS);
+            settings.setAllowCustomizeView(false);
 
-        public boolean showCustomizeLink()
-        {
-            return _viewContext.getContainer().hasPermission(_viewContext.getUser(), AdminPermission.class);
-        }
+            final String filterParam = getDescriptor().getProperty("filterParam");
 
-        public ActionURL getCustomizeURL()
-        {
-            return _customizeURL;
+            if (!StringUtils.isEmpty(filterParam))
+            {
+                final String filterValue = context.getActionURL().getParameter(filterParam);
+
+                if (filterValue != null)
+                    settings.setBaseFilter(new SimpleFilter(FieldKey.fromParts(filterParam), filterValue));
+            }
+
+            QueryView view = schema.createView(context, settings, errors);
+            view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
+
+            return view;
         }
+        return null;
     }
 
     public QueryReportDescriptor.QueryViewGenerator getQueryViewGenerator()
     {
         return null;
+    }
+
+    protected CustomView getCustomView(ContainerUser context)
+    {
+        String schemaName = getDescriptor().getProperty(ReportDescriptor.Prop.schemaName);
+        String queryName = getDescriptor().getProperty(ReportDescriptor.Prop.queryName);
+        String viewName = getDescriptor().getProperty(ReportDescriptor.Prop.viewName);
+
+        if (viewName != null)
+            return QueryService.get().getCustomView(context.getUser(), context.getContainer(), schemaName, queryName, viewName);
+
+        return null;
+    }
+
+    public void beforeDelete(ContainerUser context)
+    {
+        CustomView view = getCustomView(context);
+        if (view != null)
+        {
+            HttpServletRequest request = new MockHttpServletRequest();
+            view.delete(context.getUser(), request);
+        }
+        super.beforeDelete(context);
     }
 }
