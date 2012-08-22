@@ -239,7 +239,7 @@ public class JsonWriter
         return props;
     }
     
-    private static JSONObject getLookupInfo(ColumnInfo columnInfo, boolean includeDomainFormat)
+    public static JSONObject getLookupInfo(ColumnInfo columnInfo, boolean includeDomainFormat)
     {
         ForeignKey fk = columnInfo.getFk();
 
