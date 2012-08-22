@@ -95,6 +95,11 @@ public class QueryReport extends AbstractReport
         return null;
     }
 
+    protected  UserSchema getSchema(ViewContext context, String schemaName)
+    {
+        return QueryService.get().getUserSchema(context.getUser(), context.getContainer(), schemaName);
+    }
+
     private QueryView createQueryView(ViewContext context, BindException errors)
     {
         String schemaName = getDescriptor().getProperty(ReportDescriptor.Prop.schemaName);
@@ -102,7 +107,7 @@ public class QueryReport extends AbstractReport
         String viewName = getDescriptor().getProperty(ReportDescriptor.Prop.viewName);
         String dataRegionName = getDescriptor().getProperty(ReportDescriptor.Prop.dataRegionName);
 
-        UserSchema schema = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), schemaName);
+        UserSchema schema = getSchema(context, schemaName);
 
         if (schema != null)
         {
