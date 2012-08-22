@@ -257,7 +257,7 @@ public class MockModule implements Module
         return null;
     }
 
-    public List<ReportDescriptor> getReportDescriptors(String key)
+    public List<ReportDescriptor> getReportDescriptors(String key, Container container, User user)
     {
         return null;
     }

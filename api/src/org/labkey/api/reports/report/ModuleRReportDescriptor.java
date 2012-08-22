@@ -18,18 +18,17 @@ package org.labkey.api.reports.report;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.security.User;
 import org.labkey.api.util.Path;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.util.Pair;
+import org.labkey.query.xml.ReportDescriptorType;
 
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
-import java.util.List;
 
 /*
 * User: Dave
@@ -44,7 +43,6 @@ public class ModuleRReportDescriptor extends RReportDescriptor
 {
     public static final String TYPE = "moduleRReportDescriptor";
     public static final String FILE_EXTENSION = ".r";
-    protected static final String REPORT_METADATA_EXTENSION = ".report.xml";
 
     private Module _module;
     private Path _reportPath;
@@ -53,7 +51,7 @@ public class ModuleRReportDescriptor extends RReportDescriptor
     private long _sourceLastModified = 0;
     private long _metaDataLastModified = 0;
 
-    public ModuleRReportDescriptor(Module module, String reportKey, Resource sourceFile, Path reportPath)
+    public ModuleRReportDescriptor(Module module, String reportKey, Resource sourceFile, Path reportPath, Container container, User user)
     {
         _module = module;
         _sourceFile = sourceFile;
@@ -68,7 +66,7 @@ public class ModuleRReportDescriptor extends RReportDescriptor
         setReportType(getDefaultReportType(reportKey));
         Resource dir = sourceFile.parent();
         _metaDataFile = dir.find(getReportName() + REPORT_METADATA_EXTENSION);
-        loadMetaData();
+        loadMetaData(container, user);
     }
 
     public String getDefaultReportType(String reportKey)
@@ -84,17 +82,16 @@ public class ModuleRReportDescriptor extends RReportDescriptor
                 || (_metaDataLastModified != 0 && _metaDataFile.exists() && _metaDataFile.getLastModified() != _metaDataLastModified);
     }
 
-    protected void loadMetaData()
+    @Nullable
+    protected ReportDescriptorType loadMetaData(Container container, User user)
     {
+        ReportDescriptorType d = null;
         if (null != _metaDataFile && _metaDataFile.isFile())
         {
             try
             {
                 String xml = getFileContents(_metaDataFile);
-                List<Pair<String,String>> props = createPropsFromXML(xml);
-
-                if (null != props)
-                    setProperties(props);
+                setDescriptorFromXML(container, user, xml);
 
                 _metaDataLastModified = _metaDataFile.getLastModified();
             }
@@ -104,6 +101,7 @@ public class ModuleRReportDescriptor extends RReportDescriptor
                         + _metaDataFile.getPath(), e);
             }
         }
+        return d;
     }
 
     @Override

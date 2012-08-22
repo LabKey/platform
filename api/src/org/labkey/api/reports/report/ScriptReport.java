@@ -101,6 +101,11 @@ public abstract class ScriptReport extends AbstractReport
         return "";
     }
 
+    public boolean hasClientDependencies()
+    {
+        return false;
+    }
+
     public @Nullable String getDesignerHelpHtml()
     {
         return null;
@@ -139,6 +144,11 @@ public abstract class ScriptReport extends AbstractReport
         else
         {
             mode = (TAB_SOURCE.equals(tabId) ? Mode.update : (webpart ? Mode.view : Mode.viewAndUpdate));
+        }
+
+        if (hasClientDependencies())
+        {
+
         }
 
         return new AjaxRunScriptReportView(this, mode);

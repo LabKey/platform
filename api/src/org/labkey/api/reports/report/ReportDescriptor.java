@@ -48,18 +48,12 @@ import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.reportProps.PropertyList;
-import org.labkey.query.xml.ReportDescriptorDocument;
-import org.labkey.query.xml.ReportPropertyList;
+import org.labkey.query.xml.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * User: Karl Lum
@@ -377,7 +371,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
     private ReportDescriptorDocument getDescriptorDocument(Container c, @Nullable ImportContext context)
     {
         ReportDescriptorDocument doc = ReportDescriptorDocument.Factory.newInstance();
-        ReportDescriptorDocument.ReportDescriptor descriptor = doc.addNewReportDescriptor();
+        ReportDescriptorType descriptor = doc.addNewReportDescriptor();
 
         descriptor.setDescriptorType(getDescriptorType());
         descriptor.setReportName(getReportName());
@@ -500,7 +494,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
 
     private static ReportDescriptor createFromXML(Container container, User user, ReportDescriptorDocument doc) throws IOException, XmlValidationException
     {
-        ReportDescriptorDocument.ReportDescriptor d = doc.getReportDescriptor();
+        ReportDescriptorType d = doc.getReportDescriptor();
 
         ReportDescriptor descriptor = ReportService.get().createDescriptorInstance(d.getDescriptorType());
         if (descriptor != null)
@@ -536,6 +530,49 @@ public class ReportDescriptor extends Entity implements SecurableResource
         return null;
     }
 
+    public ReportDescriptorType setDescriptorFromXML(Container container, User user, String xmlString) throws IOException
+    {
+        ReportDescriptorType d;
+
+        try
+        {
+            XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
+            options.setLoadSubstituteNamespaces(Collections.singletonMap("", "http://labkey.org/query/xml"));
+
+            ReportDescriptorDocument doc = ReportDescriptorDocument.Factory.parse(xmlString, options);
+            d = doc.getReportDescriptor();
+
+            List<Pair<String, String>> props = new ArrayList<Pair<String, String>>();
+            if (d.getProperties() != null)
+            {
+                for (ReportPropertyList.Prop prop : d.getProperties().getPropArray())
+                    props.add(new Pair<String, String>(prop.getName(), prop.getStringValue()));
+            }
+
+            setProperties(props);
+
+            if (d.getCategory() != null)
+            {
+                ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(container, user, d.getCategory());
+                setCategory(category);
+            }
+
+            if (d.getLabel() != null)
+                setReportName(d.getLabel());
+
+            if (d.getDescription() != null)
+                setReportDescription(d.getDescription());
+
+            setHidden(d.getHidden()); // not sure
+        }
+        catch (XmlException e)
+        {
+            throw new IOException(e.getMessage());
+        }
+
+        return d;
+    }
+
     public static List<Pair<String, String>> createPropsFromXML(String xmlString) throws IOException
     {
         try
@@ -544,11 +581,14 @@ public class ReportDescriptor extends Entity implements SecurableResource
             options.setLoadSubstituteNamespaces(Collections.singletonMap("", "http://labkey.org/query/xml"));
 
             ReportDescriptorDocument doc = ReportDescriptorDocument.Factory.parse(xmlString, options);
-            ReportDescriptorDocument.ReportDescriptor d = doc.getReportDescriptor();
+            ReportDescriptorType d = doc.getReportDescriptor();
 
             List<Pair<String, String>> props = new ArrayList<Pair<String, String>>();
-            for (ReportPropertyList.Prop prop : d.getProperties().getPropArray())
-                props.add(new Pair<String, String>(prop.getName(), prop.getStringValue()));
+            if (d.getProperties() != null)
+            {
+                for (ReportPropertyList.Prop prop : d.getProperties().getPropArray())
+                    props.add(new Pair<String, String>(prop.getName(), prop.getStringValue()));
+            }
 
             return props;
         }

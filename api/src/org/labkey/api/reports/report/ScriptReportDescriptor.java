@@ -16,8 +16,9 @@
 
 package org.labkey.api.reports.report;
 
-import java.util.Collections;
-import java.util.List;
+import org.labkey.api.view.template.ClientDependency;
+
+import java.util.*;
 
 /*
 * User: adam
@@ -26,6 +27,8 @@ import java.util.List;
 */
 abstract public class ScriptReportDescriptor extends ReportDescriptor
 {
+    public static final String REPORT_METADATA_EXTENSION = ".report.xml";
+
     public enum Prop implements ReportProperty
     {
         script,
@@ -61,5 +64,10 @@ abstract public class ScriptReportDescriptor extends ReportDescriptor
     public boolean isStale()
     {
         return true;
+    }
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        return (LinkedHashSet) Collections.<ClientDependency>emptySet();
     }
 }

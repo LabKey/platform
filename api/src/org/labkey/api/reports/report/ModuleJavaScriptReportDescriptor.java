@@ -3,9 +3,13 @@ package org.labkey.api.reports.report;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.security.User;
 import org.labkey.api.util.Path;
+import org.labkey.query.xml.ReportDescriptorType;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,16 +23,15 @@ public class ModuleJavaScriptReportDescriptor extends JavaScriptReportDescriptor
 {
     public static final String TYPE = "moduleJSReportDescriptor";
     public static final String FILE_EXTENSION = ".js";
-    protected static final String REPORT_METADATA_EXTENSION = ".report.xml";
 
-    private Module _module;
-    private Path _reportPath;
-    private Resource _sourceFile;
-    // TODO: support xml metadata
-//    private Resource _metaDataFile;
-    private long _sourceLastModified = 0;
+    protected Module _module;
+    protected Path _reportPath;
+    protected Resource _sourceFile;
+    protected Resource _metaDataFile;
+    protected long _sourceLastModified = 0;
+    protected long _metaDataLastModified = 0;
 
-    public ModuleJavaScriptReportDescriptor(Module module, String reportKey, Resource sourceFile, Path reportPath)
+    public ModuleJavaScriptReportDescriptor(Module module, String reportKey, Resource sourceFile, Path reportPath, Container container, User user)
     {
         _module = module;
         _sourceFile = sourceFile;
@@ -41,6 +44,9 @@ public class ModuleJavaScriptReportDescriptor extends JavaScriptReportDescriptor
         setReportName(name);
         setDescriptorType(TYPE);
         setReportType(getDefaultReportType(reportKey));
+        Resource dir = sourceFile.parent();
+        _metaDataFile = dir.find(getReportName() + REPORT_METADATA_EXTENSION);
+        loadMetaData(container, user);
     }
 
     public String getDefaultReportType(String reportKey)
@@ -53,8 +59,30 @@ public class ModuleJavaScriptReportDescriptor extends JavaScriptReportDescriptor
     {
         //check if either source or meta-data files have changed
         //meta-data file is optional so make sure it exists before checking
-        return (_sourceLastModified != 0 && _sourceFile.getLastModified() != _sourceLastModified);
-//                || (_metaDataLastModified != 0 && _metaDataFile.exists() && _metaDataFile.getLastModified() != _metaDataLastModified);
+        return (_sourceLastModified != 0 && _sourceFile.getLastModified() != _sourceLastModified)
+                || (_metaDataLastModified != 0 && _metaDataFile.exists() && _metaDataFile.getLastModified() != _metaDataLastModified);
+    }
+
+    @Nullable
+    protected ReportDescriptorType loadMetaData(Container container, User user)
+    {
+        ReportDescriptorType d = null;
+        if (null != _metaDataFile && _metaDataFile.isFile())
+        {
+            try
+            {
+                String xml = getFileContents(_metaDataFile);
+                d = setDescriptorFromXML(container, user, xml);
+
+                _metaDataLastModified = _metaDataFile.getLastModified();
+            }
+            catch(IOException e)
+            {
+                Logger.getLogger(ModuleJavaScriptReportDescriptor.class).warn("Unable to load report metadata from file "
+                        + _metaDataFile.getPath(), e);
+            }
+        }
+        return d;
     }
 
     @Override

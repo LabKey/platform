@@ -27,11 +27,9 @@ import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.reports.report.view.AjaxScriptReportView.Mode;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.template.ClientDependency;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /*
 * User: Karl Lum
@@ -51,6 +49,7 @@ public class ScriptReportBean extends ReportDesignBean
     private Mode _mode = Mode.create;  // TODO: setting value for backward compatibility -- remove
     private boolean _sourceTabVisible;
     private String _thumbnailType;
+    private LinkedHashSet<ClientDependency> _clientDependencies;
 
     public ScriptReportBean()
     {
@@ -83,6 +82,16 @@ public class ScriptReportBean extends ReportDesignBean
     public void setScript(String script)
     {
         _script = script;
+    }
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        return _clientDependencies;
+    }
+
+    public void setClientDependencies(LinkedHashSet<ClientDependency> clientDependencies)
+    {
+        _clientDependencies = clientDependencies;
     }
 
     public boolean isRunInBackground()
@@ -172,6 +181,7 @@ public class ScriptReportBean extends ReportDesignBean
 
         setRunInBackground(BooleanUtils.toBoolean(descriptor.getProperty(ScriptReportDescriptor.Prop.runInBackground)));
         setIncludedReports(srDescriptor.getIncludedReports());
+        setClientDependencies(srDescriptor.getClientDependencies());
 
         if (ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), descriptor.getResourceContainer(), "thumbnailType") != null)
             setThumbnailType(ReportPropsManager.get().getPropertyValue(descriptor.getEntityId(), descriptor.getResourceContainer(), "thumbnailType").toString());

@@ -243,7 +243,7 @@ public interface Module extends Comparable<Module>
      * @param key The report key
      * @return A list of ReportDescriptors for that key
      */
-    public List<ReportDescriptor> getReportDescriptors(String key);
+    public List<ReportDescriptor> getReportDescriptors(String key, Container container, User user);
 
     /**
      * Returns the report descriptor for the given path

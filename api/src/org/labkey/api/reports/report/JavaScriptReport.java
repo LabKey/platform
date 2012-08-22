@@ -67,6 +67,12 @@ public class JavaScriptReport extends ScriptReport
     }
 
     @Override
+    public boolean hasClientDependencies()
+    {
+        return false;
+    }
+
+    @Override
     public String getDesignerHelpHtml()
     {
         try

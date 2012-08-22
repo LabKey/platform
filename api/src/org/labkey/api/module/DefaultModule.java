@@ -654,7 +654,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
 
-    protected List<ReportDescriptor> getAllReportDescriptors()
+    protected List<ReportDescriptor> getAllReportDescriptors(Container container, User user)
     {
         ArrayList<ReportDescriptor> list = new ArrayList<ReportDescriptor>(_reportFiles.size());
         Resource[] files = _reportFiles.toArray(new Resource[0]);
@@ -667,7 +667,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             {
                 // NOTE: reportKeyToLegalFile() is not a two-way mapping, this can cause inconsistencies
                 // so don't cache files with _ (underscore) in path
-                descriptor = createReportDescriptor(file);
+                descriptor = createReportDescriptor(file, container, user);
                 if (null != descriptor && !file.getPath().toString().contains("_"))
                     REPORT_DESCRIPTOR_CACHE.put(file.getPath(), descriptor);
             }
@@ -678,13 +678,13 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
 
-    public List<ReportDescriptor> getReportDescriptors(String keyStr)
+    public List<ReportDescriptor> getReportDescriptors(String keyStr, Container container, User user)
     {
         if (!AppProps.getInstance().isDevMode() && _reportFiles.isEmpty())
             return Collections.emptyList();
 
         if (null == keyStr)
-            return getAllReportDescriptors();
+            return getAllReportDescriptors(container, user);
 
         Path key = Path.parse(keyStr);
 
@@ -703,7 +703,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                 ScriptReportDescriptor descriptor = REPORT_DESCRIPTOR_CACHE.get(file.getPath());
                 if (null == descriptor || descriptor.isStale())
                 {
-                    descriptor = createReportDescriptor(key, file);
+                    descriptor = createReportDescriptor(key, file, container, user);
                     REPORT_DESCRIPTOR_CACHE.put(file.getPath(), descriptor);
                 }
                 reportDescriptors.add(descriptor);
@@ -747,7 +747,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                 else
                     key = Path.parse("StandAloneReport");
 
-                descriptor = createReportDescriptor(key, reportFile);
+                descriptor = createReportDescriptor(key, reportFile, null, null);
                 if (null != descriptor)
                     REPORT_DESCRIPTOR_CACHE.put(reportFile.getPath(), descriptor);
             }
@@ -756,12 +756,12 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return descriptor;
     }
 
-    protected ScriptReportDescriptor createReportDescriptor(Resource reportFile)
+    protected ScriptReportDescriptor createReportDescriptor(Resource reportFile, Container container, User user)
     {
-        return createReportDescriptor(null, reportFile);
+        return createReportDescriptor(null, reportFile, container, user);
     }
 
-    protected ScriptReportDescriptor createReportDescriptor(@Nullable Path pathKey, Resource reportFile)
+    protected ScriptReportDescriptor createReportDescriptor(@Nullable Path pathKey, Resource reportFile, Container container, User user)
     {
         Path reportKey;
 
@@ -777,9 +777,9 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
         if (lowerKey.endsWith(ModuleQueryRReportDescriptor.FILE_EXTENSION))
         {
-            return new ModuleQueryRReportDescriptor(this, parent.toString("",""), reportFile, reportKey);
+            return new ModuleQueryRReportDescriptor(this, parent.toString("",""), reportFile, reportKey, container, user);
         }
-        return new ModuleQueryJavaScriptReportDescriptor(this, parent.toString("",""), reportFile, reportKey);
+        return new ModuleQueryJavaScriptReportDescriptor(this, parent.toString("",""), reportFile, reportKey, container, user);
     }
 
     protected void loadXmlFile(Resource r)

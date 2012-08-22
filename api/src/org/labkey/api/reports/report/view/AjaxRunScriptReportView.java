@@ -57,12 +57,20 @@ public class AjaxRunScriptReportView extends AjaxScriptReportView
             bean.setScript(((ScriptReport)_report).getDefaultScript());
         }
 
+        // for late-bound client dependencies
+        if (null != bean.getClientDependencies() && bean.getClientDependencies().size() > 0)
+        {
+            setClientDependencies(bean.getClientDependencies());
+        }
+
         // set the default redirect url
         if (bean.getRedirectUrl() == null)
+        {
             bean.setRedirectUrl(getViewContext().cloneActionURL().
                     deleteParameter(RunReportView.CACHE_PARAM).getLocalURIString());
+        }
 
-        super.init(bean, mode);    //To change body of overridden methods use File | Settings | File Templates.
+        super.init(bean, mode);
     }
 
     public BindException getErrors()
