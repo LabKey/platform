@@ -115,24 +115,69 @@ public class StudyQueryReport extends QueryReport
         return reportId;
     }
 
-    protected CustomView getCustomView(ContainerUser context)
+/*
+    public HttpView renderReport(ViewContext context)
     {
-        String viewName = getDescriptor().getProperty(QueryParam.viewName.name());
-        String queryName = getDescriptor().getProperty(QueryParam.queryName.name());
+        ReportDescriptor reportDescriptor = getDescriptor();
 
-        return QueryService.get().getCustomView(context.getUser(), context.getContainer(), StudyManager.getSchemaName(), queryName, viewName);
-    }
-
-    public void beforeDelete(ContainerUser context)
-    {
-        CustomView view = getCustomView(context);
-        if (view != null)
+        String errorMessage = null;
+        if (reportDescriptor instanceof QueryReportDescriptor)
         {
-            HttpServletRequest request = new MockHttpServletRequest();
-            view.delete(context.getUser(), request);
+            try {
+                final QueryReportDescriptor descriptor = (QueryReportDescriptor)reportDescriptor;
+                QueryReportDescriptor.QueryViewGenerator qvGen = getQueryViewGenerator();
+                if (qvGen == null)
+                {
+                    qvGen = descriptor.getQueryViewGenerator();
+                }
+
+                if (qvGen != null)
+                {
+                    ReportQueryView qv = qvGen.generateQueryView(context, descriptor);
+                    if (qv != null)
+                    {
+                        final UserSchema schema = qv.getQueryDef().getSchema();
+                        if (schema != null)
+                        {
+                            String queryName = descriptor.getProperty("queryName");
+                            if (queryName != null)
+                            {
+                                String viewName = descriptor.getProperty(QueryParam.viewName.toString());
+                                QuerySettings qs = schema.getSettings(context, "Report", queryName);
+                                QueryDefinition queryDef = qv.getQueryDef();
+                                if (queryDef.getCustomView(null, context.getRequest(), viewName) == null)
+                                {
+                                    CustomView view = queryDef.createCustomView(null, viewName);
+                                    view.setIsHidden(true);
+                                    view.save(context.getUser(), context.getRequest());
+                                }
+                                qs.setViewName(viewName);
+                                return qv;
+                            }
+                            else
+                            {
+                                errorMessage = "Invalid report params: the queryName must be specified in the QueryReportDescriptor";
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    errorMessage = "Invalid report params: A query view generator has not been specified through the ReportDescriptor";
+                }
+            }
+            catch (Exception e)
+            {
+                errorMessage = e.getMessage();
+            }
         }
-        super.beforeDelete(context);
+        else
+        {
+            errorMessage = "Invalid report params: The ReportDescriptor must be an instance of QueryReportDescriptor";
+        }
+        return null;
     }
+*/
 
     public QueryReportDescriptor.QueryViewGenerator getQueryViewGenerator()
     {
@@ -158,6 +203,7 @@ public class StudyQueryReport extends QueryReport
         };
     }
 
+/*
     public ActionURL getRunReportURL(ViewContext context)
     {
         int datasetId = NumberUtils.toInt(getDescriptor().getProperty("showWithDataset"), -1);
@@ -174,4 +220,5 @@ public class StudyQueryReport extends QueryReport
         return new ActionURL(StudyController.QueryReportAction.class, context.getContainer()).
                 addParameter(ReportDescriptor.Prop.reportId, getReportId().toString());
     }
+*/
 }

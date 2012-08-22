@@ -1333,6 +1333,7 @@ public class ReportsController extends BaseStudyController
         protected boolean redirectToReport;
         protected Integer redirectToDataset;
         protected String description;
+        protected String dataRegionName;
         private BindException _errors;
 
         public SaveReportForm(){}
@@ -1382,6 +1383,7 @@ public class ReportsController extends BaseStudyController
             descriptor.initFromQueryString(params);
             descriptor.setProperty("showWithDataset", String.valueOf(showWithDataset));
             descriptor.setReportDescription(description);
+            descriptor.setProperty(ReportDescriptor.Prop.dataRegionName, dataRegionName);
 
             return report;
         }
@@ -1433,6 +1435,16 @@ public class ReportsController extends BaseStudyController
         public String getDescription(){return this.description;}
         public void setErrors(BindException errors){_errors = errors;}
         public BindException getErrors(){return _errors;}
+
+        public String getDataRegionName()
+        {
+            return dataRegionName;
+        }
+
+        public void setDataRegionName(String dataRegionName)
+        {
+            this.dataRegionName = dataRegionName;
+        }
     }
 
     public static class SaveReportViewForm extends SaveReportForm
