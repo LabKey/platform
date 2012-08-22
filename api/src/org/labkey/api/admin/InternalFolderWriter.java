@@ -15,15 +15,13 @@
  */
 package org.labkey.api.admin;
 
-import java.util.Collection;
+import org.labkey.api.data.Container;
+import org.labkey.api.writer.Writer;
 
 /**
  * User: cnathe
  * Date: Jan 18, 2012
  */
-public interface FolderSerializationRegistry
+public interface InternalFolderWriter extends Writer<Container, FolderExportContext>
 {
-    public void addFactories(FolderWriterFactory writerFactory, FolderImporterFactory importerFactory);
-    public Collection<FolderWriter> getRegisteredFolderWriters();
-    public Collection<FolderImporter> getRegisteredFolderImporters();
 }

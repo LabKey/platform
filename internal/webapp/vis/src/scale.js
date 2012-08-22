@@ -57,9 +57,6 @@ LABKEY.vis.Scale.Continuous = function(trans, data, value, domain, range){
             var allTicks = scale.ticks();
             var ticksToShow = [];
 
-            console.log(allTicks.length);
-            console.log(allTicks);
-
             if(allTicks.length < 10){
                 return allTicks;
             } else {

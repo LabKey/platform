@@ -77,6 +77,7 @@ api/src/org/labkey/api/admin/AbstractImportContext.java -text
 api/src/org/labkey/api/admin/AdminUrls.java -text
 api/src/org/labkey/api/admin/BaseFolderWriter.java -text
 api/src/org/labkey/api/admin/CoreUrls.java -text
+api/src/org/labkey/api/admin/FolderExportContext.java -text
 api/src/org/labkey/api/admin/FolderImportContext.java -text
 api/src/org/labkey/api/admin/FolderImporter.java -text
 api/src/org/labkey/api/admin/FolderImporterFactory.java -text
@@ -84,8 +85,10 @@ api/src/org/labkey/api/admin/FolderImporterImpl.java -text
 api/src/org/labkey/api/admin/FolderSerializationRegistry.java -text
 api/src/org/labkey/api/admin/FolderWriter.java -text
 api/src/org/labkey/api/admin/FolderWriterFactory.java -text
+api/src/org/labkey/api/admin/FolderWriterImpl.java -text
 api/src/org/labkey/api/admin/ImportContext.java -text
 api/src/org/labkey/api/admin/ImportException.java -text
+api/src/org/labkey/api/admin/InternalFolderWriter.java -text
 api/src/org/labkey/api/admin/InvalidFileException.java -text
 api/src/org/labkey/api/analytics/AnalyticsService.java -text
 api/src/org/labkey/api/announcements/api/Announcement.java -text

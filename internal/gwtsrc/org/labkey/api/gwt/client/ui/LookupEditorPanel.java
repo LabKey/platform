@@ -232,7 +232,9 @@ public class LookupEditorPanel extends LayoutContainer
         // If it's the same target folder and schema, and the same key as last time, we don't need to requery
         if (folder.equals(lastFolderTableStore) && schema.equals(lastSchemaTableStore) && PropertyUtil.nullSafeEquals(_keyType, lastKeyType))
         {
-            checkForMissingTargetQuery();
+            // Issue 15772: if this is called before the store loads, we clear the combo inappropriately
+            //this check has been commented out, but should be revisited
+            //checkForMissingTargetQuery();
             return;
         }
 
@@ -409,7 +411,7 @@ public class LookupEditorPanel extends LayoutContainer
                 }
             });
             addListener(Events.Expand,new Listener<FieldEvent>(){
-                public void handleEvent(FieldEvent fe) 
+                public void handleEvent(FieldEvent fe)
                 {
                     _listExpand();
                 }

@@ -360,11 +360,15 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     }
 
 
+    private static final int DEADLOCK_RETRIES = 5;
+
     protected SchemaColumnMetaData getColumnMetaData()
     {
         synchronized (_columnLock)
         {
-            if (null == _columnMetaData)
+            int retry = 0;
+
+            while (null == _columnMetaData)
             {
                 try
                 {
@@ -372,11 +376,15 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
                 }
                 catch (SQLException e)
                 {
+                    String message = e.getMessage();
+
                     // See #14374
-                    if ("com.mysql.jdbc.exceptions.jdbc4.MySQLSyntaxErrorException".equals(e.getClass().getName()) && e.getMessage().startsWith("SELECT command denied to user"))
+                    if ("com.mysql.jdbc.exceptions.jdbc4.MySQLSyntaxErrorException".equals(e.getClass().getName()) && message.startsWith("SELECT command denied to user"))
                         throw new MinorConfigurationException("The LabKey database user doesn't have permissions to access this table", e);
 
-                    throw new RuntimeSQLException(e);
+                    // Retry if we hit a deadlock exception, see #15640
+                    if (null == message || !message.contains("deadlocked") || retry++ >= DEADLOCK_RETRIES)
+                        throw new RuntimeSQLException(e);
                 }
             }
 
