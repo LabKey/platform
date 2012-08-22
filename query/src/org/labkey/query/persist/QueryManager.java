@@ -19,12 +19,15 @@ package org.labkey.query.persist;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
+import org.json.JSONWriter;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.FilterInfo;
 import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.JsonWriter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -50,6 +53,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -600,33 +604,38 @@ public class QueryManager
     public Set<String> validateFk(ColumnInfo col, User user, Container container, TableInfo parentTable)
     {
         Set<String> queryErrors = new HashSet<String>();
-        String publicSchema = col.getParentTable().getPublicSchemaName() != null ? col.getParentTable().getPublicSchemaName() : col.getParentTable().getSchema().toString();
-        String publicQuery = col.getParentTable().getPublicName() != null ? col.getParentTable().getPublicName() : col.getParentTable().getName();
-        String errorBase = "for column '" + col.getName() + "' in " + publicSchema + "." + publicQuery + ": ";
-        if (col.getFk() == null)
+
+        //NOTE: this is the same code that writes JSON to the client
+        JSONObject o = JsonWriter.getLookupInfo(col, false);
+        if (o == null)
             return queryErrors;
 
-        ForeignKey fk = col.getFk();
-        TableInfo lookupTable = col.getFkTableInfo();
-        if (lookupTable == null)
+        boolean isPublic = o.getBoolean("isPublic");
+        String schemaName = o.getString("schemaName");
+        String queryName = o.getString("queryName");
+        String displayColumn = o.getString("displayColumn");
+        String keyColumn = o.getString("keyColumn");
+        String containerPath = o.getString("containerPath");
+        String errorBase = "for column '" + col.getName() + "' in " + schemaName + "." + queryName + ": ";
+
+        Container lookupContainer = containerPath == null ? container : ContainerManager.getForPath(containerPath);
+        if (lookupContainer == null)
         {
-            queryErrors.add("ERROR: " + errorBase + " unable to create lookup table: " + col.getFk().getLookupSchemaName() + "." + col.getFk().getLookupTableName() + " with column: " + col.getFk().getLookupColumnName());
-            return queryErrors;
+            queryErrors.add("ERROR: " + errorBase + " Unable to find container" + containerPath);
         }
 
-        boolean isPublic = lookupTable.isPublic() && null != lookupTable.getPublicName() && null != lookupTable.getPublicSchemaName();
+
+        //String publicSchema = col.getParentTable().getPublicSchemaName() != null ? col.getParentTable().getPublicSchemaName() : col.getParentTable().getSchema().toString();
+        //String publicQuery = col.getParentTable().getPublicName() != null ? col.getParentTable().getPublicName() : col.getParentTable().getName();
+        if (o == null || col.getFk() == null)
+            return queryErrors;
+
         if (!isPublic)
         {
-            String schema = lookupTable.getPublicSchemaName() != null ? lookupTable.getPublicSchemaName() : lookupTable.getSchema().getName();
-            String query = lookupTable.getPublicName() != null ? lookupTable.getPublicName() : lookupTable.getName();
-            queryErrors.add("INFO: " + errorBase + " has a lookup to a non-public table: " + schema + "." + query);
+            queryErrors.add("INFO: " + errorBase + " has a lookup to a non-public table: " + schemaName + "." + queryName);
             return queryErrors;
         }
 
-        String queryName = lookupTable.getPublicName();
-        String schemaName = lookupTable.getPublicSchemaName();
-
-        Container lookupContainer = col.getFk().getLookupContainerId() == null ? container : ContainerManager.getForId(col.getFk().getLookupContainerId());
         UserSchema userSchema = QueryService.get().getUserSchema(user, lookupContainer, schemaName);
         if (userSchema == null)
         {
@@ -653,34 +662,45 @@ public class QueryManager
                 queryErrors.add("ERROR: " + errorBase + " has a foreign key to a table that fails query validation: " + fkt + ". The error was: " + e.getMessage());
             }
 
-//            if(col.getFk().getLookupColumnName() == null)
-//            {
-//                queryErrors.add("ERROR: " + errorBase + " has a foreign key to table " + fkt + ", but the target column is blank" );
-//            }
-//            else
-//            {
-//                ColumnInfo displayColumn = fk.createLookupColumn(col, null);
-//                String displayColumnName;
-//                if (displayColumn != null && displayColumn.getFieldKey() != null)
-//                {
-//                    displayColumnName = displayColumn.getFieldKey().getName();
-//                }
-//                else
-//                {
-//                    displayColumnName = lookupTable.getTitleColumn();
-//                }
-//                ColumnInfo dci = fkTable.getColumn(displayColumnName);
-//                if(dci == null)
-//                {
-//                    queryErrors.add("ERROR: " + errorBase + " has a foreign key with display column '" + displayColumnName + "', which does not exist in the target table: " + schemaName + "." + queryName);
-//                }
-//
-//                ColumnInfo dc = fkTable.getColumn(col.getFk().getLookupColumnName());
-//                if(dc == null)
-//                {
-//                    queryErrors.add("ERROR: " + errorBase + " has a foreign key with display column '" + col.getFk().getLookupColumnName() + "', which does not exist in the target table: " + schemaName + "." + queryName);
-//                }
-//            }
+            if (displayColumn != null)
+            {
+                FieldKey displayFieldKey = FieldKey.fromString(displayColumn);
+                Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(fkTable, Collections.singleton(displayFieldKey));
+                if (cols == null || !cols.containsKey(displayFieldKey))
+                {
+                    queryErrors.add("ERROR: " + errorBase + " reports a foreign key with displayColumn of " + displayColumn + " in the table " + schemaName + "." + queryName + ", but the column does not exist");
+                }
+                else
+                {
+                    ColumnInfo ci = cols.get(displayFieldKey);
+                    if (!displayColumn.equals(ci.getFieldKey().toString()))
+                    {
+                        queryErrors.add("WARNING: " + errorBase + ", the lookup to " + schemaName + "." + queryName + "' did not match the expected case, which was '" + ci.getFieldKey().toString()  + "'. Actual: '" + displayColumn + "'");
+                    }
+                }
+            }
+
+            if (keyColumn != null)
+            {
+                FieldKey keyFieldKey = FieldKey.fromString(keyColumn);
+                Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(fkTable, Collections.singleton(keyFieldKey));
+                if (cols == null || !cols.containsKey(keyFieldKey))
+                {
+                    queryErrors.add("ERROR: " + errorBase + " reports a foreign key with keyColumn of " + keyColumn + " in the table " + schemaName + "." + queryName + ", but the column does not exist");
+                }
+                else
+                {
+                    ColumnInfo ci = cols.get(keyFieldKey);
+                    if (!keyColumn.equals(ci.getFieldKey().toString()))
+                    {
+                        queryErrors.add("WARNING: " + errorBase + ", the lookup to " + schemaName + "." + queryName + "' did not match the expected case, which was '" + ci.getFieldKey().toString()  + "'. Actual: '" + keyColumn + "'");
+                    }
+                }
+            }
+            else
+            {
+                queryErrors.add("INFO: " + errorBase + ", there is a lookup where the keyColumn is blank");
+            }
         }
 
         return queryErrors;
