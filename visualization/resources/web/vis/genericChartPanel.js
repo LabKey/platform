@@ -198,6 +198,16 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             tbar: tbarItems
         });
 
+        var typeConvert = function(value, record){
+            // We take the displayFieldJSONType if available because if the column is a look up the record.type will
+            // always be INT. The displayFieldJSONType is the actual type of the lookup.
+
+            if(record.data.displayFieldJsonType){
+                return record.data.displayFieldJsonType;
+            }
+            return record.data.type;
+        };
+
         Ext4.define('MeasureModel',{
             extend: 'Ext.data.Model',
             fields: [
@@ -205,7 +215,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 {name: 'name', type: 'string'},
                 {name: 'hidden', type: 'boolean'},
                 {name: 'measure', type: 'boolean'},
-                {name: 'type'}
+                {name: 'type'},
+                {name: 'displayFieldJsonType'},
+                {name: 'normalizedType', convert: typeConvert}
             ]
         });
 
@@ -220,7 +232,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             listeners: {
                 load: function(store){
                     this.yMeasureStore.filterBy(function(record, id){
-                        var type = record.get('type');
+                        var type = record.get('normalizedType');
                         var hidden = record.get('hidden');
                         return (!hidden && (type == 'int' || type == 'float' || type == 'double'))
                     });
@@ -854,7 +866,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 name    : this.xAxisMeasure.name,
                 hidden  : this.xAxisMeasure.hidden,
                 measure : this.xAxisMeasure.measure,
-                type    : this.xAxisMeasure.type
+                type    : this.xAxisMeasure.type,
+                displayFieldJsonType : this.xAxisMeasure.displayFieldJsonType,
+                normalizedType       : this.xAxisMeasure.normalizedType
             }
         }
 
@@ -865,7 +879,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 name    : this.yAxisMeasure.name,
                 hidden  : this.yAxisMeasure.hidden,
                 measure : this.yAxisMeasure.measure,
-                type    : this.yAxisMeasure.type
+                type    : this.yAxisMeasure.type,
+                displayFieldJsonType : this.yAxisMeasure.displayFieldJsonType,
+                normalizedType       : this.yAxisMeasure.normalizedType
             }
         }
 
@@ -1427,13 +1443,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         });
         this.viewPanel.add(newChartDiv);
 
-        if(this.xAxisMeasure && this.xAxisMeasure.type === 'int' && xMeasureLabel == 'Cohort'){
-            this.xAxisMeasure.type = 'string';
-        }
-
         // TODO: make line charts render if this.xAxisMeasure.type == "date"
         if(this.renderType == 'box_plot' ||
-                (this.renderType == 'auto_plot' && (!this.xAxisMeasure || this.xAxisMeasure.type == 'string' || this.xAxisMeasure.type == 'boolean'))) {
+                (this.renderType == 'auto_plot' && (!this.xAxisMeasure || this.xAxisMeasure.normalizedType == 'string' || this.xAxisMeasure.normalizedType == 'boolean'))) {
 
             if(this.xAxisMeasure){
                 xAcc = function(row){
@@ -1451,7 +1463,18 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             yMin = d3.min(this.chartData.rows, yAcc);
             yMax = d3.max(this.chartData.rows, yAcc);
             yPadding = ((yMax - yMin) * .1);
-            scales.y = {min: yMin - yPadding, max: yMax + yPadding, scaleType: 'continuous', trans: chartOptions.yAxis.scaleType};
+
+            if (chartOptions.yAxis.scaleType == "log" && yMin - yPadding > 0){
+                // Issue 15760: Quick Chart -- Log Data Renders Incorrectly
+                // When subtracting padding we have to make sure we still produce valid values for a log scale.
+                // log([value less than 0]) = NaN.
+                // log(0) = -Infinity.
+                yMin = yMin - yPadding;
+            } else {
+                yMin = yMin - yPadding;
+            }
+            
+            scales.y = {min: yMin, max: yMax + yPadding, scaleType: 'continuous', trans: chartOptions.yAxis.scaleType};
             geom = new LABKEY.vis.Geom.Boxplot({
                 lineWidth: chartOptions.lineWidth,
                 outlierOpacity: chartOptions.opacity,
@@ -1459,13 +1482,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 outlierSize: chartOptions.pointSize
             });
         } else if(this.renderType == 'scatter_plot' ||
-                (this.renderType == 'auto_plot' && this.xAxisMeasure.type == 'int' || this.xAxisMeasure.type == 'float' || this.xAxisMeasure.type == 'date')){
+                (this.renderType == 'auto_plot' && this.xAxisMeasure.normalizedType == 'int' || this.xAxisMeasure.normalizedType == 'float' || this.xAxisMeasure.normalizedType == 'date')){
 
             xAcc = function(row){
                 return row[xMeasureName].value;
             };
             
-            scales.x = (this.xAxisMeasure.type == 'int' || this.xAxisMeasure.type == 'float' || this.xAxisMeasure.type == 'double') ?
+            scales.x = (this.xAxisMeasure.normalizedType == 'int' || this.xAxisMeasure.normalizedType == 'float' || this.xAxisMeasure.normalizedType == 'double') ?
                 {scaleType: 'continuous', trans: chartOptions.xAxis.scaleType} :
                 {scaleType: 'discrete'};
             scales.y = {scaleType: 'continuous', trans: chartOptions.yAxis.scaleType};
@@ -1480,7 +1503,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         for(var i = 0; i < this.chartData.metaData.fields.length; i++){
             var field = this.chartData.metaData.fields[i];
-            if(field.type == 'int' || field.type == 'float'){
+            var type = field.displayFieldJsonType ? field.displayFieldJsonType : field.type;
+
+            if(type == 'int' || type == 'float'){
                 if(field.name == this.yAxisMeasure.name){
                     scales.y.tickFormat = getFormatFn.call(this, field);
                 }

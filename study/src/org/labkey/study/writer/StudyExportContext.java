@@ -47,6 +47,12 @@ public class StudyExportContext extends AbstractContext
         this(study, user, c, oldFormats, dataTypes, false, new ParticipantMapper(study, false, false), logger);
     }
 
+    public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes, Set<DataSetDefinition> initDatasets, Logger logger)
+    {
+        this(study, user, c, oldFormats, dataTypes, false, new ParticipantMapper(study, false, false), logger);
+        setDatasets(initDatasets);
+    }
+
     public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes, boolean removeProtected, ParticipantMapper participantMapper, Logger logger)
     {
         super(user, c, StudyXmlWriter.getStudyDocument(), logger, null);
@@ -54,7 +60,9 @@ public class StudyExportContext extends AbstractContext
         _dataTypes = dataTypes;
         _removeProtected = removeProtected;
         _participantMapper = participantMapper;
-        initializeDatasets(study);
+
+        if (_datasets.size() == 0)
+            initializeDatasets(study);
     }
 
     public boolean useOldFormats()
@@ -108,6 +116,12 @@ public class StudyExportContext extends AbstractContext
     public List<DataSetDefinition> getDatasets()
     {
         return _datasets;
+    }
+
+    public void setDatasets(Set<DataSetDefinition> datasets)
+    {
+        _datasets.clear();
+        _datasets.addAll(datasets);
     }
 
     public ParticipantMapper getParticipantMapper()

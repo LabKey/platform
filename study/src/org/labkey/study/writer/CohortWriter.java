@@ -2,18 +2,18 @@
  * Copyright (c) 2009-2012 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-package org.labkey.study.writer;
+* you may not use this file except in compliance with the License.
+        * You may obtain a copy of the License at
+        *
+        *     http://www.apache.org/licenses/LICENSE-2.0
+        *
+        * Unless required by applicable law or agreed to in writing, software
+        * distributed under the License is distributed on an "AS IS" BASIS,
+        * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+        * See the License for the specific language governing permissions and
+        * limitations under the License.
+        */
+        package org.labkey.study.writer;
 
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.collections15.multimap.MultiHashMap;
@@ -50,39 +50,14 @@ public class CohortWriter implements InternalStudyWriter
         StudyDocument.Study studyXml = ctx.getXml();
         StudyDocument.Study.Cohorts cohortsXml = studyXml.addNewCohorts();
 
+        //
+        // export cohorts.xml for both manual and automatic mode to include
+        // the enrolled bit
+        //
         if (study.isManualCohortAssignment())
         {
             cohortsXml.setType(CohortType.MANUAL);
             cohortsXml.setMode(CohortMode.SIMPLE);
-            cohortsXml.setFile(COHORTS_FILENAME);
-
-            CohortImpl[] cohorts = study.getCohorts(ctx.getUser());
-            MultiMap<Integer, String> participantsInEachCohort = new MultiHashMap<Integer, String>(cohorts.length);
-            ParticipantMapper participantMapper = ctx.getParticipantMapper();
-
-            for (Participant participant : StudyManager.getInstance().getParticipants(study))
-            {
-                Integer id = participant.getCurrentCohortId();
-
-                if (null != id)
-                    participantsInEachCohort.put(id, participantMapper.getMappedParticipantId(participant.getParticipantId()));
-            }
-
-            CohortsDocument cohortFileXml = CohortsDocument.Factory.newInstance();
-            CohortsDocument.Cohorts cohortAssignmentXml = cohortFileXml.addNewCohorts();
-
-            for (CohortImpl cohort : cohorts)
-            {
-                CohortsDocument.Cohorts.Cohort cohortXml = cohortAssignmentXml.addNewCohort();
-                cohortXml.setLabel(cohort.getLabel());
-                cohortXml.setEnrolled(cohort.isEnrolled());
-                Collection<String> ids = participantsInEachCohort.get(cohort.getRowId());
-
-                if (null != ids)
-                    cohortXml.setIdArray(ids.toArray(new String[ids.size()]));
-            }
-
-            vf.saveXmlBean(COHORTS_FILENAME, cohortFileXml);
         }
         else
         {
@@ -98,5 +73,35 @@ public class CohortWriter implements InternalStudyWriter
                 cohortsXml.setDatasetProperty(study.getParticipantCohortProperty());
             }
         }
+
+        cohortsXml.setFile(COHORTS_FILENAME);
+
+        CohortImpl[] cohorts = study.getCohorts(ctx.getUser());
+        MultiMap<Integer, String> participantsInEachCohort = new MultiHashMap<Integer, String>(cohorts.length);
+        ParticipantMapper participantMapper = ctx.getParticipantMapper();
+
+        for (Participant participant : StudyManager.getInstance().getParticipants(study))
+        {
+            Integer id = participant.getCurrentCohortId();
+
+            if (null != id)
+                participantsInEachCohort.put(id, participantMapper.getMappedParticipantId(participant.getParticipantId()));
+        }
+
+        CohortsDocument cohortFileXml = CohortsDocument.Factory.newInstance();
+        CohortsDocument.Cohorts cohortAssignmentXml = cohortFileXml.addNewCohorts();
+
+        for (CohortImpl cohort : cohorts)
+        {
+            CohortsDocument.Cohorts.Cohort cohortXml = cohortAssignmentXml.addNewCohort();
+            cohortXml.setLabel(cohort.getLabel());
+            cohortXml.setEnrolled(cohort.isEnrolled());
+            Collection<String> ids = participantsInEachCohort.get(cohort.getRowId());
+
+            if (null != ids)
+                cohortXml.setIdArray(ids.toArray(new String[ids.size()]));
+        }
+
+        vf.saveXmlBean(COHORTS_FILENAME, cohortFileXml);
     }
 }

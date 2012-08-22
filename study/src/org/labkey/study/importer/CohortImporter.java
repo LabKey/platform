@@ -18,6 +18,7 @@ package org.labkey.study.importer;
 import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
+import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
@@ -58,52 +59,96 @@ public class CohortImporter implements InternalStudyImporter
         {
             CohortType.Enum cohortType = cohortsXml.getType();
             CohortMode.Enum cohortMode = cohortsXml.getMode();
+            String cohortFileName = cohortsXml.getFile();
+            Map<String, Integer> p2c = null;
+
+            //
+            // In ITN12.2 or > the export format changed to always persist a cohort.xml file
+            // regardless of cohort type to include 'enrolled' information for each cohort.
+            // The importer must support this new format as well as the older format
+            // for automatic cohort types.  If we are loading an older folder with automatic cohorts
+            // then each cohort is enrolled by default.
+            //
+            if (!StringUtils.isEmpty(cohortFileName))
+            {
+                p2c = buildParticipantCohortMap(ctx, root, study, cohortFileName);
+            }
 
             if (cohortType == CohortType.AUTOMATIC)
             {
-                ctx.getLogger().info("Loading automatic cohort settings");
                 Integer dataSetId = cohortsXml.getDatasetId();
                 String dataSetProperty = cohortsXml.getDatasetProperty();
-                CohortManager.getInstance().setAutomaticCohortAssignment(study, ctx.getUser(), dataSetId, dataSetProperty,
-                        cohortMode == CohortMode.ADVANCED, true);
+
+                if (p2c == null)
+                {
+                    //
+                    // older folder format, no cohorts.xml file
+                    //
+                    ctx.getLogger().info("Loading automatic cohort settings");
+                    CohortManager.getInstance().setAutomaticCohortAssignment(study, ctx.getUser(), dataSetId, dataSetProperty,
+                            cohortMode == CohortMode.ADVANCED, true);
+                }
+                else
+                {
+                    //
+                    // newer format - still automatic but we want to ensure we pick up enrolled state for each
+                    // cohort
+                    //
+                    CohortManager.getInstance().setAutomaticCohortAssignment(study, ctx.getUser(), dataSetId, dataSetProperty,
+                            cohortMode == CohortMode.ADVANCED, p2c);
+                }
             }
             else
             {
-                String cohortFileName = cohortsXml.getFile();
-                ctx.getLogger().info("Loading manual cohort assignments from " + root.getRelativePath(cohortFileName));
-                CohortsDocument cohortAssignmentXml;
-
-                try
-                {
-                    XmlObject xml = root.getXmlBean(cohortFileName);
-                    if (xml instanceof CohortsDocument)
-                    {
-                        cohortAssignmentXml = (CohortsDocument)xml;
-                        XmlBeansUtil.validateXmlDocument(cohortAssignmentXml);
-                    }
-                    else
-                        throw new ImportException("Unable to get an instance of CohortsDocument");
-                }
-                catch (XmlValidationException e)
-                {
-                    throw new InvalidFileException(root.getRelativePath(cohortFileName), e);
-                }
-
-                Map<String, Integer> p2c = new HashMap<String, Integer>();
-                CohortsDocument.Cohorts.Cohort[] cohortXmls = cohortAssignmentXml.getCohorts().getCohortArray();
-
-                for (CohortsDocument.Cohorts.Cohort cohortXml : cohortXmls)
-                {
-                    String label = cohortXml.getLabel();
-                    boolean enrolled = cohortXml.isSetEnrolled() ? cohortXml.getEnrolled() : true;
-                    CohortImpl cohort = CohortManager.getInstance().ensureCohort(study, ctx.getUser(), label, enrolled);
-
-                    for (String ptid : cohortXml.getIdArray())
-                        p2c.put(ptid, cohort.getRowId());
-                }
-
+                //
+                // For manual cohort assigments, the format stays the same except for the added
+                // enrolled state for each cohort.
+                //
+                assert (p2c != null);
                 CohortManager.getInstance().setManualCohortAssignment(study, ctx.getUser(), p2c);
             }
         }
     }
+
+    private  Map<String, Integer> buildParticipantCohortMap(StudyImportContext ctx, VirtualFile root, StudyImpl study, String cohortFileName) throws IOException, SQLException, ImportException, ServletException
+    {
+        //
+        // ITN12.2 branch and newer releases will always export a separate cohorts.xml table to
+        // round-trip the 'enrolled' bit.
+        //
+        ctx.getLogger().info("Loading cohort assignments from " + root.getRelativePath(cohortFileName));
+        CohortsDocument cohortAssignmentXml;
+
+        try
+        {
+            XmlObject xml = root.getXmlBean(cohortFileName);
+            if (xml instanceof CohortsDocument)
+            {
+                cohortAssignmentXml = (CohortsDocument)xml;
+                XmlBeansUtil.validateXmlDocument(cohortAssignmentXml);
+            }
+            else
+                throw new ImportException("Unable to get an instance of CohortsDocument");
+        }
+        catch (XmlValidationException e)
+        {
+            throw new InvalidFileException(root.getRelativePath(cohortFileName), e);
+        }
+
+        Map<String, Integer> p2c = new HashMap<String, Integer>();
+        CohortsDocument.Cohorts.Cohort[] cohortXmls = cohortAssignmentXml.getCohorts().getCohortArray();
+
+        for (CohortsDocument.Cohorts.Cohort cohortXml : cohortXmls)
+        {
+            String label = cohortXml.getLabel();
+            boolean enrolled = cohortXml.isSetEnrolled() ? cohortXml.getEnrolled() : true;
+            CohortImpl cohort = CohortManager.getInstance().ensureCohort(study, ctx.getUser(), label, enrolled);
+
+            for (String ptid : cohortXml.getIdArray())
+                p2c.put(ptid, cohort.getRowId());
+        }
+
+        return p2c;
+    }
+
 }

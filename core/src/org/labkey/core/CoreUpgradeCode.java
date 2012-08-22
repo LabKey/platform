@@ -15,9 +15,12 @@
  */
 package org.labkey.core;
 
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.FileSqlScriptProvider;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlScriptManager;
 import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.data.Table;
@@ -85,12 +88,32 @@ public class CoreUpgradeCode implements UpgradeCode
             // Run the install script only if dialect supports GROUP_CONCAT
             if (dialect.isSqlServer() && dialect.supportsGroupConcat())
             {
+                try
+                {
+                    // Attempt to use the core.GROUP_CONCAT() aggregate function. If this succeeds, we'll skip the install step.
+                    SqlExecutor executor = new SqlExecutor(CoreSchema.getInstance().getSchema(), new SQLFragment("SELECT x.G, core.GROUP_CONCAT('Foo') FROM (SELECT 1 AS G) x GROUP BY G"));
+                    executor.setLogLevel(Level.OFF);  // We expect this to fail in most cases... shut off data layer logging
+                    executor.execute();
+                    return;
+                }
+                catch (Exception e)
+                {
+                    //
+                }
+
                 FileSqlScriptProvider provider = new FileSqlScriptProvider((DefaultModule)ModuleLoader.getInstance().getCoreModule());
                 SqlScriptRunner.SqlScript script = new FileSqlScriptProvider.FileSqlScript(provider, "group_concat_install.sql", "core");
 
                 Connection conn = CoreSchema.getInstance().getSchema().getScope().getUnpooledConnection();
-                SqlScriptManager.runScript(context.getUpgradeUser(), script, context, conn);
-                conn.close();
+
+                try
+                {
+                    SqlScriptManager.runScript(context.getUpgradeUser(), script, context, conn);
+                }
+                finally
+                {
+                    conn.close();
+                }
             }
         }
         catch (Throwable t)

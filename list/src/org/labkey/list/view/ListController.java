@@ -37,14 +37,18 @@ import org.labkey.api.attachments.DownloadURL;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UrlColumn;
@@ -69,6 +73,7 @@ import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -1170,6 +1175,33 @@ public class ListController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return appendRootNavTrail(root).addChild("Import List Archive");
+        }
+    }
+
+
+    // Rename list fields named Created, CreatedBy, Modified, ModfiedBy, appending _99 to each.
+    // TODO: Remove in 12.3...
+    @RequiresSiteAdmin
+    public class RenameReservedFieldsAction extends SimpleViewAction
+    {
+        public ModelAndView getView(Object form, BindException errors) throws Exception
+        {
+            DbSchema schema = ListManager.get().getSchema();
+            SQLFragment sql = new SQLFragment("UPDATE exp.PropertyDescriptor SET Name = ");
+            sql.append(schema.getSqlDialect().concatenate("Name", "'_99'"));
+            sql.append(" WHERE LOWER(Name) IN ('created', 'createdby', 'modified', 'modifiedby') AND\n");
+            sql.append("PropertyId IN (SELECT PropertyId FROM exp.PropertyDomain pdom INNER JOIN exp.List l ON pdom.DomainId = l.DomainId)");
+
+            new SqlExecutor(schema, sql).execute();
+
+            CacheManager.clearAllKnownCaches();
+
+            return new HtmlView("Done");
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Rename Reserved Fields");
         }
     }
 }

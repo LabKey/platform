@@ -84,3 +84,8 @@ ALTER TABLE exp.MaterialSource ALTER COLUMN Name TYPE VARCHAR(100);
 
 -- Change exp.ExperimentRun.Name from VARCHAR(100) to VARCHAR(200) to match other experiment table name columns
 ALTER TABLE exp.ExperimentRun ALTER COLUMN Name TYPE VARCHAR(200);
+
+-- Rename any list field named Created, CreatedBy, Modified, or ModifiedBy since these are now built-in columns on every list
+UPDATE exp.PropertyDescriptor SET Name = Name || '_99' WHERE LOWER(Name) IN ('created', 'createdby', 'modified', 'modifiedby') AND
+    PropertyId IN (SELECT PropertyId FROM exp.PropertyDomain pdom INNER JOIN exp.List l ON pdom.DomainId = l.DomainId);
+

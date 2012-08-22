@@ -39,6 +39,7 @@ import java.util.LinkedList;
 public class StudyWriterFactory implements FolderWriterFactory
 {
     private static final String DEFAULT_DIRECTORY = "study";
+    public static final String DATA_TYPE = "Study";
 
     @Override
     public FolderWriter create()
@@ -51,7 +52,7 @@ public class StudyWriterFactory implements FolderWriterFactory
         @Override
         public String getSelectionText()
         {
-            return "Study";
+            return DATA_TYPE;
         }
 
         @Override
@@ -75,7 +76,7 @@ public class StudyWriterFactory implements FolderWriterFactory
             Container c = ctx.getContainer();
             StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
 
-            if (null != study)
+            if (null != study && ctx.getContext(StudyExportContext.class) == null)
             {
                 StudyExportContext exportCtx = new StudyExportContext(study, ctx.getUser(), c, "old".equals(ctx.getFormat()), ctx.getDataTypes(),
                         ctx.isRemoveProtected(), new ParticipantMapper(study, ctx.isShiftDates(), ctx.isAlternateIds()), ctx.getLogger());

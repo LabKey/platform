@@ -22,9 +22,14 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.admin.FolderExportContext;
+import org.labkey.api.admin.FolderWriter;
+import org.labkey.api.admin.FolderWriterImpl;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
@@ -62,12 +67,12 @@ import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.writer.CohortWriter;
 import org.labkey.study.writer.DatasetWriter;
 import org.labkey.study.writer.ParticipantGroupWriter;
 import org.labkey.study.writer.QcStateWriter;
 import org.labkey.study.writer.StudyExportContext;
 import org.labkey.study.writer.StudyWriter;
+import org.labkey.study.writer.StudyWriterFactory;
 import org.labkey.study.writer.ViewCategoryWriter;
 import org.labkey.study.writer.VisitMapWriter;
 import org.labkey.study.xml.StudyDocument;
@@ -151,13 +156,20 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
                 }
 
                 MemoryVirtualFile vf = new MemoryVirtualFile();
+                User user = getViewContext().getUser();
+                Set<String> dataTypes = getDataTypesToExport();
+                Logger log = Logger.getLogger(FolderWriterImpl.class);
+
+                // TODO: change FolderExportContext to contructor that has params for shiftDates, alternateIDs, and removeProtected
+                FolderExportContext ctx = new FolderExportContext(user, _sourceStudy.getContainer(), dataTypes, "new", log);
+                ctx.addContext(StudyExportContext.class, new StudyExportContext(_sourceStudy, user, _sourceStudy.getContainer(), false, dataTypes, _datasets, log));
 
                 // export objects from the parent study, then import them into the new study
-                exportFromParentStudy(form, errors, vf);
+                exportFromParentStudy(form, errors, ctx, vf);
                 importToDestinationStudy(form, errors, newStudy, vf);
 
                 // copy participants
-                copyParticipants(form, errors, newStudy, vf);
+                copyParticipants(form, errors, newStudy, ctx, vf);
 
                 // snapshot datasets
                 createSnapshotDatasets(form, errors, newStudy);
@@ -199,57 +211,57 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
         return _sourceStudy;
     }
 
-    private void exportFromParentStudy(EmphasisStudyDefinition form, BindException errors, VirtualFile vf) throws Exception
+    private Set<String> getDataTypesToExport()
     {
-        User user = getViewContext().getUser();
         Set<String> dataTypes = new HashSet<String>();
-
-        // export content from the parent study into a memory virtual file to avoid needing to serialize to disk
-        // need a better way to add export types...
-
-        dataTypes.add(CohortWriter.DATA_TYPE);
+        dataTypes.add(StudyWriterFactory.DATA_TYPE);
         dataTypes.add(QcStateWriter.DATA_TYPE);
         dataTypes.add(VisitMapWriter.DATA_TYPE);
         dataTypes.add(DatasetWriter.SELECTION_TEXT);
         dataTypes.add(ViewCategoryWriter.DATA_TYPE);
+        dataTypes.add(ParticipantGroupWriter.DATA_TYPE);
+        // TODO: add report, views, and lists data types
+        return dataTypes;
+    }
 
-        StudyWriter writer = new StudyWriter();
-        StudyExportContext ctx = new StudyExportContext(_sourceStudy, user, _sourceStudy.getContainer(), false, dataTypes, Logger.getLogger(StudyWriter.class));
-
-        ctx.getDatasets().clear();
-        ctx.getDatasets().addAll(_datasets);
-
-        writer.write(getSourceStudy(), ctx, vf);
+    private void exportFromParentStudy(EmphasisStudyDefinition form, BindException errors, FolderExportContext ctx, VirtualFile vf) throws Exception
+    {
+        // the set of data types to write is determined by the export context dataTypes variable
+        FolderWriterImpl writer = new FolderWriterImpl();
+        writer.write(_sourceStudy.getContainer(), ctx, vf);
     }
 
     private void importToDestinationStudy(EmphasisStudyDefinition form, BindException errors, StudyImpl newStudy, VirtualFile vf) throws Exception
     {
         User user = getViewContext().getUser();
-        XmlObject studyXml = vf.getXmlBean("study.xml");
+        VirtualFile studyDir = vf.getDir("study");
+        XmlObject studyXml = studyDir.getXmlBean("study.xml");
 
         if (studyXml instanceof StudyDocument)
         {
             StudyDocument studyDoc = (StudyDocument)studyXml;
-            StudyImportContext importContext = new StudyImportContext(user, newStudy.getContainer(), studyDoc, Logger.getLogger(StudyWriter.class), vf);
+            StudyImportContext importContext = new StudyImportContext(user, newStudy.getContainer(), studyDoc, Logger.getLogger(StudyWriter.class), studyDir);
 
             // missing values and qc states
-            new MissingValueImporterFactory().create().process(null, importContext, vf);
-            new QcStatesImporter().process(importContext, vf, errors);
+            new MissingValueImporterFactory().create().process(null, importContext, studyDir);
+            new QcStatesImporter().process(importContext, studyDir, errors);
 
             // dataset definitions
             DatasetImporter datasetImporter = new DatasetImporter();
-            datasetImporter.process(importContext, vf, errors);
+            datasetImporter.process(importContext, studyDir, errors);
 
             // import visits
             VisitImporter visitImporter = new VisitImporter();
 
             // don't create dataset definitions for datasets we don't import
             visitImporter.setEnsureDataSets(false);
-            visitImporter.process(importContext, vf, errors);
+            visitImporter.process(importContext, studyDir, errors);
 
             if (errors.hasErrors())
                 throw new RuntimeException("Error importing study objects : " + errors.getMessage());
         }
+
+        // TODO: add import of reports, views, and lists from vf
     }
 
     private void createSnapshotDatasets(EmphasisStudyDefinition form, BindException errors, StudyImpl newStudy) throws Exception
@@ -308,7 +320,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
         }
     }
 
-    private void copyParticipants(EmphasisStudyDefinition form, BindException errors, StudyImpl newStudy, VirtualFile vf) throws Exception
+    private void copyParticipants(EmphasisStudyDefinition form, BindException errors, StudyImpl newStudy, FolderExportContext ctx, VirtualFile vf) throws Exception
     {
         User user = getViewContext().getUser();
 
@@ -337,25 +349,22 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
         if (!groupsToCopy.isEmpty())
         {
             ensureGroupParticipants();
-            
-            Set<String> dataTypes = new HashSet<String>();
-            dataTypes.add(ParticipantGroupWriter.DATA_TYPE);
-            StudyExportContext ctx = new StudyExportContext(_sourceStudy, user, _sourceStudy.getContainer(), false, dataTypes, Logger.getLogger(ParticipantGroupWriter.class));
+
+            VirtualFile studyDir = vf.getDir("study");
 
             ParticipantGroupWriter groupWriter = new ParticipantGroupWriter();
-
             groupWriter.setGroupsToCopy(groupsToCopy);
-            groupWriter.write(_sourceStudy, ctx, vf);
+            groupWriter.write(_sourceStudy, ctx.getContext(StudyExportContext.class), studyDir);
 
-            XmlObject studyXml = vf.getXmlBean("study.xml");
+            XmlObject studyXml = studyDir.getXmlBean("study.xml");
 
             if (studyXml instanceof StudyDocument)
             {
                 StudyDocument studyDoc = (StudyDocument)studyXml;
-                StudyImportContext importContext = new StudyImportContext(user, newStudy.getContainer(), studyDoc, Logger.getLogger(StudyWriter.class), vf);
+                StudyImportContext importContext = new StudyImportContext(user, newStudy.getContainer(), studyDoc, Logger.getLogger(StudyWriter.class), studyDir);
 
                 ParticipantGroupImporter groupImporter = new ParticipantGroupImporter();
-                groupImporter.process(importContext, vf, errors);
+                groupImporter.process(importContext, studyDir, errors);
             }
         }
 
