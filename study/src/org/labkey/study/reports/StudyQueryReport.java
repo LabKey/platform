@@ -33,6 +33,7 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.DataSetQueryView;
 import org.springframework.mock.web.MockHttpServletRequest;
 
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
 import java.util.List;
@@ -178,6 +179,18 @@ public class StudyQueryReport extends QueryReport
         return null;
     }
 */
+
+    @Override
+    protected UserSchema getSchema(ViewContext context, String schemaName)
+    {
+        try {
+            return ReportQueryViewFactory.getStudyQuerySchema(context, getDescriptor());
+        }
+        catch (ServletException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
 
     public QueryReportDescriptor.QueryViewGenerator getQueryViewGenerator()
     {
