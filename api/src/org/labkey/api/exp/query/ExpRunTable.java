@@ -45,6 +45,7 @@ public interface ExpRunTable extends ExpTable<ExpRunTable.Column>
         Input,
         Output,
         DataOutputs,
+        Replaced,
         ReplacedByRun,
         ReplacesRun
     }

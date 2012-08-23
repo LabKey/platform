@@ -475,28 +475,28 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         if (xmlTable.isSetImportUrl())
         {
             if (StringUtils.isBlank(xmlTable.getImportUrl()))
-                _importURL = LINK_DISABLER;
+                _importURL = AbstractTableInfo.LINK_DISABLER;
             else
                 _importURL = DetailsURL.fromString(xmlTable.getImportUrl());
         }
         if (xmlTable.isSetInsertUrl())
         {
             if (StringUtils.isBlank(xmlTable.getInsertUrl()))
-                _insertURL = LINK_DISABLER;
+                _insertURL = AbstractTableInfo.LINK_DISABLER;
             else
                 _insertURL = DetailsURL.fromString(xmlTable.getInsertUrl());
         }
         if (xmlTable.isSetDeleteUrl())
         {
             if (StringUtils.isBlank(xmlTable.getDeleteUrl()))
-                _deleteURL = LINK_DISABLER;
+                _deleteURL = AbstractTableInfo.LINK_DISABLER;
             else
                 _deleteURL = DetailsURL.fromString(xmlTable.getDeleteUrl());
         }
         if (xmlTable.isSetUpdateUrl())
         {
             if (StringUtils.isBlank(xmlTable.getUpdateUrl()))
-                _updateURL = LINK_DISABLER;
+                _updateURL = AbstractTableInfo.LINK_DISABLER;
             else
                 _updateURL = DetailsURL.fromString(xmlTable.getUpdateUrl());
         }
@@ -524,8 +524,8 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     {
         if (_insertURL == null)
             return null;
-        if (LINK_DISABLER == _insertURL)
-            return LINK_DISABLER_ACTION_URL;
+        if (AbstractTableInfo.LINK_DISABLER == _insertURL)
+            return AbstractTableInfo.LINK_DISABLER_ACTION_URL;
         return _insertURL.copy(container).getActionURL();
     }
 
@@ -534,8 +534,8 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     {
         if (null == _importURL)
             return null;
-        if (LINK_DISABLER == _importURL)
-            return LINK_DISABLER_ACTION_URL;
+        if (AbstractTableInfo.LINK_DISABLER == _importURL)
+            return AbstractTableInfo.LINK_DISABLER_ACTION_URL;
         return _importURL.copy(container).getActionURL();
     }
 
@@ -543,8 +543,8 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     {
         if (_deleteURL == null)
             return null;
-        if (LINK_DISABLER == _deleteURL)
-            return LINK_DISABLER_ACTION_URL;
+        if (AbstractTableInfo.LINK_DISABLER == _deleteURL)
+            return AbstractTableInfo.LINK_DISABLER_ACTION_URL;
         return _deleteURL.copy(container).getActionURL();
     }
 
@@ -552,8 +552,8 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     {
         if (_updateURL == null)
             return null;
-        if (LINK_DISABLER == _updateURL)
-            return LINK_DISABLER;
+        if (AbstractTableInfo.LINK_DISABLER == _updateURL)
+            return AbstractTableInfo.LINK_DISABLER;
         if (_updateURL.validateFieldKeys(columns))
             return _updateURL.copy(container);
         return null;

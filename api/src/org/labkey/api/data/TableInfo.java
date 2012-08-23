@@ -55,10 +55,6 @@ import java.util.Set;
  */
 public interface TableInfo extends HasPermission
 {
-    /** Used as a marker to indicate that a URL (such as insert or update) has been explicitly disabled. Null values get filled in with default URLs in some cases */
-    public static final ActionURL LINK_DISABLER_ACTION_URL = new ActionURL();
-    /** Used as a marker to indicate that a URL (such as insert or update) has been explicitly disabled. Null values get filled in with default URLs in some cases */
-    public static final DetailsURL LINK_DISABLER = new DetailsURL(LINK_DISABLER_ACTION_URL);
 
     String getName();
 

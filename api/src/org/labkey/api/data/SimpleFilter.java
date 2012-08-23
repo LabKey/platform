@@ -51,6 +51,8 @@ import java.util.Set;
  */
 public class SimpleFilter implements Filter
 {
+    public static final String SEPARATOR_CHAR = "~";
+
     public static abstract class FilterClause
     {
         protected boolean _urlClause = false;
@@ -949,7 +951,7 @@ public class SimpleFilter implements Filter
             String[] params = urlHelp.getParameters(filterKey);
             for (String param : params)
             {
-                String[] compareInfo = colTildeCompare.split("~");
+                String[] compareInfo = colTildeCompare.split(SEPARATOR_CHAR);
                 CompareType type = null;
                 FieldKey fieldKey = FieldKey.fromString(compareInfo[0]);
                 if (compareInfo.length == 2)
@@ -1119,7 +1121,7 @@ public class SimpleFilter implements Filter
                 CompareClause cc = (CompareClause) fc;
                 ret.append(and);
                 and = "&";
-                ret.append(PageFlowUtil.encode(prefix + cc._fieldKey.toString() + "~" + cc._comparison.getPreferredUrlKey()));
+                ret.append(PageFlowUtil.encode(prefix + cc._fieldKey.toString() + SEPARATOR_CHAR + cc._comparison.getPreferredUrlKey()));
                 if (cc.getParamVals() != null && cc.getParamVals()[0] != null)
                 {
                     ret.append("=");
@@ -1166,7 +1168,7 @@ public class SimpleFilter implements Filter
 
             if (urlType != null)
             {
-                String key = prefix + fc.getColumnNames().get(0) + "~" + urlType;
+                String key = prefix + fc.getColumnNames().get(0) + SEPARATOR_CHAR + urlType;
                 url.addParameter(key, value);
             }
         }

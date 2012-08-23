@@ -79,6 +79,10 @@ import java.util.Set;
 
 abstract public class AbstractTableInfo implements TableInfo
 {
+    /** Used as a marker to indicate that a URL (such as insert or update) has been explicitly disabled. Null values get filled in with default URLs in some cases */
+    public static final ActionURL LINK_DISABLER_ACTION_URL = new ActionURL();
+    /** Used as a marker to indicate that a URL (such as insert or update) has been explicitly disabled. Null values get filled in with default URLs in some cases */
+    public static final DetailsURL LINK_DISABLER = new DetailsURL(LINK_DISABLER_ACTION_URL);
     protected Iterable<FieldKey> _defaultVisibleColumns;
     protected DbSchema _schema;
     protected String _titleColumn;

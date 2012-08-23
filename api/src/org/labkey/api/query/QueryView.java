@@ -41,7 +41,6 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -797,7 +796,7 @@ public class QueryView extends WebPartView<Object>
     public ActionButton createImportButton()
     {
         ActionURL urlImport = urlFor(QueryAction.importData);
-        if (urlImport != null && urlImport != TableInfo.LINK_DISABLER_ACTION_URL)
+        if (urlImport != null && urlImport != AbstractTableInfo.LINK_DISABLER_ACTION_URL)
         {
             ActionButton btnInsert = new ActionButton(urlImport, "Import Data");
             btnInsert.setActionType(ActionButton.Action.LINK);

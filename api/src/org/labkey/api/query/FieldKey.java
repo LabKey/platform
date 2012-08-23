@@ -171,6 +171,11 @@ public class FieldKey implements Comparable
         _name = name;
     }
 
+    public FieldKey(FieldKey parent, Enum name)
+    {
+        this(parent, name.toString());
+    }
+
     public FieldKey getTable()
     {
         return _parent;

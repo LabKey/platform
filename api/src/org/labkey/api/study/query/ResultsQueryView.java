@@ -18,6 +18,8 @@ package org.labkey.api.study.query;
 
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.query.ExpRunTable;
+import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -28,7 +30,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
-import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
 import java.util.Collections;
@@ -42,6 +43,8 @@ import java.util.Set;
  */
 public class ResultsQueryView extends AssayBaseQueryView
 {
+    private final ReplacedRunFilter _replacedRunFilter;
+
     public ResultsQueryView(ExpProtocol protocol, ViewContext context, QuerySettings settings)
     {
         this(protocol, AssayService.get().createSchema(context.getUser(), context.getContainer()), settings);
@@ -50,7 +53,15 @@ public class ResultsQueryView extends AssayBaseQueryView
     public ResultsQueryView(ExpProtocol protocol, AssaySchema schema, QuerySettings settings)
     {
         super(protocol, schema, settings);
+
+        _replacedRunFilter = ReplacedRunFilter.getFromURL(this, getReplacedFieldKey());
     }
+
+    private FieldKey getReplacedFieldKey()
+    {
+        return new FieldKey(_provider.getTableMetadata(_protocol).getRunFieldKeyFromResults(), ExpRunTable.Column.Replaced);
+    }
+
 
     @Override
     protected DataRegion createDataRegion()
@@ -77,6 +88,11 @@ public class ResultsQueryView extends AssayBaseQueryView
         if (returnURL == null)
             returnURL = getViewContext().getActionURL().toString();
         view.getDataRegion().addHiddenFormField(ActionURL.Param.returnUrl, returnURL);
+
+        TableInfo table = view.getTable();
+        SimpleFilter filter = (SimpleFilter) view.getRenderContext().getBaseFilter();
+        _replacedRunFilter.addFilterCondition(filter, getReplacedFieldKey());
+
         return view;
     }
 
@@ -121,6 +137,19 @@ public class ResultsQueryView extends AssayBaseQueryView
                     reRunURL.addParameter("reRunId", runId);
                     bar.add(new ActionButton("Re-import run", reRunURL));
                 }
+            }
+
+            AssayProvider provider = AssayService.get().getProvider(_protocol);
+            if (provider != null && provider.supportsReRun())
+            {
+                MenuButton button = new MenuButton("Replaced Filter");
+                for (ReplacedRunFilter.Type type : ReplacedRunFilter.Type.values())
+                {
+                    ActionURL url = view.getViewContext().cloneActionURL();
+                    type.addToURL(url, getDataRegionName(), getReplacedFieldKey());
+                    button.addMenuItem(type.getTitle(), url).setSelected(type == _replacedRunFilter.getType());
+                }
+                bar.add(button);
             }
         }
     }
