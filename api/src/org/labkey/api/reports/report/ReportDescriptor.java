@@ -554,7 +554,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
 
             setProperties(props);
 
-            if (d.getCategory() != null)
+            if (d.getCategory() != null && container != null && user != null)
             {
                 ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(container, user, d.getCategory());
                 setCategory(category);

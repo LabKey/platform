@@ -32,8 +32,8 @@ public class ModuleQueryJavaScriptReportDescriptor extends ModuleJavaScriptRepor
             String[] keyParts = reportKey.split("/");
             if (keyParts.length >= 2)
             {
-                setProperty(ReportDescriptor.Prop.schemaName, keyParts[0]);
-                setProperty(ReportDescriptor.Prop.queryName, keyParts[1]);
+                setProperty(ReportDescriptor.Prop.schemaName, keyParts[keyParts.length-2]);
+                setProperty(ReportDescriptor.Prop.queryName, keyParts[keyParts.length-1]);
             }
         }
     }
