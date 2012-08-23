@@ -17,6 +17,7 @@
 package org.labkey.api.reports.report;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.SimpleFilter;
@@ -27,6 +28,8 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.thumbnail.DynamicThumbnailProvider;
+import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -44,9 +47,13 @@ import java.util.List;
  * User: Karl Lum
  * Date: Oct 6, 2006
  */
-public class QueryReport extends AbstractReport
+public class QueryReport extends AbstractReport implements DynamicThumbnailProvider
 {
     public static final String TYPE = "ReportService.queryReport";
+
+    public static final String SCHEMA_NAME = "schemaName";
+    public static final String QUERY_NAME = "queryName";
+    public static final String VIEW_NAME = "viewName";
 
     public String getType()
     {
@@ -61,6 +68,21 @@ public class QueryReport extends AbstractReport
     public String getDescriptorType()
     {
         return QueryReportDescriptor.TYPE;
+    }
+
+    public void setSchemaName(String schemaName)
+    {
+        getDescriptor().setProperty(SCHEMA_NAME, schemaName);
+    }
+
+    public void setQueryName(String queryName)
+    {
+        getDescriptor().setProperty(QUERY_NAME, queryName);
+    }
+
+    public void setViewName(String viewName)
+    {
+        getDescriptor().setProperty(VIEW_NAME, viewName);
     }
 
     public HttpView renderReport(ViewContext context)
@@ -164,5 +186,17 @@ public class QueryReport extends AbstractReport
             view.delete(context.getUser(), request);
         }
         super.beforeDelete(context);
+    }
+
+    @Override
+    public Thumbnail generateDynamicThumbnail(@Nullable ViewContext context)
+    {
+        return getStaticThumbnail();
+    }
+
+    @Override
+    public String getDynamicThumbnailCacheKey()
+    {
+        return getStaticThumbnailCacheKey();
     }
 }
