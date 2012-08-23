@@ -231,8 +231,17 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
                     var rec = target.getStore().findRecord('id', this.selection[s].id);
 
                     // if no matching record by id, try to find a matching record by label (just for initial selection)
-                    if (!rec && this.selection[s].data && this.selection[s].data.label)
-                        rec = target.getStore().findRecord('label', this.selection[s].data.label);
+                    if (!rec)
+                    {
+                        var label = null;
+                        if (this.selection[s].data && this.selection[s].data.label)
+                            label = this.selection[s].data.label;
+                        else if (this.selection[s].label)
+                            label = this.selection[s].label;
+
+                        if (label != null)
+                            rec = target.getStore().findRecord('label', label);
+                    }
 
                     if (rec)
                     {
