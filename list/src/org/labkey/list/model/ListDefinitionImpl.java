@@ -20,12 +20,15 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.announcements.DiscussionService;
+import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.attachments.InputStreamAttachmentFile;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.MvUtil;
@@ -56,14 +59,12 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
-import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
-import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.list.client.ListEditorService;
@@ -72,14 +73,15 @@ import org.labkey.list.view.ListImportHelper;
 import org.labkey.list.view.ListItemAttachmentParent;
 import org.springframework.web.servlet.mvc.Controller;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -806,14 +808,8 @@ public class ListDefinitionImpl implements ListDefinition
     }
 
 
-
-/* does not fire triggers!
-    public List<String> insertListItemsETL(User user, DataLoader loader, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress) throws IOException
+    public int insertListItemsETL(final User user, DataLoader loader, final BatchValidationException errors, @Nullable final VirtualFile attachmentDir, @Nullable ListImportProgress progress) throws IOException
     {
-        List<String> messages = new ArrayList<String>();
-        BatchValidationException errors = new BatchValidationException();
-
-        // could refactor this so that we're
         ListQueryUpdateService lqus = (ListQueryUpdateService)getTable(user).getUpdateService();
         DataIteratorBuilder dib = lqus.createImportETL(user, getContainer(), loader, errors, true);
 
@@ -822,19 +818,7 @@ public class ListDefinitionImpl implements ListDefinition
             ExperimentService.get().ensureTransaction();
 
             DataIterator insertIt = dib.getDataIterator(errors);
-            // if hasAttachmentColumns
-            DataIterator attach = new WrapperDataIterator(insertIt)
-            {
-                @Override
-                public boolean next() throws BatchValidationException
-                {
-                    boolean ret = super.next();
-                    if (!ret)
-                        return false;
-                    // handle attachments here
-                    return ret;
-                }
-            };
+            DataIterator attach = _AttachmentImportDataIterator_wrap(insertIt, errors, user, attachmentDir);
             Pump p = new Pump(attach, errors);
             p.run();
             int inserted = p.getRowCount();
@@ -842,18 +826,118 @@ public class ListDefinitionImpl implements ListDefinition
             addAuditEvent(user, "Bulk inserted " + inserted + " rows to list.");
 
             ExperimentService.get().commitTransaction();
+            return inserted;
         }
         finally
         {
             ExperimentService.get().closeTransaction();
         }
-
-        for (ValidationException v : errors.getRowErrors())
-            messages.add(v.getMessage());
-        return messages;
     }
- */
 
+
+    private static class _AttachmentUploadHelper
+    {
+        _AttachmentUploadHelper(int i, DomainProperty dp)
+        {
+            index=i;
+            domainProperty = dp;
+        }
+        final int index;
+        final DomainProperty domainProperty;
+        final FileNameUniquifier uniquifier = new FileNameUniquifier();
+    }
+
+
+    private DataIterator _AttachmentImportDataIterator_wrap(DataIterator it, BatchValidationException errors, User user, VirtualFile attachmentDir)
+    {
+        // find attachment columns
+        int entityIdIndex = 0;
+        final ArrayList<_AttachmentUploadHelper> attachmentColumns = new ArrayList<_AttachmentUploadHelper>();
+        for (int c=1 ; c<=it.getColumnCount() ; c++)
+        {
+            ColumnInfo col = it.getColumnInfo(c);
+            if (StringUtils.equalsIgnoreCase("entityid",col.getName()))
+                entityIdIndex = c;
+            // Don't seem to have attachment information in the ColumnInfo 8(, so we need to lookup the DomainProperty
+            // UNDONE: PropertyURI is not propagated, need to use name
+            DomainProperty domainProperty = getDomain().getPropertyByName(col.getName());
+            if (null==domainProperty || domainProperty.getPropertyDescriptor().getPropertyType() != PropertyType.ATTACHMENT)
+                continue;
+            attachmentColumns.add(new _AttachmentUploadHelper(c,domainProperty));
+        }
+        if (!attachmentColumns.isEmpty() && 0 != entityIdIndex)
+            return new _AttachmentImportDataIterator(it, errors, user, attachmentDir, entityIdIndex, attachmentColumns);
+        else
+            return it;
+    }
+
+
+    class _AttachmentImportDataIterator extends WrapperDataIterator
+    {
+        final VirtualFile attachmentDir;
+        final BatchValidationException errors;
+        final int entityIdIndex;
+        final ArrayList<_AttachmentUploadHelper> attachmentColumns;
+        final User user;
+
+        _AttachmentImportDataIterator(DataIterator insertIt, BatchValidationException errors,
+                User user,
+                VirtualFile attachmentDir,
+                int entityIdIndex,
+                ArrayList<_AttachmentUploadHelper> attachmentColumns)
+        {
+            super(insertIt);
+            this.attachmentDir = attachmentDir;
+            this.errors = errors;
+            this.entityIdIndex = entityIdIndex;
+            this.attachmentColumns = attachmentColumns;
+            this.user = user;
+        }
+
+        @Override
+        public boolean next() throws BatchValidationException
+        {
+            try
+            {
+                boolean ret = super.next();
+                if (!ret)
+                    return false;
+                ArrayList<AttachmentFile> attachmentFiles = null;
+                for (_AttachmentUploadHelper p : attachmentColumns)
+                {
+                    Object attachmentValue = get(p.index);
+                    String filename = null;
+                    if (attachmentValue instanceof String)
+                        filename = (String)attachmentValue;
+                    else if (attachmentValue instanceof File)
+                        filename = ((File)attachmentValue).getName();
+                    if (null == filename)
+                        continue;
+                    if (null == attachmentDir)
+                    {
+                        errors.addRowError(new ValidationException("Row " + get(0) + ": " + "Can't upload to field " + p.domainProperty.getName() + " with type " + p.domainProperty.getType().getLabel() + "."));
+                        return false;
+                    }
+                    InputStream aIS = attachmentDir.getDir(p.domainProperty.getName()).getInputStream(p.uniquifier.uniquify(filename));
+                    AttachmentFile attachmentFile = new InputStreamAttachmentFile(aIS, filename);
+                    attachmentFile.setFilename(filename);
+                    if (null == attachmentFiles)
+                        attachmentFiles = new ArrayList<AttachmentFile>();
+                    attachmentFiles.add(attachmentFile);
+                }
+                if (null != attachmentFiles && !attachmentFiles.isEmpty())
+                {
+                    String entityId = String.valueOf(get(entityIdIndex));
+                    AttachmentService.get().addAttachments(new ListItemAttachmentParent(entityId, getContainer()), attachmentFiles, user);
+                }
+                return ret;
+            }
+            catch (Exception x)
+            {
+                throw UnexpectedException.wrap(x);
+            }
+        }
+    }
 
 
     private void addAuditEvent(User user, String comment)
