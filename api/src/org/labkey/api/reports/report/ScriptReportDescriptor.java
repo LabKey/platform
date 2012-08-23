@@ -61,11 +61,6 @@ abstract public class ScriptReportDescriptor extends ReportDescriptor
         return true;
     }
 
-    public boolean isStale()
-    {
-        return true;
-    }
-
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         return new LinkedHashSet<ClientDependency>();

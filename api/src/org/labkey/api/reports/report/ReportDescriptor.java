@@ -34,6 +34,7 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicyManager;
@@ -721,5 +722,15 @@ public class ReportDescriptor extends Entity implements SecurableResource
     public void setModified(Date modified)
     {
         setProperty(Prop.modified, DateUtil.formatDate(modified));
+    }
+
+    public boolean isStale()
+    {
+        return true;
+    }
+
+    public Resource getMetaDataFile()
+    {
+        return null;
     }
 }

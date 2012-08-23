@@ -74,6 +74,7 @@ public class ModuleRReportDescriptor extends RReportDescriptor
         return RReport.TYPE;
     }
 
+    @Override
     public boolean isStale()
     {
         //check if either source or meta-data files have changed
@@ -210,5 +211,11 @@ public class ModuleRReportDescriptor extends RReportDescriptor
     public boolean isModuleBased()
     {
         return true;
+    }
+
+    @Override
+    public Resource getMetaDataFile()
+    {
+        return _metaDataFile;
     }
 }

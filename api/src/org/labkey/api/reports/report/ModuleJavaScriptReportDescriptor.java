@@ -182,4 +182,10 @@ public class ModuleJavaScriptReportDescriptor extends JavaScriptReportDescriptor
     {
         return true;
     }
+
+    @Override
+    public Resource getMetaDataFile()
+    {
+        return _metaDataFile;
+    }
 }

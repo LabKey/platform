@@ -79,6 +79,14 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         }
     };
 
+    protected static final FilenameFilter moduleReportFilterWithQuery = new FilenameFilter(){
+        public boolean accept(File dir, String name)
+        {
+            return moduleReportFilter.accept(dir, name) ||
+                    name.toLowerCase().endsWith(ModuleQueryReportDescriptor.FILE_EXTENSION);
+        }
+    };
+
     private final Map<String, Class<? extends Controller>> _pageFlowNameToClass = new LinkedHashMap<String, Class<? extends Controller>>();
     private final Map<Class<? extends Controller>, String> _pageFlowClassToName = new HashMap<Class<? extends Controller>, String>();
     private static final String XML_FILENAME = "module.xml";
@@ -102,7 +110,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private Map<String, ModuleProperty> _moduleProperties = new HashMap<String, ModuleProperty>();
     private LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<ClientDependency>();
 
-    private static final Cache<Path, ScriptReportDescriptor> REPORT_DESCRIPTOR_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.DAY, "Report descriptor cache");
+    private static final Cache<Path, ReportDescriptor> REPORT_DESCRIPTOR_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.DAY, "Report descriptor cache");
 
     private enum SchemaUpdateType
     {
@@ -648,7 +656,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         {
             if (file.isCollection())
                 _findReports(file);
-            else if (moduleReportFilter.accept(null, file.getName()))
+            else if (moduleReportFilterWithQuery.accept(null, file.getName()))
                 _reportFiles.add(file);
         }
     }
@@ -658,9 +666,20 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         ArrayList<ReportDescriptor> list = new ArrayList<ReportDescriptor>(_reportFiles.size());
         Resource[] files = _reportFiles.toArray(new Resource[0]);
+
+        // Keep files that might be Query reports (end in .xml); below we'll remove ones that are associated with R or JS reports
+        HashMap<String, Resource> possibleQueryReportFiles = new HashMap<String, Resource>();
         for (Resource file : files)
         {
-            ScriptReportDescriptor descriptor = REPORT_DESCRIPTOR_CACHE.get(file.getPath());
+            if (file.getName().toLowerCase().endsWith(ModuleQueryReportDescriptor.FILE_EXTENSION))
+                possibleQueryReportFiles.put(file.getName(), file);
+        }
+
+        for (Resource file : files)
+        {
+            if (!moduleReportFilter.accept(null, file.getName()))
+                continue;
+            ReportDescriptor descriptor = REPORT_DESCRIPTOR_CACHE.get(file.getPath());
             if (null != descriptor && descriptor.isStale())
                 descriptor = null;
             if (null == descriptor && file.exists())
@@ -672,7 +691,23 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                     REPORT_DESCRIPTOR_CACHE.put(file.getPath(), descriptor);
             }
             if (null != descriptor)
+            {
                 list.add(descriptor);
+                if (null != descriptor.getMetaDataFile())
+                    possibleQueryReportFiles.remove(descriptor.getMetaDataFile().getName());
+            }
+        }
+
+        // Anything left if this map should be a Query Report
+        for (Resource file : possibleQueryReportFiles.values())
+        {
+            ReportDescriptor descriptor = REPORT_DESCRIPTOR_CACHE.get(file.getPath());
+            if (null == descriptor || descriptor.isStale())
+            {
+                descriptor = createReportDescriptor(file, container, user);
+                REPORT_DESCRIPTOR_CACHE.put(file.getPath(), descriptor);
+            }
+            list.add(descriptor);
         }
         return list;
     }
@@ -695,12 +730,36 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
         if (null != keyDir && keyDir.isCollection())
         {
+            // Keep files that might be Query reports (end in .xml); below we'll remove ones that are associated with R or JS reports
+            HashMap<String, Resource> possibleQueryReportFiles = new HashMap<String, Resource>();
+            for (Resource file : keyDir.list())
+            {
+                if (file.getName().toLowerCase().endsWith(ModuleQueryReportDescriptor.FILE_EXTENSION))
+                    possibleQueryReportFiles.put(file.getName(), file);
+            }
+
             List<ReportDescriptor> reportDescriptors = new ArrayList<ReportDescriptor>();
             for (Resource file : keyDir.list())
             {
                 if (!moduleReportFilter.accept(null, file.getName()))
                     continue;
-                ScriptReportDescriptor descriptor = REPORT_DESCRIPTOR_CACHE.get(file.getPath());
+                ReportDescriptor descriptor = REPORT_DESCRIPTOR_CACHE.get(file.getPath());
+                if (null == descriptor || descriptor.isStale())
+                {
+                    descriptor = createReportDescriptor(key, file, container, user);
+                    REPORT_DESCRIPTOR_CACHE.put(file.getPath(), descriptor);
+                }
+
+                if (null != descriptor && null != descriptor.getMetaDataFile())
+                    possibleQueryReportFiles.remove(descriptor.getMetaDataFile().getName());
+
+                reportDescriptors.add(descriptor);
+            }
+
+            // Anything left if this map should be a Query Report
+            for (Resource file : possibleQueryReportFiles.values())
+            {
+                ReportDescriptor descriptor = REPORT_DESCRIPTOR_CACHE.get(file.getPath());
                 if (null == descriptor || descriptor.isStale())
                 {
                     descriptor = createReportDescriptor(key, file, container, user);
@@ -708,6 +767,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                 }
                 reportDescriptors.add(descriptor);
             }
+
             return reportDescriptors;
         }
 
@@ -734,7 +794,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         Path legalFilePath = reportKeyToLegalFile(reportPath);
         Path fullLegalPath = getQueryReportsDir().getPath().append(legalFilePath);
 
-        ScriptReportDescriptor descriptor = REPORT_DESCRIPTOR_CACHE.get(fullLegalPath);
+        ReportDescriptor descriptor = REPORT_DESCRIPTOR_CACHE.get(fullLegalPath);
 
         if (null == descriptor || descriptor.isStale())
         {
@@ -756,12 +816,12 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return descriptor;
     }
 
-    protected ScriptReportDescriptor createReportDescriptor(Resource reportFile, Container container, User user)
+    protected ReportDescriptor createReportDescriptor(Resource reportFile, Container container, User user)
     {
         return createReportDescriptor(null, reportFile, container, user);
     }
 
-    protected ScriptReportDescriptor createReportDescriptor(@Nullable Path pathKey, Resource reportFile, Container container, User user)
+    protected ReportDescriptor createReportDescriptor(@Nullable Path pathKey, Resource reportFile, Container container, User user)
     {
         Path reportKey;
 
@@ -779,7 +839,11 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         {
             return new ModuleQueryRReportDescriptor(this, parent.toString("",""), reportFile, reportKey, container, user);
         }
-        return new ModuleQueryJavaScriptReportDescriptor(this, parent.toString("",""), reportFile, reportKey, container, user);
+        else if (lowerKey.endsWith(ModuleQueryJavaScriptReportDescriptor.FILE_EXTENSION))
+        {
+            return new ModuleQueryJavaScriptReportDescriptor(this, parent.toString("",""), reportFile, reportKey, container, user);
+        }
+        return new ModuleQueryReportDescriptor(this, parent.toString("",""), reportFile, reportKey, container, user);
     }
 
     protected void loadXmlFile(Resource r)
