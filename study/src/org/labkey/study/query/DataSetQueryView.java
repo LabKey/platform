@@ -43,8 +43,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.QueryReport;
-import org.labkey.api.reports.report.view.RReportBean;
-import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -76,7 +74,6 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.reports.ReportManager;
-import org.labkey.study.reports.StudyRReport;
 import org.labkey.study.reports.StudyReportUIProvider;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
@@ -377,7 +374,7 @@ public class DataSetQueryView extends QueryView
                     bar.add(manageButton);
 
                     // bulk import
-                    if (view.getTable().getImportDataURL(getContainer()) != TableInfo.LINK_DISABLER_ACTION_URL)
+                    if (view.getTable().getImportDataURL(getContainer()) != AbstractTableInfo.LINK_DISABLER_ACTION_URL)
                     {
                         ActionURL importURL = new ActionURL(StudyController.ImportAction.class, _dataset.getContainer());
                         importURL.addParameter(DataSetDefinition.DATASETKEY, _dataset.getDataSetId());

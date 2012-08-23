@@ -94,7 +94,7 @@ public class CohortFilter
         @Override
         public void addFilterCondition(TableInfo table, Container container, SimpleFilter filter)
         {
-            filter.addCondition(getCohortColumn(table, container).getName(), null, CompareType.ISBLANK);
+            filter.addCondition(getCohortColumn(table, container).getFieldKey(), null, CompareType.ISBLANK);
         }
 
         @Override
@@ -259,6 +259,6 @@ public class CohortFilter
 
     public void addFilterCondition(TableInfo table, Container container, SimpleFilter filter)
     {
-        filter.addCondition(getCohortColumn(table, container).getName(), getCohortId());
+        filter.addCondition(getCohortColumn(table, container).getFieldKey(), getCohortId());
     }
 }

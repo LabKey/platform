@@ -84,7 +84,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
             }
         }
 
-        if (url == TableInfo.LINK_DISABLER_ACTION_URL)
+        if (url == AbstractTableInfo.LINK_DISABLER_ACTION_URL)
         {
             return null;
         }
@@ -166,7 +166,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
                 break;
         }
 
-        if (expr == TableInfo.LINK_DISABLER)
+        if (expr == AbstractTableInfo.LINK_DISABLER)
         {
             return null;
         }

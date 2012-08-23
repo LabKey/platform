@@ -376,6 +376,15 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 replacedByRunCol.setShownInInsertView(false);
                 replacedByRunCol.setShownInUpdateView(false);
                 return replacedByRunCol;
+            case Replaced:
+                SQLFragment replacedSQL = new SQLFragment("CASE WHEN " + ExprColumn.STR_TABLE_ALIAS + ".ReplacedByRunId IS NULL THEN ? ELSE ? END");
+                replacedSQL.add(false);
+                replacedSQL.add(true);
+                ColumnInfo replacedCol = new ExprColumn(this, alias, replacedSQL, JdbcType.BOOLEAN);
+                replacedCol.setHidden(true);
+                replacedCol.setShownInInsertView(false);
+                replacedCol.setShownInUpdateView(false);
+                return replacedCol;
             case ReplacesRun:
                 SQLFragment replacesSQL = new SQLFragment("(SELECT MIN(er.RowId) FROM ");
                 replacesSQL.append(ExperimentServiceImpl.get().getTinfoExperimentRun(), "er");
@@ -472,6 +481,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         addContainerColumn(Column.Folder, null);
         addColumn(Column.FilePathRoot).setHidden(true);
         addColumn(Column.JobId).setFk(schema.getJobForeignKey());
+        addColumn(Column.Replaced);
         addColumn(Column.ReplacedByRun);
         addColumn(Column.ReplacesRun);
         addColumn(Column.LSID).setHidden(true);

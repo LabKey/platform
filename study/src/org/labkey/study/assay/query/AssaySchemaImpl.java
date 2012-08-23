@@ -48,11 +48,13 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.actions.ShowSelectedRunsAction;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayRunType;
 import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.assay.StudyContainerFilter;
 import org.labkey.api.study.query.ResultsQueryView;
+import org.labkey.api.study.query.RunListQueryView;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpressionFactory;
@@ -369,6 +371,10 @@ public class AssaySchemaImpl extends AssaySchema
                 if (name != null && name.equals(AssayService.get().getResultsTableName(protocol)))
                 {
                     return new ResultsQueryView(protocol, context, settings);
+                }
+                if (name != null && name.equals(AssayService.get().getRunsTableName(protocol)))
+                {
+                    return new RunListQueryView(protocol, this, settings, new AssayRunType(protocol, getContainer()));
                 }
             }
         }

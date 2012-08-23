@@ -83,6 +83,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.assay.ReplacedRunFilter;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.ContextListener;
@@ -665,7 +666,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 CachingDataIterator.ScrollTestCase.class,
                 StringUtilsLabKey.TestCase.class,
                 Compress.TestCase.class,
-                ExtUtil.TestCase.class
+                ExtUtil.TestCase.class,
+                ReplacedRunFilter.TestCase.class
         ));
     }
 
