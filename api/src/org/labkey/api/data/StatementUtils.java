@@ -416,7 +416,7 @@ public class StatementUtils
 
         if (null != properties)
         {
-            Set<String> skip = ((UpdateableTableInfo)table).skipProperties();
+            Set<String> skip = updatable.skipProperties();
             if (null != skip)
                 done.addAll(skip);
 
@@ -538,7 +538,6 @@ public class StatementUtils
                 fn.append(";\n");
             }
             fn.append("END;\n$$ LANGUAGE plpgsql;\n");
-System.err.println(fn.toString());
             Table.execute(table.getSchema(), fn);
             ret = new Parameter.ParameterMap(table.getSchema().getScope(), conn, call, updatable.remapSchemaColumns());
             ret.onClose(new Runnable() { @Override public void run()
