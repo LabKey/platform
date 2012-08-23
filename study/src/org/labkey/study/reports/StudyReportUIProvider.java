@@ -22,6 +22,7 @@ import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.JavaScriptReport;
+import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ChartDesignerBean;
@@ -80,6 +81,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
                 if (JavaScriptReport.TYPE.equals(reportType)) return true;
                 if (ParticipantReport.TYPE.equals(reportType)) return true;
                 if (GenericChartReport.TYPE.equals(reportType)) return true;
+                if (QueryReport.TYPE.equals(reportType)) return true;
                 return false;
             }
         };

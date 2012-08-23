@@ -715,7 +715,7 @@ public class ReportsController extends SpringActionController
                 _report = form.getReportId().getReport();
 
             if (null == _report)
-                return null;
+                return new HtmlView("<span class=\"labkey-error\">Invalid report identifier, unable to create report.</span>");
 
             HttpView ret = _report.getRunReportView(getViewContext());
 
@@ -1189,6 +1189,11 @@ public class ReportsController extends SpringActionController
 */
         }
 
+        protected String getReportKey(R report, F form)
+        {
+            return form.getViewName();
+        }
+
         public boolean saveReport(F form, BindException errors) throws Exception
         {
             DbScope scope = CoreSchema.getInstance().getSchema().getScope();
@@ -1221,7 +1226,7 @@ public class ReportsController extends SpringActionController
                 else
                     descriptor.setOwner(null);
 
-                int id = ReportService.get().saveReport(getViewContext(), form.getViewName(), report);
+                int id = ReportService.get().saveReport(getViewContext(), getReportKey(report, form), report);
 
                 report = (R)ReportService.get().getReport(id);
 
@@ -1588,6 +1593,12 @@ public class ReportsController extends SpringActionController
             report.setViewName(form.getSelectedViewName());
 
             return report;
+        }
+
+        @Override
+        protected String getReportKey(QueryReport report, QueryReportForm form)
+        {
+            return ReportUtil.getReportQueryKey(report.getDescriptor());
         }
 
         public NavTree appendNavTrail(NavTree root)
