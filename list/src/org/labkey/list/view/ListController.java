@@ -1026,13 +1026,21 @@ public class ListController extends SpringActionController
                 if (!ObjectUtils.equals(newValue, entry.getValue()))
                 {
                     out.write("<tr><td class=\"labkey-form-label\">");
-                    out.write(entry.getKey());
+                    out.write(PageFlowUtil.filter(entry.getKey()));
                     out.write("</td><td>");
 
                     modified++;
-                    out.write(entry.getValue());
+                    out.write(PageFlowUtil.filter(entry.getValue()));
                     out.write("&nbsp;&raquo;&nbsp;");
-                    out.write(ObjectUtils.toString(newValue, ""));
+                    out.write(PageFlowUtil.filter(ObjectUtils.toString(newValue, "")));
+                    out.write("</td></tr>\n");
+                }
+                else
+                {
+                    out.write("<tr><td class=\"labkey-form-label\">");
+                    out.write(PageFlowUtil.filter(entry.getKey()));
+                    out.write("</td><td>");
+                    out.write(PageFlowUtil.filter(entry.getValue()));
                     out.write("</td></tr>\n");
                 }
             }
@@ -1041,16 +1049,21 @@ public class ListController extends SpringActionController
             {
                 modified++;
                 out.write("<tr><td class=\"labkey-form-label\">");
-                out.write(entry.getKey());
+                out.write(PageFlowUtil.filter(entry.getKey()));
                 out.write("</td><td>");
 
                 out.write("&nbsp;&raquo;&nbsp;");
-                out.write(ObjectUtils.toString(entry.getValue(), ""));
+                out.write(PageFlowUtil.filter(ObjectUtils.toString(entry.getValue(), "")));
                 out.write("</td></tr>\n");
             }
             out.write("<tr><td/>\n");
             out.write("<tr><td colspan=\"2\">Summary:&nbsp;<i>");
-            out.write(modified + " field(s) were modified</i></td></tr>");
+            if (1 == modified)
+                out.write(modified + " field was modified");
+            else
+                out.write(modified + " fields were modified");
+            out.write("</i></td></tr>");
+
 
             out.write("<tr><td>&nbsp;</td></tr>");
             out.write("<tr><td>");
