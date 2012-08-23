@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.query.reports.ReportsController" %>
 <%@ page import="org.labkey.query.reports.ReportsController.LinkReportForm" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>

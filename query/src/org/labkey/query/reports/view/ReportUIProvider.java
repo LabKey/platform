@@ -30,6 +30,7 @@ import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.ExternalScriptEngineReport;
 import org.labkey.api.reports.report.InternalScriptEngineReport;
 import org.labkey.api.reports.report.JavaScriptReport;
+import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.view.ChartDesignerBean;
 import org.labkey.api.reports.report.view.DefaultReportUIProvider;
@@ -69,6 +70,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
         _typeToIconMap.put(JavaScriptReport.TYPE, "/reports/js.png");
         _typeToIconMap.put(AttachmentReport.TYPE, "/reports/attachment.png");
         _typeToIconMap.put(LinkReport.TYPE, "/reports/external-link.png");
+        _typeToIconMap.put(QueryReport.TYPE, "/reports/grid.gif");
     }
 
     /**
@@ -106,6 +108,13 @@ public class ReportUIProvider extends DefaultReportUIProvider
         linkDesigner.setId("create_link_report");
         linkDesigner.setDisabled(!context.hasPermission(InsertPermission.class));
         designers.add(linkDesigner);
+
+        DesignerInfoImpl queryDesigner = new DesignerInfoImpl(QueryReport.TYPE, "Query Report",
+                ReportsController.getCreateQueryReportURL(context.getContainer(), context.getActionURL()),
+                _getIconPath(QueryReport.TYPE));
+        queryDesigner.setId("create_query_report");
+        queryDesigner.setDisabled(!context.hasPermission(InsertPermission.class));
+        designers.add(queryDesigner);
 
         return designers;
     }

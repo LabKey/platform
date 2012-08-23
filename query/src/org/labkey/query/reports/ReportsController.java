@@ -73,6 +73,7 @@ import org.labkey.api.reports.model.ViewInfo;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.ChartReport;
+import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.RReportJob;
 import org.labkey.api.reports.report.ReportDescriptor;
@@ -1141,6 +1142,13 @@ public class ReportsController extends SpringActionController
         return url;
     }
 
+    public static ActionURL getCreateQueryReportURL(Container c, ActionURL returnURL)
+    {
+        ActionURL url = new ActionURL(CreateQueryReportAction.class, c);
+        url.addReturnURL(returnURL);
+        return url;
+    }
+
     protected abstract class BaseReportAction<F extends DataViewEditForm, R extends AbstractReport & DynamicThumbnailProvider> extends FormViewAction<F>
     {
         public void initializeForm(F form, boolean reshow, BindException errors) throws Exception
@@ -1478,6 +1486,113 @@ public class ReportsController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Create Link Report");
+        }
+    }
+
+    public static class QueryReportForm extends DataViewEditForm
+    {
+        private String selectedSchemaName;
+        private String selectedQueryName;
+        private String selectedViewName;
+        private ActionURL srcURL;
+
+        public String getSelectedSchemaName()
+        {
+            return selectedSchemaName;
+        }
+
+        public void setSelectedSchemaName(String selectedSchemaName)
+        {
+            this.selectedSchemaName = selectedSchemaName;
+        }
+
+        public String getSelectedQueryName()
+        {
+            return selectedQueryName;
+        }
+
+        public void setSelectedQueryName(String selectedQueryName)
+        {
+            this.selectedQueryName = selectedQueryName;
+        }
+
+        public String getSelectedViewName()
+        {
+            return selectedViewName;
+        }
+
+        public void setSelectedViewName(String selectedViewName)
+        {
+            this.selectedViewName = selectedViewName;
+        }
+
+        public ActionURL getSrcURL()
+        {
+            return srcURL;
+        }
+
+        public void setSrcURL(ActionURL srcURL)
+        {
+            this.srcURL = srcURL;
+        }
+    }
+
+    @RequiresPermissionClass(InsertPermission.class)
+    public class CreateQueryReportAction extends BaseReportAction<QueryReportForm, QueryReport>
+    {
+        public ModelAndView getView(QueryReportForm form, boolean reshow, BindException errors) throws Exception
+        {
+            initializeForm(form, reshow, errors);
+            return new JspView<QueryReportForm>("/org/labkey/query/reports/view/createQueryReport.jsp", form, errors);
+        }
+
+        @Override
+        public void initializeForm(QueryReportForm form, boolean reshow, BindException errors) throws Exception
+        {
+            form.setSrcURL(getViewContext().getActionURL());
+            super.initializeForm(form, reshow, errors);
+        }
+
+        @Override
+        public void validateCommand(QueryReportForm form, Errors errors)
+        {
+            super.validateCommand(form, errors);
+
+            String schemaName = StringUtils.trimToNull(form.getSelectedSchemaName());
+            String queryName = StringUtils.trimToNull(form.getSelectedQueryName());
+
+            if (null == schemaName)
+            {
+                errors.reject("selectedSchemaName", "You must specify a schema");
+            }
+
+            if (null == queryName)
+            {
+                errors.reject("selectedQueryName", "You must specify a query");
+            }
+        }
+
+        @Override
+        public boolean handlePost(QueryReportForm form, BindException errors) throws Exception
+        {
+            return saveReport(form, errors);
+        }
+
+        @Override
+        protected QueryReport createReport(QueryReportForm form)
+        {
+            QueryReport report = (QueryReport)ReportService.get().createReportInstance(QueryReport.TYPE);
+
+            report.setSchemaName(form.getSelectedSchemaName());
+            report.setQueryName(form.getSelectedQueryName());
+            report.setViewName(form.getSelectedViewName());
+
+            return report;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Create Query Report");
         }
     }
 
