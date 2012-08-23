@@ -55,31 +55,10 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.pipeline.PipeRoot;
-import org.labkey.api.pipeline.PipelineService;
-import org.labkey.api.pipeline.PipelineStatusUrls;
-import org.labkey.api.pipeline.PipelineUrls;
-import org.labkey.api.pipeline.PipelineValidationException;
+import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.query.AbstractQueryImportAction;
-import org.labkey.api.query.BatchValidationException;
-import org.labkey.api.query.CustomView;
-import org.labkey.api.query.DefaultSchema;
-import org.labkey.api.query.DetailsURL;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryAction;
-import org.labkey.api.query.QueryDefinition;
-import org.labkey.api.query.QueryForm;
-import org.labkey.api.query.QueryParseException;
-import org.labkey.api.query.QuerySchema;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.QueryView;
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.query.ValidationError;
-import org.labkey.api.query.ValidationException;
+import org.labkey.api.query.*;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotForm;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
@@ -91,113 +70,38 @@ import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.model.ViewInfo;
-import org.labkey.api.reports.report.AbstractReportIdentifier;
-import org.labkey.api.reports.report.ChartQueryReport;
-import org.labkey.api.reports.report.ChartReportDescriptor;
-import org.labkey.api.reports.report.QueryReport;
-import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.reports.report.ReportIdentifier;
+import org.labkey.api.reports.report.*;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchUrls;
-import org.labkey.api.security.RequiresNoPermission;
-import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.RequiresSiteAdmin;
+import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.security.permissions.*;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.study.DataSet;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
-import org.labkey.api.study.StudyUrls;
-import org.labkey.api.study.TimepointType;
-import org.labkey.api.study.Visit;
+import org.labkey.api.study.*;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.thumbnail.BaseThumbnailAction;
 import org.labkey.api.thumbnail.StaticThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.DemoMode;
-import org.labkey.api.util.ExtUtil;
-import org.labkey.api.util.FileStream;
-import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.HelpTopic;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
-import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.util.ReturnURLString;
-import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.util.XmlBeansUtil;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.DataView;
-import org.labkey.api.view.GridView;
-import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.JspView;
-import org.labkey.api.view.NavTree;
-import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.Portal;
-import org.labkey.api.view.RedirectException;
-import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.VBox;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ViewForm;
-import org.labkey.api.view.WebPartFactory;
-import org.labkey.api.view.WebPartView;
+import org.labkey.api.util.*;
+import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.folder.xml.FolderDocument;
-import org.labkey.study.CohortFilter;
-import org.labkey.study.SampleManager;
-import org.labkey.study.StudyFolderType;
-import org.labkey.study.StudyModule;
-import org.labkey.study.StudySchema;
-import org.labkey.study.StudyServiceImpl;
+import org.labkey.study.*;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
 import org.labkey.study.designer.StudySchedule;
-import org.labkey.study.importer.DatasetImportUtils;
-import org.labkey.study.importer.SchemaReader;
-import org.labkey.study.importer.SchemaTsvReader;
-import org.labkey.study.importer.StudyImportJob;
-import org.labkey.study.importer.StudyReload;
+import org.labkey.study.importer.*;
 import org.labkey.study.importer.StudyReload.ReloadStatus;
 import org.labkey.study.importer.StudyReload.ReloadTask;
-import org.labkey.study.importer.VisitMapImporter;
-import org.labkey.study.model.CohortImpl;
-import org.labkey.study.model.CohortManager;
-import org.labkey.study.model.CustomParticipantView;
-import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.DatasetReorderer;
-import org.labkey.study.model.Participant;
-import org.labkey.study.model.QCState;
-import org.labkey.study.model.QCStateSet;
-import org.labkey.study.model.SecurityType;
-import org.labkey.study.model.SiteImpl;
-import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.UploadLog;
-import org.labkey.study.model.VisitDataSet;
-import org.labkey.study.model.VisitDataSetType;
-import org.labkey.study.model.VisitImpl;
-import org.labkey.study.model.VisitMapKey;
+import org.labkey.study.model.*;
 import org.labkey.study.pipeline.DatasetFileReader;
 import org.labkey.study.pipeline.StudyPipeline;
-import org.labkey.study.query.DataSetQuerySettings;
-import org.labkey.study.query.DataSetQueryView;
-import org.labkey.study.query.PublishedRecordQueryView;
-import org.labkey.study.query.StudyPropertiesQueryView;
-import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.query.StudySchemaProvider;
+import org.labkey.study.query.*;
 import org.labkey.study.reports.ReportManager;
 import org.labkey.study.samples.settings.RepositorySettings;
 import org.labkey.study.security.permissions.ManageStudyPermission;
@@ -220,33 +124,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.Writer;
+import java.io.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.*;
 
 import static org.labkey.api.util.PageFlowUtil.filter;
 
@@ -363,9 +245,9 @@ public class StudyController extends BaseStudyController
 		@Override
 		protected void renderInternal(Object model, PrintWriter out) throws Exception
 		{
-			out.print("<table width=100%><tr><td align=left valign=top class=labkey-body-panel><img height=1 width=400 src=\""+getViewContext().getContextPath()+"\"/_.gif\"><br>");
+			out.print("<table width=100%><tr><td align=left valign=top class=labkey-body-panel><img height=1 width=400 src=\"" + getViewContext().getContextPath() + "\"/_.gif\"><br>");
 			include(getBody());
-			out.print("</td><td align=left valign=top class=labkey-side-panel><img height=1 width=240 src=\""+getViewContext().getContextPath()+"/_.gif\"><br>");
+			out.print("</td><td align=left valign=top class=labkey-side-panel><img height=1 width=240 src=\"" + getViewContext().getContextPath() + "/_.gif\"><br>");
 			include(getView(WebPartFactory.LOCATION_RIGHT));
 			out.print("</td></tr></table>");
 		}
@@ -6627,24 +6509,6 @@ public class StudyController extends BaseStudyController
         }
     }
 
-
-
-    @RequiresPermissionClass(AdminPermission.class)
-    public class TestUpgradeAction extends SimpleViewAction
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            DataSetDefinition.upgradeAll();
-            return new HtmlView("OK");
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root;
-        }
-    }
 
 
     public static class TSVForm

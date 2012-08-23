@@ -3,6 +3,7 @@ package org.labkey.core.dialect;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.InClauseGenerator;
+import org.labkey.api.data.ParameterMarkerInClauseGenerator;
 import org.labkey.api.data.SQLFragment;
 
 import java.sql.Array;
@@ -16,11 +17,11 @@ import java.util.Collection;
  * Time: 3:33 PM
  */
 
-// TODO: Using JDBC arrays requires a JDBC4 Connection, which the Tomcat 5.5 pool doesn't dole out. At SQLDialect
-// initialization time we need to enable this implementation only if the Connections are JDBC4.
+// Note: Use this only with a servlet container & scope that support JDBC4.
 public class ArrayParameterInClauseGenerator implements InClauseGenerator
 {
     private final DbScope _scope;
+    private final InClauseGenerator _parameterMarkerGenerator = new ParameterMarkerInClauseGenerator();
 
     public ArrayParameterInClauseGenerator(DbScope scope)
     {
@@ -28,10 +29,11 @@ public class ArrayParameterInClauseGenerator implements InClauseGenerator
     }
 
     @Override
-    public boolean appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
+    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
     {
+        // Fall back on parameter marker approach
         if (!arrayCandidate(params))
-            return false;
+            return _parameterMarkerGenerator.appendInClauseSql(sql, params);
 
         Array array = null;
         Connection conn = null;
@@ -69,7 +71,7 @@ public class ArrayParameterInClauseGenerator implements InClauseGenerator
         sql.append(" = ANY (?)");
         sql.add(array);
 
-        return true;
+        return sql;
     }
 
     private boolean arrayCandidate(Collection<?> params)

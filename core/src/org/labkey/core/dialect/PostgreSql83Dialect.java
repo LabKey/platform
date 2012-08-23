@@ -27,6 +27,7 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.InClauseGenerator;
+import org.labkey.api.data.ParameterMarkerInClauseGenerator;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -266,12 +267,9 @@ class PostgreSql83Dialect extends SqlDialect
     }
 
     @Override
-    public boolean appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
+    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
     {
-        if (_arrayInClauseGenerator.appendInClauseSql(sql, params))
-            return true;
-
-        return super.appendInClauseSql(sql, params);
+        return _arrayInClauseGenerator.appendInClauseSql(sql, params);
     }
 
     @Override
@@ -722,11 +720,11 @@ class PostgreSql83Dialect extends SqlDialect
 
     private void initializeInClauseGenerator(DbScope scope)
     {
-        _arrayInClauseGenerator = new ArrayParameterInClauseGenerator(scope);
+        _arrayInClauseGenerator = getJdbcVersion(scope) >= 4 ? new ArrayParameterInClauseGenerator(scope) : new ParameterMarkerInClauseGenerator();
     }
 
 
-    // Query any settings that may affect dialect behavior.  Right now, only "standard_conforming_strings".
+    // Query any settings that may affect dialect behavior. Right now, only "standard_conforming_strings".
     private void determineSettings(DbScope scope)
     {
         Selector selector = new SqlSelector(scope, "SELECT setting FROM pg_settings WHERE name = 'standard_conforming_strings'");
