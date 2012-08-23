@@ -79,16 +79,20 @@ public class ModuleQueryReportDescriptor extends QueryReportDescriptor
                 }
 
                 List<Pair<String,String>> props = createPropsFromXML(xml);
-                if (null != props)
-                    setProperties(props);
 
+                // parse out the query report specific schema elements
                 QueryReportDescriptorType queryReportDescriptorType = d.getReportType().getQuery();
                 String queryName = queryReportDescriptorType.getQueryName();
                 if (null != queryName)
-                    props.add(new Pair("queryName", queryName));
+                    props.add(new Pair<String, String>(Prop.queryName.name(), queryName));
                 String schemaName = queryReportDescriptorType.getSchemaName();
                 if (null != schemaName)
-                    props.add(new Pair("queryName", schemaName));
+                    props.add(new Pair<String, String>(Prop.schemaName.name(), schemaName));
+                String viewName = queryReportDescriptorType.getViewName();
+                if (null != viewName)
+                    props.add(new Pair<String,String>(Prop.viewName.name(), viewName));
+
+                setProperties(props);
             }
 
             _sourceLastModified = _sourceFile.getLastModified();

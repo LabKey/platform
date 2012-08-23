@@ -28,6 +28,7 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ChartQueryReport;
 import org.labkey.api.reports.report.JavaScriptReport;
+import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportUtil;
@@ -164,6 +165,7 @@ public class QueryView extends WebPartView<Object>
         public boolean accept(String type, String label)
         {
             if (RReport.TYPE.equals(type)) return true;
+            if (QueryReport.TYPE.equals(type)) return true;
             if (QuerySnapshotService.TYPE.equals(type)) return true;
             if (CrosstabReport.TYPE.equals(type)) return true;
             if (JavaScriptReport.TYPE.equals(type)) return true;

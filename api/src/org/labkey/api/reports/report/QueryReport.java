@@ -18,6 +18,7 @@ package org.labkey.api.reports.report;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.LabkeyError;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.SimpleFilter;
@@ -31,6 +32,8 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
@@ -90,29 +93,23 @@ public class QueryReport extends AbstractReport implements DynamicThumbnailProvi
         BindException errors = new NullSafeBindException(this, "form");
         QueryView view = createQueryView(context, errors);
         StringBuilder sb = new StringBuilder();
-        String delim = "";
 
         if (errors.hasErrors())
         {
+            sb.append("Unable to display the report");
             for (ObjectError error : (List<ObjectError>)errors.getAllErrors())
             {
-                sb.append(delim);
+                sb.append("\n");
                 sb.append(error.getDefaultMessage());
-                delim = "\n";
             }
         }
 
         if (view != null && sb.length() == 0)
             return view;
-        else
-        {
-            sb.append(delim);
-            sb.append("Unable to render the report");
-        }
 
         if (sb.length() > 0)
         {
-            return ExceptionUtil.getErrorView(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, sb.toString(), null, context.getRequest(), false);
+            return new HtmlView("<span class=\"labkey-error\">" + PageFlowUtil.filter(sb.toString(), true, false) + "</span>");
         }
         return null;
     }
@@ -128,6 +125,11 @@ public class QueryReport extends AbstractReport implements DynamicThumbnailProvi
         String queryName = getDescriptor().getProperty(ReportDescriptor.Prop.queryName);
         String viewName = getDescriptor().getProperty(ReportDescriptor.Prop.viewName);
         String dataRegionName = getDescriptor().getProperty(ReportDescriptor.Prop.dataRegionName);
+
+        if (schemaName == null)
+            errors.addError(new LabkeyError("schema name cannot be empty"));
+        if (queryName == null)
+            errors.addError(new LabkeyError("query name cannot be empty"));
 
         UserSchema schema = getSchema(context, schemaName);
 
@@ -157,6 +159,9 @@ public class QueryReport extends AbstractReport implements DynamicThumbnailProvi
 
             return view;
         }
+        else
+            errors.addError(new LabkeyError("unable to create the schema for this query configuration"));
+
         return null;
     }
 
