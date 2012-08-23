@@ -30,6 +30,9 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collections" %>
+<%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -42,9 +45,14 @@
 
     Map<String, String> reportMap = new LinkedHashMap<String, String>();
     ArrayList<String> reportNames = new ArrayList<String>();
-    for (Report report : ReportService.get().getReports(context.getUser(), context.getContainer()))
+
+    ReportUtil.ReportFilter filter = new ReportUtil.DefaultReportFilter();
+    Container c = context.getContainer();
+    User u = context.getUser();
+
+    for (Report report : ReportUtil.getReports(c, u, null, true))
     {
-        if (report.getDescriptor().isHidden())
+        if (!filter.accept(report, c, u) || report.getDescriptor().isHidden())
             continue;
 
         if (!StringUtils.isEmpty(report.getDescriptor().getReportName()))
