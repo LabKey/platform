@@ -13,7 +13,7 @@ import java.util.Collection;
 public class ParameterMarkerInClauseGenerator implements InClauseGenerator
 {
     @Override
-    public boolean appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
+    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
     {
         sql.append("IN (");
         String questionMarks = StringUtils.repeat("?, ", params.size());
@@ -22,6 +22,6 @@ public class ParameterMarkerInClauseGenerator implements InClauseGenerator
 
         sql.addAll(params);
 
-        return true;
+        return sql;
     }
 }

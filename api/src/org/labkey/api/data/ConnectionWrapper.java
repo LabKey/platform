@@ -101,7 +101,7 @@ public class ConnectionWrapper implements java.sql.Connection
         for (StackTraceElement ste : stes)
         {
             String className = ste.getClassName();
-            if (className.equals("org.labkey.api.view.ViewServlet"))
+            if (className.equals("org.labkey.api.view.ViewServlet") || className.equals("org.labkey.api.action.SpringActionController"))
                 break;
             if (className.endsWith("Controller") && !className.startsWith("org.labkey.api.view"))
                 return Logger.getLogger(className);

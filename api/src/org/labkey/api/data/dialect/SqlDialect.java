@@ -40,8 +40,10 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableTracker;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.Closure;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.SystemMaintenance;
 
@@ -50,6 +52,7 @@ import javax.sql.DataSource;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -343,7 +346,7 @@ public abstract class SqlDialect
 
     private static final InClauseGenerator GENERATOR = new ParameterMarkerInClauseGenerator();
 
-    public boolean appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
+    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
     {
         return GENERATOR.appendInClauseSql(sql, params);
     }
@@ -959,6 +962,57 @@ public abstract class SqlDialect
         }
         // let server do default conversion
         return sql;
+    }
+
+
+    protected int getJdbcVersion(DbScope scope)
+    {
+        Connection conn = null;
+
+        try
+        {
+            conn = scope.getConnection();
+            DatabaseMetaData dbmd = conn.getMetaData();
+
+            return Math.min(dbmd.getJDBCMajorVersion(), getTomcatJdbcVersion());
+        }
+        catch (SQLException e)
+        {
+            ExceptionUtil.logExceptionToMothership(null, e);
+            return 2;
+        }
+        finally
+        {
+            if (null != conn)
+            {
+                try
+                {
+                    conn.close();
+                }
+                catch (SQLException e)
+                {
+                    ExceptionUtil.logExceptionToMothership(null, e);
+                }
+            }
+        }
+    }
+
+
+    private int getTomcatJdbcVersion()
+    {
+        int version = 2;  // Assume JDBC2
+        String serverInfo = ModuleLoader.getServletContext().getServerInfo();
+
+        if (serverInfo.startsWith("Apache Tomcat/"))
+        {
+            String[] versionParts = serverInfo.substring(14).split("\\.");
+            int majorVersion = Integer.valueOf(versionParts[0]);
+
+            if (majorVersion >= 6)
+                version = 4;
+        }
+
+        return version;
     }
 
 

@@ -56,7 +56,6 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
-import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import org.springframework.web.servlet.DispatcherServlet;
 import org.springframework.web.servlet.ModelAndView;
@@ -311,7 +310,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
         ViewContext context = getViewContext();
         context.setRequest(request);
-            context.setResponse(response);
+        context.setResponse(response);
 
         ActionURL url = context.getActionURL();
         long startTime = System.currentTimeMillis();
@@ -329,6 +328,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
             if (null != redirectURL)
             {
+                _log.debug("URL " + url.toString() + " was redirected to " + redirectURL + " instead");
                 response.sendRedirect(redirectURL.toString());
                 return null;
             }
@@ -408,6 +408,9 @@ public abstract class SpringActionController implements Controller, HasViewConte
         if (upgradeRequired || maintenanceMode)
         {
             boolean actionIsAllowed = (null != action && action.getClass().isAnnotationPresent(AllowedDuringUpgrade.class));
+
+            if (null != action)
+                _log.debug("Action " + action.getClass() + " allowed: " + actionIsAllowed);
 
             if (!actionIsAllowed)
             {

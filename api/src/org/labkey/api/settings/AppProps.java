@@ -35,13 +35,10 @@ import java.util.Date;
  */
 public class AppProps
 {
-    private static Interface _instance = null;
+    private static Interface _instance = new AppPropsImpl();
 
-    public static synchronized Interface getInstance()
+    public static Interface getInstance()
     {
-        if (null == _instance)
-            _instance = new AppPropsImpl();
-
         return _instance;
     }
 

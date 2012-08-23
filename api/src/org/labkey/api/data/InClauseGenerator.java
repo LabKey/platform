@@ -2,7 +2,6 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.sql.SQLException;
 import java.util.Collection;
 
 /**
@@ -15,7 +14,5 @@ import java.util.Collection;
 // database-specific implementation that scales or performs better (e.g., arrays or in-line parameter expansion)
 public interface InClauseGenerator
 {
-    // This method can choose not to append the SQL (e.g., based on number or type of paramters). Returns true if the
-    // SQL was appended and false if it wasn't
-    public boolean appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params);
+    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params);
 }

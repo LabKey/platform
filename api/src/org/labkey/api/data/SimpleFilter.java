@@ -22,6 +22,8 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jmock.Mockery;
+import org.jmock.lib.legacy.ClassImposteriser;
 import org.junit.Test;
 import org.labkey.api.data.CompareType.CompareClause;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -656,8 +658,7 @@ public class SimpleFilter implements Filter
             in.append(" ");
 
             // Dialect may want to generate database-specific SQL, especially for very large IN clauses
-            if (!dialect.appendInClauseSql(in, convertedParams))
-                throw new IllegalStateException("Dialect failed to create IN clause SQL");
+            dialect.appendInClauseSql(in, convertedParams);
 
             if (isIncludeNull())
             {
