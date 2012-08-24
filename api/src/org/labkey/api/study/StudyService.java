@@ -190,6 +190,8 @@ public class StudyService
         DataSet.KeyType getDatasetKeyType(Container container, String datasetName);
 
         Map<String, String> getAlternateIdMap(Container container);
+    
+        Study[] getAllStudies(Container root, User user);
     }
 
     public static void register(Service serviceImpl)
