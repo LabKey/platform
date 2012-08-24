@@ -586,6 +586,20 @@ LABKEY.getModuleContext = function(moduleName){
     return LABKEY.moduleContext[moduleName.toLowerCase()];
 }
 
+/**
+ * @param {String} moduleName The name of the module
+ * @param {String} property The property name to return
+ * @returns {String} The value of the module property.  Will return null if the property has not been set.
+ */
+LABKEY.getModuleProperty = function(moduleName, property){
+    var ctx = LABKEY.getModuleContext(moduleName);
+    if (!ctx)
+        return null;
+
+    return ctx[property];
+}
+
+
 //private.  used to append additional module context objects for AJAXd views
 LABKEY.applyModuleContext = function(ctx){
     for (var mn in ctx){
