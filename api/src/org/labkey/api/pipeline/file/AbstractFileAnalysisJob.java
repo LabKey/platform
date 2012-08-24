@@ -125,7 +125,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         // Change parameters which are specific to the fraction job.
         _filesInput = Collections.singletonList(fileInput);
         _inputTypes = FileType.findTypes(job._inputTypes, _filesInput);
-        _baseName = (_inputTypes.isEmpty() ? fileInput.getName() : _inputTypes.get(0).getDefaultFileType().getBaseName(fileInput));
+        _baseName = (_inputTypes.isEmpty() ? fileInput.getName() : _inputTypes.get(0).getBaseName(fileInput));
         setLogFile(FT_LOG.newFile(_dirAnalysis, _baseName));
     }
 
