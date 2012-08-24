@@ -148,6 +148,7 @@ public class StatementUtils
 
         SqlDialect d = t.getSqlDialect();
         boolean useVariables = false;
+        String containerIdConstant = null==c ? null : "'" + c.getId() + "'";
 
         // helper for generating procedure/function variation
         Map<Parameter, String> parameterToVariable = new IdentityHashMap<Parameter, String>();
@@ -207,15 +208,15 @@ public class StatementUtils
                 // no properties in the domain when the row was originally inserted
                 sqlfInsertObject.append("INSERT INTO exp.Object (container, objecturi) ");
                 sqlfInsertObject.append("SELECT ");
-                if (null==containerParameter)
-                    sqlfInsertObject.append("'" + c.getId() + "'");
+                if (null!=containerIdConstant)
+                    sqlfInsertObject.append(containerIdConstant);
                 else
                     appendParameterOrVariable(sqlfInsertObject, d, useVariables, containerParameter, parameterToVariable);
                 sqlfInsertObject.append(" AS Container,");
                 appendParameterOrVariable(sqlfInsertObject, d, useVariables, objecturiParameter, parameterToVariable);
                 sqlfInsertObject.append(" AS ObjectURI WHERE NOT EXISTS (SELECT ObjectURI FROM exp.Object WHERE Container = ");
-                if (null==containerParameter)
-                    sqlfInsertObject.append("'" + c.getId() + "'");
+                if (null!=containerIdConstant)
+                    sqlfInsertObject.append(containerIdConstant);
                 else
                     appendParameterOrVariable(sqlfInsertObject, d, useVariables, containerParameter, parameterToVariable);
                 sqlfInsertObject.append(" AND ObjectURI = ");
@@ -225,8 +226,8 @@ public class StatementUtils
                 // Grab the object's ObjectId
                 sqlfSelectObject.append(setKeyword).append(objectIdVar).append(" = (");
                 sqlfSelectObject.append("SELECT ObjectId FROM exp.Object WHERE Container = ");
-                if (null==containerParameter)
-                    sqlfSelectObject.append("'" + c.getId() + "'");
+                if (null!=containerIdConstant)
+                    sqlfSelectObject.append(containerIdConstant);
                 else
                     appendParameterOrVariable(sqlfSelectObject, d, useVariables, containerParameter, parameterToVariable);
                 sqlfSelectObject.append(" AND ObjectURI = ");
@@ -262,14 +263,10 @@ public class StatementUtils
         if (null != col && null != user)
         {
             cols.add(new SQLFragment("Container"));
-
             if (null == containerParameter && null == c)
-            {
                 containerParameter = new Parameter("container", JdbcType.VARCHAR);
-            }
-
-            if (null==containerParameter)
-                values.add(sqlfSelectObject.append("'" + c.getId() + "'"));
+            if (null!=containerIdConstant)
+                values.add(new SQLFragment(containerIdConstant));
             else
                 values.add(appendParameterOrVariable(new SQLFragment(), d, useVariables, containerParameter, parameterToVariable));
             done.add("Container");
@@ -551,6 +548,7 @@ public class StatementUtils
                 fn.append(";\n");
             }
             fn.append("END;\n$$ LANGUAGE plpgsql;\n");
+System.err.println(fn.toString());
             Table.execute(table.getSchema(), fn);
             ret = new Parameter.ParameterMap(table.getSchema().getScope(), conn, call, updatable.remapSchemaColumns());
             ret.onClose(new Runnable() { @Override public void run()
