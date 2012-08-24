@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2012 LabKey Corporation
+ *
+ * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
+ */
  /**
     * Creates an Ext.data.Store that queries the LabKey Server database and can be used as the data source
     * for various components, including GridViews, ComboBoxes, and so forth.
