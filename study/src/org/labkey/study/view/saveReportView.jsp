@@ -34,7 +34,7 @@
     ReportsController.SaveReportViewForm bean = me.getModelBean();
     ViewContext context = me.getViewContext();
 
-    Report report = bean.getReport();
+    Report report = bean.getReport(context);
     boolean confirm = bean.getConfirmed() != null ? Boolean.parseBoolean(bean.getConfirmed()) : false;
 %>
 

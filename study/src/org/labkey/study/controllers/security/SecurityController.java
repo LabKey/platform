@@ -290,7 +290,7 @@ public class SecurityController extends SpringActionController
             {
                 ReportIdentifier reportId = _bean.getReportId();
                 if (reportId != null)
-                    return new JspView<Report>("/org/labkey/study/view/reportPermission.jsp", reportId.getReport());
+                    return new JspView<Report>("/org/labkey/study/view/reportPermission.jsp", reportId.getReport(getViewContext()));
                 else
                 {
                     throw new NotFoundException();
@@ -316,7 +316,7 @@ public class SecurityController extends SpringActionController
         {
             Report report = null;
             if (form.getReportId() != null)
-                report = form.getReportId().getReport();
+                report = form.getReportId().getReport(getViewContext());
 
             if (null == report)
             {

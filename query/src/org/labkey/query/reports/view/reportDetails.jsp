@@ -29,13 +29,14 @@
 <%@ page import="java.util.Date" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Collections" %>
+<%@ page import="org.labkey.api.reports.Report" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ReportDesignBean> me = (JspView<ReportDesignBean>) HttpView.currentView();
     ReportDesignBean bean = me.getModelBean();
-    ReportDescriptor reportDescriptor = bean.getReport().getDescriptor();
-
     ViewContext context = HttpView.currentContext();
+    Report report = bean.getReport(context);
+    ReportDescriptor reportDescriptor = report.getDescriptor();
 
     String reportName = reportDescriptor.getReportName();
     String description = reportDescriptor.getReportDescription();
@@ -44,13 +45,13 @@
     Date createdDate = reportDescriptor.getCreated();
     Date modifiedDate = reportDescriptor.getModified();
     Date refreshDate = null;
-    ActionURL reportURL = bean.getReport().getRunReportURL(context);
-    Map<String, String> reportURLAttributes =  bean.getReport().getRunReportTarget() != null ?
-            Collections.singletonMap("target", bean.getReport().getRunReportTarget()) :
+    ActionURL reportURL = report.getRunReportURL(context);
+    Map<String, String> reportURLAttributes =  report.getRunReportTarget() != null ?
+            Collections.singletonMap("target", report.getRunReportTarget()) :
             Collections.<String, String>emptyMap();
 
-    ActionURL thumbnailUrl = PageFlowUtil.urlProvider(ReportUrls.class).urlThumbnail(bean.getContainer(), bean.getReport());
-    String type = bean.getReport().getTypeDescription();
+    ActionURL thumbnailUrl = PageFlowUtil.urlProvider(ReportUrls.class).urlThumbnail(bean.getContainer(), report);
+    String type = report.getTypeDescription();
     String category = "";
     String status = "";
     try

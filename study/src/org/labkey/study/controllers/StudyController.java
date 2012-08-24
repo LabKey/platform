@@ -605,7 +605,7 @@ public class StudyController extends BaseStudyController
             {
                 ReportIdentifier identifier = form.getReportId();
                 if (identifier != null)
-                    _report = identifier.getReport();
+                    _report = identifier.getReport(getViewContext());
             }
             return _report;
         }
@@ -627,7 +627,7 @@ public class StudyController extends BaseStudyController
 
                 ReportIdentifier identifier = ReportService.get().getReportIdentifier(reportId);
                 if (identifier != null)
-                    _report = identifier.getReport();
+                    _report = identifier.getReport(getViewContext());
             }
             return _report;
         }
@@ -765,7 +765,7 @@ public class StudyController extends BaseStudyController
                     QueryService.get().getCustomView(getUser(), getContainer(), StudyManager.getSchemaName(), def.getLabel(), viewName) == null)
                 {
                     ReportIdentifier reportId = AbstractReportIdentifier.fromString(viewName);
-                    if (reportId != null && reportId.getReport() != null)
+                    if (reportId != null && reportId.getReport(getViewContext()) != null)
                     {
                         ActionURL newURL = url.clone().deleteParameter(DATASET_VIEW_NAME_PARAMETER_NAME).
                                 addParameter(DATASET_REPORT_ID_PARAMETER_NAME, reportId.toString());
@@ -891,7 +891,7 @@ public class StudyController extends BaseStudyController
                 view.addView(scriptLock);
             }
 
-            Report report = queryView.getSettings().getReportView();
+            Report report = queryView.getSettings().getReportView(context);
             if (report != null && !ReportManager.get().canReadReport(getUser(), getContainer(), report))
             {
                 return new HtmlView("User does not have read permission on this report.");
@@ -926,7 +926,7 @@ public class StudyController extends BaseStudyController
         protected QueryView createQueryView(DatasetFilterForm datasetFilterForm, BindException errors, boolean forExport, String dataRegion) throws Exception
         {
             QuerySettings qs = new QuerySettings(getViewContext(), DATASET_DATAREGION_NAME);
-            Report report = qs.getReportView();
+            Report report = qs.getReportView(getViewContext());
             if (report instanceof QueryReport)
             {
                 return ((QueryReport)report).getQueryViewGenerator().generateQueryView(getViewContext(), report.getDescriptor());

@@ -48,7 +48,7 @@
 
     if (id != null)
     {
-        report = id.getReport();
+        report = id.getReport(ctx);
         if (report != null)
             canEdit = report.canEdit(ctx.getUser(), ctx.getContainer());
     }

@@ -88,6 +88,7 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
@@ -175,7 +176,7 @@ public class ReportsController extends BaseStudyController
             Report report = null;
 
             if (reportId != null)
-                report = reportId.getReport();
+                report = reportId.getReport(getViewContext());
 
             if (report != null)
             {
@@ -600,7 +601,7 @@ public class ReportsController extends BaseStudyController
     {
         public ApiResponse execute(SaveReportViewForm form, BindException errors) throws Exception
         {
-            Report report = form.getReport();
+            Report report = form.getReport(getViewContext());
             final String key = ReportUtil.getReportQueryKey(report.getDescriptor());
 
             if (!reportNameExists(getViewContext(), form.getViewName(), key))
@@ -631,7 +632,7 @@ public class ReportsController extends BaseStudyController
     {
         public ModelAndView getView(SaveReportForm form, BindException errors) throws Exception
         {
-            Report report = form.getReport();
+            Report report = form.getReport(getViewContext());
             final String key = ReportUtil.getReportQueryKey(report.getDescriptor());
 
             int reportId = ReportService.get().saveReport(getViewContext(), key, report);
@@ -688,7 +689,7 @@ public class ReportsController extends BaseStudyController
 
         public boolean handlePost(SaveReportViewForm form, BindException errors) throws Exception
         {
-            Report report = form.getReport();
+            Report report = form.getReport(getViewContext());
             _savedReportId = ReportService.get().saveReport(getViewContext(), ReportUtil.getReportKey(form.getSchemaName(), form.getQueryName()), report);
 
             return true;
@@ -825,9 +826,9 @@ public class ReportsController extends BaseStudyController
             _stats = stats;
         }
 
-        public Report getReport() throws Exception
+        public Report getReport(ContainerUser cu) throws Exception
         {
-            Report report = super.getReport();
+            Report report = super.getReport(cu);
             CrosstabReportDescriptor descriptor = (CrosstabReportDescriptor)report.getDescriptor();
 
             if (_visitRowId != -1) descriptor.setProperty(VisitImpl.VISITKEY, Integer.toString(_visitRowId));
@@ -852,7 +853,7 @@ public class ReportsController extends BaseStudyController
 
             if (reshow)
             {
-                Report report = form.getReport();
+                Report report = form.getReport(getViewContext());
                 if (report != null)
                 {
                     v.addView(report.renderReport(getViewContext()));
@@ -974,7 +975,7 @@ public class ReportsController extends BaseStudyController
             ExportExcelReport report;
             if (form.getReportId() != null)
             {
-                Report r = form.getReportId().getReport();
+                Report r = form.getReportId().getReport(getViewContext());
                 if (!(r instanceof ExportExcelReport))
                 {
                     throw new NotFoundException();
@@ -1375,7 +1376,7 @@ public class ReportsController extends BaseStudyController
             this.reportType = reportType;
         }
 
-        public Report getReport()
+        public Report getReport(ContainerUser cu)
         {
             Report report = ReportManager.get().createReport(reportType);
             ReportDescriptor descriptor = report.getDescriptor();
@@ -1465,9 +1466,9 @@ public class ReportsController extends BaseStudyController
             reportType = report.getDescriptor().getReportType();
         }
 
-        public Report getReport()
+        public Report getReport(ContainerUser cu)
         {
-            Report report = super.getReport();
+            Report report = super.getReport(cu);
             ReportDescriptor descriptor = report.getDescriptor();
 
             if (!StringUtils.isEmpty(getSchemaName()))
@@ -1684,7 +1685,7 @@ public class ReportsController extends BaseStudyController
 
             if (reportId != null)
             {
-                Report report = reportId.getReport();
+                Report report = reportId.getReport(getViewContext());
                 if (report != null)
                     return report.renderReport(context);
             }
@@ -1752,7 +1753,7 @@ public class ReportsController extends BaseStudyController
             if (null != reportId)
             {
                 form.setReportId(reportId);
-                return reportId.getReport();
+                return reportId.getReport(getViewContext());
             }
             return null;
         }
@@ -1945,7 +1946,7 @@ public class ReportsController extends BaseStudyController
 
             try
             {
-                report = bean.getReport();
+                report = bean.getReport(ctx);
             }
             catch (Exception e)
             {
@@ -2106,7 +2107,7 @@ public class ReportsController extends BaseStudyController
                 }
                 else
                 {
-                    Report report = form.getReportId().getReport();
+                    Report report = form.getReportId().getReport(getViewContext());
 
                     if (report != null)
                     {
@@ -2145,7 +2146,7 @@ public class ReportsController extends BaseStudyController
             Report report;
 
             if (form.getReportId() != null)
-                report = form.getReportId().getReport();
+                report = form.getReportId().getReport(getViewContext());
             else
                 report = ReportService.get().createReportInstance(ParticipantReport.TYPE);
 
@@ -2188,7 +2189,7 @@ public class ReportsController extends BaseStudyController
             ApiSimpleResponse response = new ApiSimpleResponse();
             Report report = null;
             if (form.getReportId() != null)
-                report = form.getReportId().getReport();
+                report = form.getReportId().getReport(getViewContext());
 
             if (report instanceof ParticipantReport)
             {

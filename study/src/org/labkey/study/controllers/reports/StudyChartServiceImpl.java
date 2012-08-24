@@ -114,7 +114,7 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
             ChartDesignerBean bean = new ChartDesignerBean();
             PropertyUtils.copyProperties(bean, chart);
 
-            Report report = bean.getReport();
+            Report report = bean.getReport(getViewContext());
             if (report != null)
             {
                 if (_isParticipantChart)

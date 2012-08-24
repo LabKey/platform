@@ -126,8 +126,10 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.template.ClientDependency;
 import org.labkey.query.ViewFilterItemImpl;
 import org.labkey.query.reports.chart.ChartServiceImpl;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -137,18 +139,12 @@ import org.springframework.web.servlet.mvc.Controller;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * User: Karl Lum
@@ -321,7 +317,7 @@ public class ReportsController extends SpringActionController
             Report report = null;
 
             if (null != form.getReportId())
-                report = form.getReportId().getReport();
+                report = form.getReportId().getReport(getViewContext());
 
             if (report == null)
             {
@@ -362,12 +358,12 @@ public class ReportsController extends SpringActionController
         {
             verifyBean(form);
             ApiSimpleResponse response = new ApiSimpleResponse();
-            Report report = form.getReport();
+            Report report = form.getReport(getViewContext());
             if (report != null)
             {
                 ActionURL url;
                 if (null != report.getDescriptor().getReportId())
-                    url = ReportUtil.getPlotChartURL(getViewContext(), form.getReport());
+                    url = ReportUtil.getPlotChartURL(getViewContext(), report);
                 else
                 {
                     url = new ActionURL(PlotChartAction.class, getContainer());
@@ -571,7 +567,7 @@ public class ReportsController extends SpringActionController
 
         public ModelAndView getView(ScriptReportBean form, boolean reshow, BindException errors) throws Exception
         {
-            _report = form.getReport();
+            _report = form.getReport(getViewContext());
             List<ValidationError> reportErrors = new ArrayList<ValidationError>();
             validatePermissions(getViewContext(), _report, reportErrors);
 
@@ -620,7 +616,7 @@ public class ReportsController extends SpringActionController
             errors.addAllErrors(defaultBindParameters(bean, getViewContext().getBindPropertyValues()));
 
             HttpView resultsView = null;
-            Report report = bean.getReport();
+            Report report = bean.getReport(getViewContext());
 
             // for now, limit pipeline view to saved R reports
             if (null != bean.getReportId() && bean.isRunInBackground())
@@ -642,7 +638,28 @@ public class ReportsController extends SpringActionController
 
             // TODO: assert?
             if (null != resultsView)
-                resultsView.render(getViewContext().getRequest(), getViewContext().getResponse());
+            {
+                ApiResponse resp = new ApiSimpleResponse();
+                LinkedHashSet<ClientDependency> dependencies = resultsView.getClientDependencies();
+                LinkedHashSet<String> includes = new LinkedHashSet<String>();
+                LinkedHashSet<String> implicitIncludes = new LinkedHashSet<String>();
+                PageFlowUtil.getJavaScriptFiles(dependencies, includes, implicitIncludes);
+
+                MockHttpServletResponse mr = new MockHttpServletResponse();
+                resultsView.render(getViewContext().getRequest(), mr);
+
+                if (mr.getStatus() != HttpServletResponse.SC_OK){
+                    resultsView.render(getViewContext().getRequest(), getViewContext().getResponse());
+                    return null;
+                }
+
+                resp.getProperties().put("html", mr.getContentAsString());
+                resp.getProperties().put("requiredJsScripts", includes);
+                resp.getProperties().put("implicitJsIncludes", implicitIncludes);
+                resp.getProperties().put("moduleContext", PageFlowUtil.getModuleClientContext(getContainer(), getUser(), dependencies));
+
+                return resp;
+            }
 
             return null;
         }
@@ -655,7 +672,7 @@ public class ReportsController extends SpringActionController
         @Override
         public ApiResponse execute(ScriptReportBean bean, BindException errors) throws Exception
         {
-            Report report = bean.getReport();
+            Report report = bean.getReport(getViewContext());
             File logFile = new File(((RReport)report).getReportDir(), RReportJob.LOG_FILE_NAME);
             PipelineStatusFile statusFile = PipelineService.get().getStatusFile(logFile.getAbsolutePath());
 
@@ -712,7 +729,7 @@ public class ReportsController extends SpringActionController
             _report = null;
 
             if (null != form.getReportId())
-                _report = form.getReportId().getReport();
+                _report = form.getReportId().getReport(getViewContext());
 
             if (null == _report)
                 return new HtmlView("<span class=\"labkey-error\">Invalid report identifier, unable to create report.</span>");
@@ -744,11 +761,11 @@ public class ReportsController extends SpringActionController
     {
         public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
         {
-            if (form.getReport() != null)
+            Report report = form.getReport(getViewContext());
+            if (null != report)
             {
                 VBox box = new VBox(new JspView<ReportDesignBean>("/org/labkey/query/reports/view/reportDetails.jsp", form));
 
-                Report report = form.getReport();
                 DiscussionService.Service service = DiscussionService.get();
                 String title = "Discuss report - " + report.getDescriptor().getReportName();
                 box.addView(service.getDisussionArea(getViewContext(), report.getEntityId(), new ActionURL(CreateScriptReportAction.class, getContainer()), title, true, false));
@@ -770,7 +787,7 @@ public class ReportsController extends SpringActionController
     {
         public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
         {
-            return new ReportInfoView(form.getReport());
+            return new ReportInfoView(form.getReport(getViewContext()));
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -851,9 +868,9 @@ public class ReportsController extends SpringActionController
                 Report report;
 
                 if (id != null)
-                    report = id.getReport();
+                    report = id.getReport(getViewContext());
                 else
-                    report = form.getReport();
+                    report = form.getReport(getViewContext());
 
                 List<ValidationError> reportErrors = new ArrayList<ValidationError>();
                 validatePermissions(getViewContext(), report, reportErrors);
@@ -883,7 +900,7 @@ public class ReportsController extends SpringActionController
                     return null;
                 }
 
-                report = form.getReport();
+                report = form.getReport(getViewContext());
 
                 if (null == report)
                 {
@@ -981,12 +998,12 @@ public class ReportsController extends SpringActionController
 
             if (null == form.getReportId())
             {
-                report = form.getReport();
+                report = form.getReport(getViewContext());
                 job = new RReportJob(ReportsPipelineProvider.NAME, info, form, root);
             }
             else
             {
-                report = form.getReportId().getReport();
+                report = form.getReportId().getReport(getViewContext());
                 job = new RReportJob(ReportsPipelineProvider.NAME, info, form.getReportId(), root);
             }
 
@@ -1007,7 +1024,7 @@ public class ReportsController extends SpringActionController
     {
         public ModelAndView getView(RReportBean form, BindException errors) throws Exception
         {
-            Report report = form.getReport();
+            Report report = form.getReport(getViewContext());
             if (report instanceof RReport)
             {
                 try
@@ -1157,7 +1174,7 @@ public class ReportsController extends SpringActionController
 
             if (form.getReportId() != null)
             {
-                Report report = form.getReportId().getReport();
+                Report report = form.getReportId().getReport(getViewContext());
 
                 if (report != null)
                 {
@@ -1367,7 +1384,7 @@ public class ReportsController extends SpringActionController
             if (null == reportId)
                 throw new NotFoundException("ReportId not specified");
 
-            Report report = reportId.getReport();
+            Report report = reportId.getReport(getViewContext());
 
             if (null == report)
                 throw new NotFoundException("Report not found");
@@ -1834,7 +1851,7 @@ public class ReportsController extends SpringActionController
         {
             for (ReportIdentifier id : form.getReportId())
             {
-                Report report = id.getReport();
+                Report report = id.getReport(getViewContext());
 
                 if (report != null)
                 {
@@ -1907,7 +1924,7 @@ public class ReportsController extends SpringActionController
         private void validateEditReport(EditViewsForm form, Errors errors)
         {
             try {
-                _report = form.getReportId().getReport();
+                _report = form.getReportId().getReport(getViewContext());
 
                 if (_report != null)
                 {
@@ -2079,7 +2096,7 @@ public class ReportsController extends SpringActionController
                 try
                 {
                     if (null != reportId)
-                        _report = reportId.getReport();
+                        _report = reportId.getReport(getViewContext());
 
                     if (_report != null)
                     {
@@ -2160,7 +2177,7 @@ public class ReportsController extends SpringActionController
             try
             {
                 if (null != reportId)
-                    _report = reportId.getReport();
+                    _report = reportId.getReport(getViewContext());
 
                 if (_report != null)
                 {
@@ -2220,7 +2237,7 @@ public class ReportsController extends SpringActionController
             String sections = (String)getViewContext().get(Report.renderParam.showSection.name());
             if (reportId != null)
             {
-                Report report = reportId.getReport();
+                Report report = reportId.getReport(getViewContext());
 
                 // may need a better way to determine sections, do we want to add to the interface?
                 response.put("success", true);
@@ -2291,7 +2308,7 @@ public class ReportsController extends SpringActionController
             ReportIdentifier reportId = form.getReportId();
             if (reportId != null)
             {
-                Report report = reportId.getReport();
+                Report report = reportId.getReport(getViewContext());
                 if (report instanceof CrosstabReport)
                 {
                     ExcelWriter writer = ((CrosstabReport)report).getExcelWriter(getViewContext());
@@ -2314,9 +2331,7 @@ public class ReportsController extends SpringActionController
         @Override
         public StaticThumbnailProvider getProvider(ThumbnailForm form) throws Exception
         {
-            Report report = form.getReportId().getReport();
-
-            return report;
+            return form.getReportId().getReport(getViewContext());
         }
     }
 

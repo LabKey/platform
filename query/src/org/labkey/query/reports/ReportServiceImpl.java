@@ -21,8 +21,19 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
-import org.labkey.api.data.*;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
@@ -33,18 +44,42 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryListener;
 import org.labkey.api.reports.model.ViewCategoryManager;
-import org.labkey.api.reports.report.*;
+import org.labkey.api.reports.report.AbstractReportIdentifier;
+import org.labkey.api.reports.report.DbReportIdentifier;
+import org.labkey.api.reports.report.ModuleQueryJavaScriptReportDescriptor;
+import org.labkey.api.reports.report.ModuleQueryRReportDescriptor;
+import org.labkey.api.reports.report.ModuleQueryReportDescriptor;
+import org.labkey.api.reports.report.ReportDB;
+import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.ReportIdentifier;
+import org.labkey.api.reports.report.ReportIdentifierConverter;
+import org.labkey.api.reports.report.ScriptEngineReport;
 import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
-import org.labkey.api.util.*;
+import org.labkey.api.util.ContainerUtil;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
+import org.labkey.api.util.Path;
+import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.VirtualFile;
 
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -88,7 +123,6 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
         if (null != _descriptors.putIfAbsent(descriptor.getDescriptorType(), descriptor.getClass()))
             _log.warn("Descriptor type : " + descriptor.getDescriptorType() + " has previously been registered.");
-           //throw new IllegalStateException("Descriptor type : " + descriptor.getDescriptorType() + " has previously been registered.");
     }
 
     public ReportDescriptor createDescriptorInstance(String typeName)
@@ -118,6 +152,198 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         }
     }
 
+    @Nullable
+    public ReportDescriptor getModuleReportDescriptor(Module module, Container container, User user, String path)
+    {
+        List<ReportDescriptor> ds = getModuleReportDescriptors(module, container, user, path);
+        if (ds.size() == 1)
+            return ds.get(0);
+        return null;
+    }
+
+    @NotNull
+    private List<ReportDescriptor> getAllModuleReportDescriptors(Module module, Container container, User user)
+    {
+        Set<Resource> reportFiles = module.getReportFiles();
+
+        ArrayList<ReportDescriptor> list = new ArrayList<ReportDescriptor>(reportFiles.size());
+        Resource[] files = reportFiles.toArray(new Resource[0]);
+
+        // Keep files that might be Query reports (end in .xml);
+        // below we'll remove ones that are associated with R or JS reports
+        HashMap<String, Resource> possibleQueryReportFiles = new HashMap<String, Resource>();
+        for (Resource file : files)
+        {
+            if (file.getName().toLowerCase().endsWith(ModuleQueryReportDescriptor.FILE_EXTENSION))
+                possibleQueryReportFiles.put(file.getName(), file);
+        }
+
+        for (Resource file : files)
+        {
+            if (!DefaultModule.moduleReportFilter.accept(null, file.getName()))
+                continue;
+
+            ReportDescriptor descriptor = module.getCachedReport(file.getPath());
+            if ((null == descriptor || descriptor.isStale()) && file.exists())
+            {
+                // NOTE: reportKeyToLegalFile() is not a two-way mapping, this can cause inconsistencies
+                // so don't cache files with _ (underscore) in path
+                descriptor = createModuleReportDescriptorInstance(module, file, container, user);
+                if (!file.getPath().toString().contains("_"))
+                    module.cacheReport(file.getPath(), descriptor);
+            }
+
+            if (null != descriptor)
+            {
+                descriptor.setContainer(container.getId());
+                list.add(descriptor);
+                if (null != descriptor.getMetaDataFile())
+                    possibleQueryReportFiles.remove(descriptor.getMetaDataFile().getName());
+            }
+        }
+
+        // Anything left if this map should be a Query Report
+        list.addAll(getDescriptorsHelper(possibleQueryReportFiles.values(), module, container, user));
+
+        return list;
+    }
+
+    @NotNull
+    public List<ReportDescriptor> getModuleReportDescriptors(Module module, Container container, User user, @Nullable String path)
+    {
+        if (null == path)
+        {
+            return getAllModuleReportDescriptors(module, container, user);
+        }
+
+        Path legalPath = Path.parse(path);
+        legalPath = getLegalFilePath(legalPath);
+
+        Resource reportDirectory = module.getModuleResource(getQueryReportsDirectory(module).getPath().append(legalPath));
+
+        if (null == reportDirectory || !reportDirectory.isCollection())
+        {
+            reportDirectory = module.getModuleResource(legalPath.getParent());
+            if (null == reportDirectory || !reportDirectory.isCollection())
+            {
+                reportDirectory = module.getModuleResource(getQueryReportsDirectory(module).getPath().append(legalPath).getParent());
+                if (null == reportDirectory || !reportDirectory.isCollection())
+                    return Collections.emptyList();
+            }
+        }
+
+        HashMap<String, Resource> possibleQueryReportFiles = new HashMap<String, Resource>();
+        for (Resource file : reportDirectory.list())
+        {
+            if (file.getName().toLowerCase().endsWith(ModuleQueryReportDescriptor.FILE_EXTENSION))
+                possibleQueryReportFiles.put(file.getName(), file);
+        }
+
+        List<ReportDescriptor> reportDescriptors = new ArrayList<ReportDescriptor>();
+        ReportDescriptor descriptor;
+        for (Resource file : reportDirectory.list())
+        {
+            if (!DefaultModule.moduleReportFilter.accept(null, file.getName()))
+                continue;
+
+            descriptor = module.getCachedReport(file.getPath());
+
+            // cache miss
+            if (null == descriptor || descriptor.isStale())
+            {
+                descriptor = createModuleReportDescriptorInstance(module, file, container, user);
+
+                // NOTE: getLegalFilePath() is not a two-way mapping, this can cause inconsistencies
+                // so don't cache files with _ (underscore) in path
+                if (!file.getPath().toString().contains("_"))
+                    module.cacheReport(file.getPath(), descriptor);
+            }
+
+            descriptor.setContainer(container.getId());
+
+            // Return one file
+            if (legalPath.getName().equals(file.getPath().getName()))
+            {
+                reportDescriptors.clear();
+                reportDescriptors.add(descriptor);
+                return reportDescriptors;
+            }
+
+            if (null != descriptor.getMetaDataFile())
+                possibleQueryReportFiles.remove(descriptor.getMetaDataFile().getName());
+
+            reportDescriptors.add(descriptor);
+        }
+
+        // Anything left if this map should be a Query Report
+        reportDescriptors.addAll(getDescriptorsHelper(possibleQueryReportFiles.values(), module, container, user));
+
+        return reportDescriptors;
+    }
+
+    @NotNull
+    private List<ReportDescriptor> getDescriptorsHelper(Collection<? extends Resource> files, Module module, Container container, User user)
+    {
+        List<ReportDescriptor> list = new ArrayList<ReportDescriptor>();
+        ReportDescriptor descriptor;
+
+        for (Resource file : files)
+        {
+            descriptor = module.getCachedReport(file.getPath());
+
+            // cache miss
+            if (null == descriptor || descriptor.isStale())
+            {
+                descriptor = createModuleReportDescriptorInstance(module, file, container, user);
+
+                // NOTE: getLegalFilePath() is not a two-way mapping, this can cause inconsistencies
+                // so don't cache files with _ (underscore) in path
+                if (!file.getPath().toString().contains("_"))
+                    module.cacheReport(file.getPath(), descriptor);
+            }
+
+            descriptor.setContainer(container.getId());
+
+            list.add(descriptor);
+        }
+
+        return list;
+    }
+
+    @NotNull
+    private ReportDescriptor createModuleReportDescriptorInstance(Module module, Resource reportFile, Container container, User user)
+    {
+        Path path = reportFile.getPath();
+        String parent = path.getParent().toString("","");
+        String lower = path.toString().toLowerCase();
+
+        // Create R Report Descriptor
+        if (lower.endsWith(ModuleQueryRReportDescriptor.FILE_EXTENSION))
+            return new ModuleQueryRReportDescriptor(module, parent, reportFile, path, container, user);
+
+        // Create JS Report Descriptor
+        if (lower.endsWith(ModuleQueryJavaScriptReportDescriptor.FILE_EXTENSION))
+            return new ModuleQueryJavaScriptReportDescriptor(module, parent, reportFile, path, container, user);
+
+         // Create Query Report Descriptor
+        return new ModuleQueryReportDescriptor(module, parent, reportFile, path, container, user);
+    }
+
+    private Resource getQueryReportsDirectory(Module module)
+    {
+        return module.getModuleResource("reports/schemas");
+    }
+
+    private Path getLegalFilePath(@NotNull Path key)
+    {
+        Path legalPath = Path.emptyPath;
+
+        for (int idx = 0; idx < key.size() ; ++idx)
+            legalPath = legalPath.append(FileUtil.makeLegalName(key.get(idx)));
+
+        return legalPath;
+    }
+
     public void registerReport(Report report)
     {
         if (report == null)
@@ -125,7 +351,6 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
         if (null != _reports.putIfAbsent(report.getType(), report.getClass()))
             _log.warn("Report type : " + report.getType() + " has previously been registered.");
-            //throw new IllegalStateException("Report type : " + report.getType() + " has previously been registered.");
     }
 
     public Report createReportInstance(String typeName)
@@ -396,9 +621,11 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     {
         List<ReportDescriptor> moduleReportDescriptors = new ArrayList<ReportDescriptor>();
 
+        List<ReportDescriptor> descriptors;
         for (Module module : c.getActiveModules())
         {
-            List<ReportDescriptor> descriptors = module.getReportDescriptors(key, c, user);
+            descriptors = getModuleReportDescriptors(module, c, user, key);
+//            descriptors = module.getReportDescriptors(key, c, user);
             if (null != descriptors)
                 moduleReportDescriptors.addAll(descriptors);
         }

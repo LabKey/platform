@@ -1148,7 +1148,7 @@ public class VisualizationController extends SpringActionController
             ReportIdentifier reportId = form.getReportId();
             if (reportId != null)
             {
-                Report report = reportId.getReport();
+                Report report = reportId.getReport(getViewContext());
                 if (report != null)
                     return report;
             }
@@ -1481,7 +1481,7 @@ public class VisualizationController extends SpringActionController
                 }
                 else
                 {
-                    Report report = form.getReportId().getReport();
+                    Report report = form.getReportId().getReport(getViewContext());
 
                     if (report != null)
                     {
@@ -1520,7 +1520,7 @@ public class VisualizationController extends SpringActionController
             Report report;
 
             if (form.getReportId() != null)
-                report = form.getReportId().getReport();
+                report = form.getReportId().getReport(getViewContext());
             else
                 report = ReportService.get().createReportInstance(GenericChartReport.TYPE);
 
@@ -1560,7 +1560,7 @@ public class VisualizationController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
             Report report = null;
             if (form.getReportId() != null)
-                report = form.getReportId().getReport();
+                report = form.getReportId().getReport(getViewContext());
 
             if (report != null)
             {

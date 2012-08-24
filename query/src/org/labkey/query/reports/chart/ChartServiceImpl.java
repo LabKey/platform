@@ -73,7 +73,7 @@ public class ChartServiceImpl extends BaseRemoteService implements ChartService
             if (!chart.isShared())
                 bean.setOwner(_context.getUser().getUserId());
 
-            Report report = bean.getReport();
+            Report report = bean.getReport(getViewContext());
             if (report != null)
             {
                 final String key = ReportUtil.getReportQueryKey(report.getDescriptor());

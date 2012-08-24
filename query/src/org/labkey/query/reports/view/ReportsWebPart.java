@@ -25,14 +25,11 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.DbReportIdentifier;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.view.ReportUtil;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.Portal;
-import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.*;
 
 import java.io.PrintWriter;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -59,7 +56,10 @@ public class ReportsWebPart extends WebPartView
         {
             _report = getReport(properties);
             if (null != _report)
+            {
                 setTitleHref(_report.getRunReportURL(context));
+                addClientDependencies(_report.getDescriptor().getClientDependencies());
+            }
         }
         catch (Exception x)
         {
@@ -107,7 +107,9 @@ public class ReportsWebPart extends WebPartView
                 reportId = new DbReportIdentifier(Integer.parseInt(reportIdString));
 
             if (reportId != null)
-                return reportId.getReport();
+            {
+                return reportId.getReport(getViewContext());
+            }
         }
         else
         {
