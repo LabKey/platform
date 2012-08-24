@@ -16,7 +16,6 @@
 
 package org.labkey.api.etl;
 
-import com.sun.corba.se.spi.legacy.connection.Connection;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -615,16 +614,21 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
     enum SpecialColumn
     {
-        Container(When.insert),
-        Owner(When.insert),
-        CreatedBy(When.insert),
-        Created(When.insert),
-        ModifiedBy(When.both),
-        Modified(When.both),
-        EntityId(When.insert);
+        Container(When.insert, JdbcType.GUID),
+//        Owner(When.insert, JdbcType.INTEGER),
+        CreatedBy(When.insert, JdbcType.INTEGER),
+        Created(When.insert, JdbcType.TIMESTAMP),
+        ModifiedBy(When.both, JdbcType.INTEGER),
+        Modified(When.both, JdbcType.TIMESTAMP),
+        EntityId(When.insert, JdbcType.GUID);
 
-        SpecialColumn(When w)
+        final When when;
+        final JdbcType type;
+
+        SpecialColumn(When when, JdbcType type)
         {
+            this.when = when;
+            this.type = type;
         }
     }
 
@@ -650,7 +654,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             outputCols.put(_outputColumns.get(i).getKey().getName(), i);
 
         addBuiltinColumn(SpecialColumn.Container,  allowPassThrough, target, inputCols, outputCols, containerCallable);
-        addBuiltinColumn(SpecialColumn.Owner,      allowPassThrough, target, inputCols, outputCols, userCallable);
+//        addBuiltinColumn(SpecialColumn.Owner,      allowPassThrough, target, inputCols, outputCols, userCallable);
         addBuiltinColumn(SpecialColumn.CreatedBy,  allowPassThrough, target, inputCols, outputCols, userCallable);
         addBuiltinColumn(SpecialColumn.ModifiedBy, allowPassThrough, target, inputCols, outputCols, userCallable);
         addBuiltinColumn(SpecialColumn.Created,    allowPassThrough, target, inputCols, outputCols, tsCallable);
@@ -664,6 +668,8 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         String name = e.name();
         ColumnInfo col = target.getColumn(name);
         if (null==col)
+            return 0;
+        if (col.getJdbcType() != e.type && col.getJdbcType().getJavaClass() != e.type.getJavaClass())
             return 0;
 
         Integer indexOut = outputCols.get(name);
