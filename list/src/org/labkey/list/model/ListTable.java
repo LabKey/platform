@@ -316,7 +316,7 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
     {
         if (!_list.getKeyName().isEmpty() && !_list.getKeyName().equalsIgnoreCase("key"))
         {
-            CaseInsensitiveHashMap<String> m = new CaseInsensitiveHashMap<String>();
+        CaseInsensitiveHashMap<String> m = new CaseInsensitiveHashMap<String>();
             m.put("key", _list.getKeyName());
             return m;
         }
@@ -337,7 +337,7 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
     {
         data = new _DataIteratorBuilder(data);
         data.setForImport(forImport);
-        DataIteratorBuilder ins = TableInsertDataIterator.create(data, this, forImport, errors);
+        DataIteratorBuilder ins = TableInsertDataIterator.create(data, this, _list.getContainer(), forImport, errors);
         // TODO handle attachments?
         // attach = new AddAttachmentDataIterator.create(ins, this, errors);
         return ins;
@@ -379,8 +379,9 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
                     if (_list.getKeyType() == ListDefinition.KeyType.AutoIncrementInteger)
                         continue;
                 }
-                if (StringUtils.equalsIgnoreCase("container", col.getName()))
-                    continue;
+// TODO lists allow a column called "container"! need to start disallowing this!
+//                if (StringUtils.equalsIgnoreCase("container", col.getName()))
+//                    continue;
                 if (StringUtils.equalsIgnoreCase("listid", col.getName()))
                     continue;
                 it.addColumn(c);
@@ -401,8 +402,9 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
                 });
             }
 
-            ColumnInfo containerCol = new ColumnInfo("container", JdbcType.GUID);
-            it.addColumn(containerCol, new SimpleTranslator.ConstantColumn(_list.getContainer().getId()));
+// handled as constant in StatementUtils.createStatement()
+//            ColumnInfo containerCol = new ColumnInfo("container", JdbcType.GUID);
+//            it.addColumn(containerCol, new SimpleTranslator.ConstantColumn(_list.getContainer().getId()));
 
             ColumnInfo listIdCol = new ColumnInfo("listid", JdbcType.INTEGER);
             it.addColumn(listIdCol, new SimpleTranslator.ConstantColumn(_list.getListId()));
