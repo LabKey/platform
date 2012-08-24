@@ -698,6 +698,20 @@ public class AdminController extends SpringActionController
             views.addView(new CreditsView("/core/META-INF/core/executables.txt", getCreditsFile(core, "executables.txt"), getBinFilenames(), "Executable", "/external/bin directory", null, "([\\w\\.]+\\.(exe|dll|manifest|jar))"));
             views.addView(new CreditsView("/core/META-INF/core/installer.txt", getCreditsFile(core, "installer.txt"), null, "Executable", null, "the Graphical Windows Installer", null));
 
+            for (Module module : modules)
+            {
+                if (!module.equals(core))
+                {
+                    String wikiSource = getCreditsFile(module, "executables.txt");
+
+                    if (null != wikiSource)
+                    {
+                        HttpView moduleJS = new CreditsView("executables.txt", wikiSource, null, "Executable Files", null, "the " + module.getName() + " Module", null);
+                        views.addView(moduleJS);
+                    }
+                }
+            }
+
             return views;
         }
 
