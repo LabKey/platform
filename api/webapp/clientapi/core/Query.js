@@ -537,6 +537,61 @@ LABKEY.Query = new function()
             });
         },
 
+
+        /**
+         * Returns a list of reports, views and/or datasets in a container
+         * @param config
+         * @param {String} [config.containerPath] A container path in which to execute this command.  If not provided, the current container will be used
+         * @param {Array} [config.dataTypes] An array of data types to return, which can be any of: 'reports', 'datasets' or 'queries'.  If blank, all will be returned
+         * @param {Function} [config.success] A function called on success.  It will be passed a single argument with the following properties:
+         * <ul>
+         * <li>data: An array with one element per dataview.  Each view is a map with the following properties:
+         * <ul>
+         * <li>access:
+         * <li>allowCustomThumbnail: A flag indicating whether the thumbnail can be customized
+         * <li>category: The category to which this item has been assigned
+         * <li>categoryDisplayOrder: The display order within that category
+         * <li>container: The container where this dataView is defined
+         * <li>created: The displayName of the user who created the item
+         * <li>createdByUserId: The user Id of the user who created the item
+         * <li>dataType: The dataType of this item, either queries, reports or datasets
+         * <li>detailsUrl: The url that will display additional details about this item
+         * <li>icon: The url of the icon for this report
+         * <li>id: The unique Id of this item
+         * <li>modified: The date this item was last modified
+         * <li>name: The display name of this item
+         * <li>runUrl: The url that can be used to execute this report
+         * <li>shared: A flag indicating whether this item is shared
+         * <li>thumbnail: The url of this item's thumbnail image
+         * <li>type: The display string for dataType: Query, Report or Dataset
+         * <li>visible: A flag indicating whether this report is visible or hidden
+         * </ul>
+         * <li>types: a map of each dataType, and a boolean indicating whether it was included in the results (this is based on the dataTypes param in the config)
+         * </ul>
+         * @param {Function} [config.failure] A function called when execution of "getDataViews" fails.
+         * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
+         */
+        getDataViews : function(config)
+        {
+            var dataObject = {
+                includeData: true,
+                includeMetadata: false
+            };
+            if(config.dataTypes)
+                dataObject.dataTypes = config.dataTypes;
+
+            return LABKEY.Ajax.request({
+                url : LABKEY.ActionURL.buildURL('study', 'browseData', config.containerPath),
+                method : 'POST',
+                success: getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), false, config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
+                jsonData : dataObject,
+                headers : {
+                    'Content-Type' : 'application/json'
+                }
+            });
+        },
+
         /**
         * Update rows.
         * @param {Object} config An object which contains the following configuration properties.
