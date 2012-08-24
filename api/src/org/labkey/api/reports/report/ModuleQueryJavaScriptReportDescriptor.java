@@ -93,6 +93,8 @@ public class ModuleQueryJavaScriptReportDescriptor extends ModuleJavaScriptRepor
     @Override
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
-        return _dependencies;
+        if (null != _dependencies)
+            return _dependencies;
+        return new LinkedHashSet<ClientDependency>();
     }
 }
