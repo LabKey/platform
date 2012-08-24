@@ -784,4 +784,10 @@ public class StudyServiceImpl implements StudyService.Service
 
         return alternateIdMap;
     }
+
+    @Override
+    public Study[] getAllStudies(Container root, User user)
+    {
+        return StudyManager.getInstance().getAllStudies(root, user);
+    }
 }
