@@ -158,6 +158,16 @@ public interface FolderType
 
     public List<FolderTab> getDefaultTabs();
 
+    /** @return The default tab to select, which defaults to the first (including for non-tabbed folders) */
+    public FolderTab getDefaultTab();
+
     /** @return whether this is intended to be used exclusively for workbooks */
     public boolean isWorkbookType();
+
+    /**
+     * @return The pageId, which is primarily intended to support tabbed folders.  By default it will return
+     * Portal.DEFAULT_PORTAL_PAGE_ID
+     */
+    public String getPageId(ViewContext ctx, String pageId);
 }
+

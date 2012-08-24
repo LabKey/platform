@@ -48,6 +48,7 @@ public class SimpleFolderTab extends FolderTab.PortalPage
     {
         super(tab.getName(), tab.getCaption());
 
+        //initialize from XML:
         if (tab.getPreferredWebParts() != null)
         {
             _preferredWebParts = SimpleFolderType.createWebParts(tab.getPreferredWebParts().getWebPartArray(), log);
@@ -92,7 +93,6 @@ public class SimpleFolderTab extends FolderTab.PortalPage
     @Override
     public boolean isSelectedPage(ViewContext viewContext)
     {
-        //TODO: URL param??
         ActionURL currentURL = viewContext.getActionURL();
 
         String pageName = currentURL.getParameter("pageId");

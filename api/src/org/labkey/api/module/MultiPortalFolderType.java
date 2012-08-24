@@ -15,6 +15,7 @@
  */
 package org.labkey.api.module;
 
+import com.google.common.collect.Iterables;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.view.FolderTab;
@@ -26,7 +27,9 @@ import org.labkey.api.view.template.PageConfig;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -35,6 +38,9 @@ import java.util.Set;
  */
 public abstract class MultiPortalFolderType extends DefaultFolderType
 {
+    private String _activePortalPage = null;
+    protected FolderTab _defaultTab;
+
     public MultiPortalFolderType(String name, String description, @Nullable List<Portal.WebPart> requiredParts, @Nullable List<Portal.WebPart> preferredParts, Set<Module> activeModules, Module defaultModule)
     {
         super(name, description, requiredParts, preferredParts, activeModules, defaultModule);
@@ -46,26 +52,65 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         return true;
     }
 
-    @Override @NotNull
-    public AppBar getAppBar(ViewContext ctx, PageConfig pageConfig)
+    private Collection<Portal.WebPart> getTabs(ViewContext ctx)
     {
         Collection<Portal.WebPart> tabs = Portal.getParts(ctx.getContainer(), FolderTab.FOLDER_TAB_PAGE_ID);
 
         if (tabs == null || tabs.isEmpty())
             tabs = resetDefaultTabs(ctx.getContainer());
 
+        return tabs;
+    }
+
+    @Override @NotNull
+    public AppBar getAppBar(ViewContext ctx, PageConfig pageConfig)
+    {
+        Collection<Portal.WebPart> tabs = getTabs(ctx);
+
         List<NavTree> buttons = new ArrayList<NavTree>();
 
+        _activePortalPage = null;
+        Map<String, NavTree> navMap = new HashMap<String, NavTree>();
+        Map<String, Portal.WebPart> tabMap = new HashMap<String, Portal.WebPart>();
         for (Portal.WebPart tab : tabs)
         {
             FolderTab folderTab = findTab(tab.getName());
+            tabMap.put(tab.getName(), tab);
             if (folderTab != null && folderTab.isVisible(ctx))
             {
                 String label = folderTab.getCaption(ctx);
                 NavTree nav = new NavTree(label, folderTab.getURL(ctx));
                 buttons.add(nav);
+                navMap.put(tab.getName(), nav);
                 if (folderTab.isSelectedPage(ctx))
+                {
                     nav.setSelected(true);
+                    _activePortalPage = folderTab.getName();
+                }
+            }
+        }
+
+        if (_activePortalPage == null)
+        {
+            Portal.WebPart wp = null;
+            if (getDefaultTab() != null)
+            {
+                FolderTab folderTab = findTab(getDefaultTab().getName());
+                wp = tabMap.get(folderTab.getName());
+
+            }
+
+            //if no default tab is found, default to the first
+            if (wp == null)
+            {
+                wp = Iterables.get(tabs, 0);
+            }
+
+            if (wp != null)
+            {
+                _activePortalPage = wp.getName();
+                NavTree nav = navMap.get(wp.getName());
+                nav.setSelected(true);
             }
         }
 
@@ -73,4 +118,24 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
     }
 
     protected abstract String getFolderTitle(ViewContext context);
+
+    @Override
+    public String getPageId(ViewContext ctx, String pageId)
+    {
+        String page = null != pageId ? pageId :
+            _activePortalPage != null ? _activePortalPage : Portal.DEFAULT_PORTAL_PAGE_ID;
+
+        //NOTE: this is a hack for backwards compatibility.  the left-most tab should always use
+        // Portal.DEFAULT_PORTAL_PAGE_ID as the pageId.
+        if (getDefaultTab() != null && getDefaultTab().getName().equals(page))
+            page = Portal.DEFAULT_PORTAL_PAGE_ID;
+
+        return page;
+    }
+
+    @Override @Nullable
+    public FolderTab getDefaultTab()
+    {
+        return _defaultTab == null ? getDefaultTabs().get(0) : _defaultTab;
+    }
 }

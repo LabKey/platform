@@ -121,7 +121,8 @@ public class SimpleFolderType extends MultiPortalFolderType
 
     private List<FolderTab> createDefaultTab(FolderType type)
     {
-        FolderTab tab = new FolderTab(type.getName() + " Dashboard")
+        final String caption = type.getName() + " Dashboard";
+        FolderTab tab = new FolderTab(Portal.DEFAULT_PORTAL_PAGE_ID, caption)
         {
             @Override
             public boolean isSelectedPage(ViewContext viewContext)
@@ -134,6 +135,12 @@ public class SimpleFolderType extends MultiPortalFolderType
             {
                 return getStartURL(context.getContainer(), context.getUser());
             }
+
+            @Override
+            public Set<String> getLegacyNames()
+            {
+                return Collections.singleton(caption);
+            }
         };
         return Collections.singletonList(tab);
     }
@@ -144,7 +151,8 @@ public class SimpleFolderType extends MultiPortalFolderType
 
         for (FolderTabDocument.FolderTab tab : references)
         {
-            tabs.add(new SimpleFolderTab(tab, log));
+            FolderTab newTab = new SimpleFolderTab(tab, log);
+            tabs.add(newTab);
         }
 
         return tabs;
@@ -199,9 +207,42 @@ public class SimpleFolderType extends MultiPortalFolderType
             requiredParts = createWebParts(type.getRequiredWebParts().getWebPartArray(), log);
 
         if (type.getFolderTabs() != null)
+        {
+            //if folderTabs are provided, only allow other webparts if they are in the menu
+            if (preferredParts != null || requiredParts != null)
+            {
+                boolean hasError = false;
+                if (preferredParts != null)
+                {
+                    for (Portal.WebPart wp : preferredParts)
+                    {
+                        if (!wp.getLocation().equals(WebPartFactory.LOCATION_MENUBAR))
+                            hasError = true;
+                    }
+                }
+                if (requiredParts != null)
+                {
+                    for (Portal.WebPart wp : requiredParts)
+                    {
+                        if (!wp.getLocation().equals(WebPartFactory.LOCATION_MENUBAR))
+                            hasError = true;
+                    }
+                }
+                if (hasError)
+                    log.error("Error in " + _folderTypeFile.getName() + ".  A folderType that contains folderTabs cannot also provide preferredWebparts or requiredWebparts with locations outside the menubar.");
+            }
             _folderTabs = createFolderTabs(type.getFolderTabs().getFolderTabArray(), log);
+        }
         else
+        {
             _folderTabs = createDefaultTab(type);
+        }
+
+        if (_folderTabs.size() > 0)
+        {
+            _defaultTab = _folderTabs.get(0);
+            _folderTabs.get(0).setIsDefaultTab(true);
+        }
 
         setWorkbookType(type.isSetWorkbookType() && type.getWorkbookType());
         setForceAssayUploadIntoWorkbooks(type.getForceAssayUploadIntoWorkbooks());
@@ -218,7 +259,8 @@ public class SimpleFolderType extends MultiPortalFolderType
             activeModules.add(module);
         }
         _activeModules = activeModules;
-        _defaultModule = getModule(type.getDefaultModule());
+        if (type.getDefaultModule() != null)
+            _defaultModule = getModule(type.getDefaultModule());
         _lastModified = _folderTypeFile.getLastModified();
     }
 

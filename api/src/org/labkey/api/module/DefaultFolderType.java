@@ -109,6 +109,12 @@ public class DefaultFolderType implements FolderType
         return Collections.singletonList(tab);
     }
 
+    @Override
+    public FolderTab getDefaultTab()
+    {
+        return getDefaultTabs().get(0);
+    }
+
     public void configureContainer(Container c, User user)
     {
         List<Portal.WebPart> required = getRequiredWebParts();
@@ -419,5 +425,10 @@ public class DefaultFolderType implements FolderType
     public boolean isMenubarEnabled()
     {
         return menubarEnabled;
+    }
+
+    public String getPageId(ViewContext ctx, String pageId)
+    {
+        return Portal.DEFAULT_PORTAL_PAGE_ID;
     }
 }

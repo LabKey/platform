@@ -44,6 +44,8 @@ public abstract class FolderTab
 
     private final String _name;
     private final String _caption;
+    private boolean _isDefaultTab = false;
+    protected Set<String> _legacyNames = new HashSet<String>();
 
     /** Controllers and their child actions (both are Spring Controller classes) claimed by this tab */
     private Set<Class<? extends Controller>> _controllersAndActions = new HashSet<Class<? extends Controller>>();
@@ -101,7 +103,7 @@ public abstract class FolderTab
         public void initializeContent(Container container)
         {
             // Initialize the portal pages for each of the tabs
-            Collection<Portal.WebPart> webParts = Portal.getParts(container, getName());
+            Collection<Portal.WebPart> webParts = Portal.getParts(container, getDbName());
 
             if (webParts.size() == 0)
             {
@@ -109,7 +111,7 @@ public abstract class FolderTab
 
                 if (parts.size() > 0)
                 {
-                    Portal.saveParts(container, getName(), parts);
+                    Portal.saveParts(container, getDbName(), parts);
                 }
             }
         }
@@ -161,6 +163,14 @@ public abstract class FolderTab
         return canRead(context.getUser(), context.getContainer());
     }
 
+    public String getDbName()
+    {
+        // NOTE: this is for backwards compatibility.  many existing tabbed folders use Portal.DEFAULT_PORTAL_PAGE_ID
+        // as the pageId, even if it has a different name.  When this folderType was created, one of the tabs
+        // should have been specified as the default tab.  if no tab was selected, the left-most became the default
+        return _isDefaultTab ? Portal.DEFAULT_PORTAL_PAGE_ID : _name;
+    }
+
     public String getName()
     {
         return _name;
@@ -173,7 +183,7 @@ public abstract class FolderTab
 
     public Set<String> getLegacyNames()
     {
-        return Collections.emptySet();
+        return _legacyNames;
     }
 
     public boolean canRead(User u, Container c)
@@ -188,5 +198,10 @@ public abstract class FolderTab
         }
 
         return true;
+    }
+
+    public void setIsDefaultTab(boolean isDefault)
+    {
+        _isDefaultTab = isDefault;
     }
 }

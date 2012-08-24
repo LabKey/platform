@@ -96,6 +96,12 @@ public class CustomFolderType implements FolderType
         return Collections.emptyList();
     }
 
+    @Override
+    public FolderTab getDefaultTab()
+    {
+        return null;
+    }
+
     @NotNull
     public AppBar getAppBar(ViewContext context, PageConfig pageConfig)
     {
@@ -210,4 +216,9 @@ public class CustomFolderType implements FolderType
         return false;
     }
 
+    @Override
+    public String getPageId(ViewContext ctx, String pageId)
+    {
+        return Portal.DEFAULT_PORTAL_PAGE_ID;
+    }
 }
