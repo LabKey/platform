@@ -261,7 +261,7 @@ public class SaveAssayBatchAction extends AbstractAssayAPIAction<SimpleApiJsonFo
         // include any data rows
         if (dataArray.length() > 0 && outputData.isEmpty())
         {
-            newData = DefaultAssayRunCreator.createData(run.getContainer(), null, "Analysis Results", provider.getDataType());
+            newData = DefaultAssayRunCreator.createData(run.getContainer(), null, "Analysis Results", provider.getDataType(), true);
             newData.save(getViewContext().getUser());
             outputData.put(newData, ExpDataRunInput.DEFAULT_ROLE);
         }
