@@ -546,7 +546,7 @@ public class ListDefinitionImpl implements ListDefinition
     @Override
     public int insertListItems(User user, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress) throws IOException
     {
-        return insertListItemsOld(user, loader, errors, attachmentDir, progress);
+        return insertListItemsETL(user, loader, errors, attachmentDir, progress);
     }
 
 
@@ -823,10 +823,14 @@ public class ListDefinitionImpl implements ListDefinition
             p.run();
             int inserted = p.getRowCount();
 
-            addAuditEvent(user, "Bulk inserted " + inserted + " rows to list.");
-
-            ExperimentService.get().commitTransaction();
-            return inserted;
+            if (!errors.hasErrors())
+            {
+                if (inserted > 0)
+                    addAuditEvent(user, "Bulk inserted " + inserted + " rows to list.");
+                ExperimentService.get().commitTransaction();
+                return inserted;
+            }
+            return 0;
         }
         finally
         {

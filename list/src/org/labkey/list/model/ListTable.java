@@ -335,11 +335,10 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
     @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, boolean forImport, BatchValidationException errors)
     {
+        // NOTE: it's a little ambiguious how to factor code between persistRows() and createImportETL()
         data = new _DataIteratorBuilder(data);
         data.setForImport(forImport);
         DataIteratorBuilder ins = TableInsertDataIterator.create(data, this, _list.getContainer(), forImport, errors);
-        // TODO handle attachments?
-        // attach = new AddAttachmentDataIterator.create(ins, this, errors);
         return ins;
     }
 
@@ -375,7 +374,6 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
                 if (StringUtils.equalsIgnoreCase(_list.getKeyName(), col.getName()))
                 {
                     keyColumnInput = c;
-                    keyColumnOutput = c;
                     if (_list.getKeyType() == ListDefinition.KeyType.AutoIncrementInteger)
                         continue;
                 }
@@ -384,7 +382,9 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
 //                    continue;
                 if (StringUtils.equalsIgnoreCase("listid", col.getName()))
                     continue;
-                it.addColumn(c);
+                int out = it.addColumn(c);
+                if (keyColumnInput==c)
+                    keyColumnOutput = out;
             }
 
             if (_list.getKeyType() == ListDefinition.KeyType.AutoIncrementInteger)
