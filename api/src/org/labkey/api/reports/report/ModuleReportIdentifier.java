@@ -97,14 +97,17 @@ public class ModuleReportIdentifier extends AbstractReportIdentifier
 
     public Report getReport(ContainerUser cu)
     {
-        if (null == getModule())
-            return null;
+        if (null != getModule())
+        {
+            ReportService.I service = ReportService.get();
+            ReportDescriptor d = service.getModuleReportDescriptor(
+                    getModule(), cu.getContainer(), cu.getUser(), getReportPath().toString("","")
+            );
 
-        ReportService.I service = ReportService.get();
-        ReportDescriptor d = service.getModuleReportDescriptor(
-                getModule(), cu.getContainer(), cu.getUser(), getReportPath().toString("","")
-        );
+            if (null != d)
+                return service.createReportInstance(d);
+        }
 
-        return service.createReportInstance(d);
+        return null;
     }
 }
