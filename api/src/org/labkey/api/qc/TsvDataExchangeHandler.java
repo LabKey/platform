@@ -644,7 +644,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                         ExpData data = ExperimentService.get().getExpDataByURL(entry.getValue(), context.getContainer());
                         if (data == null)
                         {
-                            data = DefaultAssayRunCreator.createData(context.getContainer(), entry.getValue(), "transformed output", new DataType(entry.getKey()));
+                            data = DefaultAssayRunCreator.createData(context.getContainer(), entry.getValue(), "transformed output", new DataType(entry.getKey()), true);
                             data.setName(entry.getValue().getName());
                         }
 

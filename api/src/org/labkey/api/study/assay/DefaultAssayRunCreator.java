@@ -25,7 +25,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
@@ -359,14 +358,14 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     {
     }
 
-    public static ExpData createData(Container c, File file, String name, DataType dataType)
+    public static ExpData createData(Container c, File file, String name, DataType dataType, boolean reuseExistingDatas)
     {
         ExpData data = null;
         if (file != null)
         {
             data = ExperimentService.get().getExpDataByURL(file, c);
         }
-        if (data != null && data.getRun() != null)
+        if (!reuseExistingDatas && data != null && data.getRun() != null)
         {
             // There's an existing data, but it's already marked as being created by another run, so create a new one
             // for the same path so the new run claim it as its own
@@ -410,7 +409,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
         for (Map.Entry<String, File> entry : files.entrySet())
         {
-            ExpData data = DefaultAssayRunCreator.createData(context.getContainer(), entry.getValue(), entry.getValue().getName(), getProvider().getDataType());
+            ExpData data = DefaultAssayRunCreator.createData(context.getContainer(), entry.getValue(), entry.getValue().getName(), getProvider().getDataType(), context.getReRunId() == null);
             outputDatas.put(data, ExpDataRunInput.DEFAULT_ROLE);
         }
 
@@ -490,7 +489,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             }
             dataType = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
         }
-        ExpData data = createData(container, relatedFile, relatedFile.getName(), dataType);
+        ExpData data = createData(container, relatedFile, relatedFile.getName(), dataType, true);
         if (data.getSourceApplication() == null)
         {
             return new Pair<ExpData, String>(data, roleName);
