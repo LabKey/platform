@@ -71,7 +71,7 @@ import java.util.concurrent.TimeUnit;
 
 
 public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
-{
+ {
     private static final Logger _log = Logger.getLogger(SchemaTableInfo.class);
 
     // Table properties
@@ -788,7 +788,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, boolean forImport, BatchValidationException errors)
     {
-        return TableInsertDataIterator.create(data, this, forImport, errors);
+        return TableInsertDataIterator.create(data, this, null, forImport, errors);
     }
 
     @Override

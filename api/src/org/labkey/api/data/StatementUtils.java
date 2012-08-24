@@ -111,7 +111,7 @@ public class StatementUtils
      * This shouldn't be a big problem since we don't usually need to optimize the one row case, and we're moving
      * to provisioned tables for major datatypes.
      */
-    public static Parameter.ParameterMap insertStatement(Connection conn, TableInfo table, @Nullable Container c, User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
+    public static Parameter.ParameterMap insertStatement(Connection conn, TableInfo table, @Nullable Container c, @Nullable User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
     {
         return createStatement(conn, table, c, user, selectIds, autoFillDefaultColumns, true);
     }
@@ -131,6 +131,7 @@ public class StatementUtils
     {
         return createStatement(conn, table, c, user, selectIds, autoFillDefaultColumns, false);
     }
+
 
     public static Parameter.ParameterMap createStatement(Connection conn, TableInfo t, @Nullable Container c, User user, boolean selectIds, boolean autoFillDefaultColumns, boolean insert) throws SQLException
     {
@@ -194,7 +195,9 @@ public class StatementUtils
 
                 useVariables = d.isPostgreSQL();
                 sqlfDeclare.append("DECLARE ").append(objectIdVar).append(" INT");
-                containerParameter = new Parameter("container", JdbcType.VARCHAR);
+
+                if (null == c)
+                    containerParameter = new Parameter("container", JdbcType.VARCHAR);
 //                if (autoFillDefaultColumns && null != c)
 //                    containerParameter.setValue(c.getId(), true);
 
@@ -204,11 +207,17 @@ public class StatementUtils
                 // no properties in the domain when the row was originally inserted
                 sqlfInsertObject.append("INSERT INTO exp.Object (container, objecturi) ");
                 sqlfInsertObject.append("SELECT ");
-                appendParameterOrVariable(sqlfInsertObject, d, useVariables, containerParameter, parameterToVariable);
-                sqlfInsertObject.append(" AS ObjectURI,");
+                if (null==containerParameter)
+                    sqlfInsertObject.append("'" + c.getId() + "'");
+                else
+                    appendParameterOrVariable(sqlfInsertObject, d, useVariables, containerParameter, parameterToVariable);
+                sqlfInsertObject.append(" AS Container,");
                 appendParameterOrVariable(sqlfInsertObject, d, useVariables, objecturiParameter, parameterToVariable);
-                sqlfInsertObject.append(" AS Container WHERE NOT EXISTS (SELECT ObjectURI FROM exp.Object WHERE Container = ");
-                appendParameterOrVariable(sqlfInsertObject, d, useVariables, containerParameter, parameterToVariable);
+                sqlfInsertObject.append(" AS ObjectURI WHERE NOT EXISTS (SELECT ObjectURI FROM exp.Object WHERE Container = ");
+                if (null==containerParameter)
+                    sqlfInsertObject.append("'" + c.getId() + "'");
+                else
+                    appendParameterOrVariable(sqlfInsertObject, d, useVariables, containerParameter, parameterToVariable);
                 sqlfInsertObject.append(" AND ObjectURI = ");
                 appendParameterOrVariable(sqlfInsertObject, d, useVariables, objecturiParameter, parameterToVariable);
                 sqlfInsertObject.append(")");
@@ -216,7 +225,10 @@ public class StatementUtils
                 // Grab the object's ObjectId
                 sqlfSelectObject.append(setKeyword).append(objectIdVar).append(" = (");
                 sqlfSelectObject.append("SELECT ObjectId FROM exp.Object WHERE Container = ");
-                appendParameterOrVariable(sqlfSelectObject, d, useVariables, containerParameter, parameterToVariable);
+                if (null==containerParameter)
+                    sqlfSelectObject.append("'" + c.getId() + "'");
+                else
+                    appendParameterOrVariable(sqlfSelectObject, d, useVariables, containerParameter, parameterToVariable);
                 sqlfSelectObject.append(" AND ObjectURI = ");
                 appendParameterOrVariable(sqlfSelectObject, d, useVariables, objecturiParameter, parameterToVariable);
                 sqlfSelectObject.append(")");
@@ -251,14 +263,15 @@ public class StatementUtils
         {
             cols.add(new SQLFragment("Container"));
 
-            if (null == containerParameter)
+            if (null == containerParameter && null == c)
             {
                 containerParameter = new Parameter("container", JdbcType.VARCHAR);
-//                if (autoFillDefaultColumns && null != c)
-//                    containerParameter.setValue(c.getId(), true);
             }
 
-            values.add(appendParameterOrVariable(new SQLFragment(), d, useVariables, containerParameter, parameterToVariable));
+            if (null==containerParameter)
+                values.add(sqlfSelectObject.append("'" + c.getId() + "'"));
+            else
+                values.add(appendParameterOrVariable(new SQLFragment(), d, useVariables, containerParameter, parameterToVariable));
             done.add("Container");
         }
 

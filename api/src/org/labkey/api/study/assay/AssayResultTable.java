@@ -391,7 +391,7 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
     @Override
     public DataIteratorBuilder persistRows(DataIteratorBuilder data, boolean forImport, BatchValidationException errors)
     {
-        return TableInsertDataIterator.create(data, this, forImport, errors);
+        return TableInsertDataIterator.create(data, this, null, forImport, errors);
     }
 
     @Override

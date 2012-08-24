@@ -16,7 +16,9 @@
 
 package org.labkey.api.etl;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.StatementUtils;
@@ -35,25 +37,28 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     DbScope _scope = null;
     Connection _conn = null;
     final TableInfo _table;
+    final Container _c;
 
     public static TableInsertDataIterator create(DataIterator data, TableInfo table, BatchValidationException errors)
     {
-        TableInsertDataIterator it = new TableInsertDataIterator(data, table, errors);
+        TableInsertDataIterator it = new TableInsertDataIterator(data, table, null, errors);
         return it;
     }
 
-    public static TableInsertDataIterator create(DataIteratorBuilder data, TableInfo table, boolean forImport, BatchValidationException errors)
+    /** If container != null, it will be set as a constant in the insert statement */
+    public static TableInsertDataIterator create(DataIteratorBuilder data, TableInfo table, @Nullable Container c, boolean forImport, BatchValidationException errors)
     {
-        TableInsertDataIterator it = new TableInsertDataIterator(data.getDataIterator(errors), table, errors);
+        TableInsertDataIterator it = new TableInsertDataIterator(data.getDataIterator(errors), table, c, errors);
         it.setForImport(forImport);
         return it;
     }
 
 
-    protected TableInsertDataIterator(DataIterator data, TableInfo table, BatchValidationException errors)
+    protected TableInsertDataIterator(DataIterator data, TableInfo table, Container c, BatchValidationException errors)
     {
         super(data, null, errors);
         this._table = table;
+        this._c = c;
 
         Map<String,Integer> map = DataIteratorUtil.createColumnNameMap(data);
         for (ColumnInfo col : table.getColumns())
@@ -73,7 +78,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         {
             _scope = ((UpdateableTableInfo)_table).getSchemaTableInfo().getSchema().getScope();
             _conn = _scope.getConnection();
-            _stmt = StatementUtils.insertStatement(_conn, _table, null, null, true, false);
+            _stmt = StatementUtils.insertStatement(_conn, _table, _c, null, true, false);
             super.init();
         }
         catch (SQLException x)
