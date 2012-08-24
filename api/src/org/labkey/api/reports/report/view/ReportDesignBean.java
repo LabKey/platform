@@ -26,6 +26,7 @@ import org.labkey.api.reports.actions.ReportForm;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.util.Pair;
+import org.labkey.api.writer.ContainerUser;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -204,11 +205,11 @@ public class ReportDesignBean extends ReportForm
         _cached = cached;
     }
 
-    public Report getReport() throws Exception
+    public Report getReport(ContainerUser cu) throws Exception
     {
         Report report = null;
         if (null != getReportId())
-            report = getReportId().getReport();
+            report = getReportId().getReport(cu);
         if (report == null)
             report = ReportService.get().createReportInstance(getReportType());
 

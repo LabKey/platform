@@ -57,6 +57,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.visualization.GenericChartReport;
+import org.labkey.api.writer.ContainerUser;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
@@ -1401,7 +1402,7 @@ public class QueryView extends WebPartView<Object>
     @Override
     protected void renderView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
-        if (isReportView())
+        if (isReportView(getViewContext()))
             renderReportView(model, request, response);
         else
             renderDataRegion(response.getWriter());
@@ -1493,9 +1494,9 @@ public class QueryView extends WebPartView<Object>
         return _buttonBarConfig;
     }
 
-    private boolean isReportView()
+    private boolean isReportView(ContainerUser cu)
     {
-        _report = getSettings().getReportView();
+        _report = getSettings().getReportView(cu);
 
         return _report != null && StringUtils.trimToNull(getSettings().getViewName()) == null;
     }

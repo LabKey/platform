@@ -29,6 +29,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
@@ -464,11 +465,13 @@ public class QuerySettings
         return queryDef.getCustomView(context.getUser(), context.getRequest(), getViewName());
     }
 
-    public Report getReportView()
+    public Report getReportView(ContainerUser cu)
     {
         try {
             if (getReportId() != null)
-                return getReportId().getReport();
+            {
+                return getReportId().getReport(cu);
+            }
         }
         catch (Exception e)
         {

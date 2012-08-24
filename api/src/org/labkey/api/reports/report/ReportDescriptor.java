@@ -48,6 +48,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.reportProps.PropertyList;
 import org.labkey.query.xml.*;
@@ -732,5 +733,10 @@ public class ReportDescriptor extends Entity implements SecurableResource
     public Resource getMetaDataFile()
     {
         return null;
+    }
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        return new LinkedHashSet<ClientDependency>();
     }
 }

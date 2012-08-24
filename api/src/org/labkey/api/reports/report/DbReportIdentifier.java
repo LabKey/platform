@@ -17,6 +17,7 @@ package org.labkey.api.reports.report;
 
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.writer.ContainerUser;
 
 /*
 * User: Dave
@@ -78,7 +79,7 @@ public class DbReportIdentifier extends AbstractReportIdentifier
         return _id;
     }
 
-    public Report getReport()
+    public Report getReport(ContainerUser cu)
     {
         if(_id == -1)
             return null;

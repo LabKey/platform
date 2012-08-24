@@ -257,14 +257,19 @@ public class MockModule implements Module
         return null;
     }
 
-    public List<ReportDescriptor> getReportDescriptors(String key, Container container, User user)
+    @Nullable
+    public ReportDescriptor getCachedReport(Path path)
     {
         return null;
     }
 
-    public ReportDescriptor getReportDescriptor(String path)
+    public void cacheReport(Path path, ReportDescriptor descriptor)
     {
-        return null;
+    }
+
+    public Set<Resource> getReportFiles()
+    {
+        return Collections.emptySet();
     }
 
     public Set<ModuleResourceLoader> getResourceLoaders()

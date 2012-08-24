@@ -20,6 +20,7 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.Path;
+import org.labkey.api.writer.ContainerUser;
 
 /*
 * User: Dave
@@ -94,12 +95,16 @@ public class ModuleReportIdentifier extends AbstractReportIdentifier
         return _reportPath;
     }
 
-    public Report getReport()
+    public Report getReport(ContainerUser cu)
     {
         if (null == getModule())
             return null;
 
-        ReportDescriptor descriptor = getModule().getReportDescriptor(getReportPath().toString("",""));
-        return null == descriptor ? null : ReportService.get().createReportInstance(descriptor);
+        ReportService.I service = ReportService.get();
+        ReportDescriptor d = service.getModuleReportDescriptor(
+                getModule(), cu.getContainer(), cu.getUser(), getReportPath().toString("","")
+        );
+
+        return service.createReportInstance(d);
     }
 }

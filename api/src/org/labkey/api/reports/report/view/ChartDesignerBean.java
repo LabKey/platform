@@ -21,6 +21,7 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.util.Pair;
+import org.labkey.api.writer.ContainerUser;
 
 import java.util.List;
 
@@ -210,9 +211,9 @@ public class ChartDesignerBean extends ReportDesignBean
         _imageMapCallbackColumns = imageMapCallbackColumns;
     }
 
-    public Report getReport() throws Exception
+    public Report getReport(ContainerUser cu) throws Exception
     {
-        Report report = super.getReport();
+        Report report = super.getReport(cu);
         if (report != null)
         {
             ChartReportDescriptor descriptor = (ChartReportDescriptor)report.getDescriptor();

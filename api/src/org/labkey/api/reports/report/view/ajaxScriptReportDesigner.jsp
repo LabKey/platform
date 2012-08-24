@@ -43,7 +43,7 @@
     ViewContext ctx = getViewContext();
     Container c = ctx.getContainer();
     ScriptReportBean bean = me.getModelBean();
-    ScriptReport report = (ScriptReport)bean.getReport();
+    ScriptReport report = (ScriptReport) bean.getReport(ctx);
     List<Report> sharedReports = report.getAvailableSharedScripts(ctx, bean);
     List<String> includedReports = bean.getIncludedReports();
     String helpHtml = report.getDesignerHelpHtml();
@@ -299,8 +299,9 @@ var f_scope<%=uid%> = new (function() {
     function viewSuccess(response)
     {
         // Update the view div with the returned HTML, and make sure scripts are run
-        viewDivExtElement.update(response.responseText, true);
-        tabsDivExtElement.unmask();
+        LABKEY.Utils.loadAjaxContent(response, viewDivExtElement, function() {
+            tabsDivExtElement.unmask();
+        })
     }
 
     function viewFailure()

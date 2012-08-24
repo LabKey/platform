@@ -93,6 +93,6 @@ public class AjaxScriptReportView extends JspView<ScriptReportBean>
 
     protected void init(ScriptReportBean bean, Mode mode) throws Exception
     {
-        bean.init(mode);
+        bean.init(getViewContext(), mode);
     }
 }

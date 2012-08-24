@@ -17,13 +17,16 @@
 package org.labkey.api.reports;
 
 import org.apache.xmlbeans.XmlObject;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.Filter;
+import org.labkey.api.module.Module;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -75,6 +78,9 @@ public class ReportService
          * creates new descriptor or report instances.
          */
         public ReportDescriptor createDescriptorInstance(String typeName);
+        public ReportDescriptor getModuleReportDescriptor(Module module, Container container, User user, String path);
+        public List<ReportDescriptor> getModuleReportDescriptors(Module module, Container container, User user, @Nullable String path);
+
         public Report createReportInstance(String typeName);
         public Report createReportInstance(ReportDescriptor descriptor);
 

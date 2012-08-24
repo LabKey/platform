@@ -18,7 +18,12 @@ package org.labkey.api.reports.report;
 
 import org.labkey.api.query.CreateJavaScriptModel;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.reports.report.view.AjaxRunScriptReportView;
+import org.labkey.api.reports.report.view.AjaxScriptReportView;
 import org.labkey.api.view.*;
+import org.labkey.api.view.template.ClientDependency;
+
+import java.util.LinkedHashSet;
 
 /*
 * User: adam
@@ -100,8 +105,12 @@ public class JavaScriptReport extends ScriptReport
     @Override
     public HttpView renderReport(ViewContext context) throws Exception
     {
-        JspView<JavaScriptReportBean> view = new JspView<JavaScriptReportBean>("/org/labkey/api/reports/report/view/javaScriptReport.jsp", new JavaScriptReportBean(context));
+        JavaScriptReportBean model = new JavaScriptReportBean(context);
+        model.setClientDependencies(getDescriptor().getClientDependencies());
+
+        JspView<JavaScriptReportBean> view = new JspView<JavaScriptReportBean>("/org/labkey/api/reports/report/view/javaScriptReport.jsp", model);
         view.setFrame(WebPartView.FrameType.NONE);
+        view.setClientDependencies(getDescriptor().getClientDependencies());
         return view;
     }
 
@@ -109,14 +118,23 @@ public class JavaScriptReport extends ScriptReport
     {
         public final CreateJavaScriptModel model;
         public final String script;
-        public final boolean moduleBased;
+        private LinkedHashSet<ClientDependency> _dependencies;
 
         private JavaScriptReportBean(ViewContext context) throws Exception
         {
             QueryView qv = createQueryView(context, getDescriptor());
             model = new CreateJavaScriptModel(qv);
             script = getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
-            moduleBased = getDescriptor().isModuleBased();
+        }
+
+        public void setClientDependencies(LinkedHashSet<ClientDependency> dependencies)
+        {
+            _dependencies = dependencies;
+        }
+
+        public LinkedHashSet<ClientDependency> getClientDependencies()
+        {
+            return _dependencies;
         }
     }
 }

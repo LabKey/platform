@@ -156,6 +156,13 @@ public abstract class ScriptReport extends AbstractReport
 
     public boolean canEdit(User user, Container container, List<ValidationError> errors)
     {
+        // HACK: We shouldn't be using canEdit permissions to check during view. Rather we should new up
+        // a report and check using standard security.
+        if (errors.isEmpty() && getDescriptor().isModuleBased())
+        {
+            return true;
+        }
+
         super.canEdit(user, container, errors);
 
         if (errors.isEmpty())

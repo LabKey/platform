@@ -19,6 +19,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.writer.ContainerUser;
 
 import java.io.Serializable;
 
@@ -31,7 +32,7 @@ import java.io.Serializable;
  *
  * @author bmaclean
  */
-public class ViewBackgroundInfo implements Serializable
+public class ViewBackgroundInfo implements Serializable, ContainerUser
 {
     // Helper variables stored for use outside LabKey Server context
     private String _containerId;

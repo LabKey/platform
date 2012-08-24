@@ -28,6 +28,7 @@ import org.labkey.api.reports.report.view.AjaxScriptReportView.Mode;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.api.writer.ContainerUser;
 
 import java.util.*;
 
@@ -63,10 +64,10 @@ public class ScriptReportBean extends ReportDesignBean
     // Bean has been populated and is about to be used in a view... initialize unset values and properties.
     // This is redundant with RunScriptReportView.populateReportForm(), but we're trying to move all this handling into
     // the bean.
-    public void init(Mode mode) throws Exception
+    public void init(ContainerUser cu, Mode mode) throws Exception
     {
         setMode(mode);
-        ScriptReport report = (ScriptReport)getReport(); // TODO: Should use generics (ScriptReportBean<ScriptReport>)
+        ScriptReport report = (ScriptReport)getReport(cu); // TODO: Should use generics (ScriptReportBean<ScriptReport>)
 
         if (null == _script)
         {
@@ -114,9 +115,9 @@ public class ScriptReportBean extends ReportDesignBean
         _isDirty = dirty;
     }
 
-    public Report getReport() throws Exception
+    public Report getReport(ContainerUser cu) throws Exception
     {
-        Report report = super.getReport();
+        Report report = super.getReport(cu);
 
         if (report != null)
         {

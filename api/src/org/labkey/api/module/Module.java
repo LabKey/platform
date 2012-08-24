@@ -238,19 +238,12 @@ public interface Module extends Comparable<Module>
      */
     public String getSqlScriptsPath(@NotNull SqlDialect dialect);
 
-    /**
-     * Returns a list of report descriptors for a given key
-     * @param key The report key
-     * @return A list of ReportDescriptors for that key
-     */
-    public List<ReportDescriptor> getReportDescriptors(String key, Container container, User user);
+    @Nullable
+    public ReportDescriptor getCachedReport(Path path);
 
-    /**
-     * Returns the report descriptor for the given path
-     * @param path The report path (key + report name)
-     * @return The report descriptor or null if not found
-     */
-    public ReportDescriptor getReportDescriptor(String path);
+    public void cacheReport(Path path, ReportDescriptor descriptor);
+
+    public Set<Resource> getReportFiles();
 
     /**
      * Modules can provide a set ModuleResourceLoaders which will be used

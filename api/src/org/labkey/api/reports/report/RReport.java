@@ -260,7 +260,7 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
 
             if (reportId != null)
             {
-                Report report = reportId.getReport();
+                Report report = reportId.getReport(context);
 
                 if (validateSharedPermissions(context, report) && RReport.class.isAssignableFrom(report.getClass()))
                 {

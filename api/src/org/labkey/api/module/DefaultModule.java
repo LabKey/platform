@@ -71,22 +71,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private static final Set<Pair<Class, String>> INSTANTIATED_MODULES = new HashSet<Pair<Class, String>>();
     private Queue<Method> _deferredUpgradeTask = new LinkedList<Method>();
 
-    protected static final FilenameFilter moduleReportFilter = new FilenameFilter(){
-        public boolean accept(File dir, String name)
-        {
-            return name.toLowerCase().endsWith(ModuleRReportDescriptor.FILE_EXTENSION) ||
-                   name.toLowerCase().endsWith(ModuleJavaScriptReportDescriptor.FILE_EXTENSION);
-        }
-    };
-
-    protected static final FilenameFilter moduleReportFilterWithQuery = new FilenameFilter(){
-        public boolean accept(File dir, String name)
-        {
-            return moduleReportFilter.accept(dir, name) ||
-                    name.toLowerCase().endsWith(ModuleQueryReportDescriptor.FILE_EXTENSION);
-        }
-    };
-
     private final Map<String, Class<? extends Controller>> _pageFlowNameToClass = new LinkedHashMap<String, Class<? extends Controller>>();
     private final Map<Class<? extends Controller>, String> _pageFlowClassToName = new HashMap<Class<? extends Controller>, String>();
     private static final String XML_FILENAME = "module.xml";
@@ -170,10 +154,65 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             for (WebPartFactory part : wpFactories)
                 part.setModule(this);
         }
-
         preloadReports();
     }
 
+    Set<Resource> _reportFiles = Collections.synchronizedSet(new TreeSet<Resource>(new Comparator<Resource>(){
+        @Override
+        public int compare(Resource o, Resource o1)
+        {
+            return o.getPath().compareTo(o1.getPath());
+        }
+    }));
+
+    public static final FilenameFilter moduleReportFilter = new FilenameFilter(){
+        public boolean accept(File dir, String name)
+        {
+            return name.toLowerCase().endsWith(ModuleRReportDescriptor.FILE_EXTENSION) ||
+                   name.toLowerCase().endsWith(ModuleJavaScriptReportDescriptor.FILE_EXTENSION);
+        }
+    };
+
+    protected static final FilenameFilter moduleReportFilterWithQuery = new FilenameFilter(){
+        public boolean accept(File dir, String name)
+        {
+            return moduleReportFilter.accept(dir, name) ||
+                    name.toLowerCase().endsWith(ModuleQueryReportDescriptor.FILE_EXTENSION);
+        }
+    };
+
+    private void preloadReports()
+    {
+        Resource r = getQueryReportsDir();
+        if (null == r || !r.isCollection())
+            return;
+        _findReports(r);
+    }
+
+
+    private void _findReports(Resource dir)
+    {
+        for (Resource file : dir.list())
+        {
+            if (file.isCollection())
+                _findReports(file);
+            else if (moduleReportFilterWithQuery.accept(null, file.getName()))
+                _reportFiles.add(file);
+        }
+    }
+
+    Resource _queryReportsDir = null;
+    protected Resource getQueryReportsDir()
+    {
+        if (null == _queryReportsDir)
+            _queryReportsDir = getModuleResource("reports/schemas");
+        return _queryReportsDir;
+    }
+
+    public Set<Resource> getReportFiles()
+    {
+        return _reportFiles;
+    }
 
     protected abstract void init();
     protected abstract Collection<WebPartFactory> createWebPartFactories();
@@ -611,239 +650,20 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return fileNames;
     }
 
-
     public String getSqlScriptsPath(@NotNull SqlDialect dialect)
     {
         return "schemas/dbscripts/" + dialect.getSQLScriptPath() + "/";
     }
 
-
-    protected Path reportKeyToLegalFile(Path key)
+    @Nullable
+    public ReportDescriptor getCachedReport(Path path)
     {
-        if (null == key)
-            return null;
-
-        Path legalPath = Path.emptyPath;
-
-        for (int idx = 0; idx < key.size() ; ++idx)
-            legalPath = legalPath.append(FileUtil.makeLegalName(key.get(idx)));
-
-        return legalPath;
+        return REPORT_DESCRIPTOR_CACHE.get(path);
     }
 
-
-    Set<Resource> _reportFiles = Collections.synchronizedSet(new TreeSet<Resource>(new Comparator<Resource>(){
-        @Override
-        public int compare(Resource o, Resource o1)
-        {
-            return o.getPath().compareTo(o1.getPath());
-        }
-    }));
-
-
-    private void preloadReports()
+    public void cacheReport(Path path, ReportDescriptor descriptor)
     {
-        Resource r = getQueryReportsDir();
-        if (null == r || !r.isCollection())
-            return;
-        _findReports(r);
-    }
-
-
-    private void _findReports(Resource dir)
-    {
-        for (Resource file : dir.list())
-        {
-            if (file.isCollection())
-                _findReports(file);
-            else if (moduleReportFilterWithQuery.accept(null, file.getName()))
-                _reportFiles.add(file);
-        }
-    }
-
-
-    protected List<ReportDescriptor> getAllReportDescriptors(Container container, User user)
-    {
-        ArrayList<ReportDescriptor> list = new ArrayList<ReportDescriptor>(_reportFiles.size());
-        Resource[] files = _reportFiles.toArray(new Resource[0]);
-
-        // Keep files that might be Query reports (end in .xml); below we'll remove ones that are associated with R or JS reports
-        HashMap<String, Resource> possibleQueryReportFiles = new HashMap<String, Resource>();
-        for (Resource file : files)
-        {
-            if (file.getName().toLowerCase().endsWith(ModuleQueryReportDescriptor.FILE_EXTENSION))
-                possibleQueryReportFiles.put(file.getName(), file);
-        }
-
-        for (Resource file : files)
-        {
-            if (!moduleReportFilter.accept(null, file.getName()))
-                continue;
-            ReportDescriptor descriptor = REPORT_DESCRIPTOR_CACHE.get(file.getPath());
-            if (null != descriptor && descriptor.isStale())
-                descriptor = null;
-            if (null == descriptor && file.exists())
-            {
-                // NOTE: reportKeyToLegalFile() is not a two-way mapping, this can cause inconsistencies
-                // so don't cache files with _ (underscore) in path
-                descriptor = createReportDescriptor(file, container, user);
-                if (null != descriptor && !file.getPath().toString().contains("_"))
-                    REPORT_DESCRIPTOR_CACHE.put(file.getPath(), descriptor);
-            }
-            if (null != descriptor)
-            {
-                list.add(descriptor);
-                if (null != descriptor.getMetaDataFile())
-                    possibleQueryReportFiles.remove(descriptor.getMetaDataFile().getName());
-            }
-        }
-
-        // Anything left if this map should be a Query Report
-        for (Resource file : possibleQueryReportFiles.values())
-        {
-            ReportDescriptor descriptor = REPORT_DESCRIPTOR_CACHE.get(file.getPath());
-            if (null == descriptor || descriptor.isStale())
-            {
-                descriptor = createReportDescriptor(file, container, user);
-                REPORT_DESCRIPTOR_CACHE.put(file.getPath(), descriptor);
-            }
-            list.add(descriptor);
-        }
-        return list;
-    }
-
-
-    public List<ReportDescriptor> getReportDescriptors(String keyStr, Container container, User user)
-    {
-        if (!AppProps.getInstance().isDevMode() && _reportFiles.isEmpty())
-            return Collections.emptyList();
-
-        if (null == keyStr)
-            return getAllReportDescriptors(container, user);
-
-        Path key = Path.parse(keyStr);
-
-        //currently we support only R reports under the "reports/schemas" directory
-        //in the future, we can also support R reports that are not tied to a schema/query
-        Path legalPath = reportKeyToLegalFile(key);
-        Resource keyDir = getModuleResource(getQueryReportsDir().getPath().append(legalPath));
-
-        if (null != keyDir && keyDir.isCollection())
-        {
-            // Keep files that might be Query reports (end in .xml); below we'll remove ones that are associated with R or JS reports
-            HashMap<String, Resource> possibleQueryReportFiles = new HashMap<String, Resource>();
-            for (Resource file : keyDir.list())
-            {
-                if (file.getName().toLowerCase().endsWith(ModuleQueryReportDescriptor.FILE_EXTENSION))
-                    possibleQueryReportFiles.put(file.getName(), file);
-            }
-
-            List<ReportDescriptor> reportDescriptors = new ArrayList<ReportDescriptor>();
-            for (Resource file : keyDir.list())
-            {
-                if (!moduleReportFilter.accept(null, file.getName()))
-                    continue;
-                ReportDescriptor descriptor = REPORT_DESCRIPTOR_CACHE.get(file.getPath());
-                if (null == descriptor || descriptor.isStale())
-                {
-                    descriptor = createReportDescriptor(key, file, container, user);
-                    REPORT_DESCRIPTOR_CACHE.put(file.getPath(), descriptor);
-                }
-
-                if (null != descriptor && null != descriptor.getMetaDataFile())
-                    possibleQueryReportFiles.remove(descriptor.getMetaDataFile().getName());
-
-                reportDescriptors.add(descriptor);
-            }
-
-            // Anything left if this map should be a Query Report
-            for (Resource file : possibleQueryReportFiles.values())
-            {
-                ReportDescriptor descriptor = REPORT_DESCRIPTOR_CACHE.get(file.getPath());
-                if (null == descriptor || descriptor.isStale())
-                {
-                    descriptor = createReportDescriptor(key, file, container, user);
-                    REPORT_DESCRIPTOR_CACHE.put(file.getPath(), descriptor);
-                }
-                reportDescriptors.add(descriptor);
-            }
-
-            return reportDescriptors;
-        }
-
-        return Collections.emptyList();
-    }
-
-
-    public ReportDescriptor getReportDescriptor(String pathStr)
-    {
-        if (!AppProps.getInstance().isDevMode() && _reportFiles.isEmpty())
-            return null;
-        if (null == pathStr)
-            return null;
-
-        Path reportPath = Path.parse(pathStr);
-
-        //the report path is a relative path from the module's reports directory
-        //so the report key will be the middle two sections of the path
-        //e.g., for path 'schemas/ms2/peptides/myreport.r', key is 'ms2/peptides'
-
-        if (getQueryReportsDir().getName().equals(reportPath.get(0)) && reportPath.size() >= 3)
-            reportPath = reportPath.subpath(1,reportPath.size());
-
-        Path legalFilePath = reportKeyToLegalFile(reportPath);
-        Path fullLegalPath = getQueryReportsDir().getPath().append(legalFilePath);
-
-        ReportDescriptor descriptor = REPORT_DESCRIPTOR_CACHE.get(fullLegalPath);
-
-        if (null == descriptor || descriptor.isStale())
-        {
-            Resource reportFile = getModuleResource(fullLegalPath);
-            if (null != reportFile && reportFile.isFile())
-            {
-                Path key;
-                if (legalFilePath.size() >= 2)
-                    key = legalFilePath.subpath(0,2);
-                else
-                    key = Path.parse("StandAloneReport");
-
-                descriptor = createReportDescriptor(key, reportFile, null, null);
-                if (null != descriptor)
-                    REPORT_DESCRIPTOR_CACHE.put(reportFile.getPath(), descriptor);
-            }
-        }
-
-        return descriptor;
-    }
-
-    protected ReportDescriptor createReportDescriptor(Resource reportFile, Container container, User user)
-    {
-        return createReportDescriptor(null, reportFile, container, user);
-    }
-
-    protected ReportDescriptor createReportDescriptor(@Nullable Path pathKey, Resource reportFile, Container container, User user)
-    {
-        Path reportKey;
-
-        if (null == pathKey)
-            reportKey = getQueryReportsDir().getPath().relativize(reportFile.getPath());
-        else
-            reportKey = new Path(getQueryReportsDir().getName()).append(pathKey).append(reportFile.getName());
-
-        Path parent = reportKey.getParent();
-        String lowerKey = reportKey.toString().toLowerCase();
-
-        _log.debug("create module report: key=" + parent.toString("","") + " file=" + reportFile.getPath().toString());
-
-        if (lowerKey.endsWith(ModuleQueryRReportDescriptor.FILE_EXTENSION))
-        {
-            return new ModuleQueryRReportDescriptor(this, parent.toString("",""), reportFile, reportKey, container, user);
-        }
-        else if (lowerKey.endsWith(ModuleQueryJavaScriptReportDescriptor.FILE_EXTENSION))
-        {
-            return new ModuleQueryJavaScriptReportDescriptor(this, parent.toString("",""), reportFile, reportKey, container, user);
-        }
-        return new ModuleQueryReportDescriptor(this, parent.toString("",""), reportFile, reportKey, container, user);
+        REPORT_DESCRIPTOR_CACHE.put(path, descriptor);
     }
 
     protected void loadXmlFile(Resource r)
@@ -939,23 +759,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                 _log.error("Error trying to read and parse the metadata XML for module " + getName() + " from " + r.getPath(), e);
             }
         }
-    }
-
-    Resource _reportsDir = null;
-
-    protected Resource getReportsDir()
-    {
-        if (null == _reportsDir)
-            _reportsDir = getModuleResource("reports");
-        return _reportsDir;
-    }
-
-    Resource _queryReportsDir = null;
-    protected Resource getQueryReportsDir()
-    {
-        if (null == _queryReportsDir)
-            _queryReportsDir = getModuleResource("reports/schemas");
-        return _queryReportsDir;
     }
 
     @Override
@@ -1256,7 +1059,8 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         while (!_deferredUpgradeTask.isEmpty())
         {
-            try {
+            try
+            {
                 Method task = _deferredUpgradeTask.remove();
                 task.invoke(getUpgradeCode(), context);
             }

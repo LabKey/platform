@@ -67,6 +67,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 import org.springframework.validation.Errors;
 
 import javax.imageio.ImageIO;
@@ -555,8 +556,7 @@ public class ReportUtil
                         String security;
                         if (descriptor.getOwner() != null)
                             security = "private";
-                        // FIXME: see 10473: ModuleRReportDescriptor extends securable resource, but doesn't properly implement it.  File-based resources don't have a Container or Owner.
-                        else if (!(descriptor instanceof ModuleRReportDescriptor) && !SecurityPolicyManager.getPolicy(descriptor, false).isEmpty())
+                        else if (!SecurityPolicyManager.getPolicy(descriptor, false).isEmpty())
                             security = "custom"; // 13571: Explicit is a bad name for custom permissions
                         else
                             security = "public";
@@ -660,7 +660,7 @@ public class ReportUtil
         }
 
         @Override
-        public Report getReport()
+        public Report getReport(ContainerUser cu)
         {
             throw new UnsupportedOperationException("No report bound to this id");
         }

@@ -102,9 +102,9 @@ public class RReportJob extends PipelineJob implements Serializable
         {
             Report report = null;
             if (_reportId != null)
-                report = _reportId.getReport();
+                report = _reportId.getReport(getInfo());
             else if (_form != null)
-                report = _form.getReport();
+                report = _form.getReport(getInfo());
             if (report instanceof RReport)
                 return (RReport)report;
 
