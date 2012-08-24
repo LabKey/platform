@@ -276,7 +276,33 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         }
 
         // Anything left if this map should be a Query Report
-        reportDescriptors.addAll(getDescriptorsHelper(possibleQueryReportFiles.values(), module, container, user));
+        for (Resource file : possibleQueryReportFiles.values())
+        {
+            descriptor = module.getCachedReport(file.getPath());
+
+            // cache miss
+            if (null == descriptor || descriptor.isStale())
+            {
+                descriptor = createModuleReportDescriptorInstance(module, file, container, user);
+
+                // NOTE: getLegalFilePath() is not a two-way mapping, this can cause inconsistencies
+                // so don't cache files with _ (underscore) in path
+                if (!file.getPath().toString().contains("_"))
+                    module.cacheReport(file.getPath(), descriptor);
+            }
+
+            descriptor.setContainer(container.getId());
+
+            // Return one file
+            if (legalPath.getName().equals(file.getPath().getName()))
+            {
+                reportDescriptors.clear();
+                reportDescriptors.add(descriptor);
+                return reportDescriptors;
+            }
+
+            reportDescriptors.add(descriptor);
+        }
 
         return reportDescriptors;
     }
