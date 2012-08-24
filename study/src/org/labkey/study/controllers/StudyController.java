@@ -6836,41 +6836,47 @@ public class StudyController extends BaseStudyController
             }
             response.put("types", new JSONObject(types));
 
-            // visible columns
-            Map<String, Map<String, Boolean>> columns = new LinkedHashMap<String, Map<String, Boolean>>();
-
-            columns.put("Type", Collections.singletonMap("checked", getCheckedState("Type", props, false)));
-            columns.put("Author", Collections.singletonMap("checked", getCheckedState("Author", props, false)));
-            columns.put("Modified", Collections.singletonMap("checked", getCheckedState("Modified", props, false)));
-            columns.put("Status", Collections.singletonMap("checked", getCheckedState("Status", props, false)));
-            columns.put("Access", Collections.singletonMap("checked", getCheckedState("Access", props, true)));
-            columns.put("Details", Collections.singletonMap("checked", getCheckedState("Details", props, true)));
-            columns.put("Data Cut Date", Collections.singletonMap("checked", getCheckedState("Data Cut Date", props, false)));
-
-            response.put("visibleColumns", columns);
-
-            // provider editor information
-            Map<String, Map<String, Object>> viewTypeProps = new HashMap<String, Map<String, Object>>();
-            for (DataViewProvider.Type type : visibleDataTypes)
-            {
-                DataViewProvider provider = DataViewService.get().getProvider(type);
-                DataViewProvider.EditInfo editInfo = provider.getEditInfo();
-                if (editInfo != null)
-                {
-                    Map<String, Object> info = new HashMap<String, Object>();
-                    for (String propName : editInfo.getEditableProperties(getContainer(), getUser()))
-                    {
-                        info.put(propName, true);
-                    }
-                    viewTypeProps.put(type.getName(), info);
-                }
-            }
-            response.put("editInfo", viewTypeProps);
             String dateFormat = StudyManager.getInstance().getDefaultDateFormatString(getViewContext().getContainer());
             if (dateFormat == null)
                 dateFormat = DateUtil.getStandardDateFormatString();
 
-            response.put("dateFormat", ExtUtil.toExtDateFormat(dateFormat));
+
+            //The purpose of this flag is so LABKEY.Query.getDataViews() can omit additional information only used to render the
+            //webpart.  this also leaves flexibility to change that metadata
+            if (form.includeMetadata())
+            {
+                // visible columns
+                Map<String, Map<String, Boolean>> columns = new LinkedHashMap<String, Map<String, Boolean>>();
+
+                columns.put("Type", Collections.singletonMap("checked", getCheckedState("Type", props, false)));
+                columns.put("Author", Collections.singletonMap("checked", getCheckedState("Author", props, false)));
+                columns.put("Modified", Collections.singletonMap("checked", getCheckedState("Modified", props, false)));
+                columns.put("Status", Collections.singletonMap("checked", getCheckedState("Status", props, false)));
+                columns.put("Access", Collections.singletonMap("checked", getCheckedState("Access", props, true)));
+                columns.put("Details", Collections.singletonMap("checked", getCheckedState("Details", props, true)));
+                columns.put("Data Cut Date", Collections.singletonMap("checked", getCheckedState("Data Cut Date", props, false)));
+
+                response.put("visibleColumns", columns);
+
+                // provider editor information
+                Map<String, Map<String, Object>> viewTypeProps = new HashMap<String, Map<String, Object>>();
+                for (DataViewProvider.Type type : visibleDataTypes)
+                {
+                    DataViewProvider provider = DataViewService.get().getProvider(type);
+                    DataViewProvider.EditInfo editInfo = provider.getEditInfo();
+                    if (editInfo != null)
+                    {
+                        Map<String, Object> info = new HashMap<String, Object>();
+                        for (String propName : editInfo.getEditableProperties(getContainer(), getUser()))
+                        {
+                            info.put(propName, true);
+                        }
+                        viewTypeProps.put(type.getName(), info);
+                    }
+                }
+                response.put("editInfo", viewTypeProps);
+                response.put("dateFormat", ExtUtil.toExtDateFormat(dateFormat));
+            }
 
             if (form.includeData())
             {
@@ -6945,6 +6951,7 @@ public class StudyController extends BaseStudyController
         private int index;
         private String pageId;
         private boolean includeData = true;
+        private boolean includeMetadata = true;
 
         private ViewInfo.DataType[] _dataTypes = new ViewInfo.DataType[]{ViewInfo.DataType.reports, ViewInfo.DataType.datasets, ViewInfo.DataType.queries};
 
@@ -6986,6 +6993,16 @@ public class StudyController extends BaseStudyController
         public void setIncludeData(boolean includedata)
         {
             includeData = includedata;
+        }
+
+        public boolean includeMetadata()
+        {
+            return includeMetadata;
+        }
+
+        public void setIncludeMetadata(boolean includeMetadata)
+        {
+            this.includeMetadata = includeMetadata;
         }
     }
 
