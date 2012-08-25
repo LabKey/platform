@@ -61,9 +61,9 @@ CREATE TABLE query.CustomView
     CONSTRAINT UQ_CustomView UNIQUE (Container, "Schema", QueryName, CustomViewOwner, Name)
 );
 
-CREATE TABLE query.DbUserSchema
+CREATE TABLE query.ExternalSchema
 (
-    DbUserSchemaId INT IDENTITY(1,1) NOT NULL,
+    ExternalSchemaId INT IDENTITY(1,1) NOT NULL,
     EntityId UNIQUEIDENTIFIER NOT NULL,
     Created DATETIME NULL,
     CreatedBy INT NULL,
@@ -71,14 +71,16 @@ CREATE TABLE query.DbUserSchema
     ModifiedBy INT NULL,
 
     Container UNIQUEIDENTIFIER NOT NULL,
+    DataSource NVARCHAR(50) NOT NULL,
     UserSchemaName NVARCHAR(50) NOT NULL,
     DbSchemaName NVARCHAR(50) NOT NULL,
-    DbContainer UNIQUEIDENTIFIER NULL,
-    Editable BIT DEFAULT 0,
+    Editable BIT NOT NULL DEFAULT 0,
     MetaData NTEXT NULL,
+    Indexable BIT NOT NULL DEFAULT 1,
+    Tables VARCHAR(8000) NOT NULL DEFAULT '*',  -- Comma-separated list of tables to expose; '*' represents all tables
 
-    CONSTRAINT PK_DbUserSchema PRIMARY KEY(DbUserSchemaId),
-    CONSTRAINT UQ_DbUserSchema UNIQUE(Container,UserSchemaName)
+    CONSTRAINT PK_DbUserSchema PRIMARY KEY(ExternalSchemaId),
+    CONSTRAINT UQ_ExternalSchema UNIQUE(Container,UserSchemaName)
 );
 
 CREATE TABLE query.QuerySnapshotDef
@@ -105,36 +107,3 @@ CREATE TABLE query.QuerySnapshotDef
     CONSTRAINT FK_QuerySnapshotDef_QueryDefId FOREIGN KEY (QueryDefId) REFERENCES query.QueryDef (QueryDefId)
 );
 
-/* query-9.20-9.30.sql */
-
--- Support other DataSources in external schemas (e.g., SAS, other PostgreSQL servers, etc.)
-ALTER TABLE query.DbUserSchema ADD DataSource NVARCHAR(50) NOT NULL;
-
--- Remove unused column
-ALTER TABLE query.DbUserSchema DROP COLUMN DbContainer;
-
-/* query-10.10-10.20.sql */
-
--- Rename table and column to use "external schema" terminology
-EXEC sp_rename 'query.DbUserSchema', 'ExternalSchema';
-EXEC sp_rename 'query.ExternalSchema.DbUserSchemaId', 'ExternalSchemaId', 'COLUMN';
-
--- Add bit to determine whether to index or not (indexing is on by default)
-ALTER TABLE query.ExternalSchema ADD
-    Indexable BIT NOT NULL DEFAULT 1;
-
--- Specifies the tables to expose in a schema:
---  Comma-separated list of table names specifies a subset of tables in the schema
---  '*' represents all tables
---  Empty represents no tables (not very useful, of course...)
-ALTER TABLE query.ExternalSchema ADD
-    Tables VARCHAR(8000) NOT NULL DEFAULT '*';
-
--- Rename constraint so it matches new PostgreSQL index name
-EXEC sp_rename 'query.UQ_DbUserSchema', 'UQ_ExternalSchema', 'OBJECT';
-
--- Fix SQL Server-only issue -- old schema defs need editable set to default value and then change column to NOT NULL
-UPDATE query.ExternalSchema SET Editable = 0 WHERE Editable IS NULL;
-
-ALTER TABLE query.ExternalSchema
-    ALTER COLUMN Editable BIT NOT NULL;

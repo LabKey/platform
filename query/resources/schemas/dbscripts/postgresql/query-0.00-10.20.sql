@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-/* query-0.00-8.30.sql */
-
 CREATE SCHEMA query;
 
 CREATE TABLE query.QueryDef
@@ -60,9 +58,9 @@ CREATE TABLE query.CustomView
     CONSTRAINT UQ_CustomView UNIQUE (Container, Schema, QueryName, CustomViewOwner, Name)
 );
 
-CREATE TABLE query.DbUserSchema
+CREATE TABLE query.ExternalSchema
 (
-    DbUserSchemaId SERIAL NOT NULL,
+    ExternalSchemaId SERIAL NOT NULL,
     EntityId ENTITYID NOT NULL,
     Created TIMESTAMP NULL,
     CreatedBy INT NULL,
@@ -70,16 +68,19 @@ CREATE TABLE query.DbUserSchema
     ModifiedBy INT NULL,
 
     Container ENTITYID NOT NULL,
+    DataSource VARCHAR(50) NOT NULL,
     UserSchemaName VARCHAR(50) NOT NULL,
     DbSchemaName VARCHAR(50) NOT NULL,
-    DbContainer ENTITYID NULL,
 
     Editable BOOLEAN NOT NULL DEFAULT '0',
     MetaData TEXT NULL,
+    Indexable BOOLEAN NOT NULL DEFAULT TRUE,
+    Tables VARCHAR(8000) NOT NULL DEFAULT '*',
 
-    CONSTRAINT PK_DbUserSchema PRIMARY KEY(DbUserSchemaId),
-    CONSTRAINT UQ_DbUserSchema UNIQUE(Container, UserSchemaName)
+    CONSTRAINT PK_DbUserSchema PRIMARY KEY(ExternalSchemaId)
 );
+
+CREATE UNIQUE INDEX UQ_ExternalSchema ON query.ExternalSchema (Container, LOWER(UserSchemaName));
 
 CREATE TABLE query.QuerySnapshotDef
 (
@@ -104,36 +105,3 @@ CREATE TABLE query.QuerySnapshotDef
     CONSTRAINT PK_RowId PRIMARY KEY (RowId),
     CONSTRAINT FK_QuerySnapshotDef_QueryDefId FOREIGN KEY (QueryDefId) REFERENCES query.QueryDef (QueryDefId)
 );
-
-/* query-9.20-9.30.sql */
-
--- Support other DataSources in external schemas (e.g., SAS, other PostgreSQL servers, etc.)
-ALTER TABLE query.DbUserSchema ADD COLUMN DataSource VARCHAR(50) NOT NULL;
-
--- Remove unused column
-ALTER TABLE query.DbUserSchema DROP COLUMN DbContainer;
-
-/* query-10.10-10.20.sql */
-
--- Rename table and column to use "external schema" terminology
-ALTER TABLE query.DbUserSchema RENAME TO ExternalSchema;
-
-ALTER TABLE query.ExternalSchema
-    RENAME DbUserSchemaId TO ExternalSchemaId;
-
--- Add bit to determine whether to index or not (indexing is on by default)
-ALTER TABLE query.ExternalSchema ADD
-    COLUMN Indexable BOOLEAN NOT NULL DEFAULT TRUE;
-
--- Specifies the tables to expose in a schema:
---  Comma-separated list of table names specifies a subset of tables in the schema
---  '*' represents all tables
---  Empty represents no tables (not very useful, of course...)
-ALTER TABLE query.ExternalSchema ADD
-    COLUMN Tables VARCHAR(8000) NOT NULL DEFAULT '*';
-
-/* query-10.12-10.13.sql */
-
--- Switch to case-insensitive unique index... and rename it to match the new table name 
-ALTER TABLE query.ExternalSchema DROP CONSTRAINT UQ_DbUserSchema;
-CREATE UNIQUE INDEX UQ_ExternalSchema ON query.ExternalSchema (Container, LOWER(UserSchemaName));
