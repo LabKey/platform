@@ -18,9 +18,18 @@ package org.labkey.study.reports;
 
 import org.apache.commons.lang3.math.NumberUtils;
 import org.labkey.api.data.DataRegion;
-import org.labkey.api.query.*;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.ReportService;
-import org.labkey.api.reports.report.*;
+import org.labkey.api.reports.report.DbReportIdentifier;
+import org.labkey.api.reports.report.QueryReport;
+import org.labkey.api.reports.report.QueryReportDescriptor;
+import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.view.ReportQueryView;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
@@ -216,7 +225,9 @@ public class StudyQueryReport extends QueryReport
         };
     }
 
-/*
+    /**
+     * @deprecated
+     */
     public ActionURL getRunReportURL(ViewContext context)
     {
         int datasetId = NumberUtils.toInt(getDescriptor().getProperty("showWithDataset"), -1);
@@ -233,5 +244,4 @@ public class StudyQueryReport extends QueryReport
         return new ActionURL(StudyController.QueryReportAction.class, context.getContainer()).
                 addParameter(ReportDescriptor.Prop.reportId, getReportId().toString());
     }
-*/
 }
