@@ -430,12 +430,15 @@ public class StatementUtils
             if (null != skip)
                 done.addAll(skip);
 
+            String stmtSep = "";
             for (DomainProperty dp : properties)
             {
                 // ignore property that 'wraps' a hard column
                 if (done.contains(dp.getName()))
                     continue;
                 // CONSIDER: IF (p IS NOT NULL) THEN ...
+                sqlfObjectProperty.append(stmtSep);
+                stmtSep = ";\n";
                 sqlfObjectProperty.append("INSERT INTO exp.ObjectProperty (objectid, propertyid, typetag, mvindicator, ");
                 PropertyType propertyType = dp.getPropertyDescriptor().getPropertyType();
                 switch (propertyType.getStorageType())
@@ -462,7 +465,7 @@ public class StatementUtils
                 Parameter v = new Parameter(dp.getName(), dp.getPropertyURI(), null, propertyType.getJdbcType());
                 sqlfObjectProperty.append(",");
                 appendPropertyValue(sqlfObjectProperty, d, dp, useVariables, v, parameterToVariable);
-                sqlfObjectProperty.append(");\n");
+                sqlfObjectProperty.append(")");
             }
         }
 
@@ -543,11 +546,10 @@ public class StatementUtils
             fn.appendStatement(sqlfObjectProperty, d);
             if (null != sqlfSelectIds)
             {
-                fn.append("RETURN QUERY ");
-                fn.append(sqlfSelectIds);
-                fn.append(";\n");
+                sqlfSelectIds.insert(0, "RETURN QUERY ");
+                fn.appendStatement(sqlfSelectIds, d);
             }
-            fn.append("END;\n$$ LANGUAGE plpgsql;\n");
+            fn.append(";\nEND;\n$$ LANGUAGE plpgsql;\n");
             Table.execute(table.getSchema(), fn);
             ret = new Parameter.ParameterMap(table.getSchema().getScope(), conn, call, updatable.remapSchemaColumns());
             ret.onClose(new Runnable() { @Override public void run()
