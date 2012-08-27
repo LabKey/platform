@@ -87,7 +87,7 @@ public abstract class EmailPrefsSelector
     // Anything but NONE... override this to filter out other prefs
     protected boolean includeEmailPref(UserPreference ep)
     {
-        return ep.getEmailOptionId() != null && AnnouncementManager.EMAIL_PREFERENCE_NONE != ep.getEmailOptionId();
+        return AnnouncementManager.EMAIL_PREFERENCE_NONE != ep.getEmailOptionId();
     }
 
 
