@@ -73,6 +73,7 @@
 
             var digitsField = Ext4.create('Ext.form.field.Number', {
                 fieldLabel: 'Number of Digits',
+                name: 'numberOfDigits',
                 labelSeparator: '',
                 minValue: 6,
                 maxValue: 10,
