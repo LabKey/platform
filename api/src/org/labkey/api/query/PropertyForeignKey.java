@@ -69,6 +69,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
         this(listProperties(domain), schema);
     }
 
+
     
     private static PropertyDescriptor[] listProperties(Domain domain)
     {
