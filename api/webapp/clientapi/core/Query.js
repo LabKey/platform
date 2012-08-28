@@ -558,12 +558,13 @@ LABKEY.Query = new function()
          * <li>detailsUrl: The url that will display additional details about this item
          * <li>icon: The url of the icon for this report
          * <li>id: The unique Id of this item
+         * <li>reportId: The unique report Id if this item is a report. Value is null if this item is not a report.
          * <li>modified: The date this item was last modified
          * <li>name: The display name of this item
          * <li>runUrl: The url that can be used to execute this report
          * <li>shared: A flag indicating whether this item is shared
          * <li>thumbnail: The url of this item's thumbnail image
-         * <li>type: The display string for dataType: Query, Report or Dataset
+         * <li>type: The display string for the Data Type.
          * <li>visible: A flag indicating whether this report is visible or hidden
          * </ul>
          * <li>types: a map of each dataType, and a boolean indicating whether it was included in the results (this is based on the dataTypes param in the config)

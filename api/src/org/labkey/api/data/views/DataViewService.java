@@ -164,6 +164,15 @@ public class DataViewService
         JSONObject o = new JSONObject();
 
         o.put("id", info.getId());
+        if (info instanceof DefaultViewInfo && ((DefaultViewInfo) info).getReportId() != null)
+        {
+            o.put("reportId", ((DefaultViewInfo) info).getReportId());
+        }
+        else
+        {
+            o.put("reportId", (String) null);
+        }
+
         o.put("dataType", info.getDataType().getName());
         o.put("name", info.getName());
         o.put("container", info.getContainer().getPath());

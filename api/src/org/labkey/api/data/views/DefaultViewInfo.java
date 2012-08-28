@@ -34,6 +34,7 @@ import java.util.List;
 public class DefaultViewInfo implements DataViewInfo
 {
     private String _id;
+    private String _reportId;
     private DataViewProvider.Type _dataType;
     private String _name;
     private Container _container;
@@ -77,6 +78,16 @@ public class DefaultViewInfo implements DataViewInfo
     public DataViewProvider.Type getDataType()
     {
         return _dataType;
+    }
+
+    public String getReportId()
+    {
+        return _reportId;
+    }
+
+    public void setReportId(String reportId)
+    {
+        _reportId = reportId;
     }
 
     public String getName()
