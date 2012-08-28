@@ -41,6 +41,7 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.etl.Pump;
 import org.labkey.api.etl.WrapperDataIterator;
 import org.labkey.api.exp.DomainNotFoundException;
@@ -811,15 +812,19 @@ public class ListDefinitionImpl implements ListDefinition
     public int insertListItemsETL(final User user, DataLoader loader, final BatchValidationException errors, @Nullable final VirtualFile attachmentDir, @Nullable ListImportProgress progress) throws IOException
     {
         ListQueryUpdateService lqus = (ListQueryUpdateService)getTable(user).getUpdateService();
-        DataIteratorBuilder dib = lqus.createImportETL(user, getContainer(), loader, errors, true);
+
+        DataIteratorContext context = new DataIteratorContext(errors);
+        context.setFailFast(false);
+        context.setForImport(true);
+        DataIteratorBuilder dib = lqus.createImportETL(user, getContainer(), loader, context);
 
         try
         {
             ExperimentService.get().ensureTransaction();
 
-            DataIterator insertIt = dib.getDataIterator(errors);
+            DataIterator insertIt = dib.getDataIterator(context);
             DataIterator attach = _AttachmentImportDataIterator_wrap(insertIt, errors, user, attachmentDir);
-            Pump p = new Pump(attach, errors);
+            Pump p = new Pump(attach, context);
             p.run();
             int inserted = p.getRowCount();
 

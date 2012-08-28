@@ -34,6 +34,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.OORDisplayColumnFactory;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
@@ -1072,10 +1073,10 @@ public class Query
             R.save(user);
 //            R.insertListItems(user, new TestDataLoader(R.getName() + hash, Rsize), null, null);
             TableInfo rTableInfo = DefaultSchema.get(user,c).getSchema("lists").getTable("R");
-            BatchValidationException errors = new BatchValidationException();
-            rTableInfo.getUpdateService().importRows(user, c, new TestDataLoader(R.getName() + hash, Rsize).getDataIterator(errors), errors, null);
-            if (errors.hasErrors())
-                fail(errors.getRowErrors().get(0).toString());
+            DataIteratorContext context = new DataIteratorContext();
+            rTableInfo.getUpdateService().importRows(user, c, new TestDataLoader(R.getName() + hash, Rsize).getDataIterator(context), context.getErrors(), null);
+            if (context.getErrors().hasErrors())
+                fail(context.getErrors().getRowErrors().get(0).toString());
 
             ListDefinition S = s.createList(qtest, "S");
             S.setKeyType(ListDefinition.KeyType.AutoIncrementInteger);
@@ -1084,10 +1085,10 @@ public class Query
             S.save(user);
 //            S.insertListItems(user, new TestDataLoader(S.getName() + hash, Ssize), null, null);
             TableInfo sTableInfo = DefaultSchema.get(user,qtest).getSchema("lists").getTable("S");
-            errors = new BatchValidationException();
-            sTableInfo.getUpdateService().importRows(user, qtest, new TestDataLoader(S.getName() + hash, Rsize).getDataIterator(errors), errors, null);
-            if (errors.hasErrors())
-                fail(errors.getRowErrors().get(0).toString());
+            context = new DataIteratorContext();
+            sTableInfo.getUpdateService().importRows(user, qtest, new TestDataLoader(S.getName() + hash, Rsize).getDataIterator(context), context.getErrors(), null);
+            if (context.getErrors().hasErrors())
+                fail(context.getErrors().getRowErrors().get(0).toString());
 
 //            if (0==1)
 //            {

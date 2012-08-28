@@ -26,6 +26,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.etl.DataIterator;
+import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.property.DomainProperty;
@@ -63,6 +64,17 @@ public class ListQueryUpdateService extends AbstractQueryUpdateService
         return _list;
     }
 
+    @Override
+    protected DataIteratorContext getDataIteratorContext(BatchValidationException errors, boolean forImport)
+    {
+        DataIteratorContext context = super.getDataIteratorContext(errors, forImport);
+        if (forImport)
+        {
+            context.setMaxRowErrors(100);
+            context.setFailFast(false);
+        }
+        return context;
+    }
 
     @Override
     protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
@@ -75,14 +87,14 @@ public class ListQueryUpdateService extends AbstractQueryUpdateService
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
             throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
-        List<Map<String, Object>> result = super._insertRowsUsingETL(user, container, rows, errors, extraScriptContext);
+        List<Map<String, Object>> result = super._insertRowsUsingETL(user, container, rows, getDataIteratorContext(errors, false), extraScriptContext);
         return result;
     }
 
     @Override
     public int importRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
     {
-        int count = super._importRowsUsingETL(user, container, rows, null, errors, extraScriptContext, true);
+        int count = super._importRowsUsingETL(user, container, rows, null, getDataIteratorContext(errors, true), extraScriptContext);
         return count;
     }
 

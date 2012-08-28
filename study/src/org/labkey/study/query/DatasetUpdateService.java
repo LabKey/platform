@@ -23,6 +23,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DuplicateKeyException;
@@ -84,7 +85,8 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     @Override
     public int importRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
     {
-        int count = super._importRowsUsingETL(user, container, rows, null, errors, extraScriptContext, true);
+        DataIteratorContext context = getDataIteratorContext(errors, true);
+        int count = super._importRowsUsingETL(user, container, rows, null, context, extraScriptContext);
         if (count > 0)
         {
             StudyManager.dataSetModified(_dataset, user, true);
@@ -97,7 +99,8 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
             throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
-        List<Map<String, Object>> result = super._insertRowsUsingETL(user, container, rows, errors, extraScriptContext);
+        DataIteratorContext context = getDataIteratorContext(errors, false);
+        List<Map<String, Object>> result = super._insertRowsUsingETL(user, container, rows, context, extraScriptContext);
         if (null != result && result.size() > 0)
         {
             for (Map<String, Object> row : result)
@@ -124,10 +127,10 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
 
     @Override
-    public DataIteratorBuilder createImportETL(User user, Container container, DataIteratorBuilder data, BatchValidationException errors, boolean forImport)
+    public DataIteratorBuilder createImportETL(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
         QCState defaultQCState = StudyManager.getInstance().getDefaultQCState(_dataset.getStudy());
-        DataIteratorBuilder insert = _dataset.getInsertDataIterator(user, data, null, true, errors, defaultQCState, false);
+        DataIteratorBuilder insert = _dataset.getInsertDataIterator(user, data, null, true, context, defaultQCState, false);
 //        TableInfo table = _dataset.getTableInfo(user, false);
 //        DataIteratorBuilder insert = ((UpdateableTableInfo)table).persistRows(dsIterator, errors);
         return insert;
@@ -135,7 +138,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
 
     @Override
-    protected int _pump(DataIteratorBuilder etl, final ArrayList<Map<String, Object>> rows, BatchValidationException errors)
+    protected int _pump(DataIteratorBuilder etl, final ArrayList<Map<String, Object>> rows, DataIteratorContext context)
     {
         try
         {
@@ -143,12 +146,12 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
 
             if (!hasRowId)
             {
-                return super._pump(etl, rows, errors);
+                return super._pump(etl, rows, context);
             }
 
             synchronized (_dataset.getManagedKeyLock())
             {
-                return super._pump(etl, rows, errors);
+                return super._pump(etl, rows, context);
             }
         }
         catch (RuntimeSQLException e)
@@ -156,7 +159,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             String translated = _dataset.translateSQLException(e);
             if (translated != null)
             {
-                errors.addRowError(new ValidationException(translated));
+                context.getErrors().addRowError(new ValidationException(translated));
                 return 0;
             }
             throw e;

@@ -35,6 +35,8 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.etl.DataIterator;
+import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -768,7 +770,13 @@ public class AssayPublishManager implements AssayPublishService.Service
                 if (null == qus)
                     throw new UnauthorizedException("Can not update dataset: " + dsd.getName());
 
-                qus.importRows(user, study.getContainer(), dl.getDataIterator(errors), errors, null);
+                /**
+                 * NOTE: we're not actually sharing the DataIterationContext here...
+                 * qus.importRows() should probably take a DataIteratorBuilder instead of DataIterator
+                 */
+                DataIteratorContext context = new DataIteratorContext(errors);
+                context.setForImport(true);
+                qus.importRows(user, study.getContainer(), dl.getDataIterator(context), errors, null);
             }
 
             if (!errors.hasErrors())

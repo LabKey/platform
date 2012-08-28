@@ -41,6 +41,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.BeanDataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.etl.DataIteratorUtil;
 import org.labkey.api.etl.ListofMapsDataIterator;
 import org.labkey.api.etl.Pump;
@@ -771,14 +772,15 @@ public class StudyManager
 
             clearVisitAliases(study);
 
-            BatchValidationException errors = new BatchValidationException();
-            StandardETL etl = StandardETL.forInsert(tinfo, loader, study.getContainer(), user, errors);
-            DataIteratorBuilder insert = ((UpdateableTableInfo)tinfo).persistRows(etl, true, errors);
-            Pump p = new Pump(insert, errors);
+            DataIteratorContext context = new DataIteratorContext();
+            context.setForImport(true);
+            StandardETL etl = StandardETL.forInsert(tinfo, loader, study.getContainer(), user, context);
+            DataIteratorBuilder insert = ((UpdateableTableInfo)tinfo).persistRows(etl, context);
+            Pump p = new Pump(insert, context);
             p.run();
 
-            if (errors.hasErrors())
-                throw errors.getRowErrors().get(0);
+            if (context.getErrors().hasErrors())
+                throw context.getErrors().getRowErrors().get(0);
 
             scope.commitTransaction();
 
@@ -2703,9 +2705,10 @@ public class StudyManager
             throws IOException, ServletException, SQLException
     {
         parseData(user, def, loader, columnMap);
-        BatchValidationException ve = new BatchValidationException();
-        List<String> lsids = def.importDatasetData(study, user, loader, ve, checkDuplicates, defaultQCState, logger, false);
-        batchValidateExceptionToList(ve,errors);
+        DataIteratorContext context = new DataIteratorContext();
+        context.setForImport(true);
+        List<String> lsids = def.importDatasetData(study, user, loader, context, checkDuplicates, defaultQCState, logger, false);
+        batchValidateExceptionToList(context.getErrors(),errors);
         return lsids;
     }
 
@@ -2713,7 +2716,9 @@ public class StudyManager
             throws IOException, ServletException, SQLException
     {
         parseData(user, def, loader, columnMap);
-        return def.importDatasetData(study, user, loader, errors, checkDuplicates, defaultQCState, logger, false);
+        DataIteratorContext context = new DataIteratorContext(errors);
+        context.setForImport(true);
+        return def.importDatasetData(study, user, loader, context, checkDuplicates, defaultQCState, logger, false);
     }
     
 
@@ -2727,9 +2732,10 @@ public class StudyManager
             return Collections.emptyList();
 
         DataIteratorBuilder it = new ListofMapsDataIterator.Builder(data.get(0).keySet(), data);
-        BatchValidationException ve = new BatchValidationException();
-        List<String> lsids = def.importDatasetData(study, user, it, ve, checkDuplicates, defaultQCState, logger, forUpdate);
-        batchValidateExceptionToList(ve,errors);
+        DataIteratorContext context = new DataIteratorContext();
+        context.setForImport(!forUpdate);
+        List<String> lsids = def.importDatasetData(study, user, it, context, checkDuplicates, defaultQCState, logger, forUpdate);
+        batchValidateExceptionToList(context.getErrors(),errors);
         return lsids;
     }
 
@@ -2741,8 +2747,8 @@ public class StudyManager
             return Collections.emptyList();
 
         DataIteratorBuilder it = new ListofMapsDataIterator.Builder(data.get(0).keySet(), data);
-
-        return def.importDatasetData(study, user, it, errors, checkDuplicates, defaultQCState, logger, false);
+        DataIteratorContext context = new DataIteratorContext(errors);
+        return def.importDatasetData(study, user, it, context, checkDuplicates, defaultQCState, logger, false);
     }
 
 

@@ -32,6 +32,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.etl.DataIteratorUtil;
 import org.labkey.api.etl.ErrorIterator;
 import org.labkey.api.etl.LoggingDataIterator;
@@ -1466,7 +1467,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     /**
      * dataMaps have keys which are property URIs, and values which have already been converted.
      */
-    public List<String> importDatasetData(Study study, User user, DataIteratorBuilder in, BatchValidationException errors, boolean checkDuplicates, QCState defaultQCState, Logger logger
+    public List<String> importDatasetData(Study study, User user, DataIteratorBuilder in, DataIteratorContext context, boolean checkDuplicates, QCState defaultQCState, Logger logger
             , boolean forUpdate)
             throws SQLException
     {
@@ -1476,12 +1477,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             // increments, as we're imitating a sequence.
             synchronized (getManagedKeyLock())
             {
-                return insertData(user, in, checkDuplicates, errors, defaultQCState, logger, forUpdate);
+                return insertData(user, in, checkDuplicates, context, defaultQCState, logger, forUpdate);
             }
         }
         else
         {
-            return insertData(user, in, checkDuplicates, errors, defaultQCState, logger, forUpdate);
+            return insertData(user, in, checkDuplicates, context, defaultQCState, logger, forUpdate);
         }
     }
 
@@ -1489,8 +1490,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     private void checkForDuplicates(DataIterator data,
             int indexLSID, int indexPTID, int indexVisit, int indexKey, int indexReplace,
-            BatchValidationException errors, Logger logger)
+            DataIteratorContext context, Logger logger)
     {
+        BatchValidationException errors = context.getErrors();
         HashMap<String, Object[]> failedReplaceMap = checkAndDeleteDupes(
                 data,
                 indexLSID, indexPTID, indexVisit, indexKey, indexReplace,
@@ -1600,14 +1602,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         }
 
         @Override
-        public void setForImport(boolean forImport)
-        {
-            setUseImportAliases(true);
-        }
-
-
-        @Override
-        public DataIterator getDataIterator(BatchValidationException errors)
+        public DataIterator getDataIterator(DataIteratorContext context)
         {
             // might want to make allow importManagedKey an explicit option, for now allow for GUID
             boolean allowImportManagedKey = isForUpdate || getKeyManagementType() == KeyManagementType.GUID;
@@ -1621,9 +1616,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             ColumnInfo lsidColumn = table.getColumn("lsid");
 
             if (null == input && null != builder)
-                input = builder.getDataIterator(errors);
+                input = builder.getDataIterator(context);
 
-            _DatasetColumnsIterator it = new _DatasetColumnsIterator(input, errors, user);
+            _DatasetColumnsIterator it = new _DatasetColumnsIterator(input, context, user);
 
             ValidationException matchError = new ValidationException();
             ArrayList<ColumnInfo> inputMatches = DataIteratorUtil.matchColumns(input,table,useImportAliases,matchError);
@@ -1840,7 +1835,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             if (timetype.isVisitBased() && null == it.indexSequenceNumOutput)
                 setupError("All dataset rows must include a value for SequenceNum");
 
-            it.setInput(ErrorIterator.wrap(input, errors, false, setupError));
+            it.setInput(ErrorIterator.wrap(input, context, false, setupError));
             DataIterator ret = LoggingDataIterator.wrap(it);
 
             //
@@ -1857,7 +1852,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     ScrollableDataIterator scrollable = DataIteratorUtil.wrapScrollable(ret);
                     checkForDuplicates(scrollable, indexLSID,
                             indexPTID, null == indexVisit ? -1 : indexVisit, null == indexKeyProperty ? -1 : indexKeyProperty, null == indexReplace ? -1 : indexReplace,
-                            errors, logger);
+                            context, logger);
                     scrollable.beforeFirst();
                     ret = scrollable;
                 }
@@ -1885,9 +1880,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
         TimepointType timetype;
 
-        _DatasetColumnsIterator(DataIterator data, BatchValidationException errors, User user) // , String keyPropertyURI, boolean qc, QCState defaultQC, Map<String, QCState> qcLabels)
+        _DatasetColumnsIterator(DataIterator data, DataIteratorContext context, User user) // , String keyPropertyURI, boolean qc, QCState defaultQC, Map<String, QCState> qcLabels)
         {
-            super(data, errors);
+            super(data, context);
             this.user = user; 
             _maxPTIDLength = getTableInfo(this.user, false).getColumn("ParticipantID").getScale();
         }
@@ -2175,12 +2170,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
 
     private List<String> insertData(User user, DataIteratorBuilder in,
-            boolean checkDuplicates, BatchValidationException errors, QCState defaultQCState,
+            boolean checkDuplicates, DataIteratorContext context, QCState defaultQCState,
             Logger logger, boolean forUpdate)
             throws SQLException
     {
         ArrayList<String> lsids = new ArrayList<String>();
-        DataIteratorBuilder insert = getInsertDataIterator(user, in, lsids, checkDuplicates, errors, defaultQCState, forUpdate);
+        DataIteratorBuilder insert = getInsertDataIterator(user, in, lsids, checkDuplicates, context, defaultQCState, forUpdate);
 
         DbScope scope = ExperimentService.get().getSchema().getScope();
 
@@ -2190,13 +2185,13 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             long start = System.currentTimeMillis();
             {
-                Pump p = new Pump(insert.getDataIterator(errors), errors);
+                Pump p = new Pump(insert.getDataIterator(context), context);
                 p.run();
             }
             long end = System.currentTimeMillis();
 
-            if (errors.hasErrors())
-                throw errors;
+            if (context.getErrors().hasErrors())
+                throw context.getErrors();
 
             _log.info("imported " + getName() + " : " + DateUtil.formatDuration(end-start));
             StudyManager.dataSetModified(this, user, true);
@@ -2207,9 +2202,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         }
         catch (BatchValidationException x)
         {
-            assert x == errors;
-            assert errors.hasErrors();
-            for (ValidationException rowError : errors.getRowErrors())
+            assert x == context.getErrors();
+            assert context.getErrors().hasErrors();
+            for (ValidationException rowError : context.getErrors().getRowErrors())
             {
                 for (int i=0 ; i<rowError.getGlobalErrorCount() ; i++)
                 {
@@ -2228,7 +2223,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             String translated = translateSQLException(e);
             if (translated != null)
             {
-                errors.addRowError(new ValidationException(translated));
+                context.getErrors().addRowError(new ValidationException(translated));
                 return Collections.emptyList();
             }
             throw e;
@@ -2293,7 +2288,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
      */
     public DataIteratorBuilder getInsertDataIterator(User user, DataIteratorBuilder in,
         @Nullable List<String> lsids,
-        boolean checkDuplicates, BatchValidationException errors, QCState defaultQCState,
+        boolean checkDuplicates, DataIteratorContext context, QCState defaultQCState,
         boolean forUpdate)
     {
         TableInfo table = getTableInfo(user, false);
@@ -2309,8 +2304,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         b.setUseImportAliases(!forUpdate);
         b.setKeyList(lsids);
 
-        StandardETL etl = StandardETL.forInsert(table, b, getContainer(), user, errors);
-        DataIteratorBuilder insert = ((UpdateableTableInfo)table).persistRows(etl, false, errors);
+        StandardETL etl = StandardETL.forInsert(table, b, getContainer(), user, context);
+        DataIteratorBuilder insert = ((UpdateableTableInfo)table).persistRows(etl, context);
         return insert;
     }
 

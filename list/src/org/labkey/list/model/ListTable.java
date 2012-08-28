@@ -33,6 +33,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.etl.LoggingDataIterator;
 import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.etl.TableInsertDataIterator;
@@ -333,38 +334,33 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
 
 
     @Override
-    public DataIteratorBuilder persistRows(DataIteratorBuilder data, boolean forImport, BatchValidationException errors)
+    public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
         // NOTE: it's a little ambiguious how to factor code between persistRows() and createImportETL()
-        data = new _DataIteratorBuilder(data);
-        data.setForImport(forImport);
-        DataIteratorBuilder ins = TableInsertDataIterator.create(data, this, _list.getContainer(), forImport, errors);
+        data = new _DataIteratorBuilder(data, context);
+        DataIteratorBuilder ins = TableInsertDataIterator.create(data, this, _list.getContainer(), context);
         return ins;
     }
 
 
     public class _DataIteratorBuilder implements DataIteratorBuilder
     {
+        DataIteratorContext _context;
         final DataIteratorBuilder _in;
         final ListItemImpl.KeyIncrementer _keyIncrementer = ListItemImpl._keyIncrementer;
-        boolean _forImport = false;
 
-        _DataIteratorBuilder(@NotNull DataIteratorBuilder in)
+        _DataIteratorBuilder(@NotNull DataIteratorBuilder in, DataIteratorContext context)
         {
+            _context = context;
             _in = in;
         }
 
         @Override
-        public void setForImport(boolean forImport)
+        public DataIterator getDataIterator(DataIteratorContext context)
         {
-            _forImport = forImport;
-        }
-
-        @Override
-        public DataIterator getDataIterator(BatchValidationException x)
-        {
-            DataIterator input = _in.getDataIterator(x);
-            final SimpleTranslator it = new SimpleTranslator(input, x);
+            _context = context;
+            DataIterator input = _in.getDataIterator(context);
+            final SimpleTranslator it = new SimpleTranslator(input, context);
 
             int keyColumnInput = 0;
             int keyColumnOutput = 0;
@@ -396,7 +392,7 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
                     @Override
                     public Object call() throws Exception
                     {
-                        Object keyValue = (_forImport && inputKeyColumn != 0) ? it.getInputColumnValue(inputKeyColumn) : null;
+                        Object keyValue = (_context.isForImport() && inputKeyColumn != 0) ? it.getInputColumnValue(inputKeyColumn) : null;
                         return null != keyValue ? keyValue : _keyIncrementer.getNextKey((ListDefinitionImpl)_list);
                     }
                 });
@@ -411,9 +407,9 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
 
             DataIterator ret = LoggingDataIterator.wrap(it);
 
-            if (0 != keyColumnOutput && (_forImport || _list.getKeyType() != ListDefinition.KeyType.AutoIncrementInteger))
+            if (0 != keyColumnOutput && (context.isForImport() || _list.getKeyType() != ListDefinition.KeyType.AutoIncrementInteger))
             {
-                ValidatorIterator vi = new ValidatorIterator(ret, x, _list.getContainer(), null);
+                ValidatorIterator vi = new ValidatorIterator(ret, context, _list.getContainer(), null);
                 vi.addUniqueValidator(keyColumnOutput, DbSchema.get("lists").getSqlDialect().isCaseSensitive());
                 ret = vi;
             }
