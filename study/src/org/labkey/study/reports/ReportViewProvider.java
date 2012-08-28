@@ -52,7 +52,6 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudySchema;
 
 import java.io.InputStream;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -153,6 +152,7 @@ public class ReportViewProvider implements DataViewProvider
                         info.setCategory(ReportUtil.getDefaultCategory(c, schema, query));
 
                     info.setCreatedBy(createdBy);
+                    info.setReportId(descriptor.getReportId().toString());
                     info.setCreated(descriptor.getCreated());
                     info.setModifiedBy(modifiedBy);
                     info.setAuthor(author);

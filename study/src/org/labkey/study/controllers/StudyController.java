@@ -28,6 +28,7 @@ import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.action.*;
 import org.labkey.api.admin.ImportException;
@@ -6810,7 +6811,7 @@ public class StudyController extends BaseStudyController
 
             Portal.WebPart webPart = Portal.getPart(getViewContext().getContainer(), form.getPageId(), form.getIndex());
 
-            Map<String, String> props = new HashMap<String, String>();
+            Map<String, String> props;
             if (webPart != null)
             {
                 props = webPart.getPropertyMap();
@@ -6823,6 +6824,10 @@ public class StudyController extends BaseStudyController
                 else
                     webPartProps.put("height", String.valueOf(700));
                 response.put("webpart", new JSONObject(webPartProps));
+            }
+            else
+            {
+                props = resolveJSONProperties(form.getProps());
             }
 
             List<DataViewProvider.Type> visibleDataTypes = new ArrayList<DataViewProvider.Type>();
@@ -6944,14 +6949,53 @@ public class StudyController extends BaseStudyController
             }
             return defaultState;
         }
+
+        private Map<String, String> resolveJSONProperties(Map<String, Object> formProps)
+        {
+            JSONObject jsonProps = (JSONObject) formProps;
+            Map<String, String> props = new HashMap<String, String>();
+            boolean explicit = false;
+
+            if (null != jsonProps && jsonProps.size() > 0)
+            {
+                try
+                {
+                    // Data Types Filter
+                    JSONArray dataTypes = jsonProps.getJSONArray("dataTypes");
+                    for (int i=0; i < dataTypes.length(); i++)
+                    {
+                        props.put((String) dataTypes.get(i), "on");
+                        explicit = true;
+                    }
+                }
+                catch (JSONException x)
+                {
+                    /* No-op */
+                }
+
+                if (explicit)
+                {
+                    for (ViewInfo.DataType t : ViewInfo.DataType.values())
+                    {
+                        if (!props.containsKey(t.name()))
+                        {
+                            props.put(t.name(), "0");
+                        }
+                    }
+                }
+            }
+
+            return props;
+        }
     }
 
-    public static class BrowseDataForm extends ReturnUrlForm
+    public static class BrowseDataForm extends ReturnUrlForm implements CustomApiForm
     {
         private int index;
         private String pageId;
         private boolean includeData = true;
         private boolean includeMetadata = true;
+        Map<String, Object> _props;
 
         private ViewInfo.DataType[] _dataTypes = new ViewInfo.DataType[]{ViewInfo.DataType.reports, ViewInfo.DataType.datasets, ViewInfo.DataType.queries};
 
@@ -7003,6 +7047,17 @@ public class StudyController extends BaseStudyController
         public void setIncludeMetadata(boolean includeMetadata)
         {
             this.includeMetadata = includeMetadata;
+        }
+
+        @Override
+        public void bindProperties(Map<String, Object> props)
+        {
+            _props = props;
+        }
+
+        public Map<String, Object> getProps()
+        {
+            return _props;
         }
     }
 
