@@ -26,6 +26,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.etl.TableInsertDataIterator;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -786,9 +787,9 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     }
 
     @Override
-    public DataIteratorBuilder persistRows(DataIteratorBuilder data, boolean forImport, BatchValidationException errors)
+    public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
     {
-        return TableInsertDataIterator.create(data, this, null, forImport, errors);
+        return TableInsertDataIterator.create(data, this, null, context);
     }
 
     @Override

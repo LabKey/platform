@@ -34,6 +34,7 @@ import org.labkey.api.collections.Join;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.AbstractDataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.etl.Pump;
 import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.etl.TableInsertDataIterator;
@@ -2221,20 +2222,20 @@ public class Table
         {
             TableInfo testTable = TestSchema.getInstance().getTableInfoTestTable();
 
-            BatchValidationException errors = new BatchValidationException();
+            DataIteratorContext dic = new DataIteratorContext();
             TestDataIterator extract = new TestDataIterator();
-            SimpleTranslator translate = new SimpleTranslator(extract, errors);
+            SimpleTranslator translate = new SimpleTranslator(extract, dic);
             translate.selectAll();
             translate.addBuiltInColumns(JunitUtil.getTestContainer(), TestContext.get().getUser(), testTable, false);
 
             TableInsertDataIterator load = TableInsertDataIterator.create(
                     translate,
                     testTable,
-                    errors
+                    dic
             );
-            new Pump((DataIteratorBuilder)load, errors).run();
+            new Pump((DataIteratorBuilder)load, dic).run();
 
-            assertFalse(errors.hasErrors());
+            assertFalse(dic.getErrors().hasErrors());
             
             Table.execute(testTable.getSchema(), "DELETE FROM test.testtable WHERE EntityId = '" + extract.guid + "'");
         }

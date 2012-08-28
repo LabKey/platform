@@ -20,6 +20,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -107,8 +108,7 @@ public interface UpdateableTableInfo
      *
      * This method is _NOT_ usually called directly. See TableInfo.getUpdateService(), and StandardETL.
      */
-    DataIteratorBuilder persistRows(DataIteratorBuilder data, boolean forImport, BatchValidationException errors);
-
+    DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context);
 
     /** persist one row in the database
      *

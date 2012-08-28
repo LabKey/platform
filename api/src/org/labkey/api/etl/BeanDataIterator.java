@@ -40,9 +40,9 @@ public class BeanDataIterator<K> extends AbstractDataIterator implements DataIte
     int _currentRow = -1;
 
 
-    public BeanDataIterator(BatchValidationException errors, Class cls, List<K> rows)
+    public BeanDataIterator(DataIteratorContext context, Class cls, List<K> rows)
     {
-        super(errors);
+        super(context);
 
         _cols.add(new ColumnInfo("_rowNumber", JdbcType.INTEGER));
         _readMethods.add(null);
@@ -128,14 +128,9 @@ public class BeanDataIterator<K> extends AbstractDataIterator implements DataIte
         }
 
         @Override
-        public DataIterator getDataIterator(BatchValidationException errors)
+        public DataIterator getDataIterator(DataIteratorContext context)
         {
-            return new BeanDataIterator<K>(errors, cls, rows);
-        }
-
-        @Override
-        public void setForImport(boolean forImport)
-        {
+            return new BeanDataIterator<K>(context, cls, rows);
         }
     }
 }

@@ -28,9 +28,9 @@ import java.io.IOException;
  */
 public abstract class FilterDataIterator extends AbstractDataIterator
 {
-    protected FilterDataIterator(BatchValidationException errors)
+    protected FilterDataIterator(DataIteratorContext context)
     {
-        super(errors);
+        super(context);
     }
 
     @Override

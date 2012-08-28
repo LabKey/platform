@@ -79,16 +79,13 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         }
     };
     Object[] _row = null;
-    boolean _failFast = true;
     Container _mvContainer;
     Map<String,String> _missingValues = Collections.emptyMap();
     Map<String,Integer> _inputNameMap = null;
-    boolean _verbose = false;    // allow more than one error per field
-    Set<String> errorFields = new HashSet<String>();
 
-    public SimpleTranslator(DataIterator source, BatchValidationException errors)
+    public SimpleTranslator(DataIterator source, DataIteratorContext context)
     {
-        super(errors);
+        super(context);
         _data = source;
         _outputColumns.add(new Pair<ColumnInfo, Callable>(new ColumnInfo(source.getColumnInfo(0)), new PassthroughColumn(0)));
     }
@@ -113,25 +110,6 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     {
         return _missingValues.containsKey(mv);
     }
-
-    public void setFailFast(boolean ff)
-    {
-        _failFast = ff;
-    }
-
-
-    public void setVerbose(boolean v)
-    {
-        _verbose = v;
-    }
-
-
-    protected void addFieldError(String field, String msg)
-    {
-        if (errorFields.add(field) || _verbose)
-            getRowError().addFieldError(field, msg);
-    }
-
 
     protected Object addConversionException(String fieldName, @Nullable Object value, @Nullable JdbcType target, Exception x)
     {
@@ -590,14 +568,14 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     }
 
 
-    public static DataIterator wrapBuiltInColumns(DataIterator in , BatchValidationException errors, @Nullable Container c, @NotNull User user, @NotNull TableInfo target)
+    public static DataIterator wrapBuiltInColumns(DataIterator in , DataIteratorContext context, @Nullable Container c, @NotNull User user, @NotNull TableInfo target)
     {
         SimpleTranslator t;
         if (in instanceof SimpleTranslator)
             t = (SimpleTranslator)in;
         else
         {
-            t = new SimpleTranslator(in, errors);
+            t = new SimpleTranslator(in, context);
             t.selectAll();
         }
         t.addBuiltInColumns(c, user, target, false);
@@ -745,8 +723,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                 addFieldError(_outputColumns.get(i).getKey().getName(), x.getMessage());
             }
         }
-        if (_failFast && _errors.hasErrors())
-            return false;
+        checkShouldCancel();
         return true;
     }
 
@@ -814,9 +791,9 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         @Test
         public void passthroughTest() throws Exception
         {
-            BatchValidationException errors = new BatchValidationException();
+            DataIteratorContext context = new DataIteratorContext();
             simpleData.beforeFirst();
-            SimpleTranslator t = new SimpleTranslator(simpleData, errors);
+            SimpleTranslator t = new SimpleTranslator(simpleData, context);
             t.selectAll();
             assert(t.getColumnCount() == simpleData.getColumnCount());
             assertTrue(t.getColumnInfo(0).getJdbcType() == JdbcType.INTEGER);
@@ -835,9 +812,9 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         @Test
         public void testCoalesce() throws Exception
         {
-            BatchValidationException errors = new BatchValidationException();
+            DataIteratorContext context = new DataIteratorContext();
             simpleData.beforeFirst();
-            SimpleTranslator t = new SimpleTranslator(simpleData, errors);
+            SimpleTranslator t = new SimpleTranslator(simpleData, context);
             int c = t.addCoaleseColumn("IntNotNull", 3, new GuidColumn());
             for (int i=1 ; i<=4 ; i++)
             {
@@ -853,9 +830,9 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         {
             // w/o errors
             {
-                BatchValidationException errors = new BatchValidationException();
+                DataIteratorContext context = new DataIteratorContext();
                 simpleData.beforeFirst();
-                SimpleTranslator t = new SimpleTranslator(simpleData, errors);
+                SimpleTranslator t = new SimpleTranslator(simpleData, context);
                 t.addConvertColumn("IntNotNull", 1, JdbcType.INTEGER, false);
                 assertEquals(1, t.getColumnCount());
                 assertEquals(JdbcType.INTEGER, t.getColumnInfo(0).getJdbcType());
@@ -871,25 +848,32 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
 
             // w/ errors failfast==true
             {
-                BatchValidationException errors = new BatchValidationException();
+                DataIteratorContext context = new DataIteratorContext();
+                context.setFailFast(true);
+                context.setVerbose(true);
                 simpleData.beforeFirst();
-                SimpleTranslator t = new SimpleTranslator(simpleData, errors);
-                t.setFailFast(true);
+                SimpleTranslator t = new SimpleTranslator(simpleData, context);
                 t.addConvertColumn("Text", 2, JdbcType.INTEGER, false);
                 assertEquals(t.getColumnCount(), 1);
                 assertEquals(t.getColumnInfo(0).getJdbcType(), JdbcType.INTEGER);
                 assertEquals(t.getColumnInfo(1).getJdbcType(), JdbcType.INTEGER);
-                assertFalse(t.next());
-                assertTrue(errors.hasErrors());
+                try
+                {
+                    assertFalse(t.next());
+                }
+                catch (BatchValidationException x)
+                {
+                }
+                assertTrue(context._errors.hasErrors());
             }
 
             // w/ errors failfast==false
             {
-                BatchValidationException errors = new BatchValidationException();
+                DataIteratorContext context = new DataIteratorContext();
+                context.setFailFast(false);
+                context.setVerbose(true);
                 simpleData.beforeFirst();
-                SimpleTranslator t = new SimpleTranslator(simpleData, errors);
-                t.setFailFast(false);
-                t.setVerbose(true);
+                SimpleTranslator t = new SimpleTranslator(simpleData, context);
                 t.addConvertColumn("Text", 2, JdbcType.INTEGER, false);
                 assertEquals(t.getColumnCount(), 1);
                 assertEquals(t.getColumnInfo(0).getJdbcType(), JdbcType.INTEGER);
@@ -899,10 +883,11 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     assertTrue(t.next());
                     assertEquals(i, t.get(0));
                     assertNull(t.get(1));
-                    assertTrue(errors.hasErrors());
+                    assertTrue(context.getErrors().hasErrors());
+                    assertEquals(i, context.getErrors().getRowErrors().size());
                 }
                 assertFalse(t.next());
-                assertEquals(4, errors.getRowErrors().size());
+                assertEquals(4, context.getErrors().getRowErrors().size());
             }
 
             // missing values

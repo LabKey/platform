@@ -65,34 +65,31 @@ public class TriggerDataBuilderHelper
         }
 
         @Override
-        public DataIterator getDataIterator(BatchValidationException errors)
+        public DataIterator getDataIterator(DataIteratorContext context)
         {
-            DataIterator pre = _pre.getDataIterator(errors);
+            DataIterator pre = _pre.getDataIterator(context);
             if (!_target.hasTriggers(_c))
                 return pre;
             pre = LoggingDataIterator.wrap(pre);
-            DataIterator coerce = new CoerceDataIterator(pre, errors, _target, _useImportAliases);
+            DataIterator coerce = new CoerceDataIterator(pre, context, _target);
             coerce = LoggingDataIterator.wrap(coerce);
-            return LoggingDataIterator.wrap(new BeforeIterator(coerce, errors));
-        }
-
-        @Override
-        public void setForImport(boolean forImport)
-        {
+            return LoggingDataIterator.wrap(new BeforeIterator(coerce, context));
         }
     }
 
 
     class BeforeIterator extends WrapperDataIterator
     {
-        BatchValidationException _errors;
+        final DataIteratorContext _context;
+        final BatchValidationException _errors;
         boolean _firstRow = true;
         Map<String,Object> _currentRow = null;
 
-        BeforeIterator(DataIterator di, BatchValidationException errors)
+        BeforeIterator(DataIterator di, DataIteratorContext context)
         {
             super(DataIteratorUtil.wrapMap(di,true));
-            _errors = errors;
+            _context = context;
+            _errors = context._errors;
         }
 
         @Override
@@ -162,29 +159,26 @@ public class TriggerDataBuilderHelper
         }
 
         @Override
-        public DataIterator getDataIterator(BatchValidationException errors)
+        public DataIterator getDataIterator(DataIteratorContext context)
         {
-            DataIterator it = _post.getDataIterator(errors);
+            DataIterator it = _post.getDataIterator(context);
             if (!_target.hasTriggers(_c))
                 return it;
-            return new AfterIterator(LoggingDataIterator.wrap(it), errors);
-        }
-
-        @Override
-        public void setForImport(boolean forImport)
-        {
+            return new AfterIterator(LoggingDataIterator.wrap(it), context);
         }
     }
 
 
     class AfterIterator extends WrapperDataIterator
     {
-        BatchValidationException _errors;
+        final DataIteratorContext _context;
+        final BatchValidationException _errors;
 
-        AfterIterator(DataIterator di, BatchValidationException errors)
+        AfterIterator(DataIterator di, DataIteratorContext context)
         {
             super(DataIteratorUtil.wrapMap(di,true));
-            _errors = errors;
+            _context = context;
+            _errors = context._errors;
         }
 
         BatchValidationException getErrors()

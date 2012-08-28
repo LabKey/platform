@@ -38,11 +38,11 @@ import java.util.Set;
  */
 public class CoerceDataIterator extends SimpleTranslator
 {
-    public CoerceDataIterator(DataIterator source, BatchValidationException errors, TableInfo target, boolean useImportAliases)
+    public CoerceDataIterator(DataIterator source, DataIteratorContext context, TableInfo target)
     {
-        super(source, errors);
+        super(source, context);
         setDebugName("Coerce before trigger script");
-        init(target, useImportAliases);
+        init(target, context._forImport);
     }
 
     void init(TableInfo target, boolean useImportAliases)

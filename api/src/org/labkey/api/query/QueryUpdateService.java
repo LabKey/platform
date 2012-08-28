@@ -16,6 +16,7 @@
 package org.labkey.api.query;
 
 import org.labkey.api.etl.DataIterator;
+import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
 

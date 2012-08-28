@@ -27,21 +27,24 @@ public class Pump implements Runnable
 {
     DataIterator _it;
     DataIteratorBuilder _builder;
-    BatchValidationException _errors;
+    final DataIteratorContext _context;
+    final BatchValidationException _errors;
     int _errorLimit = Integer.MAX_VALUE;
     int _rowCount = 0;
     ListImportProgress _progress = null;
 
-    public Pump(DataIterator it, BatchValidationException errors)
+    public Pump(DataIterator it, DataIteratorContext context)
     {
         this._it = it;
-        this._errors = errors;
+        this._context = context;
+        this._errors = context.getErrors();
     }
 
-    public Pump(DataIteratorBuilder builder, BatchValidationException errors)
+    public Pump(DataIteratorBuilder builder,  DataIteratorContext context)
     {
         this._builder = builder;
-        this._errors = errors;
+        this._context = context;
+        this._errors = context.getErrors();
     }
 
     public void setProgress(ListImportProgress progress)
@@ -53,7 +56,7 @@ public class Pump implements Runnable
     public void run() throws RuntimeException
     {
         if (null == _it && null != _builder)
-            _it = _builder.getDataIterator(_errors);
+            _it = _builder.getDataIterator(_context);
 
         try
         {

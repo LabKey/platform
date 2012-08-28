@@ -37,6 +37,7 @@ import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.etl.TableInsertDataIterator;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -423,9 +424,9 @@ public class SimpleUserSchema extends UserSchema
         }
 
         @Override
-        public DataIteratorBuilder persistRows(DataIteratorBuilder data, boolean forImport, BatchValidationException errors)
+        public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
         {
-            return TableInsertDataIterator.create(data, this, null, forImport, errors);
+            return TableInsertDataIterator.create(data, this, null, context);
         }
 
         @Override

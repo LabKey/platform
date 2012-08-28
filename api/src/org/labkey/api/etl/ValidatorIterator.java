@@ -50,15 +50,13 @@ import java.util.Set;
  */
 public class ValidatorIterator extends AbstractDataIterator implements DataIterator
 {
-    boolean failFast = true;
     final DataIterator _data;
     final ValidatorContext validatorContext;
     final ArrayList<ArrayList<Validator>> _validators = new ArrayList<ArrayList<Validator>>();
-    int _rowCount = 0;
 
-    public ValidatorIterator(DataIterator data, BatchValidationException errors, Container c, User user)
+    public ValidatorIterator(DataIterator data, DataIteratorContext context, Container c, User user)
     {
-        super(errors);
+        super(context);
         _data = data;
         validatorContext = new ValidatorContext(c, user);
     }
@@ -266,47 +264,55 @@ checkRequired:
     @Override
     public boolean next() throws BatchValidationException
     {
-        if (!_data.next())
-            return false;
-
         boolean validRow = true;
+        boolean hasValidationErrors = false;
 
-        // first the column validators
-        for (int i=1 ; i<_validators.size() ; i++)
+        do
         {
-            List<Validator> l = _validators.get(i);
-            if (null == l) continue;
-            for (Validator v : l)
+            if (!_data.next())
+                return false;
+
+            // first the column validators
+            for (int i=1 ; i<_validators.size() ; i++)
             {
-                String msg = v.validate();
-                if (null != msg)
+                List<Validator> l = _validators.get(i);
+                if (null == l) continue;
+                for (Validator v : l)
                 {
-                    getRowError().addFieldError(_data.getColumnInfo(i).getName(), msg);
-                    validRow = false;
-                    break;
+                    String msg = v.validate();
+                    if (null != msg)
+                    {
+                        addFieldError(_data.getColumnInfo(i).getName(), msg);
+                        validRow = false;
+                        break;
+                    }
                 }
             }
-        }
-        // row validators
-        List<Validator> l = _validators.isEmpty() ? null : _validators.get(0);
-        if (null != l)
-        {
-            for (Validator v : l)
+            // row validators
+            List<Validator> l = _validators.isEmpty() ? null : _validators.get(0);
+            if (null != l)
             {
-                String msg = v.validate();
-                if (null != msg)
+                for (Validator v : l)
                 {
-                    getRowError().addGlobalError(msg);
-                    validRow = false;
-                    break;
+                    String msg = v.validate();
+                    if (null != msg)
+                    {
+                        addRowError(msg);
+                        validRow = false;
+                        break;
+                    }
                 }
             }
+            if (!validRow)
+            {
+                // we'll never return true once we hit a validation error
+                hasValidationErrors = true;
+                checkShouldCancel();
+            }
         }
+        while (hasValidationErrors);
 
-        boolean hasNext = validRow || !failFast;
-        if (hasNext)
-            _rowCount++;
-        return hasNext;
+        return true;
     }
 
 

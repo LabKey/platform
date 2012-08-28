@@ -20,6 +20,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * User: matthewb
  * Date: 2011-05-26
@@ -29,12 +32,14 @@ public abstract class AbstractDataIterator implements DataIterator
 {
     private String _debugName = "";
     private ValidationException _globalError = null;
-    protected BatchValidationException _errors;
+    final DataIteratorContext _context;
+    final BatchValidationException _errors;
     protected ValidationException _rowError = null;
 
-    protected AbstractDataIterator(BatchValidationException errors)
+    protected AbstractDataIterator(DataIteratorContext context)
     {
-        _errors = errors;
+        _context = context;
+        _errors = null==context ? null : context._errors;
     }
 
     public void setDebugName(String name)
@@ -70,7 +75,8 @@ public abstract class AbstractDataIterator implements DataIterator
     protected ValidationException getRowError()
     {
         int row = (Integer)this.get(0);
-
+        if (null == _rowError)
+            _rowError = _errors.getLastRowError();
         if (null == _rowError || row != _rowError.getRowNumber())
         {
             _rowError = new ValidationException();
@@ -78,5 +84,25 @@ public abstract class AbstractDataIterator implements DataIterator
             _errors.addRowError(_rowError);
         }
         return _rowError;
+    }
+
+
+    Set<String> errorFields = new HashSet<String>();
+
+    protected void addFieldError(String field, String msg)
+    {
+        if (_context.isVerbose() || errorFields.add(field))
+            getRowError().addFieldError(field, msg);
+    }
+
+    protected void addRowError(String message)
+    {
+        getRowError().addGlobalError(message);
+    }
+
+
+    protected void checkShouldCancel() throws BatchValidationException
+    {
+        _context.checkShouldCancel();
     }
 }

@@ -35,10 +35,8 @@ import java.util.Collections;
 class StatementDataIterator extends AbstractDataIterator
 {
     protected Parameter.ParameterMap _stmt;
-    BatchValidationException _errors;
     DataIterator _data;
     int _executeCount = 0;
-    boolean _failFast = false;
 
     Triple[] _bindings = null;
 
@@ -48,12 +46,11 @@ class StatementDataIterator extends AbstractDataIterator
     Integer _rowIdIndex = null;
     Integer _objectIdIndex = null;
 
-    protected StatementDataIterator(DataIterator data, Parameter.ParameterMap map, BatchValidationException errors)
+    protected StatementDataIterator(DataIterator data, Parameter.ParameterMap map, DataIteratorContext context)
     {
-        super(errors);
+        super(context);
         _data = data;
         _stmt = map;
-        _errors = errors;
 
         _keyColumnInfo = new ArrayList<ColumnInfo>(Collections.nCopies(data.getColumnCount()+1,(ColumnInfo)null));
         _keyValues = new ArrayList<Object>(Collections.nCopies(data.getColumnCount()+1,null));
@@ -180,8 +177,8 @@ class StatementDataIterator extends AbstractDataIterator
                     binding.to.setValue(value);
                 }
             }
-            if (_errors.hasErrors())
-                return !_failFast;
+
+            checkShouldCancel();
 
             _stmt.execute();
 

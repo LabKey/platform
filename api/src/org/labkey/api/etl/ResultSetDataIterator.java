@@ -40,19 +40,19 @@ import java.sql.SQLException;
  */
 public class ResultSetDataIterator extends AbstractDataIterator implements ScrollableDataIterator
 {
-    static public DataIterator wrap(ResultSet rs, BatchValidationException errors)
+    static public DataIterator wrap(ResultSet rs, DataIteratorContext context)
     {
         if (rs instanceof DataIteratorBuilder)
         {
-            return ((DataIteratorBuilder)rs).getDataIterator(errors);
+            return ((DataIteratorBuilder)rs).getDataIterator(context);
         }
 
-        return new ResultSetDataIterator(rs, errors);
+        return new ResultSetDataIterator(rs, context);
     }
 
-    protected ResultSetDataIterator(ResultSet rs, BatchValidationException errors)
+    protected ResultSetDataIterator(ResultSet rs,  DataIteratorContext context)
     {
-        super(errors);
+        super(context);
 
         try
         {
@@ -156,9 +156,9 @@ public class ResultSetDataIterator extends AbstractDataIterator implements Scrol
             ResultSet rs = null;
             try
             {
-                BatchValidationException errors = new BatchValidationException();
+                DataIteratorContext context = new DataIteratorContext();
                 rs = Table.executeQuery(DbSchema.get("core"), _testSql, null);
-                DataIterator it = ResultSetDataIterator.wrap(rs, errors);
+                DataIterator it = ResultSetDataIterator.wrap(rs, context);
                 assertEquals("a", it.getColumnInfo(1).getName());
                 assertEquals(JdbcType.INTEGER, it.getColumnInfo(1).getJdbcType());
                 assertEquals("b", it.getColumnInfo(2).getName());

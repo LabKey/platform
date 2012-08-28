@@ -55,28 +55,27 @@ public class StandardETL implements DataIteratorBuilder
     final DataIteratorBuilder _inputBuilder;
     final TableInfo _target;
     boolean _useImportAliases = false;
-    BatchValidationException _errors;
+    DataIteratorContext _context;
     final Container _c;
     final User _user;
-    boolean _failFast = true;
     _op op = _op.forInsert;
 
     ValidatorIterator _it;
 
 
-    public static StandardETL forInsert(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, BatchValidationException errors)
+    public static StandardETL forInsert(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, DataIteratorContext context)
     {
-        return new StandardETL(target, in, c, user, errors);
+        return new StandardETL(target, in, c, user, context);
     }
 
 
-    public static StandardETL forUpdate(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, BatchValidationException errors)
+    public static StandardETL forUpdate(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, DataIteratorContext context)
     {
         throw new UnsupportedOperationException();
     }
 
 
-    protected StandardETL(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, BatchValidationException errors)
+    protected StandardETL(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, DataIteratorContext context)
     {
         if (!(target instanceof UpdateableTableInfo))
             throw new IllegalArgumentException("Must implement UpdateableTableInfo");
@@ -84,19 +83,14 @@ public class StandardETL implements DataIteratorBuilder
         _target = target;
         _c = c;
         _user = user;
-        _errors = errors;
-    }
-
-
-    public void setForImport(boolean forImport)
-    {
-        _useImportAliases = forImport;
+        _context = context;
+        _useImportAliases = context.isForImport();
     }
 
 
     public BatchValidationException getErrors()
     {
-        return _errors;
+        return _context.getErrors();
     }
 
     private static class TranslateHelper
@@ -113,7 +107,7 @@ public class StandardETL implements DataIteratorBuilder
     }
 
     @Override
-    public DataIterator getDataIterator(BatchValidationException errors)
+    public DataIterator getDataIterator(DataIteratorContext context)
     {
         if (null != _it)
             return _it;
@@ -127,7 +121,7 @@ public class StandardETL implements DataIteratorBuilder
                 propertiesMap.put(dp.getPropertyURI(), dp);
         }
 
-        DataIterator input = _inputBuilder.getDataIterator(errors);
+        DataIterator input = _inputBuilder.getDataIterator(context);
 
         //
         // pass through all the source columns
@@ -136,7 +130,7 @@ public class StandardETL implements DataIteratorBuilder
         // NOTE: although some columns may be matched by propertyURI, I assumie that create/modified etc are bound by name
         //
 
-        input = SimpleTranslator.wrapBuiltInColumns(input, errors, _c, _user, _target);
+        input = SimpleTranslator.wrapBuiltInColumns(input, context, _c, _user, _target);
 
         Map<String,Integer> sourceColumnsMap = DataIteratorUtil.createColumnAndPropertyMap(input);
 
@@ -214,11 +208,10 @@ public class StandardETL implements DataIteratorBuilder
         // set up a SimpleTranslator for conversion and missing-value handling
         //
 
-        SimpleTranslator convert = new SimpleTranslator(input, errors);
+        SimpleTranslator convert = new SimpleTranslator(input, context);
         convert.setDebugName("StandardETL convert");
-        convert.setFailFast(_failFast);
         convert.setMvContainer(_c);
-        ValidatorIterator validate = new ValidatorIterator(convert, errors, _c, _user);
+        ValidatorIterator validate = new ValidatorIterator(convert, context, _c, _user);
         validate.setDebugName("StandardETL validate");
 
         for (TranslateHelper pair : targetCols)
@@ -243,6 +236,6 @@ public class StandardETL implements DataIteratorBuilder
         }
 
         DataIterator last = validate.hasValidators() ? validate : convert;
-        return LoggingDataIterator.wrap(ErrorIterator.wrap(last, errors, false, setupError));
+        return LoggingDataIterator.wrap(ErrorIterator.wrap(last, context, false, setupError));
     }
 }

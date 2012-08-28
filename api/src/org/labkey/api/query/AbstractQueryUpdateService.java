@@ -31,6 +31,7 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.etl.DataIteratorUtil;
 import org.labkey.api.etl.ListofMapsDataIterator;
 import org.labkey.api.etl.LoggingDataIterator;
@@ -93,16 +94,25 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return result;
     }
 
+
+    protected DataIteratorContext getDataIteratorContext(BatchValidationException errors, boolean forImport)
+    {
+        if (null == errors)
+            errors = new BatchValidationException();
+        DataIteratorContext context = new DataIteratorContext(errors);
+        context.setForImport(forImport);
+        return context;
+    }
+
+
     /*
      * construct the core ETL tranformation pipeline for this table, may be just StandardETL.
      * does NOT handle triggers or the insert/update iterator.
      */
-    public DataIteratorBuilder createImportETL(User user, Container container, DataIteratorBuilder data, BatchValidationException errors, boolean forImport)
+    public DataIteratorBuilder createImportETL(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
-        StandardETL etl = StandardETL.forInsert(getQueryTable(), data, container, user, errors);
-        etl.setForImport(forImport);
-        DataIteratorBuilder insert = ((UpdateableTableInfo)getQueryTable()).persistRows(etl, forImport, errors);
-        insert.setForImport(forImport);
+        StandardETL etl = StandardETL.forInsert(getQueryTable(), data, container, user, context);
+        DataIteratorBuilder insert = ((UpdateableTableInfo)getQueryTable()).persistRows(etl, context);
         return insert;
     }
 
@@ -151,37 +161,37 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     //
     // TODO do import and insert have different behavior wrt importAlaises?
     //
-    protected int _importRowsUsingETL(User user, Container container, DataIterator rows, @Nullable final ArrayList<Map<String, Object>> outputRows, BatchValidationException errors, Map<String, Object> extraScriptContext, boolean forImport)
+    protected int _importRowsUsingETL(User user, Container container, DataIterator rows, @Nullable final ArrayList<Map<String, Object>> outputRows, DataIteratorContext context, Map<String, Object> extraScriptContext)
             throws SQLException
     {
         if (!hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
 
-        errors.setExtraContext(extraScriptContext);
+        context.getErrors().setExtraContext(extraScriptContext);
 
         boolean hasTableScript = hasTableScript(container);
         DataIteratorBuilder in = new DataIteratorBuilder.Wrapper(rows);
-        TriggerDataBuilderHelper helper = new TriggerDataBuilderHelper(getQueryTable(), container, extraScriptContext, forImport);
+        TriggerDataBuilderHelper helper = new TriggerDataBuilderHelper(getQueryTable(), container, extraScriptContext, context.isForImport());
         if (hasTableScript)
             in = helper.before(in);
-        DataIteratorBuilder importETL = createImportETL(user, container, in, errors, forImport);
+        DataIteratorBuilder importETL = createImportETL(user, container, in, context);
         DataIteratorBuilder out = importETL;
         if (hasTableScript)
             out = helper.after(importETL);
 
-        int count = _pump(out, outputRows, errors);
-        return errors.hasErrors() ? 0 : count;
+        int count = _pump(out, outputRows, context);
+        return context.getErrors().hasErrors() ? 0 : count;
     }
 
 
     /** this is extracted so subclasses can add wrap */
-    protected int _pump(DataIteratorBuilder etl, final @Nullable ArrayList<Map<String, Object>> rows, BatchValidationException errors)
+    protected int _pump(DataIteratorBuilder etl, final @Nullable ArrayList<Map<String, Object>> rows,  DataIteratorContext context)
     {
-        DataIterator it = etl.getDataIterator(errors);
+        DataIterator it = etl.getDataIterator(context);
 
         if (null != rows)
         {
-            MapDataIterator maps = DataIteratorUtil.wrapMap(etl.getDataIterator(errors), false);
+            MapDataIterator maps = DataIteratorUtil.wrapMap(etl.getDataIterator(context), false);
             it = new WrapperDataIterator(maps)
             {
                 @Override
@@ -195,7 +205,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             };
         }
 
-        Pump pump = new Pump(it, errors);
+        Pump pump = new Pump(it, context);
         pump.run();
 
         return pump.getRowCount();
@@ -220,7 +230,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException;
 
 
-    protected List<Map<String, Object>> _insertRowsUsingETL(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
+    protected List<Map<String, Object>> _insertRowsUsingETL(User user, Container container, List<Map<String, Object>> rows,  DataIteratorContext context, Map<String, Object> extraScriptContext)
             throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
         if (!hasPermission(user, InsertPermission.class))
@@ -228,8 +238,8 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         DataIterator di = _toDataIterator(getClass().getSimpleName() + ".insertRows()", rows);
         ArrayList<Map<String,Object>> outputRows = new ArrayList<Map<String, Object>>();
-        int count = _importRowsUsingETL(user, container, di, outputRows, errors, extraScriptContext, false);
-        return errors.hasErrors() ? null : outputRows;
+        int count = _importRowsUsingETL(user, container, di, outputRows, context, extraScriptContext);
+        return context.getErrors().hasErrors() ? null : outputRows;
     }
 
 

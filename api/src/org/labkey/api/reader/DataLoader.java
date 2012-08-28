@@ -31,6 +31,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIterator;
+import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.etl.LoggingDataIterator;
 import org.labkey.api.etl.MapDataIterator;
 import org.labkey.api.exp.MvColumn;
@@ -834,38 +835,34 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
      */
 
     @Override
-    public DataIterator getDataIterator(final BatchValidationException errors)
+    public DataIterator getDataIterator(final DataIteratorContext context)
     {
         setInferTypes(false);
         try
         {
-            return LoggingDataIterator.wrap(new _DataIterator(errors, getColumns()));
+            return LoggingDataIterator.wrap(new _DataIterator(context, getColumns()));
         }
         catch (IOException x)
         {
-            errors.addRowError(new ValidationException(x.getMessage()));
+            context.getErrors().addRowError(new ValidationException(x.getMessage()));
             return null;
         }
     }
 
 
-    @Override
-    public void setForImport(boolean forImport)
-    {
-    }
-
-
     private class _DataIterator implements ScrollableDataIterator, MapDataIterator
     {
+        final DataIteratorContext _context;
         final BatchValidationException _errors;
         CloseableIterator<Map<String, Object>> _it = null;
         ArrayListMap<String,Object> _row = null;
         int _rowNumber = 0;
         ColumnDescriptor[] _columns;
 
-        _DataIterator(BatchValidationException errors, ColumnDescriptor[] columns)
+        _DataIterator(DataIteratorContext context, ColumnDescriptor[] columns)
         {
-            _errors = errors;
+            _context = context;
+            _errors = context.getErrors();
             _columns = columns;
             beforeFirst();
         }

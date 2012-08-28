@@ -61,10 +61,17 @@ public class BatchValidationException extends Exception
         return rowErrors;
     }
 
-    public void addToErrors(Errors errors)
+    public ValidationException getLastRowError()
+    {
+        if (rowErrors.isEmpty())
+            return null;
+        return rowErrors.get(rowErrors.size()-1);
+    }
+
+    public void addToErrors(Errors errorsTarget)
     {
         for (ValidationException vex : getRowErrors())
-            vex.addToErrors(errors);
+            vex.addToErrors(errorsTarget);
     }
 
     public void setExtraContext(Map<String, Object> extraContext)

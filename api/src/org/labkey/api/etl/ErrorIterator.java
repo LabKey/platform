@@ -38,19 +38,18 @@ public class ErrorIterator extends AbstractDataIterator
 {
     DataIterator _it;
     boolean _errorIfEmpty;
-    boolean _failFast = true;
     ValidationException _error;
 
-    public static DataIterator wrap(DataIterator di, BatchValidationException errors, boolean errorEvenIfEmpty, ValidationException x)
+    public static DataIterator wrap(DataIterator di, DataIteratorContext context, boolean errorEvenIfEmpty, ValidationException x)
     {
         if (null == x || !x.hasErrors())
             return di;
-        return new ErrorIterator(di, errors, errorEvenIfEmpty, x);
+        return new ErrorIterator(di, context, errorEvenIfEmpty, x);
     }
 
-    ErrorIterator(DataIterator di, BatchValidationException errors, boolean errorEvenIfEmpty, ValidationException x)
+    ErrorIterator(DataIterator di, DataIteratorContext context, boolean errorEvenIfEmpty, ValidationException x)
     {
-        super(errors);
+        super(context);
         this._it = di;
         this._errorIfEmpty = errorEvenIfEmpty;
         this._error = x;
@@ -77,7 +76,8 @@ public class ErrorIterator extends AbstractDataIterator
             getGlobalError().addErrors(_error);
             _error = null;
         }
-        return hasNext && !_failFast;
+        checkShouldCancel();
+        return hasNext;
     }
 
     @Override

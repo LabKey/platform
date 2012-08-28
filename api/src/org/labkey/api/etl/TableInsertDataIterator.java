@@ -39,24 +39,23 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     final TableInfo _table;
     final Container _c;
 
-    public static TableInsertDataIterator create(DataIterator data, TableInfo table, BatchValidationException errors)
+    public static TableInsertDataIterator create(DataIterator data, TableInfo table, DataIteratorContext context)
     {
-        TableInsertDataIterator it = new TableInsertDataIterator(data, table, null, errors);
+        TableInsertDataIterator it = new TableInsertDataIterator(data, table, null, context);
         return it;
     }
 
     /** If container != null, it will be set as a constant in the insert statement */
-    public static TableInsertDataIterator create(DataIteratorBuilder data, TableInfo table, @Nullable Container c, boolean forImport, BatchValidationException errors)
+    public static TableInsertDataIterator create(DataIteratorBuilder data, TableInfo table, @Nullable Container c, DataIteratorContext context)
     {
-        TableInsertDataIterator it = new TableInsertDataIterator(data.getDataIterator(errors), table, c, errors);
-        it.setForImport(forImport);
+        TableInsertDataIterator it = new TableInsertDataIterator(data.getDataIterator(context), table, c, context);
         return it;
     }
 
 
-    protected TableInsertDataIterator(DataIterator data, TableInfo table, Container c, BatchValidationException errors)
+    protected TableInsertDataIterator(DataIterator data, TableInfo table, Container c, DataIteratorContext context)
     {
-        super(data, null, errors);
+        super(data, null, context);
         this._table = table;
         this._c = c;
 
@@ -88,17 +87,10 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     }
 
     @Override
-    public DataIterator getDataIterator(BatchValidationException errors)
+    public DataIterator getDataIterator(DataIteratorContext context)
     {
-        assert null == errors || null == _errors || _errors == errors;
-        if (null != errors)
-            _errors = errors;
+        assert _context == context;
         return this;
-    }
-
-    @Override
-    public void setForImport(boolean forImport)
-    {
     }
 
     @Override
