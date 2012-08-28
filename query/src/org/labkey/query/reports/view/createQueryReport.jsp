@@ -128,14 +128,15 @@
 
     Ext4.onReady(function(){
         var queryStore = initializeQueryStore();
-        var queryId = Ext.id();
+        var queryId = Ext4.id();
         var viewStore = initializeViewStore();
-        var viewId = Ext.id();
+        var viewId = Ext4.id();
 
         queryStore.on('load', function(){
             var queryCombo = Ext4.getCmp(queryId);
             if(queryCombo){
                 queryCombo.setDisabled(false);
+                queryCombo.getEl().unmask();
             }
         });
 
@@ -144,6 +145,7 @@
 
             if(viewCombo){
                 viewCombo.setDisabled(false);
+                viewCombo.getEl().unmask();
             }
         });
 
@@ -165,6 +167,7 @@
                     if (queryCombo){
                         queryCombo.clearValue();
                         queryCombo.setDisabled(true);
+                        queryCombo.getEl().mask('loading...');
                     }
 
                     if(viewCombo){
@@ -209,7 +212,8 @@
                     }
 
                     if(this.queryName != null){
-                        Ext.Ajax.request({
+                        Ext4.getCmp(viewId).getEl().mask("loading...");
+                        Ext4.Ajax.request({
                             url: LABKEY.ActionURL.buildURL('query', 'getQueryViews'),
                             params: {
                                 schemaName: this.schemaName,
