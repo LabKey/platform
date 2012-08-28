@@ -20,7 +20,6 @@ package org.labkey.api.data;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.action.SpringActionController;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -123,6 +122,8 @@ public class ActionButton extends DisplayElement implements Cloneable
     private String _target;
     private boolean _appendScript;
     protected boolean _requiresSelection;
+    protected Integer _requiresSelectionMinCount;
+    protected Integer _requiresSelectionMaxCount;
     private @Nullable String _singularConfirmText;
     private @Nullable String _pluralConfirmText;
     private String _encodedSubmitForm;
@@ -318,20 +319,27 @@ public class ActionButton extends DisplayElement implements Cloneable
 
     public void setRequiresSelection(boolean requiresSelection)
     {
-        setRequiresSelection(requiresSelection, null, null, null);
+        setRequiresSelection(requiresSelection, (Integer)null, (Integer)null);
+    }
+
+    public void setRequiresSelection(boolean requiresSelection, Integer minCount, Integer maxCount)
+    {
+        setRequiresSelection(requiresSelection, minCount, maxCount, null, null, null);
     }
 
     // Confirm text strings can include ${selectedCount} -- when the message is rendered, this will be replaced by the actual count.
     public void setRequiresSelection(boolean requiresSelection, @NotNull String singularConfirmText, @NotNull String pluralConfirmText)
     {
-        setRequiresSelection(requiresSelection, singularConfirmText, pluralConfirmText, null);
+        setRequiresSelection(requiresSelection, null, null, singularConfirmText, pluralConfirmText, null);
     }
 
     // Confirm text strings can include ${selectedCount} -- when the message is rendered, this will be replaced by the actual count.
-    public void setRequiresSelection(boolean requiresSelection, @Nullable String singularConfirmText, @Nullable String pluralConfirmText, @Nullable String encodedSubmitForm)
+    public void setRequiresSelection(boolean requiresSelection, Integer minCount, Integer maxCount, @Nullable String singularConfirmText, @Nullable String pluralConfirmText, @Nullable String encodedSubmitForm)
     {
         checkLocked();
         _requiresSelection = requiresSelection;
+        _requiresSelectionMinCount = minCount;
+        _requiresSelectionMaxCount = maxCount;
         _singularConfirmText = singularConfirmText;
         _pluralConfirmText = pluralConfirmText;
         _encodedSubmitForm = encodedSubmitForm;
@@ -395,6 +403,14 @@ public class ActionButton extends DisplayElement implements Cloneable
             DataRegion dataRegion = ctx.getCurrentRegion();
             assert dataRegion != null : "ActionButton.setRequiresSelection() needs to be rendered in context of a DataRegion";
             attributes.append(" labkey-requires-selection=\"").append(PageFlowUtil.filter(dataRegion.getName())).append("\"");
+            if (_requiresSelectionMinCount != null)
+            {
+                attributes.append(" labkey-requires-selection-min-count=\"").append(_requiresSelectionMinCount).append("\"");
+            }
+            if (_requiresSelectionMaxCount != null)
+            {
+                attributes.append(" labkey-requires-selection-max-count=\"").append(_requiresSelectionMaxCount).append("\"");
+            }
         }
         
         if (_actionType.equals(Action.POST) || _actionType.equals(Action.GET))

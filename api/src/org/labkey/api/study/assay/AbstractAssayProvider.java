@@ -544,7 +544,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
         else
         {
-            if (allowFileReuseOnReRun && supportsReRun() && context.getReRun() != null)
+            if (allowFileReuseOnReRun && context.getReRun() != null)
             {
                 if (uploadedFiles != null && !uploadedFiles.isEmpty())
                 {

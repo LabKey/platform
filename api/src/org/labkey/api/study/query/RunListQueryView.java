@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.query;
 
+import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.SimpleFilter;
@@ -27,6 +28,9 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.study.actions.ReimportRedirectAction;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayRunType;
 import org.labkey.api.study.assay.AssayService;
@@ -102,6 +106,16 @@ public class RunListQueryView extends ExperimentRunListView
         AssayProvider provider = AssayService.get().getProvider(_protocol);
         if (provider != null && provider.supportsReRun())
         {
+            if (getViewContext().hasPermission(InsertPermission.class) && getViewContext().hasPermission(DeletePermission.class))
+            {
+                ActionURL reRunURL = new ActionURL(ReimportRedirectAction.class, getContainer());
+                reRunURL.addParameter("rowId", _protocol.getRowId());
+                ActionButton button = new ActionButton("Re-import run", reRunURL);
+                button.setActionType(ActionButton.Action.POST);
+                button.setRequiresSelection(true, 1, 1);
+                bar.add(button);
+            }
+
             MenuButton button = new MenuButton("Replaced Filter");
             for (ReplacedRunFilter.Type type : ReplacedRunFilter.Type.values())
             {

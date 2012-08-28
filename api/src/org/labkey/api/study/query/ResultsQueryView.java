@@ -139,8 +139,7 @@ public class ResultsQueryView extends AssayBaseQueryView
                 }
             }
 
-            AssayProvider provider = AssayService.get().getProvider(_protocol);
-            if (provider != null && provider.supportsReRun())
+            if (_provider != null && _provider.supportsReRun())
             {
                 MenuButton button = new MenuButton("Replaced Filter");
                 for (ReplacedRunFilter.Type type : ReplacedRunFilter.Type.values())

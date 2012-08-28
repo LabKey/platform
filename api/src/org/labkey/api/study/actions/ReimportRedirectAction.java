@@ -1,0 +1,72 @@
+package org.labkey.api.study.actions;
+
+import org.labkey.api.action.RedirectAction;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
+import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
+
+import java.util.Set;
+
+/**
+ * User: jeckels
+ * Date: 8/24/12
+ */
+@RequiresPermissionClass(InsertPermission.class)
+public class ReimportRedirectAction extends RedirectAction<ProtocolIdForm>
+{
+    @Override
+    public URLHelper getSuccessURL(ProtocolIdForm form)
+    {
+        Set<String> selectedRunIds = DataRegionSelection.getSelected(getViewContext(), true);
+        if (selectedRunIds.isEmpty())
+        {
+            throw new NotFoundException("No run selected");
+        }
+        AssayProvider provider = form.getProvider();
+        if (!provider.supportsReRun())
+        {
+            throw new NotFoundException("Unable to reimport a run for assays of type " + provider.getName());
+        }
+        ActionURL url = provider.getImportURL(getViewContext().getContainer(), form.getProtocol());
+        String runIdString = selectedRunIds.iterator().next();
+        try
+        {
+            int runId = Integer.parseInt(runIdString);
+            ExpRun run = ExperimentService.get().getExpRun(runId);
+            if (run == null)
+            {
+                throw new NotFoundException("No such run found");
+            }
+            url.setContainer(run.getContainer());
+            if (form.getProtocol().getRowId() != run.getProtocol().getRowId())
+            {
+                throw new NotFoundException("No such run for assay design " + form.getProtocol().getName());
+            }
+        }
+        catch (NumberFormatException e)
+        {
+            throw new NotFoundException("Invalid runId: " + runIdString);
+        }
+        url.addParameter("reRunId", runIdString);
+        return url;
+    }
+
+    @Override
+    public boolean doAction(ProtocolIdForm protocolIdForm, BindException errors) throws Exception
+    {
+        return true;
+    }
+
+    @Override
+    public void validateCommand(ProtocolIdForm target, Errors errors)
+    {
+    }
+}

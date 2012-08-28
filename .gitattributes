@@ -1015,6 +1015,7 @@ api/src/org/labkey/api/study/actions/PlateUploadForm.java -text
 api/src/org/labkey/api/study/actions/ProtocolIdForm.java -text
 api/src/org/labkey/api/study/actions/PublishConfirmAction.java -text
 api/src/org/labkey/api/study/actions/PublishStartAction.java -text
+api/src/org/labkey/api/study/actions/ReimportRedirectAction.java -text
 api/src/org/labkey/api/study/actions/ShowSelectedDataAction.java -text
 api/src/org/labkey/api/study/actions/ShowSelectedRunsAction.java -text
 api/src/org/labkey/api/study/actions/StudyPickerColumn.java -text

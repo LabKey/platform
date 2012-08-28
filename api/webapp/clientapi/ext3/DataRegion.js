@@ -392,14 +392,14 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         {
             if (toggle && this.isPageSelected())
                 toggle.checked = true;
-            this.onSelectChange(true);
+            this.onSelectChange(this.getSelectionCount());
         }
         else
         {
             if (toggle)
                 toggle.checked = false;
             this.removeMessage('selection');
-            this.onSelectChange(this.hasSelected());
+            this.onSelectChange(this.getSelectionCount());
         }
     },
 
@@ -511,7 +511,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             var toggle = this.form[".toggle"];
             if (toggle)
                 toggle.checked = checked;
-            this.onSelectChange(checked);
+            this.onSelectChange(this.getSelectionCount());
             this.setSelected({ids: ids, checked: checked, success: function (response, options) {
                 var count = 0;
                 try {
@@ -555,17 +555,27 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
      */
     hasSelected : function ()
     {
-        if (!this.table)
-            return false;
+        return this.getSelectionCount() > 0;
+    },
 
+    /**
+     * Returns the number of selected rows on the current page of the DataRegion. Selected items may exist on other pages.
+     * @returns {Integer} the number of selected rows on the current page of the DataRegion.
+     * @see LABKEY.DataRegion#getSelected to get all selected rows.
+     */
+    getSelectionCount : function ()
+    {
+        if (!this.table)
+            return 0;
+        var selectionCount = 0;
         var checkboxes = Ext.query('input[@type="checkbox"][@name=".select"]', this.table.dom);
         var len = checkboxes ? checkboxes.length : 0;
         for (var i = 0; i < len; i++)
         {
             if (checkboxes[i].checked)
-                return true;
+                selectionCount++;
         }
-        return false;
+        return selectionCount;
     },
 
     /**
@@ -621,7 +631,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
         if (!this.selectionKey)
             return;
 
-        this.onSelectChange(false);
+        this.onSelectChange(0);
 
         config = config || { };
         config.selectionKey = this.selectionKey;
@@ -1050,11 +1060,11 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                     var toggle = this.form[".toggle"];
                     if (toggle)
                         toggle.checked = true;
-                    this.onSelectChange(true);
+                    this.onSelectChange(this.getSelectionCount());
                 }
                 else
                 {
-                    this.onSelectChange(this.hasSelected());
+                    this.onSelectChange(this.getSelectionCount());
                 }
             }
             else
@@ -1415,9 +1425,9 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
     },
 
     // private
-    updateRequiresSelectionButtons : function (hasSelected)
+    updateRequiresSelectionButtons : function (selectionCount)
     {
-        var fn = hasSelected ? LABKEY.Utils.enableButton : LABKEY.Utils.disableButton;
+//        var fn = selectionCount > 0 ? LABKEY.Utils.enableButton : LABKEY.Utils.disableButton;
 
         // 10566: for javascript perf on IE stash the requires selection buttons
         if (!this._requiresSelectionButtons)
@@ -1426,15 +1436,42 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             var escaped = this.name.replace(/('|"|\\)/g, "\\$1");
             this._requiresSelectionButtons = Ext.DomQuery.select("a[labkey-requires-selection='" + escaped + "']");
         }
-        Ext.each(this._requiresSelectionButtons, fn);
 
+        for (var i = 0; i < this._requiresSelectionButtons.length; i++)
+        {
+            var buttonElement = this._requiresSelectionButtons[i];
+            var minCount = buttonElement.attributes['labkey-requires-selection-min-count'];
+            if (minCount)
+            {
+                minCount = parseInt(minCount.value);
+            }
+            if (minCount === undefined)
+            {
+                minCount = 1;
+            }
+            var maxCount = buttonElement.attributes['labkey-requires-selection-max-count'];
+            if (maxCount)
+            {
+                maxCount = parseInt(maxCount.value);
+            }
+            if (minCount <= selectionCount && (!maxCount || maxCount >= selectionCount))
+            {
+                LABKEY.Utils.enableButton(buttonElement);
+            }
+            else
+            {
+                LABKEY.Utils.disableButton(buttonElement);
+            }
+        }
+
+//        Ext.each(this._requiresSelectionButtons, fn);
     },
 
     // private
-    onSelectChange : function (hasSelected)
+    onSelectChange : function (selectionCount)
     {
-        this.updateRequiresSelectionButtons(hasSelected);
-        this.fireEvent('selectchange', this, hasSelected);
+        this.updateRequiresSelectionButtons(selectionCount);
+        this.fireEvent('selectchange', this, selectionCount);
     },
 
     onButtonClick : function(buttonId)
