@@ -26,6 +26,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.query.AliasManager;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 
@@ -510,7 +511,7 @@ public class StatementUtils
                 fn.append(variable);
                 fn.append(" ");
                 fn.append(type);
-                fn.append(" -- ").append(p.getName());
+                fn.append(" -- ").append(AliasManager.makeLegalName(p.getName(), null, false));
                 drop.append(comma).append(type);
                 call.append(comma).append("?");
                 call.add(p);
