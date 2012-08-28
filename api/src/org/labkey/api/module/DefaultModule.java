@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -386,9 +387,19 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
         // Handle modules that have no controllers (e.g., BigIron)
         if (!map.isEmpty())
-            return new ActionURL(map.keySet().iterator().next(), "begin", c);
-        else
-            return null;
+        {
+            Class<? extends Controller> controllerClass = map.values().iterator().next();
+            Controller controller = getController(null, controllerClass);
+            if (controller instanceof SpringActionController)
+            {
+                Controller action = ((SpringActionController) controller).getActionResolver().resolveActionName(controller, "begin");
+                if (action != null)
+                {
+                    return new ActionURL(action.getClass(), c);
+                }
+            }
+        }
+        return null;
     }
 
     @Override
@@ -892,7 +903,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
 
-    public Controller getController(HttpServletRequest request, Class cls)
+    public Controller getController(@Nullable HttpServletRequest request, Class cls)
     {
         try
         {
