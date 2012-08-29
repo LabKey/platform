@@ -88,6 +88,8 @@ public class ListQueryUpdateService extends AbstractQueryUpdateService
             throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
         List<Map<String, Object>> result = super._insertRowsUsingETL(user, container, rows, getDataIteratorContext(errors, false), extraScriptContext);
+        if (result.size() > 0 && !errors.hasErrors())
+            ListManager.get().indexList((ListDef)_list);
         return result;
     }
 
@@ -95,6 +97,8 @@ public class ListQueryUpdateService extends AbstractQueryUpdateService
     public int importRows(User user, Container container, DataIterator rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
     {
         int count = super._importRowsUsingETL(user, container, rows, null, getDataIteratorContext(errors, true), extraScriptContext);
+        if (count > 0 && !errors.hasErrors())
+            ListManager.get().indexList((ListDef)_list);
         return count;
     }
 

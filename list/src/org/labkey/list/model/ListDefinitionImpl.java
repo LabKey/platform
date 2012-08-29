@@ -833,6 +833,7 @@ public class ListDefinitionImpl implements ListDefinition
                 if (inserted > 0)
                     addAuditEvent(user, "Bulk inserted " + inserted + " rows to list.");
                 ExperimentService.get().commitTransaction();
+                ListManager.get().indexList(_def);
                 return inserted;
             }
             return 0;
