@@ -45,8 +45,8 @@ public class SpecimenPivotByDerivativeType extends BaseSpecimenPivotTable
         setDescription("Contains up to one row of Specimen Primary/Derivative Type totals for each " + StudyService.get().getSubjectNounSingular(getContainer()) +
             "/visit combination.");
 
-        Map<Integer, String> primaryTypeMap = getPrimaryTypeMap(getContainer());
-        Map<Integer, String> derivativeTypeMap = getDerivativeTypeMap(getContainer());
+        Map<Integer, NameLabelPair> primaryTypeMap = getPrimaryTypeMap(getContainer());
+        Map<Integer, NameLabelPair> derivativeTypeMap = getDerivativeTypeMap(getContainer());
 
         for (ColumnInfo col : getRealTable().getColumns())
         {
@@ -68,12 +68,14 @@ public class SpecimenPivotByDerivativeType extends BaseSpecimenPivotTable
                                 COLUMN_DESCRIPTION_FORMAT,
                                 primaryTypeMap.get(primaryId),
                                 derivativeTypeMap.get(derivativeId),
-                                parts[1]);
+                                new NameLabelPair(parts[1], parts[1]));
                     }
                 }
             }
         }
         setDefaultVisibleColumns(getDefaultVisibleColumns());
         addWrapColumn(_rootTable.getColumn("Container"));
+
+        saveTypeNameIdMap();
     }
 }

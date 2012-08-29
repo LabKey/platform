@@ -16,9 +16,9 @@
 package org.labkey.study.query;
 
 import org.apache.log4j.Logger;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FilteredTable;
@@ -30,6 +30,8 @@ import org.labkey.study.model.SpecimenTypeSummary;
 
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -41,6 +43,111 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable
 {
     protected static final String AGGREGATE_DELIM = "::";
     protected static final String TYPE_DELIM = "-";
+
+    protected static String getNormalName(String name)
+    {
+        return name.toLowerCase();
+    }
+
+    protected class LegalCaseInsensitiveMap
+    {
+        // Map of names to normalized and legalized names
+        // If normalized name is duplicated, it is added to the Duplicated set
+        private HashMap<String, String> _nameToNormalName = new HashMap<String, String>();
+        private HashSet<String> _normalNameDuplicated = new HashSet<String>();
+
+        public void putName(String key)
+        {
+            if (!_nameToNormalName.containsKey(key))
+            {
+                String legalName = ColumnInfo.legalNameFromName(key);
+                String normalName = BaseSpecimenPivotTable.getNormalName(legalName);
+                if (_nameToNormalName.containsValue(normalName))
+                {
+                    _normalNameDuplicated.add(normalName);
+                }
+                _nameToNormalName.put(key, normalName);
+
+                if (!_typeNameIdMapWrapper.containsKey(key))
+                {
+                    int id = _typeNameIdMapWrapper.size() + 1;
+                    _typeNameIdMapWrapper.put(key, String.valueOf(id));
+                }
+            }
+        }
+
+        public String getNormalName(String key)
+        {
+            return _nameToNormalName.get(key);
+        }
+
+        public boolean isDuplicated(String key)
+        {
+            return _normalNameDuplicated.contains(getNormalName(key));
+        }
+
+    }
+
+    protected class NameLabelPair
+    {
+        public String _name;
+        public String _label;
+
+        public NameLabelPair(String name, String label)
+        {
+            _name = name;
+            _label = label;
+        }
+    }
+
+    // For assigning unique ids to type names, so if there are legal/lowercase name conflicts we can create
+    // a unique id to ensure uniqueness in the queries we create
+    private static final String CATEGORY_NAME = "TypeNameToUniqueIdPropertyMap";
+
+    private class PropertyMapWrapper
+    {
+        private PropertyManager.PropertyMap _typeNameIdMapWritable = null;
+        private Map<String, String> _typeNameIdMap = null;
+        private Container _container = null;
+
+        public PropertyMapWrapper(Container container)
+        {
+            _container = container;
+            _typeNameIdMap = PropertyManager.getProperties(container, CATEGORY_NAME);
+        }
+        public boolean containsKey(String key)
+        {
+            if (null != _typeNameIdMapWritable)
+                return _typeNameIdMapWritable.containsKey(key);
+            return _typeNameIdMap.containsKey(key);
+        }
+        public String get(String key)
+        {
+            if (null != _typeNameIdMapWritable)
+                return _typeNameIdMapWritable.get(key);
+             return _typeNameIdMap.get(key);
+        }
+        public void put(String key, String value)
+        {
+            if (null == _typeNameIdMapWritable)
+                _typeNameIdMapWritable = PropertyManager.getWritableProperties(_container, CATEGORY_NAME, true);
+            _typeNameIdMapWritable.put(key, value);
+
+        }
+        public void save()
+        {
+            if (null != _typeNameIdMapWritable)
+                PropertyManager.saveProperties(_typeNameIdMapWritable);
+        }
+        public int size()
+        {
+            if (null != _typeNameIdMapWritable)
+                return _typeNameIdMapWritable.size();
+            return _typeNameIdMap.size();
+        }
+    }
+
+    private PropertyMapWrapper _typeNameIdMapWrapper = null;
 
     public BaseSpecimenPivotTable(final TableInfo tinfo, final StudyQuerySchema schema)
     {
@@ -55,30 +162,41 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable
         addWrapColumn(_rootTable.getColumn(StudyService.get().getSubjectColumnName(getContainer())));
         addWrapColumn(_rootTable.getColumn(StudyService.get().getSubjectVisitColumnName(getContainer())));
         addWrapColumn(_rootTable.getColumn("Visit"));
+
+        _typeNameIdMapWrapper = new PropertyMapWrapper(getContainer());
     }
 
-    protected ColumnInfo wrapPivotColumn(ColumnInfo col, String descriptionFormat, String ...parts)
+    protected void saveTypeNameIdMap()
     {
+        _typeNameIdMapWrapper.save();
+    }
+
+    protected ColumnInfo wrapPivotColumn(ColumnInfo col, String descriptionFormat, NameLabelPair ...parts)
+    {
+        // The parts._name should already be "Normal Legal Name" parts
         StringBuilder name = new StringBuilder();
         StringBuilder label = new StringBuilder();
         String delim = "";
         String labelDelim = "";
-
-        for (String part : parts)
+        String[] labelsForDescription = new String[parts.length];
+        int i = 0;
+        for (NameLabelPair part : parts)
         {
             if (part != null)
             {
-                name.append(delim).append(part);
-                label.append(labelDelim).append(part);
+                name.append(delim).append(part._name);
+                label.append(labelDelim).append(part._label);
+                labelsForDescription[i] = part._label;
 
                 delim = "_";
                 labelDelim = ":";
             }
+            i += 1;
         }
-        ColumnInfo colInfo = new AliasedColumn(this, ColumnInfo.legalNameFromName(name.toString()), col);
-        colInfo.setLabel(ColumnInfo.labelFromName(label.toString()));
+        ColumnInfo colInfo = new AliasedColumn(this, name.toString(), col);       // make lower case
+        colInfo.setLabel(label.toString());
         if (descriptionFormat != null)
-            colInfo.setDescription(String.format(descriptionFormat, parts));
+            colInfo.setDescription(String.format(descriptionFormat, labelsForDescription));
 
         return addColumn(colInfo);
     }
@@ -86,27 +204,26 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable
     /**
      * Returns a map of primary type id's to labels
      */
-    protected Map<Integer, String> getPrimaryTypeMap(Container container)
+    protected Map<Integer, NameLabelPair> getPrimaryTypeMap(Container container)
     {
-        Map<Integer, String> typeMap = new HashMap<Integer, String>();
-        Map<String, Boolean> dupMap = new CaseInsensitiveHashMap<Boolean>();
+        Map<Integer, NameLabelPair> typeMap = new HashMap<Integer, NameLabelPair>();
+        LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
         SpecimenTypeSummary summary = SampleManager.getInstance().getSpecimenTypeSummary(getContainer());
+        List<? extends SpecimenTypeSummary.TypeCount> primaryTypes = summary.getPrimaryTypes();
 
-        for (SpecimenTypeSummary.TypeCount type : summary.getPrimaryTypes())
+        for (SpecimenTypeSummary.TypeCount type : primaryTypes)
         {
             if (type.getId() != null)
             {
-                if (dupMap.containsKey(type.getLabel()))
-                    dupMap.put(type.getLabel(), true);
-                else
-                    dupMap.put(type.getLabel(), false);
+                legalMap.putName(type.getLabel());
             }
         }
 
-        for (SpecimenTypeSummary.TypeCount type : summary.getPrimaryTypes())
+        for (SpecimenTypeSummary.TypeCount type : primaryTypes)
         {
             if (type.getId() != null)
-                typeMap.put(type.getId(), getLabel(type.getLabel(), type.getId(), dupMap));
+                typeMap.put(type.getId(), new NameLabelPair(
+                        getLabel(type.getLabel(), type.getId(), legalMap), type.getLabel()));
         }
         return typeMap;
     }
@@ -114,23 +231,21 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable
     /**
      * Returns a map of all primary types
      */
-    protected Map<Integer, String> getAllPrimaryTypesMap(Container container) throws SQLException
+    protected Map<Integer, NameLabelPair> getAllPrimaryTypesMap(Container container) throws SQLException
     {
-        Map<Integer, String> typeMap = new HashMap<Integer, String>();
-        Map<String, Boolean> dupMap = new CaseInsensitiveHashMap<Boolean>();
+        Map<Integer, NameLabelPair> typeMap = new HashMap<Integer, NameLabelPair>();
+        LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
+        PrimaryType[] primaryTypes = SampleManager.getInstance().getPrimaryTypes(container);
 
-        for (PrimaryType type : SampleManager.getInstance().getPrimaryTypes(container))
+        for (PrimaryType type : primaryTypes)
         {
-            if (dupMap.containsKey(type.getPrimaryType()))
-                dupMap.put(type.getPrimaryType(), true);
-            else
-                dupMap.put(type.getPrimaryType(), false);
+            legalMap.putName(type.getPrimaryType());
         }
 
-
-        for (PrimaryType type : SampleManager.getInstance().getPrimaryTypes(container))
+        for (PrimaryType type : primaryTypes)
         {
-            typeMap.put((int)type.getRowId(), getLabel(type.getPrimaryType(), (int)type.getRowId(), dupMap));
+            typeMap.put((int)type.getRowId(), new NameLabelPair(
+                    getLabel(type.getPrimaryType(), (int)type.getRowId(), legalMap), type.getPrimaryType()));
         }
         return typeMap;
     }
@@ -138,24 +253,24 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable
     /**
      * Returns a map of derivative type id's to labels
      */
-    protected Map<Integer, String> getDerivativeTypeMap(Container container)
+    protected Map<Integer, NameLabelPair> getDerivativeTypeMap(Container container)
     {
-        Map<Integer, String> typeMap = new HashMap<Integer, String>();
-        Map<String, Boolean> dupMap = new CaseInsensitiveHashMap<Boolean>();
+        Map<Integer, NameLabelPair> typeMap = new HashMap<Integer, NameLabelPair>();
+        LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
         SpecimenTypeSummary summary = SampleManager.getInstance().getSpecimenTypeSummary(getContainer());
+        List<? extends SpecimenTypeSummary.TypeCount> types = summary.getDerivatives();
 
-        for (SpecimenTypeSummary.TypeCount type : summary.getDerivatives())
+        for (SpecimenTypeSummary.TypeCount type : types)
         {
-            if (dupMap.containsKey(type.getLabel()))
-                dupMap.put(type.getLabel(), true);
-            else
-                dupMap.put(type.getLabel(), false);
+            if (type.getId() != null && type.getLabel() != null)
+                legalMap.putName(type.getLabel());
         }
 
-        for (SpecimenTypeSummary.TypeCount type : summary.getDerivatives())
+        for (SpecimenTypeSummary.TypeCount type : types)
         {
-            if (type.getId() != null)
-                typeMap.put(type.getId(), getLabel(type.getLabel(), type.getId(), dupMap));
+            if (type.getId() != null  && type.getLabel() != null)
+                typeMap.put(type.getId(), new NameLabelPair(
+                        getLabel(type.getLabel(), type.getId(), legalMap), type.getLabel()));
         }
         return typeMap;
     }
@@ -163,32 +278,36 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable
     /**
      * Returns a map of site id's to labels
      */
-    protected Map<Integer, String> getSiteMap(Container container) throws SQLException
+    protected Map<Integer, NameLabelPair> getSiteMap(Container container) throws SQLException
     {
-        Map<Integer, String> siteMap = new HashMap<Integer, String>();
-        Map<String, Boolean> dupMap = new CaseInsensitiveHashMap<Boolean>();
+        Map<Integer, NameLabelPair> siteMap = new HashMap<Integer, NameLabelPair>();
+        LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
+        SiteImpl[] sites = SampleManager.getInstance().getSites(container);
 
-        for (SiteImpl site : SampleManager.getInstance().getSites(container))
+        for (SiteImpl site : sites)
         {
-            if (dupMap.containsKey(site.getLabel()))
-                dupMap.put(site.getLabel(), true);
-            else
-                dupMap.put(site.getLabel(), false);
+            legalMap.putName(site.getLabel());
         }
 
-        for (SiteImpl site : SampleManager.getInstance().getSites(container))
-            siteMap.put(site.getRowId(), getLabel(site.getLabel(), site.getRowId(), dupMap));
-
+        for (SiteImpl site : sites)
+        {
+            siteMap.put(site.getRowId(), new NameLabelPair(
+                    getLabel(site.getLabel(), site.getRowId(), legalMap), site.getLabel()));
+        }
         return siteMap;
     }
 
     /**
      * use the row id to uniquify the column name, else just return the name
      */
-    private String getLabel(String label, int id, Map<String, Boolean> dupMap)
+    private String getLabel(String label, int id, LegalCaseInsensitiveMap legalMap)
     {
-        if (label != null && dupMap.containsKey(label) && dupMap.get(label))
-            return String.format("%s(%s)", label, id);
+        if (label != null && legalMap.isDuplicated(label))
+        {
+            String idString = _typeNameIdMapWrapper.get(label);
+            int mappedId = (idString != null) ? Integer.valueOf(idString) : id;
+            return String.format("%s(%s)", legalMap.getNormalName(label), mappedId);
+        }
         else
             return label;
     }

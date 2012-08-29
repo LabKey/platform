@@ -48,8 +48,8 @@ public class SpecimenPivotByPrimaryType extends BaseSpecimenPivotTable
             "/visit combination.");
 
         try {
-            Map<Integer, String> primaryTypeMap = getPrimaryTypeMap(getContainer());
-            Map<Integer, String> allPrimaryTypes = getAllPrimaryTypesMap(getContainer());
+            Map<Integer, NameLabelPair> primaryTypeMap = getPrimaryTypeMap(getContainer());
+            Map<Integer, NameLabelPair> allPrimaryTypes = getAllPrimaryTypesMap(getContainer());
             
             for (ColumnInfo col : getRealTable().getColumns())
             {
@@ -62,11 +62,13 @@ public class SpecimenPivotByPrimaryType extends BaseSpecimenPivotTable
 
                     if (primaryTypeMap.containsKey(primaryId))
                     {
-                        wrapPivotColumn(col, COLUMN_DESCRIPTION_FORMAT, primaryTypeMap.get(primaryId), parts[1]);
+                        wrapPivotColumn(col, COLUMN_DESCRIPTION_FORMAT, primaryTypeMap.get(primaryId),
+                                new NameLabelPair(parts[1], parts[1]));
                     }
                     else if (allPrimaryTypes.containsKey(primaryId))
                     {
-                        ColumnInfo wrappedCol = wrapPivotColumn(col, COLUMN_DESCRIPTION_FORMAT, allPrimaryTypes.get(primaryId), parts[1]);
+                        ColumnInfo wrappedCol = wrapPivotColumn(col, COLUMN_DESCRIPTION_FORMAT, allPrimaryTypes.get(primaryId),
+                                new NameLabelPair(parts[1], parts[1]));
 
                         wrappedCol.setHidden(true);
                     }
@@ -81,8 +83,13 @@ public class SpecimenPivotByPrimaryType extends BaseSpecimenPivotTable
         {
             throw new RuntimeException(e);
         }
+        finally
+        {
+            saveTypeNameIdMap();
+        }
     }
 
+    /*
     private List<FieldKey> getDefaultColumns(StudyQuerySchema schema)
     {
         List<FieldKey> defaultColumns = new ArrayList<FieldKey>();
@@ -109,4 +116,5 @@ public class SpecimenPivotByPrimaryType extends BaseSpecimenPivotTable
         }
         return defaultColumns;
     }
+    */
 }

@@ -45,9 +45,9 @@ public class SpecimenPivotByRequestingLocation extends BaseSpecimenPivotTable
 
         try {
 
-            Map<Integer, String> primaryTypeMap = getPrimaryTypeMap(getContainer());
-            Map<Integer, String> derivativeTypeMap = getDerivativeTypeMap(getContainer());
-            Map<Integer, String> siteMap = getSiteMap(getContainer());
+            Map<Integer, NameLabelPair> primaryTypeMap = getPrimaryTypeMap(getContainer());
+            Map<Integer, NameLabelPair> derivativeTypeMap = getDerivativeTypeMap(getContainer());
+            Map<Integer, NameLabelPair> siteMap = getSiteMap(getContainer());
 
             for (ColumnInfo col : getRealTable().getColumns())
             {
@@ -81,6 +81,10 @@ public class SpecimenPivotByRequestingLocation extends BaseSpecimenPivotTable
         catch (SQLException e)
         {
             throw new RuntimeException(e);
+        }
+        finally
+        {
+            saveTypeNameIdMap();
         }
     }
 }
