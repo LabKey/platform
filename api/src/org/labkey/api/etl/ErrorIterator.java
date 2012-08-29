@@ -75,6 +75,7 @@ public class ErrorIterator extends AbstractDataIterator
         {
             getGlobalError().addErrors(_error);
             _error = null;
+            return false;
         }
         checkShouldCancel();
         return hasNext;
