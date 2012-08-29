@@ -487,6 +487,12 @@ LABKEY.Assay = new function()
 */
 
 /**
+* @name containerPath
+* @description The path to the container in which this assay design is saved
+* @type String
+*/
+
+/**
 * @name type
 * @description The name of the assay type.  Example:  "ELISpot"
 * @type String
