@@ -2844,10 +2844,14 @@ study/resources/schemas/dbscripts/sqlserver/study-create.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-drop.sql -text
 study/resources/schemas/study.xml -text
 study/src/org/labkey/study/AssayFolderType.java -text
+study/src/org/labkey/study/BaseCohortFilter.java -text
 study/src/org/labkey/study/CohortFilter.java -text
+study/src/org/labkey/study/CohortFilterFactory.java -text
+study/src/org/labkey/study/MultipleCohortFilter.java -text
 study/src/org/labkey/study/PurgeParticipantsMaintenanceTask.java -text
 study/src/org/labkey/study/QueryHelper.java -text
 study/src/org/labkey/study/SampleManager.java -text
+study/src/org/labkey/study/SingleCohortFilter.java -text
 study/src/org/labkey/study/SpecimenServiceImpl.java -text
 study/src/org/labkey/study/StudyCache.java -text
 study/src/org/labkey/study/StudyContainerListener.java -text

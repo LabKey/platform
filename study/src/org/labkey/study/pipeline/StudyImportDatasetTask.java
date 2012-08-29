@@ -39,14 +39,28 @@ public class StudyImportDatasetTask extends AbstractDatasetImportTask<StudyImpor
         super(factory, job);
     }
 
-    public File getDatasetsFile() throws ImportException
+    @Override
+    protected String getDatasetsFileName() throws ImportException
+    {
+        StudyJobSupport support = getJob().getJobSupport(StudyJobSupport.class);
+        StudyImportContext ctx = support.getImportContext();
+
+        return StudyImportDatasetTask.getDatasetsFileName(ctx);
+    }
+
+    @Override
+    protected VirtualFile getDatasetsDirectory() throws ImportException
     {
         StudyJobSupport support = getJob().getJobSupport(StudyJobSupport.class);
         StudyImportContext ctx = support.getImportContext();
         VirtualFile root = support.getRoot();
-        return getDatasetsFile(ctx, root);
+
+        return StudyImportDatasetTask.getDatasetsDirectory(ctx, root);
     }
 
+    /**
+     * @deprecated
+     */
     public static File getDatasetsFile(StudyImportContext ctx, VirtualFile root) throws ImportException
     {
         StudyDocument.Study.Datasets datasetsXml = ctx.getXml().getDatasets();
@@ -61,6 +75,21 @@ public class StudyImportDatasetTask extends AbstractDatasetImportTask<StudyImpor
         }
 
         return null;
+    }
+
+    public static String getDatasetsFileName(StudyImportContext ctx) throws ImportException
+    {
+        StudyDocument.Study.Datasets datasetsXml = ctx.getXml().getDatasets();
+
+        if (null != datasetsXml)
+            return datasetsXml.getDefinition().getFile();
+
+        return null;
+    }
+
+    public static VirtualFile getDatasetsDirectory(StudyImportContext ctx, VirtualFile root) throws ImportException
+    {
+        return DatasetImporter.getDatasetDirectory(ctx, root);
     }
 
     public StudyImpl getStudy()

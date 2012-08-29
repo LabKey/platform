@@ -20,7 +20,10 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.writer.VirtualFile;
 
 import java.io.File;
 import java.io.Serializable;
@@ -33,9 +36,22 @@ import java.sql.SQLException;
  */
 public class DatasetBatch extends StudyBatch implements Serializable, DatasetJobSupport
 {
-    public DatasetBatch(ViewBackgroundInfo info, File definitionFile, PipeRoot root) throws SQLException
+    private VirtualFile _datasetsDirectory;
+    private String _datasetsFileName;
+
+    public DatasetBatch(ViewBackgroundInfo info, VirtualFile datasetsDirectory, String datasetsFileName, PipeRoot root) throws SQLException
     {
-        super(info, definitionFile, root);
+        // TODO, convert StudyBatch to use virtual files instead of passing it a definitionFile
+        super(info, null, root);
+
+        _datasetsDirectory = datasetsDirectory;
+        _datasetsFileName = datasetsFileName;
+    }
+
+    protected File createLogFile()
+    {
+        Path logFilePath = Path.parse(_datasetsDirectory.getLocation()).append(_datasetsFileName);
+        return new File(FileUtil.makeFileNameWithTimestamp(logFilePath.toString(), "log"));
     }
 
     @Override
@@ -48,9 +64,15 @@ public class DatasetBatch extends StudyBatch implements Serializable, DatasetJob
     }
 
     @Override
-    public File getDatasetsFile()
+    public VirtualFile getDatasetsDirectory()
     {
-        return getDefinitionFile();
+        return _datasetsDirectory;
+    }
+
+    @Override
+    public String getDatasetsFileName()
+    {
+        return _datasetsFileName;
     }
 
     @Override

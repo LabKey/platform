@@ -25,7 +25,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
 
     border : false,
     frame  : false,
-    bubbleEvents : ['select', 'selectionchange', 'itemmouseenter', 'itemmouseleave', 'initSelectionComplete'],
+    bubbleEvents : ['select', 'selectionchange', 'itemmouseenter', 'itemmouseleave', 'initSelectionComplete', 'beginInitSelection'],
 
     statics : {
         groupSelCache : {} // 15505
@@ -38,6 +38,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
             bodyStyle: 'padding-bottom: 10px;'
         });
 
+        this.addEvents('initSelectionComplete', 'beginInitSelection');
         this.registerSelectionCache(this.sectionName);
         this.addEvents('initSelectionComplete');
 
@@ -209,6 +210,8 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
         // if there is not a default number of selection to make initially, set it to select all
         if (!this.maxInitSelection)
             this.maxInitSelection = target.store.getCount();
+
+        this.fireEvent('beginInitSelection', this, target.store);
 
         target.suspendEvents(); // queueing of events id depended on
         if (!this.noSelection) {

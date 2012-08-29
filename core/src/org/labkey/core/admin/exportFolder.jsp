@@ -43,7 +43,7 @@ var formItems = [];
 formItems.push({xtype: "label", text: "Folder objects to export:"});
 <%
     Collection<FolderWriter> writers = new LinkedList<FolderWriter>(FolderSerializationRegistryImpl.get().getRegisteredFolderWriters());
-    boolean showFormatOptions = false;
+    boolean showStudyOptions = false;
     for (FolderWriter writer : writers)
     {
         String parent = writer.getSelectionText();
@@ -69,18 +69,18 @@ formItems.push({xtype: "label", text: "Folder objects to export:"});
             }
         }
 
-        // if there is a study writer shown, set a boolean variable so we know whether or not the show the file format picker
+        // if there is a study writer shown, set a boolean variable so we know whether or not the show the study related options
         if ("Study".equals(parent) && writer.show(c))
-            showFormatOptions = true;
+            showStudyOptions = true;
     }
 %>
 
-formItems.push({xtype: "spacer", height: 20, hidden: <%=!showFormatOptions%>});
-formItems.push({xtype: "label", text: "Export file formats:", hidden: <%=!showFormatOptions%>});
+formItems.push({xtype: "spacer", height: 20, hidden: <%=!showStudyOptions%>});
+formItems.push({xtype: "label", text: "Export file formats:", hidden: <%=!showStudyOptions%>});
 var formatRadios = new Ext.form.RadioGroup({
     hideLabel: true,
     columns: 1,
-    hidden: <%=!showFormatOptions%>,
+    hidden: <%=!showStudyOptions%>,
     items: [
         {boxLabel: 'New XML file formats<%=PageFlowUtil.helpPopup("New XML file formats","Selecting this option will export study meta data using XML file formats (e.g., visit_map.xml and datasets_metadata.xml). This is the recommended setting.")%>', name: "format", inputValue: "new", checked: true},
         {boxLabel: 'Legacy file formats<%=PageFlowUtil.helpPopup("Legacy File Formats", "Selecting this option will export some meta data using older, non-XML file formats (e.g, visit_map.txt and schema.tsv). This setting is not recommended since the non-XML formats contain less information than the XML formats. This option is provided to support older studies that haven't switched to XML file formats yet.")%>', name: "format", inputValue: "old"}
@@ -90,9 +90,9 @@ formItems.push(formatRadios);
 
 formItems.push({xtype: "spacer", height: 20});
 formItems.push({xtype: "label", text: "Options:"});
-formItems.push({xtype: 'checkbox', hideLabel: true, boxLabel: 'Remove All Columns Tagged as Protected<%=PageFlowUtil.helpPopup("Remove Protected Columns", "Selecting this option will exclude all dataset and list columns that have been tagged as protected columns.")%>', name: 'removeProtected'});
-formItems.push({xtype: 'checkbox', hideLabel: true, boxLabel: 'Shift All Participant Dates<%=PageFlowUtil.helpPopup("Shift Date Columns", "Selecting this option will shift all date values associated with a participant by a random, participant specific, offset (from 1 to 365 days).")%>', name: 'shiftDates'});
-formItems.push({xtype: 'checkbox', hideLabel: true, boxLabel: 'Export Alternate Participant IDs in Datasets<%=PageFlowUtil.helpPopup("Export Alternate Participant IDs", "Selecting this option will replace each participant id by an alternate randomly generated id.")%>', name: 'alternateIds'});
+formItems.push({xtype: 'checkbox', hideLabel: true, boxLabel: 'Remove All Columns Tagged as Protected<%=PageFlowUtil.helpPopup("Remove Protected Columns", "Selecting this option will exclude all dataset and list columns that have been tagged as protected columns.")%>', name: 'removeProtected', objectType: 'otherOptions'});
+formItems.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!showStudyOptions%>, boxLabel: 'Shift All Participant Dates in Datasets<%=PageFlowUtil.helpPopup("Shift Date Columns", "Selecting this option will shift all date values associated with a participant by a random, participant specific, offset (from 1 to 365 days).")%>', name: 'shiftDates', objectType: 'otherOptions'});
+formItems.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!showStudyOptions%>, boxLabel: 'Export Alternate Participant IDs in Datasets<%=PageFlowUtil.helpPopup("Export Alternate Participant IDs", "Selecting this option will replace each participant id by an alternate randomly generated id.")%>', name: 'alternateIds', objectType: 'otherOptions'});
 
 formItems.push({xtype: "spacer", height: 20});
 formItems.push({xtype: "label", text: "Export to:"});
@@ -117,7 +117,33 @@ var exportForm = new LABKEY.ext.FormPanel({
 
 function submit()
 {
-    exportForm.getForm().submit();
+    // issue 15792: warn if specimen export is selected with any of the PHI related options also selected
+    var specimenItems = exportForm.find("itemId", "Specimens");
+    if (hasSelectedOption("itemId", "Specimens") && hasSelectedOption("objectType", "otherOptions"))
+    {
+        Ext.Msg.confirm('Confirm export options', 'Specimen export does not support removing protected columns, shifting participant dates, or using alternate participant IDs. Would you like to proceed anyway?',
+            function(btn)
+            {
+                if (btn == 'yes')
+                    exportForm.getForm().submit();
+            }
+        );
+    }
+    else
+    {
+        exportForm.getForm().submit();
+    }
+}
+
+function hasSelectedOption(attribute, value)
+{
+    var items = exportForm.find(attribute, value);
+    for (var i = 0; i < items.length; i++)
+    {
+        if (items[i].checked)
+            return true;
+    }
+    return false;
 }
 
 Ext.onReady(function() {

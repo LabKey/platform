@@ -41,6 +41,8 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.CohortFilter;
+import org.labkey.study.CohortFilterFactory;
+import org.labkey.study.SingleCohortFilter;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.CohortController;
 
@@ -209,7 +211,7 @@ public class CohortManager
             if (cohorts.length > 0)
             {
                 MenuButton button = new MenuButton("Cohorts");
-                ActionURL allCohortsURL = CohortFilter.clearURLParameters(context.cloneActionURL());
+                ActionURL allCohortsURL = CohortFilterFactory.clearURLParameters(context.cloneActionURL());
                 NavTree item = new NavTree("All", allCohortsURL.toString());
                 item.setId(button.getCaption() + ":" + item.getText());
                 if (currentCohortFilter == null)
@@ -257,7 +259,7 @@ public class CohortManager
 
                     for (CohortFilter.Type type : CohortFilter.Type.values())
                     {
-                        CohortFilter filter = new CohortFilter(type, cohort.getRowId());
+                        CohortFilter filter = new SingleCohortFilter(type, cohort.getRowId());
                         ActionURL url = filter.addURLParameters(baseURL.clone());
 
                         NavTree typeItem = new NavTree(type.getTitle(), url.toString());
@@ -274,7 +276,7 @@ public class CohortManager
             {
                 for (CohortImpl cohort : cohorts)
                 {
-                    CohortFilter filter = new CohortFilter(CohortFilter.Type.PTID_CURRENT, cohort.getRowId());
+                    CohortFilter filter = new SingleCohortFilter(CohortFilter.Type.PTID_CURRENT, cohort.getRowId());
                     ActionURL url = filter.addURLParameters(baseURL.clone());
                     NavTree item = new NavTree(cohort.getLabel(), url.toString());
                     item.setId(caption + ":" + item.getText());

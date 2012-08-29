@@ -16,6 +16,7 @@
 package org.labkey.query.reports;
 
 import org.labkey.api.admin.BaseFolderWriter;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportContext;
@@ -25,6 +26,11 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.ExportDirType;
 import org.labkey.folder.xml.FolderDocument;
+
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * User: adam
@@ -43,9 +49,26 @@ public class ReportWriter extends BaseFolderWriter
     @Override
     public void write(Container object, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
     {
-        Report[] reports = ReportService.get().getReports(ctx.getUser(), ctx.getContainer());
+        Set<Report> reports = new LinkedHashSet<Report>(Arrays.asList(ReportService.get().getReports(ctx.getUser(), ctx.getContainer())));
 
-        if (reports.length > 0)
+        if (ctx.getClass().equals(FolderExportContext.class))
+        {
+            Set<String> reportsToExport = ((FolderExportContext)ctx).getReportAndViewIds();
+            if (reportsToExport != null)
+            {
+                Iterator it = reports.iterator();
+                while (it.hasNext())
+                {
+                    Object reportObj = it.next();
+                    if(!reportsToExport.contains(((Report)reportObj).getDescriptor().getEntityId()))
+                    {
+                        it.remove();
+                    }
+                }
+            }
+        }
+
+        if (reports.size() > 0)
         {
             ExportDirType reportsXml = ctx.getXml().addNewReports();
             reportsXml.setDir(DEFAULT_DIRECTORY);

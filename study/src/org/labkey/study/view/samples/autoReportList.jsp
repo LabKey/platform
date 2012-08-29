@@ -20,12 +20,14 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.study.CohortFilter" %>
+<%@ page import="org.labkey.study.CohortFilterFactory" %>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page import="org.labkey.study.model.CohortImpl" %>
 <%@ page import="org.labkey.study.model.ParticipantCategoryImpl" %>
@@ -35,7 +37,6 @@
 <%@ page import="org.labkey.study.samples.report.SpecimenVisitReportParameters" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenController.ReportConfigurationBean> me = (JspView<SpecimenController.ReportConfigurationBean>) HttpView.currentView();
@@ -133,7 +134,7 @@ This folder does not contain a study.
                     <tr>
                         <td style="<%= optionLabelStyle %>">Cohort filter</td>
                         <td>
-                            <select name="<%= CohortFilter.Params.cohortId %>">
+                            <select name="<%= CohortFilterFactory.Params.cohortId %>">
                                 <option value="">All Cohorts</option>
                             <%
                                 for (CohortImpl cohort : cohorts)
@@ -155,7 +156,7 @@ This folder does not contain a study.
                     <tr>
                         <td style="<%= optionLabelStyle %>">Cohort filter type</td>
                         <td>
-                            <select name="<%= CohortFilter.Params.cohortFilterType %>">
+                            <select name="<%= CohortFilterFactory.Params.cohortFilterType %>">
                             <%
                                 for (CohortFilter.Type type : CohortFilter.Type.values())
                                 {
@@ -174,7 +175,7 @@ This folder does not contain a study.
                         else
                         {
                 %>
-                        <input type="hidden" name="<%= CohortFilter.Params.cohortFilterType %>" value="<%= CohortFilter.Type.PTID_CURRENT %>">
+                        <input type="hidden" name="<%= CohortFilterFactory.Params.cohortFilterType %>" value="<%= CohortFilter.Type.PTID_CURRENT %>">
                 <%
                         }
                     }

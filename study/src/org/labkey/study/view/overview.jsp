@@ -42,6 +42,7 @@
 <%@ page import="org.labkey.study.visitmanager.VisitManager.VisitStatistics" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.study.CohortFilterFactory" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyController.OverviewBean> me = (JspView<StudyController.OverviewBean>) HttpView.currentView();
@@ -109,8 +110,8 @@
     if (showCohorts)
     {
 %>
-    <input type="hidden" name="<%= CohortFilter.Params.cohortFilterType.name() %>" value="<%= CohortFilter.Type.PTID_CURRENT.name() %>">
-    <%= h(subjectNoun) %>'s current cohort: <select name="<%= CohortFilter.Params.cohortId.name() %>" onchange="document.changeFilterForm.submit()">
+    <input type="hidden" name="<%= CohortFilterFactory.Params.cohortFilterType.name() %>" value="<%= CohortFilter.Type.PTID_CURRENT.name() %>">
+    <%= h(subjectNoun) %>'s current cohort: <select name="<%= CohortFilterFactory.Params.cohortId.name() %>" onchange="document.changeFilterForm.submit()">
     <option value="">All</option>
     <%
         for (CohortImpl cohort : cohorts)

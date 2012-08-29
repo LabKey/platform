@@ -16,6 +16,7 @@
 
 package org.labkey.study.controllers;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.HasPageConfig;
 import org.labkey.api.action.NavTrailAction;
@@ -292,7 +293,7 @@ public abstract class BaseStudyController extends SpringActionController
         return root;
     }
 
-    protected NavTree _appendDataset(NavTree root, Study study, int datasetId, int visitRowId, CohortFilter cohortFilter, String qcStateSetFormValue)
+    protected NavTree _appendDataset(NavTree root, Study study, int datasetId, int visitRowId, @Nullable CohortFilter cohortFilter, String qcStateSetFormValue)
     {
         if (datasetId > 0)
         {

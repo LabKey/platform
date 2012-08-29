@@ -176,17 +176,22 @@ li.ptid a.unhighlight
         if (StudyManager.getInstance().showCohorts(container, user))
             cohorts = StudyManager.getInstance().getCohorts(container, user);
         boolean hasCohorts = cohorts.length > 0;
+        boolean hasUnenrolledCohorts = false;
         if (hasCohorts)
         {
             for (Cohort co : cohorts)
             {
                 cohortMap.put(((CohortImpl)co).getRowId(), index);
-                %><%=commas[0]%>{id:<%=((CohortImpl)co).getRowId()%>, index:<%=index%>, type:'cohort', label:<%=q(co.getLabel())%>}<%
+                %><%=commas[0]%>{id:<%=((CohortImpl)co).getRowId()%>, index:<%=index%>, type:'cohort', label:<%=q(co.getLabel())%>, enrolled:<%=co.isEnrolled()%>}<%
                 commas[0]=",\n";
                 index++;
+                if (!co.isEnrolled())
+                {
+                    hasUnenrolledCohorts = true;
+                }
             }
             cohortMap.put(-1, index); // 'no cohort place holder
-            %><%=commas[0]%>{id:-1, index:<%=index%>, type:'cohort', label:'{no cohort}'}<%
+            %><%=commas[0]%>{id:-1, index:<%=index%>, type:'cohort', label:'{no cohort}', enrolled:true}<%
             commas[0]=",\n";
             index++;
         }
@@ -285,6 +290,7 @@ li.ptid a.unhighlight
         ptidsPerCol = ptidMap.size()/2;
     } %>
     var _ptidPerCol = <%=ptidsPerCol%>;
+    var _hasUnenrolledCohorts = <%=hasUnenrolledCohorts%>;
 
     var h, i, ptid;
     for (i=0 ; i<_ptids.length ; i++)
@@ -426,6 +432,40 @@ li.ptid a.unhighlight
                         json.push(filters[f].data);
                     }
                     filterTask.delay(400, null, null, [json]);
+                },
+                beginInitSelection: function(list, store)
+                {
+                    // setup our initial selection list to only
+                    // included enrolled cohorts.  If all cohorts
+                    // are enrolled, then let let the list engage
+                    // in default behavior
+
+                    var hasUnenrolled = false;
+                    var select = [];
+
+                    for (var i = 0; i < store.getCount(); i++)
+                    {
+                        var rec = store.getAt(i);
+
+                        if (rec.data.type == 'cohort')
+                        {
+                            if (rec.data.enrolled)
+                            {
+                                select.push(rec.data);
+                            }
+                            else
+                            {
+                                hasUnenrolled = true;
+                            }
+                        }
+                    }
+
+                    if (hasUnenrolled)
+                    {
+                        list.selection = select;
+                        // ensure we apply the group filter as well
+                        filterTask.delay(50, null, null, [select])
+                    }
                 }
             }
         });
@@ -457,11 +497,18 @@ li.ptid a.unhighlight
             first = false;
             return;
         }
+        // don't render the initial list if we have unenrolled cohorts; wait until we have a filterGroupMap
+        if (_hasUnenrolledCohorts && !_filterGroupMap)
+        {
+            return;
+        }
         first = false;
 
         var html = [];
         html.push('<table><tr><td valign="top"><ul class="subjectlist">');
         var count = 0;
+        var showEnrolledText = _hasUnenrolledCohorts;
+
         for (var subjectIndex = 0; subjectIndex < _ptids.length; subjectIndex++)
         {
             var p = _ptids[subjectIndex];
@@ -470,24 +517,36 @@ li.ptid a.unhighlight
                 if (++count > 1 && count % _ptidPerCol == 1)
                     html.push('</ul></td><td valign="top"><ul class="subjectlist">');
                 html.push('<li class="ptid" index=' + subjectIndex + ' ptid="' + p.html + '" style="white-space:nowrap;"><a href="' + _urlTemplate + p.html + '">' + (LABKEY.demoMode?LABKEY.id(p.ptid):p.html) + '</a></li>\n');
+
+
+                if (showEnrolledText)
+                {
+                    showEnrolledText = isParticipantEnrolled(subjectIndex);
+                }
+
             }
         }
 
         html.push('</ul></td></tr></table>');
         html.push('<div style="clear:both;">');
         var message = "";
+        // if we have no unenrolled cohorts in the study, then no need to call out that a participant belongs to an enrolled cohort
+        // if the filter only includes enrolled participants, then use 'enrolled' to describe them
+        // if the filter includes both enrolled and unenrolled cohorts, then don't use 'enrolled'
+        // if there are no participants because they all belong to unenrolled cohorts, then say "no matching enrolled..."
+        var enrolledText = showEnrolledText ? " enrolled " : " ";
         if (count > 0)
         {
             if (_filterSubstringMap || _filterGroupMap)
-                message = 'Found ' + count + ' ' + (count > 1 ? _pluralNoun.toLowerCase() : _singularNoun.toLowerCase()) + ' of ' + _ptids.length + '.';
+                message = 'Found ' + count + enrolledText + (count > 1 ? _pluralNoun.toLowerCase() : _singularNoun.toLowerCase()) + ' of ' + _ptids.length + '.';
             else
-                message = 'Showing all ' + count + ' ' + (count > 1 ? _pluralNoun.toLowerCase() : _singularNoun.toLowerCase()) + '.';
+                message = 'Showing all ' + count + enrolledText + (count > 1 ? _pluralNoun.toLowerCase() : _singularNoun.toLowerCase()) + '.';
         }
         else {
             if (_filterSubstring && _filterSubstring.length > 0)
                 message = 'No ' + _singularNoun.toLowerCase() + ' IDs contain \"' + _filterSubstring + '\".';
             else
-                message = 'No matching ' + _pluralNoun + '.';
+                message = 'No matching' + enrolledText + _pluralNoun + '.';
         }
         html.push('</div>');
 
@@ -530,6 +589,21 @@ li.ptid a.unhighlight
         return html.join("");
     }
 
+    function isParticipantEnrolled(subjectIndex)
+    {
+        for (var g = 0; g < _groups.length; g++)
+        {
+            if (_groups[g].id != -1 && _groups[g].type == 'cohort' && testGroupPtid(g,subjectIndex))
+            {
+                if (!_groups[g].enrolled)
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
 
     function render()
     {

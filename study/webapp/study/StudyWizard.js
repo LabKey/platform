@@ -49,6 +49,13 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         this.steps.push(this.getParticipantsPanel());
         this.steps.push(this.getDatasetsPanel());
 
+        if(this.mode == 'publish'){
+            this.steps.push(this.getVisitsPanel());
+            this.steps.push(this.getViewsPanel());
+            this.steps.push(this.getListsPanel());
+            this.steps.push(this.getPublishOptionsPanel());
+        }
+
         this.prevBtn = new Ext.Button({text: 'Previous', disabled: true, scope: this, handler: function(){
             this.lastStep = this.currentStep;
             this.currentStep--;
@@ -80,6 +87,21 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             bbar: ['->', this.prevBtn, this.nextBtn]
         });
 
+        var steps = [
+            {value: 'General Setup', currentStep: true},
+            {value: this.subject.nounPlural, currentStep: false},
+            {value: 'Datasets', currentStep: false}
+        ];
+
+        if(this.mode == 'publish'){
+            steps.push(
+                    {value: this.studyType == "VISIT" ? 'Visits' : 'Timepoints', currentStep: false},
+                    {value: 'Views and Reports', currentStep: false},
+                    {value: 'Lists', currentStep: false},
+                    {value: 'Publish Options', currentStep: false}
+            );
+        }
+
         this.sideBar = new Ext.Panel({
             //This is going to be where the sidebar content goes.
             name: 'sidebar',
@@ -88,7 +110,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             cls: 'extContainer',
             tpl: this.sideBarTemplate,
             data: {
-                steps: [{value: 'General Setup', currentStep: true}, {value: this.subject.nounPlural, currentStep: false}, {value: 'Datasets', currentStep: false}]
+                steps: steps
             }
         });
 
@@ -105,12 +127,13 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         //To update the sideBar call this.sideBar.update({steps: [], currentStepIndex: int});
+        var title = this.mode == "ancillary" ? 'Create Ancillary Study' : 'Publish Study';
 
         this.win = new Ext.Window({
-            title: 'Create Ancillary Study',
+            title: title,
             width: 875,
             height: 600,
-            autoScroll: true,
+            autoScroll: false,
             closeAction:'close',
             border: false,
             modal: true,
@@ -294,14 +317,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             folderTree.collapse();
         }
 
-        var selectFolderBtn = new Ext.Button({
-            name:"selectFolder",
-            text: "Select",
-            cls: "labkey-button",
-            handler: selectFolder,
-            scope: this
-        });
-
         var cancelBtn = new Ext.Button({
             name: "cancelBtn",
             text: "cancel",
@@ -358,9 +373,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
         items.push(this.nameFormPanel);
 
-        var txt = Ext.DomHelper.markup({tag:'div', html:'This Study will be created as a subfolder from the current folder. Click on the Change Folder button to select a different location.<br>'});
-//        items.push({xtype:'displayfield', html: txt});
-
         var panel = new Ext.Panel({
             border: false,
             name: "General Setup",
@@ -395,9 +407,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         var items = [];
 
         var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: this.subject.nounPlural}) +
-                Ext.DomHelper.markup({tag:'div', html:'&nbsp;'});// +
-//                Ext.DomHelper.markup({tag:'div', html:'Choose the ' + this.subject.nounSingular.toLowerCase() + ' groups you would like to use from the parent study:'}) +
-//                Ext.DomHelper.markup({tag:'div', html:'&nbsp;'});
+                Ext.DomHelper.markup({tag:'div', html:'&nbsp;'});
 
         items.push({xtype:'displayfield', html: txt});
 
@@ -634,11 +644,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             ],
             padding: '10px 0px',
             border: false,
-            height: 100,
-//            labelWidth: 100,
+            height: 50,
             width : 300
         });
-        items.push(this.snapshotOptions);
+        if (this.mode != 'publish')
+            items.push(this.snapshotOptions);
 
         var panel = new Ext.Panel({
             border: false,
@@ -651,19 +661,339 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             }
         });
 
+        var validate = function(cmp){
+            if(this.mode == 'publish'){
+                if (this.lastStep > this.currentStep)
+                    return;
+
+                if (!this.info.datasets || (this.info.datasets.length == 0))
+                {
+                    Ext.MessageBox.alert('Error', 'You must select at least one dataset to create the new study from.');
+                    this.currentStep--;
+                    this.updateStep();
+                    return false;
+                }
+            }
+        };
+
+        panel.on('beforehide', validate, this);
+
         return panel;
     },
 
-    customizeColumnModel : function(colModel, index, c)
-    {
+    getViewsPanel: function(){
+        this.selectedViews = [];
+        
+        var items = [];
+
+        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Views and Reports'}) +
+                Ext.DomHelper.markup({tag:'div', html:'&nbsp;'}) +
+                Ext.DomHelper.markup({tag:'div', html:'Choose the views and reports you would like to publish:'}) +
+                Ext.DomHelper.markup({tag:'div', html:'&nbsp;'});
+
+        items.push({xtype:'displayfield', html: txt});
+
+        var selectionModel = new Ext.grid.CheckboxSelectionModel({
+            moveEditorOnEnter: false,
+            listeners: {
+                selectionChange: function(selModel){
+                    this.selectedViews = selModel.getSelections();
+                },
+                scope: this
+            }
+        });
+
+        var grid = new Ext.grid.EditorGridPanel({
+            store: new Ext.data.Store({
+                proxy: new Ext.data.HttpProxy({
+                    url: LABKEY.ActionURL.buildURL('study', 'browseData.api')
+                }),
+                reader: new Ext.data.JsonReader({
+                    root: 'data',
+                    fields: [
+                        {name : 'id'},
+                        {name : 'name'},
+                        {name : 'category'},
+                        {name : 'createdBy'},
+                        {name : 'createdByUserId',      type : 'int'},
+                        {name : 'type'},
+                        {name : 'description'}
+                    ]
+                }),
+                listeners: {
+                    load: function(store){
+                        store.filterBy(function(record){
+                            return record.get('type') != 'Dataset';
+                        });
+                    }
+                },
+                autoLoad: true
+            }),
+            selModel: selectionModel,
+            columns: [
+                selectionModel,
+                {header: 'Name', width: 200, sortable: true, dataIndex: 'name'},
+                {header: 'Category', width: 120, sortable: true, dataIndex:'category'},
+                {header: 'Type', width: 140, sortable: true, dataIndex: 'type'},
+                {header: 'Description', width: 145, sortable: true, dataIndex: 'description'}
+            ],
+            loadMask:{msg:"Loading, please wait..."},
+            editable: false,
+            stripeRows: true,
+            pageSize: 300000,
+            cls: 'studyWizardDatasetList',
+            flex: 1,
+            bbar: [{hidden:true}],
+            tbar: [{hidden:true}]
+        });
+
+        items.push(grid);
+
+        grid.on('render', function(cmp){
+            //This is to hide the background color of the bbar/tbar.
+            cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
+            cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
+        });
+
+        return new Ext.Panel({
+            border: false,
+            name: "Views and Reports",
+            layout: 'vbox',
+            layoutConfig: {
+                align: 'stretch',
+                pack: 'start'
+            },
+            items: items
+        });
+    },
+
+    getVisitsPanel: function(){
+        var items = [];
+
+        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: this.studyType == "VISIT" ? 'Visits' : 'Timepoints'}) +
+                Ext.DomHelper.markup({tag:'div', html:'&nbsp;'}) +
+                Ext.DomHelper.markup({tag:'div', html:'Choose the ' + (this.studyType == "VISIT" ? 'visits' : 'timepoints') + ' you would like to publish:'}) +
+                Ext.DomHelper.markup({tag:'div', html:'&nbsp;'});
+
+        items.push({xtype:'displayfield', html: txt});
+
+        var grid = new LABKEY.ext.EditorGridPanel({
+            store: new LABKEY.ext.Store({
+                schemaName: 'study',
+                queryName: 'visit',
+                columns: 'RowId, Label, SequenceNumMin, SequenceNumMax, DisplayOrder',
+                sort: 'DisplayOrder, SequenceNumMin'
+            }),
+            loadMask:{msg:"Loading, please wait..."},
+            enableFilters: true,
+            editable: false,
+            stripeRows: true,
+            pageSize: 300000,
+            cls: 'studyWizardDatasetList',
+            flex: 1,
+            bbar: [{hidden:true}],
+            tbar: [{hidden:true}]
+        });
+
+        items.push(grid);
+        grid.on('render', function(cmp){
+            //This is to hide the background color of the bbar/tbar.
+            cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
+            cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
+        });
+        grid.on('columnmodelcustomize', this.customizeVisitColumnModel, this);
+        grid.selModel.on('selectionchange', function(cmp){this.selectedVisits = cmp.getSelections();}, this);
+
+        var panel = new Ext.Panel({
+            border: false,
+            name: this.studyType == "VISIT" ? 'Visits' : 'Timepoints',
+            layout: 'vbox',
+            layoutConfig: {
+                align: 'stretch',
+                pack: 'start'
+            },
+            items: items
+        });
+
+        var validate = function(cmp){
+            // if the prev button was pressed, we don't care about validation
+            if (this.lastStep > this.currentStep)
+                return;
+
+            if(!this.selectedVisits || this.selectedVisits == 0){
+                Ext.MessageBox.alert('Error', 'You must select at least one ' + (this.studyType == "VISIT" ? 'visit' : 'timepoint') + '.');
+                this.currentStep--;
+                this.updateStep();
+                return false;
+            }
+            return true;
+        };
+
+        panel.on('beforehide', validate, this);
+
+        return panel;
+    },
+
+    getListsPanel: function(){
+        this.selectedLists = [];
+
+        var items = [];
+
+        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Lists'}) +
+                Ext.DomHelper.markup({tag:'div', html:'&nbsp;'}) +
+                Ext.DomHelper.markup({tag:'div', html:'Choose the lists you would like to publish:'}) +
+                Ext.DomHelper.markup({tag:'div', html:'&nbsp;'});
+
+        items.push({xtype:'displayfield', html: txt});
+
+        var selectionModel = new Ext.grid.CheckboxSelectionModel({
+            moveEditorOnEnter: false,
+            listeners: {
+                selectionChange: function(selModel){
+                    this.selectedLists = selModel.getSelections();
+                },
+                scope: this
+            }
+        });
+
+        var grid = new Ext.grid.EditorGridPanel({
+            store: new Ext.data.Store({
+                proxy: new Ext.data.HttpProxy({
+                    url: LABKEY.ActionURL.buildURL('list', 'browseLists.api')
+                }),
+                reader: new Ext.data.JsonReader({
+                    root: 'lists',
+                    fields: [
+                        {name : 'id'},
+                        {name : 'name'},
+                        {name : 'description'}
+                    ]
+                }),
+                autoLoad: true
+            }),
+            selModel: selectionModel,
+            columns: [
+                selectionModel,
+                {header: 'Name', width: 300, sortable: true, dataIndex: 'name'},
+                {header: 'Description', width: 300, sortable: true, dataIndex: 'description'}
+            ],
+            loadMask:{msg:"Loading, please wait..."},
+            editable: false,
+            stripeRows: true,
+            pageSize: 300000,
+            cls: 'studyWizardDatasetList',
+            flex: 1,
+            bbar: [{hidden:true}],
+            tbar: [{hidden:true}]
+        });
+
+        items.push(grid);
+
+        grid.on('render', function(cmp){
+            //This is to hide the background color of the bbar/tbar.
+            cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
+            cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
+        });
+
+        var panel = new Ext.Panel({
+            border: false,
+            name: "Lists",
+            layout: 'vbox',
+            layoutConfig: {
+                align: 'stretch',
+                pack: 'start'
+            },
+            items: items
+        });
+
+        return panel;
+    },
+
+    getPublishOptionsPanel: function(){
+        var items = [];
+
+        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Publish Options'});
+
+        items.push({xtype:'displayfield', html: txt});
+
+        //Export Alternate Participant IDs in Datasets
+
+        this.alternateIdsCheckBox = new Ext.form.Checkbox({
+            name: 'alternateids',
+            fieldLabel: "Export Alternate " + this.subject.nounSingular + " IDs in Datasets?",
+            checked: true,
+            value: true
+        });
+
+        this.shiftDatesCheckBox = new Ext.form.Checkbox({
+            xtype: 'checkbox',
+            name: 'shiftDates',
+            fieldLabel: 'Shift All Participant Dates?',
+            checked: true,
+            value: true
+        });
+
+        this.protectedColumnsCheckBox = new Ext.form.Checkbox({
+            xtype: 'checkbox',
+            name: 'removeProtected',
+            fieldLabel: 'Remove All Columns Tagged as Protected?',
+            checked: true,
+            value: true
+        });
+
+        var optionsPanel = new Ext.form.FormPanel({
+            defaults: {labelSeparator: ''},
+            padding: '10px 0px',
+            border: false,
+            labelWidth: 300,
+            height: 300,
+            width : 400,
+            items: [
+                this.protectedColumnsCheckBox,
+                this.shiftDatesCheckBox,
+                this.alternateIdsCheckBox
+            ]
+        });
+
+        items.push(optionsPanel);
+
+        var panel = new Ext.Panel({
+            border: false,
+            name: "Publish Options",
+            layout: 'vbox',
+            layoutConfig: {
+                align: 'stretch',
+                pack: 'start'
+            },
+            items: items
+        });
+
+        return panel;
+    },
+
+    customizeColumnModel : function(colModel, index, c){
         index.Label.header = 'Dataset';
         index.Label.width = 250;
         index.DataSetId.hidden = true;
     },
 
+    customizeVisitColumnModel: function(colModel, index, c){
+        index.RowId.hidden = true;
+        index.Folder.hidden = true;
+        index.DisplayOrder.hidden = true;
+
+        index.SequenceNumMin.header = 'Sequence Min';
+        index.SequenceNumMin.align = 'left';
+        index.SequenceNumMax.header = 'Sequence Max';
+        index.SequenceNumMax.align = 'left';
+
+        index.SequenceNumMin.width = 70;
+        index.SequenceNumMax.width = 70;
+    },
+
     onFinish : function() {
 
-        if (!this.info.datasets || (this.info.datasets.length == 0))
+        if (this.mode == 'ancillary' && !this.info.datasets || (this.info.datasets.length == 0))
         {
             Ext.MessageBox.alert('Error', 'You must select at least one dataset to create the new study from.');
             return;
@@ -676,6 +1006,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         params.description = this.info.description;
         params.srcPath = LABKEY.ActionURL.getContainer();
         params.dstPath = this.info.dstPath;
+        if(this.mode == 'publish'){
+            params.useAlternateParticipantIds = this.alternateIdsCheckBox.getValue();
+            params.shiftDates = this.shiftDatesCheckBox.getValue();
+            params.removeProtectedColumns = this.protectedColumnsCheckBox.getValue();
+        }
 
         var hiddenFields = [];
         if(this.existingGroupRadio.checked)
@@ -700,12 +1035,42 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             hiddenFields.push(id);
             this.nameFormPanel.add({xtype:'hidden', id: id, name: 'datasets', value: ds.data.DataSetId});
         }
+
+        if(this.mode == 'publish'){
+            for(i = 0; i < this.selectedVisits.length; i++){
+                var visit = this.selectedVisits[i];
+                id = Ext.id();
+                hiddenFields.push(id);
+                this.nameFormPanel.add({xtype: 'hidden', id: id, name: 'visits', value: visit.data.RowId});
+            }
+
+            for(i = 0; i < this.selectedViews.length; i++){
+                var view = this.selectedViews[i];
+                id = Ext.id();
+                hiddenFields.push(id);
+                this.nameFormPanel.add({xtype: 'hidden', id: id, name: 'reportsAndViews', value: view.data.id});
+            }
+
+            for(i = 0; i < this.selectedLists.length; i++){
+                var list = this.selectedLists[i];
+                id = Ext.id();
+                hiddenFields.push(id);
+                this.nameFormPanel.add({xtype: 'hidden', id: id, name: 'lists', value: list.data.id});
+            }
+
+            id = Ext.id();
+            hiddenFields.push(id);
+            this.nameFormPanel.add({xtype: 'hidden', id: id, name: 'publish', value: true});
+        }
+
         this.nameFormPanel.doLayout();
 
-        var form = this.snapshotOptions.getForm();
-        var refreshOptions = form.getValues();
-        if (refreshOptions.autoRefresh === 'true')
-            params.updateDelay = refreshOptions.updateDelay;
+        if(this.mode != 'publish'){
+            var form = this.snapshotOptions.getForm();
+            var refreshOptions = form.getValues();
+            if (refreshOptions.autoRefresh === 'true')
+                params.updateDelay = refreshOptions.updateDelay;
+        }
 
         this.win.getEl().mask("creating study...");
 

@@ -44,6 +44,7 @@
     String subjectNounPlural = s.getSubjectNounPlural();
     String subjectNounColName = s.getSubjectColumnName();
     boolean isAdmin = c.hasPermission(getViewContext().getUser(), AdminPermission.class);
+    Integer numberOfDigits = bean.getNumDigits() > 0 ? bean.getNumDigits() : 6;
 %>
 <div style="max-width: 1000px">
 <p>Alternate <%= PageFlowUtil.filter(subjectNounSingular) %> IDs allow you to publish a study with all <%= PageFlowUtil.filter(subjectNounSingular.toLowerCase()) %> IDs
@@ -77,7 +78,7 @@
                 labelSeparator: '',
                 minValue: 6,
                 maxValue: 10,
-                value: <%= bean.getNumDigits()%>,
+                value: <%= numberOfDigits%>,
                 width : 220,
                 labelWidth: 130,
                 height: 28

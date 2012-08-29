@@ -46,6 +46,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.CohortFilter;
+import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.CohortController;
 import org.labkey.study.controllers.StudyController;
@@ -173,15 +174,18 @@ public class ParticipantGroupManager
     private ActionButton createParticipantGroupButton(ViewContext context, String dataRegionName, Set<ParticipantGroup> selected, CohortFilter cohortFilter,
                                                       boolean hasCreateGroupFromSelection)
     {
-        try {
+        try
+        {
             Container container = context.getContainer();
+            User user = context.getUser();
             StudyImpl study = StudyManager.getInstance().getStudy(container);
             MenuButton button = new MenuButton(study.getSubjectNounSingular() + " Groups");
 
             ParticipantCategoryImpl[] classes = getParticipantCategories(container, context.getUser());
 
+            // TODO: Move all cohort menu generation into CohortFilterFactory
             // Remove all ptid list filters from the URL- this lets users switch between lists via the menu (versus adding filters with each click)
-            ActionURL baseURL = CohortFilter.clearURLParameters(context.cloneActionURL());
+            ActionURL baseURL = CohortFilterFactory.clearURLParameters(context.cloneActionURL());
 
             for (ParticipantCategoryImpl cls : classes)
             {
@@ -196,8 +200,45 @@ public class ParticipantGroupManager
             button.addMenuItem("All", baseURL.toString(), null, (selected.isEmpty() && cohortFilter == null));
 
             // merge in cohorts
-            if (CohortManager.getInstance().hasCohortMenu(context.getContainer(), context.getUser()))
+            if (CohortManager.getInstance().hasCohortMenu(container, user))
             {
+                // Add "Enrolled" menu item, if both enrolled and unenrolled cohorts exist
+                if (study.isAdvancedCohorts())
+                {
+                    NavTree tree = new NavTree("Enrolled");
+
+                    for (CohortFilter.Type type : CohortFilter.Type.values())
+                    {
+                        CohortFilter filter = CohortFilterFactory.getEnrolledCohortFilter(container, user, type);
+
+                        // Should check for both enrolled & unenrolled earlier, and skip the "Enrolled" nav tree / loop entirely
+                        if (null == filter)
+                            break;
+
+                        ActionURL url = filter.addURLParameters(baseURL.clone());
+
+                        NavTree typeItem = new NavTree(type.getTitle(), url);
+                        typeItem.setId("Enrolled:" + typeItem.getText());
+                        if (filter.equals(cohortFilter))
+                            typeItem.setSelected(true);
+
+                        tree.addChild(typeItem);
+                    }
+
+                    if (tree.hasChildren())
+                        button.addMenuItem(tree);
+                }
+                else
+                {
+                    CohortFilter filter = CohortFilterFactory.getEnrolledCohortFilter(container, user, CohortFilter.Type.PTID_CURRENT);
+
+                    if (null != filter)
+                    {
+                        ActionURL enrolledURL = filter.addURLParameters(baseURL.clone());
+                        button.addMenuItem("Enrolled", enrolledURL.toString(), null, (selected.isEmpty() && filter.equals(cohortFilter)));
+                    }
+                }
+
                 //button.addMenuItem(((MenuButton)cohortButton).getPopupMenu().getNavTree());
                 NavTree cohort = new NavTree("Cohorts");
                 CohortManager.getInstance().addCohortNavTree(context.getContainer(), context.getUser(), baseURL, cohortFilter, cohort);

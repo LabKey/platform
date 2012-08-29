@@ -433,6 +433,9 @@ public class StudyManager
         if (study.getProtocolDocumentEntityId() == null)
             study.setProtocolDocumentEntityId(GUID.makeGUID());
 
+        if (study.getAlternateIdDigits() == 0)
+           study.setAlternateIdDigits(StudyManager.ALTERNATEID_DEFAULT_NUM_DIGITS);
+
         study = _studyHelper.create(user, study);
 
         //note: we no longer copy the container's policy to the study upon creation

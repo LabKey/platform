@@ -15,6 +15,8 @@
  */
 package org.labkey.study.samples.report.specimentype;
 
+import org.labkey.study.CohortFilterFactory;
+import org.labkey.study.SingleCohortFilter;
 import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyManager;
@@ -55,8 +57,8 @@ public class TypeCohortReportFactory extends TypeReportFactory
             StringBuilder cohortTypeSelect = new StringBuilder();
             CohortFilter.Type currentType = getCohortFilter() != null ? getCohortFilter().getType() : CohortFilter.Type.DATA_COLLECTION;
 
-            cohortTypeSelect.append("<input type=\"hidden\" name=\"").append(CohortFilter.Params.cohortId.name()).append("\" value=\"0\">\n");
-            cohortTypeSelect.append("<select name=\"").append(CohortFilter.Params.cohortFilterType.name()).append("\">\n");
+            cohortTypeSelect.append("<input type=\"hidden\" name=\"").append(CohortFilterFactory.Params.cohortId.name()).append("\" value=\"0\">\n");
+            cohortTypeSelect.append("<select name=\"").append(CohortFilterFactory.Params.cohortFilterType.name()).append("\">\n");
             for (CohortFilter.Type type : CohortFilter.Type.values())
             {
                 cohortTypeSelect.append("\t<option value=\"").append(type.name()).append("\" ");
@@ -75,8 +77,8 @@ public class TypeCohortReportFactory extends TypeReportFactory
         List<CohortFilter> reportCohorts = new ArrayList<CohortFilter>();
         CohortFilter.Type type = getCohortFilter() != null ? getCohortFilter().getType() : CohortFilter.Type.DATA_COLLECTION;
         for (CohortImpl cohort : StudyManager.getInstance().getCohorts(getContainer(), getUser()))
-            reportCohorts.add(new CohortFilter(type, cohort.getRowId()));
-        reportCohorts.add(CohortFilter.UNASSIGNED);
+            reportCohorts.add(new SingleCohortFilter(type, cohort.getRowId()));
+        reportCohorts.add(CohortFilterFactory.UNASSIGNED);
 
         List<SpecimenVisitReport> reports = new ArrayList<SpecimenVisitReport>();
         for (CohortFilter cohortFilter : reportCohorts)

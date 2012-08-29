@@ -16,7 +16,9 @@
 
 package org.labkey.study.pipeline;
 
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
 
 import java.io.File;
@@ -37,9 +39,16 @@ public class StandaloneDatasetTask extends AbstractDatasetImportTask<StandaloneD
         super(factory, job);
     }
 
-    public File getDatasetsFile()
+    @Override
+    protected String getDatasetsFileName() throws ImportException
     {
-        return getJob().getJobSupport(DatasetJobSupport.class).getDatasetsFile();
+        return getJob().getJobSupport(DatasetJobSupport.class).getDatasetsFileName();
+    }
+
+    @Override
+    protected VirtualFile getDatasetsDirectory() throws ImportException
+    {
+        return getJob().getJobSupport(DatasetJobSupport.class).getDatasetsDirectory();
     }
 
     public StudyImpl getStudy()

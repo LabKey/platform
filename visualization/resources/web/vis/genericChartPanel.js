@@ -1469,11 +1469,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 // When subtracting padding we have to make sure we still produce valid values for a log scale.
                 // log([value less than 0]) = NaN.
                 // log(0) = -Infinity.
-                yMin = yMin - yPadding;
+                if(yMin - yPadding > 0){
+                    yMin = yMin - yPadding;
+                }
             } else {
                 yMin = yMin - yPadding;
             }
-            
+
             scales.y = {min: yMin, max: yMax + yPadding, scaleType: 'continuous', trans: chartOptions.yAxis.scaleType};
             geom = new LABKEY.vis.Geom.Boxplot({
                 lineWidth: chartOptions.lineWidth,

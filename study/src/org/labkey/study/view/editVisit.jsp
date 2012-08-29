@@ -15,15 +15,20 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.study.DataSet"%>
+<%@ page import="org.labkey.api.study.Visit"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.controllers.StudyController"%>
-<%@ page import="org.labkey.study.model.*" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.study.CohortFilterFactory" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.study.model.CohortImpl" %>
+<%@ page import="org.labkey.study.model.DataSetDefinition" %>
+<%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.study.model.VisitDataSet" %>
+<%@ page import="org.labkey.study.model.VisitDataSetType" %>
+<%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="java.util.HashMap" %>
-<%@ page import="org.labkey.api.study.DataSet" %>
-<%@ page import="org.labkey.api.study.Visit" %>
-<%@ page import="org.labkey.study.CohortFilter" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -86,7 +91,7 @@
                     else
                     {
                     %>
-                    <select name="<%= CohortFilter.Params.cohortId.name() %>">
+                    <select name="<%= CohortFilterFactory.Params.cohortId.name() %>">
                         <option value="">All</option>
                     <%
 

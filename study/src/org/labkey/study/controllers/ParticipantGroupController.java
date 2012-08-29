@@ -460,7 +460,7 @@ public class ParticipantGroupController extends BaseStudyController
                                 for (ParticipantGroup group : category.getGroups())
                                 {
                                     if (form.includeParticipantIds())
-                                        groups.add(createGroup(jsonCategory, group.getRowId(), group.getLabel(), groupType, group.getRowId(), group.getFilters(), group.getDescription(), group.getCreatedBy(), group.getModifiedBy(), group.getParticipantSet()));
+                                        groups.add(createGroup(jsonCategory, group.getRowId(), group.getLabel(), true, groupType, group.getRowId(), group.getFilters(), group.getDescription(), group.getCreatedBy(), group.getModifiedBy(), group.getParticipantSet()));
                                     else
                                         groups.add(createGroup(jsonCategory, group.getRowId(), group.getLabel(), groupType, group.getRowId(), group.getFilters(), group.getDescription(), group.getCreatedBy(), group.getModifiedBy()));
                                 }
@@ -475,9 +475,9 @@ public class ParticipantGroupController extends BaseStudyController
                         for (CohortImpl cohort : StudyManager.getInstance().getCohorts(getContainer(), getUser()))
                         {
                             if (form.includeParticipantIds())
-                                groups.add(createGroup(null, cohort.getRowId(), cohort.getLabel(), groupType, cohort.getRowId(), null, null, 0, 0, cohort.getParticipantSet()));
+                                groups.add(createGroup(null, cohort.getRowId(), cohort.getLabel(), cohort.isEnrolled(), groupType, cohort.getRowId(), null, null, 0, 0, cohort.getParticipantSet()));
                             else
-                                groups.add(createGroup(null, cohort.getRowId(), cohort.getLabel(), groupType));
+                                groups.add(createGroup(null, cohort.getRowId(), cohort.getLabel(), cohort.isEnrolled(), groupType));
                         }
                         groups.add(createGroup(null, -1, "Not in any cohort", groupType));
                         break;
@@ -491,20 +491,25 @@ public class ParticipantGroupController extends BaseStudyController
 
         private Map<String, Object> createGroup(JSONObject category, int id, String label, GroupType type)
         {
-            return createGroup(category, id, label, type, 0, "", "", 0, 0, Collections.<String>emptySet());
+            return createGroup(category, id, label, true, type, 0, "", "", 0, 0, Collections.<String>emptySet());
+        }
+        private Map<String, Object> createGroup(JSONObject category, int id, String label, boolean isEnrolled, GroupType type)
+        {
+            return createGroup(category, id, label, isEnrolled, type, 0, "", "", 0, 0, Collections.<String>emptySet());
         }
 
         private Map<String, Object> createGroup(JSONObject category, int id, String label, GroupType type, int categoryId, String filters, String description, int createdBy, int modifiedBy)
         {
-            return createGroup(category, id, label, type, categoryId, filters, description, createdBy, modifiedBy, Collections.<String>emptySet());
+            return createGroup(category, id, label, true, type, categoryId, filters, description, createdBy, modifiedBy, Collections.<String>emptySet());
         }
 
-        private Map<String, Object> createGroup(JSONObject category, int id, String label, GroupType type, int categoryId, String filters, String description, int createdBy, int modifiedBy, Set<String> participantIds)
+        private Map<String, Object> createGroup(JSONObject category, int id, String label, boolean enrolled, GroupType type, int categoryId, String filters, String description, int createdBy, int modifiedBy, Set<String> participantIds)
         {
             Map<String, Object> group = new HashMap<String, Object>();
 
             group.put("id", id);
             group.put("label", label);
+            group.put("enrolled", enrolled);
             group.put("type", type);
             group.put("categoryId", categoryId);
             group.put("filters", filters);

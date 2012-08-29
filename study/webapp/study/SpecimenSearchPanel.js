@@ -140,6 +140,7 @@ Ext4.define('LABKEY.ext.SampleSearchPanel', {
         this.simpleSpecimenStore = Ext4.create('LABKEY.ext4.Store', {
             schemaName: 'study',
             queryName: 'SimpleSpecimen',
+            maxRows: 0,
             autoLoad: true,
             listeners: {
                 scope: this,
@@ -153,6 +154,7 @@ Ext4.define('LABKEY.ext.SampleSearchPanel', {
         this.specimenSummaryStore = Ext4.create('LABKEY.ext4.Store', {
             schemaName: 'study',
             queryName: 'SpecimenSummary',
+            maxRows: 0,
             autoLoad: true,
             listeners: {
                 scope: this,

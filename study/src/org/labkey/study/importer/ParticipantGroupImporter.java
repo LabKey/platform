@@ -19,6 +19,7 @@ import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.admin.InvalidFileException;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
@@ -33,7 +34,9 @@ import org.labkey.study.xml.participantGroups.GroupType;
 import org.labkey.study.xml.participantGroups.ParticipantGroupsDocument;
 import org.springframework.validation.BindException;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -86,6 +89,10 @@ public class ParticipantGroupImporter implements InternalStudyImporter
                 for (ParticipantCategoryImpl group : ParticipantGroupManager.getInstance().getParticipantCategories(ctx.getContainer(), ctx.getUser()))
                     existingGroups.put(group.getLabel(), group);
 
+                Map<String, String> existingParticipants = new HashMap<String, String>();
+                for (String id : StudyManager.getInstance().getParticipantIds(study))
+                    existingParticipants.put(id, id);
+
                 // create the imported participant groups
                 for (CategoryType category : doc.getParticipantGroups().getParticipantCategoryArray())
                 {
@@ -118,9 +125,19 @@ public class ParticipantGroupImporter implements InternalStudyImporter
                         pg.setContainerId(ctx.getContainer().getId());
                         pg.setLabel(group.getLabel());
                         pg.setCategoryLabel(pc.getLabel());
-                        pg.setParticipantIds(group.getParticipantIdArray());
 
-                        ParticipantGroupManager.getInstance().setParticipantGroup(ctx.getContainer(), ctx.getUser(), pg);
+                        List<String> ids = new ArrayList<String>();
+                        for (String id : group.getParticipantIdArray())
+                        {
+                            if (existingParticipants.containsKey(id))
+                                ids.add(id);
+                        }
+
+                        if (!ids.isEmpty())
+                        {
+                            pg.setParticipantIds(ids.toArray(new String[ids.size()]));
+                            ParticipantGroupManager.getInstance().setParticipantGroup(ctx.getContainer(), ctx.getUser(), pg);
+                        }
                     }
                 }
                 scope.commitTransaction();

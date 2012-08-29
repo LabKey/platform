@@ -46,6 +46,11 @@ public class SpecimenBatch extends StudyBatch implements Serializable, SpecimenJ
         _isMerge = merge;
     }
 
+    protected File createLogFile()
+    {
+        return StudyPipeline.logForInputFile(_definitionFile);
+    }
+
     public String getDescription()
     {
         String description = "Import specimens";

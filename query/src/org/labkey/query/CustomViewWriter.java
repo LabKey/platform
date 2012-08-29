@@ -15,8 +15,8 @@
  */
 package org.labkey.query;
 
-import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.BaseFolderWriter;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
 import org.labkey.api.admin.ImportContext;
@@ -53,6 +53,12 @@ public class CustomViewWriter extends BaseFolderWriter
     {
         Container c = ctx.getContainer();
         User user = ctx.getUser();
+        Set<String> viewsToExport = null;
+
+        if (ctx.getClass().equals(FolderExportContext.class))
+        {
+           viewsToExport = ((FolderExportContext)ctx).getReportAndViewIds();
+        }
 
         // TODO: Export views from external schemas as well?
         DefaultSchema folderSchema = DefaultSchema.get(user, c);
@@ -71,12 +77,15 @@ public class CustomViewWriter extends BaseFolderWriter
 
                 for (CustomView customView : customViews)
                 {
-                    VirtualFile customViewDir = ensureViewDirectory(ctx, root);
-                    if (customView.serialize(customViewDir))
+                    if(viewsToExport == null || viewsToExport.contains(customView.getEntityId()))
                     {
-                        // Create the <view> element only if we have a custom view to write
-                        if (!ctx.getXml().isSetViews())
-                            ctx.getXml().addNewViews().setDir(DEFAULT_DIRECTORY);
+                        VirtualFile customViewDir = ensureViewDirectory(ctx, root);
+                        if (customView.serialize(customViewDir))
+                        {
+                            // Create the <view> element only if we have a custom view to write
+                            if (!ctx.getXml().isSetViews())
+                                ctx.getXml().addNewViews().setDir(DEFAULT_DIRECTORY);
+                        }
                     }
                 }
             }

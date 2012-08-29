@@ -17,18 +17,18 @@
 package org.labkey.study.pipeline;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.tika.io.IOUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.pipeline.AbstractDatasetImportTask.Action;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
@@ -56,28 +56,31 @@ public class DatasetFileReader
 {
     private static final Pattern DEFAULT_PATTERN = Pattern.compile("^\\D*(\\d*).(?:tsv|txt)$");
 
-    private final File _definitionFile;
     private final StudyImpl _study;
     private final StudyManager _studyManager = StudyManager.getInstance();
     private final PipelineJob _job;
 
+    private String _datasetsFileName;
+    private VirtualFile _datasetsDirectory;
+
     private ArrayList<DatasetImportRunnable> _runnables = null;
 
-    public DatasetFileReader(File datasetFile, StudyImpl study)
+    public DatasetFileReader(VirtualFile datasetsDirectory, String datasetsFileName, StudyImpl study)
     {
-        this(datasetFile, study, null);
+        this(datasetsDirectory, datasetsFileName, study, null);
     }
 
-    public DatasetFileReader(File datasetFile, StudyImpl study, PipelineJob job)
+    public DatasetFileReader(VirtualFile datasetsDirectory, String datasetsFileName, StudyImpl study, PipelineJob job)
     {
-        _definitionFile = datasetFile;
+        _datasetsDirectory = datasetsDirectory;
+        _datasetsFileName = datasetsFileName;
         _study = study;
         _job = job;
     }
 
-    public File getDefinitionFile()
+    public String getDefinitionFileName()
     {
-        return _definitionFile;
+        return _datasetsFileName;
     }
 
     public PipelineJob getJob()
@@ -94,20 +97,18 @@ public class DatasetFileReader
 
     public void validate(List<String> errors) throws IOException
     {
-        File dir = _definitionFile.getParentFile();
         InputStream is = null;
         Properties props;
 
         try
         {
-            is = new FileInputStream(_definitionFile);
+            is = _datasetsDirectory.getInputStream(_datasetsFileName);
             props = new Properties();
             props.load(is);
         }
         finally
         {
-            if (null != is)
-                is.close();
+            IOUtils.closeQuietly(is);
         }
 
         if (null == _study)
@@ -215,12 +216,12 @@ public class DatasetFileReader
             DatasetImportRunnable runnable = jobMap.get(ds);
             if (null == runnable)
             {
-                runnable = newImportJob(ds, null, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
+                runnable = newImportJob(ds, _datasetsDirectory, null, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
                 jobMap.put(ds, runnable);
             }
             if (propertyKey.equals("file"))
             {
-                runnable._tsv = new File(dir, value);
+                runnable._tsvName = value;
             }
             else if (propertyKey.equals("action"))
             {
@@ -255,11 +256,9 @@ public class DatasetFileReader
             }
         }
 
-        File[] files = dir.listFiles();
-        for (File tsv : files)
+        for (String name : _datasetsDirectory.list())
         {
-            String name = tsv.getName();
-            if (!tsv.isFile() || tsv.isHidden() || name.startsWith("."))
+            if (name.startsWith("."))
                 continue;
             Matcher m = filePattern.matcher(name);
             if (!m.find())
@@ -274,11 +273,11 @@ public class DatasetFileReader
             {
                 if (!importAllMatches)
                     continue;
-                runnable = newImportJob(ds, tsv, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
+                runnable = newImportJob(ds, _datasetsDirectory, name, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
                 jobMap.put(ds, runnable);
             }
-            else if (runnable._tsv == null)
-                runnable._tsv = tsv;
+            else if (runnable._tsvName == null)
+                runnable._tsvName = name;
         }
 
         _runnables = new ArrayList<DatasetImportRunnable>(jobMap.values());
@@ -317,13 +316,13 @@ public class DatasetFileReader
         }
     }
 
-    private DatasetImportRunnable newImportJob(DataSetDefinition ds, File tsv, Action defaultAction, boolean defaultDeleteAfterImport, Date defaultReplaceCutoff, OneToOneStringMap defaultColumnMap)
+    private DatasetImportRunnable newImportJob(DataSetDefinition ds, VirtualFile root, String tsv, Action defaultAction, boolean defaultDeleteAfterImport, Date defaultReplaceCutoff, OneToOneStringMap defaultColumnMap)
     {
         DatasetImportRunnable runnable;
         if (ds.getDataSetId() == -1 && "Participant".equals(ds.getLabel()))
-            runnable = new ParticipantImportRunnable(_job, _study, ds, tsv, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
+            runnable = new ParticipantImportRunnable(_job, _study, ds, root, tsv, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
         else
-            runnable = new DatasetImportRunnable(_job, _study, ds, tsv, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
+            runnable = new DatasetImportRunnable(_job, _study, ds, root, tsv, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
         return runnable;
     }
 

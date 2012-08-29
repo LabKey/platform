@@ -26,7 +26,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
-import org.labkey.study.CohortFilter;
+import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.DataSetDefinition;
@@ -103,7 +103,7 @@ public class DataHeader extends HttpView
         {
             if (!StudyController.DATASET_VIEW_NAME_PARAMETER_NAME.equalsIgnoreCase(parameter.getKey()) &&
                 !"prevView".equalsIgnoreCase(parameter.getKey()) &&
-                !CohortFilter.isCohortFilterParameterName(parameter.getKey()) &&
+                !CohortFilterFactory.isCohortFilterParameterName(parameter.getKey()) &&
                 !"participantId".equalsIgnoreCase(parameter.getKey()) &&
                 !"tabId".equalsIgnoreCase(parameter.getKey()) &&
                 !"reportId".equalsIgnoreCase(parameter.getKey()) &&

@@ -24,6 +24,7 @@ import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -102,6 +103,10 @@ public class StudyPipeline extends PipelineProvider
         return new File(path + "." + "_" + study.getContainer().getRowId() + ".lock");
     }
 
+    public static File lockForDataset(Study study, Path path)
+    {
+        return new File(path + "." + "_" + study.getContainer().getRowId() + ".lock");
+    }
 
     private void handleDatasetFiles(ViewContext context, Study study, PipelineDirectory directory, File[] files, boolean includeAll) throws IOException
     {

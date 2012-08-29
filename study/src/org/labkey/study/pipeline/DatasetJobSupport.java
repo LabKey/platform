@@ -16,6 +16,8 @@
 
 package org.labkey.study.pipeline;
 
+import org.labkey.api.writer.VirtualFile;
+
 import java.io.File;
 
 /*
@@ -25,5 +27,6 @@ import java.io.File;
 */
 public interface DatasetJobSupport
 {
-    File getDatasetsFile();
+    VirtualFile getDatasetsDirectory();
+    String getDatasetsFileName();
 }

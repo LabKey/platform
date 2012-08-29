@@ -161,7 +161,7 @@
     </tr>
     <tr>
         <th align="left">Alternate <%= h(subjectNounSingle) %> IDs</th>
-        <td>This study defines <%=categories.length%> <%= h(subjectNounSingle.toLowerCase()) %> groups</td>
+        <td>Configure how alternate <%= h(subjectNounSingle.toLowerCase()) %> ids are generated</td>
         <td><%= textLink("Manage Alternate " + h(subjectNounSingle) + " IDs", new ActionURL(StudyController.ManageAlternateIdsAction.class, c)) %></td>
     </tr>
     <tr>
@@ -290,6 +290,7 @@
 <%=generateButton("Reload Study", StudyController.ImportStudyAction.class)%>
 <%=generateButton("Delete Study", StudyController.DeleteStudyAction.class)%>
 <%=generateButton("Create Ancillary Study", "javascript:void(0)", "showNewStudyWizard()")%>
+<%=generateButton("Publish Study", "javascript:void(0)", "showPublishStudyWizard()")%>
 <%
     }
 %>
@@ -303,9 +304,35 @@
 
     function showNewStudyWizard()
     {
-        function init(){
+        var init = function(){
             var wizard = new LABKEY.study.CreateStudyWizard({
+                mode: 'ancillary',
                 studyName : <%=q(ancillaryStudyName)%>,
+                studyType: "<%=study.getTimepointType().toString()%>",
+                subject: {
+                    nounSingular: <%=q(study.getSubjectNounSingular())%>,
+                    nounPlural: <%=q(study.getSubjectNounPlural())%>,
+                    nounColumnName: <%=q(study.getSubjectColumnName())%>,
+                }
+            });
+
+            wizard.on('success', function(info){}, this);
+
+            // run the wizard
+            wizard.show();
+        };
+        Ext.onReady(init);
+    }
+</script>
+
+<script>
+    function showPublishStudyWizard()
+    {
+        var init = function(){
+            var wizard = new LABKEY.study.CreateStudyWizard({
+                mode: 'publish',
+                studyName : <%=q(ancillaryStudyName)%>,
+                studyType: "<%=study.getTimepointType().toString()%>",
                 subject: {
                     nounSingular: <%=q(study.getSubjectNounSingular())%>,
                     nounPlural: <%=q(study.getSubjectNounPlural())%>,
@@ -317,7 +344,8 @@
 
             // run the wizard
             wizard.show();
-        }
+        };
+
         Ext.onReady(init);
     }
 </script>

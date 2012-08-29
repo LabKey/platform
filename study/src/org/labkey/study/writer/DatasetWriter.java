@@ -220,6 +220,10 @@ public class DatasetWriter implements InternalStudyWriter
             {
                 createAlternateIdColumns(ti, columns, ctx.getContainer());
             }
+            if (ctx.getVisitIds() != null && !ctx.getVisitIds().isEmpty())
+            {
+                filter.addInClause(FieldKey.fromParts("VisitRowId"), ctx.getVisitIds());
+            }
 
             Results rs = QueryService.get().select(ti, columns, filter, sort);
             writeResultsToTSV(rs, vf, def.getFileName());

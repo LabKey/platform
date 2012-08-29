@@ -106,6 +106,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.study.CohortFilter;
+import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
@@ -115,7 +116,6 @@ import org.labkey.study.designer.MapArrayExcelWriter;
 import org.labkey.study.importer.RequestabilityManager;
 import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.Participant;
 import org.labkey.study.model.ParticipantDataset;
 import org.labkey.study.model.SampleRequest;
 import org.labkey.study.model.SampleRequestActor;
@@ -425,7 +425,7 @@ public class SpecimenController extends BaseStudyController
         protected SpecimenQueryView createQueryView(SampleViewTypeForm form, BindException errors, boolean forExport, String dataRegion) throws Exception
         {
             _vialView = form.isShowVials();
-            CohortFilter cohortFilter = CohortFilter.getFromURL(getViewContext().getActionURL());
+            CohortFilter cohortFilter = CohortFilterFactory.getFromURL(getContainer(), getUser(), getViewContext().getActionURL());
             SpecimenQueryView view = getUtils().getSpecimenQueryView(_vialView, forExport, form.getViewModeEnum(), cohortFilter);
             if (SpecimenUtils.isCommentsMode(getContainer(), form.getViewModeEnum()))
                 view.setRestrictRecordSelectors(false);

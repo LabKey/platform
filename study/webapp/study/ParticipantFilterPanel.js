@@ -31,6 +31,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
             extend : 'Ext.data.Model',
             fields : [
                 {name : 'id'},
+                {name : 'enrolled'},
                 {name : 'label'},
                 {name : 'description'},
                 {name : 'participantIds'},

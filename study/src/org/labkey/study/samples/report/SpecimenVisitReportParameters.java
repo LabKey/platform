@@ -24,6 +24,7 @@ import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewForm;
+import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.SampleManager;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.StudySchema;
@@ -97,7 +98,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
     public SpecimenVisitReportParameters()
     {
-        _cohortFilter = CohortFilter.getFromURL(getViewContext().getActionURL());    
+        _cohortFilter = CohortFilterFactory.getFromURL(getViewContext().getContainer(), getViewContext().getUser(), getViewContext().getActionURL());
     }
 
     public String getTypeLevel()
@@ -284,7 +285,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
     protected void addCohortFilter(SimpleFilter filter, CohortFilter cohortFilter)
     {
         StudyManager.getInstance().assertCohortsViewable(getContainer(), getUser());
-        if (cohortFilter == CohortFilter.UNASSIGNED)
+        if (cohortFilter == CohortFilterFactory.UNASSIGNED)
         {
             filter.addWhereClause("(" + StudyService.get().getSubjectColumnName(getContainer()) + " IN\n" +
                     "(SELECT ParticipantId FROM study.participant WHERE CurrentCohortId IS NULL AND Container = ?)" +

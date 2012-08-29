@@ -20,9 +20,11 @@ import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.pipeline.DatasetBatch;
 import org.labkey.study.pipeline.StudyPipeline;
 
@@ -38,20 +40,20 @@ import java.sql.SQLException;
 */
 public class DatasetImportUtils
 {
-    public static void submitStudyBatch(Study study, File datasetFile, Container c, User user, ActionURL url, PipeRoot root) throws IOException, DatasetLockExistsException, SQLException
+    public static void submitStudyBatch(Study study, VirtualFile datasetsDirectory, String datasetsFileName, Container c, User user, ActionURL url, PipeRoot root) throws IOException, DatasetLockExistsException, SQLException
     {
-        if (null == datasetFile || !datasetFile.exists() || !datasetFile.isFile())
+        if (null == datasetsDirectory || null == datasetsFileName)
         {
             throw new NotFoundException();
         }
 
-        File lockFile = StudyPipeline.lockForDataset(study, datasetFile);
-        if (!datasetFile.canRead() || lockFile.exists())
+        File lockFile = StudyPipeline.lockForDataset(study, Path.parse(datasetsDirectory.getLocation()).append(datasetsFileName));
+        if (lockFile.exists())
         {
             throw new DatasetLockExistsException();
         }
 
-        DatasetBatch batch = new DatasetBatch(new ViewBackgroundInfo(c, user, url), datasetFile, root);
+        DatasetBatch batch = new DatasetBatch(new ViewBackgroundInfo(c, user, url), datasetsDirectory, datasetsFileName, root);
         batch.submit();
     }
 

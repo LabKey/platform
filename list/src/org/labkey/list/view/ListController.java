@@ -22,6 +22,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
+import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormViewAction;
@@ -129,6 +133,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 
 import static org.labkey.api.data.TableInfo.TriggerType.INSERT;
 import static org.labkey.api.data.TableInfo.TriggerType.UPDATE;
@@ -1191,7 +1196,6 @@ public class ListController extends SpringActionController
         }
     }
 
-
     // Rename list fields named Created, CreatedBy, Modified, ModfiedBy, appending _99 to each.
     // TODO: Remove in 12.3...
     @RequiresSiteAdmin
@@ -1215,6 +1219,32 @@ public class ListController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Rename Reserved Fields");
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class BrowseListsAction extends ApiAction<Object>
+    {
+        public ApiResponse execute(Object form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            response.put("lists", getJSONLists(ListService.get().getLists(getContainer())));
+            response.put("success", true);
+
+            return response;
+        }
+
+        private List<JSONObject> getJSONLists(Map<String, ListDefinition> lists){
+            List<JSONObject> listsJSON = new ArrayList<JSONObject>();
+            for(ListDefinition def : new TreeSet<ListDefinition>(lists.values())){
+                JSONObject listObj = new JSONObject();
+                listObj.put("name", def.getName());
+                listObj.put("id", def.getListId());
+                listObj.put("description", def.getDescription());
+                listsJSON.add(listObj);
+            }
+            return listsJSON;
         }
     }
 }

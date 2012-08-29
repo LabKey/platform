@@ -16,6 +16,7 @@
 
 package org.labkey.list.model;
 
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
@@ -58,6 +59,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -86,6 +88,25 @@ public class ListWriter
 
         if (!lists.isEmpty())
         {
+            if (ctx != null && ctx.getClass().equals(FolderExportContext.class))
+            {
+                Set<Integer> listsToExport = ((FolderExportContext)ctx).getListIds();
+                if (listsToExport != null)
+                {
+                    // If we have a list of lists to export then we only want to export the ones in the list.
+                    // If the list is null then we want to grab all of them, so we don't do anything the lists map.
+                    Iterator listIt = lists.keySet().iterator();
+                    while (listIt.hasNext())
+                    {
+                        Object key = listIt.next();
+                        ListDefinition list = lists.get(key);
+                        if (!listsToExport.contains(list.getListId()))
+                        {
+                            listIt.remove();
+                        }
+                    }
+                }
+            }
             // Create meta data doc
             TablesDocument tablesDoc = TablesDocument.Factory.newInstance();
             TablesType tablesXml = tablesDoc.addNewTables();

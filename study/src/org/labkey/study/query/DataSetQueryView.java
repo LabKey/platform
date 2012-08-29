@@ -63,6 +63,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.CohortFilter;
+import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.reports.ReportsController;
@@ -136,7 +137,7 @@ public class DataSetQueryView extends QueryView
                 throw new NotFoundException();
         }
         if (context.getActionURL() != null)
-            _cohortFilter = CohortFilter.getFromURL(context.getActionURL());
+            _cohortFilter = CohortFilterFactory.getFromURL(getContainer(), getUser(), getViewContext().getActionURL());
 
         _protocol = _dataset.getAssayProtocol();
         if (_protocol != null)

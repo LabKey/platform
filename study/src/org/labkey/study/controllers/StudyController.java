@@ -87,8 +87,17 @@ import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
 import org.labkey.api.view.template.PageConfig;
+import org.labkey.api.writer.FileSystemFile;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.folder.xml.FolderDocument;
+import org.labkey.study.CohortFilter;
+import org.labkey.study.CohortFilterFactory;
+import org.labkey.study.SampleManager;
+import org.labkey.study.StudyFolderType;
+import org.labkey.study.StudyModule;
+import org.labkey.study.StudySchema;
+import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.*;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
@@ -423,22 +432,10 @@ public class StudyController extends BaseStudyController
 
     public static class DatasetFilterForm extends QueryViewAction.QueryExportForm implements HasViewContext
     {
-        private String _cohortFilterType;
-        private Integer _cohortId;
+//        private String _cohortFilterType;
+//        private Integer _cohortId;
         private String _qcState;
         private ViewContext _viewContext;
-
-        public Integer getCohortId()
-        {
-            return _cohortId;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setCohortId(Integer cohortId)
-        {
-            if (StudyManager.getInstance().showCohorts(HttpView.currentContext().getContainer(), HttpView.currentContext().getUser()))
-                _cohortId = cohortId;
-        }
 
         public String getQCState()
         {
@@ -450,24 +447,37 @@ public class StudyController extends BaseStudyController
             _qcState = qcState;
         }
 
-        public String getCohortFilterType()
-        {
-            return _cohortFilterType;
-        }
-
-        public void setCohortFilterType(String cohortFilterType)
-        {
-            _cohortFilterType = cohortFilterType;
-        }
-
-        public CohortFilter getCohortFilter()
-        {
-            if (_cohortId == null)
-                return null;
-            CohortFilter.Type type = _cohortFilterType != null ? CohortFilter.Type.valueOf(_cohortFilterType) : null;
-            return new CohortFilter(type, getCohortId());
-        }
-
+//        TODO: Delete... this all appears to be unused
+//        public Integer getCohortId()
+//        {
+//            return _cohortId;
+//        }
+//
+//        @SuppressWarnings({"UnusedDeclaration"})
+//        public void setCohortId(Integer cohortId)
+//        {
+//            if (StudyManager.getInstance().showCohorts(HttpView.currentContext().getContainer(), HttpView.currentContext().getUser()))
+//                _cohortId = cohortId;
+//        }
+//
+//        public String getCohortFilterType()
+//        {
+//            return _cohortFilterType;
+//        }
+//
+//        public void setCohortFilterType(String cohortFilterType)
+//        {
+//            _cohortFilterType = cohortFilterType;
+//        }
+//
+//        public CohortFilter getCohortFilter()
+//        {
+//            if (_cohortId == null)
+//                return null;
+//            CohortFilter.Type type = _cohortFilterType != null ? CohortFilter.Type.valueOf(_cohortFilterType) : null;
+//            return new CohortFilter(type, getCohortId());
+//        }
+//
         public void setViewContext(ViewContext context)
         {
             _viewContext = context;
@@ -531,7 +541,7 @@ public class StudyController extends BaseStudyController
             if (!bean.showCohorts)
                 bean.cohortFilter = null;
             else
-                bean.cohortFilter = CohortFilter.getFromURL(getViewContext().getActionURL());
+                bean.cohortFilter = CohortFilterFactory.getFromURL(getContainer(), getUser(), getViewContext().getActionURL());
 
             VisitManager visitManager = StudyManager.getInstance().getVisitManager(bean.study);
             bean.visitMapSummary = visitManager.getVisitSummary(bean.cohortFilter, bean.qcStates, bean.stats, bean.showAll);
@@ -783,7 +793,7 @@ public class StudyController extends BaseStudyController
             // each dataset is determined by a visitid/datasetid
 
             Study study = getStudy();
-            _cohortFilter = CohortFilter.getFromURL(getViewContext().getActionURL());
+            _cohortFilter = CohortFilterFactory.getFromURL(getContainer(), getUser(), getViewContext().getActionURL());
             _encodedQcState = form.getQCState();
             QCStateSet qcStateSet = null;
             if (StudyManager.getInstance().showQCStates(getContainer()))
@@ -939,7 +949,7 @@ public class StudyController extends BaseStudyController
         {
             try
             {
-                return _appendNavTrail(root, getDataSetDefinition().getDataSetId(), _visitId,  _cohortFilter, _encodedQcState);
+                return _appendNavTrail(root, getDataSetDefinition().getDataSetId(), _visitId, _cohortFilter, _encodedQcState);
             }
             catch (ServletException x)
             {
@@ -1059,7 +1069,7 @@ public class StudyController extends BaseStudyController
 
             String viewName = (String) getViewContext().get(DATASET_VIEW_NAME_PARAMETER_NAME);
 
-            _cohortFilter = CohortFilter.getFromURL(getViewContext().getActionURL());
+            _cohortFilter = CohortFilterFactory.getFromURL(getContainer(), getUser(), getViewContext().getActionURL());
             // display the next and previous buttons only if we have a cached participant index
             if (_cohortFilter != null && !StudyManager.getInstance().showCohorts(getContainer(), getUser()))
                 throw new UnauthorizedException("User does not have permission to view cohort information");
@@ -1279,6 +1289,8 @@ public class StudyController extends BaseStudyController
                 study.setDescriptionRendererType(form.getDescriptionRendererType());
             study.setGrant(form.getGrant());
             study.setInvestigator(form.getInvestigator());
+            study.setAlternateIdPrefix(form.getAlternateIdPrefix());
+            study.setAlternateIdDigits(form.getAlternateIdDigits());
             StudyManager.getInstance().createStudy(user, study);
         }
     }
@@ -2700,7 +2712,7 @@ public class StudyController extends BaseStudyController
         {
             if ((param.getKey().contains(".sort")) ||
                 (param.getKey().contains("~")) ||
-                (CohortFilter.isCohortFilterParameterName(param.getKey())) ||
+                (CohortFilterFactory.isCohortFilterParameterName(param.getKey())) ||
                 (SharedFormParameters.QCState.name().equals(param.getKey())) ||
                 (DATASET_VIEW_NAME_PARAMETER_NAME.equals(param.getKey())))
             {
@@ -2833,7 +2845,7 @@ public class StudyController extends BaseStudyController
         if (viewName != null && !StringUtils.isEmpty(viewName))
             key = key + viewName;
         if (cohortFilter != null)
-            key = key + "cohort" + cohortFilter.getType().name()  + cohortFilter.getCohortId();
+            key = key + "cohort" + cohortFilter.getCacheKey();
         if (encodedQCState != null)
             key = key + "qcState" + encodedQCState;
         return key;
@@ -3982,7 +3994,8 @@ public class StudyController extends BaseStudyController
             if (lockFile.exists())
                 errors.reject("importStudyBatch", "Lock file exists.  Delete file before running import. " + lockFile.getName());
 
-            DatasetFileReader reader = new DatasetFileReader(definitionFile, getStudy());
+            VirtualFile datasetsDir = new FileSystemFile(definitionFile.getParentFile());
+            DatasetFileReader reader = new DatasetFileReader(datasetsDir, definitionFile.getName(), getStudy());
 
             if (!errors.hasErrors())
             {
@@ -4030,7 +4043,11 @@ public class StudyController extends BaseStudyController
 
             try
             {
-                DatasetImportUtils.submitStudyBatch(study, f, c, getUser(), getViewContext().getActionURL(), root);
+                if (f != null)
+                {
+                    VirtualFile datasetsDir = new FileSystemFile(f.getParentFile());
+                    DatasetImportUtils.submitStudyBatch(study, datasetsDir, f.getName(), c, getUser(), getViewContext().getActionURL(), root);
+                }
             }
             catch (DatasetImportUtils.DatasetLockExistsException e)
             {
@@ -5707,6 +5724,8 @@ public class StudyController extends BaseStudyController
         private String _grant;
         private String _investigator;
         private int _defaultTimepointDuration = 0;
+        private String _alternateIdPrefix;
+        private int _alternateIdDigits;
 
         public String getLabel()
         {
@@ -5856,6 +5875,26 @@ public class StudyController extends BaseStudyController
         public void setDefaultTimepointDuration(int defaultTimepointDuration)
         {
             _defaultTimepointDuration = defaultTimepointDuration;
+        }
+
+        public String getAlternateIdPrefix()
+        {
+            return _alternateIdPrefix;
+        }
+
+        public void setAlternateIdPrefix(String alternateIdPrefix)
+        {
+            _alternateIdPrefix = alternateIdPrefix;
+        }
+
+        public int getAlternateIdDigits()
+        {
+            return _alternateIdDigits;
+        }
+
+        public void setAlternateIdDigits(int alternateIdDigits)
+        {
+            _alternateIdDigits = alternateIdDigits;
         }
     }
 

@@ -15,16 +15,9 @@
  */
 package org.labkey.study.model;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.view.ViewContext;
-import org.labkey.study.controllers.ParticipantGroupController;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -32,30 +25,24 @@ import java.util.Map;
  * Date: Aug 25, 2011
  * Time: 3:51:31 PM
  */
-public class EmphasisStudyDefinition implements HasViewContext
+public class EmphasisStudyDefinition
 {
     private String _name;
     private String _description;
     private String _srcPath;
     private String _dstPath;
+    private boolean _removeProtectedColumns;
+    private boolean _shiftDates;
+    private boolean _useAlternateParticipantIds;
+    private Integer[] _visits;
+    private Integer[] _lists;
+    private String[] _reportsAndViews;
     private int[] _datasets = new int[0];
-    private ViewContext _context;
     private int _updateDelay;
 
     private int[] _groups = new int[0];
     private boolean _copyParticipantGroups;
-
-    @Override
-    public void setViewContext(ViewContext context)
-    {
-        _context = context;
-    }
-
-    @Override
-    public ViewContext getViewContext()
-    {
-        return _context;
-    }
+    private boolean _publish;
 
     public String getName()
     {
@@ -135,5 +122,63 @@ public class EmphasisStudyDefinition implements HasViewContext
     public void setCopyParticipantGroups(boolean copyParticipantGroups)
     {
         _copyParticipantGroups = copyParticipantGroups;
+    }
+
+    public boolean isRemoveProtectedColumns(){
+        return _removeProtectedColumns;
+    }
+
+    public void setRemoveProtectedColumns(boolean removeProtectedColumns){
+        _removeProtectedColumns = removeProtectedColumns;
+    }
+
+    public boolean isShiftDates(){
+        return _shiftDates;
+    }
+
+    public void setShiftDates(boolean shiftDates){
+        _shiftDates = shiftDates;
+    }
+
+    public boolean isUseAlternateParticipantIds(){
+        return _useAlternateParticipantIds;
+    }
+
+    public void setUseAlternateParticipantIds(boolean useAlternateParticipantIds){
+        _useAlternateParticipantIds = useAlternateParticipantIds;
+    }
+
+    public Integer[] getVisits(){
+        return _visits;
+    }
+
+    public void setVisits(Integer[] visits){
+        _visits = visits;
+    }
+
+    public Integer[] getLists(){
+        return _lists;
+    }
+
+    public void setLists(Integer[] lists){
+        _lists = lists;
+    }
+
+    public String[] getReportsAndViews(){
+        return _reportsAndViews;
+    }
+
+    public void setReportsAndViews(String[] views){
+        _reportsAndViews = views;
+    }
+
+    public boolean isPublish()
+    {
+        return _publish;
+    }
+
+    public void setPublish(boolean publish)
+    {
+        _publish = publish;
     }
 }

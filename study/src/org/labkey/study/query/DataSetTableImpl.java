@@ -105,11 +105,14 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
                 {
                     public DisplayColumn createRenderer(ColumnInfo colInfo)
                     {
-                        DataColumn dataColumn = new DataColumn(colInfo);
+                        DataColumn dataColumn = new DataColumn(colInfo, false);
                         dataColumn.setInputType("text");
                         return dataColumn;
                     }
                 });
+                // Issue 15791: R labkey.data object contains both lookup value and foreign key
+                // Use self as display column for participant id to avoid using ParticipantId/ParticipantId as display column.
+                column.setDisplayField(column);
 
                 column.setFk(new LookupForeignKey(subjectColName)
                 {

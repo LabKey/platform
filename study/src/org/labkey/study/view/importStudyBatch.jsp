@@ -37,10 +37,10 @@
     boolean hasError = me.getErrors().hasErrors();
 
 %>
-The dataset definition file <b><%= h(reader.getDefinitionFile().getName()) %></b> refers to the following dataset files:<br><br>
+The dataset definition file <b><%= h(reader.getDefinitionFileName()) %></b> refers to the following dataset files:<br><br>
 
 <table class="labkey-data-region labkey-show-borders">
-    <tr><th>#</th><th align="left">Dataset Name</th><th align=left>File</th><th align=left>Action</th><th>Size</th><th>Modified</th></tr><%
+    <tr><th>#</th><th align="left">Dataset Name</th><th align=left>File</th><th align=left>Action</th></tr><%
 int row = 0;
 for (DatasetImportRunnable runnable : runnables)
 {
@@ -59,8 +59,6 @@ for (DatasetImportRunnable runnable : runnables)
         <td><%=dataset != null ? dataset.getLabel() : "Unknown"%></td>
         <td><%=message%></td>
         <td><%=runnable.getAction()%></td>
-        <td align="right"><%=runnable.getFile().length() == 0 ? "0" : Math.max(1, runnable.getFile().length() / 1000) %> kb</td>
-        <td><%= h(formatDateTime(new Date(runnable.getFile().lastModified()))) %></td>
     </tr><%
 }
 %></table><%

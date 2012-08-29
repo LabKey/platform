@@ -16,25 +16,34 @@
 
 package org.labkey.study;
 
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.data.*;
-import org.labkey.api.security.User;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryService;
+import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.view.ActionURL;
 import org.labkey.study.model.CohortImpl;
-import org.labkey.study.model.StudyManager;
-
-import java.util.Map;
-import java.util.Collections;
 
 /**
  * User: brittp
  * Date: Sep 10, 2009
  * Time: 10:32:54 AM
  */
-public class CohortFilter
+public interface CohortFilter
 {
+    Type getType();
+    ActionURL addURLParameters(ActionURL url);
+    String getDescription(Container container, User user);
+    void addFilterCondition(TableInfo table, Container container, SimpleFilter filter);
+    String getCacheKey();
+
+    @Deprecated // Callers need to handle multiple cohorts case
+    CohortImpl getCohort(Container container, User user);
+
+    @Deprecated // Callers need to handle multiple cohorts case
+    int getCohortId();
+
     public enum Type
     {
         PTID_INITIAL("Initial cohort")
@@ -74,191 +83,5 @@ public class CohortFilter
         }
 
         public abstract FieldKey getFilterColumn(Container container);
-    }
-
-    public static final CohortFilter UNASSIGNED = new UnassignedCohort();
-
-    private static class UnassignedCohort extends CohortFilter
-    {
-        public UnassignedCohort()
-        {
-            super(Type.DATA_COLLECTION);
-        }
-
-        @Override
-        public String getDescription(Container container, User user)
-        {
-            return getType().getTitle() + " is unassigned";
-        }
-
-        @Override
-        public void addFilterCondition(TableInfo table, Container container, SimpleFilter filter)
-        {
-            filter.addCondition(getCohortColumn(table, container).getFieldKey(), null, CompareType.ISBLANK);
-        }
-
-        @Override
-        public CohortImpl getCohort(Container container, User user)
-        {
-            return null;
-        }
-    }
-
-    private Type _type;
-    private int _cohortId;
-
-    public CohortFilter(Type type, int cohortId)
-    {
-        if (type == null)
-            throw new IllegalArgumentException("Cohort filter type must not be null");
-        if (cohortId < 0)
-            throw new IllegalArgumentException("Invalid cohort ID: " + cohortId);
-
-        _type = type;
-        _cohortId = cohortId;
-    }
-
-    // Special constructor for the 'unassigned' singleton cohort filter
-    protected CohortFilter(Type type)
-    {
-        _type = type;
-        _cohortId = -1;
-    }
-
-    public Type getType()
-    {
-        return _type;
-    }
-
-    public int getCohortId()
-    {
-        return _cohortId;
-    }
-
-    public enum Params
-    {
-        cohortFilterType,
-        cohortId
-    }
-
-    public static ActionURL clearURLParameters(ActionURL url)
-    {
-        url.deleteParameter(Params.cohortFilterType);
-        url.deleteParameter(Params.cohortId);
-        return url;
-    }
-
-    private static Type getTypeFromURL(ActionURL url)
-    {
-        String cohortFilterType = url.getParameter(Params.cohortFilterType);
-        if (cohortFilterType != null)
-        {
-            try
-            {
-                return Type.valueOf(cohortFilterType);
-            }
-            catch (IllegalArgumentException e)
-            {
-                // fall through to return a null filter if the type parameter isn't recognized
-            }
-        }
-        return null;
-    }
-
-    private static Integer getCohortIdFromURL(ActionURL url)
-    {
-        String cohortIdStr = url.getParameter(Params.cohortId);
-        try
-        {
-            if (null != cohortIdStr)
-                return Integer.parseInt(cohortIdStr);
-        }
-        catch (NumberFormatException e)
-        {
-            // fall through to return a null filter if the id parameter isn't a valid int
-        }
-        return null;
-    }
-
-    public static boolean isCohortFilterParameterName(String name)
-    {
-        for (Params param : Params.values())
-        {
-            if (name.equals(param.name()))
-                return true;
-        }
-        return false;
-    }
-
-    public static CohortFilter getFromURL(ActionURL url)
-    {
-        Type type = getTypeFromURL(url);
-        Integer cohortId = getCohortIdFromURL(url);
-        if (type != null && cohortId != null)
-        {
-            if (type == UNASSIGNED.getType() && cohortId == UNASSIGNED.getCohortId())
-                return UNASSIGNED;
-            return new CohortFilter(type, cohortId);
-        }
-        return null;
-    }
-
-    public ActionURL addURLParameters(ActionURL url)
-    {
-        url.replaceParameter(Params.cohortFilterType, getType().name());
-        url.replaceParameter(Params.cohortId, "" + getCohortId());
-        return url;
-    }
-
-    @Override
-    public boolean equals(Object o)
-    {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        CohortFilter that = (CohortFilter) o;
-
-        if (_cohortId != that._cohortId) return false;
-        if (_type != that._type) return false;
-
-        return true;
-    }
-
-    @Override
-    public int hashCode()
-    {
-        int result = _type.hashCode();
-        result = 31 * result + _cohortId;
-        return result;
-    }
-
-    public CohortImpl getCohort(Container container, User user)
-    {
-        if (!StudyManager.getInstance().showCohorts(container, user))
-            return null;
-        return StudyManager.getInstance().getCohortForRowId(container, user, getCohortId());
-    }
-
-    public String getDescription(Container container, User user)
-    {
-        CohortImpl cohort = getCohort(container, user);
-        if (cohort == null)
-            return null;
-        return getType().getTitle() + " is " + cohort.getLabel();
-    }
-
-    protected ColumnInfo getCohortColumn(TableInfo table, Container container)
-    {
-        FieldKey cohortColKey = _type.getFilterColumn(container);
-        Map<FieldKey, ColumnInfo> cohortColumnMap = QueryService.get().getColumns(table, Collections.singleton(cohortColKey));
-        ColumnInfo cohortColumn = cohortColumnMap.get(cohortColKey);
-        if (cohortColumn == null)
-            throw new IllegalStateException("A column with key '" + cohortColKey.toString() + "'  was not found on table " + table.getName());
-        return cohortColumn;
-    }
-
-    public void addFilterCondition(TableInfo table, Container container, SimpleFilter filter)
-    {
-        filter.addCondition(getCohortColumn(table, container).getFieldKey(), getCohortId());
     }
 }

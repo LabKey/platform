@@ -104,9 +104,11 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                 StudyImportInitialTask.doImport(job, studyImportContext, errors, studyFileName);
 
                 // the dataset import task handles importing the dataset data and updating the participant and participantVisit tables
-                File datasetsFile = StudyImportDatasetTask.getDatasetsFile(studyImportContext, studyDir);
+                String datasetsFileName = StudyImportDatasetTask.getDatasetsFileName(studyImportContext);
+                VirtualFile datasetsDirectory = StudyImportDatasetTask.getDatasetsDirectory(studyImportContext, studyDir);
+
                 StudyImpl study = StudyManager.getInstance().getStudy(c);
-                StudyImportDatasetTask.doImport(datasetsFile, job, study);
+                StudyImportDatasetTask.doImport(datasetsDirectory, datasetsFileName, job, study);
 
                 // specimen import task
                 File specimenFile = getSpecimenArchive(studyImportContext, studyDir);

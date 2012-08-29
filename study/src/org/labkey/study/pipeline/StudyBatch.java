@@ -55,10 +55,11 @@ public abstract class StudyBatch extends PipelineJob implements Serializable
         return "Import files";
     }
 
+    protected abstract File createLogFile();
+
     public void submit() throws IOException
     {
-        File log = StudyPipeline.logForInputFile(_definitionFile);
-        setLogFile(log);
+        setLogFile(createLogFile());
         try
         {
             PipelineService.get().queueJob(this);

@@ -41,6 +41,7 @@ public class StudyExportContext extends AbstractContext
     private final Set<Integer> _datasetIds = new HashSet<Integer>();
     private final boolean _removeProtected;
     private final ParticipantMapper _participantMapper;
+    private Set<Integer> _visitIds = null;
 
     public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes, Logger logger)
     {
@@ -63,6 +64,12 @@ public class StudyExportContext extends AbstractContext
 
         if (_datasets.size() == 0)
             initializeDatasets(study);
+    }
+
+    public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes, boolean removeProtected, ParticipantMapper participantMapper, Set<DataSetDefinition> initDatasets, Logger logger)
+    {
+        this(study, user, c, oldFormats, dataTypes, removeProtected, participantMapper, logger);
+        setDatasets(initDatasets);
     }
 
     public boolean useOldFormats()
@@ -127,5 +134,15 @@ public class StudyExportContext extends AbstractContext
     public ParticipantMapper getParticipantMapper()
     {
         return _participantMapper;
+    }
+
+    public Set<Integer> getVisitIds()
+    {
+        return _visitIds;
+    }
+
+    public void setVisitIds(Set<Integer> visits)
+    {
+        _visitIds = visits;
     }
 }

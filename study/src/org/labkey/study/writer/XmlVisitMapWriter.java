@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 /**
  * User: adam
@@ -59,50 +60,55 @@ public class XmlVisitMapWriter implements Writer<StudyImpl, StudyExportContext>
         VisitMapDocument visitMapDoc = VisitMapDocument.Factory.newInstance();
         VisitMap visitMapXml = visitMapDoc.addNewVisitMap();
 
+        Set<Integer> visitsToExport = ctx.getVisitIds();
+
         for (VisitImpl visit : visits)
         {
-            VisitMap.Visit visitXml = visitMapXml.addNewVisit();
-
-            if (null != visit.getLabel())
-                visitXml.setLabel(visit.getLabel());
-
-            if (null != visit.getTypeCode())
-                visitXml.setTypeCode(String.valueOf(visit.getTypeCode()));
-
-            // Only set if false; default value is "true"
-            if (!visit.isShowByDefault())
-                visitXml.setShowByDefault(visit.isShowByDefault());
-
-            visitXml.setSequenceNum(visit.getSequenceNumMin());
-
-            if (visit.getSequenceNumMin() != visit.getSequenceNumMax())
-                visitXml.setMaxSequenceNum(visit.getSequenceNumMax());
-
-            if (null != visit.getCohort())
-                visitXml.setCohort(visit.getCohort().getLabel());
-
-            if (null != visit.getVisitDateDatasetId() && ctx.isExportedDataset(visit.getVisitDateDatasetId()))
-                visitXml.setVisitDateDatasetId(visit.getVisitDateDatasetId());
-
-            if (visit.getDisplayOrder() > 0)
-                visitXml.setDisplayOrder(visit.getDisplayOrder());
-
-            if (visit.getChronologicalOrder() > 0)
-                visitXml.setChronologicalOrder(visit.getChronologicalOrder());
-
-            List<VisitDataSet> vds = visit.getVisitDataSets();
-
-            if (!vds.isEmpty())
+            if (visitsToExport == null || visitsToExport.contains(visit.getId()))
             {
-                VisitMap.Visit.Datasets datasetsXml = visitXml.addNewDatasets();
+                VisitMap.Visit visitXml = visitMapXml.addNewVisit();
 
-                for (VisitDataSet vd : vds)
+                if (null != visit.getLabel())
+                    visitXml.setLabel(visit.getLabel());
+
+                if (null != visit.getTypeCode())
+                    visitXml.setTypeCode(String.valueOf(visit.getTypeCode()));
+
+                // Only set if false; default value is "true"
+                if (!visit.isShowByDefault())
+                    visitXml.setShowByDefault(visit.isShowByDefault());
+
+                visitXml.setSequenceNum(visit.getSequenceNumMin());
+
+                if (visit.getSequenceNumMin() != visit.getSequenceNumMax())
+                    visitXml.setMaxSequenceNum(visit.getSequenceNumMax());
+
+                if (null != visit.getCohort())
+                    visitXml.setCohort(visit.getCohort().getLabel());
+
+                if (null != visit.getVisitDateDatasetId() && ctx.isExportedDataset(visit.getVisitDateDatasetId()))
+                    visitXml.setVisitDateDatasetId(visit.getVisitDateDatasetId());
+
+                if (visit.getDisplayOrder() > 0)
+                    visitXml.setDisplayOrder(visit.getDisplayOrder());
+
+                if (visit.getChronologicalOrder() > 0)
+                    visitXml.setChronologicalOrder(visit.getChronologicalOrder());
+
+                List<VisitDataSet> vds = visit.getVisitDataSets();
+
+                if (!vds.isEmpty())
                 {
-                    if (ctx.isExportedDataset(vd.getDataSetId()))
+                    VisitMap.Visit.Datasets datasetsXml = visitXml.addNewDatasets();
+
+                    for (VisitDataSet vd : vds)
                     {
-                        VisitMap.Visit.Datasets.Dataset datasetXml = datasetsXml.addNewDataset();
-                        datasetXml.setId(vd.getDataSetId());
-                        datasetXml.setType(vd.isRequired() ? DatasetType.REQUIRED : DatasetType.OPTIONAL);
+                        if (ctx.isExportedDataset(vd.getDataSetId()))
+                        {
+                            VisitMap.Visit.Datasets.Dataset datasetXml = datasetsXml.addNewDataset();
+                            datasetXml.setId(vd.getDataSetId());
+                            datasetXml.setType(vd.isRequired() ? DatasetType.REQUIRED : DatasetType.OPTIONAL);
+                        }
                     }
                 }
             }

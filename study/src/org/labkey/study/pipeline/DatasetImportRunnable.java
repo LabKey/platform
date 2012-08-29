@@ -26,12 +26,15 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.Filter;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.QCState;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStreamReader;
 import java.util.*;
 
 public class DatasetImportRunnable implements Runnable
@@ -39,7 +42,6 @@ public class DatasetImportRunnable implements Runnable
     private static final Logger LOG = PipelineJob.getJobLogger(DatasetImportRunnable.class);
 
     protected AbstractDatasetImportTask.Action _action = null;
-    protected File _tsv;
     protected boolean _deleteAfterImport = false;
     protected Date _replaceCutoff = null;
     protected String visitDatePropertyURI = null;
@@ -50,8 +52,10 @@ public class DatasetImportRunnable implements Runnable
     protected final StudyImpl _study;
     protected final Map<String, String> _columnMap = new DatasetFileReader.OneToOneStringMap();
 
+    protected VirtualFile _root;
+    protected String _tsvName;
 
-    DatasetImportRunnable(PipelineJob job, StudyImpl study, DataSetDefinition ds, File tsv, AbstractDatasetImportTask.Action action, boolean deleteAfterImport, Date defaultReplaceCutoff, Map<String, String> columnMap)
+    DatasetImportRunnable(PipelineJob job, StudyImpl study, DataSetDefinition ds, VirtualFile root, String tsv, AbstractDatasetImportTask.Action action, boolean deleteAfterImport, Date defaultReplaceCutoff, Map<String, String> columnMap)
     {
         _job = job;
         _study = study;
@@ -60,7 +64,9 @@ public class DatasetImportRunnable implements Runnable
         _deleteAfterImport = deleteAfterImport;
         _replaceCutoff = defaultReplaceCutoff;
         _columnMap.putAll(columnMap);
-        _tsv = tsv;
+
+        _root = root;
+        _tsvName = tsv;
     }
 
     public String validate()
@@ -85,12 +91,10 @@ public class DatasetImportRunnable implements Runnable
         if (_action == AbstractDatasetImportTask.Action.DELETE)
             return;
 
-        if (null == _tsv)
+        if (null == _tsvName)
             errors.add("No file specified");
-        else if (!_tsv.exists())
-            errors.add("File does not exist: " + _tsv.getName());
-        else if (!_tsv.canRead())
-            errors.add("Cannot read tsv: " + _tsv.getName());
+        else if (!Arrays.asList(_root.list()).contains(_tsvName))
+            errors.add("File does not exist: " + _tsvName);
     }
 
 
@@ -112,11 +116,13 @@ public class DatasetImportRunnable implements Runnable
         if (!errors.isEmpty())
         {
             for (String e : errors)
-                _job.error(_tsv.getName() + " -- " + e);
+                _job.error(_tsvName + " -- " + e);
             return;
         }
 
         boolean needToClose = true;
+        TabLoader loader = null;
+
         try
         {
             scope.ensureTransaction();
@@ -139,7 +145,7 @@ public class DatasetImportRunnable implements Runnable
             if (_action == AbstractDatasetImportTask.Action.APPEND || _action == AbstractDatasetImportTask.Action.REPLACE)
             {
                 final Integer[] skippedRowCount = new Integer[] { 0 };
-                TabLoader loader = new TabLoader(_tsv, true);
+                loader = new TabLoader(new BufferedReader(new InputStreamReader(_root.getInputStream(_tsvName))), true);
                 if (useCutoff)
                 {
                     loader.setMapFilter(new Filter<Map<String,Object>>()
@@ -180,7 +186,7 @@ public class DatasetImportRunnable implements Runnable
                 {
                     assert cpuCommit.start();
                     scope.commitTransaction();
-                    String msg = _datasetDefinition.getLabel() + ": Successfully imported " + imported.size() + " rows from " + _tsv;
+                    String msg = _datasetDefinition.getLabel() + ": Successfully imported " + imported.size() + " rows from " + _tsvName;
                     if (useCutoff && skippedRowCount[0] > 0)
                         msg += " (skipped " + skippedRowCount[0] + " rows older than cutoff)";
                     _job.info(msg);
@@ -188,15 +194,15 @@ public class DatasetImportRunnable implements Runnable
                 }
 
                 for (String err : errors)
-                    _job.error(_tsv.getName() + " -- " + err);
+                    _job.error(_tsvName + " -- " + err);
 
                 if (_deleteAfterImport)
                 {
-                    boolean success = _tsv.delete();
+                    boolean success = _root.delete(_tsvName);
                     if (success)
-                        _job.info("Deleted file " + _tsv.getPath());
+                        _job.info("Deleted file " + _tsvName);
                     else
-                        _job.error("Could not delete file " + _tsv.getPath());
+                        _job.error("Could not delete file " + _tsvName);
                 }
                 assert cpuImport.stop();
             }
@@ -208,10 +214,13 @@ public class DatasetImportRunnable implements Runnable
             scope.closeConnection();
             needToClose = false;
 
-            _job.error("Exception while importing dataset " + _datasetDefinition.getName() + " from " + _tsv, x);
+            _job.error("Exception while importing dataset " + _datasetDefinition.getName() + " from " + _tsvName, x);
         }
         finally
         {
+            if (loader != null)
+                loader.close();
+
             if (needToClose)
             {
                 scope.closeConnection();
@@ -233,14 +242,9 @@ public class DatasetImportRunnable implements Runnable
         return _action;
     }
 
-    public File getFile()
-    {
-        return _tsv;
-    }
-
     public String getFileName()
     {
-        return null == _tsv ? null : _tsv.getName();
+        return _tsvName;
     }
 
     public DataSetDefinition getDatasetDefinition()

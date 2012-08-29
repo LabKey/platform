@@ -117,15 +117,27 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
 
                 if (studyXml.getDescription() != null)
                     studyForm.setDescription(studyXml.getDescription());
+                // Issue 15789: Carriage returns in protocol description are not round-tripped
+                else if (studyXml.getStudyDescription() != null && studyXml.getStudyDescription().getDescription() != null)
+                    studyForm.setDescription(studyXml.getStudyDescription().getDescription());
                 
-                if(studyXml.getDescriptionRendererType() != null)
+                if (studyXml.getDescriptionRendererType() != null)
                     studyForm.setDescriptionRendererType(studyXml.getDescriptionRendererType());
+                // Issue 15789: Carriage returns in protocol description are not round-tripped
+                else if (studyXml.getStudyDescription() != null && studyXml.getStudyDescription().getRendererType() != null)
+                    studyForm.setDescriptionRendererType(studyXml.getStudyDescription().getRendererType());
 
                 if (studyXml.getInvestigator() != null)
                     studyForm.setInvestigator(studyXml.getInvestigator());
 
                 if (studyXml.getGrant() != null)
                     studyForm.setGrant(studyXml.getGrant());
+
+                if (studyXml.getAlternateIdPrefix() != null)
+                    studyForm.setAlternateIdPrefix(studyXml.getAlternateIdPrefix());
+
+                if (studyXml.isSetAlternateIdDigits())
+                    studyForm.setAlternateIdDigits(studyXml.getAlternateIdDigits());
 
                 StudyController.createStudy(study, ctx.getContainer(), ctx.getUser(), studyForm);
             }

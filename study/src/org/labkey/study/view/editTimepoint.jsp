@@ -19,7 +19,7 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.CohortFilter" %>
+<%@ page import="org.labkey.study.CohortFilterFactory" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.CohortImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
@@ -71,7 +71,7 @@
                     else
                     {
                     %>
-                    <select name="<%= CohortFilter.Params.cohortId.name() %>">
+                    <select name="<%= CohortFilterFactory.Params.cohortId.name() %>">
                         <option value="">All</option>
                     <%
 

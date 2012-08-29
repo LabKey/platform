@@ -26,12 +26,15 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.Map;
@@ -40,9 +43,9 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
 {
     private String _siteLookup = "RowId";
 
-    ParticipantImportRunnable(PipelineJob job, StudyImpl study, DataSetDefinition ds, File tsv, AbstractDatasetImportTask.Action action, boolean deleteAfterImport, Date defaultReplaceCutoff, Map<String, String> columnMap)
+    ParticipantImportRunnable(PipelineJob job, StudyImpl study, DataSetDefinition ds, VirtualFile root, String tsv, AbstractDatasetImportTask.Action action, boolean deleteAfterImport, Date defaultReplaceCutoff, Map<String, String> columnMap)
     {
-        super(job, study, ds, tsv, action, deleteAfterImport, defaultReplaceCutoff, columnMap);
+        super(job, study, ds, root, tsv, action, deleteAfterImport, defaultReplaceCutoff, columnMap);
     }
 
 
@@ -63,7 +66,7 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
         }
         catch (Exception x)
         {
-            _job.error("Unexpected error importing file: " + _tsv.getName(), x);
+            _job.error("Unexpected error importing file: " + _tsvName, x);
         }
     }
 
@@ -86,49 +89,60 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
 
     public void _run() throws IOException, SQLException
     {
-        TabLoader loader = new TabLoader(_tsv, true);
-        CaseInsensitiveHashMap<ColumnDescriptor> columnMap = new CaseInsensitiveHashMap<ColumnDescriptor>();
-        for (ColumnDescriptor c : loader.getColumns())
-            columnMap.put(c.name, c);
+        TabLoader loader = null;
 
-        String subjectIdCol = StudyService.get().getSubjectColumnName(getDatasetDefinition().getContainer());
-        if (!columnMap.containsKey(subjectIdCol))
+        try
         {
-            _job.error("Dataset does not contain column " + subjectIdCol + ".");
-            return;
+            loader = new TabLoader(new BufferedReader(new InputStreamReader(_root.getInputStream(_tsvName))), true);
+
+            CaseInsensitiveHashMap<ColumnDescriptor> columnMap = new CaseInsensitiveHashMap<ColumnDescriptor>();
+            for (ColumnDescriptor c : loader.getColumns())
+                columnMap.put(c.name, c);
+
+            String subjectIdCol = StudyService.get().getSubjectColumnName(getDatasetDefinition().getContainer());
+            if (!columnMap.containsKey(subjectIdCol))
+            {
+                _job.error("Dataset does not contain column " + subjectIdCol + ".");
+                return;
+            }
+
+            StudySchema schema = StudySchema.getInstance();
+
+            TempTableWriter ttl = new TempTableWriter(loader);
+            TempTableInfo tinfoTemp = ttl.loadTempTable(schema.getSchema());
+            TableInfo site = StudySchema.getInstance().getTableInfoSite();
+            ColumnInfo siteLookup = site.getColumn(_siteLookup);
+
+            // Merge uploaded data with Study tables
+
+            Table.execute(schema.getSchema(), "INSERT INTO " + schema.getTableInfoParticipant() + " (ParticipantId)\n" +
+                    "SELECT " + subjectIdCol + " FROM " + tinfoTemp + " WHERE " + subjectIdCol + " NOT IN (SELECT ParticipantId FROM " + schema.getTableInfoParticipant() + ")");
+
+            if (columnMap.containsKey("EnrollmentSiteId"))
+            {
+                Table.execute(schema.getSchema(), "UPDATE " + schema.getTableInfoParticipant() + " SET EnrollmentSiteId=study.Site.RowId\n" +
+                        "FROM " + tinfoTemp + " JOIN study.Site ON " + tinfoTemp.toString() + ".EnrollmentSiteId=study.Site." + siteLookup.getSelectName() + "\n" +
+                        "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp.toString() + "." + subjectIdCol);
+            }
+            if (columnMap.containsKey("CurrentSiteId"))
+            {
+                Table.execute(schema.getSchema(), "UPDATE " + schema.getTableInfoParticipant() + " SET CurrentSiteId=study.Site.RowId\n" +
+                        "FROM " + tinfoTemp + " JOIN study.Site ON " + tinfoTemp.toString() + ".CurrentSiteId=study.Site." + siteLookup.getSelectName() + "\n" +
+                        "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp.toString() + "." + subjectIdCol);
+            }
+
+            if (columnMap.containsKey("StartDate"))
+            {
+                Table.execute(schema.getSchema(), "UPDATE " + schema.getTableInfoParticipant() + " SET StartDate=" + tinfoTemp.toString() + ".StartDate\n" +
+                        "FROM " + tinfoTemp + " \n" +
+                        "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp.toString() + "." + subjectIdCol);
+            }
+            tinfoTemp.delete();
         }
-
-        StudySchema schema = StudySchema.getInstance();
-
-        TempTableWriter ttl = new TempTableWriter(loader);
-        TempTableInfo tinfoTemp = ttl.loadTempTable(schema.getSchema());
-        TableInfo site = StudySchema.getInstance().getTableInfoSite();
-        ColumnInfo siteLookup = site.getColumn(_siteLookup);
-
-        // Merge uploaded data with Study tables
-
-        Table.execute(schema.getSchema(), "INSERT INTO " + schema.getTableInfoParticipant() + " (ParticipantId)\n" +
-                "SELECT " + subjectIdCol + " FROM " + tinfoTemp + " WHERE " + subjectIdCol + " NOT IN (SELECT ParticipantId FROM " + schema.getTableInfoParticipant() + ")");
-
-        if (columnMap.containsKey("EnrollmentSiteId"))
+        finally
         {
-            Table.execute(schema.getSchema(), "UPDATE " + schema.getTableInfoParticipant() + " SET EnrollmentSiteId=study.Site.RowId\n" +
-                    "FROM " + tinfoTemp + " JOIN study.Site ON " + tinfoTemp.toString() + ".EnrollmentSiteId=study.Site." + siteLookup.getSelectName() + "\n" +
-                    "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp.toString() + "." + subjectIdCol);
+            if (loader != null)
+                loader.close();
         }
-        if (columnMap.containsKey("CurrentSiteId"))
-        {
-            Table.execute(schema.getSchema(), "UPDATE " + schema.getTableInfoParticipant() + " SET CurrentSiteId=study.Site.RowId\n" +
-                    "FROM " + tinfoTemp + " JOIN study.Site ON " + tinfoTemp.toString() + ".CurrentSiteId=study.Site." + siteLookup.getSelectName() + "\n" +
-                    "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp.toString() + "." + subjectIdCol);
-        }
-
-        if (columnMap.containsKey("StartDate"))
-        {
-            Table.execute(schema.getSchema(), "UPDATE " + schema.getTableInfoParticipant() + " SET StartDate=" + tinfoTemp.toString() + ".StartDate\n" +
-                    "FROM " + tinfoTemp + " \n" +
-                    "WHERE " + schema.getTableInfoParticipant() + ".ParticipantId = " + tinfoTemp.toString() + "." + subjectIdCol);
-        }
-        tinfoTemp.delete();
     }
 }

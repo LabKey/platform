@@ -22,6 +22,8 @@ import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.data.Container;
 import org.labkey.api.message.settings.MessageConfigService.UserPreference;
 import org.labkey.api.security.User;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.view.HttpView;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -95,6 +97,14 @@ public abstract class EmailPrefsSelector
     {
         PreferencePicker pp = _emailPrefsMap.get(user);
         UserPreference up = pp.getApplicablePreference(ann);
+
+        // This should not happen, but it has on one discussion board attached to a list, see #15748 & #15731. For now,
+        // log information to mothership (to help track this down) and return false (to avoid subsequent NPE).
+        if (null == up)
+        {
+            ExceptionUtil.logExceptionToMothership(HttpView.currentRequest(), new IllegalStateException("UserPreference is null for user: " + user.getEmail() + ", ann: " + ann + ", c: " + _c.toString()));
+            return false;
+        }
 
         // Skip if current notification type (e.g., individual or digest) doesn't match the preference
         if (!includeEmailPref(up))

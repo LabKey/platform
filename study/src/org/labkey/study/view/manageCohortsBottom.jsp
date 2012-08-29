@@ -15,10 +15,12 @@
     * limitations under the License.
     */
 %>
+<%@ page import="org.labkey.api.study.Cohort" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.study.CohortFilter" %>
+<%@ page import="org.labkey.study.CohortFilterFactory" %>
+<%@ page import="org.labkey.study.controllers.CohortController" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController" %>
 <%@ page import="org.labkey.study.model.CohortImpl" %>
 <%@ page import="org.labkey.study.model.Participant" %>
@@ -30,8 +32,6 @@
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.study.Cohort" %>
-<%@ page import="org.labkey.study.controllers.CohortController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -119,7 +119,7 @@
                 {
                     %>
                 <input type="hidden" name="participantId" value="<%=entry.getKey().getParticipantId()%>">
-                <select name="<%= CohortFilter.Params.cohortId.name() %>"><%
+                <select name="<%= CohortFilterFactory.Params.cohortId.name() %>"><%
                     // Need to display selection drop-down for each participant
                     CohortImpl selectedCohort = entry.getValue();
                     
