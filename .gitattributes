@@ -2902,6 +2902,7 @@ study/src/org/labkey/study/controllers/StudyPropertiesController.java -text
 study/src/org/labkey/study/controllers/assay/AssayController.java -text
 study/src/org/labkey/study/controllers/assay/actions/AbstractAssayAPIAction.java -text
 study/src/org/labkey/study/controllers/assay/actions/GetAssayBatchAction.java -text
+study/src/org/labkey/study/controllers/assay/actions/ImportRunApiAction.java -text
 study/src/org/labkey/study/controllers/assay/actions/SaveAssayBatchAction.java -text
 study/src/org/labkey/study/controllers/dataset.png -text
 study/src/org/labkey/study/controllers/designer/DesignerController.java -text

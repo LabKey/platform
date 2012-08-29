@@ -20,6 +20,7 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -33,6 +34,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AbstractTsvAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.data.Table;
 import org.json.JSONObject;
@@ -52,8 +54,8 @@ import java.sql.SQLException;
 public abstract class AbstractAssayAPIAction<FORM extends SimpleApiJsonForm> extends ApiAction<FORM>
 {
     // Top level properties
-    protected static final String ASSAY_ID = "assayId";
-    protected static final String BATCH_ID = "batchId";
+    public static final String ASSAY_ID = "assayId";
+    public static final String BATCH_ID = "batchId";
     protected static final String BATCH = "batch";
     protected static final String RUNS = "runs";
 
@@ -66,7 +68,17 @@ public abstract class AbstractAssayAPIAction<FORM extends SimpleApiJsonForm> ext
         {
             form.bindProperties(new JSONObject());
         }
-        int assayId = form.getJsonObject().getInt(ASSAY_ID);
+
+        Pair<ExpProtocol, AssayProvider> pair = getProtocolProvider(form.getJsonObject(), getViewContext().getContainer());
+        ExpProtocol protocol = pair.first;
+        AssayProvider provider = pair.second;
+
+        return executeAction(protocol, provider, form, errors);
+    }
+
+    public static Pair<ExpProtocol, AssayProvider> getProtocolProvider(JSONObject json, Container c)
+    {
+        int assayId = json.getInt(ASSAY_ID);
 
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(assayId);
         if (protocol == null)
@@ -74,10 +86,10 @@ public abstract class AbstractAssayAPIAction<FORM extends SimpleApiJsonForm> ext
             throw new NotFoundException("Could not find assay id " + assayId);
         }
 
-        List<ExpProtocol> availableAssays = AssayService.get().getAssayProtocols(getViewContext().getContainer());
+        List<ExpProtocol> availableAssays = AssayService.get().getAssayProtocols(c);
         if (!availableAssays.contains(protocol))
         {
-            throw new NotFoundException("Assay id " + assayId + " is not visible for folder " + getViewContext().getContainer());
+            throw new NotFoundException("Assay id " + assayId + " is not visible for folder " + c);
         }
 
         AssayProvider provider = AssayService.get().getProvider(protocol);
@@ -86,7 +98,7 @@ public abstract class AbstractAssayAPIAction<FORM extends SimpleApiJsonForm> ext
             throw new NotFoundException("Could not find assay provider for assay id " + assayId);
         }
 
-        return executeAction(protocol, provider, form, errors);
+        return Pair.of(protocol, provider);
     }
 
     protected abstract ApiResponse executeAction(ExpProtocol assay, AssayProvider provider, FORM form, BindException errors) throws Exception;

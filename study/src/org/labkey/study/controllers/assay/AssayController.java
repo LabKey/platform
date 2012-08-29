@@ -91,6 +91,7 @@ import org.labkey.study.assay.TsvImportAction;
 import org.labkey.study.assay.query.AssayAuditViewFactory;
 import org.labkey.study.assay.query.AssaySchemaImpl;
 import org.labkey.study.controllers.assay.actions.GetAssayBatchAction;
+import org.labkey.study.controllers.assay.actions.ImportRunApiAction;
 import org.labkey.study.controllers.assay.actions.SaveAssayBatchAction;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -126,6 +127,7 @@ public class AssayController extends SpringActionController
             SaveAssayBatchAction.class,
             PublishStartAction.class,
             PublishConfirmAction.class,
+            ImportRunApiAction.class,
             UploadWizardAction.class,
             PipelineDataCollectorRedirectAction.class,
             DeleteAction.class,
