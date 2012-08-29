@@ -297,5 +297,11 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
         {
             throw new UnsupportedOperationException();
         }
+        
+        @Override
+        public void uploadComplete(ExpRun run) throws ExperimentException
+        {
+            // no-op
+        }
     }
 }
