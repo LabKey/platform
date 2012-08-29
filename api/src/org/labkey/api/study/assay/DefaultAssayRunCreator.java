@@ -123,9 +123,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             run.setComments(context.getComments());
 
             exp = saveExperimentRun(context, exp, run, false);
+            context.uploadComplete(run);
         }
         else
         {
+            context.uploadComplete(null);
             exp = saveExperimentRunAsync(context, exp);
         }
 
@@ -158,6 +160,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     forceSaveBatchProps,
                     PipelineService.get().getPipelineRootSetting(context.getContainer()),
                     primaryFile);
+
             // Don't queue the job until the transaction is committed, since otherwise the thread
             // that's running the job might start before it can access the job's row in the database.
             ExperimentService.get().getSchema().getScope().addCommitTask(new Runnable()

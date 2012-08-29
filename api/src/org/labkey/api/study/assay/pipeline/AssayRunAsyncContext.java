@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -316,5 +317,11 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     public Integer getReRunId()
     {
         return _reRunId;
+    }
+
+    @Override
+    public void uploadComplete(ExpRun run) throws ExperimentException
+    {
+        // no-op
     }
 }

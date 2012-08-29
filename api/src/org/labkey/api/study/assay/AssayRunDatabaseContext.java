@@ -226,4 +226,10 @@ public class AssayRunDatabaseContext<ProviderType extends AssayProvider> impleme
     {
         return null;
     }
+
+    @Override
+    public void uploadComplete(ExpRun run) throws ExperimentException
+    {
+        // no-op
+    }
 }

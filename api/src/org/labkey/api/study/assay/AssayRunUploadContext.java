@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.qc.TransformResult;
@@ -83,4 +84,6 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider>
 
     /** The RowId for the run that is being deleted and reuploaded, or null if this is a new run */
     Integer getReRunId();
+
+    void uploadComplete(ExpRun run) throws ExperimentException;
 }

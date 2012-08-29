@@ -586,7 +586,6 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             ExpRun run = pair.second;
 
             // CONSIDER: move into saveExperimentRun?
-            form.uploadComplete(run);
             form.setBatchId(exp.getRowId());
             form.saveDefaultBatchValues();
             form.saveDefaultRunValues();

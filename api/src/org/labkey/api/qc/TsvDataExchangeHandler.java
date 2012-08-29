@@ -867,5 +867,11 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public void uploadComplete(ExpRun run) throws ExperimentException
+        {
+            // no-op
+        }
     }
 }
