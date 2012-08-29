@@ -161,4 +161,15 @@ public class MemoryVirtualFile extends AbstractVirtualFile
     {
         return _folders.keySet().toArray(new String[_folders.size()]);
     }
+
+    @Override
+    public boolean delete(String filename)
+    {
+        if (_docMap.containsKey(filename))
+        {
+            _docMap.remove(filename);
+            return true;
+        }
+        return false;
+    }
 }

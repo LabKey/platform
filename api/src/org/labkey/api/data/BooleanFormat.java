@@ -54,13 +54,40 @@ public class BooleanFormat extends Format
     public static final String DEFAULT_PATTERN = DEFAULT_TRUE + ";" + DEFAULT_FALSE + ";" + DEFAULT_NULL;
 
     /**
+     * Static map of common parse associations
+     */
+    private static HashMap<String, Boolean> _parseAssocs = new HashMap<String, Boolean>();
+
+    static
+    {
+        _parseAssocs.put("true", Boolean.TRUE);
+        _parseAssocs.put("false", Boolean.FALSE);
+        _parseAssocs.put("1", Boolean.TRUE);
+        _parseAssocs.put("0", Boolean.FALSE);
+        _parseAssocs.put("yes", Boolean.TRUE);
+        _parseAssocs.put("no", Boolean.FALSE);
+        _parseAssocs.put("on", Boolean.TRUE);
+        _parseAssocs.put("off", Boolean.FALSE);
+        _parseAssocs.put("y", Boolean.TRUE);
+        _parseAssocs.put("n", Boolean.FALSE);
+        _parseAssocs.put("t", Boolean.TRUE);
+        _parseAssocs.put("f", Boolean.FALSE);
+    }
+
+    //The current true, false, and null strings set by the format string
+    protected String _true;
+    protected String _false;
+    protected String _null;
+
+    private static BooleanFormat _definstance = new BooleanFormat();
+
+
+    /**
      * Returns a singleton default instance which is most useful for parsing.
      * @return The singleton default instance
      */
-    public synchronized static BooleanFormat getInstance()
+    public static BooleanFormat getInstance()
     {
-        if(null == _definstance)
-            _definstance = new BooleanFormat();
         return _definstance;
     }
 
@@ -213,34 +240,6 @@ public class BooleanFormat extends Format
         
         return ret;
     }
-
-    /**
-     * Static map of common parse associations
-     */
-    protected static HashMap<String,Boolean> _parseAssocs = new HashMap<String,Boolean>();
-    static
-    {
-        _parseAssocs.put("true", Boolean.TRUE);
-        _parseAssocs.put("false", Boolean.FALSE);
-        _parseAssocs.put("1", Boolean.TRUE);
-        _parseAssocs.put("0", Boolean.FALSE);
-        _parseAssocs.put("yes", Boolean.TRUE);
-        _parseAssocs.put("no", Boolean.FALSE);
-        _parseAssocs.put("on", Boolean.TRUE);
-        _parseAssocs.put("off", Boolean.FALSE);
-        _parseAssocs.put("y", Boolean.TRUE);
-        _parseAssocs.put("n", Boolean.FALSE);
-        _parseAssocs.put("t", Boolean.TRUE);
-        _parseAssocs.put("f", Boolean.FALSE);
-    }
-
-    //The current true, false, and null strings set by the format string
-    protected String _true;
-    protected String _false;
-    protected String _null;
-
-    protected static BooleanFormat _definstance;
-
 
     //JUnit Test Case
     public static class TestCase extends Assert

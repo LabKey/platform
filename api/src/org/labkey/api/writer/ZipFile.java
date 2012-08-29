@@ -234,4 +234,10 @@ public class ZipFile extends AbstractVirtualFile implements Archive
     {
         throw new UnsupportedOperationException("The ZipFile class only supports write operations");
     }
+
+    @Override
+    public boolean delete(String filename)
+    {
+        throw new UnsupportedOperationException("The ZipFile class only supports write operations");
+    }
 }

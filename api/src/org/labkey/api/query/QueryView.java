@@ -385,6 +385,8 @@ public class QueryView extends WebPartView<Object>
     protected StringExpression urlExpr(QueryAction action)
     {
         StringExpression expr = _schema.urlExpr(action, _queryDef);
+        if (expr == null)
+            return null;
 
         switch (action)
         {
@@ -394,16 +396,11 @@ public class QueryView extends WebPartView<Object>
             case deleteQueryRows:
             {
                 // ICK
-                if (expr instanceof DetailsURL)
+                URLHelper srcURL = getReturnURL();
+                if (srcURL != null)
                 {
-                    ActionURL url = ((DetailsURL)expr).getActionURL();
-                    if (null != url)
-                    {
-                        URLHelper srcURL = getReturnURL();
-                        if (srcURL != null)
-                            url.addParameter(QueryParam.srcURL, srcURL.getLocalURIString());
-                        return StringExpressionFactory.createURL(url);
-                    }
+                    String encodedSrcURL = PageFlowUtil.encode(srcURL.getLocalURIString());
+                    expr = ((StringExpressionFactory.AbstractStringExpression)expr).addParameter(QueryParam.srcURL.name(), encodedSrcURL);
                 }
             }
         }

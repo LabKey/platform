@@ -40,6 +40,7 @@ public interface VirtualFile
     public String getRelativePath(String filename);
     public String[] list();
     public String[] listDirs();
+    public boolean delete(String filename);
 
     public Archive createZipArchive(String name) throws IOException;
     public VirtualFile getDir(String path);

@@ -187,4 +187,11 @@ public class FileSystemFile extends AbstractVirtualFile
 
         return dirNames;
     }
+
+    @Override
+    public boolean delete(String filename)
+    {
+        File file = new File(_root, makeLegalName(filename));
+        return file.delete();
+    }
 }

@@ -29,7 +29,6 @@ import org.labkey.api.util.PageFlowUtil;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionBindingEvent;
 import javax.servlet.http.HttpSessionBindingListener;
@@ -59,7 +58,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper
     private HttpSession _session = null;
 
 
-    public AuthenticatedRequest(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, @NotNull User user)
+    public AuthenticatedRequest(@NotNull HttpServletRequest request, @NotNull User user)
     {
         super(request instanceof AuthenticatedRequest ? (HttpServletRequest)((AuthenticatedRequest)request).getRequest() : request);
         _user = null == user ? User.guest : user;

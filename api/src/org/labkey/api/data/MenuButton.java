@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.BooleanUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.PopupMenu;
@@ -81,7 +82,7 @@ public class MenuButton extends ActionButton
         return addMenuItem(caption, url, onClickScript, false);
     }
 
-    public NavTree addMenuItem(String caption, String url, String onClickScript, boolean checked)
+    public NavTree addMenuItem(String caption, String url, @Nullable String onClickScript, boolean checked)
     {
         return addMenuItem(caption, url, onClickScript, checked, false);
     }
@@ -91,7 +92,7 @@ public class MenuButton extends ActionButton
         return addMenuItem(caption, null, null, checked, disabled);
     }
 
-    protected NavTree addMenuItem(String caption, String url, String onClickScript, boolean checked, boolean disabled)
+    protected NavTree addMenuItem(String caption, String url, @Nullable String onClickScript, boolean checked, boolean disabled)
     {
         NavTree menuItem = new NavTree(caption, url);
         menuItem.setScript(onClickScript);

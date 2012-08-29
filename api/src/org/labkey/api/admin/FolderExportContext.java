@@ -20,6 +20,8 @@ import org.labkey.api.security.User;
 import org.apache.log4j.Logger;
 import org.labkey.folder.xml.FolderDocument;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -33,6 +35,9 @@ public class FolderExportContext extends AbstractFolderContext
     private boolean _removeProtected = false;
     private boolean _shiftDates = false;
     private boolean _alternateIds = false;
+    private Set<String> _reportAndViewIds;
+    private Set<Integer> _listIds;
+    private Set<Integer> _visitIds;
 
     public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, Logger logger)
     {
@@ -47,6 +52,31 @@ public class FolderExportContext extends AbstractFolderContext
         _removeProtected = removeProtected;
         _shiftDates = shiftDates;
         _alternateIds = alternateIds;
+    }
+
+    public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, boolean removeProtected, boolean shiftDates, boolean alternateIds, Integer[] visits, Integer[] lists, String[] views, Logger logger)
+    {
+        super(user, c, getFolderDocument(), logger, null);
+        _dataTypes = dataTypes;
+        _format = format;
+        _removeProtected = removeProtected;
+        _shiftDates = shiftDates;
+        _alternateIds = alternateIds;
+
+        if (views != null)
+        {
+            _reportAndViewIds = new HashSet<String>(Arrays.asList(views));
+        }
+
+        if (visits != null)
+        {
+            _visitIds = new HashSet<Integer>(Arrays.asList(visits));
+        }
+        
+        if(lists != null)
+        {
+            _listIds = new HashSet<Integer>(Arrays.asList(lists));
+        }
     }
 
     public Set<String> getDataTypes()
@@ -79,5 +109,20 @@ public class FolderExportContext extends AbstractFolderContext
         FolderDocument doc = FolderDocument.Factory.newInstance();
         doc.addNewFolder();
         return doc;
+    }
+
+    public Set<Integer> getVisitIds()
+    {
+        return _visitIds;
+    }
+
+    public Set<String> getReportAndViewIds()
+    {
+        return _reportAndViewIds;
+    }
+
+    public Set<Integer> getListIds()
+    {
+        return _listIds;
     }
 }

@@ -421,6 +421,24 @@ public class StringExpressionFactory
         {
             return clone();
         }
+
+        public AbstractStringExpression addParameter(String key, String value)
+        {
+            if (_parsedExpression == null)
+                parse();
+
+            AbstractStringExpression copy = copy();
+            copy._parsedExpression.add(new ConstantPart("&" + key + "="));
+            if (value.startsWith("${") && value.endsWith("}"))
+            {
+                copy._parsedExpression.add(parsePart(value.substring(2, value.length() - 1)));
+            }
+            else
+            {
+                copy._parsedExpression.add(new ConstantPart(value));
+            }
+            return copy;
+        }
     }
 
 
@@ -463,19 +481,6 @@ public class StringExpressionFactory
             else
                 return new SubstitutePart(expr);
         }
-
-//        public void addParameter(String key, String value)
-//        {
-//            _parsedExpression.add(new ConstantPart("&" + key + "="));
-//            if (value.startsWith("${") && value.endsWith("}"))
-//            {
-//                _parsedExpression.add(parsePart(value.substring(2, value.length() - 3)));
-//            }
-//            else
-//            {
-//                _parsedExpression.add(new ConstantPart(value));
-//            }
-//        }
     }
 
 
@@ -774,7 +779,12 @@ public class StringExpressionFactory
             m.put("rowId",5);
             m.put("label","%encode me%");
             assertEquals("/labkey/controller/home/details.view?id=5&label=%25encode%20me%25", b.eval(m));
+        }
 
+        @Test
+        public void testFieldKey()
+        {
+            Map<Object,Object> m = new HashMap<Object,Object>();
 
             FieldKeyStringExpression fkse = new FieldKeyStringExpression("details.view?id=${rowid}&title=${title}");
             m.put(FieldKey.fromParts("A","rowid"), "BUG");
@@ -784,6 +794,31 @@ public class StringExpressionFactory
             remap.put(new FieldKey(null,"rowid"), new FieldKey(null,"lookup"));
             FieldKeyStringExpression lookup = fkse.remapFieldKeys(new FieldKey(null, "A"), remap);
             assertEquals("details.view?id=5&title=title%20one", lookup.eval(m));
+        }
+
+        @Test
+        public void testAddParameter() throws URISyntaxException
+        {
+            Map<Object,Object> m = new HashMap<Object,Object>();
+
+            StringExpression b = StringExpressionFactory.create("z/details.view?id=${rowId}", true);
+
+            // Add a srcURL parameter expression
+            StringExpression c = ((AbstractStringExpression)b).addParameter("srcURL", "${srcURL}");
+            assertNotSame("addParameter() should clone the original expression", c, b);
+
+            URLHelper srcURL = new URLHelper("/x/y.view?foo=bar&blee=q");
+            m.put("rowId",5);
+            m.put("srcURL", srcURL);
+            // XXX: URL parameters should be encoded with PageFlowUtil.encode() instead of PageFlowUtil.encodePart()
+            //assertEquals("z/details.view?id=5&srcURL=%2Fx%2Fy.view%3Ffoo%3Dbar%26blee%3Dq", c.eval(m));
+
+            // Add a srcURL parameter literal
+            String encodedSrcURL = PageFlowUtil.encode(srcURL.getLocalURIString(false));
+            StringExpression d = ((AbstractStringExpression)b).addParameter("srcURL", encodedSrcURL);
+            m.remove("srcURL");
+            assertEquals("z/details.view?id=5&srcURL=%2Fx%2Fy.view%3Ffoo%3Dbar%26blee%3Dq", d.eval(m));
+            //assertEquals(b.eval(m), d.eval(m));
         }
     }
 

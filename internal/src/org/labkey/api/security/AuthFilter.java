@@ -152,7 +152,7 @@ public class AuthFilter implements Filter
             if (null != user)
                 UserManager.updateActiveUser(user);
 
-            req = new AuthenticatedRequest(req, resp, user);
+            req = new AuthenticatedRequest(req, user);
 
             if (null != e)
             {

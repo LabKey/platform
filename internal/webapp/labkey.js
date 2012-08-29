@@ -538,6 +538,10 @@ LABKEY.showNavTrail = function()
 
 LABKEY.requiresVisualization = function ()
 {
+    if(!LABKEY.vis){
+        LABKEY.vis = {};
+    }
+
     if (LABKEY.devMode)
     {
         LABKEY.requiresScript('vis/lib/raphael-2.1.0.js');

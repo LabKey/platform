@@ -562,7 +562,9 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
     public StringExpression getDetailsURL(Set<FieldKey> columns, Container container)
     {
-        ContainerContext containerContext = container;
+        ContainerContext containerContext = getContainerContext();
+        if (containerContext == null)
+            containerContext = container;
 
         if (_detailsURL != null && _detailsURL.validateFieldKeys(columns))
         {

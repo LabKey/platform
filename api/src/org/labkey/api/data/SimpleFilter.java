@@ -67,7 +67,6 @@ public class SimpleFilter implements Filter
             return _urlClause;
         }
 
-
         public boolean isIncludeNull()
         {
             return _includeNull;
@@ -76,6 +75,11 @@ public class SimpleFilter implements Filter
         public boolean isNegated()
         {
             return _negated;
+        }
+
+        public void setIncludeNull(boolean includeNull)
+        {
+            _includeNull = includeNull;
         }
 
         public Object[] getParamVals()
@@ -452,8 +456,7 @@ public class SimpleFilter implements Filter
 
     public static abstract class MultiValuedFilterClause extends FilterClause
     {
-        @NotNull
-        protected FieldKey _fieldKey;
+        @NotNull protected FieldKey _fieldKey;
         public static final int MAX_FILTER_VALUES_TO_DISPLAY = 10;
 
         public MultiValuedFilterClause(FieldKey fieldKey, Collection params)
@@ -508,7 +511,6 @@ public class SimpleFilter implements Filter
             super(fieldKey, params);
 
             _urlClause = urlClause;
-            _paramVals = params.toArray();
             _negated = negated;
         }
 
