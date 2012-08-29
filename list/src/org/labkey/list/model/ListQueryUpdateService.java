@@ -89,7 +89,7 @@ public class ListQueryUpdateService extends AbstractQueryUpdateService
     {
         List<Map<String, Object>> result = super._insertRowsUsingETL(user, container, rows, getDataIteratorContext(errors, false), extraScriptContext);
         if (result.size() > 0 && !errors.hasErrors())
-            ListManager.get().indexList((ListDef)_list);
+            ListManager.get().indexList(_list);
         return result;
     }
 
@@ -98,7 +98,7 @@ public class ListQueryUpdateService extends AbstractQueryUpdateService
     {
         int count = super._importRowsUsingETL(user, container, rows, null, getDataIteratorContext(errors, true), extraScriptContext);
         if (count > 0 && !errors.hasErrors())
-            ListManager.get().indexList((ListDef)_list);
+            ListManager.get().indexList(_list);
         return count;
     }
 

@@ -162,7 +162,11 @@ public class ListManager implements SearchService.DocumentProvider
         task.addRunnable(r, SearchService.PRIORITY.group);
     }
 
-    
+    public void indexList(final ListDefinition def)
+    {
+        indexList(((ListDefinitionImpl)def)._def);
+    }
+
     // Index a single list
     public void indexList(final ListDef def)
     {
