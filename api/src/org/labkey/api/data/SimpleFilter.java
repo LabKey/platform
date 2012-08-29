@@ -62,7 +62,7 @@ public class SimpleFilter implements Filter
         protected boolean _includeNull = false;
         protected boolean _negated = false;
 
-        boolean isUrlClause()
+        public boolean isUrlClause()
         {
             return _urlClause;
         }
