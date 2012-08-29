@@ -38,7 +38,7 @@ import java.util.Map;
  * User: jeckels
  * Date: Aug 3, 2007
  */
-public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadForm<? extends AssayProvider>> extends AbstractTempDirDataCollector<ContextType>
+public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadContext<? extends AssayProvider>> extends AbstractTempDirDataCollector<ContextType>
 {
     private static final String PATH_FORM_ELEMENT_NAME = "PreviouslyUploadedFilePaths";
     private static final String NAME_FORM_ELEMENT_NAME = "PreviouslyUploadedFileNames";

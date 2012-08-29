@@ -806,7 +806,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         }
 
         @NotNull
-        public Map<String, File> getUploadedData() throws IOException, ExperimentException
+        public Map<String, File> getUploadedData() throws ExperimentException
         {
             return Collections.emptyMap();
         }

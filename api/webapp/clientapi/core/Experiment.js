@@ -399,6 +399,161 @@ LABKEY.Exp.Run = function (config) {
 LABKEY.ExtAdapter.extend(LABKEY.Exp.Run, LABKEY.Exp.ExpObject);
 
 /**
+ * Create an assay run and import results.
+ *
+ * @param {Number} config.assayId The assay protocol id.
+ * @param {String} config.name The name of a run to create.
+ * @param {String} config.comments Run comments.
+ * @param {Number} [config.batchId] The id of an existing {Exp.RunGroup} to add this run into.
+ * //@param {Number} [config.batchName] The name of an {Exp.RunGroup} to create; only allowed if <code>batchId</code> is not provided.
+ * @param {Object} [config.runProperties] JSON formatted run properties.
+ * @param {Object} [config.batchProperties] JSON formatted batch properties.
+ * @param {Array} config.data Array of raw data results to import.  Each item in the array may
+ *  either be raw file data (requires browser support for the <code>File</code> API)
+ *  or rectangular json results Array of Objects.
+ *
+ *  @example Here is an example of retrieving one or more File objects from an <code>&lt;input&gt;</code>
+ *  element and submitting them together to create a new run.
+ *  <pre>
+ *      <input id='myfiles' type='file' multiple>
+ *      <script>
+ *          function doSubmit() {
+ *              // Example result data in JSON format.
+ *              var json = [{
+ *                  "Result Field": "one"
+ *              },{
+ *                  "Result Field": "two"
+ *              }];
+ *
+ *              var data = [];
+ *              data.push(json);
+ *
+ *              // Collect selected files from the input element.
+ *              // NOTE: The File API not supported on all browsers.
+ *              var files = document.getElementById('myfiles').files;
+ *              for (var i = 0; i < files.length; i++)
+ *                  data.push(files[i]);
+ *
+ *              LABKEY.Exp.Run.importRun({
+ *                  assayId: 3,
+ *                  name: "new run",
+ *                  batchId: 300,
+ *                  //batchName: "new batch",
+ *                  properties: {
+ *                      "Run Field": "value"
+ *                  },
+ *                  data: data
+ *              });
+ *          }
+ *      </script>
+ *  </pre>
+ */
+LABKEY.Exp.Run.importRun = function (config)
+{
+    var formData = null;
+
+    var files = [];
+    var datas = [];
+    if (config.data) {
+        // Check for File objects in config.data if browser supports File API.
+        if (window.File && window.FormData) {
+            for (var i = 0; i < config.data.length; i++) {
+                if (config.data[i] instanceof window.File) {
+                    files.push(config.data[i]);
+                }
+                else {
+                    datas.push(config.data[i]);
+                }
+            }
+        }
+        else {
+            datas = config.data;
+        }
+
+    }
+
+    if (files.length > 0) {
+    }
+
+    var success = LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), this, false);
+    var failure = LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), this, true);
+
+    // ExtJS doesn't support FormData uploads yet, so we do it ourselves.
+    // XXX: Move functionality into LABKEY.Ajax
+    if (files.length > 0) {
+        var formData = new window.FormData();
+        /*
+        formData.append("assayId", config.assayId);
+        formData.append("name", config.name);
+        if (config.batchId)
+            formData.append("batchId", config.batchId);
+        //if (config.batchName)
+        //    formData.append("batchName", config.batchName);
+        if (config.properties)
+            formData.append("properties", config.properties);
+        //formData.append("dataCollectorName", "File Upload");
+        */
+        var json = {
+            assayId: config.assayId,
+            batchId: config.batchId,
+            name: config.name,
+            properties: {
+                RunFieldOne: 300
+            }
+        };
+        formData.append("root", LABKEY.ExtAdapter.encode(json));
+
+        // NOTE: Commons multipart file uploader doesn't support using the same input name so we must append file index
+        formData.append("file", files[0]);
+        for (var i = 1; i < files.length; i++) {
+            formData.append("file" + i, files[i]);
+        }
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', LABKEY.ActionURL.buildURL("assay", "importRun"));
+        xhr.onprogress = function (evt) {
+            if (evt.lengthComputable) {
+                var loaded = evt.loaded / evt.total;
+                console.log("  percent complete: " + (100 * loaded) + " ...");
+            }
+            else {
+                console.log("  loading ...");
+            }
+        };
+        xhr.onerror = function (evt) {
+            console.error(evt);
+            failure.call(config.scope || this);
+        };
+        xhr.onload = function (evt) {
+            console.log(evt);
+
+            if (evt.target.status === 200)
+                success.call(config.scope || this);
+            else
+                failure.call(config.scope || this);
+        };
+
+        xhr.send(formData);
+    }
+    else
+    {
+        LABKEY.Ajax.request({
+            url: LABKEY.ActionURL.buildURL("assay", "importRun"),
+            method: 'POST',
+            params : {
+                assayId: config.assayId,
+                name: config.name,
+                batchId: config.batchId,
+                batchName: config.batchName,
+                properties: config.properties
+            },
+            success: success,
+            failure: failure
+        });
+    }
+};
+
+/**
  * The Protocol constructor is private.
  * @class Experiment protocol.
  * @extends LABKEY.Exp.ExpObject

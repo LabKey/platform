@@ -23,6 +23,7 @@ import org.apache.commons.beanutils.converters.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
+import org.json.JSONObject;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportIdentifierConverter;
@@ -44,6 +45,7 @@ import java.sql.*;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Map;
 
 
 public class ConvertHelper implements PropertyEditorRegistrar
@@ -118,6 +120,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new UserConverter(), User.class);
         _register(new ExpDataFileConverter(), File.class);
         _register(new FacetingBehaviorTypeConverter(), FacetingBehaviorType.class);
+        _register(new JSONTypeConverter(), JSONObject.class);
         EnumConverter.registerEnum(DataSet.KeyManagementType.class);
         EnumConverter.registerEnum(TSVWriter.DELIM.class);
         EnumConverter.registerEnum(TSVWriter.QUOTE.class);
@@ -587,7 +590,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         @Override
         public Object convert(Class type, Object value)
         {
-            if(value == null || value.equals("null") || !type.equals(User.class))
+            if (value == null || value.equals("null") || !type.equals(User.class))
                 return null;
             else
             {
@@ -600,12 +603,32 @@ public class ConvertHelper implements PropertyEditorRegistrar
     {
         public Object convert(Class type, Object value)
         {
-            if(value == null || value.equals("null") || !type.equals(FacetingBehaviorType.class))
+            if (value == null || value.equals("null") || !type.equals(FacetingBehaviorType.class))
                 return null;
             else
             {
                 return FacetingBehaviorType.valueOf(value.toString());
             }
+        }
+    }
+
+    public static class JSONTypeConverter implements Converter
+    {
+        @Override
+        public Object convert(Class type, Object value)
+        {
+            if (value == null || value.equals("null"))
+                return null;
+
+            if (value.getClass() == type)
+                return value;
+
+            if (value instanceof Map)
+                return new JSONObject((Map)value);
+            if (value instanceof String)
+                return new JSONObject((String)value);
+
+            throw new ConversionException("Could not convert '" + value + "' to an JSONObject");
         }
     }
 }

@@ -59,7 +59,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider>
 
     /** @return Map of original file name to file on disk */
     @NotNull
-    Map<String, File> getUploadedData() throws IOException, ExperimentException;
+    Map<String, File> getUploadedData() throws ExperimentException;
 
     ProviderType getProvider();
 

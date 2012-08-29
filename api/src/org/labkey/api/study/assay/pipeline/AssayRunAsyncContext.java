@@ -243,7 +243,7 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
 
     @NotNull
     @Override
-    public Map<String, File> getUploadedData()
+    public Map<String, File> getUploadedData() throws ExperimentException
     {
         return _uploadedData;
     }

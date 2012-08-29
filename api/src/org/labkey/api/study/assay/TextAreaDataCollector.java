@@ -32,7 +32,7 @@ import java.io.*;
  * User: jeckels
  * Date: Jul 12, 2007
  */
-public class TextAreaDataCollector<ContextType extends AssayRunUploadForm<? extends AssayProvider>> extends AbstractTempDirDataCollector<ContextType>
+public class TextAreaDataCollector<ContextType extends AssayRunUploadContext<? extends AssayProvider>> extends AbstractTempDirDataCollector<ContextType>
 {
     private static final String FORM_ELEMENT_NAME = "TextAreaDataCollector.textArea";
 

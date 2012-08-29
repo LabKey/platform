@@ -38,6 +38,7 @@ import org.labkey.api.security.permissions.*;
 import org.labkey.api.study.assay.*;
 import org.labkey.api.study.assay.pipeline.AssayUploadPipelineJob;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.*;
 import org.springframework.context.MessageSourceResolvable;
@@ -577,88 +578,20 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             return afterRunCreation(form, run, errors);
         }
 
-        protected File getPrimaryFile(AssayRunUploadContext context) throws ExperimentException
+        public final ExpRun saveExperimentRun(FormType form) throws ExperimentException, ValidationException
         {
-            try
-            {
-                Map<String, File> uploadedData = context.getUploadedData();
-                return uploadedData.get(AssayDataCollector.PRIMARY_FILE);
-            }
-            catch (IOException e)
-            {
-                throw new ExperimentException(e);
-            }
-        }
-        
-        public ExpRun saveExperimentRun(FormType form) throws ExperimentException, ValidationException
-        {
-            ExpExperiment exp = null;
-            if (form.getBatchId() != null)
-            {
-                exp = ExperimentService.get().getExpExperiment(form.getBatchId().intValue());
-            }
+            Pair<ExpExperiment, ExpRun> pair = form.getProvider().getRunCreator().saveExperimentRun(form, form.getBatchId());
+            assert pair != null && pair.first != null;
+            ExpExperiment exp = pair.first;
+            ExpRun run = pair.second;
 
-            ExpRun run;
-
-            boolean background = form.getProvider().isBackgroundUpload(form.getProtocol());
-            if (!background)
-            {
-                run = AssayService.get().createExperimentRun(form.getName(), getViewContext().getContainer(), form.getProtocol(), getPrimaryFile(form));
-                run.setComments(form.getComments());
-
-                exp = form.getProvider().getRunCreator().saveExperimentRun(form, exp, run, false);
-                form.uploadComplete(run);
-            }
-            else
-            {
-                try
-                {
-                    // Whether or not we need to save batch properties
-                    boolean forceSaveBatchProps = false;
-                    if (exp == null)
-                    {
-                        // No batch yet, so make one
-                        exp = AssayService.get().createStandardBatch(getContainer(), null, form.getProtocol());
-                        exp.save(form.getUser());
-                        // It's brand new, so we need to eventually set its properties
-                        forceSaveBatchProps = true;
-                    }
-
-                    // Queue up a pipeline job to do the actual import in the background
-                    ViewBackgroundInfo info = new ViewBackgroundInfo(getContainer(), getViewContext().getUser(), getViewContext().getActionURL());
-
-                    run = null;
-                    form.uploadComplete(run);
-
-                    final AssayUploadPipelineJob<ProviderType> pipelineJob = new AssayUploadPipelineJob<ProviderType>(form.getProvider().createRunAsyncContext(form), info, exp, forceSaveBatchProps, PipelineService.get().getPipelineRootSetting(getContainer()), getPrimaryFile(form));
-                    // Don't queue the job until the transaction is committed, since otherwise the thread
-                    // that's running the job might start before it can access the job's row in the database. 
-                    ExperimentService.get().getSchema().getScope().addCommitTask(new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            try
-                            {
-                                PipelineService.get().queueJob(pipelineJob);
-                            }
-                            catch (PipelineValidationException e)
-                            {
-                                throw new UnexpectedException(e);
-                            }
-                        }
-                    });
-                }
-                catch (IOException e)
-                {
-                    throw new ExperimentException(e);
-                }
-            }
-
+            // CONSIDER: move into saveExperimentRun?
+            form.uploadComplete(run);
             form.setBatchId(exp.getRowId());
             form.saveDefaultBatchValues();
             form.saveDefaultRunValues();
 
+            // CONSIDER: move into uploadComplete?
             getCompletedUploadAttemptIDs().add(form.getUploadAttemptID());
             form.resetUploadAttemptID();
 

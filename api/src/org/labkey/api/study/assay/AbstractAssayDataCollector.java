@@ -22,7 +22,6 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpRun;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Map;
 
 /**
@@ -33,14 +32,7 @@ public abstract class AbstractAssayDataCollector<ContextType extends AssayRunUpl
 {
     public Map<String, File> uploadComplete(ContextType context, @Nullable ExpRun run) throws ExperimentException
     {
-        try
-        {
-            return context.getUploadedData();
-        }
-        catch (IOException e)
-        {
-            throw new ExperimentException(e);
-        }
+        return context.getUploadedData();
     }
 
     public AdditionalUploadType getAdditionalUploadType(ContextType context)

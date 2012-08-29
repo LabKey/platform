@@ -32,23 +32,31 @@ import java.util.Map;
  * User: jeckels
  * Date: 8/17/12
  */
-public abstract class AbstractTempDirDataCollector<ContextType extends AssayRunUploadForm<? extends AssayProvider>> extends AbstractAssayDataCollector<ContextType>
+public abstract class AbstractTempDirDataCollector<ContextType extends AssayRunUploadContext<? extends AssayProvider>> extends AbstractAssayDataCollector<ContextType>
 {
     protected boolean _uploadComplete = false;
 
     protected File getFileTargetDir(ContextType context) throws ExperimentException
     {
-        File tempDir = ensureSubdirectory(context.getContainer(), TEMP_DIR_NAME);
-        File uploadAttemptDir = new File(tempDir, context.getUploadAttemptID());
-        if (!NetworkDrive.exists(uploadAttemptDir))
+        if (context instanceof AssayRunUploadForm)
         {
-            uploadAttemptDir.mkdir();
+            File tempDir = ensureSubdirectory(context.getContainer(), TEMP_DIR_NAME);
+            File uploadAttemptDir = new File(tempDir, ((AssayRunUploadForm)context).getUploadAttemptID());
+
+            if (!NetworkDrive.exists(uploadAttemptDir))
+            {
+                uploadAttemptDir.mkdir();
+            }
+            if (!uploadAttemptDir.isDirectory())
+            {
+                throw new ExperimentException("Unable to create temporary assay directory " + uploadAttemptDir);
+            }
+            return uploadAttemptDir;
         }
-        if (!uploadAttemptDir.isDirectory())
+        else
         {
-            throw new ExperimentException("Unable to create temporary assay directory " + uploadAttemptDir);
+            return super.getFileTargetDir(context);
         }
-        return uploadAttemptDir;
     }
 
     public Map<String, File> uploadComplete(ContextType context, @Nullable ExpRun run) throws ExperimentException

@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -37,10 +38,13 @@ import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.ValidatorContext;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.qc.DataTransformer;
 import org.labkey.api.qc.DefaultTransformResult;
 import org.labkey.api.qc.TransformDataHandler;
@@ -50,9 +54,11 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.study.assay.pipeline.AssayUploadPipelineJob;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.File;
@@ -90,11 +96,101 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     }
 
     /**
+     * Create and save an experiment run synchronously or asynchronously in a background job depending upon the assay design.
+     *
+     * @param context The context used to create and save the batch and run.
+     * @param batchId if not null, the run group that's already created for this batch. If null, a new one will be created.
+     * @return Pair of batch and run that were inserted.  ExpBatch will not be null, but ExpRun may be null when inserting the run async.
+     */
+    @Override
+    public Pair<ExpExperiment, ExpRun> saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable Integer batchId) throws ExperimentException, ValidationException
+    {
+        ExpExperiment exp = null;
+        if (batchId != null)
+        {
+            exp = ExperimentService.get().getExpExperiment(batchId.intValue());
+        }
+
+        AssayProvider provider = context.getProvider();
+        ExpProtocol protocol = context.getProtocol();
+        ExpRun run = null;
+
+        boolean background = provider.isBackgroundUpload(protocol);
+        if (!background)
+        {
+            File primaryFile = context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE);
+            run = AssayService.get().createExperimentRun(context.getName(), context.getContainer(), protocol, primaryFile);
+            run.setComments(context.getComments());
+
+            exp = saveExperimentRun(context, exp, run, false);
+        }
+        else
+        {
+            exp = saveExperimentRunAsync(context, exp);
+        }
+
+        return Pair.of(exp, run);
+    }
+
+    private ExpExperiment saveExperimentRunAsync(AssayRunUploadContext<ProviderType> context, @Nullable ExpExperiment batch) throws ExperimentException
+    {
+        try
+        {
+            // Whether or not we need to save batch properties
+            boolean forceSaveBatchProps = false;
+            if (batch == null)
+            {
+                // No batch yet, so make one
+                batch = AssayService.get().createStandardBatch(context.getContainer(), null, context.getProtocol());
+                batch.save(context.getUser());
+                // It's brand new, so we need to eventually set its properties
+                forceSaveBatchProps = true;
+            }
+
+            // Queue up a pipeline job to do the actual import in the background
+            ViewBackgroundInfo info = new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL());
+
+            File primaryFile = context.getUploadedData().get(AssayDataCollector.PRIMARY_FILE);
+            final AssayUploadPipelineJob<ProviderType> pipelineJob = new AssayUploadPipelineJob<ProviderType>(
+                    context.getProvider().createRunAsyncContext(context),
+                    info,
+                    batch,
+                    forceSaveBatchProps,
+                    PipelineService.get().getPipelineRootSetting(context.getContainer()),
+                    primaryFile);
+            // Don't queue the job until the transaction is committed, since otherwise the thread
+            // that's running the job might start before it can access the job's row in the database.
+            ExperimentService.get().getSchema().getScope().addCommitTask(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    try
+                    {
+                        PipelineService.get().queueJob(pipelineJob);
+                    }
+                    catch (PipelineValidationException e)
+                    {
+                        throw new UnexpectedException(e);
+                    }
+                }
+            });
+        }
+        catch (IOException e)
+        {
+            throw new ExperimentException(e);
+        }
+
+        return batch;
+    }
+
+    /**
      * @param batch if not null, the run group that's already created for this batch. If null, a new one needs to be created
+     * @param run The run to save
      * @param forceSaveBatchProps
      * @return the run and batch that were inserted
      */
-    public ExpExperiment saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable ExpExperiment batch, ExpRun run, boolean forceSaveBatchProps) throws ExperimentException, ValidationException
+    public ExpExperiment saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable ExpExperiment batch, @NotNull ExpRun run, boolean forceSaveBatchProps) throws ExperimentException, ValidationException
     {
         Map<ExpMaterial, String> inputMaterials = new HashMap<ExpMaterial, String>();
         Map<ExpData, String> inputDatas = new HashMap<ExpData, String>();
@@ -397,15 +493,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
     protected void addOutputDatas(AssayRunUploadContext context, Map<ExpData, String> outputDatas, ParticipantVisitResolverType resolverType) throws ExperimentException
     {
-        Map<String, File> files;
-        try
-        {
-            files = context.getUploadedData();
-        }
-        catch (IOException e)
-        {
-            throw new ExperimentException(e);
-        }
+        Map<String, File> files = context.getUploadedData();
 
         for (Map.Entry<String, File> entry : files.entrySet())
         {
