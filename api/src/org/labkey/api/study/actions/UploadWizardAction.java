@@ -232,6 +232,15 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
     private ModelAndView getBatchPropertiesView(FormType runForm, boolean errorReshow, BindException errors) throws ServletException
     {
+        // Check if the user is trying to replace a run that's already been replaced
+        if (runForm.getReRun() != null)
+        {
+            if (runForm.getReRun().getReplacedByRun() != null)
+            {
+                return new JspView<ExpRun>("/org/labkey/api/study/actions/alreadyReplacedError.jsp", runForm.getReRun());
+            }
+        }
+
         ExpProtocol protocol = runForm.getProtocol();
         AssayProvider provider = AssayService.get().getProvider(protocol);
         runForm.setProviderName(provider.getName());
@@ -310,6 +319,15 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
     protected ModelAndView getRunPropertiesView(FormType newRunForm, boolean errorReshow, boolean warnings, BindException errors) throws ExperimentException
     {
+        // Check if the user is trying to replace a run that's already been replaced
+        if (newRunForm.getReRun() != null)
+        {
+            if (newRunForm.getReRun().getReplacedByRun() != null)
+            {
+                return new JspView<ExpRun>("/org/labkey/api/study/actions/alreadyReplacedError.jsp", newRunForm.getReRun());
+            }
+        }
+
         if (!errorReshow && !newRunForm.isResetDefaultValues())
         {
             newRunForm.clearUploadedData();

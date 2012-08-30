@@ -18,6 +18,8 @@ package org.labkey.api.study.query;
 
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
@@ -133,9 +135,18 @@ public class ResultsQueryView extends AssayBaseQueryView
                         getViewContext().hasPermission(DeletePermission.class) &&
                         _provider.supportsReRun())
                 {
-                    ActionURL reRunURL = _provider.getImportURL(getViewContext().getContainer(), _protocol);
-                    reRunURL.addParameter("reRunId", runId);
-                    bar.add(new ActionButton("Re-import run", reRunURL));
+                    try
+                    {
+                        // Don't give the user to re-import if the run has already been replaced
+                        ExpRun run = ExperimentService.get().getExpRun(Integer.parseInt(runId));
+                        if (run != null && run.getReplacedByRun() == null)
+                        {
+                            ActionURL reRunURL = _provider.getImportURL(getViewContext().getContainer(), _protocol);
+                            reRunURL.addParameter("reRunId", runId);
+                            bar.add(new ActionButton("Re-import run", reRunURL));
+                        }
+                    }
+                    catch (NumberFormatException ignored) {}
                 }
             }
 
