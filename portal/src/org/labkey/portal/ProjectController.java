@@ -1250,7 +1250,7 @@ public class ProjectController extends SpringActionController
             User user = getViewContext().getUser();
 
             Map<String, Object> resultMap;
-            if (form.isMultipleContainers())
+            if (form.isMultipleContainers() || (form.getContainer() != null && form.getContainer().length > 1))
             {
                 Set<Container> containers = new LinkedHashSet<Container>();
                 if (form.getContainer() != null)
@@ -1269,7 +1269,10 @@ public class ProjectController extends SpringActionController
             }
             else
             {
-                resultMap = getContainerJSON(getViewContext().getContainer(), user);
+                Container c = getViewContext().getContainer();
+                if (form.getContainer() != null && form.getContainer().length > 0)
+                    c = form.getContainer()[0];
+                resultMap = getContainerJSON(c, user);
             }
 
             response.putAll(resultMap);

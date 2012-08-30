@@ -68,34 +68,53 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
     @Override
     public ApiResponse execute(ImportRunApiForm form, BindException errors) throws Exception
     {
-        JSONObject root = form.getRoot();
-        if (root == null)
-            throw new IllegalAccessException("Expected root parameter");
-
-        Pair<ExpProtocol, AssayProvider> pp = AbstractAssayAPIAction.getProtocolProvider(root, getViewContext().getContainer());
-        ExpProtocol protocol = pp.first;
-        AssayProvider provider = pp.second;
-
+        ExpProtocol protocol;
+        AssayProvider provider;
+        AssayRunUploadContext<ProviderType> uploadContext;
         Integer batchId = null;
-        if (root.has(AbstractAssayAPIAction.BATCH_ID))
-            batchId = root.getInt(AbstractAssayAPIAction.BATCH_ID);
 
-        String name = null;
-        if (root.has(ExperimentJSONConverter.NAME))
-            name = root.getString(ExperimentJSONConverter.NAME);
-
-        String comments = null;
-        if (root.has(ExperimentJSONConverter.COMMENT))
-            comments = root.getString(ExperimentJSONConverter.COMMENT);
-
-        try
+        JSONObject root = form.getRoot();
+        if (root != null)
         {
-            AssayRunUploadContext<ProviderType> uploadContext = new ImportRunApiUploadContext<ProviderType>(
+            Pair<ExpProtocol, AssayProvider> pp = AbstractAssayAPIAction.getProtocolProvider(root, getViewContext().getContainer());
+            protocol = pp.first;
+            provider = pp.second;
+
+            batchId = root.optInt(AbstractAssayAPIAction.BATCH_ID);
+            String name = root.optString(ExperimentJSONConverter.NAME);
+            String comments = root.optString(ExperimentJSONConverter.COMMENT);
+            Map<String, String> runProperties = (Map)root.optJSONObject(ExperimentJSONConverter.PROPERTIES);
+            Map<String, String> batchProperties = (Map)root.optJSONObject(ExperimentJSONConverter.PROPERTIES);
+
+            uploadContext = new ImportRunApiUploadContext<ProviderType>(
                     protocol,
                     (ProviderType)provider,
                     getViewContext(),
                     name,
-                    comments);
+                    comments,
+                    runProperties,
+                    batchProperties);
+        }
+        else
+        {
+            Pair<ExpProtocol, AssayProvider> pp = AbstractAssayAPIAction.getProtocolProvider(form.getAssayId(), getViewContext().getContainer());
+            protocol = pp.first;
+            provider = pp.second;
+
+            batchId = form.getBatchId();
+
+            uploadContext = new ImportRunApiUploadContext<ProviderType>(
+                    protocol,
+                    (ProviderType)provider,
+                    getViewContext(),
+                    form.getName(),
+                    form.getComment(),
+                    form.getProperties(),
+                    form.getBatchProperties());
+        }
+
+        try
+        {
 
             Pair<ExpExperiment, ExpRun> result = provider.getRunCreator().saveExperimentRun(uploadContext, batchId);
             ExpRun run = result.second;
@@ -135,7 +154,7 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
 
     protected static class ImportRunApiForm extends SimpleApiJsonForm
     {
-        JSONObject _root;
+        private JSONObject _root;
 
         public JSONObject getRoot()
         {
@@ -145,6 +164,73 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
         public void setRoot(JSONObject root)
         {
             _root = root;
+        }
+
+        private Integer _assayId;
+        private Integer _batchId;
+        private String _name;
+        private String _comment;
+        private Map<String, String> _properties = new HashMap<String, String>();
+        private Map<String, String> _batchProperties = new HashMap<String, String>();
+
+        public Integer getAssayId()
+        {
+            return _assayId;
+        }
+
+        public void setAssayId(Integer assayId)
+        {
+            _assayId = assayId;
+        }
+
+        public Integer getBatchId()
+        {
+            return _batchId;
+        }
+
+        public void setBatchId(Integer batchId)
+        {
+            _batchId = batchId;
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+
+        public String getComment()
+        {
+            return _comment;
+        }
+
+        public void setComment(String comment)
+        {
+            _comment = comment;
+        }
+
+        public Map<String, String> getProperties()
+        {
+            return _properties;
+        }
+
+        public void setProperties(Map<String, String> properties)
+        {
+            _properties = properties;
+        }
+
+        public Map<String, String> getBatchProperties()
+        {
+            return _batchProperties;
+        }
+
+        public void setBatchProperties(Map<String, String> properties)
+        {
+            _batchProperties = properties;
         }
     }
 
@@ -157,16 +243,26 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
         private String _comments;
         private String _name;
 
+        private Map<String, String> _rawRunProperties;
+        private Map<String, String> _rawBatchProperties;
+        private Map<DomainProperty, String> _runProperties;
+        private Map<DomainProperty, String> _batchProperties;
+
         public ImportRunApiUploadContext(
                 @NotNull ExpProtocol protocol, @NotNull ProviderType provider, ViewContext context,
-                String name, String comments)
+                String name, String comment,
+                Map<String, String> runProperties,
+                Map<String, String> batchProperties)
         {
             _protocol = protocol;
             _provider = provider;
             _context = context;
 
             _name = name;
-            _comments = comments;
+            _comments = comment;
+
+            _rawRunProperties = runProperties;
+            _rawBatchProperties = batchProperties;
         }
 
         @NotNull
@@ -177,20 +273,42 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
 
         public Map<DomainProperty, String> getRunProperties() throws ExperimentException
         {
-            Map<DomainProperty, String> properties = new HashMap<DomainProperty, String>();
-            for (DomainProperty prop : _provider.getRunDomain(_protocol).getProperties())
-                ;//properties.put(prop, getSampleValue(prop));
+            if (_runProperties == null && _rawRunProperties != null)
+            {
+                Map<DomainProperty, String> properties = new HashMap<DomainProperty, String>();
+                for (DomainProperty prop : _provider.getRunDomain(_protocol).getProperties())
+                {
+                    String value = null;
+                    if (_rawRunProperties.containsKey(prop.getName()))
+                        value = _rawRunProperties.get(prop.getName());
+                    else
+                        value = _rawRunProperties.get(prop.getPropertyURI());
+                    properties.put(prop, value);
+                }
 
-            return properties;
+                _runProperties = properties;
+            }
+            return _runProperties;
         }
 
         public Map<DomainProperty, String> getBatchProperties()
         {
-            Map<DomainProperty, String> properties = new HashMap<DomainProperty, String>();
-            for (DomainProperty prop : _provider.getBatchDomain(_protocol).getProperties())
-                ;//properties.put(prop, getSampleValue(prop));
+            if (_batchProperties == null && _rawBatchProperties != null)
+            {
+                Map<DomainProperty, String> properties = new HashMap<DomainProperty, String>();
+                for (DomainProperty prop : _provider.getBatchDomain(_protocol).getProperties())
+                {
+                    String value = null;
+                    if (_rawBatchProperties.containsKey(prop.getName()))
+                        value = _rawBatchProperties.get(prop.getName());
+                    else
+                        value = _rawBatchProperties.get(prop.getPropertyURI());
+                    properties.put(prop, value);
+                }
 
-            return properties;
+                _batchProperties = properties;
+            }
+            return _batchProperties;
         }
 
         public String getComments()

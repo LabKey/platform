@@ -79,6 +79,15 @@ public abstract class AbstractAssayAPIAction<FORM extends SimpleApiJsonForm> ext
     public static Pair<ExpProtocol, AssayProvider> getProtocolProvider(JSONObject json, Container c)
     {
         int assayId = json.getInt(ASSAY_ID);
+        return getProtocolProvider(assayId, c);
+    }
+
+    public static Pair<ExpProtocol, AssayProvider> getProtocolProvider(Integer assayId, Container c)
+    {
+        if (assayId == null)
+        {
+            throw new IllegalArgumentException("assayId parameter required");
+        }
 
         ExpProtocol protocol = ExperimentService.get().getExpProtocol(assayId);
         if (protocol == null)
