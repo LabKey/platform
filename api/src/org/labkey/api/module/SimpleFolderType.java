@@ -18,6 +18,7 @@ package org.labkey.api.module;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
@@ -47,6 +48,8 @@ import java.util.Set;
  */
 public class SimpleFolderType extends MultiPortalFolderType
 {
+    private static final Logger LOGGER = Logger.getLogger(SimpleFolderType.class);
+
     private Resource _folderTypeFile;
     private long _lastModified = 0;
     private String _name;
@@ -145,20 +148,28 @@ public class SimpleFolderType extends MultiPortalFolderType
         return Collections.singletonList(tab);
     }
 
-    private List<FolderTab> createFolderTabs(FolderTabDocument.FolderTab[] references, Logger log)
+    private List<FolderTab> createFolderTabs(FolderTabDocument.FolderTab[] references)
     {
         ArrayList<FolderTab> tabs = new ArrayList<FolderTab>();
+        Set<String> tabNames = new CaseInsensitiveHashSet();
 
         for (FolderTabDocument.FolderTab tab : references)
         {
-            FolderTab newTab = new SimpleFolderTab(tab, log);
-            tabs.add(newTab);
+            if (tabNames.add(tab.getName()))
+            {
+                FolderTab newTab = new SimpleFolderTab(tab);
+                tabs.add(newTab);
+            }
+            else
+            {
+                LOGGER.error("Folder type '" + _name + "' defines multiple tabs with the name '" + tab.getName() + "', only the first will be used.");
+            }
         }
 
         return tabs;
     }
 
-    public static List<Portal.WebPart> createWebParts(WebPartDocument.WebPart[] references, Logger log)
+    public static List<Portal.WebPart> createWebParts(WebPartDocument.WebPart[] references)
     {
         List<Portal.WebPart> parts = new ArrayList<Portal.WebPart>();
         for (WebPartDocument.WebPart reference : references)
@@ -175,7 +186,7 @@ public class SimpleFolderType extends MultiPortalFolderType
                 parts.add(webPart);
             }
             else
-                log.error("Unable to register folder type web parts: web part " + reference.getName() + " does not exist.");
+                LOGGER.error("Unable to register folder type web parts: web part " + reference.getName() + " does not exist.");
         }
         return parts;
     }
@@ -193,7 +204,6 @@ public class SimpleFolderType extends MultiPortalFolderType
             // Don't try to reload it
             return;
         }
-        Logger log = Logger.getLogger(SimpleFolderType.class);
         FolderType type = parseFile(_folderTypeFile);
         _name = type.getName();
         _description = type.getDescription();
@@ -202,9 +212,9 @@ public class SimpleFolderType extends MultiPortalFolderType
             menubarEnabled = type.getMenubarEnabled();
 
         if (type.getPreferredWebParts() != null)
-            preferredParts = createWebParts(type.getPreferredWebParts().getWebPartArray(), log);
+            preferredParts = createWebParts(type.getPreferredWebParts().getWebPartArray());
         if (type.getRequiredWebParts() != null)
-            requiredParts = createWebParts(type.getRequiredWebParts().getWebPartArray(), log);
+            requiredParts = createWebParts(type.getRequiredWebParts().getWebPartArray());
 
         if (type.getFolderTabs() != null)
         {
@@ -229,9 +239,9 @@ public class SimpleFolderType extends MultiPortalFolderType
                     }
                 }
                 if (hasError)
-                    log.error("Error in " + _folderTypeFile.getName() + ".  A folderType that contains folderTabs cannot also provide preferredWebparts or requiredWebparts with locations outside the menubar.");
+                    LOGGER.error("Error in " + _folderTypeFile.getName() + ".  A folderType that contains folderTabs cannot also provide preferredWebparts or requiredWebparts with locations outside the menubar.");
             }
-            _folderTabs = createFolderTabs(type.getFolderTabs().getFolderTabArray(), log);
+            _folderTabs = createFolderTabs(type.getFolderTabs().getFolderTabArray());
         }
         else
         {
@@ -255,7 +265,7 @@ public class SimpleFolderType extends MultiPortalFolderType
         {
             Module module = getModule(moduleName);
             if (module == null)
-                log.error("Unable to load folder type: module " + moduleName + " does not exist.");
+                LOGGER.error("Unable to load folder type: module " + moduleName + " does not exist.");
             activeModules.add(module);
         }
         _activeModules = activeModules;

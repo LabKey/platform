@@ -195,7 +195,8 @@ public class StudyFolderTabs
         public boolean isSelectedPage(ViewContext viewContext)
         {
             ActionURL currentURL = viewContext.getActionURL();
-            return currentURL.getController().equalsIgnoreCase("study-definition") ||
+            return super.isSelectedPage(viewContext) ||
+                    currentURL.getController().equalsIgnoreCase("study-definition") ||
                     currentURL.getController().equalsIgnoreCase("cohort") ||
                     currentURL.getController().equalsIgnoreCase("study-properties");
         }

@@ -44,20 +44,20 @@ public class SimpleFolderTab extends FolderTab.PortalPage
         super(name, caption);
     }
 
-    public SimpleFolderTab(FolderTabDocument.FolderTab tab, Logger log)
+    public SimpleFolderTab(FolderTabDocument.FolderTab tab)
     {
         super(tab.getName(), tab.getCaption());
 
         //initialize from XML:
         if (tab.getPreferredWebParts() != null)
         {
-            _preferredWebParts = SimpleFolderType.createWebParts(tab.getPreferredWebParts().getWebPartArray(), log);
+            _preferredWebParts = SimpleFolderType.createWebParts(tab.getPreferredWebParts().getWebPartArray());
 
         }
 
         if (tab.getRequiredWebParts() != null)
         {
-            _requiredWebParts = SimpleFolderType.createWebParts(tab.getRequiredWebParts().getWebPartArray(), log);
+            _requiredWebParts = SimpleFolderType.createWebParts(tab.getRequiredWebParts().getWebPartArray());
         }
 
         if (tab.getSelectorsArray() != null)

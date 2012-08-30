@@ -44,7 +44,8 @@
                 <table cellpadding="0" cellspacing="0">
                     <tr>
                 <%
-                    for (NavTree navTree : bean.getButtons())
+                    NavTree[] tabs = bean.getButtons();
+                    for (NavTree navTree : tabs)
                     {
                 %>
                         <td><li class="<%=navTree.isSelected() ? "labkey-tab-active" : "labkey-tab-inactive"%>"><a href="<%=h(navTree.getHref())%>" id="<%=h(navTree.getText())%>Tab"><%=h(navTree.getText())%></a></td>
@@ -53,15 +54,18 @@
                     if (context.getContainer().getFolderType().hasConfigurableTabs() && context.hasPermission(org.labkey.api.security.permissions.AdminPermission.class))
                     {
                         NavTree link = new NavTree("Tab Administration");
-                        NavTree removeNode = new NavTree("Remove tab");
-                        int index = 1;
-                        for (NavTree tab : bean.getButtons())
+                        if (tabs.length > 1)
                         {
-                            ActionURL url = PageFlowUtil.urlProvider(ProjectUrls.class).getDeleteWebPartURL(context.getContainer(), FolderTab.FOLDER_TAB_PAGE_ID, index++, getViewContext().getActionURL());
-                            NavTree removeTab = new NavTree(tab.getText(), url);
-                            removeNode.addChild(removeTab);
+                            NavTree removeNode = new NavTree("Remove tab");
+                            int index = 1;
+                            for (NavTree tab : tabs)
+                            {
+                                ActionURL url = PageFlowUtil.urlProvider(ProjectUrls.class).getDeleteWebPartURL(context.getContainer(), FolderTab.FOLDER_TAB_PAGE_ID, index++, getViewContext().getActionURL());
+                                NavTree removeTab = new NavTree(tab.getText(), url);
+                                removeNode.addChild(removeTab);
+                            }
+                            link.addChild(removeNode);
                         }
-                        link.addChild(removeNode);
 
                         link.addChild(new NavTree("Reset to default tabs", PageFlowUtil.urlProvider(ProjectUrls.class).getResetDefaultTabsURL(context.getContainer(), getViewContext().getActionURL())));
 

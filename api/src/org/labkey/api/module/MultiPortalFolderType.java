@@ -82,35 +82,12 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                 NavTree nav = new NavTree(label, folderTab.getURL(ctx));
                 buttons.add(nav);
                 navMap.put(tab.getName(), nav);
-                if (folderTab.isSelectedPage(ctx))
+                // Stop looking for a tab to select if we've already found one
+                if (_activePortalPage == null && folderTab.isSelectedPage(ctx))
                 {
                     nav.setSelected(true);
                     _activePortalPage = folderTab.getName();
                 }
-            }
-        }
-
-        if (_activePortalPage == null)
-        {
-            Portal.WebPart wp = null;
-            if (getDefaultTab() != null)
-            {
-                FolderTab folderTab = findTab(getDefaultTab().getName());
-                wp = tabMap.get(folderTab.getName());
-
-            }
-
-            //if no default tab is found, default to the first
-            if (wp == null)
-            {
-                wp = Iterables.get(tabs, 0);
-            }
-
-            if (wp != null)
-            {
-                _activePortalPage = wp.getName();
-                NavTree nav = navMap.get(wp.getName());
-                nav.setSelected(true);
             }
         }
 

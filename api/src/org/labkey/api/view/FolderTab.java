@@ -15,6 +15,8 @@
  */
 package org.labkey.api.view;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -52,7 +54,7 @@ public abstract class FolderTab
 
     protected List<Class<? extends Permission>> _permissions;
 
-    protected FolderTab(String name)
+    protected FolderTab(@NotNull String name)
     {
         this(name, name);
     }
@@ -61,16 +63,16 @@ public abstract class FolderTab
      * @param name the stable, consistent name for this tab, regardless of any content in this folder
      * @param caption the title to be shown on the tab itself in the UI, which may vary based on configuration
      */
-    protected FolderTab(String name, String caption)
+    protected FolderTab(@NotNull String name, @Nullable String caption)
     {
         _name = name;
-        _caption = caption;
+        _caption = caption == null ? name : caption;
     }
 
     /** A tab backed by a portal page */
     public static abstract class PortalPage extends FolderTab
     {
-        protected PortalPage(String pageId, String caption)
+        protected PortalPage(@NotNull String pageId, @Nullable String caption)
         {
             super(pageId, caption);
         }
@@ -130,6 +132,11 @@ public abstract class FolderTab
 
     public boolean isSelectedPage(ViewContext viewContext)
     {
+        if (viewContext.getActionURL().equals(getURL(viewContext)))
+        {
+            return true;
+        }
+
         if (_controllersAndActions.isEmpty())
         {
             return false;

@@ -615,6 +615,15 @@ public class ActionURL extends URLHelper implements Cloneable
         return (ActionURL) super.clone();
     }
 
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (obj instanceof URLHelper)
+        {
+            return toString().equals(obj.toString());
+        }
+        return false;
+    }
 
     public static class TestCase extends Assert
     {
