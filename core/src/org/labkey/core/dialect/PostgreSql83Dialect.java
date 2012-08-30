@@ -83,7 +83,7 @@ class PostgreSql83Dialect extends SqlDialect
     private static final Logger _log = Logger.getLogger(PostgreSql83Dialect.class);
 
     private final Map<String, Integer> _userDefinedTypeScales = new ConcurrentHashMap<String, Integer>();
-    private InClauseGenerator _arrayInClauseGenerator = null;
+    private InClauseGenerator _inClauseGenerator = null;
 
     // Specifies if this PostgreSQL server treats backslashes in string literals as normal characters (as per the SQL
     // standard) or as escape characters (old, non-standard behavior). As of PostgreSQL 9.1, the setting
@@ -267,9 +267,9 @@ class PostgreSql83Dialect extends SqlDialect
     }
 
     @Override
-    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
+    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Object[] params)
     {
-        return _arrayInClauseGenerator.appendInClauseSql(sql, params);
+        return _inClauseGenerator.appendInClauseSql(sql, params);
     }
 
     @Override
@@ -720,7 +720,7 @@ class PostgreSql83Dialect extends SqlDialect
 
     private void initializeInClauseGenerator(DbScope scope)
     {
-        _arrayInClauseGenerator = getJdbcVersion(scope) >= 4 ? new ArrayParameterInClauseGenerator(scope) : new ParameterMarkerInClauseGenerator();
+        _inClauseGenerator = getJdbcVersion(scope) >= 4 ? new ArrayParameterInClauseGenerator(scope) : new ParameterMarkerInClauseGenerator();
     }
 
 
