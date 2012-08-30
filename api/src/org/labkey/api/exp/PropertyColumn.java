@@ -140,7 +140,7 @@ public class PropertyColumn extends LookupColumn
         }
         else if (_pd.getPropertyType() == PropertyType.BOOLEAN)
         {
-            sql.append("CASE FloatValue WHEN 1.0 THEN 1 ELSE 0 END");
+            sql.append("CASE WHEN FloatValue IS NULL THEN NULL WHEN FloatValue=1.0 THEN 1 ELSE 0 END");
         }
         else
         {
