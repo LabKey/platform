@@ -17,6 +17,7 @@ package org.labkey.api.reports.report;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -95,6 +96,11 @@ public class ModuleJavaScriptReportDescriptor extends JavaScriptReportDescriptor
             {
                 Logger.getLogger(ModuleJavaScriptReportDescriptor.class).warn("Unable to load report metadata from file "
                         + _metaDataFile.getPath(), e);
+            }
+            catch(XmlException e)
+            {
+                Logger.getLogger(ModuleQueryReportDescriptor.class).warn("Unable to load query report metadata from file "
+                        + _sourceFile.getPath(), e);
             }
         }
         return d;

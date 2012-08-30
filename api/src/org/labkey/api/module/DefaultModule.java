@@ -787,19 +787,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @Override
     public Resource getModuleResource(Path path)
     {
-        Resource r = _resolver.lookup(path);
-        if (null != r)
-            return r;
-        return new AbstractResource(new Path("reports"), getModuleResolver())
-        {
-            @Override
-            public Resource parent()
-            {
-                if (getPath().size()==0)
-                    return null;
-                return getModuleResource(getPath().getParent());
-            }
-        };
+        return _resolver.lookup(path);
     }
 
     public Resource getModuleResource(String path)

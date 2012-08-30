@@ -41,17 +41,14 @@ import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.GUID;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
-import org.labkey.api.util.XmlBeansUtil;
-import org.labkey.api.util.XmlValidationException;
+import org.labkey.api.util.*;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.reportProps.PropertyList;
-import org.labkey.query.xml.*;
+import org.labkey.query.xml.ReportDescriptorDocument;
+import org.labkey.query.xml.ReportDescriptorType;
+import org.labkey.query.xml.ReportPropertyList;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -534,45 +531,38 @@ public class ReportDescriptor extends Entity implements SecurableResource
         return null;
     }
 
-    public ReportDescriptorType setDescriptorFromXML(Container container, User user, String xmlString) throws IOException
+    public ReportDescriptorType setDescriptorFromXML(Container container, User user, String xmlString) throws IOException, XmlException
     {
         ReportDescriptorType d;
 
-        try
+        XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
+        options.setLoadSubstituteNamespaces(Collections.singletonMap("", "http://labkey.org/query/xml"));
+
+        ReportDescriptorDocument doc = ReportDescriptorDocument.Factory.parse(xmlString, options);
+        d = doc.getReportDescriptor();
+
+        List<Pair<String, String>> props = new ArrayList<Pair<String, String>>();
+        if (d.getProperties() != null)
         {
-            XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
-            options.setLoadSubstituteNamespaces(Collections.singletonMap("", "http://labkey.org/query/xml"));
-
-            ReportDescriptorDocument doc = ReportDescriptorDocument.Factory.parse(xmlString, options);
-            d = doc.getReportDescriptor();
-
-            List<Pair<String, String>> props = new ArrayList<Pair<String, String>>();
-            if (d.getProperties() != null)
-            {
-                for (ReportPropertyList.Prop prop : d.getProperties().getPropArray())
-                    props.add(new Pair<String, String>(prop.getName(), prop.getStringValue()));
-            }
-
-            setProperties(props);
-
-            if (d.getCategory() != null && container != null && user != null)
-            {
-                ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(container, user, d.getCategory());
-                setCategory(category);
-            }
-
-            if (d.getLabel() != null)
-                setReportName(d.getLabel());
-
-            if (d.getDescription() != null)
-                setReportDescription(d.getDescription());
-
-            setHidden(d.getHidden()); // not sure
+            for (ReportPropertyList.Prop prop : d.getProperties().getPropArray())
+                props.add(new Pair<String, String>(prop.getName(), prop.getStringValue()));
         }
-        catch (XmlException e)
+
+        setProperties(props);
+
+        if (d.getCategory() != null && container != null && user != null)
         {
-            throw new IOException(e.getMessage());
+            ViewCategory category = ViewCategoryManager.getInstance().ensureViewCategory(container, user, d.getCategory());
+            setCategory(category);
         }
+
+        if (d.getLabel() != null)
+            setReportName(d.getLabel());
+
+        if (d.getDescription() != null)
+            setReportDescription(d.getDescription());
+
+        setHidden(d.getHidden()); // not sure
 
         return d;
     }
