@@ -58,7 +58,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable
 
         public void putName(String key)
         {
-            if (!_nameToNormalName.containsKey(key))
+            if (key != null && !_nameToNormalName.containsKey(key))
             {
                 String legalName = ColumnInfo.legalNameFromName(key);
                 String normalName = BaseSpecimenPivotTable.getNormalName(legalName);
@@ -182,7 +182,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable
         int i = 0;
         for (NameLabelPair part : parts)
         {
-            if (part != null)
+            if (part != null && part._name != null)
             {
                 name.append(delim).append(part._name);
                 label.append(labelDelim).append(part._label);
