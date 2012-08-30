@@ -161,7 +161,7 @@ abstract public class UserSchema extends AbstractSchema
         if (table != null)
         {
             if (includeExtraMetadata)
-                overlayMetadata(table, name, errors);
+                table.overlayMetadata(name, this, errors);
             afterConstruct(table);
             // should just be !forWrite, but exp schema is still a problem
             if (useCache)
@@ -185,12 +185,6 @@ abstract public class UserSchema extends AbstractSchema
 
         assert MemTracker.put(torq);
         return torq;
-    }
-
-
-    protected void overlayMetadata(TableInfo table, String name, Collection<QueryException> errors)
-    {
-        table.overlayMetadata(name, this, errors);
     }
 
     @Nullable
