@@ -40,11 +40,13 @@ import org.labkey.api.defaults.SetDefaultValuesAssayAction;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
+import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.portal.ProjectUrls;
@@ -65,9 +67,11 @@ import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayRunsView;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayTableMetadata;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.assay.PipelineDataCollectorRedirectAction;
 import org.labkey.api.study.assay.PlateBasedAssayProvider;
+import org.labkey.api.study.assay.ReplacedRunFilter;
 import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.FileUtil;
@@ -269,7 +273,7 @@ public class AssayController extends SpringActionController
         if (provider instanceof PlateBasedAssayProvider)
             assayProperties.put("plateTemplate", ((PlateBasedAssayProvider)provider).getPlateTemplate(c, protocol));
 
-        // XXX: UGLY: Get the TableInfo associated with the Domain -- loop over all tables and ask for the Domins.
+        // XXX: UGLY: Get the TableInfo associated with the Domain -- loop over all tables and ask for the Domains.
         if (schema == null)
             schema = new AssaySchemaImpl(user, c);
         Set<String> tableNames = schema.getTableNames(provider, protocol);
@@ -898,6 +902,24 @@ public class AssayController extends SpringActionController
         {
             ActionURL result = getProtocolURL(container, protocol, AssayResultsAction.class);
             AssayProvider provider = AssayService.get().getProvider(protocol);
+
+            AssayTableMetadata tableMetadata = provider.getTableMetadata(protocol);
+            String resultsTableName = AssayService.get().getResultsTableName(protocol);
+
+            // Check if we need to set a filter on the URL to show replaced data, which is usually filtered out
+            if (provider.supportsReRun())
+            {
+                for (int runId : runIds)
+                {
+                    ExpRun run = ExperimentService.get().getExpRun(runId);
+                    if (run != null && run.getReplacedByRun() != null)
+                    {
+                        ReplacedRunFilter.Type.ALL.addToURL(result, resultsTableName, new FieldKey(tableMetadata.getRunFieldKeyFromResults(), ExpRunTable.Column.Replaced));
+                        break;
+                    }
+                }
+            }
+
             if (runIds.length > 1)
             {
                 String sep = "";
@@ -907,13 +929,13 @@ public class AssayController extends SpringActionController
                     filterValue.append(sep).append(runId);
                     sep = ";";
                 }
-                result.addFilter(AssayService.get().getResultsTableName(protocol),
-                        provider.getTableMetadata(protocol).getRunRowIdFieldKeyFromResults(), CompareType.IN, filterValue.toString());
+                result.addFilter(resultsTableName,
+                        tableMetadata.getRunRowIdFieldKeyFromResults(), CompareType.IN, filterValue.toString());
             }
             else if (runIds.length == 1)
             {
-                result.addFilter(AssayService.get().getResultsTableName(protocol),
-                        provider.getTableMetadata(protocol).getRunRowIdFieldKeyFromResults(), CompareType.EQUAL, runIds[0]);
+                result.addFilter(resultsTableName,
+                        tableMetadata.getRunRowIdFieldKeyFromResults(), CompareType.EQUAL, runIds[0]);
             }
             if (containerFilter != null && containerFilter != ContainerFilter.EVERYTHING)
                 result.addParameter(protocol.getName() + " Data." + QueryParam.containerFilterName, containerFilter.getType().name());
