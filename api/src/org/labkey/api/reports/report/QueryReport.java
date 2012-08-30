@@ -124,7 +124,7 @@ public class QueryReport extends AbstractReport implements DynamicThumbnailProvi
         String schemaName = getDescriptor().getProperty(ReportDescriptor.Prop.schemaName);
         String queryName = getDescriptor().getProperty(ReportDescriptor.Prop.queryName);
         String viewName = getDescriptor().getProperty(ReportDescriptor.Prop.viewName);
-        String dataRegionName = getDescriptor().getProperty(ReportDescriptor.Prop.dataRegionName);
+        String dataRegionName = StringUtils.defaultString(getDescriptor().getProperty(ReportDescriptor.Prop.dataRegionName), QueryView.DATAREGIONNAME_DEFAULT);
 
         if (schemaName == null)
             errors.addError(new LabkeyError("schema name cannot be empty"));
@@ -204,4 +204,26 @@ public class QueryReport extends AbstractReport implements DynamicThumbnailProvi
     {
         return getStaticThumbnailCacheKey();
     }
+
+/*
+    public ActionURL getRunReportURL(ViewContext context)
+    {
+        String schemaName = getDescriptor().getProperty(ReportDescriptor.Prop.schemaName);
+        UserSchema schema = getSchema(context, schemaName);
+
+        if (schema != null)
+        {
+            String queryName = getDescriptor().getProperty(ReportDescriptor.Prop.queryName);
+            String viewName = getDescriptor().getProperty(ReportDescriptor.Prop.viewName);
+            ActionURL url = schema.urlFor(QueryAction.executeQuery);
+
+            url.addParameter(QueryParam.queryName, queryName);
+            if (viewName != null)
+                url.addParameter(QueryParam.viewName, viewName);
+
+            return url;
+        }
+        return super.getRunReportURL(context);
+    }
+*/
 }
