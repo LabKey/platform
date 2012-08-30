@@ -221,6 +221,12 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
         Resource reportDirectory = module.getModuleResource(getQueryReportsDirectory(module).getPath().append(legalPath));
 
+        //15941
+        if (legalPath.getParent().getName().equals(""))
+        {
+            legalPath = reportDirectory.getPath();
+        }
+
         if (null == reportDirectory || !reportDirectory.isCollection())
         {
             reportDirectory = module.getModuleResource(legalPath.getParent());
