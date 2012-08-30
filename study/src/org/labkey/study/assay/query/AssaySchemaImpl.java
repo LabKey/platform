@@ -217,9 +217,9 @@ public class AssaySchemaImpl extends AssaySchema
         return null;
     }
 
-    // NOTE: It would be nice if we could just override the UserSchema.overlayMetadata() method, but we need
-    // to know the protocol name and provider's resource directory to find the metadata.  If AssaySchema.createTable()
-    // returned an AssayTable type that knew it's protocol, we could override the UserSchema.overlayMetadata() method.
+    // NOTE: This should be transitioned to partly happen in the TableInfo.overlayMetadata() for the various tables
+    // associated with the assay design. They should call into here with the unprefixed name to be added
+    // from the assay provider's metadata files.
     protected void overlayMetadata(AssayProvider provider, ExpProtocol protocol, TableInfo table, String name)
     {
         fixupRenderers(table);
@@ -235,9 +235,6 @@ public class AssaySchemaImpl extends AssaySchema
             TableType metadata = QueryService.get().findMetadataOverride(this, unprefixedTableName, false, true, errors, dir);
             if (errors.isEmpty())
                 table.overlayMetadata(metadata, this, errors);
-
-            if (!errors.isEmpty())
-                throw errors.get(0);
         }
     }
 
