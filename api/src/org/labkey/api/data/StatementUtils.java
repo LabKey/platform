@@ -149,6 +149,8 @@ public class StatementUtils
 
         SqlDialect d = t.getSqlDialect();
         boolean useVariables = false;
+        String ifTHEN = d.isSqlServer() ? " BEGIN " : " THEN ";
+        String ifEND = d.isSqlServer() ? " END " : "; END IF ";
         String containerIdConstant = null==c ? null : "'" + c.getId() + "'";
 
         // helper for generating procedure/function variation
@@ -191,7 +193,7 @@ public class StatementUtils
             if (null != properties)
             {
                 if (!d.isPostgreSQL() && !d.isSqlServer())
-                    throw new IllegalArgumentException("Domains are only supported for sql server and postgres");
+                    throw new IllegalStateException("Domains are only supported for sql server and postgres");
 
                 objectIdVar = d.isPostgreSQL() ? "_$objectid$_" : "@_objectid_";
 
@@ -437,11 +439,17 @@ public class StatementUtils
                 // ignore property that 'wraps' a hard column
                 if (done.contains(dp.getName()))
                     continue;
-                // CONSIDER: IF (p IS NOT NULL) THEN ...
+                PropertyType propertyType = dp.getPropertyDescriptor().getPropertyType();
+                Parameter v = new Parameter(dp.getName(), dp.getPropertyURI(), null, propertyType.getJdbcType());
+                Parameter mv = new Parameter(dp.getName()+ MvColumn.MV_INDICATOR_SUFFIX, dp.getPropertyURI() + MvColumn.MV_INDICATOR_SUFFIX, null, JdbcType.VARCHAR);
                 sqlfObjectProperty.append(stmtSep);
                 stmtSep = ";\n";
+                sqlfObjectProperty.append("IF (");
+                appendPropertyValue(sqlfObjectProperty, d, dp, useVariables, v, parameterToVariable);
+                sqlfObjectProperty.append(" IS NOT NULL OR ");
+                appendParameterOrVariable(sqlfObjectProperty, d, useVariables, mv, parameterToVariable);
+                sqlfObjectProperty.append(" IS NOT NULL)").append(ifTHEN);
                 sqlfObjectProperty.append("INSERT INTO exp.ObjectProperty (objectid, propertyid, typetag, mvindicator, ");
-                PropertyType propertyType = dp.getPropertyDescriptor().getPropertyType();
                 switch (propertyType.getStorageType())
                 {
                     case 's':
@@ -460,13 +468,12 @@ public class StatementUtils
                 sqlfObjectProperty.append(objectIdVar);
                 sqlfObjectProperty.append(",").append(dp.getPropertyId());
                 sqlfObjectProperty.append(",'").append(propertyType.getStorageType()).append("'");
-                Parameter mv = new Parameter(dp.getName()+ MvColumn.MV_INDICATOR_SUFFIX, dp.getPropertyURI() + MvColumn.MV_INDICATOR_SUFFIX, null, JdbcType.VARCHAR);
                 sqlfObjectProperty.append(",");
                 appendParameterOrVariable(sqlfObjectProperty, d, useVariables, mv, parameterToVariable);
-                Parameter v = new Parameter(dp.getName(), dp.getPropertyURI(), null, propertyType.getJdbcType());
                 sqlfObjectProperty.append(",");
                 appendPropertyValue(sqlfObjectProperty, d, dp, useVariables, v, parameterToVariable);
                 sqlfObjectProperty.append(")");
+                sqlfObjectProperty.append(ifEND);
             }
         }
 
