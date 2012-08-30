@@ -24,7 +24,6 @@
 
     String uniqueDivName = "div_" + UniqueID.getServerSessionScopedUID();  // Unique div name to support multiple reports per page
 %>
-<%= PageFlowUtil.getJavaScriptIncludes(bean.getClientDependencies(), false) %>
 <div id="<%=uniqueDivName%>"></div>
 <script type="text/javascript">
     (function()
