@@ -98,8 +98,8 @@ public class Parameter
 
 
     private String _name;
-    private String _uri = null;  // for migration of ontology based code
-    private final JdbcType _type;
+    private @Nullable String _uri = null;  // for migration of ontology based code
+    private final @Nullable JdbcType _type;
 
     // only allow setting once, do not clear
     private boolean _constant = false;
@@ -118,7 +118,7 @@ public class Parameter
         this(stmt, new int[] { index }, type);
     }
 
-    public Parameter(PreparedStatement stmt, int[] indexes, JdbcType type)
+    public Parameter(PreparedStatement stmt, int[] indexes, @Nullable JdbcType type)
     {
         _stmt = stmt;
         _indexes = indexes;
@@ -148,11 +148,11 @@ public class Parameter
         this(name, uri, new int[] { index }, type);
     }
 
-    public Parameter(String name, String uri, int[] indexes, JdbcType type)
+    public Parameter(String name, @Nullable String uri, @Nullable int[] indexes, JdbcType type)
     {
         _name = name;
         _uri = uri;
-        _indexes = null==indexes ? new int[0] : indexes;
+        _indexes = null == indexes ? new int[0] : indexes;
         _type = type;
     }
 
@@ -179,7 +179,7 @@ public class Parameter
         return _name;
     }
 
-    public JdbcType getType()
+    public @Nullable JdbcType getType()
     {
         return _type;
     }
@@ -208,7 +208,6 @@ public class Parameter
 
         try
         {
-
             if (null == value)
             {
                 setNull(type);
@@ -370,7 +369,7 @@ public class Parameter
             List<Object> paramList = sql.getParams();
             List<Parameter> parameters = new ArrayList<Parameter>(paramList.size());
 
-            for (int i=0 ; i<paramList.size() ; i++)
+            for (int i = 0; i < paramList.size(); i++)
             {
                 Object o = paramList.get(i);
                 if (!(o instanceof Parameter))

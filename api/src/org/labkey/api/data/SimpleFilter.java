@@ -22,10 +22,9 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jmock.Mockery;
-import org.jmock.lib.legacy.ClassImposteriser;
 import org.junit.Test;
 import org.labkey.api.data.CompareType.CompareClause;
+import org.labkey.api.data.dialect.MockSqlDialect;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.DateUtil;
@@ -41,7 +40,6 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -637,18 +635,18 @@ public class SimpleFilter implements Filter
                 return in;
             }
 
-            List<Object> convertedParams;
+            Object[] convertedParams;
 
             if (null == colInfo || !isUrlClause())
             {
-                convertedParams = Arrays.asList(params);
+                convertedParams = params;
             }
             else
             {
-                convertedParams = new LinkedList<Object>();
+                convertedParams = new Object[params.length];
 
-                for (Object paramVal : params)
-                    convertedParams.add(CompareType.convertParamValue(colInfo, paramVal));
+                for (int i = 0; i < params.length; i++)
+                    convertedParams[i] = CompareType.convertParamValue(colInfo, params[i]);
             }
 
             in.append("((");
@@ -678,38 +676,6 @@ public class SimpleFilter implements Filter
             }
 
             return in;
-        }
-
-        public static class InClauseTestCase extends org.junit.Assert
-        {
-            @Test
-            public void testInClause()
-            {
-//                Mockery _context = new Mockery();
-//                _context.setImposteriser(ClassImposteriser.INSTANCE);
-//                SqlDialect dialect = _context.mock(SqlDialect.class);
-
-                // TODO: Mock SqlDialect... above code doesn't work right now
-                SqlDialect dialect = CoreSchema.getInstance().getSqlDialect();
-                FieldKey fieldKey = FieldKey.fromParts("Foo");
-
-                // Empty parameter list
-                test("Foo IN (NULL)", new InClause(fieldKey, Collections.emptySet()), dialect);
-                test("1=1", new InClause(fieldKey, Collections.emptySet(), true, true), dialect);
-
-                // Non-null parameters only
-                test("((Foo IN (1, 2, 3)))", new InClause(fieldKey, PageFlowUtil.set(1, 2, 3)), dialect);
-                test("((NOT Foo IN (1, 2, 3)) OR Foo IS NULL)", new InClause(fieldKey, PageFlowUtil.set(1, 2, 3), true, true), dialect);
-
-                // Include null parameter
-                test("((Foo IN ('Blip', 'Bar')) OR Foo IS NULL)", new InClause(fieldKey, PageFlowUtil.set("Bar", "Blip", "")), dialect);
-                test("((NOT Foo IN ('Blip', 'Bar')) AND Foo IS NOT NULL)", new InClause(fieldKey, PageFlowUtil.set("Bar", "Blip", ""), true, true), dialect);
-            }
-
-            private void test(String expected, InClause inClause, SqlDialect dialect)
-            {
-                assertEquals(expected, inClause.toSQLFragment(Collections.<FieldKey, ColumnInfo>emptyMap(), dialect).toString());
-            }
         }
 
         public void addInValue(Object... values)
@@ -1371,8 +1337,6 @@ public class SimpleFilter implements Filter
     }
 
 
-
-
     public static class FilterTestCase extends Assert
     {
         Calendar asCalendar(Object x)
@@ -1459,6 +1423,34 @@ public class SimpleFilter implements Filter
             //Operation
             //Or
             //StartsWith
+        }
+    }
+
+
+    public static class InClauseTestCase extends org.junit.Assert
+    {
+        @Test
+        public void testInClause()
+        {
+            SqlDialect mockDialect = new MockSqlDialect();
+            FieldKey fieldKey = FieldKey.fromParts("Foo");
+
+            // Empty parameter list
+            test("Foo IN (NULL)", new InClause(fieldKey, Collections.emptySet()), mockDialect);
+            test("1=1", new InClause(fieldKey, Collections.emptySet(), true, true), mockDialect);
+
+            // Non-null parameters only
+            test("((Foo IN (1, 2, 3)))", new InClause(fieldKey, PageFlowUtil.set(1, 2, 3)), mockDialect);
+            test("((NOT Foo IN (1, 2, 3)) OR Foo IS NULL)", new InClause(fieldKey, PageFlowUtil.set(1, 2, 3), true, true), mockDialect);
+
+            // Include null parameter
+            test("((Foo IN ('Blip', 'Bar')) OR Foo IS NULL)", new InClause(fieldKey, PageFlowUtil.set("Bar", "Blip", "")), mockDialect);
+            test("((NOT Foo IN ('Blip', 'Bar')) AND Foo IS NOT NULL)", new InClause(fieldKey, PageFlowUtil.set("Bar", "Blip", ""), true, true), mockDialect);
+        }
+
+        private void test(String expected, InClause inClause, SqlDialect dialect)
+        {
+            assertEquals(expected, inClause.toSQLFragment(Collections.<FieldKey, ColumnInfo>emptyMap(), dialect).toString());
         }
     }
 }
