@@ -211,7 +211,11 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     @NotNull
     public List<ReportDescriptor> getModuleReportDescriptors(Module module, Container container, User user, @Nullable String path)
     {
-        if (null == path)
+        if (module.getReportFiles().isEmpty())
+        {
+            return Collections.emptyList();
+        }
+        else if (null == path)
         {
             return getAllModuleReportDescriptors(module, container, user);
         }
@@ -219,23 +223,37 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         Path legalPath = Path.parse(path);
         legalPath = getLegalFilePath(legalPath);
 
-        Resource reportDirectory = module.getModuleResource(getQueryReportsDirectory(module).getPath().append(legalPath));
+        // module relative file path
+        Resource reportDirectory = module.getModuleResource(legalPath);
 
-        //15941
-        if (legalPath.getParent().getName().equals(""))
+        // report folder relative file path
+        if (null == reportDirectory)
         {
-            legalPath = reportDirectory.getPath();
+            reportDirectory = module.getModuleResource(getQueryReportsDirectory(module).getPath().append(legalPath));
+
+            // The directory does not exist
+            if (null == reportDirectory)
+                return Collections.emptyList();
         }
 
-        if (null == reportDirectory || !reportDirectory.isCollection())
+        Resource report = getQueryReportsDirectory(module);
+
+        // Check if it is a file
+        if (!reportDirectory.isFile())
         {
-            reportDirectory = module.getModuleResource(legalPath.getParent());
-            if (null == reportDirectory || !reportDirectory.isCollection())
-            {
-                reportDirectory = module.getModuleResource(getQueryReportsDirectory(module).getPath().append(legalPath).getParent());
-                if (null == reportDirectory || !reportDirectory.isCollection())
-                    return Collections.emptyList();
-            }
+
+            // Not a file so must be within the valid module report path
+            if (!reportDirectory.getPath().startsWith(report.getPath()))
+                return Collections.emptyList();
+        }
+        else
+        {
+            // cannot access files outside of report directory
+            if (!reportDirectory.getPath().startsWith(report.getPath()))
+                return Collections.emptyList();
+
+            // It is a file so iterate across all files within this file's parent folder.
+            reportDirectory = module.getModuleResource(reportDirectory.getPath().getParent());
         }
 
         HashMap<String, Resource> possibleQueryReportFiles = new HashMap<String, Resource>();
@@ -297,6 +315,8 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
                     module.cacheReport(file.getPath(), descriptor);
             }
 
+            // TODO: Make a copy of the cached ReportDescriptor rather than setting the container
+            // as this does not hold up in race conditions.
             descriptor.setContainer(container.getId());
 
             // Return one file
