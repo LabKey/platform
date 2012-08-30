@@ -332,6 +332,8 @@ public class DateUtil
                 }
                 continue;
             }
+/*
+This syntax seems unused and untested, so removing for now
             if (c == '(')
             {
                 int depth = 1;
@@ -347,6 +349,7 @@ public class DateUtil
                 }
                 continue;
             }
+*/
             if ('0' <= c && c <= '9')
             {
                 n = c - '0';
@@ -1194,6 +1197,7 @@ Parse:
             assertEquals(datetimeExpected, DateUtil.parseDateTime("2/3/2001 4:05:06.000"));
             assertEquals(datetimeExpected, DateUtil.parseDateTime("03-FEB-2001-04:05:06")); // FCS dates
             assertEquals(datetimeExpected, DateUtil.parseDateTime("2-03-2001 4:05:06"));
+
             // illegal
             assertIllegalDateTime("2");
             assertIllegalDateTime("2/3");
@@ -1247,6 +1251,10 @@ Parse:
             assertEquals(zo.parse("2001-02-03 04:05:06 GMT"), ut.parse("2001-02-03 04:05:06"));
             long utcOffset = TimeZone.getDefault().getOffset(datetimeUTC);
             assertEquals(datetimeLocal + utcOffset, datetimeUTC);
+            assertEquals(datetimeUTC, DateUtil.parseDateTime("Sat Feb 03 04:05:06 GMT-0000 2001"));
+            assertEquals(datetimeUTC+TimeUnit.HOURS.toMillis(1), DateUtil.parseDateTime("Sat Feb 03 04:05:06 GMT-1 2001"));
+            assertEquals(datetimeUTC+TimeUnit.HOURS.toMillis(1), DateUtil.parseDateTime("Sat Feb 03 04:05:06 GMT-0100 2001"));
+            assertEquals(datetimeUTC-TimeUnit.MINUTES.toMillis(270), DateUtil.parseDateTime("Sat Feb 03 04:05:06 GMT+0430 2001"));
 
             // check that parseDateTimeUS handles ISO
             assertEquals(datetimeLocal, parseDateTimeUS("2001-02-03 04:05:06", DateTimeOption.DateTime, true));
