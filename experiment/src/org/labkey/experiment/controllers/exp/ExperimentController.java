@@ -3557,16 +3557,16 @@ public class ExperimentController extends SpringActionController
         {
             Set<String> runIds = DataRegionSelection.getSelected(getViewContext(), true);
             ExpExperiment exp = form.lookupExperiment();
-            if (exp == null || !exp.getContainer().equals(getContainer()))
+            if (exp == null || !exp.getContainer().hasPermission(getUser(), DeletePermission.class))
             {
-                throw new NotFoundException("Experiment " + form.getExpRowId());
+                throw new NotFoundException("Could not find run group with RowId " + form.getExpRowId());
             }
             for (int runId : PageFlowUtil.toInts(runIds))
             {
                 ExpRun run = ExperimentService.get().getExpRun(runId);
-                if (run == null || !run.getContainer().equals(getContainer()))
+                if (run == null || !run.getContainer().hasPermission(getUser(), DeletePermission.class))
                 {
-                    throw new NotFoundException("Run " + runId);
+                    throw new NotFoundException("Could not find run with RowId " + runId);
                 }
                 exp.removeRun(getUser(), run);
             }
