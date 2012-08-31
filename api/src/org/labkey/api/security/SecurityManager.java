@@ -917,7 +917,7 @@ public class SecurityManager
     {
         try
         {
-            String crypt = Crypt.SaltMD5.digestWithPrefix(password);
+            String crypt = Crypt.BCrypt.digestWithPrefix(password);
             List<String> history = new ArrayList<String>(getCryptHistory(email.getEmailAddress()));
             history.add(crypt);
 
