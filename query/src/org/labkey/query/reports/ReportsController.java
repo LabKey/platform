@@ -262,7 +262,13 @@ public class ReportsController extends SpringActionController
         @Override
         public ActionURL urlReportDetails(Container c, Report r)
         {
-            return new ActionURL(DetailsAction.class, c).addParameter("reportId", r.getDescriptor().getReportId().toString());
+            return new ActionURL(DetailsAction.class, c).addParameter(ReportDescriptor.Prop.reportId, r.getDescriptor().getReportId().toString());
+        }
+
+        @Override
+        public ActionURL urlQueryReport(Container c, Report r)
+        {
+            return new ActionURL(RenderQueryReport.class, c).addParameter(ReportDescriptor.Prop.reportId, r.getDescriptor().getReportId().toString());
         }
     }
 
@@ -2352,4 +2358,38 @@ public class ReportsController extends SpringActionController
         }
     }
 
+    @RequiresPermissionClass(ReadPermission.class)
+    public class RenderQueryReport extends SimpleViewAction<ReportDesignBean>
+    {
+        String _reportName;
+
+        public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
+        {
+            ReportIdentifier id = form.getReportId();
+
+            if (id != null)
+            {
+                Report report = id.getReport(getViewContext());
+
+                _reportName = report.getDescriptor().getReportName();
+                VBox view = new VBox(new JspView<Report>("/org/labkey/api/reports/report/view/renderQueryReport.jsp", report));
+
+                if (!isPrint())
+                {
+                    DiscussionService.Service service = DiscussionService.get();
+                    String title = "Discuss report - " + _reportName;
+                    view.addView(service.getDisussionArea(getViewContext(), report.getEntityId(), new ActionURL(CreateScriptReportAction.class, getContainer()), title, true, false));
+                }
+                return view;
+            }
+            return new HtmlView("<span class=\"labkey-error\">Invalid report identifier, unable to create report.</span>");
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            if (_reportName != null)
+                return root.addChild(_reportName);
+            return null;
+        }
+    }
 }
