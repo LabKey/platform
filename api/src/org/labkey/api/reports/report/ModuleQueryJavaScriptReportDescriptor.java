@@ -75,7 +75,8 @@ public class ModuleQueryJavaScriptReportDescriptor extends ModuleJavaScriptRepor
                     {
                         for (DependencyType depend : js.getDependencies().getDependencyArray())
                         {
-                            _dependencies.add(ClientDependency.fromFilePath(depend.getPath()));
+                            if (null != depend.getPath())
+                                _dependencies.add(ClientDependency.fromFilePath(depend.getPath()));
                         }
                     }
                 }

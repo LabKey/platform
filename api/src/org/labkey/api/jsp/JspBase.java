@@ -584,7 +584,8 @@ abstract public class JspBase extends JspContext implements HasViewContext
 
     public void addClientDependency(String scriptPath)
     {
-        _clientDependencies.add(ClientDependency.fromFilePath(scriptPath));
+        if (null != scriptPath)
+            _clientDependencies.add(ClientDependency.fromFilePath(scriptPath));
     }
 
     public void addClientDependencies(Set<ClientDependency> resources)
