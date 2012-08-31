@@ -15,15 +15,19 @@ exports.Adapter = {
 
     each: Ext.each,
 
-    EventManager: Ext.EventManager,
+    EventManager: function() { throw Error("Ext.EventManager is not implemented on server-side JS");},
 
     //note: this is still present in Ext4, but is deprecated
-    extend: Ext.extend,
+    extend: function() { throw Error("Ext.extend is not implemented on server-side JS");},
 
     get: Ext.get,
 
-    //htmlEncode: Ext.util.Format.htmlEncode,
-    htmlEncode: Ext.emptyFn,
+    //this is b/c in Ext4, Ext.util.Format depends on the entire class system, and we are trying to avoid loading this
+    //it is not used in the core API
+    htmlEncode: function() { throw Error("htmlEncode is not implemented on server-side JS");},
+
+    //see above
+    format: function() { throw Error("Ext.Format is not implemented on server-side JS");},
 
     isArray: Ext.isArray,
 
@@ -68,11 +72,8 @@ else if (Ext.Version == 3){
     exports.Adapter.Ajax = Ext.Ajax;
 
     exports.Adapter.decode = Ext.util.JSON.decode;
-    //decode: Ext.JSON ? Ext.JSON.decode : Ext.util.JSON.decode
 
     exports.Adapter.encode = Ext.util.JSON.encode;
-
-    exports.Format = Ext.util.Format;
 
     //NOTE: must be placed at end
     Ext.lib = {
