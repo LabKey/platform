@@ -46,6 +46,7 @@ public interface ReportUrls extends UrlProvider
     ActionURL urlAttachmentReport(Container c, ActionURL returnURL);
     ActionURL urlLinkReport(Container c, ActionURL returnURL);
     ActionURL urlReportDetails(Container c, Report r);
+    ActionURL urlQueryReport(Container c, Report r);
 
     Class<? extends Controller> getDownloadClass();
 }

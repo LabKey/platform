@@ -1043,7 +1043,8 @@ public class QueryView extends WebPartView<Object>
             }
         }
 
-        addCustomizeViewItems(button);
+        if (getSettings().isAllowCustomizeView())
+            addCustomizeViewItems(button);
         if (!getQueryDef().isTemporary())
         {
             addManageViewItems(button, PageFlowUtil.map("baseFilterItems", PageFlowUtil.encode(baseFilterItems.toString()),

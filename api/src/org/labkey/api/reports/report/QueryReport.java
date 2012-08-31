@@ -29,12 +29,14 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.reports.Report;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
-import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -42,7 +44,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
 /**
@@ -90,28 +91,35 @@ public class QueryReport extends AbstractReport implements DynamicThumbnailProvi
 
     public HttpView renderReport(ViewContext context)
     {
-        BindException errors = new NullSafeBindException(this, "form");
-        QueryView view = createQueryView(context, errors);
-        StringBuilder sb = new StringBuilder();
-
-        if (errors.hasErrors())
+        if ("true".equals(context.get(renderParam.reportWebPart.name())))
         {
-            sb.append("Unable to display the report");
-            for (ObjectError error : (List<ObjectError>)errors.getAllErrors())
+            return new JspView<Report>("/org/labkey/api/reports/report/view/renderQueryReport.jsp", this);
+        }
+        else
+        {
+            BindException errors = new NullSafeBindException(this, "form");
+            QueryView view = createQueryView(context, errors);
+            StringBuilder sb = new StringBuilder();
+
+            if (errors.hasErrors())
             {
-                sb.append("\n");
-                sb.append(error.getDefaultMessage());
+                sb.append("Unable to display the report");
+                for (ObjectError error : (List<ObjectError>)errors.getAllErrors())
+                {
+                    sb.append("\n");
+                    sb.append(error.getDefaultMessage());
+                }
             }
-        }
 
-        if (view != null && sb.length() == 0)
-            return view;
+            if (view != null && sb.length() == 0)
+                return view;
 
-        if (sb.length() > 0)
-        {
-            return new HtmlView("<span class=\"labkey-error\">" + PageFlowUtil.filter(sb.toString(), true, false) + "</span>");
+            if (sb.length() > 0)
+            {
+                return new HtmlView("<span class=\"labkey-error\">" + PageFlowUtil.filter(sb.toString(), true, false) + "</span>");
+            }
+            return null;
         }
-        return null;
     }
 
     protected  UserSchema getSchema(ViewContext context, String schemaName)
@@ -142,7 +150,7 @@ public class QueryReport extends AbstractReport implements DynamicThumbnailProvi
             // by default we want all rows since the data may be used for a chart, grid based reports will ask for paging
             // at the report level.
             settings.setMaxRows(Table.ALL_ROWS);
-            settings.setAllowCustomizeView(false);
+            //settings.setAllowCustomizeView(false);
 
             final String filterParam = getDescriptor().getProperty("filterParam");
 
@@ -205,6 +213,10 @@ public class QueryReport extends AbstractReport implements DynamicThumbnailProvi
         return getStaticThumbnailCacheKey();
     }
 
+    public ActionURL getRunReportURL(ViewContext context)
+    {
+        return PageFlowUtil.urlProvider(ReportUrls.class).urlQueryReport(context.getContainer(), this);
+    }
 /*
     public ActionURL getRunReportURL(ViewContext context)
     {
