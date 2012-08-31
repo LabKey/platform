@@ -105,7 +105,7 @@ public abstract class FolderTab
         public void initializeContent(Container container)
         {
             // Initialize the portal pages for each of the tabs
-            Collection<Portal.WebPart> webParts = Portal.getParts(container, getDbName());
+            List<Portal.WebPart> webParts = Portal.getParts(container, getDbName());
 
             if (webParts.size() == 0)
             {
@@ -172,10 +172,7 @@ public abstract class FolderTab
 
     public String getDbName()
     {
-        // NOTE: this is for backwards compatibility.  many existing tabbed folders use Portal.DEFAULT_PORTAL_PAGE_ID
-        // as the pageId, even if it has a different name.  When this folderType was created, one of the tabs
-        // should have been specified as the default tab.  if no tab was selected, the left-most became the default
-        return _isDefaultTab ? Portal.DEFAULT_PORTAL_PAGE_ID : _name;
+        return _name;
     }
 
     public String getName()

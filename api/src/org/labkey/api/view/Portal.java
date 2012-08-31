@@ -292,6 +292,44 @@ public class Portal
         {
             this.rowId = rowId;
         }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            WebPart webPart = (WebPart) o;
+
+            if (index != webPart.index) return false;
+            if (permanent != webPart.permanent) return false;
+            if (container != null ? !container.equals(webPart.container) : webPart.container != null) return false;
+            if (extendedProperties != null ? !extendedProperties.equals(webPart.extendedProperties) : webPart.extendedProperties != null)
+                return false;
+            if (location != null ? !location.equals(webPart.location) : webPart.location != null) return false;
+            if (name != null ? !name.equals(webPart.name) : webPart.name != null) return false;
+            if (pageId != null ? !pageId.equals(webPart.pageId) : webPart.pageId != null) return false;
+            if (properties != null ? !properties.equals(webPart.properties) : webPart.properties != null) return false;
+            if (propertyMap != null ? !propertyMap.equals(webPart.propertyMap) : webPart.propertyMap != null)
+                return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result = container != null ? container.hashCode() : 0;
+            result = 31 * result + (pageId != null ? pageId.hashCode() : 0);
+            result = 31 * result + index;
+            result = 31 * result + (name != null ? name.hashCode() : 0);
+            result = 31 * result + (location != null ? location.hashCode() : 0);
+            result = 31 * result + (permanent ? 1 : 0);
+            result = 31 * result + (propertyMap != null ? propertyMap.hashCode() : 0);
+            result = 31 * result + (properties != null ? properties.hashCode() : 0);
+            result = 31 * result + (extendedProperties != null ? extendedProperties.hashCode() : 0);
+            return result;
+        }
     }
 
     public static class WebPartBeanLoader extends BeanObjectFactory<WebPart>
@@ -308,14 +346,14 @@ public class Portal
         }
     }
 
-    public static ArrayList<WebPart> getParts(Container c)
+    public static List<WebPart> getParts(Container c)
     {
         return getParts(c, DEFAULT_PORTAL_PAGE_ID);
     }
 
-    public static ArrayList<WebPart> getParts(Container c, String pageId)
+    public static List<WebPart> getParts(Container c, String pageId)
     {
-        return WebPartCache.getWebParts(c, pageId);
+        return Collections.unmodifiableList(WebPartCache.getWebParts(c, pageId));
     }
 
     // TODO: Should use WebPartCache... but we need pageId to do that. Fortunately, this is used infrequently now (see #13267).
@@ -371,7 +409,7 @@ public class Portal
     // Add a web part to the container at the specified index, with properties
     public static WebPart addPart(Container c, String pageId, WebPartFactory desc, @Nullable String location, int partIndex, @Nullable Map<String, String> properties)
     {
-        Collection<WebPart> parts = getParts(c, pageId);
+        List<WebPart> parts = getParts(c, pageId);
 
         WebPart newPart = new Portal.WebPart();
         newPart.setContainer(c);
@@ -400,7 +438,7 @@ public class Portal
 
         if (parts == null)
         {
-            parts = Collections.singleton(newPart);
+            parts = Collections.singletonList(newPart);
         }
         else
         {

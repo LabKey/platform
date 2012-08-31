@@ -341,4 +341,10 @@ public class SimpleFolderType extends MultiPortalFolderType
     {
         return context.getContainer().getName();
     }
+
+    @Override
+    public String toString()
+    {
+        return "Folder type: " + _name;
+    }
 }

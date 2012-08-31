@@ -820,6 +820,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         Map<String, String> props = PropertyManager.getProperties(this, "activeModules");
         //get set of all modules
         List<Module> allModules = ModuleLoader.getInstance().getModules();
+
         //get active web parts for this container
         List<Portal.WebPart> activeWebparts = Portal.getParts(this);
 

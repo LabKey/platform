@@ -217,7 +217,7 @@ public class CustomFolderType implements FolderType
     }
 
     @Override
-    public String getPageId(ViewContext ctx, String pageId)
+    public String getDefaultPageId(ViewContext ctx)
     {
         return Portal.DEFAULT_PORTAL_PAGE_ID;
     }

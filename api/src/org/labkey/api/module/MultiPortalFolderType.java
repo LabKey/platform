@@ -15,19 +15,23 @@
  */
 package org.labkey.api.module;
 
-import com.google.common.collect.Iterables;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.template.AppBar;
 import org.labkey.api.view.template.PageConfig;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -54,12 +58,30 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
 
     private Collection<Portal.WebPart> getTabs(ViewContext ctx)
     {
-        Collection<Portal.WebPart> tabs = Portal.getParts(ctx.getContainer(), FolderTab.FOLDER_TAB_PAGE_ID);
+        List<Portal.WebPart> tabs = Portal.getParts(ctx.getContainer(), FolderTab.FOLDER_TAB_PAGE_ID);
 
-        if (tabs == null || tabs.isEmpty())
-            tabs = resetDefaultTabs(ctx.getContainer());
+        // Build up a list of all the currently defined tab names
+        Set<String> currentTabNames = new HashSet<String>();
+        for (FolderTab folderTab : getDefaultTabs())
+        {
+            currentTabNames.add(folderTab.getName());
+        }
 
-        return tabs;
+        // Filter out ones that we've saved that are no longer part of the folder type
+        List<Portal.WebPart> filtered = new ArrayList<Portal.WebPart>(tabs.size());
+        for (Portal.WebPart tab : tabs)
+        {
+            if (currentTabNames.contains(tab.getName()))
+            {
+                filtered.add(tab);
+            }
+        }
+
+        // If we don't have any matching tabs any more, reset to the default set
+        if (filtered.isEmpty())
+            filtered = resetDefaultTabs(ctx.getContainer());
+
+        return filtered;
     }
 
     @Override @NotNull
@@ -91,23 +113,83 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
             }
         }
 
+        migrateLegacyPortalPage(ctx.getContainer());
+
         return new AppBar(getFolderTitle(ctx), ctx.getContainer().getStartURL(ctx.getUser()), buttons);
+    }
+
+    private void migrateLegacyPortalPage(Container container)
+    {
+        List<Portal.WebPart> legacyPortalParts = new ArrayList<Portal.WebPart>(Portal.getParts(container));
+        if (!legacyPortalParts.isEmpty())
+        {
+            // Check if there's a tab that has the legacy portal page ID
+            for (FolderTab folderTab : getDefaultTabs())
+            {
+                if (Portal.DEFAULT_PORTAL_PAGE_ID.equalsIgnoreCase(folderTab.getName()))
+                {
+                    // If so, we don't need to migrate anything
+                    return;
+                }
+            }
+
+            String defaultTabName = getDefaultTab().getName();
+            List<Portal.WebPart> mergedParts = new ArrayList<Portal.WebPart>(Portal.getParts(container, defaultTabName));
+            Iterator<Portal.WebPart> i = legacyPortalParts.iterator();
+            boolean changed = false;
+            while (i.hasNext())
+            {
+                Portal.WebPart defaultPortalPart = i.next();
+                if (!WebPartFactory.LOCATION_MENUBAR.equals(defaultPortalPart.getLocation()))
+                {
+                    // Add it to the default tab if it's not already there
+                    if (!mergedParts.contains(defaultPortalPart))
+                    {
+                        defaultPortalPart.setPageId(defaultTabName);
+                        mergedParts.add(defaultPortalPart);
+                    }
+                    // Remove it from the legacy portal page
+                    i.remove();
+                    changed = true;
+                }
+            }
+
+            if (changed)
+            {
+                // Save the legacy page and the newly merged page
+                Portal.saveParts(container, legacyPortalParts);
+                Portal.saveParts(container, defaultTabName, mergedParts);
+            }
+        }
     }
 
     protected abstract String getFolderTitle(ViewContext context);
 
     @Override
-    public String getPageId(ViewContext ctx, String pageId)
+    public String getDefaultPageId(ViewContext ctx)
     {
-        String page = null != pageId ? pageId :
-            _activePortalPage != null ? _activePortalPage : Portal.DEFAULT_PORTAL_PAGE_ID;
+        String result;
+        if (_activePortalPage != null)
+        {
+            // If we have an explicit selection, use that
+            result = _activePortalPage;
+        }
+        else
+        {
+            Collection<Portal.WebPart> activeTabs = getTabs(ctx);
+            if (activeTabs.isEmpty())
+            {
+                // No real tabs exist for this folder type, so just use the default portal page
+                result = Portal.DEFAULT_PORTAL_PAGE_ID;
+            }
+            else
+            {
+                // Use the left-most tab as the default
+                result = activeTabs.iterator().next().getName();
+            }
+        }
 
-        //NOTE: this is a hack for backwards compatibility.  the left-most tab should always use
-        // Portal.DEFAULT_PORTAL_PAGE_ID as the pageId.
-        if (getDefaultTab() != null && getDefaultTab().getName().equals(page))
-            page = Portal.DEFAULT_PORTAL_PAGE_ID;
-
-        return page;
+        return result;
     }
 
     @Override @Nullable

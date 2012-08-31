@@ -207,6 +207,7 @@ public class DefaultFolderType implements FolderType
         }
 
         Portal.saveParts(c, FolderTab.FOLDER_TAB_PAGE_ID, tabs);
+
         return Portal.getParts(c, FolderTab.FOLDER_TAB_PAGE_ID);
     }
 
@@ -427,7 +428,7 @@ public class DefaultFolderType implements FolderType
         return menubarEnabled;
     }
 
-    public String getPageId(ViewContext ctx, String pageId)
+    public String getDefaultPageId(ViewContext ctx)
     {
         return Portal.DEFAULT_PORTAL_PAGE_ID;
     }

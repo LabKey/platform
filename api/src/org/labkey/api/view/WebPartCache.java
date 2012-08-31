@@ -29,6 +29,7 @@ import org.labkey.api.view.Portal.WebPart;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -50,7 +51,7 @@ public class WebPartCache
         return result;
     }
 
-    static ArrayList<WebPart> getWebParts(@NotNull Container c, @NotNull String pageId)
+    static List<WebPart> getWebParts(@NotNull Container c, @NotNull String pageId)
     {
         return get(c, pageId).getKey();
     }
