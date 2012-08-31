@@ -15,6 +15,7 @@ Ext4.namespace('LABKEY.ext');
  * @cfg {LABKEY.ext4.Store} store Can be supplied instead of schemaName / queryName
  * @cfg {string} titleField
  * @cfg {string} titlePrefix Defaults to 'Details'
+ * @cfg {boolean} showBackBtn If false, the default 'back' button will not appear below the panel
  * @cfg {Ext4.data.Record / Integer} boundRecord Either a record object
  */
 Ext4.define('LABKEY.ext.DetailsPanel', {
@@ -23,15 +24,13 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
     initComponent: function(){
         Ext4.apply(this, {
             items: [{html: 'Loading...'}],
-            bodyStyle: 'padding:5px;',
-
-            border: true,
+            bodyStyle: this.bodyStyle || 'padding:5px;',
+            border: Ext4.isDefined(this.border) ? this.border : true,
             frame: false,
             defaults: {
                 border: false
             },
             buttonAlign: 'left',
-            title: Ext4.isDefined(this.titlePrefix) ?  this.titlePrefix : 'Details',
             fieldDefaults: {
                 labelWidth: 175
             },
@@ -42,6 +41,9 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
                 style: 'padding-top: 10px;'
             }]
         });
+
+        if(this.showTitle !== false)
+            this.title = Ext4.isDefined(this.titlePrefix) ?  this.titlePrefix : 'Details';
 
         this.callParent(arguments);
 
@@ -126,7 +128,7 @@ Ext4.define('LABKEY.ext.DetailsPanel', {
             bbar.removeAll();
 
         var url = LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.getParameter('returnURL');
-        if(url){
+        if(url && this.showBackBtn !== false){
             bbar.add({
                 xtype: 'button',
                 text: 'Back',

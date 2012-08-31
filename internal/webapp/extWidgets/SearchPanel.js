@@ -89,6 +89,7 @@ Ext4.define('LABKEY.ext4.SearchPanel', {
         var buttons = this.buttons || [{
             text: 'Submit', scope: this, handler: this.onSubmit
         }];
+        buttons.unshift({xtype: 'tbfill'});
         this.buttons = null;
         if(buttons){
             this.dockedItems = {

@@ -375,7 +375,6 @@ LABKEY.requiresCoreClientAPI = function(immediate)
         LABKEY.requiresScript("clientapi/core/Form.js", immediate);
         LABKEY.requiresScript("clientapi/core/Message.js", immediate);
         LABKEY.requiresScript("clientapi/core/Pipeline.js", immediate);
-        LABKEY.requiresScript("clientapi/core/FileSystem.js", immediate);
         LABKEY.requiresScript("clientapi/core/Portal.js", immediate);
         LABKEY.requiresScript("clientapi/core/Visualization.js", immediate);
     }

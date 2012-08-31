@@ -233,16 +233,24 @@ LABKEY.WebPart = function(config)
  * This is a static method to generate a report webpart.  It is equivalent to LABKEY.WebPart with partName='Report'; however,
  * it simplifies the configuration
  * @param config The config object
- * @param {String} reportId The Id of the report to load.
- * @param {String} renderTo The Id of the element in which the web part should be rendered.
+ * @param {String} config.renderTo The Id of the element in which the web part should be rendered.
+ * @param {String} [config.reportId] The Id of the report to load.  This can be used in place of schemaName/queryName/reportName
+ * @param {String} [config.schemaName] The name of the schema where the report is associated.
+ * @param {String} [config.queryName] The name of the query where the report is attached.
+ * @param {String} [config.reportName] The name of the report to be loaded.
+ * @param {String} [config.title] The title that will appear above the report webpart
  * @param {Object} [config.webPartConfig] A optional config object used to create the LABKEY.WebPart.  Any config options supported by WebPart can be used here.
  * @param {Object} [config.reportProperties] An optional config object with additional report-specific properties.  This is equal to partConfig from LABKEY.Webpart
  * @return A LABKEY.WebPart instance
  * @example
  &lt;div id='testDiv'/&gt;
-  &lt;script type="text/javascript"&gt;
+ &lt;div id='testDiv2'/&gt;
+ &lt;script type="text/javascript"&gt;
+     //a report can be loaded using its name, schema and query
      var reportWebpart = LABKEY.WebPart.createReportWebpart({
-         reportId: 'module:laboratory/schemas/laboratory/DNA_Oligos/Query.report.xml',
+         schemaName: 'laboratory',
+         queryName: 'DNA_Oligos',
+         reportName: 'My Report',
          renderTo: 'testDiv',
          webPartConfig: {
             title: 'Example Report',
@@ -253,6 +261,19 @@ LABKEY.WebPart = function(config)
          }
      });
      reportWebpart.render();
+
+     //the report can also be loaded using its Id
+     var reportWebpartUsingId = LABKEY.WebPart.createReportWebpart({
+         reportId: 'module:laboratory/schemas/laboratory/DNA_Oligos/Query.report.xml',
+         renderTo: 'testDiv2',
+         webPartConfig: {
+            title: 'Example Report',
+            suppressRenderErrors: true
+         },
+         reportProperties: {
+            'query.name~eq': 'Primer2'
+         }
+     }).render();
   &lt;/script&gt;  </pre></code>
  */
 LABKEY.WebPart.createReportWebpart = function(config){
@@ -268,7 +289,7 @@ LABKEY.WebPart.createReportWebpart = function(config){
 
     //then merge the partConfig options.  we document specific Report-specific options for clarity to the user
     wpConfig.partConfig = LABKEY.ExtAdapter.apply({}, config.reportProperties);
-    LABKEY.ExtAdapter.each(['reportId', 'dataRegionName'], function(prop){
+    LABKEY.ExtAdapter.each(['reportId', 'reportName', 'schemaName', 'queryName', 'title'], function(prop){
         if (LABKEY.ExtAdapter.isDefined(config[prop]))
             wpConfig.partConfig[prop] = config[prop];
     }, this);

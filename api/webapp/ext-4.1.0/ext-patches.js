@@ -103,6 +103,11 @@ Ext4.override(Ext4.form.field.Base, {
     //afterLabelTextTpl: ['{%this.helpPopup%}<tpl if="helpPopup"><a href="#" data-qtip="{helpPopup}"><span class="labkey-help-pop-up">?</span></a></tpl>']
 });
 
+Ext4.override(Ext4.form.FieldContainer, {
+    labelableRenderTpl: Ext4.form.field.Base.prototype.labelableRenderTpl,
+    getLabelableRenderData: Ext4.form.field.Base.prototype.getLabelableRenderData
+});
+
 /**
  * @Override
  * This is an override of the Ext 4.1 selection model for checkboxes due to how easy it was to accidentally uncheck a large set of rows.
