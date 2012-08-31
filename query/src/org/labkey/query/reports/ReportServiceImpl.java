@@ -225,31 +225,36 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
         // module relative file path
         Resource reportDirectory = module.getModuleResource(legalPath);
+        Path moduleReportDirectory = getQueryReportsDirectory(module).getPath();
 
         // report folder relative file path
         if (null == reportDirectory)
         {
-            reportDirectory = module.getModuleResource(getQueryReportsDirectory(module).getPath().append(legalPath));
+            reportDirectory = module.getModuleResource(moduleReportDirectory.append(legalPath));
 
             // The directory does not exist
             if (null == reportDirectory)
-                return Collections.emptyList();
-        }
+            {
+                // 15966 -- check to see if it is resolving from parent report directory
+                reportDirectory = module.getModuleResource(moduleReportDirectory.getParent().append(legalPath));
 
-        Resource report = getQueryReportsDirectory(module);
+                if (null == reportDirectory)
+                    return Collections.emptyList();
+            }
+        }
 
         // Check if it is a file
         if (!reportDirectory.isFile())
         {
 
             // Not a file so must be within the valid module report path
-            if (!reportDirectory.getPath().startsWith(report.getPath()))
+            if (!reportDirectory.getPath().startsWith(moduleReportDirectory))
                 return Collections.emptyList();
         }
         else
         {
             // cannot access files outside of report directory
-            if (!reportDirectory.getPath().startsWith(report.getPath()))
+            if (!reportDirectory.getPath().startsWith(moduleReportDirectory))
                 return Collections.emptyList();
 
             // It is a file so iterate across all files within this file's parent folder.
