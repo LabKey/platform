@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.api.reports.report.RedirectReport" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="org.labkey.api.reports.Report" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -62,11 +61,11 @@
 <img style='width:100px; height: auto; float: left;' src='<%=h(thumbnailURL)%>'>
 </a>
 <table style='padding-left: 1em;'>
-    <% if (name != null) { %> <tr><td><b>Name:</b></td><td><%=name%></td></tr> <% } %>
-    <% if (author != null) { %> <tr><td><b>Author:</b></td><td><%=author%></td></tr> <% } %>
-    <% if (category != null) { %> <tr><td><b>Category:</b></td><td><%=category%></td></tr> <% } %>
-    <% if (type != null) { %> <tr><td><b>Type:</b></td><td><%=type%></td></tr> <% } %>
-    <% if (description != null) { %> <tr><td><b>Description:</b></td><td><%=description%></td></tr> <% } %>
+    <% if (name != null) { %> <tr><td><b>Name:</b></td><td><%=h(name)%></td></tr> <% } %>
+    <% if (author != null) { %> <tr><td><b>Author:</b></td><td><%=h(author)%></td></tr> <% } %>
+    <% if (category != null) { %> <tr><td><b>Category:</b></td><td><%=h(category)%></td></tr> <% } %>
+    <% if (type != null) { %> <tr><td><b>Type:</b></td><td><%=h(type)%></td></tr> <% } %>
+    <% if (description != null) { %> <tr><td><b>Description:</b></td><td><%=h(description)%></td></tr> <% } %>
     <tr><td colspan=2>
         <%=PageFlowUtil.textLink("view report", url, null, null, reportURLAttributes)%>
     </td></tr>
