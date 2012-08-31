@@ -334,7 +334,11 @@ public class ProjectController extends SpringActionController
             else
                 template = new PrintTemplate(new VBox());
 
-            String pageId = folderType.getPageId(getViewContext(), form.getPageId());
+            String pageId = form.getPageId();
+            if (pageId == null)
+            {
+                pageId = folderType.getDefaultPageId(getViewContext());
+            }
             Portal.populatePortalView(getViewContext(), pageId, template);
 
             getPageConfig().setTemplate(PageConfig.Template.None);
