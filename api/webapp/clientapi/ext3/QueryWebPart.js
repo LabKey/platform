@@ -136,6 +136,7 @@
  * @param {Array} [config.removeableFilters] A set of filters to apply. This should be an array of {@link LABKEY.Filter} objects
  * each of which is created using the {@link LABKEY.Filter.create} method. These filters can be modified or removed by the user
  * interacting with the UI.
+ * @param {Object} [config.parameters] Map of name (string)/value pairs for the values of parameters if the target query is a parameterized query
  * @param {Array} [config.aggregates] An array of aggregate definitions. The objects in this array should have two
  * properties: 'column' and 'type'. The column property is the column name, and the type property may be one of the
  * the {@link LABKEY.AggregateTypes} values.

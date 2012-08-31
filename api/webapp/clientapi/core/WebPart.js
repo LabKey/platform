@@ -229,3 +229,50 @@ LABKEY.WebPart = function(config)
     };
 };
 
+/**
+ * This is a static method to generate a report webpart.  It is equivalent to LABKEY.WebPart with partName='Report'; however,
+ * it simplifies the configuration
+ * @param config The config object
+ * @param {String} reportId The Id of the report to load.
+ * @param {String} renderTo The Id of the element in which the web part should be rendered.
+ * @param {Object} [config.webPartConfig] A optional config object used to create the LABKEY.WebPart.  Any config options supported by WebPart can be used here.
+ * @param {Object} [config.reportProperties] An optional config object with additional report-specific properties.  This is equal to partConfig from LABKEY.Webpart
+ * @return A LABKEY.WebPart instance
+ * @example
+ &lt;div id='testDiv'/&gt;
+  &lt;script type="text/javascript"&gt;
+     var reportWebpart = LABKEY.WebPart.createReportWebpart({
+         reportId: 'module:laboratory/schemas/laboratory/DNA_Oligos/Query.report.xml',
+         renderTo: 'testDiv',
+         webPartConfig: {
+            title: 'Example Report',
+            suppressRenderErrors: true
+         },
+         reportProperties: {
+            'query.name~eq': 'Primer2'
+         }
+     });
+     reportWebpart.render();
+  &lt;/script&gt;  </pre></code>
+ */
+LABKEY.WebPart.createReportWebpart = function(config){
+    var wpConfig = LABKEY.ExtAdapter.apply({}, config.webPartConfig);
+    wpConfig.partName = 'Report';
+
+    //for convenience, support these wp properties in config
+    var prop;
+    LABKEY.ExtAdapter.each(['renderTo', 'success', 'failure'], function(prop){
+        if (LABKEY.ExtAdapter.isDefined(config[prop]))
+            wpConfig[prop] = config[prop];
+    }, this);
+
+    //then merge the partConfig options.  we document specific Report-specific options for clarity to the user
+    wpConfig.partConfig = LABKEY.ExtAdapter.apply({}, config.reportProperties);
+    LABKEY.ExtAdapter.each(['reportId', 'dataRegionName'], function(prop){
+        if (LABKEY.ExtAdapter.isDefined(config[prop]))
+            wpConfig.partConfig[prop] = config[prop];
+    }, this);
+
+    return new LABKEY.WebPart(wpConfig);
+}
+
