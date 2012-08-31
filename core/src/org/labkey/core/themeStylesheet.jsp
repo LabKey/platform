@@ -457,7 +457,7 @@ th.labkey-wp-title-left a:hover
     color: #<%= link %>;
 }
 
-a.labkey-text-link, a.labkey-text-link:visited
+a.labkey-text-link, a.labkey-text-link:visited, a.labkey-text-link-noarrow, a.labkey-text-link-noarrow:visited
 {
     color: #<%= link %>;
 }
