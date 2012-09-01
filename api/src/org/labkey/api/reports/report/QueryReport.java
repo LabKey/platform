@@ -44,6 +44,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.InputStream;
 import java.util.List;
 
 /**
@@ -211,6 +212,19 @@ public class QueryReport extends AbstractReport implements DynamicThumbnailProvi
     public String getDynamicThumbnailCacheKey()
     {
         return getStaticThumbnailCacheKey();
+    }
+
+    @Override
+    public String getStaticThumbnailCacheKey()
+    {
+        return "Query";
+    }
+
+    @Override
+    public Thumbnail getStaticThumbnail()
+    {
+        InputStream is = AbstractReport.class.getResourceAsStream("query.png");
+        return new Thumbnail(is, "image/png");
     }
 
     public ActionURL getRunReportURL(ViewContext context)
