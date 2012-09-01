@@ -64,6 +64,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -827,10 +828,15 @@ public abstract class SqlDialect
 
         private String getProperty(String methodName) throws ServletException
         {
+            return callGetter(methodName);
+        }
+
+        private <K> K callGetter(String methodName) throws ServletException
+        {
             try
             {
                 Method getUrl = _ds.getClass().getMethod(methodName);
-                return (String)getUrl.invoke(_ds);
+                return (K)getUrl.invoke(_ds);
             }
             catch (Exception e)
             {
@@ -863,7 +869,16 @@ public abstract class SqlDialect
 
         public String getPassword() throws ServletException
         {
-            return getProperty("getPassword");
+            // Special handling for Tomcat JDBC connection pool; getPassword() returns a fixed string
+            if ("org.apache.tomcat.jdbc.pool.DataSource".equals(_ds.getClass().getName()))
+            {
+                Properties props = callGetter("getDbProperties");
+                return props.getProperty("password");
+            }
+            else
+            {
+                return getProperty("getPassword");
+            }
         }
     }
 

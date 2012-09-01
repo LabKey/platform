@@ -29,6 +29,7 @@ import org.labkey.api.util.MemTracker;
 
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
+import javax.sql.PooledConnection;
 import java.io.IOException;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
@@ -366,6 +367,20 @@ public class DbScope
     {
         Connection delegate = null;
 
+        // This works for Tomcat JDBC Connection Pool
+        if (conn instanceof PooledConnection)
+        {
+            try
+            {
+                return ((PooledConnection) conn).getConnection();
+            }
+            catch (SQLException e)
+            {
+                _log.error("Attempt to retrieve underlying connection failed", e);
+            }
+        }
+
+        // This approach is required for Commons DBCP (default Tomcat connection pool)
         ensureDelegation(conn);
 
         if (isDelegating && classDelegatingConnection.isAssignableFrom(conn.getClass()))
@@ -588,11 +603,6 @@ public class DbScope
             else if (dataSources.containsKey("cpasDataSource"))
                 labkeyDsName = "cpasDataSource";
 
-            if (null == labkeyDsName)
-                throw new ConfigurationException("You must have a DataSource named \"labkeyDataSource\" defined in labkey.xml.");
-            else
-                ensureDataBase(labkeyDsName, dataSources.get(labkeyDsName));
-
             // Put labkey data source first, followed by all others in alphabetical order
             Set<String> dsNames = new LinkedHashSet<String>();
             dsNames.add(labkeyDsName);
@@ -638,7 +648,7 @@ public class DbScope
     // then attempt to create the database.  Return true if the database existed, false if it was just created.  Throw if some
     // other exception occurs (connection fails repeatedly with something other than "database doesn't exist" or database can't
     // be created.
-    private static boolean ensureDataBase(String dsName, DataSource ds) throws ServletException
+    public static boolean ensureDataBase(String dsName, DataSource ds) throws ServletException
     {
         Connection conn = null;
         SqlDialect.DataSourceProperties props = new SqlDialect.DataSourceProperties(dsName, ds);
@@ -648,7 +658,7 @@ public class DbScope
         // 2) get the name of the "master" database
         //
         // Only way to get the right dialect is to look up based on the driver class name.
-        SqlDialect dialect = SqlDialectManager.getFromDataSourceProperties(props);
+        SqlDialect dialect = SqlDialectManager.getFromDriverClassname(dsName, props.getDriverClassName());
 
         SQLException lastException = null;
 
@@ -682,7 +692,7 @@ public class DbScope
             {
                 if (dialect.isNoDatabaseException(e))
                 {
-                    createDataBase(props, dialect);
+                    createDataBase(dialect, props.getUrl(), props.getUsername(), props.getPassword());
                     return false;   // Successfully created database
                 }
                 else
@@ -715,21 +725,21 @@ public class DbScope
     }
 
 
-    private static void createDataBase(SqlDialect.DataSourceProperties props, SqlDialect dialect) throws ServletException
+    public static void createDataBase(SqlDialect dialect, String url, String username, String password) throws ServletException
     {
         Connection conn = null;
         PreparedStatement stmt = null;
 
-        String dbName = dialect.getDatabaseName(props.getUrl());
+        String dbName = dialect.getDatabaseName(url);
 
         _log.info("Attempting to create database \"" + dbName + "\"");
 
-        String masterUrl = StringUtils.replace(props.getUrl(), dbName, dialect.getMasterDataBaseName());
+        String masterUrl = StringUtils.replace(url, dbName, dialect.getMasterDataBaseName());
         String createSql = "(undefined)";
 
         try
         {
-            conn = DriverManager.getConnection(masterUrl, props.getUsername(), props.getPassword());
+            conn = DriverManager.getConnection(masterUrl, username, password);
             // get version specific dialect
             dialect = SqlDialectManager.getFromMetaData(conn.getMetaData());
             createSql = dialect.getCreateDatabaseSql(dbName);

@@ -43,10 +43,8 @@ public class SqlDialectManager
      * Getting the SqlDialect from the datasource properties won't return the version-specific dialect -- use
      * getFromMetaData() if possible.
      */
-    public static SqlDialect getFromDataSourceProperties(SqlDialect.DataSourceProperties props) throws ServletException
+    public static SqlDialect getFromDriverClassname(String dsName, String driverClassName) throws ServletException
     {
-        String driverClassName = props.getDriverClassName();
-
         for (SqlDialectFactory factory : _factories)
         {
             SqlDialect dialect = factory.createFromDriverClassName(driverClassName);
@@ -55,7 +53,7 @@ public class SqlDialectManager
                 return dialect;
         }
 
-        throw new SqlDialectNotSupportedException("The database driver \"" + props.getDriverClassName() + "\" specified in data source \"" + props.getDataSourceName() + "\" is not supported in your installation.");
+        throw new SqlDialectNotSupportedException("The database driver \"" + driverClassName + "\" specified in data source \"" + dsName + "\" is not supported in your installation.");
     }
 
 

@@ -37,6 +37,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -61,6 +62,7 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
+import javax.naming.Reference;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -74,6 +76,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.SQLException;
@@ -561,6 +564,8 @@ public class ModuleLoader implements Filter
 
         try
         {
+            ensureLabKeyDatabase();
+
             InitialContext ctx = new InitialContext();
             Context envCtx = (Context) ctx.lookup("java:comp/env");
             NamingEnumeration<Binding> iter = envCtx.listBindings("jdbc");
@@ -586,6 +591,74 @@ public class ModuleLoader implements Filter
         }
 
         DbScope.initializeScopes(dataSources);
+    }
+
+
+    // Ensures that a labkeyDataSource (or cpasDataSource, for old installations) exists in labkey.xml / cpas.xml and
+    // creates the labkey database if it doesn't already exist.
+    private void ensureLabKeyDatabase() throws NamingException, ServletException
+    {
+        InitialContext ctx = new InitialContext();
+        Context envCtx = (Context) ctx.lookup("java:comp/env");
+
+        DataSource labkeyDataSource = null;
+        String dsName = null;
+
+        for (String name : new String[]{"labkeyDataSource", "cpasDataSource"})
+        {
+            dsName = name;
+
+            try
+            {
+                labkeyDataSource = (DataSource)envCtx.lookup("jdbc/" + name);
+                break;
+            }
+            catch (NamingException e)
+            {
+                String message = e.getMessage();
+
+                // labkeyDataSource is defined but the database doesn't exist. This happens only with the Tomcat JDBC
+                // connection pool, which attempts a connection on bind. In this case, we need to use some horrible
+                // reflection to get the properties we need to create the database.
+                if ((message.contains("FATAL: database") && message.contains("does not exist")) ||
+                    (message.contains("Cannot open database") && message.contains("requested by the login. The login failed.")))
+                {
+                    try
+                    {
+                        Object namingContext = envCtx.lookup("jdbc");
+                        Field bindingsField = namingContext.getClass().getDeclaredField("bindings");
+                        bindingsField.setAccessible(true);
+                        Map bindings = (Map)bindingsField.get(namingContext);
+                        Object namingEntry = bindings.get(name);
+                        Field valueField = namingEntry.getClass().getDeclaredField("value");
+                        Reference reference = (Reference)valueField.get(namingEntry);
+
+                        String driverClassname = (String)reference.get("driverClassName").getContent();
+                        SqlDialect dialect = SqlDialectManager.getFromDriverClassname(dsName, driverClassname);
+                        String url = (String)reference.get("url").getContent();
+                        String password = (String)reference.get("password").getContent();
+                        String username = (String)reference.get("username").getContent();
+
+                        DbScope.createDataBase(dialect, url, username, password);
+                    }
+                    catch (Exception e2)
+                    {
+                        throw new ConfigurationException("Failed to retrieve \"" + name + "\" properties from labkey.xml. Try creating the database manually and restarting the server.", e2);
+                    }
+
+                    // Try it again
+                    labkeyDataSource = (DataSource)envCtx.lookup("jdbc/" + name);
+                    break;
+                }
+
+                // Ignore any other NamingException... keep trying names until we find one defined.
+            }
+        }
+
+        if (null == labkeyDataSource)
+            throw new ConfigurationException("You must have a DataSource named \"labkeyDataSource\" defined in labkey.xml.");
+
+        DbScope.ensureDataBase(dsName, labkeyDataSource);
     }
 
 

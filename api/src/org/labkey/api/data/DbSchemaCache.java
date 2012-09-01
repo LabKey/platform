@@ -75,7 +75,7 @@ public class DbSchemaCache
             {
                 ModuleContext context = ModuleLoader.getInstance().getModuleContext(module);
 
-                if (!context.isInstallComplete())
+                if (null != context && !context.isInstallComplete())
                 {
                     _scope.invalidateAllTables(schemaName);
                     return true;
