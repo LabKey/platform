@@ -132,6 +132,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         addSearchCategory(navigationCategory);
 
         // Hack to work around Java 7 PriorityBlockingQueue bug, http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7161229
+        // TODO: Remove this once Oracle fixes it; it's claimed to be fixed in 1.7.0_08
         if (SystemUtils.IS_JAVA_1_7)
         {
             MemTracker.register(new MemTrackerListener()

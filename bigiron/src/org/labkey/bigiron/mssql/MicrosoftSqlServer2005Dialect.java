@@ -400,8 +400,8 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
         String sql = selectSql.getSQL().toUpperCase();
 
         // Use SQLServer's FOR XML syntax to concat multiple values together
-        // We want the separated by commas, so prefix each value with a comma and then use SUBSTRING to strip
-        // of the leading comma - this is easier than stripping a trailing comma because we don't have to determine
+        // We want them separated by commas, so prefix each value with a comma and then use SUBSTRING to strip
+        // off the leading comma - this is easier than stripping a trailing comma because we don't have to determine
         // the length of the string
 
         // The goal is to get something of the form:

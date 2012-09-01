@@ -783,11 +783,11 @@ class PostgreSql83Dialect extends SqlDialect
     @Override
     public void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext, @Nullable Connection conn) throws SQLException
     {
-        SqlScriptExecutor parser = new SqlScriptExecutor(sql, null, JAVA_CODE_PATTERN, schema, upgradeCode, moduleContext, conn);
+        SqlScriptExecutor executor = new SqlScriptExecutor(sql, null, JAVA_CODE_PATTERN, schema, upgradeCode, moduleContext, conn);
 
         try
         {
-            parser.execute();
+            executor.execute();
         }
         catch (SQLException e)
         {
