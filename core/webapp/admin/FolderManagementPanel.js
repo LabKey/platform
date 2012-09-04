@@ -42,7 +42,6 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
 
         Ext4.applyIf(config, {
             layout : 'border',
-            draggable : true,
             frame  : false, border : false
         });
 

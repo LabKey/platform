@@ -1392,19 +1392,22 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                 }
 
                 //Display individual lines
-                var groupedIndividualData;
-                if(this.individualData){
+                var groupedIndividualData = null;
+                if (this.individualData)
                     groupedIndividualData = generateGroupSeries(this.individualData, this.chartInfo.subject.groups, this.getColumnAlias(this.individualData.columnAliases, this.viewInfo.subjectColumn));
-                }
+
                 // Display aggregate lines
-                var groupedAggregateData;
-                if(this.aggregateData){
-                    var groupDataAggregate = LABKEY.vis.groupData(this.aggregateData.rows, function(row){return row.GroupId.displayValue});
-                }
+                var groupedAggregateData = null;
+                if (this.aggregateData)
+                    groupedAggregateData = LABKEY.vis.groupData(this.aggregateData.rows, function(row){return row.GroupId.displayValue});
 
                 for (var i = 0; i < (this.chartInfo.subject.groups.length > this.maxCharts ? this.maxCharts : this.chartInfo.subject.groups.length); i++)
                 {
                     var group = this.chartInfo.subject.groups[i];
+                    // skip the group if there is no data for it
+                    if (!((groupedIndividualData != null && groupedIndividualData[group.label]) || (groupedAggregateData != null && groupedAggregateData[group.label])))
+                        continue;
+
                     var newChart = this.generatePlot(
                             this.chart,
                             this.editorXAxisPanel.getTime(),
@@ -1415,7 +1418,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                             groupedIndividualData && groupedIndividualData[group.label] ? groupedIndividualData[group.label] : null,
                             this.individualData ? this.individualData.columnAliases : null,
                             this.individualData ? this.individualData.visitMap : null,
-                            groupDataAggregate && groupDataAggregate[group.label] ? groupDataAggregate[group.label] : null,
+                            groupedAggregateData && groupedAggregateData[group.label] ? groupedAggregateData[group.label] : null,
                             this.aggregateData ? this.aggregateData.columnAliases : null,
                             this.aggregateData ? this.aggregateData.visitMap : null,
                             this.chartInfo.subject.groups.length > 1 ? 380 : 600, // chart height

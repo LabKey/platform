@@ -291,9 +291,15 @@ public class CohortController extends BaseStudyController
 
             DataView view;
             if (isInsert())
+            {
                 view = new InsertView(updateForm, errors);
+                // by default, cohorts are enrolled
+                updateForm.set("enrolled", true);
+            }
             else
+            {
                 view = new UpdateView(updateForm, errors);
+            }
             DataRegion dataRegion = view.getDataRegion();
 
             // In case we reshow due to errors, we need to stuff the row id into the data region
@@ -367,17 +373,27 @@ public class CohortController extends BaseStudyController
                     if (cohort == null)
                         throw new IllegalStateException("Cannot find Cohort for rowId: " + rowId);
 
-                    if (newLabel != null && !cohort.getLabel().equals(newLabel))
+                    boolean labelChanged = (newLabel != null && !cohort.getLabel().equals(newLabel));
+                    boolean enrolledChanged = cohort.isEnrolled() != newEnrolled;
+
+                    if (labelChanged || enrolledChanged)
                     {
-                        // Check if there's a conflict
-                        CohortImpl existingCohort = StudyManager.getInstance().getCohortByLabel(getContainer(), getUser(), newLabel);
-                        if (existingCohort != null && existingCohort.getRowId() != cohort.getRowId())
-                        {
-                            errors.reject("insertCohort", "A cohort with the label '" + newLabel + "' already exists");
-                            return false;
-                        }
                         cohort = cohort.createMutable();
-                        cohort.setLabel(newLabel);
+
+                        if (labelChanged)
+                        {
+                            // Check if there's a conflict
+                            CohortImpl existingCohort = StudyManager.getInstance().getCohortByLabel(getContainer(), getUser(), newLabel);
+                            if (existingCohort != null && existingCohort.getRowId() != cohort.getRowId())
+                            {
+                                errors.reject("insertCohort", "A cohort with the label '" + newLabel + "' already exists");
+                                return false;
+                            }
+                            cohort.setLabel(newLabel);
+                        }
+
+                        cohort.setEnrolled(newEnrolled);
+
                         StudyManager.getInstance().updateCohort(getUser(), cohort);
                     }
                 }

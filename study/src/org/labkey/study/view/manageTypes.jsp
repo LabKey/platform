@@ -167,7 +167,7 @@
 </form>
 <% WebPartView.endTitleFrame(out); %>
 
-<% WebPartView.startTitleFrame(out, "Datasets", null, null, null); %>
+<% WebPartView.startTitleFrame(out, "Datasets", null, null, "datasets"); %>
 <table>
     <tr>
         <th align="left">ID</th>

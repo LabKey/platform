@@ -49,7 +49,7 @@
         isBegin = false;
     }
 %>
-<table>
+<table id="lists">
     <%
         if (lists.isEmpty())
         {

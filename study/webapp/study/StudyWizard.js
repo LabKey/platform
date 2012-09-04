@@ -51,8 +51,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         if(this.mode == 'publish'){
             this.steps.push(this.getVisitsPanel());
-            this.steps.push(this.getViewsPanel());
             this.steps.push(this.getListsPanel());
+            this.steps.push(this.getViewsPanel());
+            this.steps.push(this.getReportsPanel());
             this.steps.push(this.getPublishOptionsPanel());
         }
 
@@ -96,8 +97,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         if(this.mode == 'publish'){
             steps.push(
                     {value: this.studyType == "VISIT" ? 'Visits' : 'Timepoints', currentStep: false},
-                    {value: 'Views and Reports', currentStep: false},
                     {value: 'Lists', currentStep: false},
+                    {value: 'Views', currentStep: false},
+                    {value: 'Reports', currentStep: false},
                     {value: 'Publish Options', currentStep: false}
             );
         }
@@ -683,12 +685,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
     getViewsPanel: function(){
         this.selectedViews = [];
-        
         var items = [];
-
-        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Views and Reports'}) +
+        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Views'}) +
                 Ext.DomHelper.markup({tag:'div', html:'&nbsp;'}) +
-                Ext.DomHelper.markup({tag:'div', html:'Choose the views and reports you would like to publish:'}) +
+                Ext.DomHelper.markup({tag:'div', html:'Choose the views you would like to publish:'}) +
                 Ext.DomHelper.markup({tag:'div', html:'&nbsp;'});
 
         items.push({xtype:'displayfield', html: txt});
@@ -698,6 +698,129 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             listeners: {
                 selectionChange: function(selModel){
                     this.selectedViews = selModel.getSelections();
+                },
+                scope: this
+            }
+        });
+
+        var viewsStore = new Ext.data.Store({
+            proxy: new Ext.data.HttpProxy({
+                url: LABKEY.ActionURL.buildURL('study', 'browseData.api')
+            }),
+            reader: new Ext.data.JsonReader({
+                root: 'data',
+                fields: [
+                    {name : 'id'},
+                    {name : 'name'},
+                    {name : 'category'},
+                    {name : 'createdBy'},
+                    {name : 'createdByUserId',      type : 'int'},
+                    {name : 'type'},
+                    {name : 'description'},
+                    {name : 'schemaName'},
+                    {name : 'queryName'},
+                    {name : 'shared'}
+                ]
+            }),
+            listeners: {
+                load: function(store){
+                    store.filterBy(function(record){
+                        return record.get('type') === 'Query' &&
+                                record.get('shared') == true;
+                    });
+                }
+            },
+            autoLoad: true
+        });
+
+        var grid = new Ext.grid.EditorGridPanel({
+            store: viewsStore,
+            selModel: selectionModel,
+            columns: [
+                selectionModel,
+                {header: 'Name', width: 270, sortable: true, dataIndex: 'name'},
+                {header: 'Category', width: 120, sortable: true, dataIndex:'category'},
+                {header: 'Description', width: 215, sortable: true, dataIndex: 'description'}
+            ],
+            loadMask:{msg:"Loading, please wait..."},
+            editable: false,
+            stripeRows: true,
+            pageSize: 300000,
+            cls: 'studyWizardViewList',
+            flex: 1,
+            bbar: [{hidden:true}],
+            tbar: [{hidden:true}]
+        });
+
+        items.push(grid);
+
+        grid.on('render', function(cmp){
+            //This is to hide the background color of the bbar/tbar.
+            cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
+            cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
+        });
+
+        var panel = new Ext.Panel({
+            border: false,
+            name: "Views",
+            layout: 'vbox',
+            layoutConfig: {
+                align: 'stretch',
+                pack: 'start'
+            },
+            items: items
+        });
+
+        panel.on('activate', function(){
+            // Filter out the views that will not be exported.
+            var listQueries = {},
+                studyQueries = {},
+                i;
+            
+            for(i = 0; i < this.selectedLists.length; i++){
+                listQueries[this.selectedLists[i].data.name] = this.selectedLists[i].data.name;
+            }
+
+            for(i = 0; i < this.info.datasets.length; i++){
+                studyQueries[this.info.datasets[i].data.Label] = this.info.datasets[i].data.Label;
+            }
+
+            viewsStore.filterBy(function(record){
+                var schemaName = record.get('schemaName'),
+                    queryName = record.get('queryName');
+
+                if(record.get('type') === 'Query' && record.get('shared')){
+                    if(schemaName == 'lists'){
+                        return listQueries[record.get('queryName')] != undefined;
+                    } else if(schemaName == 'study'){
+                        return studyQueries[record.get('queryName')] != undefined;
+                    }
+                }
+
+                return false;
+            }, this);
+        }, this);
+
+        return panel;
+    },
+
+    getReportsPanel: function(){
+        this.selectedReports = [];
+        
+        var items = [];
+
+        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Reports'}) +
+                Ext.DomHelper.markup({tag:'div', html:'&nbsp;'}) +
+                Ext.DomHelper.markup({tag:'div', html:'Choose the reports you would like to publish:'}) +
+                Ext.DomHelper.markup({tag:'div', html:'&nbsp;'});
+
+        items.push({xtype:'displayfield', html: txt});
+
+        var selectionModel = new Ext.grid.CheckboxSelectionModel({
+            moveEditorOnEnter: false,
+            listeners: {
+                selectionChange: function(selModel){
+                    this.selectedReports = selModel.getSelections();
                 },
                 scope: this
             }
@@ -717,13 +840,18 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                         {name : 'createdBy'},
                         {name : 'createdByUserId',      type : 'int'},
                         {name : 'type'},
-                        {name : 'description'}
+                        {name : 'description'},
+                        {name : 'schemaName'},
+                        {name : 'queryName'},
+                        {name : 'shared'}
                     ]
                 }),
                 listeners: {
                     load: function(store){
                         store.filterBy(function(record){
-                            return record.get('type') != 'Dataset';
+                            return record.get('type') != 'Dataset' &&
+                                    record.get('type') != 'Query' &&
+                                    record.get('shared') == true;
                         });
                     }
                 },
@@ -741,7 +869,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             editable: false,
             stripeRows: true,
             pageSize: 300000,
-            cls: 'studyWizardDatasetList',
+            cls: 'studyWizardReportList',
             flex: 1,
             bbar: [{hidden:true}],
             tbar: [{hidden:true}]
@@ -757,7 +885,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         return new Ext.Panel({
             border: false,
-            name: "Views and Reports",
+            name: "Reports",
             layout: 'vbox',
             layoutConfig: {
                 align: 'stretch',
@@ -789,7 +917,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             editable: false,
             stripeRows: true,
             pageSize: 300000,
-            cls: 'studyWizardDatasetList',
+            cls: 'studyWizardVisitList',
             flex: 1,
             bbar: [{hidden:true}],
             tbar: [{hidden:true}]
@@ -881,7 +1009,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             editable: false,
             stripeRows: true,
             pageSize: 300000,
-            cls: 'studyWizardDatasetList',
+            cls: 'studyWizardListList',
             flex: 1,
             bbar: [{hidden:true}],
             tbar: [{hidden:true}]
@@ -1048,7 +1176,14 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 var view = this.selectedViews[i];
                 id = Ext.id();
                 hiddenFields.push(id);
-                this.nameFormPanel.add({xtype: 'hidden', id: id, name: 'reportsAndViews', value: view.data.id});
+                this.nameFormPanel.add({xtype: 'hidden', id: id, name: 'views', value: view.data.id});
+            }
+
+            for(i = 0; i < this.selectedReports.length; i++){
+                var report = this.selectedReports[i];
+                id = Ext.id();
+                hiddenFields.push(id);
+                this.nameFormPanel.add({xtype: 'hidden', id: id, name: 'reports', value: report.data.id});
             }
 
             for(i = 0; i < this.selectedLists.length; i++){

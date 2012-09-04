@@ -31,8 +31,6 @@ import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.study.DataSet;
-import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -40,7 +38,6 @@ import org.labkey.api.view.ViewContext;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by IntelliJ IDEA.
@@ -85,6 +82,9 @@ public class QueryDataViewProvider implements DataViewProvider
             info.setModified(view.getModified());
             info.setShared(view.getOwner() == null);
             info.setAccess(view.isShared() ? "public" : "private");
+
+            info.setSchemaName(view.getSchemaName());
+            info.setQueryName(view.getQueryName());
 
             // run url and details url are the same for now
             ActionURL runUrl = getViewRunURL(context.getUser(), context.getContainer(), view);

@@ -1497,7 +1497,9 @@
       </ns:column>
       <ns:column columnName="container"/>
       <ns:column columnName="LSID"/>
-      <ns:column columnName="enrolled"/>
+      <ns:column columnName="enrolled">
+          <ns:description>Determines whether participants belonging to this cohort are considered enrolled in the study.</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenComment" tableDbType="TABLE">

@@ -52,7 +52,10 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.reports.ParticipantReport;
+import org.labkey.study.reports.ParticipantReportDescriptor;
 
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletResponse;
@@ -367,6 +370,58 @@ public class StudyUpgradeCode implements UpgradeCode
             ReportPropsManager.get().ensureProperty(container, user, "author", "Author", PropertyType.INTEGER);
 
             _propertyMap.put(container, true);
+        }
+    }
+
+    // invoked by study-12.24-12.25.sql
+    @SuppressWarnings({"UnusedDeclaration"})
+    @DeferredUpgrade
+    public void upgradeParticipantReport(final ModuleContext context)
+    {
+        if (!context.isNewInstall())
+        {
+            DbScope scope = StudySchema.getInstance().getSchema().getScope();
+            try {
+                scope.ensureTransaction();
+                for (Report report : ReportService.get().getReports(new SimpleFilter()))
+                {
+                    // for existing participant reports, upgrade the descriptor type to enable
+                    // alternate participant ID handling during export.
+                    if (report.getType() == ParticipantReport.TYPE)
+                    {
+                        ReportDescriptor descriptor = report.getDescriptor();
+
+                        if (!ParticipantReportDescriptor.TYPE.equals(descriptor.getDescriptorType()))
+                        {
+                            descriptor.setDescriptorType(ParticipantReportDescriptor.TYPE);
+                            final Container descriptorContainer = ContainerManager.getForId(descriptor.getContainerId());
+
+                            ContainerUser rptContext = new ContainerUser()
+                            {
+                                public User getUser()
+                                {
+                                    return context.getUpgradeUser();
+                                }
+
+                                public Container getContainer()
+                                {
+                                    return descriptorContainer;
+                                }
+                            };
+                            ReportService.get().saveReport(rptContext, descriptor.getReportKey(), report);
+                        }
+                    }
+                }
+                scope.commitTransaction();
+            }
+            catch (Exception e)
+            {
+                _log.error("An error occurred upgrading participant reports: ", e);
+            }
+            finally
+            {
+                scope.closeConnection();
+            }
         }
     }
 }

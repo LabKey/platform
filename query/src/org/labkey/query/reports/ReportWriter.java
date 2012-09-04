@@ -53,7 +53,7 @@ public class ReportWriter extends BaseFolderWriter
 
         if (ctx.getClass().equals(FolderExportContext.class))
         {
-            Set<String> reportsToExport = ((FolderExportContext)ctx).getReportAndViewIds();
+            Set<String> reportsToExport = ((FolderExportContext)ctx).getReportIds();
             if (reportsToExport != null)
             {
                 Iterator it = reports.iterator();

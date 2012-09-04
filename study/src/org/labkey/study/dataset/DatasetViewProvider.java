@@ -132,6 +132,9 @@ public class DatasetViewProvider implements DataViewProvider
 
                     view.setTags(ReportPropsManager.get().getProperties(ds.getEntityId(), container));
 
+                    view.setSchemaName("study");
+                    view.setQueryName(ds.getName());
+
                     datasets.add(view);
                 }
             }

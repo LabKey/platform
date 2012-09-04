@@ -224,6 +224,10 @@ public class DatasetWriter implements InternalStudyWriter
             {
                 filter.addInClause(FieldKey.fromParts("VisitRowId"), ctx.getVisitIds());
             }
+            if (!ctx.getParticipants().isEmpty())
+            {
+                filter.addInClause(FieldKey.fromParts(StudyService.get().getSubjectColumnName(ctx.getContainer())), ctx.getParticipants());
+            }
 
             Results rs = QueryService.get().select(ti, columns, filter, sort);
             writeResultsToTSV(rs, vf, def.getFileName());

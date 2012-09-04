@@ -153,6 +153,7 @@ li.ptid a.unhighlight
 
 
     var _initialRenderComplete = false;
+    var _isWide = <%= bean.getWide()%>;
     var _ptids = [<%
         final String[] commas = new String[]{"\n"};
         final HashMap<String,Integer> ptidMap = new HashMap<String,Integer>();
@@ -285,7 +286,7 @@ li.ptid a.unhighlight
             comma = ",\n";
         }
     %>];
-    <% int ptidsPerCol = Math.min(Math.max(20,groupMap.size()), Math.max(6, ptidMap .size()/6));%>
+    <% int ptidsPerCol = Math.min(Math.max(20,groupMap.size()), Math.max(6, ptidMap.size()/6));%>
     <% if (!bean.getWide()) {
         ptidsPerCol = ptidMap.size()/2;
     } %>
@@ -498,7 +499,8 @@ li.ptid a.unhighlight
             return;
         }
         // don't render the initial list if we have unenrolled cohorts; wait until we have a filterGroupMap
-        if (_hasUnenrolledCohorts && !_filterGroupMap)
+        // (unless this is the narrow participant list which doesn't have a filterGroupMap)
+        if (_isWide && _hasUnenrolledCohorts && !_filterGroupMap)
         {
             return;
         }
@@ -514,16 +516,20 @@ li.ptid a.unhighlight
             var p = _ptids[subjectIndex];
             if ((!_filterSubstringMap || test(_filterSubstringMap,subjectIndex)) && (!_filterGroupMap || _filterGroupMap[p.ptid]))
             {
-                if (++count > 1 && count % _ptidPerCol == 1)
-                    html.push('</ul></td><td valign="top"><ul class="subjectlist">');
-                html.push('<li class="ptid" index=' + subjectIndex + ' ptid="' + p.html + '" style="white-space:nowrap;"><a href="' + _urlTemplate + p.html + '">' + (LABKEY.demoMode?LABKEY.id(p.ptid):p.html) + '</a></li>\n');
+                // For the wide participant list, we have a _filterGroupMap we can use.  For the narrow participant list
+                // there is no group filter but we still only want to show enrolled participants so do the filter manually.
+                if (_isWide ||
+                    isParticipantEnrolled(subjectIndex))
+                {
+                    if (++count > 1 && count % _ptidPerCol == 1)
+                        html.push('</ul></td><td valign="top"><ul class="subjectlist">');
+                    html.push('<li class="ptid" index=' + subjectIndex + ' ptid="' + p.html + '" style="white-space:nowrap;"><a href="' + _urlTemplate + p.html + '">' + (LABKEY.demoMode?LABKEY.id(p.ptid):p.html) + '</a></li>\n');
+                }
 
-
-                if (showEnrolledText)
+                if (_isWide && showEnrolledText)
                 {
                     showEnrolledText = isParticipantEnrolled(subjectIndex);
                 }
-
             }
         }
 
@@ -537,7 +543,7 @@ li.ptid a.unhighlight
         var enrolledText = showEnrolledText ? " enrolled " : " ";
         if (count > 0)
         {
-            if (_filterSubstringMap || _filterGroupMap)
+            if (_filterSubstringMap || _filterGroupMap || _hasUnenrolledCohorts)
                 message = 'Found ' + count + enrolledText + (count > 1 ? _pluralNoun.toLowerCase() : _singularNoun.toLowerCase()) + ' of ' + _ptids.length + '.';
             else
                 message = 'Showing all ' + count + enrolledText + (count > 1 ? _pluralNoun.toLowerCase() : _singularNoun.toLowerCase()) + '.';

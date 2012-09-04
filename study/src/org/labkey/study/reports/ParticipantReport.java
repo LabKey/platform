@@ -16,6 +16,7 @@
 package org.labkey.study.reports;
 
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
@@ -178,7 +179,7 @@ public class ParticipantReport extends AbstractReport
             {
                 String type = group.getString("type");
                 String label = group.getString("label");
-                int id = group.getInt("id");
+                int id = NumberUtils.toInt(group.getString("id"), -1);
 
                 if (id == -1)
                 {

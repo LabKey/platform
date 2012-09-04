@@ -1397,10 +1397,15 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         var yMeasureName = this.yAxisMeasure.name;
         var xAcc = null;
         var yAcc = function(row){
-            var value = row[yMeasureName].value;
-            if(value === false || value === true){
-                value = value.toString();
+            var value = null;
+
+            if(row[yMeasureName]){
+                value = row[yMeasureName].value;
+                if(value === false || value === true){
+                    value = value.toString();
+                }
             }
+            
             return value;
         };
 

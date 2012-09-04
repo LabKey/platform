@@ -32,6 +32,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.FolderType;
@@ -96,6 +97,7 @@ import java.io.File;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -208,7 +210,10 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
         study.setStartDate(_sourceStudy.getStartDate());
         study.setSecurityType(securityType);
         Container sourceContainer = ContainerManager.getForPath(form.getSrcPath());
-        study.setSourceStudyContainerId(sourceContainer.getId());
+        if (!form.isPublish())
+        {
+            study.setSourceStudyContainerId(sourceContainer.getId());
+        }
         study.setSubjectNounSingular(_sourceStudy.getSubjectNounSingular());
         study.setSubjectNounPlural(_sourceStudy.getSubjectNounPlural());
         study.setSubjectColumnName(_sourceStudy.getSubjectColumnName());
@@ -330,17 +335,32 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
                     Set<String> dataTypes = getDataTypesToExport(_form);
                     Logger log = Logger.getLogger(FolderWriterImpl.class);
 
-                    FolderExportContext ctx = new FolderExportContext(user, _sourceStudy.getContainer(), dataTypes, "new", _form.isRemoveProtectedColumns(),
-                            _form.isShiftDates(), _form.isUseAlternateParticipantIds(), _form.getVisits(), _form.getLists(), _form.getReportsAndViews(), log);
+                    FolderExportContext ctx = new FolderExportContext(user, _sourceStudy.getContainer(), dataTypes, "new",
+                            _form.isRemoveProtectedColumns(), _form.isShiftDates(), _form.isUseAlternateParticipantIds(), log);
+
+                    if (_form.getVisits() != null)
+                        ctx.setVisitIds(_form.getVisits());
+
+                    if (_form.getLists() != null)
+                        ctx.setListIds(_form.getLists());
+
+                    if (_form.getViews() != null)
+                        ctx.setViewIds(_form.getViews());
+
+                    if (_form.getReports() != null)
+                        ctx.setReportIds(_form.getReports());
+
                     StudyExportContext studyCtx = new StudyExportContext(_sourceStudy, user, _sourceStudy.getContainer(),
                             false, dataTypes, _form.isRemoveProtectedColumns(),
                             new ParticipantMapper(_sourceStudy, _form.isShiftDates(), _form.isUseAlternateParticipantIds()),
                             _datasets, log
                     );
+
                     if (selectedVisits != null)
-                    {
                         studyCtx.setVisitIds(selectedVisits);
-                    }
+                    if (!_participantGroups.isEmpty())
+                        studyCtx.setParticipants(getGroupParticipants(_form, studyCtx));
+
                     ctx.addContext(StudyExportContext.class, studyCtx);
 
                     // export objects from the parent study, then import them into the new study
@@ -419,9 +439,13 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
             dataTypes.add(ParticipantGroupWriter.DATA_TYPE);
             // TODO: add report, views, and lists data types
 
-            if (form.getReportsAndViews() != null)
+            if (form.getReports() != null)
             {
                 dataTypes.add(REPORT_WRITER_TYPE);
+            }
+
+            if (form.getViews() != null)
+            {
                 dataTypes.add(CUSTOM_VIEWS_TYPE);
             }
 
@@ -581,6 +605,49 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
                 groupWriter.setGroupsToCopy(groupsToCopy);
                 groupWriter.write(_sourceStudy, ctx.getContext(StudyExportContext.class), studyDir);
             }
+        }
+
+        private List<String> getGroupParticipants(EmphasisStudyDefinition form, StudyExportContext ctx)
+        {
+            if (!_participantGroups.isEmpty())
+            {
+                StudySchema schema = StudySchema.getInstance();
+
+                StringBuilder groupInClause = new StringBuilder();
+                String delim = "";
+
+                groupInClause.append("(");
+                for (ParticipantGroup group : _participantGroups)
+                {
+                    groupInClause.append(delim);
+                    groupInClause.append(group.getRowId());
+
+                    delim = ",";
+                }
+                groupInClause.append(")");
+
+                SQLFragment sql = new SQLFragment();
+
+                sql.append(" SELECT DISTINCT(ParticipantId), ? FROM ").append(ParticipantGroupManager.getInstance().getTableInfoParticipantGroupMap(), "");
+                sql.append(" WHERE GroupId IN ").append(groupInClause).append(" AND Container = ?");
+
+                sql.add(_dstContainer.getId());
+                sql.add(_sourceStudy.getContainer().getId());
+                SqlSelector selector = new SqlSelector(schema.getSchema(), sql);
+
+                if (form.isUseAlternateParticipantIds())
+                {
+                    List<String> alternateIds = new ArrayList<String>();
+                    ParticipantMapper mapper = ctx.getParticipantMapper();
+                    for (String id : selector.getArray(String.class))
+                        alternateIds.add(mapper.getMappedParticipantId(id));
+
+                    return alternateIds;
+                }
+                else
+                    return (List<String>)selector.getCollection(String.class);
+            }
+            return Collections.emptyList();
         }
 
         /**

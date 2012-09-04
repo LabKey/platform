@@ -23,6 +23,7 @@ import org.labkey.study.model.ParticipantMapper;
 import org.labkey.study.model.StudyImpl;
 import org.apache.log4j.Logger;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,6 +43,7 @@ public class StudyExportContext extends AbstractContext
     private final boolean _removeProtected;
     private final ParticipantMapper _participantMapper;
     private Set<Integer> _visitIds = null;
+    private List<String> _participants = new ArrayList<String>();
 
     public StudyExportContext(StudyImpl study, User user, Container c, boolean oldFormats, Set<String> dataTypes, Logger logger)
     {
@@ -144,5 +146,15 @@ public class StudyExportContext extends AbstractContext
     public void setVisitIds(Set<Integer> visits)
     {
         _visitIds = visits;
+    }
+
+    public List<String> getParticipants()
+    {
+        return _participants;
+    }
+
+    public void setParticipants(List<String> participants)
+    {
+        _participants = participants;
     }
 }

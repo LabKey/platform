@@ -36,7 +36,8 @@ public class EmphasisStudyDefinition
     private boolean _useAlternateParticipantIds;
     private Integer[] _visits;
     private Integer[] _lists;
-    private String[] _reportsAndViews;
+    private String[] _views;
+    private String[] _reports;
     private int[] _datasets = new int[0];
     private int _updateDelay;
 
@@ -164,12 +165,20 @@ public class EmphasisStudyDefinition
         _lists = lists;
     }
 
-    public String[] getReportsAndViews(){
-        return _reportsAndViews;
+    public String[] getReports(){
+        return _reports;
     }
 
-    public void setReportsAndViews(String[] views){
-        _reportsAndViews = views;
+    public void setReports(String[] views){
+        _reports = views;
+    }
+
+    public String[] getViews(){
+        return _views;
+    }
+
+    public void setViews(String[] views){
+        _views = views;
     }
 
     public boolean isPublish()

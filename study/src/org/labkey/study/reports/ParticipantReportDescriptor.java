@@ -30,7 +30,7 @@ import java.util.Map;
  */
 public class ParticipantReportDescriptor extends ReportDescriptor
 {
-    static final String TYPE = "participantReportDescriptor";
+    public static final String TYPE = "participantReportDescriptor";
 
     public ParticipantReportDescriptor()
     {
