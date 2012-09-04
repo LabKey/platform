@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.Role;
@@ -202,7 +203,7 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
-    public void setWidth(String width)
+    public void setWidth(@Nullable String width)
     {
         _column.setWidth(width);
     }

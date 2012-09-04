@@ -35,7 +35,8 @@ public class FolderExportContext extends AbstractFolderContext
     private boolean _removeProtected = false;
     private boolean _shiftDates = false;
     private boolean _alternateIds = false;
-    private Set<String> _reportAndViewIds;
+    private Set<String> _viewIds;
+    private Set<String> _reportIds;
     private Set<Integer> _listIds;
     private Set<Integer> _visitIds;
 
@@ -52,31 +53,6 @@ public class FolderExportContext extends AbstractFolderContext
         _removeProtected = removeProtected;
         _shiftDates = shiftDates;
         _alternateIds = alternateIds;
-    }
-
-    public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, boolean removeProtected, boolean shiftDates, boolean alternateIds, Integer[] visits, Integer[] lists, String[] views, Logger logger)
-    {
-        super(user, c, getFolderDocument(), logger, null);
-        _dataTypes = dataTypes;
-        _format = format;
-        _removeProtected = removeProtected;
-        _shiftDates = shiftDates;
-        _alternateIds = alternateIds;
-
-        if (views != null)
-        {
-            _reportAndViewIds = new HashSet<String>(Arrays.asList(views));
-        }
-
-        if (visits != null)
-        {
-            _visitIds = new HashSet<Integer>(Arrays.asList(visits));
-        }
-        
-        if(lists != null)
-        {
-            _listIds = new HashSet<Integer>(Arrays.asList(lists));
-        }
     }
 
     public Set<String> getDataTypes()
@@ -116,13 +92,38 @@ public class FolderExportContext extends AbstractFolderContext
         return _visitIds;
     }
 
-    public Set<String> getReportAndViewIds()
+    public void setVisitIds(Integer[] visitIds)
     {
-        return _reportAndViewIds;
+        _visitIds = new HashSet<Integer>(Arrays.asList(visitIds));
+    }
+
+    public Set<String> getReportIds()
+    {
+        return _reportIds;
+    }
+
+    public void setReportIds(String[] reportIds)
+    {
+        _reportIds = new HashSet<String>(Arrays.asList(reportIds));
+    }
+
+    public Set<String> getViewIds()
+    {
+        return _viewIds;
+    }
+
+    public void setViewIds(String[] viewIds)
+    {
+        _viewIds = new HashSet<String>(Arrays.asList(viewIds));
     }
 
     public Set<Integer> getListIds()
     {
         return _listIds;
+    }
+
+    public void setListIds(Integer[] listIds)
+    {
+        _listIds = new HashSet<Integer>(Arrays.asList(listIds));
     }
 }

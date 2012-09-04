@@ -19,6 +19,7 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.collections.NullPreventingSet;
 import org.labkey.api.query.FieldKey;
@@ -187,7 +188,7 @@ public abstract class DisplayColumn extends RenderColumn
     }
 
     /** If width is null, no width will be requested in the HTML table */
-    public void setWidth(String width)
+    public void setWidth(@Nullable String width)
     {
         _width = width;
     }

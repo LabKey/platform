@@ -182,6 +182,11 @@ public class DataViewService
         if (info.getDescription() != null)
             o.put("description", info.getDescription());
 
+        if (info.getSchemaName() != null)
+            o.put("schemaName", info.getSchemaName());
+        if (info.getQueryName() != null)
+            o.put("queryName", info.getQueryName());
+
         if (info.getIcon() != null)
             o.put("icon", info.getIcon());
 

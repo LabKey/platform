@@ -60,6 +60,9 @@ public class DefaultViewInfo implements DataViewInfo
     private String _access;
     private boolean _allowCustomThumbnail = false;
 
+    private String _schemaName;
+    private String _queryName;
+
     private List<Pair<DomainProperty, Object>> _tags = Collections.emptyList();
 
     public DefaultViewInfo(DataViewProvider.Type dataType, String id, String name, Container container)
@@ -282,5 +285,25 @@ public class DefaultViewInfo implements DataViewInfo
     public void setAllowCustomThumbnail(boolean allowCustomThumbnail)
     {
         _allowCustomThumbnail = allowCustomThumbnail;
+    }
+
+    public String getSchemaName()
+    {
+        return _schemaName;
+    }
+
+    public void setSchemaName(String schemaName)
+    {
+        _schemaName = schemaName;
+    }
+
+    public String getQueryName()
+    {
+        return _queryName;
+    }
+
+    public void setQueryName(String queryName)
+    {
+        _queryName = queryName;
     }
 }

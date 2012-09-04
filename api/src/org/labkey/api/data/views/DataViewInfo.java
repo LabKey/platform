@@ -50,6 +50,9 @@ public interface DataViewInfo
     @Nullable
     ViewCategory getCategory();         // an optional view category
 
+    @Nullable String getSchemaName();
+    @Nullable String getQueryName();
+
     boolean isVisible();                // specifies whether this view is hidden
     boolean isShared();
     @Nullable
