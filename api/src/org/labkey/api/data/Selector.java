@@ -32,6 +32,8 @@ public interface Selector
 
     long getRowCount();
 
+    boolean exists();
+
     <K> K[] getArray(Class<K> clazz);
 
     <K> Collection<K> getCollection(Class<K> clazz);

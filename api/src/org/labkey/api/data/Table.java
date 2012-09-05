@@ -117,6 +117,154 @@ public class Table
         return offset >= 0;
     }
 
+    // ================== These methods are no longer used by core Labkey code ==================
+
+    @Deprecated // Use TableSelector
+    public static <K> K selectObject(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
+    {
+        return new LegacyTableSelector(table, select, filter, sort).getObject(clss);
+    }
+
+    @Deprecated // Use TableSelector
+    @NotNull
+    public static <K> K[] select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss, int rowCount, long offset)
+            throws SQLException
+    {
+        return new LegacyTableSelector(table, select, filter, sort).setRowCount(rowCount).setOffset(offset).getArray(clss);
+    }
+
+    // return a result from a one column resultset. K should be a string or number type
+    @Deprecated // Use TableSelector
+    public static <K> K[] executeArray(TableInfo table, ColumnInfo col, @Nullable Filter filter, @Nullable Sort sort, Class<K> c) throws SQLException
+    {
+        return new LegacyTableSelector(col, filter, sort).getArray(c);
+    }
+
+    // ================== These methods have been converted to Selector/Executor, but still have callers ==================
+
+    // 21 usages
+    @NotNull
+    @Deprecated // Use SqlSelector
+    public static <K> K[] executeQuery(DbSchema schema, SQLFragment sqlf, Class<K> clss) throws SQLException
+    {
+        return new LegacySqlSelector(schema, sqlf).getArray(clss);
+    }
+
+
+    // 42 usages
+    @NotNull
+    @Deprecated // Use SqlSelector
+    public static <K> K[] executeQuery(DbSchema schema, String sql, @Nullable Object[] parameters, Class<K> clss) throws SQLException
+    {
+        return new LegacySqlSelector(schema, fragment(sql, parameters)).getArray(clss);
+    }
+
+
+    // 92 usages
+    @Deprecated // Use SqlSelector
+    public static int execute(DbSchema schema, SQLFragment f) throws SQLException
+    {
+        return new LegacySqlExecutor(schema, f).execute();
+    }
+
+
+    // 333 usages
+    @Deprecated // Use SqlSelector
+    public static int execute(DbSchema schema, String sql, @NotNull Object... parameters) throws SQLException
+    {
+        return new LegacySqlExecutor(schema, new SQLFragment(sql, parameters)).execute();
+    }
+
+
+    // 82 usages
+    /** return a result from a one row one column resultset. does not distinguish between not found, and NULL value */
+    @Deprecated // Use SqlSelector
+    public static <K> K executeSingleton(DbSchema schema, String sql, @Nullable Object[] parameters, Class<K> c) throws SQLException
+    {
+        return new LegacySqlSelector(schema, fragment(sql, parameters)).getObject(c);
+    }
+
+
+    // 8 usages
+    // return a result from a one column resultset. K should be a string or number type
+    @Deprecated // Use TableSelector
+    public static <K> K[] executeArray(TableInfo table, String column, @Nullable Filter filter, @Nullable Sort sort, Class<K> c) throws SQLException
+    {
+        return new LegacyTableSelector(table.getColumn(column), filter, sort).getArray(c);
+    }
+
+    // 11 usages
+    // return a result from a one column resultset. K should be a string or number type
+    @Deprecated // Use SqlSelector
+    public static <K> K[] executeArray(DbSchema schema, SQLFragment sql, Class<K> c) throws SQLException
+    {
+        return new LegacySqlSelector(schema, sql).getArray(c);
+    }
+
+    // 19 usages
+    // return a result from a one column resultset. K should be a string or number type
+    @Deprecated // Use SqlSelector
+    public static <K> K[] executeArray(DbSchema schema, String sql, Object[] parameters, Class<K> c) throws SQLException
+    {
+        return new LegacySqlSelector(schema, fragment(sql, parameters)).getArray(c);
+    }
+
+
+    // 3 usages
+    /**
+     * This is a shortcut method that can be used for two-column ResultSets
+     * The first column is key, the second column is the value
+     */
+    @Deprecated // Use SqlSelector
+    public static Map executeValueMap(DbSchema schema, String sql, Object[] parameters, @Nullable Map<Object, Object> m)
+            throws SQLException
+    {
+        if (null == m)
+            return new LegacySqlSelector(schema, fragment(sql, parameters)).getValueMap();
+        else
+            return new LegacySqlSelector(schema, fragment(sql, parameters)).fillValueMap(m);
+    }
+
+
+    // 6 usages
+    @Deprecated // Use TableSelector
+    public static Map<String, Object>[] selectMaps(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
+    {
+        LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort);
+
+        //noinspection unchecked
+        return selector.getArray(Map.class);
+    }
+
+
+    // 15 usages
+    @Deprecated // Use TableSelector
+    public static <K> K selectObject(TableInfo table, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
+    {
+        return new LegacyTableSelector(table, filter, sort).getObject(clss);
+    }
+
+
+    // 98 usages
+    @NotNull
+    @Deprecated // Use TableSelector
+    public static <K> K[] select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
+    {
+        return new LegacyTableSelector(table, select, filter, sort).getArray(clss);
+    }
+
+
+    // 10 usages
+    @NotNull
+    @Deprecated // Use TableSelector
+    public static <K> K[] select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
+    {
+        return new LegacyTableSelector(table, columns, filter, sort).getArray(clss);
+    }
+
+
+    // ================== These methods have not been converted to Selector/Executor ==================
+
     // Careful: caller must track and clean up parameters (e.g., close InputStreams) after execution is complete
     public static PreparedStatement prepareStatement(Connection conn, String sql, Object[] parameters) throws SQLException
     {
@@ -424,32 +572,6 @@ public class Table
     }
 
 
-    @NotNull
-    public static <K> K[] executeQuery(DbSchema schema, SQLFragment sqlf, Class<K> clss) throws SQLException
-    {
-        return new LegacySqlSelector(schema, sqlf).getArray(clss);
-    }
-
-
-    @NotNull
-    public static <K> K[] executeQuery(DbSchema schema, String sql, @Nullable Object[] parameters, Class<K> clss) throws SQLException
-    {
-        return new LegacySqlSelector(schema, fragment(sql, parameters)).getArray(clss);
-    }
-
-
-    public static int execute(DbSchema schema, SQLFragment f) throws SQLException
-    {
-        return new LegacySqlExecutor(schema, f).execute();
-    }
-
-
-    public static int execute(DbSchema schema, String sql, @NotNull Object... parameters) throws SQLException
-    {
-        return new LegacySqlExecutor(schema, new SQLFragment(sql, parameters)).execute();
-    }
-
-
     // Careful: Caller must track and clean up parameters (e.g., close InputStreams) after execution is complete
     public static void batchExecute(DbSchema schema, String sql, Iterable<? extends Collection<?>> paramList)
             throws SQLException
@@ -490,13 +612,6 @@ public class Table
         {
             doFinally(null, stmt, conn, schema.getScope());
         }
-    }
-
-
-    /** return a result from a one row one column resultset. does not distinguish between not found, and NULL value */
-    public static <K> K executeSingleton(DbSchema schema, String sql, @Nullable Object[] parameters, Class<K> c) throws SQLException
-    {
-        return new LegacySqlSelector(schema, fragment(sql, parameters)).getObject(c);
     }
 
 
@@ -599,49 +714,10 @@ public class Table
     }
 
 
-    // return a result from a one column resultset. K should be a string or number type
-    public static <K> K[] executeArray(TableInfo table, String column, @Nullable Filter filter, @Nullable Sort sort, Class<K> c) throws SQLException
-    {
-        return new LegacyTableSelector(table.getColumn(column), filter, sort).getArray(c);
-    }
-
-    // return a result from a one column resultset. K should be a string or number type
-    public static <K> K[] executeArray(TableInfo table, ColumnInfo col, @Nullable Filter filter, @Nullable Sort sort, Class<K> c) throws SQLException
-    {
-        return new LegacyTableSelector(col, filter, sort).getArray(c);
-    }
-    
-    // return a result from a one column resultset. K should be a string or number type
-    public static <K> K[] executeArray(DbSchema schema, SQLFragment sql, Class<K> c) throws SQLException
-    {
-        return new LegacySqlSelector(schema, sql).getArray(c);
-    }
-
     // TODO: Matt: Table layer allows parameters == null, but SQLFragment doesn't... change SQLFragment?  Or change Table callers?
     private static SQLFragment fragment(String sql, @Nullable Object[] parameters)
     {
         return new SQLFragment(sql, null == parameters ? new Object[0] : parameters);
-    }
-
-
-    // return a result from a one column resultset. K should be a string or number type
-    public static <K> K[] executeArray(DbSchema schema, String sql, Object[] parameters, Class<K> c) throws SQLException
-    {
-        return new LegacySqlSelector(schema, fragment(sql, parameters)).getArray(c);
-    }
-
-
-    /**
-     * This is a shortcut method that can be used for two-column ResultSets
-     * The first column is key, the second column is the value
-     */
-    public static Map executeValueMap(DbSchema schema, String sql, Object[] parameters, @Nullable Map<Object, Object> m)
-            throws SQLException
-    {
-        if (null == m)
-            return new LegacySqlSelector(schema, fragment(sql, parameters)).getValueMap();
-        else
-            return new LegacySqlSelector(schema, fragment(sql, parameters)).fillValueMap(m);
     }
 
 
@@ -1135,28 +1211,6 @@ public class Table
     }
 
 
-    public static Map<String, Object>[] selectMaps(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
-    {
-        LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort);
-
-        //noinspection unchecked
-        return selector.getArray(Map.class);
-    }
-
-
-    public static <K> K selectObject(TableInfo table, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
-    {
-        return new LegacyTableSelector(table, filter, sort).getObject(clss);
-    }
-
-
-    @Deprecated
-    public static <K> K selectObject(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
-    {
-        return new LegacyTableSelector(table, select, filter, sort).getObject(clss);
-    }
-
-
     public static SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
     {
         return QueryService.get().getSelectSQL(table, columns, filter, sort, ALL_ROWS, NO_OFFSET, false);
@@ -1172,29 +1226,6 @@ public class Table
     public static Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
     {
         return QueryService.get().select(table, columns, filter, sort);
-    }
-
-
-    @NotNull
-    public static <K> K[] select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
-    {
-        return new LegacyTableSelector(table, select, filter, sort).getArray(clss);
-    }
-
-
-    @NotNull
-    public static <K> K[] select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
-    {
-        return new LegacyTableSelector(table, columns, filter, sort).getArray(clss);
-    }
-
-
-    @Deprecated // Use TableSelector
-    @NotNull
-    public static <K> K[] select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss, int rowCount, long offset)
-            throws SQLException
-    {
-        return new LegacyTableSelector(table, select, filter, sort).setRowCount(rowCount).setOffset(offset).getArray(clss);
     }
 
 

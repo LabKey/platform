@@ -102,6 +102,8 @@ public class TableSelectorTestCase extends Assert
 
     private <K> void testSelectorMethods(TableSelector selector, Class<K> clazz)
     {
+        assertTrue(selector.exists());
+
         K[] array = selector.getArray(clazz);
         Collection<K> collection = selector.getCollection(clazz);
 

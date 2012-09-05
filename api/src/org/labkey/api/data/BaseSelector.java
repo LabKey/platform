@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.labkey.api.collections.ArrayListMap;
+import org.labkey.api.data.dialect.SqlDialect;
 
 import java.lang.reflect.Array;
 import java.sql.ResultSet;
@@ -83,10 +84,7 @@ public abstract class BaseSelector<FACTORY extends SqlFactory> extends JdbcComma
                     }
                     else
                     {
-                        ObjectFactory<K> factory = ObjectFactory.Registry.getFactory(clazz);
-
-                        if (null == factory)
-                            throw new IllegalArgumentException("Cound not find object factory for " + clazz.getSimpleName() + ".");
+                        ObjectFactory<K> factory = getObjectFactory(clazz);
 
                         return factory.handleArrayList(rs);
                     }
@@ -95,6 +93,16 @@ public abstract class BaseSelector<FACTORY extends SqlFactory> extends JdbcComma
         }
 
         return list;
+    }
+
+    private <K> ObjectFactory<K> getObjectFactory(Class<K> clazz)
+    {
+        ObjectFactory<K> factory = ObjectFactory.Registry.getFactory(clazz);
+
+        if (null == factory)
+            throw new IllegalArgumentException("Cound not find object factory for " + clazz.getSimpleName() + ".");
+
+        return factory;
     }
 
     @Override
@@ -114,6 +122,27 @@ public abstract class BaseSelector<FACTORY extends SqlFactory> extends JdbcComma
             {
                 rs.next();
                 return rs.getLong(1);
+            }
+        });
+    }
+
+    @Override
+    public boolean exists()
+    {
+        return exists(getSqlFactory());
+    }
+
+    protected boolean exists(FACTORY factory)
+    {
+        SqlFactory existsFactory = new ExistsSqlFactory(factory);
+
+        return existsFactory.handleResultSet(new ResultSetHandler<Boolean>()
+        {
+            @Override
+            public Boolean handle(ResultSet rs) throws SQLException
+            {
+                rs.next();
+                return rs.getBoolean(1);
             }
         });
     }
@@ -195,17 +224,34 @@ public abstract class BaseSelector<FACTORY extends SqlFactory> extends JdbcComma
     @Override
     public <K> void forEach(final ForEachBlock<K> block, Class<K> clazz)
     {
-        final ObjectFactory<K> factory = ObjectFactory.Registry.getFactory(clazz);
+        final Table.Getter getter = Table.Getter.forClass(clazz);
 
-        ForEachBlock<Map<String, Object>> mapBlock = new ForEachBlock<Map<String, Object>>() {
-            @Override
-            public void exec(Map<String, Object> map) throws SQLException
-            {
-                block.exec(factory.fromMap(map));
-            }
-        };
+        // This is a simple object (Number, String, Date, etc.)
+        if (null != getter)
+        {
+            forEach(new ForEachBlock<ResultSet>() {
+                @Override
+                public void exec(ResultSet rs) throws SQLException
+                {
+                    //noinspection unchecked
+                    block.exec((K)getter.getObject(rs));
+                }
+            });
+        }
+        else
+        {
+            final ObjectFactory<K> factory = getObjectFactory(clazz);
 
-        forEachMap(mapBlock);
+            ForEachBlock<Map<String, Object>> mapBlock = new ForEachBlock<Map<String, Object>>() {
+                @Override
+                public void exec(Map<String, Object> map) throws SQLException
+                {
+                    block.exec(factory.fromMap(map));
+                }
+            };
+
+            forEachMap(mapBlock);
+        }
     }
 
     @Override
@@ -235,7 +281,7 @@ public abstract class BaseSelector<FACTORY extends SqlFactory> extends JdbcComma
     }
 
 
-    // Wraps another SqlFactory, wrapping the SQL it produces with a SELECT COUNT(*) query.
+    // Wraps the underlying factory's SQL with a SELECT COUNT(*) query
     private class RowCountSqlFactory extends BaseSqlFactory
     {
         private final SqlFactory _factory;
@@ -249,9 +295,40 @@ public abstract class BaseSelector<FACTORY extends SqlFactory> extends JdbcComma
         @Override
         public SQLFragment getSql()
         {
-            SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM (");
+            SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM\n(\n");
             sql.append(_factory.getSql());
-            sql.append(") x");
+            sql.append("\n) x");
+
+            return sql;
+        }
+    }
+
+
+    // Wraps the underlying factory's SQL with an EXISTS query that returns true or false
+    private class ExistsSqlFactory extends BaseSqlFactory
+    {
+        private final SqlFactory _factory;
+
+        private ExistsSqlFactory(SqlFactory factory)
+        {
+            super(BaseSelector.this);
+            _factory = factory;
+        }
+
+        @Override
+        public SQLFragment getSql()
+        {
+            SqlDialect dialect = getScope().getSqlDialect();
+
+            // This EXISTS syntax works on PostgreSQL and SQL Server
+            SQLFragment sql = new SQLFragment("SELECT CASE WHEN EXISTS\n(\n");
+            sql.append(_factory.getSql());
+            sql.append("\n)\n");
+            sql.append("THEN ");
+            sql.append(dialect.getBooleanTRUE());
+            sql.append(" ELSE ");
+            sql.append(dialect.getBooleanFALSE());
+            sql.append(" END");
 
             return sql;
         }

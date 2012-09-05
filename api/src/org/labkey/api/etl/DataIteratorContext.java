@@ -3,7 +3,6 @@ package org.labkey.api.etl;
 import org.labkey.api.query.BatchValidationException;
 
 /**
- * Created with IntelliJ IDEA.
  * User: matthewb
  * Date: 2012-08-27
  * Time: 5:58 PM
