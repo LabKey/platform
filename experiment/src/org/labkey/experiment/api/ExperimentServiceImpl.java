@@ -2387,7 +2387,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     {
         SimpleFilter filter = new SimpleFilter(pkName, rowId);
         filter.addCondition("OntologyEntryURI", param.getOntologyEntryURI());
-        Map<String, Object> existingValue = Table.selectObject(tiValueTable, filter, null, Map.class);
+        Map<String, Object> existingValue = new TableSelector(tiValueTable, filter, null).getObject(Map.class);
+
         if (existingValue == null)
         {
             Table.insert(user, tiValueTable, param);

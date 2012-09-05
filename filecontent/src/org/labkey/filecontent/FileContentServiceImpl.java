@@ -21,7 +21,14 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentParent;
-import org.labkey.api.data.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
@@ -380,26 +387,16 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
     {
         SimpleFilter filter = new SimpleFilter("Container", c);
         filter.addCondition("Name", name);
-        try
-        {
-            return Table.selectObject(CoreSchema.getInstance().getMappedDirectories(), filter, null, FileSystemAttachmentParent.class);
-        } catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+
+        return new TableSelector(CoreSchema.getInstance().getMappedDirectories(), filter, null).getObject(FileSystemAttachmentParent.class);
     }
 
     public FileSystemAttachmentParent getRegisteredDirectoryFromEntityId(Container c, String entityId)
     {
         SimpleFilter filter = new SimpleFilter("Container", c);
         filter.addCondition("EntityId", entityId);
-        try
-        {
-            return Table.selectObject(CoreSchema.getInstance().getMappedDirectories(), filter, null, FileSystemAttachmentParent.class);
-        } catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+
+        return new TableSelector(CoreSchema.getInstance().getMappedDirectories(), filter, null).getObject(FileSystemAttachmentParent.class);
     }
 
     public FileSystemAttachmentParent[] getRegisteredDirectories(Container c)
@@ -408,7 +405,8 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         try
         {
             return Table.select(CoreSchema.getInstance().getMappedDirectories(), Table.ALL_COLUMNS, filter, null, FileSystemAttachmentParent.class);
-        } catch (SQLException e)
+        }
+        catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
         }

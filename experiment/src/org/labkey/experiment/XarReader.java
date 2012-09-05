@@ -800,7 +800,7 @@ public class XarReader extends AbstractXarImporter
             }
             SimpleFilter filter = new SimpleFilter("MaterialId", inputRow.getRowId());
             filter = filter.addCondition("TargetApplicationId", protAppId);
-            if (Table.selectObject(tiMaterialInput, filter, null, MaterialInput.class) == null)
+            if (new TableSelector(tiMaterialInput, filter, null).getObject(MaterialInput.class) == null)
             {
                 MaterialInput mi = new MaterialInput();
                 mi.setMaterialId(inputRow.getRowId());
@@ -825,7 +825,7 @@ public class XarReader extends AbstractXarImporter
 
             SimpleFilter filter = new SimpleFilter("DataId", data.getRowId());
             filter = filter.addCondition("TargetApplicationId", protAppId);
-            if (Table.selectObject(tiDataInput, filter, null, DataInput.class) == null)
+            if (new TableSelector(tiDataInput, filter, null).getObject(DataInput.class) == null)
             {
                 DataInput input = new DataInput();
                 input.setDataId(data.getRowId());

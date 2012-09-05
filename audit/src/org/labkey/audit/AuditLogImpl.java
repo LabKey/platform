@@ -349,18 +349,13 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
 
     public AuditLogEvent getEvent(int rowId)
     {
-        try {
-            /**
-             * need to check for the physical table to be in existence because the audit log service needs
-             * to be registered in the constructor of the audit module.
-             */
-            if (LogManager.get().getTinfoAuditLog().getTableType() != DatabaseTableType.NOT_IN_DB)
-                return LogManager.get().getEvent(rowId);
-        }
-        catch (SQLException e)
-        {
-            _log.error("Failed to insert audit log event", e);
-        }
+        /**
+         * need to check for the physical table to be in existence because the audit log service needs
+         * to be registered in the constructor of the audit module.
+         */
+        if (LogManager.get().getTinfoAuditLog().getTableType() != DatabaseTableType.NOT_IN_DB)
+            return LogManager.get().getEvent(rowId);
+
         return null;
     }
 

@@ -34,6 +34,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
@@ -90,16 +91,10 @@ public class ListManager implements SearchService.DocumentProvider
 
     public ListDef getList(Container container, int id)
     {
-        try
-        {
-            SimpleFilter filter = new PkFilter(getTinfoList(), id);
-            filter.addCondition("Container", container);
-            return Table.selectObject(getTinfoList(), filter, null, ListDef.class);
-        }
-        catch (SQLException x)
-        {
-            throw new RuntimeSQLException(x);
-        }
+        SimpleFilter filter = new PkFilter(getTinfoList(), id);
+        filter.addCondition("Container", container);
+
+        return new TableSelector(getTinfoList(), filter, null).getObject(ListDef.class);
     }
 
     

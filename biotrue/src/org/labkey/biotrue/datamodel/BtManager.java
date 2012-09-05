@@ -114,7 +114,7 @@ public class BtManager
             filter.addCondition("ParentId", parent.getRowId());
         }
         filter.addCondition("BioTrue_Id", bioTrueId);
-        return Table.selectObject(getTinfoEntity(), filter, null, Entity.class);
+        return new TableSelector(getTinfoEntity(), filter, null).getObject(Entity.class);
     }
 
     public Entity ensureEntity(Server server, Entity parent, String bioTrueId, String ent, String name) throws SQLException

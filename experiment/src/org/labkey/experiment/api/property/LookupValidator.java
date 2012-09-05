@@ -22,6 +22,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.DefaultPropertyValidator;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -37,6 +38,7 @@ import org.labkey.api.security.User;
 
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
@@ -158,15 +160,8 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
                         }
                         else
                         {
-                            try
-                            {
-                                Object[] keys = Table.executeArray(_tableInfo, keyCols.get(0), null, null, keyCols.get(0).getJavaObjectClass());
-                                addAll(Arrays.asList(keys));
-                            }
-                            catch (SQLException e)
-                            {
-                                throw new RuntimeSQLException(e);
-                            }
+                            Collection<Object> keys = new TableSelector(keyCols.get(0)).getCollection(keyCols.get(0).getJavaObjectClass());
+                            addAll(keys);
                         }
                     }
                 }

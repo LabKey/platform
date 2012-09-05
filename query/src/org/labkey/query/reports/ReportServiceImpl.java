@@ -793,7 +793,7 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
     private boolean reportExists(int reportId) throws SQLException
     {
         SimpleFilter filter = new SimpleFilter("RowId", reportId);
-        ReportDB report = Table.selectObject(getTable(), filter, null, ReportDB.class);
+        ReportDB report = new TableSelector(getTable(), filter, null).getObject(ReportDB.class);
 
         return (report != null);
     }

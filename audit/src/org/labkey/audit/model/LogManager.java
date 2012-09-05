@@ -57,10 +57,10 @@ public class LogManager
         return Table.insert(user, getTinfoAuditLog(), event);
     }
 
-    public AuditLogEvent getEvent(int rowId) throws SQLException
+    public AuditLogEvent getEvent(int rowId)
     {
         SimpleFilter filter = new SimpleFilter("RowId", rowId);
-        return Table.selectObject(getTinfoAuditLog(), filter, null, AuditLogEvent.class);
+        return new TableSelector(getTinfoAuditLog(), filter, null).getObject(AuditLogEvent.class);
     }
 
     public AuditLogEvent[] getEvents(Filter filter, Sort sort) throws SQLException

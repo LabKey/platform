@@ -2547,7 +2547,8 @@ public class SampleManager
     {
         SimpleFilter filter = new SimpleFilter("Container", container.getId());
         filter.addCondition("GlobalUniqueId", globalUniqueId);
-        return Table.selectObject(StudySchema.getInstance().getTableInfoSpecimenComment(), filter, null, SpecimenComment.class);
+
+        return new TableSelector(StudySchema.getInstance().getTableInfoSpecimenComment(), filter, null).getObject(SpecimenComment.class);
     }
 
     public SpecimenComment getSpecimenCommentForVial(Specimen vial) throws SQLException

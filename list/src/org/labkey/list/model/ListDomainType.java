@@ -19,10 +19,10 @@ package org.labkey.list.model;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Table;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -133,16 +133,14 @@ public class ListDomainType extends AbstractDomainKind
         if (pd.getPropertyType() != PropertyType.ATTACHMENT)
             return;
 
-        ListDefinition list = ListService.get().getList(domain);
-        Container c = list.getContainer();
+        final ListDefinition list = ListService.get().getList(domain);
+        final Container c = list.getContainer();
         TableInfo tinfo = list.getTable(user);
-        DomainProperty prop = domain.getPropertyByName(pd.getName());
+        final DomainProperty prop = domain.getPropertyByName(pd.getName());
 
-        try
-        {
-            Object[] keys = Table.executeArray(tinfo, tinfo.getColumn(list.getKeyName()), null, null, Object.class);
-
-            for (Object key : keys)
+        new TableSelector(tinfo.getColumn(list.getKeyName())).forEach(new Selector.ForEachBlock<Object>() {
+            @Override
+            public void exec(Object key) throws SQLException
             {
                 ListItem item = list.getListItem(key);
                 Object file = item.getProperty(prop);
@@ -154,11 +152,7 @@ public class ListDomainType extends AbstractDomainKind
                     AttachmentService.get().deleteAttachment(parent, file.toString(), null);
                 }
             }
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        }, Object.class);
     }
 
     public Set<String> getReservedPropertyNames(Domain domain)
