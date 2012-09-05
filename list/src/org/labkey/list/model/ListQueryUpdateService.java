@@ -88,7 +88,7 @@ public class ListQueryUpdateService extends AbstractQueryUpdateService
             throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
         List<Map<String, Object>> result = super._insertRowsUsingETL(user, container, rows, getDataIteratorContext(errors, false), extraScriptContext);
-        if (result.size() > 0 && !errors.hasErrors())
+        if (null != result && result.size() > 0 && !errors.hasErrors())
             ListManager.get().indexList(_list);
         return result;
     }
