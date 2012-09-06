@@ -408,7 +408,8 @@ LABKEY.ExtAdapter.extend(LABKEY.Exp.Run, LABKEY.Exp.ExpObject);
  * @param {Number} [config.batchId] The id of an existing {Exp.RunGroup} to add this run into.
  * @param {Object} [config.batchProperties] JSON formatted batch properties.
  * Only used if batchId is not provided when creating a new batch.
- * @param {Array} config.files Array of <a href='https://developer.mozilla.org/en-US/docs/DOM/File'><code>File</code></a> objects to import.
+ * @param {Array} config.files Array of <a href='https://developer.mozilla.org/en-US/docs/DOM/File'><code>File</code></a> objects
+ * or form file input elements to import.
  * @param {Function} config.success The success callback function will be called with the following arguments:
  * <ul>
  *     <li><b>json</b>: The success response object contains two properties:
@@ -445,8 +446,7 @@ LABKEY.ExtAdapter.extend(LABKEY.Exp.Run, LABKEY.Exp.ExpObject);
  *             batchProperties: {
  *                 "Batch Field": "value"
  *             },
- *             // NOTE: The File API is not yet supported on all browsers.
- *             files: document.getElementById('myfiles').files,
+ *             files: [ document.getElementById('myfiles') ],
  *             success: function (json, response) {
  *                 window.location = json.successurl;
  *             },
@@ -470,14 +470,20 @@ LABKEY.Exp.Run.importRun = function (config)
     {
         var files = [];
         if (config.files) {
-            for (var i = 0; i < config.file.length; i++) {
-                if (config.file[i] instanceof window.File) {
-                    files.push(config.files[i]);
+            for (var i = 0; i < config.files.length; i++) {
+                var f = config.files[i];
+                if (f instanceof window.File) {
+                    files.push(f);
+                }
+                else if (f.tagName == "INPUT") {
+                    for (var j = 0; j < f.files.length; j++) {
+                        files.push(f.files[j]);
+                    }
                 }
             }
         }
 
-        if (files.length = 0)
+        if (files.length == 0)
             throw new Error("At least one file is required");
 
         var formData = new window.FormData();
@@ -497,7 +503,6 @@ LABKEY.Exp.Run.importRun = function (config)
                 formData.append("batchProperties['" + key + "']", config.batchProperties[key]);
         }
 
-        // NOTE: Commons multipart file uploader doesn't support using the same input name so we must append file index
         formData.append("file", files[0]);
         for (var i = 1; i < files.length; i++) {
             formData.append("file" + i, files[i]);
@@ -534,7 +539,18 @@ LABKEY.Exp.Run.importRun = function (config)
     }
     else
     {
-        throw new Error("Browser does not support FormData API");
+        var fileInputs = [];
+        if (config.files) {
+            for (var i = 0; i < config.files.length; i++) {
+                var f = config.files[i];
+                if (f.tagName == "INPUT") {
+                    fileInputs.push(f);
+                }
+            }
+        }
+
+        if (fileInputs.length == 0)
+            throw new Error("At least one file input is required");
 
         var values = {
             assayId: config.assayId,
@@ -543,7 +559,7 @@ LABKEY.Exp.Run.importRun = function (config)
         };
 
         if (config.batchId)
-            values.batchId = config.batchId;
+            values["batchId"] = config.batchId;
 
         if (config.properties) {
             for (var key in config.properties)
@@ -555,27 +571,47 @@ LABKEY.Exp.Run.importRun = function (config)
                 values["batchProperties['" + key + "']"] = config.batchProperties[key];
         }
 
-        /*
-         values.file = files[0];
-         for (var i = 1; i < files.length; i++) {
-         values["file" + i] = files[i];
-         }
-         */
-        values["file"] = config.fileInput;
+        // Create a dummy form to hang the file inputs off of.
+        // Ext.Ajax.request() will use this form in a hidden iframe to submit the file inputs.
+        var form = document.createElement("form");
 
-        var basicForm = new Ext.form.BasicForm({
+        // The browser won't allow us to copy file input elements onto the dummy form.
+        // As a workaround, we move the file input to the dummy form and move it back once the submit is complete.
+        // We clone the original file input and insert it into the original form only for cosmetic purposes (which may not work well with Ext forms).
+        var clones = [];
+        for (var i = 0; i < fileInputs.length; i++) {
+            var name = "file";
+            if (i > 0)
+                name = name + i;
+
+            var input = fileInputs[i];
+            var clone = input.cloneNode();
+            input.parentElement.insertBefore(clone, input);
+            clones.push(clone);
+
+            input.originalName = input.name;
+            input.name = name;
+            form.appendChild(input);
+        }
+
+        LABKEY.Ajax.request({
             url: LABKEY.ActionURL.buildURL("assay", "importRun"),
-            fileUpload: true,
-            method: "POST"
-            //params: params
-        });
-        basicForm.setValues(values);
-        basicForm.submit({
-            succcess: function (form, action) {
-                console.log("success");
-            },
-            failure: function (form, action) {
-                console.log("failure");
+            isUpload: true,
+            method: 'POST',
+            params: values,
+            form: form,
+            success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope, false),
+            failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
+            callback: function (options, success, response) {
+                // restore file input in original location
+                for (var i = 0; i < fileInputs.length; i++) {
+                    var input = fileInputs[i];
+                    input.name = input.originalName;
+
+                    var clone = clones[i];
+                    clone.parentElement.insertBefore(input, clone);
+                    clone.parentElement.removeChild(clone);
+                }
             }
         });
     }
