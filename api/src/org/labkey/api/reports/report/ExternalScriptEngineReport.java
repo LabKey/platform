@@ -18,11 +18,13 @@ package org.labkey.api.reports.report;
 import org.apache.commons.lang3.BooleanUtils;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngine;
+import org.labkey.api.reports.RConnectionHolder;
 import org.labkey.api.reports.RserveScriptEngine;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
@@ -220,6 +222,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
     public String runScript(ViewContext context, List<ParamReplacement> outputSubst, File inputDataTsv) throws ScriptException
     {
         ScriptEngine engine = getScriptEngine();
+        RConnectionHolder rh = null;
 
         if (engine != null)
         {
@@ -240,43 +243,47 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
 
                     PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(context.getContainer());
                     bindings.put(RserveScriptEngine.PIPELINE_ROOT, pipelineRoot.getRootPath());
-                    /*
-
-                    todo: code in progress for session sharing
 
                     //
-                    // pass along the connection id for reuse
+                    // See if a valid report session id was passed in
+                    // An empty session id is allowed; we just
+                    // don't do any session sharing in this case
                     //
-                    RConnectionHolder rh = (RConnectionHolder) context.getSession().getAttribute(RserveScriptEngine.R_CONNECTION_ID);
-                    if (rh != null)
+                    String reportSessionId = (String) context.get(renderParam.reportSessionId.name());
+
+                    if (!StringUtils.isEmpty(reportSessionId))
                     {
-                        bindings.put(RserveScriptEngine.R_CONNECTION_ID, rh.getConnectionId());
-                    }
+                        rh = (RConnectionHolder) context.getSession().getAttribute(reportSessionId);
 
-                    */
+                        if (rh != null)
+                        {
+                            synchronized (rh)
+                            {
+                                if (!rh.isInUse())
+                                {
+                                    rh.setInUse(true);
+                                }
+                                else
+                                {
+                                    throw new ScriptException("The report session is currently in use");
+                                }
+                            }
+                            bindings.put(RserveScriptEngine.R_SESSION, rh);
+                        }
+                        else
+                        {
+                            //
+                            // This can happen if the client never called the createSession action or
+                            // if the session expired
+                            //
+                            throw new ScriptException("The report session is invalid");
+                        }
+                    }
                 }
 
                 Object output = engine.eval(createScript(engine, context, outputSubst, inputDataTsv));
 
-
-                /*
-                if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
-                {
-                    //
-                    // todo: if the caller requested a connection id then store this away
-                    //
-                    RConnectionHolder rh = (RConnectionHolder) context.getSession().getAttribute(RserveScriptEngine.R_CONNECTION_ID);
-                    if (rh == null)
-                    {
-                        //
-                        // todo: in the real implementation the caller will pass in the connection id here
-                        //
-                        rh = new RConnectionHolder("shazam", (RserveScriptEngine)engine);
-                        context.getSession().setAttribute(RserveScriptEngine.R_CONNECTION_ID, rh);
-                    }
-                }
-                */
-                    // render the output into the console
+                // render the output into the console
                 if (output != null)
                 {
                     File console = new File(getReportDir(), CONSOLE_OUTPUT);
@@ -296,6 +303,19 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
             catch(Exception e)
             {
                 throw new ScriptException(e);
+            }
+            finally
+            {
+                if (rh != null)
+                {
+                    synchronized (rh)
+                    {
+                        //
+                        // we are done with the R session for this request
+                        //
+                        rh.setInUse(false);
+                    }
+                }
             }
         }
 

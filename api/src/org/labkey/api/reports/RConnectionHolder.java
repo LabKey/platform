@@ -15,20 +15,23 @@
  */
 package org.labkey.api.reports;
 
-import javax.script.ScriptContext;
 import javax.servlet.http.HttpSessionBindingEvent;
 import javax.servlet.http.HttpSessionBindingListener;
+import org.rosuda.REngine.Rserve.RConnection;
 
-
+//
+// This object and its held RConnection will outlive the underlying ScriptEngine
+//
 public class RConnectionHolder implements HttpSessionBindingListener
 {
-    String _connectionId;
-    RserveScriptEngine _engine;
+    RConnection _connection;
+    boolean _inUse;
 
-    public RConnectionHolder(String connectionId, RserveScriptEngine engine)
+    public RConnectionHolder()  {}
+
+    protected void finalize()
     {
-        _connectionId = connectionId;
-        _engine = engine;
+        close();
     }
 
     public void valueBound(HttpSessionBindingEvent httpSessionBindingEvent)
@@ -38,12 +41,42 @@ public class RConnectionHolder implements HttpSessionBindingListener
 
     public void valueUnbound(HttpSessionBindingEvent httpSessionBindingEvent)
     {
-        _engine.closeConnection(_connectionId);
-        _engine.getContext().getBindings(ScriptContext.ENGINE_SCOPE).remove(RserveScriptEngine.R_CONNECTION_ID);
+        close();
     }
 
-    public String getConnectionId()
+    public RConnection getConnection()
     {
-        return _connectionId;
+        return _connection;
+    }
+
+    public void setConnection(RConnection connection)
+    {
+        if (_connection != connection)
+        {
+            close();
+            _connection = connection;
+        }
+    }
+
+    public boolean isInUse()
+    {
+        return _inUse;
+    }
+
+    public void setInUse(boolean value)
+    {
+        _inUse = value;
+    }
+
+    private void close()
+    {
+        if (_connection != null)
+        {
+            if (_connection.isConnected())
+            {
+                _connection.close();
+            }
+            _connection = null;
+        }
     }
 }

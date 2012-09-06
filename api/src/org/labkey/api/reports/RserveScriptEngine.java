@@ -33,27 +33,18 @@ public class RserveScriptEngine extends ExternalScriptEngine
 {
     private String localHostIP = "127.0.0.1";
     private String localHostName = "localhost";
-    private Map<String, RConnection> _connections;
     private static final int INITIAL_R_SESSONS = 5;
-
     //
     // "share" is a bad name here - what we really mean is the name of the mounted
     // volume and path to the share on the labkey server reports directory
     //
     public static final String TEMP_ROOT = "rserve.script.engine.tempRoot";
-    public static final String R_CONNECTION_ID = "rserve.script.engine.connection";
+    public static final String R_SESSION = "rserve.script.engine.session";
     public static final String PIPELINE_ROOT = "rserve.script.engine.pipelineRoot";
-
-
 
     public RserveScriptEngine(ExternalScriptEngineDefinition def)
     {
         super(def);
-
-        //
-        // create our session pool
-        //
-        _connections = new HashMap<String, RConnection>();
     }
 
     public Object eval(String script, ScriptContext context) throws ScriptException
@@ -61,6 +52,8 @@ public class RserveScriptEngine extends ExternalScriptEngine
         List<String> extensions = getFactory().getExtensions();
         String rcmd = "";
         RConnection rconn = null;
+        RConnectionHolder rh = null;
+
         String connectionId = null;
 
         if (extensions.isEmpty())
@@ -68,19 +61,23 @@ public class RserveScriptEngine extends ExternalScriptEngine
             throw new ScriptException("There are no file name extensions registered for this ScriptEngine : " + getFactory().getLanguageName());
         }
 
-        /*
-        todo: session sharing
-        if (context.getBindings(ScriptContext.ENGINE_SCOPE).containsKey(RserveScriptEngine.R_CONNECTION_ID))
+        //
+        // see if session sharing was requested
+        //
+        if (context.getBindings(ScriptContext.ENGINE_SCOPE).containsKey(RserveScriptEngine.R_SESSION))
         {
-            connectionId = (String) context.getBindings(ScriptContext.ENGINE_SCOPE).get(RserveScriptEngine.R_CONNECTION_ID);
+            rh = (RConnectionHolder) context.getBindings(ScriptContext.ENGINE_SCOPE).get(RserveScriptEngine.R_SESSION);
+            //
+            // if we have a session in the bindings then the connection holder better be there and marked as in use
+            //
+            assert (rh!=null) && (rh.isInUse());
         }
-        */
 
         File scriptFile = writeScriptFile(script, context, extensions);
 
         try
         {
-            rconn = getConnection(connectionId);
+            rconn = getConnection(rh);
 
             //
             // use the source command to load in the script.  this is good because we aren't parsing the script at all
@@ -106,7 +103,7 @@ public class RserveScriptEngine extends ExternalScriptEngine
         }
         finally
         {
-            closeConnection(rconn, connectionId);
+            closeConnection(rconn, rh);
         }
     }
 
@@ -269,7 +266,7 @@ public class RserveScriptEngine extends ExternalScriptEngine
         */
     }
 
-    private synchronized RConnection getConnection(String connectionId)
+    private RConnection getConnection(RConnectionHolder rh)
     {
         //
         // todo: on windows this will create a connection against the same environment
@@ -278,33 +275,22 @@ public class RserveScriptEngine extends ExternalScriptEngine
         RConnection rconn = null;
 
         //
-        // by passing in a connectionId, the user has indicated that
-        // we should attempt to reuse an existing connection
+        // by passing in an RConnectionHolder, the user has indicated that
+        // we should attempt to reuse an existing connection.  If the connection
+        // is null, then create one
         //
-        if (!StringUtils.isEmpty(connectionId))
+        if (rh != null)
         {
-            //
-            // try to use an existing connection
-            //
-            if (_connections.containsKey(connectionId))
-            {
-                rconn = _connections.get(connectionId);
-                assert rconn != null;
+            rconn = rh.getConnection();
 
+            if (rconn != null)
+            {
                 if (!rconn.isConnected())
                 {
                     //
-                    // this connectino got closed for some reason so remove it from our pool
+                    // connection got closed from underneath us
                     //
-                     rconn = null;
-                    _connections.remove(connectionId);
-                }
-                else
-                {
-                    //
-                    // connection is in use so remove from the pool
-                    //
-                    _connections.put(connectionId, null);
+                    rconn = null;
                 }
             }
         }
@@ -344,46 +330,24 @@ public class RserveScriptEngine extends ExternalScriptEngine
         return rconn;
     }
 
-    public synchronized void closeConnection(String connectionId)
+    private void closeConnection(RConnection conn, RConnectionHolder rh)
     {
         //
-        // called on cleanup if a session goes away or the connection is inactive for
-        // a timeout period.
+        // if an RConnectionHolder exists then we want to reuse
+        // this connection.  Otherwise, be sure to close it
         //
-
-        //
-        //todo:  need a timestamp
-        //
-        if (_connections.containsKey(connectionId))
+        if (conn != null)
         {
-            RConnection c = _connections.get(connectionId);
-            c.close();
-            _connections.remove(connectionId);
-        }
-    }
-
-    private synchronized void closeConnection(RConnection c, String connectionId)
-    {
-        //
-        // if we have a non-empty connection id
-        // then the caller has indicated that s/he wants to
-        // reuse the same connection
-        //
-        if (c!= null)
-        {
-            if (!StringUtils.isEmpty(connectionId))
+            if (rh != null)
             {
-               if (c.isConnected())
-               {
-                   _connections.put(connectionId, c);
-               }
+                if (conn.isConnected())
+                {
+                    rh.setConnection(conn);
+                }
             }
             else
             {
-                //
-                // clean up the connection here
-                //
-                c.close();
+                conn.close();
             }
         }
     }

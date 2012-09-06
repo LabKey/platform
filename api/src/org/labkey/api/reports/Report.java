@@ -195,6 +195,7 @@ public interface Report extends AttachmentParent, StaticThumbnailProvider
     {
         reportWebPart,
         reportId,
+        reportSessionId,
         showTabs,
         showSection,
         reportName,
