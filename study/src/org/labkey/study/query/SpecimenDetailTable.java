@@ -97,7 +97,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         addWrapColumn(_rootTable.getColumn("AtRepository"));
 
         ColumnInfo availableColumn = wrapColumn("Available", getRealTable().getColumn("Available"));
-        availableColumn.setKeyField(true);
+        // Don't setKeyField. Use addQueryFieldKeys where needed
         addColumn(availableColumn);
         addWrapColumn(_rootTable.getColumn("AvailabilityReason"));
 

@@ -39,7 +39,8 @@ public abstract class AbstractSpecimenTable extends BaseStudyTable
         rowIdColumn.setKeyField(true);
 
         addWrapColumn(_rootTable.getColumn("SpecimenHash")).setHidden(true);
-        addWrapParticipantColumn("PTID").setKeyField(true);
+        addWrapParticipantColumn("PTID");
+        // Don't setKeyField. Use addQueryFieldKeys where needed
         addContainerColumn();
     }
 

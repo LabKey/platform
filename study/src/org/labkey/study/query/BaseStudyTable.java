@@ -128,7 +128,7 @@ public abstract class BaseStudyTable extends FilteredTable
         if(lfk.getLookupTableInfo() != null)
             participantColumn.setURL(LookupForeignKey.getDetailsURL(participantColumn, lfk.getLookupTableInfo(), subjectColName));
 
-        participantColumn.setKeyField(true);
+        // Don't setKeyField. Use addQueryFieldKeys where needed
 
         if (DemoMode.isDemoMode(_schema.getContainer(), _schema.getUser()))
         {
@@ -247,7 +247,7 @@ public abstract class BaseStudyTable extends FilteredTable
         };
         visitFK.addJoin(FieldKey.fromParts("Container"), "Folder", false);
         visitColumn.setFk(visitFK);
-        visitColumn.setKeyField(true);
+        // Don't setKeyField. Use addQueryFieldKeys where needed
 
         visitColumn.setDisplayColumnFactory(new DisplayColumnFactory()
         {
@@ -354,6 +354,7 @@ public abstract class BaseStudyTable extends FilteredTable
         };
         commentsFK.addJoin(FieldKey.fromParts("Container"), "Folder", false);
         commentsColumn.setFk(commentsFK);
+        commentsColumn.setDescription("");
         commentsColumn.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)
