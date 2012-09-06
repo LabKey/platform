@@ -60,6 +60,11 @@ public class MultiValuedForeignKey implements ForeignKey
 
         ColumnInfo lookupColumn = fk.createLookupColumn(junctionKey, displayField);
 
+        if (lookupColumn == null)
+        {
+            return null;
+        }
+
         if (lookupColumn.getURL() instanceof StringExpressionFactory.FieldKeyStringExpression)
         {
             // We need to strip off the junction table's contribution to the FieldKey in the URL since we don't
