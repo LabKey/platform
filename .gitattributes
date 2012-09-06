@@ -598,6 +598,8 @@ core/script-fragments/labkey/Message.footer.js -text
 core/script-fragments/labkey/Message.header.js -text
 core/script-fragments/labkey/Query.footer.js -text
 core/script-fragments/labkey/Query.header.js -text
+core/script-fragments/labkey/Report.footer.js -text
+core/script-fragments/labkey/Report.header.js -text
 core/script-fragments/labkey/Security.footer.js -text
 core/script-fragments/labkey/Security.header.js -text
 core/script-fragments/labkey/Utils.footer.js -text

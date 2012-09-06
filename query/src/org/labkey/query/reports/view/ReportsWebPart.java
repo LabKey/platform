@@ -25,6 +25,7 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.DbReportIdentifier;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.view.ReportUtil;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.*;
 
 import java.io.PrintWriter;
@@ -79,6 +80,12 @@ public class ReportsWebPart extends WebPartView
 
         if (properties.containsKey(Report.renderParam.showSection.name()))
             getViewContext().put(Report.renderParam.showSection.name(), properties.get(Report.renderParam.showSection.name()));
+
+        if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+        {
+            if (properties.containsKey(Report.renderParam.reportSessionId.name()))
+                getViewContext().put(Report.renderParam.reportSessionId.name(), properties.get(Report.renderParam.reportSessionId.name()));
+        }
 
         if (_report != null)
         {

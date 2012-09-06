@@ -18,6 +18,7 @@ LABKEY.Security = require("labkey/Security").Security;
 
 LABKEY.Utils = require("labkey/Utils").Utils;
 LABKEY.Query = require("labkey/Query").Query;
+LABKEY.Report = require("labkey/Report").Report;
 
 // Export all symbols
 for (var key in LABKEY)

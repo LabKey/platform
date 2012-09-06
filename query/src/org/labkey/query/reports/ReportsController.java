@@ -63,6 +63,7 @@ import org.labkey.api.query.ViewOptions;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.reports.RConnectionHolder;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.DataViewEditForm;
@@ -113,6 +114,7 @@ import org.labkey.api.util.IdentifierString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.GWTView;
 import org.labkey.api.view.HtmlView;
@@ -138,6 +140,7 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
@@ -562,6 +565,89 @@ public class ReportsController extends SpringActionController
         }
     }
 
+    @RequiresPermissionClass(ReadPermission.class)
+    public class CreateSessionAction extends MutatingApiAction
+    {
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            String reportSessionId = null;
+            //
+            // create a unique key for this session.  Note that a report session id can never
+            // span sessions but does span multiple requests within a session
+            //
+            if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+            {
+                reportSessionId = "LabKey.ReportSession" + UniqueID.getServerSessionScopedUID();
+                getViewContext().getSession().setAttribute(reportSessionId, new RConnectionHolder());
+            }
+            else
+            {
+                //
+                // consider: don't throw an exception
+                //
+                throw new ScriptException("This feature requires that the 'Rserve Reports' experimental feature be turned on");
+            }
+
+            return new ApiSimpleResponse(Report.renderParam.reportSessionId.name(), reportSessionId);
+        }
+    }
+
+    public static class DeleteSessionForm
+    {
+        private String _reportSessionId;
+
+        public String getReportSessionId()
+        {
+            return _reportSessionId;
+        }
+
+        public void setReportSessionId(String reportSessionId)
+        {
+            _reportSessionId = reportSessionId;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class DeleteSessionAction extends MutatingApiAction<DeleteSessionForm>
+    {
+        public ApiResponse execute(DeleteSessionForm form , BindException errors) throws Exception
+        {
+            if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+            {
+                String reportSessionId = form.getReportSessionId();
+
+                if (null != reportSessionId)
+                {
+                    RConnectionHolder rh = (RConnectionHolder) getViewContext().getSession().getAttribute(reportSessionId);
+                    if (rh != null)
+                    {
+                        getViewContext().getSession().removeAttribute(reportSessionId);
+                        synchronized(rh)
+                        {
+                            if (!rh.isInUse())
+                            {
+                                rh.setConnection(null);
+                            }
+                            else
+                            {
+                                throw new ScriptException("Cannot delete a report session that is currently in use");
+                            }
+                        }
+                    }
+                }
+                //
+                //  Don't error if rh could not be found.  This could happen because the session timed out.
+                //
+            }
+            else
+            {
+                throw new ScriptException("This feature requires that the 'Rserve Reports' experimental feature be turned on");
+            }
+
+            return new ApiSimpleResponse("success", true);
+        }
+    }
+
     @RequiresPermissionClass(InsertPermission.class)  // Need insert AND developer (checked below)
     public class CreateScriptReportAction extends FormViewAction<ScriptReportBean>
     {
@@ -670,7 +756,6 @@ public class ReportsController extends SpringActionController
             return null;
         }
     }
-
 
     @RequiresPermissionClass(ReadPermission.class)
     public class GetBackgroundReportResultsAction extends ApiAction<ScriptReportBean>
