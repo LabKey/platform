@@ -31,6 +31,8 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.lists.permissions.DesignListPermission;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
@@ -119,7 +121,9 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
     public List<String> getListNames()
     {
         Map<String,ListDefinition> m = ListService.get().getLists(getContainer());
+        Map<String,QueryDefinition> queries = QueryService.get().getQueryDefs(getUser(), getContainer(), "lists");
         ArrayList ret = new ArrayList(m.keySet());
+        ret.addAll(queries.keySet());
         return ret;
     }
 
