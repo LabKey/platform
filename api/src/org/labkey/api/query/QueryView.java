@@ -384,7 +384,7 @@ public class QueryView extends WebPartView<Object>
 
     protected StringExpression urlExpr(QueryAction action)
     {
-        StringExpression expr = _schema.urlExpr(action, _queryDef);
+        StringExpression expr = _queryDef.urlExpr(action, _schema.getContainer());
         if (expr == null)
             return null;
 
@@ -2070,19 +2070,10 @@ public class QueryView extends WebPartView<Object>
         {
             StringExpression urlDetails = urlExpr(QueryAction.detailsQueryRow);
 
-            if (urlDetails != AbstractTableInfo.LINK_DISABLER)
+            if (urlDetails != null && urlDetails != AbstractTableInfo.LINK_DISABLER)
             {
-                if (urlDetails != null)
-                {
-                    ret.add(new DetailsColumn(urlDetails));
-                }
-                else
-                {
-                    // We resolve lookups later.  Assume this table will have a valid details url.
-                    // this is messy because for most columns we just omit the link if the url is not valid
-                    // for details url we want to be sure to omit the column in the grid altogether
-                    ret.add(new DetailsColumn(table));
-                }
+                // We'll decide at render time if we have enough columns in the results to make the DetailsColumn visible
+                ret.add(new DetailsColumn(urlDetails, table));
             }
         }
 

@@ -17,41 +17,43 @@
 package org.labkey.api.data;
 
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.URLHelper;
 
 import java.util.Set;
 
 public class DetailsColumn extends UrlColumn
 {
-    public DetailsColumn(StringExpression urlExpression)
+    TableInfo tinfo;
+
+    public DetailsColumn(StringExpression url, TableInfo table)
     {
-        super(urlExpression, "details");
+        super(url, "details");
+        tinfo = table;
+
         setGridHeaderClass("");
         addDisplayClass("labkey-details");
     }
 
-    TableInfo tinfo;
-
-    public DetailsColumn(TableInfo table)
+    @Override
+    public void addQueryFieldKeys(Set<FieldKey> keys)
     {
-        this((StringExpression)null);
-        tinfo = table;
+        if (tinfo != null)
+        {
+            keys.addAll(tinfo.getDetailsURLKeys());
+        }
     }
 
-    public boolean isValid(Set<FieldKey> keys, Container c)
+    @Override
+    public boolean isVisible(RenderContext ctx)
     {
-        if (null != getURLExpression())
-            return true;
-        if (null == tinfo)
-            return true;
-        // see if we now have a legal details url
-        StringExpression se = tinfo.getDetailsURL(keys, c);
-        if (null != se)
+        if (!super.isVisible(ctx) || null == getURLExpression())
         {
-            setURLExpression(se);
-            return true;
+            return false;
         }
-        return false;
+        return tinfo == null || ctx.getFieldMap().keySet().containsAll(tinfo.getDetailsURLKeys());
     }
 }
 

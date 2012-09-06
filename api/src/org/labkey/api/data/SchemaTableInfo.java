@@ -549,24 +549,28 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         return _deleteURL.copy(container).getActionURL();
     }
 
-    public StringExpression getUpdateURL(Set<FieldKey> columns, Container container)
+    public StringExpression getUpdateURL(@Nullable Set<FieldKey> columns, Container container)
     {
         if (_updateURL == null)
             return null;
         if (AbstractTableInfo.LINK_DISABLER == _updateURL)
             return AbstractTableInfo.LINK_DISABLER;
-        if (_updateURL.validateFieldKeys(columns))
+        if (columns == null || _updateURL.validateFieldKeys(columns))
             return _updateURL.copy(container);
         return null;
     }
 
     public StringExpression getDetailsURL(Set<FieldKey> columns, Container container)
     {
+        if (_detailsURL == AbstractTableInfo.LINK_DISABLER)
+        {
+            return null;
+        }
         ContainerContext containerContext = getContainerContext();
         if (containerContext == null)
             containerContext = container;
 
-        if (_detailsURL != null && _detailsURL.validateFieldKeys(columns))
+        if (_detailsURL != null && (columns == null || _detailsURL.validateFieldKeys(columns)))
         {
             return _detailsURL.copy(containerContext);
         }

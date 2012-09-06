@@ -173,7 +173,7 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
         FieldKey columnKey = new FieldKey(null,columnName);
         Set<FieldKey> keys = Collections.singleton(columnKey);
 
-        StringExpression expr = lookupTable.getDetailsURL(keys, null);
+        StringExpression expr = lookupTable.getDetailsURL(null, null);
         if (expr instanceof StringExpressionFactory.FieldKeyStringExpression)
         {
             StringExpressionFactory.FieldKeyStringExpression f = (StringExpressionFactory.FieldKeyStringExpression)expr;

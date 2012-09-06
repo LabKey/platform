@@ -168,14 +168,14 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
     }
 
     @Override
-    public StringExpression getUpdateURL(Set<FieldKey> columns, Container container)
+    public StringExpression getUpdateURL(@Nullable Set<FieldKey> columns, Container container)
     {
         StringExpression expr = super.getUpdateURL(columns, container);
         return expr != null ? expr : getRealTable().getUpdateURL(columns, container);
     }
 
     @Override
-    public StringExpression getDetailsURL(Set<FieldKey> columns, Container container)
+    public StringExpression getDetailsURL(@Nullable Set<FieldKey> columns, Container container)
     {
         StringExpression expr = super.getDetailsURL(columns, container);
         return expr != null ? expr : getRealTable().getDetailsURL(columns, container);

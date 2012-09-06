@@ -174,17 +174,21 @@ public interface TableInfo extends HasPermission
      * {@link QueryAction#updateQueryRow} to
      * {@link org.labkey.api.query.QueryView#urlFor(QueryAction)} or
      * {@link org.labkey.api.query.UserSchema#urlFor(org.labkey.api.query.QueryAction)}.
+     * @param columns if null, implementations should simply return their first (and potentially only) details URL,
+     *                or null if they don't have one.
+     *                If non-null, the set of columns that are available from the ResultSet so that an appropriate
+     *                URL can be chosen
      */
-    StringExpression getUpdateURL(Set<FieldKey> columns, Container container);
+    StringExpression getUpdateURL(@Nullable Set<FieldKey> columns, Container container);
 
     /**
      * Return the details URL expression for a particular record or null.
-     * The column map passed in maps from a name of a column in this table
-     * to the actual ColumnInfo used to generate the SQL for the SELECT
-     * statement.  (e.g. if this is the Protocol table, the column "LSID" might
-     * actually be represented by the "ProtocolLSID" column from the ProtocolApplication table).
+     * @param columns if null, implementations should simply return their first (and potentially only) details URL,
+     *                or null if they don't have one.
+     *                If non-null, the set of columns that are available from the ResultSet so that an appropriate
+     *                URL can be chosen
      */
-    StringExpression getDetailsURL(Set<FieldKey> columns, Container container);
+    StringExpression getDetailsURL(@Nullable Set<FieldKey> columns, Container container);
     boolean hasDetailsURL();
     public Set<FieldKey> getDetailsURLKeys();
 

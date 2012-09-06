@@ -104,7 +104,7 @@ abstract public class AbstractTableInfo implements TableInfo
     protected ButtonBarConfig _buttonBarConfig;
     protected AggregateRowConfig _aggregateRowConfig;
 
-    private List<DetailsURL> _detailsURLs = new ArrayList<DetailsURL>(1);
+    private DetailsURL _detailsURL;
 
     @NotNull
     public List<ColumnInfo> getPkColumns()
@@ -140,9 +140,9 @@ abstract public class AbstractTableInfo implements TableInfo
                 if (url instanceof DetailsURL)
                     ((DetailsURL)url).setContainerContext(cc, false);
             }
-            for (DetailsURL detailsURL : _detailsURLs)
+            if (_detailsURL != null)
             {
-                detailsURL.setContainerContext(cc);
+                _detailsURL.setContainerContext(cc);
             }
         }
     }
@@ -487,27 +487,27 @@ abstract public class AbstractTableInfo implements TableInfo
         return null;
     }
 
-    public StringExpression getUpdateURL(Set<FieldKey> columns, Container container)
+    public StringExpression getUpdateURL(@Nullable Set<FieldKey> columns, Container container)
     {
         if (_updateURL == LINK_DISABLER)
         {
             return LINK_DISABLER;
         }
-        if (_updateURL != null && _updateURL.validateFieldKeys(columns))
+        if (_updateURL != null && (columns == null || _updateURL.validateFieldKeys(columns)))
         {
             return _updateURL.copy(container);
         }
         return null;
     }
 
-    public StringExpression getDetailsURL(Set<FieldKey> columns, Container container)
+    public StringExpression getDetailsURL(@Nullable Set<FieldKey> columns, Container container)
     {
         ContainerContext containerContext = getContainerContext();
         if (containerContext == null)
             containerContext = container;
 
         // Include the ContainerContext FieldKey if it hasn't already been included.
-        if (containerContext instanceof ContainerContext.FieldKeyContext)
+        if (columns != null && containerContext instanceof ContainerContext.FieldKeyContext)
         {
             ContainerContext.FieldKeyContext fieldKeyContext = (ContainerContext.FieldKeyContext) containerContext;
             Set<FieldKey> s = new HashSet<FieldKey>(columns);
@@ -515,11 +515,13 @@ abstract public class AbstractTableInfo implements TableInfo
             columns = s;
         }
 
-        for (DetailsURL dUrl : _detailsURLs)
+        if (_detailsURL == AbstractTableInfo.LINK_DISABLER || _detailsURL == null)
         {
-            if (dUrl.validateFieldKeys(columns))
-                return dUrl.copy(containerContext);
+            return null;
         }
+
+        if (columns == null || _detailsURL.validateFieldKeys(columns))
+            return _detailsURL.copy(containerContext);
         return null;
     }
 
@@ -530,30 +532,20 @@ abstract public class AbstractTableInfo implements TableInfo
 
     public void setDetailsURL(DetailsURL detailsURL)
     {
-        _detailsURLs.clear();
-        addDetailsURL(detailsURL);
-    }
-
-    public void addDetailsURL(DetailsURL detailsURL)
-    {
-        if (detailsURL != null)
-        {
-            _detailsURLs.add(detailsURL);
-        }
+        _detailsURL = detailsURL;
     }
 
     @Override
     public boolean hasDetailsURL()
     {
-        return !_detailsURLs.isEmpty();
+        return _detailsURL != null;
     }
 
     public Set<FieldKey> getDetailsURLKeys()
     {
-        HashSet<FieldKey> set = new HashSet<FieldKey>();
-        for (DetailsURL dUrl : _detailsURLs)
-            set.addAll(dUrl.getFieldKeys());
-        return set;
+        if (_detailsURL != null)
+            return _detailsURL.getFieldKeys();
+        return Collections.emptySet();
     }
 
     public void setGridURL(DetailsURL gridURL)

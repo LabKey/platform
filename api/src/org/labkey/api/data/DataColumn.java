@@ -24,6 +24,7 @@ import org.labkey.api.collections.NamedObject;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.util.PageFlowUtil;
@@ -166,6 +167,10 @@ public class DataColumn extends DisplayColumn
             keys.add(_filterColumn.getFieldKey());
         if (_sortColumn != null)
             keys.add(_sortColumn.getFieldKey());
+        if (_boundColumn.getEffectiveURL() instanceof DetailsURL)
+        {
+            keys.addAll(((DetailsURL) _boundColumn.getEffectiveURL()).getFieldKeys());
+        }
     }
 
     public void addQueryColumns(Set<ColumnInfo> columns)

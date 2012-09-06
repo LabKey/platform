@@ -790,14 +790,6 @@ public class DataRegion extends AbstractDataRegion
         int colCount = 0;
         for (DisplayColumn col : renderers)
         {
-            // check that detail columns have valid urls
-            if (null != fieldKeys && col instanceof DetailsColumn)
-            {
-                DetailsColumn details = (DetailsColumn)col;
-                Container c = ctx.getContainer();
-                if (!details.isValid(fieldKeys, c))
-                    details.setVisible(false);
-            }
             if (col.isVisible(ctx))
                 colCount++;
         }
