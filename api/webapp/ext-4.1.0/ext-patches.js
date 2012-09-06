@@ -103,6 +103,12 @@ Ext4.override(Ext4.form.field.Base, {
     //afterLabelTextTpl: ['{%this.helpPopup%}<tpl if="helpPopup"><a href="#" data-qtip="{helpPopup}"><span class="labkey-help-pop-up">?</span></a></tpl>']
 });
 
+/**
+ * @Override
+ * This was added for the same purpose as the override of Ext4.form.field.Base directly above.  It allows the field to supply a helpPopup
+ * config property, which creates a tooltip next to the field label.  The override of FieldContainer is required for nested fields
+ * (like CheckboxGroup or RadioGroup) to support the same option as regular fields.
+ */
 Ext4.override(Ext4.form.FieldContainer, {
     labelableRenderTpl: Ext4.form.field.Base.prototype.labelableRenderTpl,
     getLabelableRenderData: Ext4.form.field.Base.prototype.getLabelableRenderData
