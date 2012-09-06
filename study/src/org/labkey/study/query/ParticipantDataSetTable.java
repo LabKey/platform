@@ -18,12 +18,15 @@ package org.labkey.study.query;
 
 import org.labkey.api.data.*;
 import org.labkey.api.query.AliasedColumn;
+import org.labkey.api.query.QueryException;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
+
+import java.util.ArrayList;
 
 public class ParticipantDataSetTable extends VirtualTable
 {
@@ -92,6 +95,7 @@ public class ParticipantDataSetTable extends VirtualTable
                     {
                         DataSetTableImpl dsTable = _schema.createDataSetTableInternal(def);
                         dsTable.hideParticipantLookups();
+                        dsTable.overlayMetadata(dsTable.getName(), _schema, new ArrayList<QueryException>());
                         return dsTable;
                     }
                     catch (UnauthorizedException e)
@@ -125,7 +129,9 @@ public class ParticipantDataSetTable extends VirtualTable
 
                 public TableInfo getLookupTableInfo()
                 {
-                    return new ParticipantVisitDataSetTable(_schema, def, null);
+                    ParticipantVisitDataSetTable result = new ParticipantVisitDataSetTable(_schema, def, null);
+                    result.overlayMetadata(result.getName(), _schema, new ArrayList<QueryException>());
+                    return result;
                 }
 
                 public StringExpression getURL(ColumnInfo parent)

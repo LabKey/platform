@@ -84,7 +84,7 @@ public class SiteSettingsAuditViewFactory extends SimpleAuditViewFactory
         ColumnInfo idCol = table.getColumn("RowId");
 
         ActionURL url = new ActionURL(AuditController.ShowSiteSettingsAuditDetailsAction.class, table.getContainer());
-        table.addDetailsURL(new DetailsURL(url, Collections.singletonMap("id", idCol.getFieldKey())));
+        table.setDetailsURL(new DetailsURL(url, Collections.singletonMap("id", idCol.getFieldKey())));
     }
 
     private class DetailsDisplayColumn extends DataColumn

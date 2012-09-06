@@ -2166,7 +2166,7 @@ public class QueryController extends SpringActionController
             {
                 if (_table.hasPermission(getViewContext().getUser(), UpdatePermission.class))
                 {
-                    StringExpression updateExpr = _schema.urlExpr(QueryAction.updateQueryRow, _form.getQueryDef());
+                    StringExpression updateExpr = _form.getQueryDef().urlExpr(QueryAction.updateQueryRow, _schema.getContainer());
                     if (updateExpr != null)
                     {
                         String url = updateExpr.eval(tableForm.getTypedValues());

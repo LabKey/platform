@@ -24,7 +24,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DetailsColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -43,7 +42,6 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.list.view.ListController;
@@ -199,7 +197,7 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
 
         public ListItemDetailsColumn(Map<String, ColumnInfo> columns, ColumnInfo containerId)
         {
-            super((StringExpression)null);
+            super(null, null);
 
             _columns = columns;
             _containerId = containerId;
@@ -249,6 +247,12 @@ public class ListAuditViewFactory extends SimpleAuditViewFactory
                     set.add(entry.getValue());
             }
             set.add(_containerId);
+        }
+
+        @Override
+        public boolean isVisible(RenderContext ctx)
+        {
+            return true;
         }
     }
 

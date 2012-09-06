@@ -29,7 +29,6 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.query.controllers.QueryController;
@@ -136,7 +135,7 @@ public class QueryAuditViewFactory extends SimpleAuditViewFactory
 
         public QueryDetailsColumn(ColumnInfo containerCol, ColumnInfo schemaCol, ColumnInfo queryCol, ColumnInfo sortFilterCol)
         {
-            super((StringExpression)null);
+            super(null, null);
             _containerCol = containerCol;
             _schemaCol = schemaCol;
             _queryCol = queryCol;
@@ -203,6 +202,12 @@ public class QueryAuditViewFactory extends SimpleAuditViewFactory
                 url.addParameter(QueryParam.queryName, queryName);
 
             return url.toString();
+        }
+
+        @Override
+        public boolean isVisible(RenderContext ctx)
+        {
+            return true;
         }
     }
 }

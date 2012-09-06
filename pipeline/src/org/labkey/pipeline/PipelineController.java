@@ -272,12 +272,12 @@ public class PipelineController extends SpringActionController
             }
             catch (BadPaddingException e)
             {
-                errors.addError(new LabkeyError("Invalid Globus SSL configuration: This is most likely caused by an incorrect password for the private key file, but could also be a corrupt private key file (" + e.getMessage() + ")"));
+                errors.addError(new LabkeyError("Invalid Globus key/cert configuration: This is most likely caused by an incorrect password for the private key file, but could also be a corrupt private key file (" + e.getMessage() + ")"));
                 return false;
             }
             catch (GeneralSecurityException e)
             {
-                errors.addError(new LabkeyError("Invalid Globus SSL configuration: " + e.getMessage()));
+                errors.addError(new LabkeyError("Invalid Globus key/cert configuration: " + e.getMessage()));
                 return false;
             }
         }

@@ -29,7 +29,6 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.*;
 import org.labkey.api.security.User;
-import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.study.Study;
@@ -276,7 +275,7 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
 
         public PublishDetailsColumn(Map<String, ColumnInfo> columns, ColumnInfo containerId)
         {
-            super((StringExpression)null);
+            super(null, null);
 
             _columns = columns;
             _containerId = containerId;
@@ -309,7 +308,7 @@ public class AssayAuditViewFactory extends SimpleAuditViewFactory
         }
 
         @Override
-        public boolean isValid(Set<FieldKey> keys, Container c)
+        public boolean isVisible(RenderContext ctx)
         {
             return true;
         }

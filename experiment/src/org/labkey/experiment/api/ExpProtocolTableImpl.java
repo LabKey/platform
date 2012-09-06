@@ -74,6 +74,5 @@ public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> 
         addColumn(Column.ModifiedBy);
         ActionURL urlDetails = new ActionURL(ExperimentController.ProtocolDetailsAction.class, _schema.getContainer());
         setDetailsURL(new DetailsURL(urlDetails, Collections.singletonMap("rowId", "RowId")));
-        addDetailsURL(new DetailsURL(urlDetails, Collections.singletonMap("LSID", "LSID")));
     }
 }
