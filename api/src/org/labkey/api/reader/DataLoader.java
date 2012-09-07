@@ -303,7 +303,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             inferColumnInfo();
     }
 
-    protected void setHasColumnHeaders(boolean hasColumnHeaders)
+    public void setHasColumnHeaders(boolean hasColumnHeaders)
     {
         _skipLines = hasColumnHeaders ? 1 : 0;
     }
