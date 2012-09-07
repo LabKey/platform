@@ -129,9 +129,7 @@ public class ParticipantDataSetTable extends VirtualTable
 
                 public TableInfo getLookupTableInfo()
                 {
-                    ParticipantVisitDataSetTable result = new ParticipantVisitDataSetTable(_schema, def, null);
-                    result.overlayMetadata(result.getName(), _schema, new ArrayList<QueryException>());
-                    return result;
+                    return new ParticipantVisitDataSetTable(_schema, def, null);
                 }
 
                 public StringExpression getURL(ColumnInfo parent)
