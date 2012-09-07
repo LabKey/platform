@@ -579,7 +579,7 @@ public class DavController extends SpringActionController
                     _log.debug(getResponse().sbLogResponse);
                 WebdavStatus status = getResponse().getStatus();
                 String message = getResponse().getMessage();
-                _log.debug("<<<< " + (status != null ? status.code : 0) + ": " + StringUtils.defaultString(message, status.message));
+                _log.debug("<<<< " + (status != null ? status.code : 0) + " " + StringUtils.defaultString(message, status.message));
             }
 
             return null;
@@ -2281,7 +2281,16 @@ public class DavController extends SpringActionController
                     }
                     else
                     {
-                        resource.copyFrom(getUser(), getFileStream());
+                        try
+                        {
+                            resource.copyFrom(getUser(), getFileStream());
+                        }
+                        catch (IOException io)
+                        {
+                            if (null != resource.getFile() && !resource.getFile().exists())
+                                throw new DavException(WebdavStatus.SC_INTERNAL_SERVER_ERROR, "Can not create resource: " + resource.getPath(), io);
+                            throw io;
+                        }
                     }
 
                     if (!temp)
@@ -3028,11 +3037,7 @@ public class DavController extends SpringActionController
                 }
             }
 
-            if (!content)
-            {
-                getResponse().setContentLength(resource.getContentLength());
-            }
-            else
+            if (content)
             {
                 File file = null==gz ? resource.getFile() : gz.getFile();
                 HttpServletRequest request = getRequest();
