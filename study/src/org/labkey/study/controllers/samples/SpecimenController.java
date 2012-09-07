@@ -3250,7 +3250,7 @@ public class SpecimenController extends BaseStudyController
             _viewContext = singleFactory.getViewContext();
             assert (_viewContext != null) : "Expected report factory to be instantiated by Spring.";
             registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, singleFactory);
-            _hasReports = (singleFactory.getReports().size() > 0);
+            _hasReports = StudyManager.getInstance().getStudy(_viewContext.getContainer()) != null && singleFactory.getReports().size() > 0;
         }
 
         private void registerReportFactory(String category, SpecimenVisitReportParameters factory)
