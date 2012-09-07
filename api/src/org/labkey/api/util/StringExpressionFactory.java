@@ -422,6 +422,12 @@ public class StringExpressionFactory
             return clone();
         }
 
+        @Override
+        public boolean canRender(Set<FieldKey> fieldKeys)
+        {
+            return true;
+        }
+
         public AbstractStringExpression addParameter(String key, String value)
         {
             if (_parsedExpression == null)
@@ -622,6 +628,12 @@ public class StringExpressionFactory
                     set.add(((FieldPart)p)._key);
             }
             return set;
+        }
+
+        @Override
+        public boolean canRender(Set<FieldKey> fieldKeys)
+        {
+            return fieldKeys.containsAll(getFieldKeys());
         }
 
         @Override

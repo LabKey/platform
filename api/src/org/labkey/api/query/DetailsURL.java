@@ -201,6 +201,10 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
         return set;
     }
 
+    public ContainerContext getContainerContext()
+    {
+        return _containerContext;
+    }
 
     @Override
     public DetailsURL remapFieldKeys(FieldKey parent, Map<FieldKey, FieldKey> remap)
@@ -338,7 +342,15 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
         assert null == DetailsURL.validateURL(to);
         return to;
     }
-    
+
+    @Override
+    public boolean canRender(Set<FieldKey> fieldKeys)
+    {
+        // Call super so that we don't consider the ContainerContext's column mandatory (we will default to the current
+        // container if it's not present)
+        return fieldKeys.containsAll(super.getFieldKeys());
+    }
+
 
     private String encode(String s)
     {

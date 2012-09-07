@@ -15,9 +15,12 @@
  */
 package org.labkey.api.util;
 
+import org.labkey.api.query.FieldKey;
+
 import java.util.Map;
 import java.io.Writer;
 import java.io.IOException;
+import java.util.Set;
 
 /**
  * User: matthewb
@@ -35,4 +38,7 @@ public interface StringExpression extends Cloneable
     public void render(Writer out, Map ctx) throws IOException;
 
     public StringExpression copy(); // clone without the Exception
+
+    /** @return whether the fieldKeys are sufficient to render this expression */
+    boolean canRender(Set<FieldKey> fieldKeys);
 }
