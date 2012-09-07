@@ -769,8 +769,12 @@ public class AssayPublishManager implements AssayPublishService.Service
                 if (null == qus)
                     throw new UnauthorizedException("Can not update dataset: " + dsd.getName());
 
+                /**
+                 * NOTE: we're not actually sharing the DataIterationContext here...
+                 * qus.importRows() should probably take a DataIteratorBuilder instead of DataIterator
+                 */
                 DataIteratorContext context = new DataIteratorContext(errors);
-
+                context.setForImport(true);
                 qus.importRows(user, study.getContainer(), dl.getDataIterator(context), errors, null);
             }
 
