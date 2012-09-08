@@ -2194,7 +2194,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             if (context.getErrors().hasErrors())
                 throw context.getErrors();
 
-            _log.info("imported " + getName() + " : " + DateUtil.formatDuration(end-start));
+            _log.info("imported " + getName() + " : " + DateUtil.formatDuration(Math.max(0,end-start)));
             StudyManager.dataSetModified(this, user, true);
             scope.commitTransaction();
             if (logger != null) logger.debug("commit complete");

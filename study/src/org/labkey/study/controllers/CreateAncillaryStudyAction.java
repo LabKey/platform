@@ -28,6 +28,7 @@ import org.labkey.api.admin.FolderImporterImpl;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterImpl;
 import org.labkey.api.attachments.AttachmentFile;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
@@ -51,6 +52,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -248,7 +250,7 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
         {
             super(null, new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL()), root);
 
-            File tempLogFile = new File(root.getRootPath(), FileUtil.makeFileNameWithTimestamp("ancillaryStudy", "log"));
+            File tempLogFile = new File(root.getRootPath(), FileUtil.makeFileNameWithTimestamp("publishStudy", "log"));
             setLogFile(tempLogFile);
 
             _form = form;
@@ -327,6 +329,29 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
                             DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getSourceStudy(), visit.getVisitDateDatasetId());
                             if (def != null)
                                 _datasets.add(def);
+                        }
+                    }
+
+                    // issue 15942: for date based studies any demographics datasets that have a StartDate column need to be included so that
+                    // visits are correctly calculated\
+                    if (_sourceStudy.getTimepointType() == TimepointType.DATE)
+                    {
+                        for (DataSetDefinition dataset : _sourceStudy.getDataSets())
+                        {
+                            if (dataset.isDemographicData())
+                            {
+                                TableInfo tInfo = dataset.getStorageTableInfo();
+                                if (tInfo == null) continue;
+                                ColumnInfo col = tInfo.getColumn("StartDate");
+                                if (null != col)
+                                {
+                                    _datasets.add(dataset);
+
+                                    // also add the visits included in this dataset
+                                    for (Visit visit : StudyManager.getInstance().getVisitsForDataset(_sourceStudy.getContainer(), dataset.getDataSetId()))
+                                        selectedVisits.add(visit.getId());
+                                }
+                            }
                         }
                     }
 

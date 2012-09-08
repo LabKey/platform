@@ -12,6 +12,7 @@ LABKEY.requiresScript("vis/genericOptionsPanel.js");
 LABKEY.requiresScript("vis/genericChartOptionsPanel.js");
 LABKEY.requiresScript("vis/mainTitleOptionsPanel.js");
 LABKEY.requiresScript("vis/genericChartAxisPanel.js");
+LABKEY.requiresScript("vis/genericChartGroupingPanel.js");
 
 Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
@@ -74,7 +75,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             auto_plot : 'Auto Plot Report',
             scatter_plot : 'Scatter Plot Report',
             box_plot : 'Box Plot Report'
-        }
+        };
         this.callParent([config]);
     },
 
@@ -86,10 +87,19 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.supportedBrowser = !(Ext4.isIE6 || Ext4.isIE7 || Ext4.isIE8);
 
         this.items = [];
+
         this.showOptionsBtn = Ext4.create('Ext.button.Button', {
             text: 'Options',
             handler: function(){
                 this.optionsWindow.setVisible(this.optionsWindow.isHidden());
+            },
+            scope: this
+        });
+
+        this.groupingBtn = Ext4.create('Ext.button.Button', {
+            text: 'Grouping',
+            handler: function(){
+                this.groupingWindow.setVisible(this.groupingWindow.isHidden());
             },
             scope: this
         });
@@ -146,11 +156,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     this.centerPanel.getLayout().setActiveItem(0);
                     this.toggleBtn.setText('View Data');
                     this.showOptionsBtn.show();
+                    this.groupingBtn.show();
                     this.exportPdfBtn.show();
                 } else {
                     this.centerPanel.getLayout().setActiveItem(1);
                     this.toggleBtn.setText('View Chart');
                     this.showOptionsBtn.hide();
+                    this.groupingBtn.hide();
                     this.exportPdfBtn.hide();
                 }
             },
@@ -159,7 +171,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         var tbarItems = [
             this.toggleBtn,
-            this.exportPdfBtn
+            this.exportPdfBtn,
+			this.groupingBtn
         ];
 
         if (this.editMode)
@@ -541,6 +554,89 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
         });
 
+        this.groupingMeasureStore = Ext4.create ('Ext.data.Store', {
+            model: 'MeasureModel',
+            proxy: {
+                type: 'memory',
+                reader: {
+                    type: 'json'
+                }
+            },
+            listeners: {
+                load: function(store){
+                    this.groupingMeasureStore.filterBy(function(record, id){
+                        var normalizedType = record.get('normalizedType');
+                        return (!record.get('hidden') && normalizedType !== 'float' && normalizedType !== 'int' && normalizedType !== 'double');
+                    });
+
+                    this.groupingPanel.supressEvents = true;
+
+                    if(this.groupingPanel.getColorMeasure() == null){
+                        this.groupingPanel.setColorMeasure(this.groupingMeasureStore.getAt(0).get('name'));
+                    }
+
+                    if(this.groupingPanel.getPointMeasure() == null){
+                        this.groupingPanel.setPointMeasure(this.groupingMeasureStore.getAt(0).get('name'));
+                    }
+
+                    this.groupingPanel.supressEvents = false;
+                },
+                scope: this
+            }
+        });
+
+        this.groupingPanel = Ext4.create('LABKEY.vis.GenericChartGroupingPanel', {
+            width: '100%',
+            store: this.groupingMeasureStore,
+            listeners: {
+                chartDefinitionChanged: function(){
+                    var renderType = this.optionsPanel.getRenderType();
+                    if(this.renderType != renderType){
+                        this.renderType = renderType;
+
+                        if (!this.reportId)
+                            this.updateWebpartTitle(this.typeToLabel[renderType]);
+                    }
+                    this.viewPanel.getEl().mask('Rendering Chart...');
+                    this.chartDefinitionChanged.delay(500);
+                },
+                'closeOptionsWindow': function(canceling){
+                    if (canceling)
+                        this.groupingWindow.fireEvent('beforeclose');
+                    this.groupingWindow.hide();
+                },
+                scope: this
+            }
+        });
+
+        this.groupingWindow = Ext4.create('Ext.window.Window', {
+            title: 'Grouping Options',
+            hidden: true,
+            border: 1,
+            width: 400,
+            cls: 'data-window',
+            resizable: false,
+            modal: true,
+            draggable: false,
+            closable: true,
+            closeAction: 'hide',
+            expandOnShow: false,
+            relative: this.groupingBtn,
+            items: [this.groupingPanel],
+            listeners: {
+                scope: this,
+                show: function(){
+                    this.initialPanelValues = this.groupingPanel.getPanelOptionValues();
+                    this.groupingWindow.alignTo(this.groupingBtn, 'tl-tr', [-175, 30]);
+                },
+                beforeclose: function(){
+                    if(this.initialPanelValues){
+                        this.groupingPanel.restoreValues(this.initialPanelValues);
+                    }
+                }
+            }
+        });
+
         this.mainTitlePanel = Ext4.create('LABKEY.vis.MainTitleOptionsPanel', {
             listeners: {
                 closeOptionsWindow : function(canceling){
@@ -592,6 +688,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }, this);
 
         this.items.push(this.optionsWindow);
+        this.items.push(this.groupingWindow);
         this.items.push(this.centerPanel);
 
         this.callParent();
@@ -1319,6 +1416,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                         this.yMeasurePanel.userEditedLabel = true;
                     }
                 }
+
+                if(json.chartConfig.chartOptions.grouping){
+                    this.groupingPanel.setPanelOptionValues(json.chartConfig.chartOptions.grouping);
+                }
             }
         }
 
@@ -1395,6 +1496,53 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         var xMeasureName = this.xAxisMeasure ? this.xAxisMeasure.name : this.chartData.queryName;
         var xMeasureLabel = this.xAxisMeasure ? Ext4.util.Format.htmlEncode(this.xAxisMeasure.label) : this.chartData.queryName;
         var yMeasureName = this.yAxisMeasure.name;
+        var colorMeasureName = null;
+        var colorMeasureLabel = null;
+        var colorAcc = null;
+        var pointMeasureName = null;
+        var pointMeasureLabel = null;
+        var pointAcc = null;
+
+        if(chartOptions.grouping.colorType === 'measure'){
+            colorMeasureName = chartOptions.grouping.colorMeasure;
+            var colorMeasureIdx = this.groupingMeasureStore.find('name', colorMeasureName);
+
+            if(colorMeasureIdx > -1){
+                colorMeasureLabel = this.groupingMeasureStore.getAt(colorMeasureIdx).get('label');
+            }
+
+            colorAcc = function(row){
+                var value = row[colorMeasureName].value;
+
+                if(value === null || value === undefined){
+                    value = "n/a";
+                }
+                
+                return value;
+            };
+
+            scales.color = {scaleType: 'discrete'};
+        }
+
+        if(chartOptions.grouping.pointType === 'measure'){
+            pointMeasureName = chartOptions.grouping.pointMeasure;
+            var pointMeasureIdx = this.groupingMeasureStore.find('name', pointMeasureName);
+
+            if(pointMeasureIdx > -1){
+                pointMeasureLabel = this.groupingMeasureStore.getAt(pointMeasureIdx).get('label');
+            }
+
+            pointAcc = function(row){
+                var value = row[pointMeasureName].value;
+
+                if(value === null || value === undefined){
+                    value = "n/a";
+                }
+
+                return value;
+            };
+        }
+
         var xAcc = null;
         var yAcc = function(row){
             var value = null;
@@ -1561,6 +1709,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 xAcc,
                 yAcc
         );
+
+        plotConfig.aes = this.generateAes(
+                geom,
+                xMeasureName, yMeasureName, colorMeasureName, pointMeasureName,
+                xAcc, yAcc, colorAcc, pointAcc
+        );
+
         var plot = new LABKEY.vis.Plot(plotConfig);
         plot.render();
 
@@ -1585,12 +1740,48 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
     },
 
+    generateAes: function(geom, xAxisName, yAxisName, colorName, pointName, xAcc, yAcc, colorAcc, pointAcc){
+        var aes = {
+            y: yAcc,
+            x: xAcc
+        };
+
+        if(geom.type == "Boxplot"){
+            aes.hoverText = function(x, stats){
+                return x + ':\nMin: ' + stats.min + '\nMax: ' + stats.max + '\nQ1: ' + stats.Q1 + '\nQ2: ' + stats.Q2 +
+                        '\nQ3: ' + stats.Q3;
+            };
+            aes.outlierHoverText = function(row){
+                if(row[xAxisName]){
+                    return xAxisName + ': ' + row[xAxisName].value + ', ' + yAxisName + ': ' + row[yAxisName].value;
+                } else {
+                    return xAxisName + ', ' + yAxisName + ': ' + row[yAxisName].value;
+                }
+            }
+        } else if(geom.type == "Point"){
+            aes.hoverText = function(row){
+                return xAxisName + ': ' + row[xAxisName].value + ', ' + yAxisName + ': ' + row[yAxisName].value;
+            };
+            
+            if(colorAcc){
+                aes.color = colorAcc;
+            }
+
+            if(pointAcc){
+                aes.shape = pointAcc;
+            }
+        }
+
+        return aes;
+    },
+
     generatePlotConfig: function(geom, renderTo, width, height, data, labels, scales, xAxisName, yAxisName, xAcc, yAcc){
 
         var aes = {
             y: yAcc,
             x: xAcc
         };
+        
         if(geom.type == "Boxplot"){
             aes.hoverText = function(x, stats){
                 return x + ':\nMin: ' + stats.min + '\nMax: ' + stats.max + '\nQ1: ' + stats.Q1 + '\nQ2: ' + stats.Q2 +
@@ -1643,6 +1834,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.chartData = response;
         this.yMeasureStore.loadRawData(this.chartData.metaData.fields);
         this.xMeasureStore.loadRawData(this.chartData.metaData.fields);
+        this.groupingMeasureStore.loadRawData(this.chartData.metaData.fields);
 
         this.renderPlot();
     },
@@ -1675,6 +1867,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         chartOptions.yAxis = this.yMeasurePanel.getPanelOptionValues();
         chartOptions.xAxis = this.xMeasurePanel.getPanelOptionValues();
+
+        chartOptions.grouping = this.groupingPanel.getPanelOptionValues();
 
         return chartOptions;
     },

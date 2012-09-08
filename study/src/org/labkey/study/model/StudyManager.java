@@ -1286,6 +1286,32 @@ public class StudyManager
         }
     }
 
+    public List<VisitImpl> getVisitsForDataset(Container container, int datasetId)
+    {
+        List<VisitImpl> visits = new ArrayList<VisitImpl>();
+
+        DataSetDefinition def = getDataSetDefinition(getStudy(container), datasetId);
+        TableInfo ds = def.getTableInfo(null, false);
+
+        SQLFragment sql = new SQLFragment();
+        sql.append("SELECT DISTINCT v.RowId AS RowId FROM ").append(ds.getFromSQL("sd")).append("\n" +
+                "JOIN study.ParticipantVisit pv ON \n" +
+                "\tsd.SequenceNum = pv.SequenceNum AND\n" +
+                "\tsd.ParticipantId = pv.ParticipantId\n" +
+                "JOIN study.Visit v ON\n" +
+                "\tpv.VisitRowId = v.RowId AND\n" +
+                "\tpv.Container = ? AND v.Container = ?\n");
+        sql.add(container.getId());
+        sql.add(container.getId());
+
+        Study study = getStudy(container);
+        SqlSelector selector = new SqlSelector(StudySchema.getInstance().getSchema(), sql);
+        for (Integer rowId : selector.getArray(Integer.class))
+        {
+            visits.add(getVisitForRowId(study, rowId));
+        }
+        return visits;
+    }
 
     public void updateDataQCState(Container container, User user, int datasetId, Collection<String> lsids, QCState newState, String comments) throws SQLException
     {
