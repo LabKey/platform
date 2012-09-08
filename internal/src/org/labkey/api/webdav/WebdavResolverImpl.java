@@ -674,7 +674,7 @@ public class WebdavResolverImpl implements WebdavResolver
             rTest = resolver.lookup(rootPath.append(pathTest));
             assertTrue(rTest.canRead(guest,true));
 
-            ContainerManager.rename(cTest, "webdav");
+            ContainerManager.rename(cTest, user, "webdav");
             Path pathNew = c.getParsedPath().append("webdav");
             assertFalse(resolver.lookup(rootPath.append(pathTest)).exists());
             assertTrue(resolver.lookup(rootPath.append(pathNew)).exists());

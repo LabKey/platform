@@ -456,7 +456,7 @@ public class ContainerManager
         String oldValue = container.getDescription();
         _removeFromCache(container);
         container = getForRowId(container.getRowId());
-        ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(container, Property.Description, oldValue, description);
+        ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(container, user, Property.Description, oldValue, description);
         firePropertyChangeEvent(evt);
     }
 
@@ -484,7 +484,7 @@ public class ContainerManager
         _removeFromCache(container);
         String oldValue = container.getTitle();
         container = getForRowId(container.getRowId());
-        ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(container, Property.Title, oldValue, title);
+        ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(container, user, Property.Title, oldValue, title);
         firePropertyChangeEvent(evt);
     }
 
@@ -1062,7 +1062,7 @@ public class ContainerManager
 
     // Rename a container in the table.  Will fail if the new name already exists in the parent container.
     // Lock the class to ensure the old version of this container doesn't sneak into the cache after clearing
-    public static void rename(Container c, String name)
+    public static void rename(Container c, User user, String name)
     {
         name = StringUtils.trimToNull(name);
         if (null == name)
@@ -1081,7 +1081,7 @@ public class ContainerManager
                 clearCache();  // Clear the entire cache, since containers cache their full paths
                 //Get new version since name has changed.
                 c = getForId(c.getId());
-                fireRenameContainer(c, oldName);
+                fireRenameContainer(c, user, oldName);
             }
             CORE.getSchema().getScope().commitTransaction();
         }
@@ -1526,12 +1526,19 @@ public class ContainerManager
     {
         public final Property property;
         public final Container container;
+        public User user;
         
-        public ContainerPropertyChangeEvent(Container c, Property p, Object oldValue, Object newValue)
+        public ContainerPropertyChangeEvent(Container c, @Nullable User user, Property p, Object oldValue, Object newValue)
         {
             super(c, p.name(), oldValue, newValue);
             container = c;
+            this.user = user;
             property = p;
+        }
+
+        public ContainerPropertyChangeEvent(Container c, Property p, Object oldValue, Object newValue)
+        {
+            this(c, null, p, oldValue, newValue);
         }
     }
 
@@ -1611,9 +1618,9 @@ public class ContainerManager
     }
 
 
-    protected static void fireRenameContainer(Container c, String oldValue)
+    protected static void fireRenameContainer(Container c, User user, String oldValue)
     {
-        ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(c, Property.Name, oldValue, c.getName());
+        ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(c, user, Property.Name, oldValue, c.getName());
         firePropertyChangeEvent(evt);
     }
 
@@ -1633,7 +1640,7 @@ public class ContainerManager
                 LOG.error("fireMoveContainer for " + cl.getClass().getName(), t);
             }
         }
-        ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(c, Property.Parent, oldParent, c.getParent());
+        ContainerPropertyChangeEvent evt = new ContainerPropertyChangeEvent(c, user, Property.Parent, oldParent, c.getParent());
         firePropertyChangeEvent(evt);
     }
 
