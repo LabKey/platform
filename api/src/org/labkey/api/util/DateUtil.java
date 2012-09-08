@@ -1089,10 +1089,10 @@ Parse:
     // how ISO8601 do we want to be (v. readable)
     public static String formatDuration(long duration)
     {
-        if (duration < 0)
-            throw new IllegalArgumentException("negative durations not supported");
-        if (duration == 0)
+        if (duration==0) //  || duration==Long.MIN_VALUE)
             return "0s";
+        if (duration < 0)
+            return duration==Long.MIN_VALUE ? "-106751991167d7h12m55.808s" : "-" + formatDuration(-duration);
 
         StringBuilder s = new StringBuilder();
         long r = duration;
@@ -1418,6 +1418,13 @@ Parse:
             assertEquals("1d2h3m4s", formatDuration(makeDuration(1,2,3,4)));
             assertEquals("1h2m3.010s", formatDuration(makeDuration(0,1,2,3.010)));
             assertEquals("1h0m0.010s", formatDuration(makeDuration(0,1,0,0.010)));
+
+            // edge cases
+            assertEquals("0s", formatDuration(0));
+            assertEquals("-1s", formatDuration(-1000));
+            assertEquals("106751991167d7h12m55.807s", formatDuration(Long.MAX_VALUE));
+            assertEquals("-106751991167d7h12m55.807s", formatDuration(-Long.MAX_VALUE));
+            assertEquals("-106751991167d7h12m55.808s", formatDuration(Long.MIN_VALUE));
 
             long start = parseStringJDBC("2010-01-31");
             assertEquals(parseDateTime("2011-01-31"), addDuration(start,"1y"));
