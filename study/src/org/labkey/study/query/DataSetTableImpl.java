@@ -92,6 +92,9 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
         importURL.addParameter(DataSetDefinition.DATASETKEY, dsd.getDataSetId());
         setImportURL(new DetailsURL(importURL));
 
+        ActionURL deleteRowsURL = new ActionURL(StudyController.DeleteDatasetRowsAction.class, getContainer());
+        setDeleteURL(new DetailsURL(deleteRowsURL));
+
         String subjectColName = StudyService.get().getSubjectColumnName(dsd.getContainer());
         for (ColumnInfo baseColumn : getRealTable().getColumns())
         {

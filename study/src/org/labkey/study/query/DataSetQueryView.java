@@ -388,12 +388,8 @@ public class DataSetQueryView extends QueryView
                 if (canWrite && _study instanceof StudyImpl)
                 {
                     ActionURL deleteRowsURL = urlFor(QueryAction.deleteQueryRows);
-                    if (deleteRowsURL != AbstractTableInfo.LINK_DISABLER_ACTION_URL)
+                    if (deleteRowsURL != null)
                     {
-                        if (deleteRowsURL == null)
-                        {
-                            deleteRowsURL = new ActionURL(StudyController.DeleteDatasetRowsAction.class, getContainer());
-                        }
                         ActionButton deleteRows = new ActionButton(deleteRowsURL, "Delete");
                         deleteRows.setRequiresSelection(true, "Delete selected row from this dataset?", "Delete selected rows from this dataset?");
                         deleteRows.setActionType(ActionButton.Action.POST);
