@@ -215,6 +215,11 @@ public class DatasetViewProvider implements DataViewProvider
                             dirty = dsDef.getCategoryId() == null || (category.getRowId() != dsDef.getCategoryId());
                             dsDef.setCategoryId(category.getRowId());
                         }
+                        else
+                        {
+                            dirty = dsDef.getCategoryId() != null;
+                            dsDef.setCategoryId(null);
+                        }
 
                         if (props.containsKey(Property.description.name()))
                         {

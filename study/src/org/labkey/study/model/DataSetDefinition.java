@@ -331,6 +331,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     {
         verifyMutability();
         _categoryId = categoryId;
+        _category = null;
 
         if (_categoryId != null)
         {

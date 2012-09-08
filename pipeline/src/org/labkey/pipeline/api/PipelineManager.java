@@ -159,7 +159,7 @@ public class PipelineManager
         DbCache.remove(pipeline.getTableInfoPipelineRoots(), getCacheKey(container, type));
 
         ContainerManager.firePropertyChangeEvent(new ContainerManager.ContainerPropertyChangeEvent(
-                container, ContainerManager.Property.PipelineRoot, oldValue, newValue));
+                container, user, ContainerManager.Property.PipelineRoot, oldValue, newValue));
     }
 
     static public void purge(Container container)

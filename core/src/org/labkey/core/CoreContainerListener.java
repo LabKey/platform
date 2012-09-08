@@ -96,9 +96,21 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
         }
     }
 
-    public void propertyChange(PropertyChangeEvent evt)
+    public void propertyChange(PropertyChangeEvent propertyChangeEvent)
     {
-        Container container = ((ContainerManager.ContainerPropertyChangeEvent)evt).container;
-        ((CoreModule)ModuleLoader.getInstance().getCoreModule()).enumerateDocuments(null, container, null);
+        ContainerManager.ContainerPropertyChangeEvent evt = (ContainerManager.ContainerPropertyChangeEvent)propertyChangeEvent;
+        ((CoreModule)ModuleLoader.getInstance().getCoreModule()).enumerateDocuments(null, evt.container, null);
+
+        switch (evt.property)
+        {
+            case Name:
+            {
+                String oldValue = (String) evt.getOldValue();
+                String newValue = (String) evt.getNewValue();
+                String message = evt.container.getName() + " was renamed from " + oldValue + " to " + newValue;
+                addAuditEvent(evt.user, evt.container, message);
+                break;
+            }
+        }
     }
 }

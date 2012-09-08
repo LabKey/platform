@@ -299,8 +299,7 @@ public class ReportViewProvider implements DataViewProvider
                             category = ViewCategoryManager.getInstance().ensureViewCategory(context.getContainer(), context.getUser(), categoryName);
                     }
 
-                    if (category != null)
-                        report.getDescriptor().setCategory(category);
+                    report.getDescriptor().setCategory(category);
 
                     if (props.containsKey(Property.description.name()))
                         report.getDescriptor().setReportDescription(StringUtils.trimToNull(String.valueOf(props.get(Property.description.name()))));

@@ -3764,7 +3764,7 @@ public class AdminController extends SpringActionController
                     error.append("The parent folder already has a folder with this name.");
                 else
                 {
-                    ContainerManager.rename(c, folderName);
+                    ContainerManager.rename(c, getUser(), folderName);
                     if (form.isAddAlias())
                     {
                         String[] originalAliases = ContainerManager.getAliasesForContainer(c);
