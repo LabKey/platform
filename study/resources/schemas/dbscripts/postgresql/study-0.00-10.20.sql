@@ -1316,7 +1316,7 @@ ALTER INDEX study.IX_Specimen_CurrentLocation RENAME TO IX_Vial_CurrentLocation;
 ALTER INDEX study.IX_Specimen_GlobalUniqueId RENAME TO IX_Vial_GlobalUniqueId;
 ALTER INDEX study.IX_Specimen_SpecimenHash RENAME TO IX_Vial_Container_SpecimenHash;
 
--- Next, we create the specimen table, which will hold static properties of a specimen draw (versus a vial)
+-- Next, we create the new specimen table, which will hold static properties of a specimen draw (versus a vial)
 CREATE TABLE study.Specimen
 (
     RowId SERIAL NOT NULL,
@@ -1431,14 +1431,14 @@ FROM (SELECT
 WHERE study.Specimen.Container = VialCounts.Container AND study.Specimen.SpecimenHash = VialCounts.SpecimenHash;
 
 ALTER TABLE study.Vial
-  DROP FrozenTime,
-  DROP ProcessingTime,
-  DROP ProcessedByInitials,
-  DROP ProcessingDate;
+    DROP FrozenTime,
+    DROP ProcessingTime,
+    DROP ProcessedByInitials,
+    DROP ProcessingDate;
 
 ALTER TABLE study.Vial
-  ADD PrimaryVolume FLOAT,
-  ADD PrimaryVolumeUnits VARCHAR(20);
+    ADD PrimaryVolume FLOAT,
+    ADD PrimaryVolumeUnits VARCHAR(20);
 
 UPDATE study.Vial SET
   PrimaryVolume = study.Specimen.PrimaryVolume,
@@ -1447,8 +1447,8 @@ FROM study.Specimen
 WHERE study.Specimen.RowId = study.Vial.SpecimenId;
 
 ALTER TABLE study.Specimen
-  DROP PrimaryVolume,
-  DROP PrimaryVolumeUnits;
+    DROP PrimaryVolume,
+    DROP PrimaryVolumeUnits;
 
 ALTER TABLE study.SpecimenEvent RENAME COLUMN SpecimenId TO VialId;
 
@@ -1485,19 +1485,19 @@ ALTER TABLE study.ParticipantVisit
 UPDATE study.ParticipantVisit SET ParticipantSequenceKey = ParticipantID || '|' || CAST(SequenceNum AS VARCHAR);
 
 ALTER TABLE study.ParticipantVisit
-  ADD CONSTRAINT UQ_StudyData_ParticipantSequenceKey UNIQUE (ParticipantSequenceKey, Container);
+    ADD CONSTRAINT UQ_StudyData_ParticipantSequenceKey UNIQUE (ParticipantSequenceKey, Container);
 
 CREATE INDEX IX_ParticipantVisit_ParticipantSequenceKey ON study.ParticipantVisit(ParticipantSequenceKey, Container);
 
 ALTER TABLE study.StudyData
-  ADD ParticipantSequenceKey VARCHAR(200);
+    ADD ParticipantSequenceKey VARCHAR(200);
 
 UPDATE study.StudyData SET ParticipantSequenceKey = ParticipantID || '|' || CAST(SequenceNum AS VARCHAR);
 
 CREATE INDEX IX_StudyData_ParticipantSequenceKey ON study.StudyData(ParticipantSequenceKey, Container);
 
 ALTER TABLE study.Specimen ADD
-  ParticipantSequenceKey VARCHAR(200);
+    ParticipantSequenceKey VARCHAR(200);
 
 UPDATE study.Specimen SET ParticipantSequenceKey = PTID || '|' || CAST(VisitValue AS VARCHAR);
 
@@ -1563,17 +1563,17 @@ UPDATE study.Specimen SET ProcessingLocation = (
 /* study-9.30-10.10.sql */
 
 ALTER TABLE study.study
-  ALTER COLUMN datebased DROP DEFAULT,
-  ALTER COLUMN datebased TYPE VARCHAR(15)
-    USING CASE WHEN datebased THEN 'RELATIVE_DATE' ELSE 'VISIT' END,
-  ALTER COLUMN datebased SET NOT NULL;
+    ALTER COLUMN datebased DROP DEFAULT,
+    ALTER COLUMN datebased TYPE VARCHAR(15)
+        USING CASE WHEN datebased THEN 'RELATIVE_DATE' ELSE 'VISIT' END,
+    ALTER COLUMN datebased SET NOT NULL;
 
 ALTER TABLE study.study RENAME COLUMN datebased TO TimepointType;
 
 ALTER TABLE study.study
-  ADD COLUMN SubjectNounSingular VARCHAR(50) NOT NULL DEFAULT 'Participant',
-  ADD COLUMN SubjectNounPlural VARCHAR(50) NOT NULL DEFAULT 'Participants',
-  ADD COLUMN SubjectColumnName VARCHAR(50) NOT NULL DEFAULT 'ParticipantId';
+    ADD COLUMN SubjectNounSingular VARCHAR(50) NOT NULL DEFAULT 'Participant',
+    ADD COLUMN SubjectNounPlural VARCHAR(50) NOT NULL DEFAULT 'Participants',
+    ADD COLUMN SubjectColumnName VARCHAR(50) NOT NULL DEFAULT 'ParticipantId';
 
 ALTER TABLE study.Vial ADD FirstProcessedByInitials VARCHAR(32);
 ALTER TABLE study.Specimen ADD FirstProcessedByInitials VARCHAR(32);
@@ -1583,75 +1583,25 @@ UPDATE study.Study SET timepointType='CONTINUOUS' WHERE timepointType='ABSOLUTE_
 
 /* study-10.10-10.20.sql */
 
-/* Handle the possibility that branch release10.1 study-10.10-10.11.sql script has already run. */
+/* Create studydata participant index */
+CREATE INDEX IX_StudyData_Participant ON study.StudyData USING btree (Container, ParticipantId);
 
-/* Create studydata participant index if it doesn't exist. */
-CREATE OR REPLACE FUNCTION core.fn_create_studydata_participant_index () RETURNS INTEGER AS $$
-BEGIN
-    IF NOT EXISTS (SELECT * FROM pg_indexes
-                   WHERE schemaname = 'study'
-                   AND tablename = LOWER('StudyData')
-                   AND indexname = LOWER('IX_StudyData_Participant'))
-    THEN
-        CREATE INDEX IX_StudyData_Participant
-            ON study.StudyData
-            USING btree
-            (container, participantid);
-        RETURN 1;
-    ELSE
-        RETURN 0;
-    END IF;
-END;
-$$ LANGUAGE plpgsql;
-
-SELECT core.fn_create_studydata_participant_index();
-DROP FUNCTION core.fn_create_studydata_participant_index();
+/* Create study.vial.AvailabilityReason column */
+ALTER TABLE study.Vial ADD AvailabilityReason VARCHAR(256);
 
 
-/* Create study.vial.AvailabilityReason column if it doesn't exist. */
-CREATE OR REPLACE FUNCTION core.fn_create_vial_availabilityreason () RETURNS INTEGER AS $$
-BEGIN
-    IF NOT EXISTS ( SELECT * FROM pg_attribute, pg_class
-        WHERE attname = LOWER('AvailabilityReason')
-        AND pg_attribute.attrelid = pg_class.oid
-        AND pg_class.relname = LOWER('Vial') )
-    THEN
-        ALTER TABLE study.Vial ADD AvailabilityReason VARCHAR(256);
-        RETURN 1;
-    ELSE
-        RETURN 0;
-    END IF;
-END;
-$$ LANGUAGE plpgsql;
+/* Create study.SampleAvailabilityRule table */
+CREATE TABLE study.SampleAvailabilityRule
+(
+    RowId SERIAL NOT NULL,
+    Container EntityId NOT NULL,
+    SortOrder INTEGER NOT NULL,
+    RuleType VARCHAR(50),
+    RuleData VARCHAR(250),
+    MarkType VARCHAR(30),
 
-SELECT core.fn_create_vial_availabilityreason();
-DROP FUNCTION core.fn_create_vial_availabilityreason();
-
-
-/* Create study.SampleAvailabilityRule table if it doesn't exist */
-CREATE OR REPLACE FUNCTION core.fn_create_study_sampleavailabilityrule () RETURNS INTEGER AS $$
-BEGIN
-    IF NOT EXISTS ( SELECT * FROM pg_tables WHERE schemaname = 'study' AND tablename = LOWER('SampleAvailabilityRule'))
-    THEN
-        CREATE TABLE study.SampleAvailabilityRule
-        (
-            RowId SERIAL NOT NULL,
-            Container EntityId NOT NULL,
-            SortOrder INTEGER NOT NULL,
-            RuleType VARCHAR(50),
-            RuleData VARCHAR(250),
-            MarkType VARCHAR(30),
-            CONSTRAINT PL_SampleAvailabilityRule PRIMARY KEY (RowId)
-        );
-        RETURN 1;
-    ELSE
-        RETURN 0;
-    END IF;
-END;
-$$ LANGUAGE plpgsql;
-
-SELECT core.fn_create_study_sampleavailabilityrule();
-DROP FUNCTION core.fn_create_study_sampleavailabilityrule();
+    CONSTRAINT PL_SampleAvailabilityRule PRIMARY KEY (RowId)
+);
 
 -- Migrate from boolean key management type to None, RowId, and GUID
 ALTER TABLE study.dataset ADD KeyManagementType VARCHAR(10);

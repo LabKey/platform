@@ -16,6 +16,8 @@
 
 package org.labkey.core.admin.sql;
 
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.util.PageFlowUtil;
 
@@ -29,6 +31,7 @@ import java.util.regex.Pattern;
 
 class ScriptReorderer
 {
+    private static final String SCHEMA_NAME_REGEX = "(?:(?:\\w+)\\.)?";
     private static final String TABLE_NAME_REGEX;
     private static final String STATEMENT_ENDING_REGEX;
     private static final String COMMENT_REGEX = "((/\\*.+?\\*/)|(^--.+?$))\\s*";   // Single-line or block comment, followed by white space
@@ -37,24 +40,26 @@ class ScriptReorderer
     {
         if (CoreSchema.getInstance().getSqlDialect().isSqlServer())
         {
-            TABLE_NAME_REGEX = "((?:(?:\\w+)\\.)?(?:#?\\w+))";  // # allows for temp table names
-            STATEMENT_ENDING_REGEX = "((; GO$)|(;$)|( GO$))\\s*";       // Semicolon, GO, or both
+            TABLE_NAME_REGEX = "(" + SCHEMA_NAME_REGEX + "(?:#?\\w+))";  // # allows for temp table names
+            STATEMENT_ENDING_REGEX = "((; GO\\s*$)|(;\\s*$)|( GO\\s*$))\\s*";       // Semicolon, GO, or both
         }
         else
         {
-            TABLE_NAME_REGEX = "((?:(?:\\w+)\\.)?(?:\\w+))";
+            TABLE_NAME_REGEX = "(" + SCHEMA_NAME_REGEX + "(?:\\w+))";
             STATEMENT_ENDING_REGEX = ";(\\s*?)((--)[^\\n]*)?$(\\s*)";
         }
     }
 
-    private final Map<String, Collection<String>> _statements = new LinkedHashMap<String, Collection<String>>();
+    private final Map<String, Collection<Statement>> _statements = new LinkedHashMap<String, Collection<Statement>>();
     private final List<String> _endingStatements = new LinkedList<String>();
 
+    private final String _schemaName;
     private String _contents;
     private int _row = 0;
 
-    ScriptReorderer(String contents)
+    ScriptReorderer(String schemaName, String contents)
     {
+        _schemaName = schemaName;
         _contents = contents;
     }
 
@@ -62,39 +67,52 @@ class ScriptReorderer
     {
         List<SqlPattern> patterns = new LinkedList<SqlPattern>();
 
-        patterns.add(new SqlPattern("INSERT (?:INTO )?" + TABLE_NAME_REGEX + " \\([^\\)]+?\\) VALUES \\([^\\)]+?\\)\\s*(" + STATEMENT_ENDING_REGEX + "|$(\\s*))", Type.Table, RowEffect.Insert));
-        patterns.add(new SqlPattern("INSERT (?:INTO )?" + TABLE_NAME_REGEX + " \\([^\\)]+?\\) SELECT .+?"+ STATEMENT_ENDING_REGEX, Type.Table, RowEffect.Insert));
-        patterns.add(new SqlPattern(getRegExWithPrefix("INSERT INTO "), Type.Table, RowEffect.Insert));
+        patterns.add(new SqlPattern("INSERT (?:INTO )?" + TABLE_NAME_REGEX + " \\([^\\)]+?\\) VALUES \\([^\\)]+?\\)\\s*(" + STATEMENT_ENDING_REGEX + "|$(\\s*))", Type.Table, Operation.InsertRows));
+        patterns.add(new SqlPattern("INSERT (?:INTO )?" + TABLE_NAME_REGEX + " \\([^\\)]+?\\) SELECT .+?"+ STATEMENT_ENDING_REGEX, Type.Table, Operation.InsertRows));
+        patterns.add(new SqlPattern(getRegExWithPrefix("INSERT INTO "), Type.Table, Operation.InsertRows));
 
-        patterns.add(new SqlPattern(getRegExWithPrefix("UPDATE "), Type.Table, RowEffect.Alter));
-        patterns.add(new SqlPattern(getRegExWithPrefix("DELETE FROM "), Type.Table, RowEffect.Alter));
+        patterns.add(new SqlPattern(getRegExWithPrefix("UPDATE "), Type.Table, Operation.AlterRows));
+        patterns.add(new SqlPattern(getRegExWithPrefix("DELETE FROM "), Type.Table, Operation.AlterRows));
 
-        patterns.add(new SqlPattern("CREATE (?:UNIQUE )?(?:CLUSTERED )?INDEX \\w+? ON " + TABLE_NAME_REGEX + ".+?" + STATEMENT_ENDING_REGEX, Type.Table, RowEffect.None));
-        patterns.add(new SqlPattern(getRegExWithPrefix("CREATE TABLE "), Type.Table, RowEffect.None));
-        patterns.add(new SqlPattern(getRegExWithPrefix("ALTER TABLE "), Type.Table, RowEffect.None));
-        patterns.add(new SqlPattern(getRegExWithPrefix("DROP INDEX "), Type.Table, RowEffect.None));    // By convention, index names start with their associated table names
+        patterns.add(new SqlPattern("CREATE (?:UNIQUE )?(?:CLUSTERED )?INDEX \\w+? ON " + TABLE_NAME_REGEX + ".+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+        patterns.add(new SqlPattern(getRegExWithPrefix("CREATE TABLE "), Type.Table, Operation.Other));
 
         if (CoreSchema.getInstance().getSqlDialect().isSqlServer())
         {
-            patterns.add(new SqlPattern(getRegExWithPrefix("DROP TABLE "), Type.Table, RowEffect.None));
-            patterns.add(new SqlPattern(getRegExWithPrefix("CREATE TABLE "), Type.Table, RowEffect.None));
-            patterns.add(new SqlPattern("(?:EXEC )?sp_rename (?:@objname\\s*=\\s*)?'" + TABLE_NAME_REGEX + ".*?'.+?" + STATEMENT_ENDING_REGEX, Type.Table, RowEffect.None));
-            patterns.add(new SqlPattern("EXEC core\\.fn_dropifexists '(\\w+)', '(\\w+)'.+?" + STATEMENT_ENDING_REGEX, Type.Table, RowEffect.None));
+            patterns.add(new SqlPattern(getRegExWithPrefix("DROP TABLE "), Type.Table, Operation.Other));
+            patterns.add(new SqlPattern(getRegExWithPrefix("CREATE TABLE "), Type.Table, Operation.Other));
 
-            patterns.add(new SqlPattern("CREATE PROCEDURE .+?" + STATEMENT_ENDING_REGEX, Type.NonTable, RowEffect.None));
+            // Specific sp_rename pattern for table rename
+            patterns.add(new SqlPattern("(?:EXEC )?sp_rename (?:@objname\\s*=\\s*)?'" + TABLE_NAME_REGEX + "', '" + TABLE_NAME_REGEX + "'" + STATEMENT_ENDING_REGEX, Type.Table, Operation.RenameTable));
+
+            // All other sp_renames
+            patterns.add(new SqlPattern("(?:EXEC )?sp_rename (?:@objname\\s*=\\s*)?'" + TABLE_NAME_REGEX + ".*?'.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+            patterns.add(new SqlPattern("EXEC core\\.fn_dropifexists '(\\w+)', '(\\w+)'.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+
+            // Index names are prefixed with their associated table names on SQL Server
+            patterns.add(new SqlPattern(getRegExWithPrefix("DROP INDEX "), Type.Table, Operation.Other));
+
+            patterns.add(new SqlPattern("CREATE PROCEDURE .+?" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
         }
         else
         {
-            patterns.add(new SqlPattern(getRegExWithPrefix("DROP TABLE (?:IF EXISTS )?"), Type.Table, RowEffect.None));
-            patterns.add(new SqlPattern(getRegExWithPrefix("CREATE (?:TEMPORARY )?TABLE "), Type.Table, RowEffect.None));
-            patterns.add(new SqlPattern("SELECT core\\.fn_dropifexists\\s*\\('(\\w+)', '(\\w+)'.+?" + STATEMENT_ENDING_REGEX, Type.Table, RowEffect.None));
-            patterns.add(new SqlPattern("SELECT SETVAL\\('([a-zA-Z]+)\\.([a-zA-Z]+)_.+?" + STATEMENT_ENDING_REGEX, Type.Table, RowEffect.None));
-            patterns.add(new SqlPattern(getRegExWithPrefix("CLUSTER \\w+ ON "), Type.Table, RowEffect.None));   // e.g. CLUSTER PK_Keyword ON flow.Keyword
-            patterns.add(new SqlPattern(getRegExWithPrefix("CLUSTER "), Type.Table, RowEffect.None));
-            patterns.add(new SqlPattern(getRegExWithPrefix("ANALYZE "), Type.Table, RowEffect.None));
+            patterns.add(new SqlPattern("ALTER TABLE " + TABLE_NAME_REGEX + " RENAME TO " + TABLE_NAME_REGEX + STATEMENT_ENDING_REGEX, Type.Table, Operation.RenameTable));
+            patterns.add(new SqlPattern(getRegExWithPrefix("DROP TABLE (?:IF EXISTS )?"), Type.Table, Operation.Other));
+            patterns.add(new SqlPattern(getRegExWithPrefix("CREATE (?:TEMPORARY )?TABLE "), Type.Table, Operation.Other));
+            patterns.add(new SqlPattern("SELECT core\\.fn_dropifexists\\s*\\('(\\w+)', '(\\w+)'.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+            patterns.add(new SqlPattern("SELECT SETVAL\\('([a-zA-Z]+)\\.([a-zA-Z]+)_.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+            patterns.add(new SqlPattern(getRegExWithPrefix("CLUSTER \\w+ ON "), Type.Table, Operation.Other));   // e.g. CLUSTER PK_Keyword ON flow.Keyword
+            patterns.add(new SqlPattern(getRegExWithPrefix("CLUSTER "), Type.Table, Operation.Other));
+            patterns.add(new SqlPattern(getRegExWithPrefix("ANALYZE "), Type.Table, Operation.Other));
 
-            patterns.add(new SqlPattern("CREATE FUNCTION .+? RETURNS \\w+ AS (.+?) (?:.+?) \\1 LANGUAGE plpgsql" + STATEMENT_ENDING_REGEX, Type.NonTable, RowEffect.None));
+            // Can't prefix index names with table name on PostgreSQL... find table name based on our naming conventions.
+            patterns.add(new SqlPattern("(?:DROP|ALTER) INDEX " + SCHEMA_NAME_REGEX + "(?:IX_|IDX_)" + TABLE_NAME_REGEX + "_.+?" + STATEMENT_ENDING_REGEX, Type.Table, Operation.Other));
+
+            patterns.add(new SqlPattern("CREATE FUNCTION .+? RETURNS \\w+ AS (.+?) (?:.+?) \\1 LANGUAGE plpgsql" + STATEMENT_ENDING_REGEX, Type.NonTable, Operation.Other));
         }
+
+        // Put this at the end to catch all other ALTER TABLE statements (i.e., not RENAMEs)
+        patterns.add(new SqlPattern(getRegExWithPrefix("ALTER TABLE "), Type.Table, Operation.Other));
 
         Pattern commentPattern = compile(COMMENT_REGEX);
 
@@ -140,11 +158,18 @@ class ScriptReorderer
                     String tableName = m.group(1);
 
                     if (-1 == tableName.indexOf('.'))
-                        tableName = m.group(2) + "." + m.group(1);
+                    {
+                        String schemaName = m.group(2).isEmpty() ? _schemaName : m.group(2);
+                        tableName = schemaName + "." + m.group(1);
+                    }
 
                     addStatement(tableName, comments + m.group());
                     _contents = _contents.substring(m.end());
                     recognized = true;
+
+                    if (pattern.getOperation() == Operation.RenameTable)
+                        handleTableRename(tableName, _schemaName + "." + m.group(2));
+
                     break;
                 }
             }
@@ -203,10 +228,10 @@ class ScriptReorderer
 
         if (!_endingStatements.isEmpty())
         {
-            appendStatement(newScript, "\n=======================\n", isHtml);
+            appendStatement(newScript, new Statement(null, "\n=======================\n"), isHtml);
 
             for (String unknownStatement : _endingStatements)
-                appendStatement(newScript, unknownStatement, isHtml);
+                appendStatement(newScript, new Statement(null, unknownStatement), isHtml);
         }
 
         return newScript.toString();
@@ -226,32 +251,32 @@ class ScriptReorderer
     {
         String key = tableName.toLowerCase();
 
-        Collection<String> tableStatements = _statements.get(key);
+        Collection<Statement> tableStatements = _statements.get(key);
 
         if (null == tableStatements)
         {
-            tableStatements = new LinkedList<String>();
+            tableStatements = new LinkedList<Statement>();
             _statements.put(key, tableStatements);
         }
 
-        tableStatements.add(statement);
+        tableStatements.add(new Statement(tableName, statement));
     }
 
     private void appendAllStatements(StringBuilder sb, boolean html)
     {
-        for (Map.Entry<String, Collection<String>> tableStatements : _statements.entrySet())
-            for (String statement : tableStatements.getValue())
+        for (Map.Entry<String, Collection<Statement>> tableStatements : _statements.entrySet())
+            for (Statement statement : tableStatements.getValue())
                 appendStatement(sb, statement, html);
     }
 
-    private void appendStatement(StringBuilder sb, String statement, boolean html)
+    private void appendStatement(StringBuilder sb, Statement statement, boolean html)
     {
         if (html)
         {
             sb.append("<tr class=\"");
             sb.append(0 == (_row % 2) ? "labkey-row" : "labkey-alternate-row");
             sb.append("\"><td>");
-            sb.append(PageFlowUtil.filter(statement, true));
+            appendStatement(sb, statement);
             sb.append("</td></tr>\n");
             _row++;
         }
@@ -261,21 +286,62 @@ class ScriptReorderer
         }
     }
 
+    private void appendStatement(StringBuilder sb, Statement statement)
+    {
+        String sql = PageFlowUtil.filter(statement.getSql(), true);
+        String tableName = statement.getTableName();
+
+        // If we have a table name then try to highlight the first occurence in statement
+        if (null != tableName)
+        {
+            int tableNameIndex = StringUtils.indexOfIgnoreCase(sql, tableName);
+
+            if (-1 == tableNameIndex)
+            {
+                int dotIndex = tableName.indexOf('.');
+
+                if (-1 != dotIndex)
+                {
+                    tableName = tableName.substring(dotIndex + 1);
+                    tableNameIndex = StringUtils.indexOfIgnoreCase(sql, tableName);
+                }
+            }
+
+            if (-1 != tableNameIndex)
+            {
+                sb.append(sql.substring(0, tableNameIndex));
+                sb.append("<b>");
+                sb.append(sql.substring(tableNameIndex, tableNameIndex + tableName.length()));
+                sb.append("</b>");
+                sb.append(sql.substring(tableNameIndex + tableName.length()));
+
+                return;
+            }
+        }
+
+        sb.append(sql);
+    }
+
+    private void handleTableRename(String oldName, String newName)
+    {
+        Collection<Statement> statements = _statements.remove(oldName.toLowerCase());
+        _statements.put(newName.toLowerCase(), statements);
+    }
+
     private enum Type {Table, NonTable}
-    private enum RowEffect {None, Alter, Insert}
-    //private enum Bar {}
+    private enum Operation {Other, AlterRows, InsertRows, RenameTable}
 
     private static class SqlPattern
     {
         private final Pattern _pattern;
         private final Type _type;
-        private RowEffect _rowEffect;
+        private Operation _operation;
 
-        private SqlPattern(String regex, Type type, RowEffect rowEffect)
+        private SqlPattern(String regex, Type type, Operation operation)
         {
             _pattern = compile(regex);
             _type = type;
-            _rowEffect = rowEffect;
+            _operation = operation;
         }
 
         private Pattern compile(String regEx)
@@ -283,9 +349,9 @@ class ScriptReorderer
             return Pattern.compile(regEx.replaceAll(" ", "\\\\s+"), Pattern.CASE_INSENSITIVE + Pattern.DOTALL + Pattern.MULTILINE);
         }
 
-        public RowEffect getRowEffect()
+        public Operation getOperation()
         {
-            return _rowEffect;
+            return _operation;
         }
 
         public Type getType()
@@ -296,6 +362,29 @@ class ScriptReorderer
         public Matcher getMatcher(CharSequence input)
         {
             return _pattern.matcher(input);
+        }
+    }
+
+    // Saving the original table name helps with highlighting, especially in the case of a table rename
+    private static class Statement
+    {
+        private final @Nullable String _tableName;
+        private final String _sql;
+
+        private Statement(@Nullable String tableName, String sql)
+        {
+            _tableName = tableName;
+            _sql = sql;
+        }
+
+        public @Nullable String getTableName()
+        {
+            return _tableName;
+        }
+
+        public String getSql()
+        {
+            return _sql;
         }
     }
 }

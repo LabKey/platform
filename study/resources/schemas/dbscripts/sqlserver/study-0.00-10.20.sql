@@ -24,9 +24,9 @@ CREATE TABLE study.Study
 (
     Label NVARCHAR(200) NULL,
     Container ENTITYID NOT NULL
+
     CONSTRAINT PK_Study PRIMARY KEY (Container)
-)
-GO
+);
 
 
 CREATE TABLE study.Site
@@ -44,8 +44,7 @@ CREATE TABLE study.Site
     IsEndpoint Bit,
 
     CONSTRAINT PK_Site PRIMARY KEY (RowId)
-)
-GO
+);
 
 
 CREATE TABLE study.Visit
@@ -58,8 +57,7 @@ CREATE TABLE study.Visit
     Container ENTITYID NOT NULL
 
     CONSTRAINT PK_Visit PRIMARY KEY CLUSTERED (Container,VisitId)
-)
-GO
+);
 
 
 CREATE TABLE study.VisitMap
@@ -70,8 +68,7 @@ CREATE TABLE study.VisitMap
     IsRequired BIT NOT NULL DEFAULT 1
 
     CONSTRAINT PK_VisitMap PRIMARY KEY CLUSTERED (Container,VisitId,DataSetId)
-)
-GO
+);
 
 
 CREATE TABLE study.DataSet -- AKA CRF or Assay
@@ -85,8 +82,7 @@ CREATE TABLE study.DataSet -- AKA CRF or Assay
     Category NVARCHAR(200) NULL
 
     CONSTRAINT PK_DataSet PRIMARY KEY CLUSTERED (Container,DataSetId)
-)
-GO
+);
 
 
 -- ParticipantId is not a sequence, we assume these are externally defined
@@ -96,8 +92,8 @@ CREATE TABLE study.Participant
     ParticipantId VARCHAR(16) NOT NULL,
 
     CONSTRAINT PK_Participant PRIMARY KEY (Container, ParticipantId)
-)
-GO
+);
+
 
 CREATE TABLE study.SampleRequestStatus
 (
@@ -107,8 +103,7 @@ CREATE TABLE study.SampleRequestStatus
     Label NVARCHAR(100),
 
     CONSTRAINT PK_SampleRequestStatus PRIMARY KEY (RowId)
-)
-GO
+);
 
 
 CREATE TABLE study.SampleRequestActor
@@ -120,7 +115,7 @@ CREATE TABLE study.SampleRequestActor
     PerSite Bit NOT NULL DEFAULT 0,
 
     CONSTRAINT PK_SampleRequestActor PRIMARY KEY (RowId)
-)
+);
 
 
 CREATE TABLE study.SampleRequest
@@ -142,8 +137,8 @@ CREATE TABLE study.SampleRequest
     CONSTRAINT PK_SampleRequest PRIMARY KEY (RowId),
     CONSTRAINT FK_SampleRequest_SampleRequestStatus FOREIGN KEY (StatusId) REFERENCES study.SampleRequestStatus(RowId),
     CONSTRAINT FK_SampleRequest_Site FOREIGN KEY (DestinationSiteId) REFERENCES study.Site(RowId)
-)
-GO
+);
+
 
 CREATE TABLE study.SampleRequestRequirement
 (
@@ -159,8 +154,7 @@ CREATE TABLE study.SampleRequestRequirement
     CONSTRAINT FK_SampleRequestRequirement_SampleRequest FOREIGN KEY (RequestId) REFERENCES study.SampleRequest(RowId),
     CONSTRAINT FK_SampleRequestRequirement_SampleRequestActor FOREIGN KEY (ActorId) REFERENCES study.SampleRequestActor(RowId),
     CONSTRAINT FK_SampleRequestRequirement_Site FOREIGN KEY (SiteId) REFERENCES study.Site(RowId)
-)
-GO
+);
 
 
 CREATE TABLE study.SampleRequestEvent
@@ -176,8 +170,7 @@ CREATE TABLE study.SampleRequestEvent
     RequirementId INT NULL,
 
     CONSTRAINT FK_SampleRequestEvent_SampleRequest FOREIGN KEY (RequestId) REFERENCES study.SampleRequest(RowId),
-)
-GO
+);
 
 
 CREATE TABLE study.Report
@@ -194,8 +187,7 @@ CREATE TABLE study.Report
 
     CONSTRAINT PK_Report PRIMARY KEY (ReportId),
     CONSTRAINT UQ_Report UNIQUE (ContainerId, Label)
-)
-GO
+);
 
 
 CREATE TABLE study.StudyData
@@ -208,8 +200,7 @@ CREATE TABLE study.StudyData
 
     CONSTRAINT PK_ParticipantDataset PRIMARY KEY (LSID),
     CONSTRAINT AK_ParticipantDataset UNIQUE CLUSTERED (Container, DatasetId, VisitId, ParticipantId)
-)
-GO
+);
 
 
 CREATE TABLE study.SpecimenAdditive
@@ -223,8 +214,8 @@ CREATE TABLE study.SpecimenAdditive
 
     CONSTRAINT PK_Additives PRIMARY KEY (RowId),
     CONSTRAINT UQ_Additives UNIQUE (ScharpId, Container)
-)
-GO
+);
+
 
 CREATE TABLE study.SpecimenDerivative
 (
@@ -237,8 +228,8 @@ CREATE TABLE study.SpecimenDerivative
 
     CONSTRAINT PK_Derivatives PRIMARY KEY (RowId),
     CONSTRAINT UQ_Derivatives UNIQUE (ScharpId, Container)
-)
-GO
+);
+
 
 CREATE TABLE study.SpecimenPrimaryType
 (
@@ -251,8 +242,8 @@ CREATE TABLE study.SpecimenPrimaryType
 
     CONSTRAINT PK_PrimaryTypes PRIMARY KEY (RowId),
     CONSTRAINT UQ_PrimaryTypes UNIQUE (ScharpId, Container)
-)
-GO
+);
+
 
 CREATE TABLE study.Specimen
 (
@@ -289,8 +280,8 @@ CREATE TABLE study.Specimen
     CONSTRAINT FK_Specimens_Additives FOREIGN KEY (AdditiveTypeId) REFERENCES study.SpecimenAdditive(RowId),
     CONSTRAINT FK_Specimens_Derivatives FOREIGN KEY (DerivativeTypeId) REFERENCES study.SpecimenDerivative(RowId),
     CONSTRAINT FK_Specimens_PrimaryTypes FOREIGN KEY (PrimaryTypeId) REFERENCES study.SpecimenPrimaryType(RowId)
-)
-GO
+);
+
 
 CREATE TABLE study.SpecimenEvent
 (
@@ -315,8 +306,8 @@ CREATE TABLE study.SpecimenEvent
     CONSTRAINT UQ_Specimens_ScharpId UNIQUE (ScharpId, Container),
     CONSTRAINT FK_SpecimensEvents_Specimens FOREIGN KEY (SpecimenId) REFERENCES study.Specimen(RowId),
     CONSTRAINT FK_Specimens_Site FOREIGN KEY (LabId) REFERENCES study.Site(RowId)
-)
-GO
+);
+
 
 CREATE TABLE study.SampleRequestSpecimen
 (
@@ -328,8 +319,8 @@ CREATE TABLE study.SampleRequestSpecimen
     CONSTRAINT PK_SampleRequestSpecimen PRIMARY KEY (RowId),
     CONSTRAINT FK_SampleRequestSpecimen_SampleRequest FOREIGN KEY (SampleRequestId) REFERENCES study.SampleRequest(RowId),
     CONSTRAINT FK_SampleRequestSpecimen_Specimen FOREIGN KEY (SpecimenId) REFERENCES study.Specimen(RowId)
-)
-GO
+);
+
 
 ALTER TABLE study.StudyData ADD Created DATETIME NULL, Modified DATETIME NULL, VisitDate DATETIME NULL
 GO
@@ -352,8 +343,8 @@ CREATE TABLE study.AssayRun
     AssayType NVARCHAR(200) NOT NULL,
     Container ENTITYID NOT NULL,
     CONSTRAINT PK_AssayRun PRIMARY KEY (RowId)
-)
-GO
+);
+
 
 ALTER TABLE study.SampleRequestStatus ADD
     FinalState BIT NOT NULL DEFAULT 0,
@@ -391,8 +382,8 @@ CREATE TABLE study.UploadLog
 
     CONSTRAINT PK_UploadLog PRIMARY KEY (RowId),
     CONSTRAINT UQ_UploadLog_FilePath UNIQUE (FilePath)
-)
-GO
+);
+
 
 ALTER TABLE study.Report
     ADD ShowWithDataset INT NULL
@@ -453,8 +444,8 @@ CREATE TABLE study.Plate
     Rows INT NOT NULL,
     Columns INT NOT NULL,
     CONSTRAINT PK_Plate PRIMARY KEY (RowId)
-)
-GO
+);
+
 
 CREATE TABLE study.WellGroup
 (
@@ -467,8 +458,8 @@ CREATE TABLE study.WellGroup
     TypeName NVARCHAR(50) NOT NULL,
     CONSTRAINT PK_WellGroup PRIMARY KEY (RowId),
     CONSTRAINT FK_WellGroup_Plate FOREIGN KEY (PlateId) REFERENCES study.Plate(RowId)
-)
-GO
+);
+
 
 CREATE TABLE study.Well
 (
@@ -482,8 +473,7 @@ CREATE TABLE study.Well
     Col INT NOT NULL,
     CONSTRAINT PK_Well PRIMARY KEY (RowId),
     CONSTRAINT FK_Well_Plate FOREIGN KEY (PlateId) REFERENCES study.Plate(RowId)
-)
-GO
+);
 
 --
 -- refactor Visit, split VisitId into two different keys
@@ -815,13 +805,12 @@ GO
 
 CREATE INDEX IX_SampleRequest_EntityId ON study.SampleRequest(EntityId);
 CREATE INDEX IX_SampleRequestRequirement_OwnerEntityId ON study.SampleRequestRequirement(OwnerEntityId);
-GO
 
 DROP TABLE study.AssayRun
 GO
 
 ALTER TABLE study.Specimen
-    ADD Requestable BIT
+    ADD Requestable BIT;
 
 ALTER TABLE study.SpecimenEvent ADD
     freezer NVARCHAR(200),
@@ -853,9 +842,6 @@ ALTER TABLE study.Dataset
     DEFAULT 0 FOR DemographicData
 GO
 
-ALTER TABLE study.Study ADD StudySecurity BIT DEFAULT 0
-GO
-
 ALTER TABLE study.Plate ADD Type NVARCHAR(200)
 GO
 
@@ -866,15 +852,13 @@ CREATE TABLE study.Cohort
     Container ENTITYID NOT NULL,
     CONSTRAINT PK_Cohort PRIMARY KEY (RowId),
     CONSTRAINT UQ_Cohort_Label UNIQUE(Label, Container)
-)
-GO
+);
 
 ALTER TABLE study.Dataset ADD
     CohortId INT NULL,
-    CONSTRAINT FK_Dataset_Cohort FOREIGN KEY (CohortId) REFERENCES study.Cohort (RowId)
+    CONSTRAINT FK_Dataset_Cohort FOREIGN KEY (CohortId) REFERENCES study.Cohort (RowId);
 
-CREATE INDEX IX_Dataset_CohortId ON study.Dataset(CohortId)
-GO
+CREATE INDEX IX_Dataset_CohortId ON study.Dataset(CohortId);
 
 ALTER TABLE study.Participant ADD
     CohortId INT NULL,
@@ -882,10 +866,7 @@ ALTER TABLE study.Participant ADD
 
 CREATE INDEX IX_Participant_CohortId ON study.Participant(CohortId);
 CREATE INDEX IX_Participant_ParticipantId ON study.Participant(ParticipantId);
-GO
-
 CREATE INDEX IX_Specimen_Ptid ON study.Specimen(Ptid);
-GO
 
 ALTER TABLE study.Visit ADD
     CohortId INT NULL,
@@ -893,7 +874,6 @@ ALTER TABLE study.Visit ADD
 GO
 
 CREATE INDEX IX_Visit_CohortId ON study.Visit(CohortId);
-GO
 
 ALTER TABLE study.Study ADD
     ParticipantCohortDataSetId INT NULL,
@@ -904,8 +884,7 @@ ALTER TABLE study.Participant
     DROP CONSTRAINT PK_Participant
 GO
 
-DROP INDEX study.Participant.IX_Participant_ParticipantId
-GO    
+DROP INDEX study.Participant.IX_Participant_ParticipantId;
 
 ALTER TABLE study.Participant
     ALTER COLUMN ParticipantId NVARCHAR(32) NOT NULL
@@ -913,7 +892,7 @@ GO
 
 ALTER TABLE study.Participant
     ADD CONSTRAINT PK_Participant PRIMARY KEY (Container, ParticipantId)
-GO    
+GO
 
 CREATE INDEX IX_Participant_ParticipantId ON study.Participant(ParticipantId)
 GO
@@ -946,8 +925,7 @@ CREATE TABLE study.ParticipantView
 
     CONSTRAINT PK_ParticipantView PRIMARY KEY (RowId),
     CONSTRAINT FK_ParticipantView_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId)
-)
-GO
+);
 
 ALTER TABLE study.specimen ADD CurrentLocation INT;
 ALTER TABLE study.specimen ADD
@@ -958,79 +936,9 @@ CREATE INDEX IX_Specimen_CurrentLocation ON study.Specimen(CurrentLocation);
 CREATE INDEX IX_Specimen_VisitValue ON study.Specimen(VisitValue);
 CREATE INDEX IX_Visit_SequenceNumMin ON study.Visit(SequenceNumMin);
 CREATE INDEX IX_Visit_ContainerSeqNum ON study.Visit(Container, SequenceNumMin);
-GO
-
-ALTER TABLE study.Dataset ADD
-    KeyPropertyManaged BIT DEFAULT 0
-GO
-
-ALTER TABLE study.Study ADD
-    DatasetRowsEditable BIT DEFAULT 0
-GO
-
-UPDATE study.Study
-    SET DatasetRowsEditable = 0 WHERE DatasetRowsEditable IS NULL
-GO
-
-UPDATE study.Dataset
-    SET KeyPropertyManaged = 0 WHERE KeyPropertyManaged IS NULL
-GO
-
-ALTER TABLE study.Study
-    ALTER COLUMN DatasetRowsEditable BIT NOT NULL
-GO
-
-ALTER TABLE study.Dataset
-    ALTER COLUMN KeyPropertyManaged BIT NOT NULL
-GO
 
 ALTER TABLE study.Study
     ADD SecurityType NVARCHAR(32)
-GO
-
-UPDATE study.Study
-    SET SecurityType = 'ADVANCED' WHERE StudySecurity = 1
-
-UPDATE study.Study
-    SET SecurityType = 'EDITABLE_DATASETS' WHERE StudySecurity = 0 AND DatasetRowsEditable = 1
-
-UPDATE study.Study
-    SET SecurityType = 'BASIC' WHERE StudySecurity = 0 AND DatasetRowsEditable = 0
-GO
-
-declare @constname sysname
-select @constname= so.name
-from
-sysobjects so inner join sysconstraints sc on (sc.constid = so.id)
-inner join sysobjects soc on (sc.id = soc.id)
-where so.xtype='D'
-and soc.id=object_id('Study.Study')
-and col_name(soc.id, sc.colid) = 'StudySecurity'
-
-declare @cmd VARCHAR(500)
-select @cmd='Alter Table Study.Study DROP CONSTRAINT ' + @constname
-select @cmd
-
-exec(@cmd)
-
-ALTER TABLE study.Study
-  DROP COLUMN StudySecurity
-
-select @constname= so.name
-from
-sysobjects so inner join sysconstraints sc on (sc.constid = so.id)
-inner join sysobjects soc on (sc.id = soc.id)
-where so.xtype='D'
-and soc.id=object_id('Study.Study')
-and col_name(soc.id, sc.colid) = 'DatasetRowsEditable'
-
-select @cmd='Alter Table Study.Study DROP CONSTRAINT ' + @constname
-select @cmd
-
-exec(@cmd)
-
-ALTER TABLE study.Study
-    DROP COLUMN DatasetRowsEditable
 GO
 
 ALTER TABLE study.Study
@@ -1043,8 +951,7 @@ GO
 
 UPDATE study.Cohort
     SET LSID='UPGRADE_REQUIRED'
-    WHERE LSID IS NULL
-GO
+    WHERE LSID IS NULL;
 
 ALTER TABLE study.Cohort
     ALTER COLUMN LSID NVARCHAR(200) NOT NULL
@@ -1059,8 +966,7 @@ UPDATE study.Visit
     WHERE LSID IS NULL
 GO
 
-ALTER TABLE
-    study.Visit
+ALTER TABLE study.Visit
     ALTER COLUMN LSID NVARCHAR(200) NOT NULL
 GO
 
@@ -1070,11 +976,9 @@ GO
 
 UPDATE study.Study
     SET LSID='UPGRADE_REQUIRED'
-    WHERE LSID IS NULL
-GO
+    WHERE LSID IS NULL;
 
-ALTER TABLE
-    study.Study
+ALTER TABLE study.Study
     ALTER COLUMN LSID NVARCHAR(200) NOT NULL
 GO
 
@@ -1092,15 +996,13 @@ CREATE TABLE study.QCState
     PublicData BIT NOT NULL,
     CONSTRAINT PK_QCState PRIMARY KEY (RowId),
     CONSTRAINT UQ_QCState_Label UNIQUE(Label, Container)
-)
-GO
+);
 
 ALTER TABLE study.StudyData ADD
     QCState INT NULL,
-    CONSTRAINT FK_StudyData_QCState FOREIGN KEY (QCState) REFERENCES study.QCState (RowId)
+    CONSTRAINT FK_StudyData_QCState FOREIGN KEY (QCState) REFERENCES study.QCState (RowId);
 
-CREATE INDEX IX_StudyData_QCState ON study.StudyData(QCState)
-GO
+CREATE INDEX IX_StudyData_QCState ON study.StudyData(QCState);
 
 ALTER TABLE study.Study ADD
     DefaultPipelineQCState INT,
@@ -1117,15 +1019,9 @@ ALTER TABLE
     DROP COLUMN LSID
 GO
 
-UPDATE study.Study
-  SET SecurityType = 'BASIC_READ' WHERE SecurityType = 'BASIC'
-
-UPDATE study.Study
-  SET SecurityType = 'BASIC_WRITE' WHERE SecurityType = 'EDITABLE_DATASETS'
-
-UPDATE study.Study
-  SET SecurityType = 'ADVANCED_READ' WHERE SecurityType = 'ADVANCED'
-GO
+UPDATE study.Study SET SecurityType = 'BASIC_READ' WHERE SecurityType = 'BASIC';
+UPDATE study.Study SET SecurityType = 'BASIC_WRITE' WHERE SecurityType = 'EDITABLE_DATASETS';
+UPDATE study.Study SET SecurityType = 'ADVANCED_READ' WHERE SecurityType = 'ADVANCED';
 
 CREATE TABLE study.SpecimenComment
 (
@@ -1160,7 +1056,6 @@ ALTER TABLE study.Specimen
 GO
 
 DROP INDEX study.SpecimenComment.IX_SpecimenComment_SpecimenNumber;
-GO
 
 ALTER TABLE study.SpecimenComment
     ADD SpecimenHash NVARCHAR(256);
@@ -1176,7 +1071,7 @@ GO
 /* study-8.30-9.10.sql */
 
 ALTER TABLE study.Dataset
-  ADD protocolid INT NULL;
+    ADD protocolid INT NULL;
 GO
 
 ALTER TABLE study.SpecimenEvent
@@ -1185,7 +1080,6 @@ GO
 
 UPDATE study.SpecimenEvent SET SpecimenNumber =
     (SELECT SpecimenNumber FROM study.Specimen WHERE study.SpecimenEvent.SpecimenId = study.Specimen.RowId);
-GO
 
 ALTER TABLE study.Specimen
     DROP COLUMN SpecimenNumber;
@@ -1206,8 +1100,7 @@ UPDATE exp.protocol SET MaxInputMaterialPerInstance = NULL
             Lsid LIKE '%:NabAssayProtocol.Folder-%' OR 
             Lsid LIKE '%:ElispotAssayProtocol.Folder-%' OR 
             Lsid LIKE '%:MicroarrayAssayProtocol.Folder-%'
-        ) AND ApplicationType = 'ExperimentRun'
-GO
+        ) AND ApplicationType = 'ExperimentRun';
 
 -- Remove ScharpId from SpecimenPrimaryType
 ALTER TABLE study.SpecimenPrimaryType DROP CONSTRAINT UQ_PrimaryTypes;
@@ -1263,7 +1156,6 @@ UPDATE study.Specimen SET
         ExternalId = study.Specimen.DerivativeTypeId AND study.SpecimenDerivative.Container = study.Specimen.Container),
     AdditiveTypeId = (SELECT RowId FROM study.SpecimenAdditive WHERE
         ExternalId = study.Specimen.AdditiveTypeId AND study.SpecimenAdditive.Container = study.Specimen.Container);
-GO
 
 ALTER TABLE study.Site ADD
     Repository BIT,
@@ -1307,13 +1199,10 @@ ALTER TABLE study.SpecimenEvent ADD
     ShippedToLab INT,
     CONSTRAINT FK_ShippedFromLab_Site FOREIGN KEY (ShippedFromLab) references study.Site(RowId),
     CONSTRAINT FK_ShippedToLab_Site FOREIGN KEY (ShippedToLab) references study.Site(RowId)
-
 GO
 
-CREATE INDEX IX_SpecimenEvent_ShippedFromLab ON study.SpecimenEvent(ShippedFromLab)
-CREATE INDEX IX_SpecimenEvent_ShippedToLab ON study.SpecimenEvent(ShippedToLab)
-
-GO
+CREATE INDEX IX_SpecimenEvent_ShippedFromLab ON study.SpecimenEvent(ShippedFromLab);
+CREATE INDEX IX_SpecimenEvent_ShippedToLab ON study.SpecimenEvent(ShippedToLab);
 
 ALTER TABLE study.Site ALTER COLUMN LabUploadCode NVARCHAR(10);
 GO
@@ -1348,8 +1237,7 @@ SELECT
 REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(er.lsid, ':ElispotAssayRun', ':Experiment'), ':MicroarrayAssayRun', ':Experiment'), ':GeneralAssayRun', ':Experiment'), ':NabAssayRun', ':Experiment'), ':LuminexAssayRun', ':Experiment'), ':CBCAssayRun', ':Experiment'),
 er.name + ' Batch', er.created, er.createdby, er.modified, er.modifiedby, er.container, 0, p.rowid FROM exp.experimentrun er, exp.protocol p
 WHERE er.lsid LIKE 'urn:lsid:%:%AssayRun.Folder-%:%' AND er.protocollsid = p.lsid
-AND er.RowId NOT IN (SELECT ExperimentRunId FROM exp.RunList rl, exp.Experiment e WHERE rl.ExperimentId = e.RowId AND e.BatchProtocolId IS NOT NULL)
-GO
+AND er.RowId NOT IN (SELECT ExperimentRunId FROM exp.RunList rl, exp.Experiment e WHERE rl.ExperimentId = e.RowId AND e.BatchProtocolId IS NOT NULL);
 
 -- Add an entry to the object table
 INSERT INTO exp.object (objecturi, container)
@@ -1357,8 +1245,7 @@ SELECT
 REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(er.lsid, ':ElispotAssayRun', ':Experiment'), ':MicroarrayAssayRun', ':Experiment'), ':GeneralAssayRun', ':Experiment'), ':NabAssayRun', ':Experiment'), ':LuminexAssayRun', ':Experiment'), ':CBCAssayRun', ':Experiment'),
 er.container FROM exp.experimentrun er
 WHERE er.lsid LIKE 'urn:lsid:%:%AssayRun.Folder-%:%'
-AND er.RowId NOT IN (SELECT ExperimentRunId FROM exp.RunList rl, exp.Experiment e WHERE rl.ExperimentId = e.RowId AND e.BatchProtocolId IS NOT NULL)
-GO
+AND er.RowId NOT IN (SELECT ExperimentRunId FROM exp.RunList rl, exp.Experiment e WHERE rl.ExperimentId = e.RowId AND e.BatchProtocolId IS NOT NULL);
 
 -- Flip the properties to hang from the batch
 UPDATE exp.ObjectProperty SET ObjectId =
@@ -1369,52 +1256,49 @@ UPDATE exp.ObjectProperty SET ObjectId =
 WHERE
     PropertyId IN (SELECT dp.PropertyId FROM exp.DomainDescriptor dd, exp.PropertyDomain dp WHERE dd.DomainId = dp.DomainId AND dd.DomainURI LIKE 'urn:lsid:%:AssayDomain-Batch.Folder-%:%')
     AND ObjectId IN (SELECT o.ObjectId FROM exp.Object o, exp.ExperimentRun er WHERE o.ObjectURI = er.LSID AND er.lsid LIKE 'urn:lsid:%:%AssayRun.Folder-%:%'
-    AND er.RowId NOT IN (SELECT ExperimentRunId FROM exp.RunList rl, exp.Experiment e WHERE rl.ExperimentId = e.RowId AND e.BatchProtocolId IS NOT NULL))
-GO
+    AND er.RowId NOT IN (SELECT ExperimentRunId FROM exp.RunList rl, exp.Experiment e WHERE rl.ExperimentId = e.RowId AND e.BatchProtocolId IS NOT NULL));
 
 -- Point the runs at their new batches
 INSERT INTO exp.RunList (ExperimentRunId, ExperimentId)
     SELECT er.RowId, e.RowId FROM exp.ExperimentRun er, exp.Experiment e
     WHERE
         e.LSID = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(er.LSID, ':ElispotAssayRun', ':Experiment'), ':MicroarrayAssayRun', ':Experiment'), ':GeneralAssayRun', ':Experiment'), ':NabAssayRun', ':Experiment'), ':LuminexAssayRun', ':Experiment'), ':CBCAssayRun', ':Experiment')
-        AND er.RowId NOT IN (SELECT ExperimentRunId FROM exp.RunList rl, exp.Experiment e WHERE rl.ExperimentId = e.RowId AND e.BatchProtocolId IS NOT NULL)
-GO
+        AND er.RowId NOT IN (SELECT ExperimentRunId FROM exp.RunList rl, exp.Experiment e WHERE rl.ExperimentId = e.RowId AND e.BatchProtocolId IS NOT NULL);
 
 -- Clean out the duplicated batch properties on the runs
 DELETE FROM exp.ObjectProperty
     WHERE
         ObjectId IN (SELECT o.ObjectId FROM exp.Object o WHERE o.ObjectURI LIKE 'urn:lsid:%:%AssayRun.Folder-%:%')
-        AND PropertyId IN (SELECT dp.PropertyId FROM exp.DomainDescriptor dd, exp.PropertyDomain dp WHERE dd.DomainId = dp.DomainId AND dd.DomainURI LIKE 'urn:lsid:%:AssayDomain-Batch.Folder-%:%')
-GO
+        AND PropertyId IN (SELECT dp.PropertyId FROM exp.DomainDescriptor dd, exp.PropertyDomain dp WHERE dd.DomainId = dp.DomainId AND dd.DomainURI LIKE 'urn:lsid:%:AssayDomain-Batch.Folder-%:%');
 
 /* study-9.10-9.20.sql */
 
 ALTER TABLE study.SpecimenComment ADD
-  QualityControlFlag BIT NOT NULL DEFAULT 0,
-  QualityControlFlagForced BIT NOT NULL DEFAULT 0,
-  QualityControlComments NVARCHAR(512)
+    QualityControlFlag BIT NOT NULL DEFAULT 0,
+    QualityControlFlagForced BIT NOT NULL DEFAULT 0,
+    QualityControlComments NVARCHAR(512)
 GO
 
 ALTER TABLE study.SpecimenEvent ADD
-  Ptid NVARCHAR(32),
-  DrawTimestamp DATETIME,
-  SalReceiptDate DATETIME,
-  ClassId NVARCHAR(20),
-  VisitValue NUMERIC(15,4),
-  ProtocolNumber NVARCHAR(20),
-  VisitDescription NVARCHAR(10),
-  Volume double precision,
-  VolumeUnits NVARCHAR(20),
-  SubAdditiveDerivative NVARCHAR(50),
-  PrimaryTypeId INT,
-  DerivativeTypeId INT,
-  AdditiveTypeId INT,
-  DerivativeTypeId2 INT,
-  OriginatingLocationId INT,
-  FrozenTime DATETIME,
-  ProcessingTime DATETIME,
-  PrimaryVolume FLOAT,
-  PrimaryVolumeUnits NVARCHAR(20)
+    Ptid NVARCHAR(32),
+    DrawTimestamp DATETIME,
+    SalReceiptDate DATETIME,
+    ClassId NVARCHAR(20),
+    VisitValue NUMERIC(15,4),
+    ProtocolNumber NVARCHAR(20),
+    VisitDescription NVARCHAR(10),
+    Volume double precision,
+    VolumeUnits NVARCHAR(20),
+    SubAdditiveDerivative NVARCHAR(50),
+    PrimaryTypeId INT,
+    DerivativeTypeId INT,
+    AdditiveTypeId INT,
+    DerivativeTypeId2 INT,
+    OriginatingLocationId INT,
+    FrozenTime DATETIME,
+    ProcessingTime DATETIME,
+    PrimaryVolume FLOAT,
+    PrimaryVolumeUnits NVARCHAR(20)
 GO
 
 UPDATE study.SpecimenEvent SET
@@ -1437,13 +1321,11 @@ UPDATE study.SpecimenEvent SET
     study.SpecimenEvent.ProcessingTime = study.Specimen.ProcessingTime,
     study.SpecimenEvent.PrimaryVolume = study.Specimen.PrimaryVolume,
     study.SpecimenEvent.PrimaryVolumeUnits = study.Specimen.PrimaryVolumeUnits
-FROM study.Specimen WHERE study.Specimen.RowId = study.SpecimenEvent.SpecimenId
-GO
+FROM study.Specimen WHERE study.Specimen.RowId = study.SpecimenEvent.SpecimenId;
 
 CREATE INDEX IX_ParticipantVisit_Container ON study.ParticipantVisit(Container);
 CREATE INDEX IX_ParticipantVisit_ParticipantId ON study.ParticipantVisit(ParticipantId);
 CREATE INDEX IX_ParticipantVisit_SequenceNum ON study.ParticipantVisit(SequenceNum);
-GO
 
 ALTER TABLE study.SampleRequestSpecimen
   ADD Orphaned BIT NOT NULL DEFAULT 0
@@ -1455,8 +1337,7 @@ UPDATE study.SampleRequestSpecimen SET Orphaned = 1 WHERE RowId IN (
         study.Specimen.GlobalUniqueId = study.SampleRequestSpecimen.SpecimenGlobalUniqueId AND
         study.Specimen.Container = study.SampleRequestSpecimen.Container
     WHERE study.Specimen.GlobalUniqueId IS NULL
-)
-GO
+);
 
 -- It was a mistake to make this a "hard" foreign key- query will take care of
 -- linking without it, so we just need an index.  This allows us to drop all contents
@@ -1464,27 +1345,24 @@ GO
 ALTER TABLE study.Specimen DROP CONSTRAINT FK_Specimens_Derivatives2
 GO
 
-CREATE INDEX IX_Specimens_Derivatives2 ON study.Specimen(DerivativeTypeId2)
-GO
+CREATE INDEX IX_Specimens_Derivatives2 ON study.Specimen(DerivativeTypeId2);
 
 ALTER TABLE study.Specimen ADD
-  AtRepository BIT NOT NULL DEFAULT 0,
-  LockedInRequest BIT NOT NULL DEFAULT 0,
-  Available BIT NOT NULL DEFAULT 0
+    AtRepository BIT NOT NULL DEFAULT 0,
+    LockedInRequest BIT NOT NULL DEFAULT 0,
+    Available BIT NOT NULL DEFAULT 0
 GO
 
 UPDATE study.Specimen SET AtRepository = 1
-  WHERE CurrentLocation IN (SELECT ss.RowId FROM study.Site ss WHERE ss.Repository = 1)
-GO
+    WHERE CurrentLocation IN (SELECT ss.RowId FROM study.Site ss WHERE ss.Repository = 1);
 
 UPDATE study.Specimen SET LockedInRequest = 1 WHERE RowId IN
 (
-  SELECT study.Specimen.RowId FROM ((study.SampleRequest AS request
-      JOIN study.SampleRequestStatus AS status ON request.StatusId = status.RowId AND status.SpecimensLocked = 1)
-      JOIN study.SampleRequestSpecimen AS map ON request.rowid = map.SampleRequestId AND map.Orphaned = 0)
-      JOIN study.Specimen ON study.Specimen.GlobalUniqueId = map.SpecimenGlobalUniqueId AND study.Specimen.Container = map.Container
-)
-GO
+    SELECT study.Specimen.RowId FROM ((study.SampleRequest AS request
+        JOIN study.SampleRequestStatus AS status ON request.StatusId = status.RowId AND status.SpecimensLocked = 1)
+        JOIN study.SampleRequestSpecimen AS map ON request.rowid = map.SampleRequestId AND map.Orphaned = 0)
+        JOIN study.Specimen ON study.Specimen.GlobalUniqueId = map.SpecimenGlobalUniqueId AND study.Specimen.Container = map.Container
+);
 
 UPDATE study.Specimen SET Available =
 (
@@ -1505,23 +1383,20 @@ UPDATE study.Specimen SET Available =
       ELSE 0
       END)
   END
-)
-GO
+);
 
 ALTER TABLE study.Specimen ADD
-  ProcessedByInitials NVARCHAR(32),
-  ProcessingDate DATETIME,
-  ProcessingLocation INT
+    ProcessedByInitials NVARCHAR(32),
+    ProcessingDate DATETIME,
+    ProcessingLocation INT
 GO
 
-DROP INDEX study.SpecimenEvent.IX_SpecimenEvent_ShippedFromLab
-GO
-DROP INDEX study.SpecimenEvent.IX_SpecimenEvent_ShippedToLab
-GO
+DROP INDEX study.SpecimenEvent.IX_SpecimenEvent_ShippedFromLab;
+DROP INDEX study.SpecimenEvent.IX_SpecimenEvent_ShippedToLab;
 
 ALTER TABLE study.SpecimenEvent ADD
-  ProcessedByInitials NVARCHAR(32),
-  ProcessingDate DATETIME
+    ProcessedByInitials NVARCHAR(32),
+    ProcessingDate DATETIME
 GO
 
 ALTER TABLE study.SpecimenEvent DROP CONSTRAINT FK_ShippedFromLab_Site
@@ -1535,12 +1410,12 @@ ALTER TABLE study.SpecimenEvent ALTER COLUMN ShippedToLab NVARCHAR(32)
 GO
 
 ALTER TABLE study.Study ADD
-  AllowReload BIT NOT NULL DEFAULT 0,
-  ReloadInterval INT NULL,
-  LastReload DATETIME NULL;
+    AllowReload BIT NOT NULL DEFAULT 0,
+    ReloadInterval INT NULL,
+    LastReload DATETIME NULL;
 
 ALTER TABLE study.Study ADD
-  ReloadUser UserId;
+    ReloadUser UserId;
 
 -- This script creates a hard table to hold static specimen data.  Dynamic data (available counts, etc)
 -- is calculated on the fly via aggregates.
@@ -1566,38 +1441,36 @@ UPDATE study.Specimen SET SpecimenHash =
     +'~'+ CASE WHEN AdditiveTypeId IS NOT NULL THEN CAST(AdditiveTypeId AS NVARCHAR) ELSE '' END
 FROM study.Specimen InnerSpecimen
 JOIN core.Containers ON InnerSpecimen.Container = core.Containers.EntityId
-WHERE InnerSpecimen.RowId = study.Specimen.RowId)
-GO
+WHERE InnerSpecimen.RowId = study.Specimen.RowId);
 
 UPDATE study.SpecimenComment SET SpecimenHash =
     (SELECT SpecimenHash FROM study.Specimen
     WHERE study.SpecimenComment.Container = study.Specimen.Container AND
-          study.SpecimenComment.GlobalUniqueId = study.Specimen.GlobalUniqueId)
-GO
+          study.SpecimenComment.GlobalUniqueId = study.Specimen.GlobalUniqueId);
 
 -- First, we rename 'specimen' to 'vial' to correct a long-standing bad name
 ALTER TABLE study.Specimen
     DROP CONSTRAINT FK_SpecimenOrigin_Site
 GO
 
-DROP INDEX study.Specimen.IX_Specimen_AdditiveTypeId
-DROP INDEX study.Specimen.IX_Specimen_DerivativeTypeId
-DROP INDEX study.Specimen.IX_Specimen_OriginatingLocationId
-DROP INDEX study.Specimen.IX_Specimen_PrimaryTypeId
-DROP INDEX study.Specimen.IX_Specimen_Ptid
-DROP INDEX study.Specimen.IX_Specimen_VisitValue
-DROP INDEX study.Specimen.IX_Specimens_Derivatives2
+DROP INDEX study.Specimen.IX_Specimen_AdditiveTypeId;
+DROP INDEX study.Specimen.IX_Specimen_DerivativeTypeId;
+DROP INDEX study.Specimen.IX_Specimen_OriginatingLocationId;
+DROP INDEX study.Specimen.IX_Specimen_PrimaryTypeId;
+DROP INDEX study.Specimen.IX_Specimen_Ptid;
+DROP INDEX study.Specimen.IX_Specimen_VisitValue;
+DROP INDEX study.Specimen.IX_Specimens_Derivatives2;
 
 -- First, we rename 'specimen' to 'vial' to correct a long-standing bad name
-EXEC sp_rename 'study.Specimen', 'Vial'
+EXEC sp_rename 'study.Specimen', 'Vial';
 
-EXEC sp_rename 'study.Vial.IX_Specimen_Container', 'IX_Vial_Container', 'INDEX'
-EXEC sp_rename 'study.Vial.IX_Specimen_CurrentLocation', 'IX_Vial_CurrentLocation', 'INDEX'
-EXEC sp_rename 'study.Vial.IX_Specimen_GlobalUniqueId', 'IX_Vial_GlobalUniqueId', 'INDEX'
-EXEC sp_rename 'study.Vial.IX_Specimen_SpecimenHash', 'IX_Vial_Container_SpecimenHash', 'INDEX'
+EXEC sp_rename 'study.Vial.IX_Specimen_Container', 'IX_Vial_Container', 'INDEX';
+EXEC sp_rename 'study.Vial.IX_Specimen_CurrentLocation', 'IX_Vial_CurrentLocation', 'INDEX';
+EXEC sp_rename 'study.Vial.IX_Specimen_GlobalUniqueId', 'IX_Vial_GlobalUniqueId', 'INDEX';
+EXEC sp_rename 'study.Vial.IX_Specimen_SpecimenHash', 'IX_Vial_Container_SpecimenHash', 'INDEX';
 
 
--- Next, we create the specimen table, which will hold static properties of a specimen draw (versus a vial)
+-- Next, we create the new specimen table, which will hold static properties of a specimen draw (versus a vial)
 CREATE TABLE study.Specimen
 (
     RowId INT IDENTITY(1,1),
@@ -1627,19 +1500,17 @@ CREATE TABLE study.Specimen
     AvailableCount INTEGER,
     ExpectedAvailableCount INTEGER,
     CONSTRAINT PK_Specimen PRIMARY KEY (RowId)
-)
-GO
+);
 
-CREATE INDEX IX_Specimen_AdditiveTypeId ON study.Specimen(AdditiveTypeId)
-CREATE INDEX IX_Specimen_Container ON study.Specimen(Container)
-CREATE INDEX IX_Specimen_DerivativeTypeId ON study.Specimen(DerivativeTypeId)
-CREATE INDEX IX_Specimen_OriginatingLocationId ON study.Specimen(OriginatingLocationId)
-CREATE INDEX IX_Specimen_PrimaryTypeId ON study.Specimen(PrimaryTypeId)
-CREATE INDEX IX_Specimen_Ptid ON study.Specimen(Ptid)
-CREATE INDEX IX_Specimen_Container_SpecimenHash ON study.Specimen(Container, SpecimenHash)
-CREATE INDEX IX_Specimen_VisitValue ON study.Specimen(VisitValue)
-CREATE INDEX IX_Specimen_DerivativeTypeId2 ON study.Specimen(DerivativeTypeId2)
-GO
+CREATE INDEX IX_Specimen_AdditiveTypeId ON study.Specimen(AdditiveTypeId);
+CREATE INDEX IX_Specimen_Container ON study.Specimen(Container);
+CREATE INDEX IX_Specimen_DerivativeTypeId ON study.Specimen(DerivativeTypeId);
+CREATE INDEX IX_Specimen_OriginatingLocationId ON study.Specimen(OriginatingLocationId);
+CREATE INDEX IX_Specimen_PrimaryTypeId ON study.Specimen(PrimaryTypeId);
+CREATE INDEX IX_Specimen_Ptid ON study.Specimen(Ptid);
+CREATE INDEX IX_Specimen_Container_SpecimenHash ON study.Specimen(Container, SpecimenHash);
+CREATE INDEX IX_Specimen_VisitValue ON study.Specimen(VisitValue);
+CREATE INDEX IX_Specimen_DerivativeTypeId2 ON study.Specimen(DerivativeTypeId2);
 
 -- we populate 'specimen' via a grouped query over the vial table to retrive the constant properties:
 INSERT INTO study.Specimen (Container, SpecimenHash, Ptid, VisitDescription, VisitValue,
@@ -1655,8 +1526,7 @@ INSERT INTO study.Specimen (Container, SpecimenHash, Ptid, VisitDescription, Vis
         VisitValue, VolumeUnits, PrimaryTypeId, AdditiveTypeId, DerivativeTypeId,
         PrimaryVolume, PrimaryVolumeUnits, DerivativeTypeId2,
         DrawTimestamp, SalReceiptDate, ClassId, ProtocolNumber, SubAdditiveDerivative,
-        OriginatingLocationId
-GO
+        OriginatingLocationId;
 
 -- after specimen is populated, we create a foreign key column on vial, populate it, and change the type to NOT NULL
 ALTER TABLE study.Vial ADD SpecimenId INTEGER;
@@ -1671,8 +1541,7 @@ UPDATE study.Vial SET SpecimenId = (
 ALTER TABLE study.Vial ALTER COLUMN SpecimenId INTEGER NOT NULL
 GO
 
-CREATE INDEX IX_Vial_SpecimenId ON study.Vial(SpecimenId)
-GO
+CREATE INDEX IX_Vial_SpecimenId ON study.Vial(SpecimenId);
 
 ALTER TABLE study.Vial ADD CONSTRAINT FK_Vial_Specimen FOREIGN KEY (SpecimenId) REFERENCES study.Specimen(RowId)
 GO
@@ -1717,8 +1586,7 @@ FROM (SELECT
     FROM study.Vial
     GROUP BY Container, SpecimenHash
     ) VialCounts
-WHERE study.Specimen.Container = VialCounts.Container AND study.Specimen.SpecimenHash = VialCounts.SpecimenHash
-GO
+WHERE study.Specimen.Container = VialCounts.Container AND study.Specimen.SpecimenHash = VialCounts.SpecimenHash;
 
 ALTER TABLE study.Vial DROP
     COLUMN FrozenTime,
@@ -1736,8 +1604,7 @@ UPDATE study.Vial SET
     PrimaryVolume = study.Specimen.PrimaryVolume,
     PrimaryVolumeUnits = study.Specimen.PrimaryVolumeUnits
 FROM study.Specimen
-WHERE study.Specimen.RowId = study.Vial.SpecimenId
-GO
+WHERE study.Specimen.RowId = study.Vial.SpecimenId;
 
 ALTER TABLE study.Specimen DROP
     COLUMN PrimaryVolume,
@@ -1747,8 +1614,7 @@ GO
 EXEC sp_rename 'study.SpecimenEvent.SpecimenId', 'VialId', 'COLUMN'
 GO
 
-CREATE INDEX IDX_StudyData_ContainerKey ON study.StudyData(Container, _Key)
-GO
+CREATE INDEX IDX_StudyData_ContainerKey ON study.StudyData(Container, _Key);
 
 /* study-9.20-9.30.sql */
 
@@ -1767,14 +1633,10 @@ GO
 ALTER TABLE study.Participant ADD InitialCohortId INTEGER
 GO
 
-UPDATE study.Participant SET InitialCohortId = CurrentCohortId
-GO
+UPDATE study.Participant SET InitialCohortId = CurrentCohortId;
 
-CREATE INDEX IX_Participant_InitialCohort ON study.Participant(InitialCohortId)
-GO
-
-CREATE INDEX IX_Participant_CurrentCohort ON study.Participant(CurrentCohortId)
-GO
+CREATE INDEX IX_Participant_InitialCohort ON study.Participant(InitialCohortId);
+CREATE INDEX IX_Participant_CurrentCohort ON study.Participant(CurrentCohortId);
 
 ALTER TABLE study.Study ADD AdvancedCohorts BIT NOT NULL DEFAULT 0
 GO
@@ -1790,42 +1652,30 @@ ALTER TABLE study.ParticipantVisit ADD
     ParticipantSequenceKey NVARCHAR(200)
 GO
 
-UPDATE study.ParticipantVisit SET ParticipantSequenceKey = ParticipantID + '|' + CAST(SequenceNum AS NVARCHAR)
-GO
+UPDATE study.ParticipantVisit SET ParticipantSequenceKey = ParticipantID + '|' + CAST(SequenceNum AS NVARCHAR);
 
 ALTER TABLE study.ParticipantVisit ADD
     CONSTRAINT UQ_StudyData_ParticipantSequenceKey UNIQUE (ParticipantSequenceKey, Container)
 GO
 
-CREATE INDEX IX_ParticipantVisit_ParticipantSequenceKey ON study.ParticipantVisit(ParticipantSequenceKey, Container)
-GO
+CREATE INDEX IX_ParticipantVisit_ParticipantSequenceKey ON study.ParticipantVisit(ParticipantSequenceKey, Container);
 
 ALTER TABLE study.StudyData ADD ParticipantSequenceKey NVARCHAR(200)
 GO
 
-UPDATE study.StudyData SET ParticipantSequenceKey = ParticipantID + '|' + CAST(SequenceNum AS NVARCHAR)
-GO
+UPDATE study.StudyData SET ParticipantSequenceKey = ParticipantID + '|' + CAST(SequenceNum AS NVARCHAR);
 
-CREATE INDEX IX_StudyData_ParticipantSequenceKey ON study.StudyData(ParticipantSequenceKey, Container)
-GO
+CREATE INDEX IX_StudyData_ParticipantSequenceKey ON study.StudyData(ParticipantSequenceKey, Container);
 
 ALTER TABLE study.Specimen ADD ParticipantSequenceKey NVARCHAR(200)
 GO
 
-UPDATE study.Specimen SET ParticipantSequenceKey = PTID + '|' + CAST(VisitValue AS NVARCHAR)
-GO
+UPDATE study.Specimen SET ParticipantSequenceKey = PTID + '|' + CAST(VisitValue AS NVARCHAR);
 
-CREATE INDEX IX_Specimen_ParticipantSequenceKey ON study.Specimen(ParticipantSequenceKey, Container)
-GO
-
-CREATE INDEX IX_SpecimenPrimaryType_PrimaryType ON study.SpecimenPrimaryType(PrimaryType)
-GO
-
-CREATE INDEX IX_SpecimenDerivative_Derivative ON study.SpecimenDerivative(Derivative)
-GO
-
-CREATE INDEX IX_SpecimenAdditive_Additive ON study.SpecimenAdditive(Additive)
-GO
+CREATE INDEX IX_Specimen_ParticipantSequenceKey ON study.Specimen(ParticipantSequenceKey, Container);
+CREATE INDEX IX_SpecimenPrimaryType_PrimaryType ON study.SpecimenPrimaryType(PrimaryType);
+CREATE INDEX IX_SpecimenDerivative_Derivative ON study.SpecimenDerivative(Derivative);
+CREATE INDEX IX_SpecimenAdditive_Additive ON study.SpecimenAdditive(Additive);
 
 ALTER TABLE study.StudyData DROP CONSTRAINT UQ_StudyData;
 ALTER TABLE study.StudyData DROP CONSTRAINT PK_ParticipantDataset;
@@ -1867,29 +1717,25 @@ UPDATE exp.objectproperty SET typetag = 'f', floatvalue =
      WHERE stringvalue = name)
 WHERE propertyid IN (SELECT pd.propertyid FROM exp.propertydescriptor pd, exp.propertydomain pdlink, exp.domaindescriptor dd, study.dataset d
 WHERE pd.propertyid=pdlink.propertyid AND pdlink.domainid = dd.domainid
-AND dd.domainuri = d.typeuri AND (pd.name='RunCreatedBy' OR pd.name='Run CreatedBy') AND d.protocolid IS NOT NULL AND pd.rangeuri='http://www.w3.org/2001/XMLSchema#string')
-GO
+AND dd.domainuri = d.typeuri AND (pd.name='RunCreatedBy' OR pd.name='Run CreatedBy') AND d.protocolid IS NOT NULL AND pd.rangeuri='http://www.w3.org/2001/XMLSchema#string');
 
 -- Clear out the old string values
 UPDATE exp.objectproperty SET stringvalue = NULL
 WHERE propertyid IN (SELECT pd.propertyid FROM exp.propertydescriptor pd, exp.propertydomain pdlink, exp.domaindescriptor dd, study.dataset d
 WHERE pd.propertyid=pdlink.propertyid AND pdlink.domainid = dd.domainid
-AND dd.domainuri = d.typeuri AND (pd.name='RunCreatedBy' OR pd.name='Run CreatedBy') AND d.protocolid IS NOT NULL AND pd.rangeuri='http://www.w3.org/2001/XMLSchema#string')
-GO
+AND dd.domainuri = d.typeuri AND (pd.name='RunCreatedBy' OR pd.name='Run CreatedBy') AND d.protocolid IS NOT NULL AND pd.rangeuri='http://www.w3.org/2001/XMLSchema#string');
 
 -- Just to be safe, clean out any ones where we couldn't find the right user
 DELETE FROM exp.objectproperty WHERE floatvalue IS NULL AND propertyid IN
 (SELECT pd.propertyid FROM exp.propertydescriptor pd, exp.propertydomain pdlink, exp.domaindescriptor dd, study.dataset d
 WHERE pd.propertyid=pdlink.propertyid AND pdlink.domainid = dd.domainid
-AND dd.domainuri = d.typeuri AND (pd.name='RunCreatedBy' OR pd.name='Run CreatedBy') AND d.protocolid IS NOT NULL AND pd.rangeuri='http://www.w3.org/2001/XMLSchema#string')
-GO
+AND dd.domainuri = d.typeuri AND (pd.name='RunCreatedBy' OR pd.name='Run CreatedBy') AND d.protocolid IS NOT NULL AND pd.rangeuri='http://www.w3.org/2001/XMLSchema#string');
 
 -- Update the property descriptor so that it's now an integer and is the correct lookup
 UPDATE exp.propertydescriptor SET lookupschema='core', lookupquery='users', rangeuri='http://www.w3.org/2001/XMLSchema#int' WHERE propertyid IN
 (SELECT pd.propertyid FROM exp.propertydescriptor pd, exp.propertydomain pdlink, exp.domaindescriptor dd, study.dataset d
 WHERE pd.propertyid=pdlink.propertyid AND pdlink.domainid = dd.domainid
-AND dd.domainuri = d.typeuri AND (pd.name='RunCreatedBy' OR pd.name='Run CreatedBy') AND d.protocolid IS NOT NULL AND pd.rangeuri='http://www.w3.org/2001/XMLSchema#string')
-GO
+AND dd.domainuri = d.typeuri AND (pd.name='RunCreatedBy' OR pd.name='Run CreatedBy') AND d.protocolid IS NOT NULL AND pd.rangeuri='http://www.w3.org/2001/XMLSchema#string');
 
 ALTER TABLE study.Specimen ADD ProcessingLocation INT
 GO
@@ -1901,8 +1747,7 @@ UPDATE study.Specimen SET ProcessingLocation = (
          WHERE SpecimenId = study.Specimen.RowId) Locations
     GROUP BY SpecimenId
     HAVING COUNT(ProcessingLocation) = 1
-)
-GO
+);
 
 /* study-9.30-10.10.sql */
 
@@ -1910,8 +1755,8 @@ EXEC core.fn_dropifexists 'Study', 'study', 'DEFAULT', 'DateBased'
 GO
 ALTER TABLE study.Study ALTER COLUMN DateBased NVARCHAR(15)
 GO
-UPDATE study.Study SET DateBased = CASE WHEN DateBased = '1' THEN 'RELATIVE_DATE' ELSE 'VISIT' END
-GO
+UPDATE study.Study SET DateBased = CASE WHEN DateBased = '1' THEN 'RELATIVE_DATE' ELSE 'VISIT' END;
+
 ALTER TABLE study.Study ALTER COLUMN DateBased NVARCHAR(15) NOT NULL
 GO
 EXEC sp_RENAME 'study.Study.DateBased', 'TimepointType', 'COLUMN'
@@ -1921,7 +1766,6 @@ ALTER TABLE study.study ADD
   SubjectNounSingular NVARCHAR(50) NOT NULL DEFAULT 'Participant',
   SubjectNounPlural NVARCHAR(50) NOT NULL DEFAULT 'Participants',
   SubjectColumnName NVARCHAR(50) NOT NULL DEFAULT 'ParticipantId'
-
 GO
 
 ALTER TABLE study.Vial ADD FirstProcessedByInitials NVARCHAR(32)
@@ -1935,59 +1779,27 @@ UPDATE study.Study SET timepointType='CONTINUOUS' WHERE timepointType='ABSOLUTE_
 
 /* study-10.10-10.20.sql */
 
-/* Handle the possibility that branch release10.1 study-10.10-10.11.sql script has already run. */
+/* Create studydata participant index */
+CREATE INDEX IX_StudyData_Participant ON study.StudyData(container, participantid);
 
-/* Create studydata participant index if it doesn't exist. */
-IF INDEXPROPERTY(OBJECT_ID(LOWER('study.studydata')), 'IX_StudyData_Participant', 'IndexID') IS NULL
-BEGIN
-    CREATE INDEX IX_StudyData_Participant ON study.StudyData(container, participantid)
-END
+/* Create study.vial.AvailabilityReason column */
+ALTER TABLE study.Vial ADD AvailabilityReason NVARCHAR(256)
 GO
 
-/* Create study.vial.AvailabilityReason column if it doesn't exist. */
-IF NOT EXISTS(SELECT * from syscolumns WHERE Name = LOWER('AvailabilityReason') AND ID = OBJECT_ID(LOWER('study.Vial')))
-BEGIN
-    ALTER TABLE study.Vial ADD AvailabilityReason NVARCHAR(256)
-END
-GO
+CREATE TABLE study.SampleAvailabilityRule
+(
+    RowId INT IDENTITY(1,1),
+    Container EntityId NOT NULL,
+    SortOrder INTEGER NOT NULL,
+    RuleType NVARCHAR(50),
+    RuleData NVARCHAR(250),
+    MarkType NVARCHAR(30),
 
-/* Create study.SampleAvailabilityRule table if it doesn't exist */
-IF OBJECTPROPERTY(OBJECT_ID(LOWER('study.SampleAvailabilityRule')), 'IsTable') IS NULL
-BEGIN
-    CREATE TABLE study.SampleAvailabilityRule
-    (
-      RowId INT IDENTITY(1,1),
-      Container EntityId NOT NULL,
-      SortOrder INTEGER NOT NULL,
-      RuleType NVARCHAR(50),
-      RuleData NVARCHAR(250),
-      MarkType NVARCHAR(30),
-      CONSTRAINT PL_SampleAvailabilityRule PRIMARY KEY (RowId)
-    )
-END
-GO
+    CONSTRAINT PL_SampleAvailabilityRule PRIMARY KEY (RowId)
+);
 
 -- Migrate from boolean key management type to None, RowId, and GUID
-ALTER TABLE study.dataset ADD KeyManagementType VARCHAR(10)
-GO
-
-UPDATE study.dataset SET KeyManagementType='RowId' WHERE KeyPropertyManaged = 1
-GO
-UPDATE study.dataset SET KeyManagementType='None' WHERE KeyPropertyManaged = 0
-GO
-
--- Drop the default value on study.dataset.KeyPropertyManaged
-DECLARE @default sysname
-SELECT @default = object_name(cdefault)
-FROM syscolumns
-WHERE id = object_id('study.dataset')
-AND name = 'KeyPropertyManaged'
-EXEC ('ALTER TABLE study.dataset DROP CONSTRAINT ' + @default)
-GO
-
-ALTER TABLE study.dataset DROP COLUMN KeyPropertyManaged
-GO
-ALTER TABLE study.dataset ALTER COLUMN KeyManagementType VARCHAR(10) NOT NULL
+ALTER TABLE study.dataset ADD KeyManagementType VARCHAR(10) NOT NULL
 GO
 
 CREATE SCHEMA studyDataset

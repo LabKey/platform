@@ -729,7 +729,7 @@ public class SqlScriptController extends SpringActionController
 
             if (null == errorMessage)
             {
-                renderScript(contents, out);
+                renderScript(script, out);
 
                 if (AppProps.getInstance().isDevMode())
                     renderButtons(script, out);
@@ -740,10 +740,10 @@ public class SqlScriptController extends SpringActionController
             }
         }
 
-        protected void renderScript(String contents, PrintWriter out)
+        protected void renderScript(SqlScript script, PrintWriter out)
         {
             out.println("<pre>");
-            out.println(PageFlowUtil.filter(contents));
+            out.println(PageFlowUtil.filter(script.getContents()));
             out.println("</pre>");
         }
 
@@ -780,7 +780,7 @@ public class SqlScriptController extends SpringActionController
         @Override
         protected ModelAndView getScriptView(SqlScript script) throws RedirectException, IOException
         {
-            ScriptReorderer reorderer = new ScriptReorderer(script.getContents());
+            ScriptReorderer reorderer = new ScriptReorderer(script.getSchemaName(), script.getContents());
             String reorderedScript = reorderer.getReorderedScript(false);
             ((FileSqlScriptProvider)script.getProvider()).saveScript(script.getDescription(), reorderedScript, true);
             
@@ -801,10 +801,10 @@ public class SqlScriptController extends SpringActionController
         }
 
         @Override
-        protected void renderScript(String contents, PrintWriter out)
+        protected void renderScript(SqlScript script, PrintWriter out)
         {
             out.println("<table>");
-            ScriptReorderer reorderer = new ScriptReorderer(contents);
+            ScriptReorderer reorderer = new ScriptReorderer(script.getSchemaName(), script.getContents());
             out.println(reorderer.getReorderedScript(true));
             out.println("</table>");
         }
