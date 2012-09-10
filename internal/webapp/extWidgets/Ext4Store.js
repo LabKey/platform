@@ -1017,7 +1017,7 @@ Ext4.define('LABKEY.ext4.AjaxProxy', {
             }
         }
 
-        //this is added compared ot Ext 4.1
+        //this is added compared to Ext 4.1
         if(commands.length){
             var request = Ext4.create('Ext.data.Request', {
                 action: 'saveRows',
@@ -1069,8 +1069,9 @@ Ext4.define('LABKEY.ext4.AjaxProxy', {
         var request = this.callParent(arguments);
         request.jsonData = request.jsonData || {};
         Ext4.apply(request.jsonData, request.params);
-        if(request.method != 'GET')
+        if (request.method == 'POST' || request.url.indexOf('selectRows') > -1 || request.url.indexOf('saveRows') > -1) {
             delete request.params;  //would be applied to the URL
+        }
 
         //morph request into the commands expected by saverows:
         request.jsonData.commands = request.jsonData.commands || [];
