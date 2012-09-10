@@ -1686,7 +1686,7 @@ public class IssuesController extends SpringActionController
                 String detailsURLString = filteredURLString.substring(0, filteredURLString.length() - 1);
 
                 WebPartView v = new JspView<RssBean>("/org/labkey/issue/rss.jsp", new RssBean(issues, detailsURLString));
-                v.setFrame(WebPartView.FrameType.NONE);
+                v.setFrame(WebPartView.FrameType.NOT_HTML);
 
                 return v;
             }

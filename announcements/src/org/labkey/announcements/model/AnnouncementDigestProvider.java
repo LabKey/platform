@@ -136,7 +136,7 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
 
         DailyDigestPage page = createPage("dailyDigestPlain.jsp", c, settings, perm, announcementModels);
         JspView view = new JspView(page);
-        view.setFrame(WebPartView.FrameType.NONE);
+        view.setFrame(WebPartView.FrameType.NOT_HTML);
         m.setTemplateContent(request, view, "text/plain");
 
         page = createPage("dailyDigest.jsp", c, settings, perm, announcementModels);

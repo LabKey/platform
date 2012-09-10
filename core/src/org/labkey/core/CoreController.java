@@ -290,7 +290,7 @@ public class CoreController extends SpringActionController
             if (null == content || !dependsOn.equals(content.dependencies))
             {
                 JspView view = new JspView("/org/labkey/core/themeStylesheet.jsp");
-                view.setFrame(WebPartView.FrameType.NONE);
+                view.setFrame(WebPartView.FrameType.NOT_HTML);
                 Content contentRaw = PageFlowUtil.getViewContent(view, request, response);
                 content  = new Content(compileCSS(contentRaw.content));
                 content.dependencies = dependsOn;

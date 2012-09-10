@@ -1397,7 +1397,7 @@ public class AnnouncementsController extends SpringActionController
         private RssView(AnnouncementModel[] announcementModels, String url)
         {
             super("/org/labkey/announcements/rss.jsp", new RssBean(announcementModels, url));
-            setFrame(WebPartView.FrameType.NONE);
+            setFrame(WebPartView.FrameType.NOT_HTML);
         }
 
         public static class RssBean
