@@ -834,7 +834,7 @@ quickScan:
             }
             catch (IOException e)
             {
-                throw new RuntimeException(e);
+                throw new ConfigurationException("The temporary directory on this server is inaccessible", e);
             }
         }
 
