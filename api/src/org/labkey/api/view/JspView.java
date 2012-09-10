@@ -16,8 +16,10 @@
 
 package org.labkey.api.view;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.jsp.JspBase;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.jsp.JspLoader;
@@ -124,8 +126,16 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
         if (null != _errors && _errors instanceof BindException)
             exposeModelAsRequestAttributes(((BindException)_errors).getModel(), request, response);
         exposeModelAsRequestAttributes(_renderMap, request, response);
-        
+
+        boolean devMode = AppProps.getInstance().isDevMode();
+        boolean isDebugHtml = devMode && this.getFrame() != FrameType.NOT_HTML && StringUtils.startsWith(response.getContentType(), "text/html");
+        if (isDebugHtml)
+            response.getWriter().print("<!--" + _page.getClass() + "-->");
+
         _page._jspService(request, response);
+
+        if (isDebugHtml)
+            response.getWriter().print("<!--/" + _page.getClass() + "-->");
     }
 
 

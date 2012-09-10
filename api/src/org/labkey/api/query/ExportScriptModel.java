@@ -177,7 +177,7 @@ public abstract class ExportScriptModel
         response.setContentType("text/plain");
         ExportScriptFactory factory = QueryView.getExportScriptFactory(scriptType);
         WebPartView scriptView = factory.getView(queryView);
-        scriptView.setFrame(WebPartView.FrameType.NONE);
+        scriptView.setFrame(WebPartView.FrameType.NOT_HTML);
 
         QueryService.get().addAuditEvent(queryView, "Exported to script type " + scriptType);
         return scriptView;

@@ -38,7 +38,7 @@ public class JspTemplate<ModelClass> extends JspView<ModelClass>
     public JspTemplate(String page, @Nullable ModelClass model)
     {
         super(page, model);
-        setFrame(WebPartView.FrameType.NONE);
+        setFrame(WebPartView.FrameType.NOT_HTML);
     }
 
     public String render() throws Exception

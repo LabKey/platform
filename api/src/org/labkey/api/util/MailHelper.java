@@ -327,7 +327,7 @@ public class MailHelper
         {
             // set the frame type to none to remove the extra div that gets added otherwise.
             if (view instanceof JspView)
-                ((JspView) view).setFrame(WebPartView.FrameType.NONE);
+                ((JspView) view).setFrame(WebPartView.FrameType.NOT_HTML);
 
             MockHttpServletResponse response = new MockHttpServletResponse();
             HttpView.include(view, request, response);

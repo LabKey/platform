@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ErrorRenderer;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HString;
@@ -53,6 +54,9 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
     private String _defaultLocation;
     private NavTree _custom;
 
+    private final boolean _devMode =AppProps.getInstance().isDevMode();
+    protected String _debugViewDescription = null;
+
     public static enum FrameType
     {
         /** with portal widgets */
@@ -64,7 +68,8 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         DIV,
         LEFT_NAVIGATION,
         /** clean */
-        NONE
+        NONE,
+        NOT_HTML    // same as NONE, just a marker
     }
 
     public WebPartView()
@@ -281,6 +286,9 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         Throwable exceptionToRender = _prepareException;
         String errorMessage = null;
 
+        boolean isDebugHtml = _devMode && _frame != FrameType.NOT_HTML && StringUtils.startsWith(response.getContentType(),"text/html");
+        if (isDebugHtml)
+            response.getWriter().print("<!--" + StringUtils.defaultString(_debugViewDescription,this.getClass().toString()) + "-->");
         doStartTag(getViewContext().getExtendedProperties(), response.getWriter());
 
         if (exceptionToRender == null)
@@ -330,6 +338,8 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         }
 
         doEndTag(getViewContext().getExtendedProperties(), response.getWriter());
+        if (isDebugHtml)
+            response.getWriter().print("<!--/" + this.getClass() + "-->");
     }
 
     /**
@@ -406,6 +416,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         switch (frameType)
         {
             case NONE:
+            case NOT_HTML:
                 break;
 
             case DIV:
@@ -810,6 +821,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         switch (frameType)
         {
             case NONE:
+            case NOT_HTML:
                 break;
 
             case DIV:

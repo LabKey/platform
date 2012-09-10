@@ -19,7 +19,9 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.resource.FileResource;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.Portal;
@@ -53,11 +55,16 @@ public class ModuleHtmlView extends HtmlView
     public ModuleHtmlView(Resource r, Portal.WebPart webpart)
     {
         super(null);
+        _debugViewDescription = this.getClass().toString();
+        if (r != null)
+            _debugViewDescription += ": " + PageFlowUtil.filter((r instanceof FileResource && null != ((FileResource) r).getFile()) ?
+                    ((FileResource) r).getFile().toString() :
+                    r.getPath().toString());
         _viewdef = getViewDef(r);
         setTitle(_viewdef.getTitle());
         setClientDependencies(_viewdef.getClientDependencies());
         setHtml(replaceTokens(_viewdef.getHtml(), getViewContext(), webpart));
-        if(null != _viewdef.getFrameType())
+        if (null != _viewdef.getFrameType())
             setFrame(_viewdef.getFrameType());
 
         if(_viewdef.getResource().getResolver() instanceof ModuleResourceResolver)
