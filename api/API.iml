@@ -28,7 +28,6 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="InternalGWT" exported="" />
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
@@ -651,6 +650,7 @@
       </library>
     </orderEntry>
     <orderEntry type="library" name="Rserve" level="project" />
+    <orderEntry type="module" module-name="InternalGWT" exported="" />
   </component>
 </module>
 
