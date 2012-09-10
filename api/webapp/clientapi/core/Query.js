@@ -227,7 +227,7 @@ LABKEY.Query = new function()
 
             // Work with Ext4.Ajax.request
             if (config.saveInSession !== undefined && config.saveInSession !== null)
-                dataObject = config.saveInSession;
+                dataObject.saveInSession = config.saveInSession;
 
             //set optional parameters
             if (config.maxRows && config.maxRows >= 0)
