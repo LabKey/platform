@@ -92,15 +92,23 @@ public class QAggregate extends QExpr
 
             SQLFragment gcSql;
 
-            if (iter.hasNext())
+            // Don't blow up if database doesn't support GROUP_CONCAT, #15554
+            if (builder.getDialect().supportsGroupConcat())
             {
-                SqlBuilder delimiter = new SqlBuilder(builder.getDbSchema());
-                ((QExpr)iter.next()).appendSql(delimiter);
-                gcSql = builder.getDialect().getGroupConcat(nestedBuilder, _distinct, true, delimiter.getSQL());
+                if (iter.hasNext())
+                {
+                    SqlBuilder delimiter = new SqlBuilder(builder.getDbSchema());
+                    ((QExpr)iter.next()).appendSql(delimiter);
+                    gcSql = builder.getDialect().getGroupConcat(nestedBuilder, _distinct, true, delimiter.getSQL());
+                }
+                else
+                {
+                    gcSql = builder.getDialect().getGroupConcat(nestedBuilder, _distinct, true);
+                }
             }
             else
             {
-                gcSql = builder.getDialect().getGroupConcat(nestedBuilder, _distinct, true);
+                gcSql = new SQLFragment("'<GROUP_CONCAT function not supported on this database>'");
             }
 
             builder.append(gcSql);
