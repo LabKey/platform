@@ -325,7 +325,8 @@ public abstract class Method
         @Override
         public SQLFragment getSQL(DbSchema schema, SQLFragment[] arguments)
         {
-            // jTDS driver blows up if query contains more than a few {fn curdate()} expansions, so don't use it on SQL Server. See #15479.
+            // jTDS driver blows up if query contains more than a few {fn curdate()} expansions, so don't use it on SQL Server.
+            // See #15479 and http://sourceforge.net/p/jtds/bugs/673
             if (schema.getSqlDialect().isSqlServer())
                 return new SQLFragment("convert(datetime, convert(varchar, getdate(), 112))");
             else

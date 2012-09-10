@@ -50,8 +50,10 @@ class ScriptReorderer
         }
     }
 
-    private final Map<String, Collection<Statement>> _statements = new LinkedHashMap<String, Collection<Statement>>();
+    private final List<Map<String, Collection<Statement>>> _statementLists = new LinkedList<Map<String, Collection<Statement>>>();
     private final List<String> _endingStatements = new LinkedList<String>();
+
+    private Map<String, Collection<Statement>> _currentStatements;
 
     private final String _schemaName;
     private String _contents;
@@ -61,6 +63,13 @@ class ScriptReorderer
     {
         _schemaName = schemaName;
         _contents = contents;
+        newStatementList();
+    }
+
+    private void newStatementList()
+    {
+        _currentStatements = new LinkedHashMap<String, Collection<Statement>>();
+        _statementLists.add(_currentStatements);
     }
 
     public String getReorderedScript(boolean isHtml)
@@ -163,13 +172,20 @@ class ScriptReorderer
                         tableName = schemaName + "." + m.group(1);
                     }
 
+                    if (pattern.getOperation() == Operation.RenameTable)
+                    {
+                        // Associate the rename statement with the new table name
+                        tableName = _schemaName + "." + m.group(2);
+
+                        // Since future references to the old name will actual refer to a new table, we don't want to intermingle
+                        // the previous statements with any subsequent statements. Create a demarkation point by moving to a new,
+                        // empty statement list that will contain the rename and all subsequent statements.
+                        newStatementList();
+                    }
+
                     addStatement(tableName, comments + m.group());
                     _contents = _contents.substring(m.end());
                     recognized = true;
-
-                    if (pattern.getOperation() == Operation.RenameTable)
-                        handleTableRename(tableName, _schemaName + "." + m.group(2));
-
                     break;
                 }
             }
@@ -251,12 +267,12 @@ class ScriptReorderer
     {
         String key = tableName.toLowerCase();
 
-        Collection<Statement> tableStatements = _statements.get(key);
+        Collection<Statement> tableStatements = _currentStatements.get(key);
 
         if (null == tableStatements)
         {
             tableStatements = new LinkedList<Statement>();
-            _statements.put(key, tableStatements);
+            _currentStatements.put(key, tableStatements);
         }
 
         tableStatements.add(new Statement(tableName, statement));
@@ -264,9 +280,10 @@ class ScriptReorderer
 
     private void appendAllStatements(StringBuilder sb, boolean html)
     {
-        for (Map.Entry<String, Collection<Statement>> tableStatements : _statements.entrySet())
-            for (Statement statement : tableStatements.getValue())
-                appendStatement(sb, statement, html);
+        for (Map<String, Collection<Statement>> statementList : _statementLists)
+            for (Map.Entry<String, Collection<Statement>> tableStatements : statementList.entrySet())
+                for (Statement statement : tableStatements.getValue())
+                    appendStatement(sb, statement, html);
     }
 
     private void appendStatement(StringBuilder sb, Statement statement, boolean html)
@@ -282,7 +299,7 @@ class ScriptReorderer
         }
         else
         {
-            sb.append(statement);
+            sb.append(statement.getSql());
         }
     }
 
@@ -320,12 +337,6 @@ class ScriptReorderer
         }
 
         sb.append(sql);
-    }
-
-    private void handleTableRename(String oldName, String newName)
-    {
-        Collection<Statement> statements = _statements.remove(oldName.toLowerCase());
-        _statements.put(newName.toLowerCase(), statements);
     }
 
     private enum Type {Table, NonTable}
