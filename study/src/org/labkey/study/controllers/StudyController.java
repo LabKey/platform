@@ -2969,7 +2969,7 @@ public class StudyController extends BaseStudyController
                     RenderContext ctx = dataView.getRenderContext();
                     DataRegion dataRegion = dataView.getDataRegion();
                     queryView.getSettings().setShowRows(ShowRows.ALL);
-                    rs = ctx.getResultSet(columns, table, dataRegion.getQueryParameters(), Table.ALL_ROWS, dataRegion.getOffset(), dataRegion.getName(), false);
+                    rs = ctx.getResultSet(columns, table, queryView.getSettings(), dataRegion.getQueryParameters(), Table.ALL_ROWS, dataRegion.getOffset(), dataRegion.getName(), false);
                     int ptidIndex = (null != ptidColumnInfo) ? rs.findColumn(ptidColumnInfo.getAlias()) : 0;
 
                     Set<String> participantSet = new LinkedHashSet<String>();
