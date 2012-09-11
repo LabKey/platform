@@ -281,13 +281,19 @@ public class RenderContext implements Map<String, Object>, Serializable
         return _rs;
     }
 
-    public Map<String, List<Aggregate.Result>> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, String dataRegionName, List<Aggregate> aggregatesIn, Map<String,Object> parameters, boolean async) throws SQLException, IOException
+    public Map<String, List<Aggregate.Result>> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, String dataRegionName, List<Aggregate> aggregatesIn, Map<String,Object> parameters, boolean async) throws SQLException, IOException
     {
         if (aggregatesIn == null || aggregatesIn.isEmpty())
             return Collections.emptyMap();
 
         Set<FieldKey> ignoredAggregateFilters = new HashSet<FieldKey>();
-        ActionURL url = getViewContext().cloneActionURL();
+
+        ActionURL url;
+        if (null != settings)
+            url = settings.getSortFilterURL();
+        else
+            url = getViewContext().cloneActionURL();
+
         Collection<ColumnInfo> cols = getSelectColumns(displayColumns, tinfo);
 
         Sort sort = buildSort(tinfo, url, dataRegionName);

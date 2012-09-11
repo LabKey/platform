@@ -631,7 +631,7 @@ public class DataRegion extends AbstractDataRegion
                 newAggregates.addAll(ctx.getBaseAggregates());
 
             newAggregates.add(Aggregate.createCountStar());
-            _aggregateResults = ctx.getAggregates(_displayColumns, getTable(), getName(), newAggregates, getQueryParameters(), isAllowAsync());
+            _aggregateResults = ctx.getAggregates(_displayColumns, getTable(), getSettings(), getName(), newAggregates, getQueryParameters(), isAllowAsync());
             List<Aggregate.Result> result = _aggregateResults.remove(Aggregate.STAR);
 
             //Issue 14863: add null check
@@ -640,7 +640,7 @@ public class DataRegion extends AbstractDataRegion
         }
         else
         {
-            _aggregateResults =  ctx.getAggregates(_displayColumns, getTable(), getName(), ctx.getBaseAggregates(), getQueryParameters(), isAllowAsync());
+            _aggregateResults =  ctx.getAggregates(_displayColumns, getTable(), getSettings(), getName(), ctx.getBaseAggregates(), getQueryParameters(), isAllowAsync());
         }
 
         // TODO: Move this into RenderContext?

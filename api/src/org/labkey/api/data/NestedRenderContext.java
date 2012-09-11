@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryNestingOption;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ActionURL;
 
@@ -129,7 +130,7 @@ public class NestedRenderContext extends RenderContext
     }
 
     @Override
-    public Map<String, List<Aggregate.Result>> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, String dataRegionName, List<Aggregate> aggregatesIn,
+    public Map<String, List<Aggregate.Result>> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, String dataRegionName, List<Aggregate> aggregatesIn,
             Map<String,Object> parameters,  boolean async) throws SQLException, IOException
     {
         if (aggregatesIn == null || aggregatesIn.isEmpty())
@@ -140,7 +141,7 @@ public class NestedRenderContext extends RenderContext
         if (_nestingOption == null)
         {
             // If we're not a nested query, don't do anything special
-            return super.getAggregates(displayColumns, tinfo, dataRegionName, aggregatesIn, parameters, async);
+            return super.getAggregates(displayColumns, tinfo, settings, dataRegionName, aggregatesIn, parameters, async);
         }
 
         // We want to do the aggregate query on the grouped data, since ultimately we want

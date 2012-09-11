@@ -155,11 +155,11 @@ public class RenderContextDecorator extends RenderContext
     }
 
     @Override
-    public Map<String, List<Aggregate.Result>> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, String dataRegionName,
+    public Map<String, List<Aggregate.Result>> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, String dataRegionName,
             List<Aggregate> aggregatesIn, Map<String, Object> parameters, boolean async)
             throws SQLException, IOException
     {
-        return _ctx.getAggregates(displayColumns, tinfo, dataRegionName, aggregatesIn, parameters, async);
+        return _ctx.getAggregates(displayColumns, tinfo, settings, dataRegionName, aggregatesIn, parameters, async);
     }
 
     @Override

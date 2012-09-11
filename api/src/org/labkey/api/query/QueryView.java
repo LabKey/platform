@@ -1259,7 +1259,7 @@ public class QueryView extends WebPartView<Object>
             // view that's doing magic to add additional filters, for example.
             if (viewItemFilter.accept(report.getType(), null))
             {
-                if (canViewReport(getUser(), getContainer(), report))
+                if (canViewReport(getUser(), getContainer(), report) && !report.getDescriptor().isHidden())
                 {
                     if (!views.containsKey(report.getType()))
                         views.put(report.getType(), new ArrayList<Report>());
