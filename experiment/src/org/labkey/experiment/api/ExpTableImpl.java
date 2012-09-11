@@ -31,8 +31,8 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.ActionURL;
-import org.labkey.experiment.api.flag.FlagColumnRenderer;
-import org.labkey.experiment.api.flag.FlagForeignKey;
+import org.labkey.api.exp.flag.FlagColumnRenderer;
+import org.labkey.api.exp.flag.FlagForeignKey;
 
 import java.util.ArrayList;
 import java.util.HashSet;
