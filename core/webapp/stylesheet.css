@@ -3312,9 +3312,15 @@ ul.labkey-tab-strip a
     border-bottom : none;
     float: left;
     line-height : 14px;
-    margin-right : 8px;
-    padding: 4px 7px;
     text-decoration : none;
+
+    border-radius: 5px 5px 0 0;
+    margin-right: 2px;
+    padding: 6px 9px;
+
+    -moz-box-shadow: 0 -2px 2px #ddd;
+    -webkit-box-shadow: 0 -2px 2px #ddd;
+    box-shadow: 0 -2px 2px #ddd;
 }
 
 li.labkey-tab-active a
@@ -3540,6 +3546,28 @@ ul.x-tab-strip-top li {
 
 .x-tab-strip-top .x-tab-right, .x-tab-strip-top .x-tab-left, .x-tab-strip-top .x-tab-strip-inner {
 	background-image: none;
+}
+
+.x-tab-panel-header-plain .x-tab-strip-top  {
+    padding-top: 3px !important;
+    padding-left: 6px;
+}
+
+ul.x-tab-strip-top li {
+    border-radius: 5px 5px 0 0;
+    margin-left: 2px;
+
+    -moz-box-shadow: 0 -2px 2px #ddd;
+    -webkit-box-shadow: 0 -2px 2px #ddd;
+    box-shadow: 0 -2px 2px #ddd;
+}
+
+.x-tab-strip-top .x-tab-strip-active .x-tab-right, .x-tab-strip-top .x-tab-strip-active .x-tab-close {
+    border-radius: 5px 5px 0 0;
+}
+
+.x-tab-strip-active .x-tab-strip-text {
+    color: #000 !important;
 }
 
 .drag-target-table-positioner {
