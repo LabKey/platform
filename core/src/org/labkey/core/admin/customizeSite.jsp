@@ -32,54 +32,62 @@
     AppProps.Interface appProps = AppProps.getInstance();
 %>
 <script type="text/javascript">
-function testNetworkDrive()
-{
-    var preferenceForm = document.forms['preferences'];
-    var networkDriveForm = document.forms['networkdrivetest'];
-    if (preferenceForm.networkDriveLetter.value.length == 0)
+
+var testNetworkDrive;
+var testMascot;
+var submitSystemMaintenance;
+
+(function(){
+
+    testNetworkDrive = function()
     {
-        alert("Please specify your drive letter before testing.");
-        try {preferenceForm.networkDriveLetter.focus();} catch(x){}
-        return;
+        var preferenceForm = document.forms['preferences'];
+        var networkDriveForm = document.forms['networkdrivetest'];
+        if (preferenceForm.networkDriveLetter.value.length == 0)
+        {
+            alert("Please specify your drive letter before testing.");
+            try {preferenceForm.networkDriveLetter.focus();} catch(x){}
+            return;
+        }
+
+        if (preferenceForm.networkDrivePath.value.length == 0)
+        {
+            alert("Please specify your drive path before testing.");
+            try {preferenceForm.networkDrivePath.focus();} catch(x){}
+            return;
+        }
+        networkDriveForm.networkDriveLetter.value = preferenceForm.networkDriveLetter.value;
+        networkDriveForm.networkDrivePath.value = preferenceForm.networkDrivePath.value;
+        networkDriveForm.networkDriveUser.value = preferenceForm.networkDriveUser.value;
+        networkDriveForm.networkDrivePassword.value = preferenceForm.networkDrivePassword.value;
+
+        networkDriveForm.submit();
     }
 
-    if (preferenceForm.networkDrivePath.value.length == 0)
+    testMascot = function()
     {
-        alert("Please specify your drive path before testing.");
-        try {preferenceForm.networkDrivePath.focus();} catch(x){}
-        return;
+        var preferenceForm = document.forms['preferences'];
+        var mascotForm = document.forms['mascottest'];
+        if (preferenceForm.mascotServer.value.length == 0)
+        {
+            alert("Please specify your mascot server before testing.");
+            try {preferenceForm.mascotServer.focus();} catch(x){}
+            return;
+        }
+        mascotForm.mascotServer.value = preferenceForm.mascotServer.value;
+        mascotForm.mascotUserAccount.value = preferenceForm.mascotUserAccount.value;
+        mascotForm.mascotUserPassword.value = preferenceForm.mascotUserPassword.value;
+        mascotForm.mascotHTTPProxy.value = preferenceForm.mascotHTTPProxy.value;
+
+        mascotForm.action = LABKEY.ActionURL.buildURL("ms2","mascotTest","/");
+        mascotForm.submit();
     }
-    networkDriveForm.networkDriveLetter.value = preferenceForm.networkDriveLetter.value;
-    networkDriveForm.networkDrivePath.value = preferenceForm.networkDrivePath.value;
-    networkDriveForm.networkDriveUser.value = preferenceForm.networkDriveUser.value;
-    networkDriveForm.networkDrivePassword.value = preferenceForm.networkDrivePassword.value;
 
-    networkDriveForm.submit();
-}
-
-function testMascot()
-{
-    var preferenceForm = document.forms['preferences'];
-    var mascotForm = document.forms['mascottest'];
-    if (preferenceForm.mascotServer.value.length == 0)
+    submitSystemMaintenance = function()
     {
-        alert("Please specify your mascot server before testing.");
-        try {preferenceForm.mascotServer.focus();} catch(x){}
-        return;
+        document.forms['systemMaintenance'].submit();
     }
-    mascotForm.mascotServer.value = preferenceForm.mascotServer.value;
-    mascotForm.mascotUserAccount.value = preferenceForm.mascotUserAccount.value;
-    mascotForm.mascotUserPassword.value = preferenceForm.mascotUserPassword.value;
-    mascotForm.mascotHTTPProxy.value = preferenceForm.mascotHTTPProxy.value;
-
-    mascotForm.action = LABKEY.ActionURL.buildURL("ms2","mascotTest","/");
-    mascotForm.submit();
-}
-    
-function submitSystemMaintenance()
-{
-    document.forms['systemMaintenance'].submit();
-}
+})();
 </script>
 
 <form name="preferences" enctype="multipart/form-data" method="post"><labkey:csrf />
@@ -212,6 +220,11 @@ Click the Save button at any time to accept the current settings and continue.</
     <td><input type="text" name="maxBLOBSize" size="10" value="<%= h(appProps.getMaxBLOBSize()) %>"></td>
 </tr>
 <tr>
+    <td class="labkey-form-label">Require ExtJS v3.4.0 be loaded on each page</td>
+    <td><input type="checkbox" name="ext3Required" <%=(appProps.isExt3Required() ? "checked=\"true\"" : "")%>>
+    <b>WARNING:</b> Not requiring v3.4.0 may cause some pages to load incorrectly. It is advised this only be disabled in non-production environments in 12.3.</td>
+</tr>
+<tr>
     <td>&nbsp;</td>
 </tr>
 
@@ -249,7 +262,7 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">Require SSL connections (users must connect via SSL)</td>
-    <td><input type="checkbox" name="sslRequired" <%=appProps.isSSLRequired() ? "checked" : ""%>></td>
+    <td><input type="checkbox" name="sslRequired" <%=(appProps.isSSLRequired() ? "checked=\"true\"" : "")%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label">SSL port number (specified in server config file)</td>
@@ -333,7 +346,7 @@ Click the Save button at any time to accept the current settings and continue.</
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
     <td class="labkey-form-label">Admin only mode (only site admins may log in)</td>
-    <td><input type="checkbox" name="adminOnlyMode" <%=appProps.isUserRequestedAdminOnlyMode() ? "checked" : ""%>></td>
+    <td><input type="checkbox" name="adminOnlyMode" <%=(appProps.isUserRequestedAdminOnlyMode() ? "checked=\"true\"" : "")%>></td>
 </tr>
 <tr>
     <td class="labkey-form-label" valign="top">Message to users when site is in admin-only mode<br/>(Wiki formatting allowed)</td>

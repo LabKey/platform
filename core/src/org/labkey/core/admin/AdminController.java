@@ -1107,6 +1107,7 @@ public class AdminController extends SpringActionController
             props.setSSLPort(form.getSslPort());
             props.setMemoryUsageDumpInterval(form.getMemoryUsageDumpInterval());
             props.setMaxBLOBSize(form.getMaxBLOBSize());
+            props.setExt3Required(form.isExt3Required());
 
             // Save the old system maintenance property values, compare with the new ones, and set a flag if they've changed
             String oldInterval = props.getSystemMaintenanceInterval();
@@ -1461,6 +1462,7 @@ public class AdminController extends SpringActionController
         private String _pipelineToolsDirectory;
         private boolean _sslRequired;
         private boolean _adminOnlyMode;
+        private boolean _ext3Required;
         private String _adminOnlyMessage;
         private int _sslPort;
         private String _systemMaintenanceInterval;
@@ -1560,6 +1562,16 @@ public class AdminController extends SpringActionController
         public void setSslRequired(boolean sslRequired)
         {
             _sslRequired = sslRequired;
+        }
+
+        public boolean isExt3Required()
+        {
+            return _ext3Required;
+        }
+
+        public void setExt3Required(boolean ext3Required)
+        {
+            _ext3Required = ext3Required;
         }
 
         public String getSystemMaintenanceInterval()
