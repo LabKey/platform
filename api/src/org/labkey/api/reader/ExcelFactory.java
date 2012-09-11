@@ -34,6 +34,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
@@ -610,8 +611,19 @@ public class ExcelFactory
         public void testExcelFileImportShouldSucceed()  throws Exception
         {
 
-           JSONArray jsonArray = startImportFile("Formulas.xlsx");
-           assertEquals("#VALUE!", jsonArray.getJSONObject(0).getJSONArray("data").getJSONArray(1).getJSONObject(0).getString("value"));
+            JSONArray jsonArray = startImportFile("Formulas.xlsx");
+            try
+            {
+                assertEquals("#VALUE!", jsonArray.getJSONObject(0).getJSONArray("data").getJSONArray(1).getJSONObject(0).getString("value"));
+            }
+            catch (NullPointerException e)
+            {
+                throw new RuntimeException("Bad import response: \n" + jsonArray.toString(), e);
+            }
+            catch (JSONException e)
+            {
+                throw new RuntimeException("Bad import response: \n" + jsonArray.toString(), e);
+            }
         }
 
         @Test
