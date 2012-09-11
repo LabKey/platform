@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.Errors;
@@ -147,10 +148,10 @@ public class RenderContextDecorator extends RenderContext
     }
 
     @Override
-    public Results getResultSet(Map<FieldKey, ColumnInfo> fieldMap, TableInfo tinfo, Map<String, Object> parameters, int maxRows, long offset, String name, boolean async)
+    public Results getResultSet(Map<FieldKey, ColumnInfo> fieldMap, TableInfo tinfo, QuerySettings settings, Map<String, Object> parameters, int maxRows, long offset, String name, boolean async)
             throws SQLException, IOException
     {
-        return _ctx.getResultSet(fieldMap, tinfo, parameters, maxRows, offset, name, async);
+        return _ctx.getResultSet(fieldMap, tinfo, settings, parameters, maxRows, offset, name, async);
     }
 
     @Override

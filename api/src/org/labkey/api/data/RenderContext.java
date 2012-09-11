@@ -23,6 +23,7 @@ import org.labkey.api.collections.NullPreventingSet;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -261,9 +262,13 @@ public class RenderContext implements Map<String, Object>, Serializable
         return null==_rs ? null : _rs.getFieldMap();
     }
 
-    public Results getResultSet(Map<FieldKey, ColumnInfo> fieldMap, TableInfo tinfo, Map<String,Object> parameters, int maxRows, long offset, String name, boolean async) throws SQLException, IOException
+    public Results getResultSet(Map<FieldKey, ColumnInfo> fieldMap, TableInfo tinfo, QuerySettings settings, Map<String,Object> parameters, int maxRows, long offset, String name, boolean async) throws SQLException, IOException
     {
-        ActionURL url = getViewContext().cloneActionURL();
+        ActionURL url;
+        if (null != settings)
+            url = settings.getSortFilterURL();
+        else
+            url = getViewContext().cloneActionURL();
 
         Sort sort = buildSort(tinfo, url, name);
         SimpleFilter filter = buildFilter(tinfo, url, name, maxRows, offset, sort);

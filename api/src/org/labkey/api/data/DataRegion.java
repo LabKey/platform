@@ -602,7 +602,7 @@ public class DataRegion extends AbstractDataRegion
     protected Results getResultSet(RenderContext ctx, boolean async) throws SQLException, IOException
     {
         LinkedHashMap<FieldKey, ColumnInfo> selectKeyMap = getSelectColumns();
-        return ctx.getResultSet(selectKeyMap, getTable(), getQueryParameters(), getMaxRows(), getOffset(), getName(), async);
+        return ctx.getResultSet(selectKeyMap, getTable(), getSettings(), getQueryParameters(), getMaxRows(), getOffset(), getName(), async);
     }
 
 

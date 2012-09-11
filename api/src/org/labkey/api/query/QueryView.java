@@ -1912,17 +1912,8 @@ public class QueryView extends WebPartView<Object>
                     rgn.addColumn(pkCol);
             }
 
-            Results rs = null;
-
-            try
-            {
-                rgn.setAllowAsync(false);
-                response.initialize(view.getRenderContext(), rgn, table, getExportColumns(rgn.getDisplayColumns()));
-            }
-            finally
-            {
-                ResultSetUtil.close(rs);
-            }
+            rgn.setAllowAsync(false);
+            response.initialize(view.getRenderContext(), rgn, table, getExportColumns(rgn.getDisplayColumns()));
         }
         else
         {
