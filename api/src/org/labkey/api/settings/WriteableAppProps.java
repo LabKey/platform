@@ -74,6 +74,11 @@ public class WriteableAppProps extends AppPropsImpl
         storeIntValue(MAX_BLOB_SIZE, maxBLOBSize);
     }
 
+    public void setExt3Required(boolean ext3Required)
+    {
+        storeBooleanValue(EXT3_REQUIRED, ext3Required);
+    }
+
     public void setBLASTServerBaseURL(String blastServerBaseURL)
     {
         storeStringValue(BLAST_SERVER_BASE_URL_PROP, blastServerBaseURL);

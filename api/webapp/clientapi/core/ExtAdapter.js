@@ -4,6 +4,11 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 LABKEY.initExtAdapter = function(LABKEY, Ext){
+
+    if (!Ext) {
+        return;
+    }
+
     Ext.ns('LABKEY.ExtAdapter');
     //console.log('using Ext version: ' + Ext.version);
 
@@ -66,6 +71,7 @@ LABKEY.inferHighestExtVersion = function(){
         return Ext4;
     else if (window.Ext)
         return Ext;
+    console.warn('A known version of ExtJS cannot be found. Some features of this page may not work correctly.');
 }
 
 LABKEY.initExtAdapter(LABKEY, LABKEY.inferHighestExtVersion());
