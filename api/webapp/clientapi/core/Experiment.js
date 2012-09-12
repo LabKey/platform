@@ -416,6 +416,9 @@ LABKEY.ExtAdapter.extend(LABKEY.Exp.Run, LABKEY.Exp.ExpObject);
  *         <ul>
  *             <li><b>success</b>: true</li>
  *             <li><b>successurl</b>: The url to browse the newly imported assay run.</li>
+ *             <li><b>assayId</b>: The assay id.</li>
+ *             <li><b>batchId</b>: The previously existing or newly created batch id.</li>
+ *             <li><b>runId</b>: The newly created run id.</li>
  *         </ul>
  *     </li>
  *     <li><b>response</b>: The XMLHttpResponseObject used to submit the request.</li>
@@ -571,6 +574,7 @@ LABKEY.Exp.Run.importRun = function (config)
                 values["batchProperties['" + key + "']"] = config.batchProperties[key];
         }
 
+        // XXX: All this hackery is unnecessary if all of the fileInputs originate from the same form.
         // Create a dummy form to hang the file inputs off of.
         // Ext.Ajax.request() will use this form in a hidden iframe to submit the file inputs.
         var form = document.createElement("form");
