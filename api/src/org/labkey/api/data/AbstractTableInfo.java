@@ -73,6 +73,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -617,6 +618,27 @@ abstract public class AbstractTableInfo implements TableInfo
             return Collections.unmodifiableList(ret);
         }
         return Collections.unmodifiableList(QueryService.get().getDefaultVisibleColumns(getColumns()));
+    }
+
+    @Override
+    public Collection<ColumnInfo> getExtendedColumns(boolean hidden)
+    {
+        List<ColumnInfo> columns = getColumns();
+        LinkedHashSet<ColumnInfo> ret = new LinkedHashSet<ColumnInfo>(columns.size());
+        if (hidden)
+        {
+            ret.addAll(columns);
+        }
+        else
+        {
+            // Include just the visible columns
+            ret.addAll(QueryService.get().getDefaultVisibleColumnInfos(columns));
+        }
+
+        // Include any extra columns named by the default visible set
+        ret.addAll(QueryService.get().getColumns(this, getDefaultVisibleColumns()).values());
+
+        return Collections.unmodifiableCollection(ret);
     }
 
     public boolean safeAddColumn(ColumnInfo column)

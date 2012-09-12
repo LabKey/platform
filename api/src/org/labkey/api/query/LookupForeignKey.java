@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.util.ContainerContext;
@@ -32,6 +33,8 @@ import java.util.Set;
 
 abstract public class LookupForeignKey extends AbstractForeignKey implements Cloneable
 {
+    private static Logger _log = Logger.getLogger(LookupForeignKey.class);
+
     ActionURL _baseURL;
     Object _param;
     private boolean _prefixColumnCaption = false;
@@ -153,7 +156,7 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
         {
             // CONSIDER: set ContainerContext in AbstractForeignKey.getURL() so all subclasses can benefit
             DetailsURL url = new DetailsURL(_baseURL, _param.toString(), parent.getFieldKey());
-            setURLContainerContext(url, getLookupTableInfo());
+            setURLContainerContext(url, getLookupTableInfo(), parent);
             return url;
         }
 
@@ -187,18 +190,25 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
 
             // CONSIDER: set ContainerContext in AbstractForeignKey.getURL() so all subclasses can benefit
             if (rewrite instanceof DetailsURL)
-                setURLContainerContext((DetailsURL)rewrite, lookupTable);
+                setURLContainerContext((DetailsURL)rewrite, lookupTable, parent);
 
             return rewrite;
         }
         return null;
     }
 
-    protected static DetailsURL setURLContainerContext(DetailsURL url, TableInfo lookupTable)
+    protected static DetailsURL setURLContainerContext(DetailsURL url, TableInfo lookupTable, ColumnInfo parent)
     {
         ContainerContext cc = lookupTable.getContainerContext();
         if (cc != null)
+        {
+            // XXX: Why would the DetailsURL not have a ContainerContext but the lookupTable does?
+            // Usually, the DetailsURL has recieved a ContainerContext (set in AbstractTableInfo.getDetailsURL(...))
+            // from the lookupTable and it's FieldKeyContext has been fixed up.
+            if (!url.hasContainerContext())
+                _log.warn("Table's DetailURL does not have a container context. Table: " + lookupTable.getPublicSchemaName() + "." + lookupTable.getName() + ", column: " + parent.getName());
             url.setContainerContext(cc, false);
+        }
         return url;
     }
 

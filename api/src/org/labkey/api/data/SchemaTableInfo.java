@@ -65,6 +65,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -616,6 +617,28 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         for (FieldKey key : keys)
             _defaultVisibleColumns.add(key);
     }
+
+    @Override
+    public Collection<ColumnInfo> getExtendedColumns(boolean hidden)
+    {
+        List<ColumnInfo> columns = getColumns();
+        LinkedHashSet<ColumnInfo> ret = new LinkedHashSet<ColumnInfo>(columns.size());
+        if (hidden)
+        {
+            ret.addAll(columns);
+        }
+        else
+        {
+            // Include just the visible columns
+            ret.addAll(QueryService.get().getDefaultVisibleColumnInfos(columns));
+        }
+
+        // Include any extra columns named by the default visible set
+        ret.addAll(QueryService.get().getColumns(this, getDefaultVisibleColumns()).values());
+
+        return Collections.unmodifiableCollection(ret);
+    }
+
 
     /** Used by SimpleUserSchema and external schemas to hide tables from the list of visible tables.  Not the same as isPublic(). */
     public boolean isHidden()

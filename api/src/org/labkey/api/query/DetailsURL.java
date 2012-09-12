@@ -201,9 +201,9 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
         return set;
     }
 
-    public ContainerContext getContainerContext()
+    public boolean hasContainerContext()
     {
-        return _containerContext;
+        return _containerContext != null;
     }
 
     @Override

@@ -127,6 +127,7 @@ abstract public class QueryService
 
     abstract public UserSchema createSimpleUserSchema(String name, @Nullable String description, User user, Container container, DbSchema schema);
 
+    abstract public List<ColumnInfo> getDefaultVisibleColumnInfos(List<ColumnInfo> columns);
     abstract public List<FieldKey> getDefaultVisibleColumns(List<ColumnInfo> columns);
 
     /**
