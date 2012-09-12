@@ -26,6 +26,7 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 // TODO: cache, for display, async, etc.
@@ -38,6 +39,7 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory>
 
     private int _rowCount = Table.ALL_ROWS;
     private long _offset = Table.NO_OFFSET;
+    private boolean _forDisplay = false;
 
     // Select specified columns from a table
     public TableSelector(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
@@ -95,6 +97,12 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory>
         return this;
     }
 
+    public TableSelector setForDisplay(boolean forDisplay)
+    {
+        _forDisplay = forDisplay;
+        return this;
+    }
+
     // pk can be single value or an array of values
     public <K> K getObject(Object pk, Class<K> clazz)
     {
@@ -106,8 +114,8 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory>
     {
         List<ColumnInfo> pkColumns = _table.getPkColumns();
         Object[] pks;
-
         SimpleFilter filter = new SimpleFilter(_filter);
+
         if (pk instanceof SimpleFilter)
         {
             filter.addAllClauses((SimpleFilter)pk);
@@ -170,6 +178,7 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory>
         private final @Nullable Sort _sort;
         private final Collection<ColumnInfo> _columns;
         private final boolean _allowSort;
+
         private long _scrollOffset = 0;
 
         public TableSqlFactory(@Nullable Filter filter, @Nullable Sort sort, Collection<ColumnInfo> columns, boolean allowSort)
@@ -181,9 +190,22 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory>
             _allowSort = allowSort;
         }
 
-        @Override      // Note: This method refers to _table, _offset, and _rowCount from parent; the other fields are from this class.
+        @Override      // Note: This method refers to _table, _offset, _rowCount, and _forDisplay from parent; the other fields are from this class.
         public SQLFragment getSql()
         {
+            Collection<ColumnInfo> columns;
+
+            if (_forDisplay)
+            {
+                Map<String, ColumnInfo> map = Table.getDisplayColumnsList(_columns);
+                Table.ensureRequiredColumns(_table, map, _filter, _sort, null);
+                columns = map.values();
+            }
+            else
+            {
+                columns = _columns;
+            }
+
             // NOTE: When ResultSet is supported, we'll need to select one extra row to support isComplete(). Factory will
             // need to know that a ResultSet was requested
 
@@ -196,14 +218,14 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory>
                 // - Set _scrollOffset so getResultSet() skips over the rows we don't want
 
                 _scrollOffset = _offset;
-                return QueryService.get().getSelectSQL(_table, _columns, _filter, _sort, (int)_offset + _rowCount, 0, forceSort);
+                return QueryService.get().getSelectSQL(_table, columns, _filter, _sort, (int)_offset + _rowCount, 0, forceSort);
             }
             else
             {
                 // Standard case is simply to create SQL using the rowCount and offset
 
                 _scrollOffset = 0;
-                return QueryService.get().getSelectSQL(_table, _columns, _filter, _sort, _rowCount, _offset, forceSort);
+                return QueryService.get().getSelectSQL(_table, columns, _filter, _sort, _rowCount, _offset, forceSort);
             }
         }
 

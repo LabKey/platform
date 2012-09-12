@@ -263,6 +263,27 @@ public class Table
     }
 
 
+    @NotNull
+    @Deprecated // Use TableSelector
+    public static <K> K[] selectForDisplay(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss)
+            throws SQLException
+    {
+        return selectForDisplay(table, columnInfosList(table, select), filter, sort, clss);
+    }
+
+
+    @NotNull
+    @Deprecated // Use TableSelector
+    public static <K> K[] selectForDisplay(TableInfo table, Collection<ColumnInfo> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss)
+            throws SQLException
+    {
+        TableSelector selector = new TableSelector(table, select, filter, sort);
+        selector.setForDisplay(true);
+
+        return selector.getArray(clss);
+    }
+
+
     // ================== These methods have not been converted to Selector/Executor ==================
 
     // Careful: caller must track and clean up parameters (e.g., close InputStreams) after execution is complete
@@ -459,8 +480,7 @@ public class Table
      * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
      * you must explicitly start your own transaction and commit it.
      */
-    public static Table.TableResultSet executeQuery(DbSchema schema, SQLFragment sql, int rowCount)
-            throws SQLException
+    public static Table.TableResultSet executeQuery(DbSchema schema, SQLFragment sql, int rowCount) throws SQLException
     {
         return (Table.TableResultSet) executeQuery(schema, sql.getSQL(), sql.getParamsArray(), rowCount, NO_OFFSET, true, false, null, null, null);
     }
@@ -1387,24 +1407,6 @@ public class Table
     }
 
 
-    public static <K> K[] selectForDisplay(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss)
-            throws SQLException
-    {
-        return selectForDisplay(table, columnInfosList(table, select), filter, sort, clss);
-    }
-
-
-    public static <K> K[] selectForDisplay(TableInfo table, Collection<ColumnInfo> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss)
-            throws SQLException
-    {
-        Map<String, ColumnInfo> columns = getDisplayColumnsList(select);
-        ensureRequiredColumns(table, columns, filter, sort, null);
-        SQLFragment sql = QueryService.get().getSelectSQL(table, new ArrayList<ColumnInfo>(columns.values()), filter, sort, ALL_ROWS, NO_OFFSET, true);
-
-        return new LegacySqlSelector(table.getSchema(), sql).getArray(clss);
-    }
-
-
     static List<ColumnInfo> columnInfosList(TableInfo table, Set<String> select)
     {
         List<ColumnInfo> allColumns = table.getColumns();
@@ -1428,7 +1430,7 @@ public class Table
     }
 
 
-    private static Map<String,ColumnInfo> getDisplayColumnsList(Collection<ColumnInfo> arrColumns)
+    static Map<String,ColumnInfo> getDisplayColumnsList(Collection<ColumnInfo> arrColumns)
     {
         Map<String, ColumnInfo> columns = new LinkedHashMap<String, ColumnInfo>();
         ColumnInfo existing;
