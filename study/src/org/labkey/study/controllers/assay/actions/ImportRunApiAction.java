@@ -51,6 +51,7 @@ import org.springframework.validation.BindException;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -349,7 +350,9 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
                 try
                 {
                     AssayDataCollector<ImportRunApiUploadContext> collector = new FileUploadDataCollector(1, FILE_INPUT_NAME);
-                    _uploadedData = collector.createData(this);
+                    Map<String, File> files = collector.createData(this);
+                    // HACK: rekey the map using PRIMARY_FILE instead of FILE_INPUT_NAME
+                    _uploadedData = Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, files.get(FILE_INPUT_NAME));
                 }
                 catch (IOException e)
                 {
