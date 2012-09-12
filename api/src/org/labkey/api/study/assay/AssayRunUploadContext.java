@@ -58,7 +58,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider>
 
     ActionURL getActionURL();
 
-    /** @return Map of original file name to file on disk */
+    /** @return Map of file input name to file on disk */
     @NotNull
     Map<String, File> getUploadedData() throws ExperimentException;
 
