@@ -619,11 +619,11 @@ public class ExcelFactory
             }
             catch (NullPointerException e)
             {
-                throw new RuntimeException("Bad import response: \n" + jsonArray.toString(), e);
+                throw new RuntimeException("Bad import response: \n" + jsonArray, e);
             }
             catch (JSONException e)
             {
-                throw new RuntimeException("Bad import response: \n" + jsonArray.toString(), e);
+                throw new RuntimeException("Bad import response: \n" + jsonArray, e);
             }
         }
 
