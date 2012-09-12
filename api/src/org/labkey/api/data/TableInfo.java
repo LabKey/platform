@@ -116,6 +116,21 @@ public interface TableInfo extends HasPermission
 
     Set<String> getColumnNameSet();
 
+    /**
+     * Return a list of ColumnInfos that make up the extended set of
+     * columns that could be considered a part of this table by default.
+     * For the majority of tables, this is simply the columns returned from
+     * {@link TableInfo#getColumns()} plus any additional columns from
+     * {@link TableInfo#getDefaultVisibleColumns()).
+     *
+     * For other tables, the extended column set could include some columns
+     * from lookup tables.
+     *
+     * @param hidden Include hidden columns.
+     * @return All columns.
+     */
+    Collection<ColumnInfo> getExtendedColumns(boolean hidden);
+
     List<FieldKey> getDefaultVisibleColumns();
 
     void setDefaultVisibleColumns(Iterable<FieldKey> keys);
