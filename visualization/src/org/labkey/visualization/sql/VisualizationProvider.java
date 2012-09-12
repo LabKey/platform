@@ -181,18 +181,19 @@ public abstract class VisualizationProvider
         return true;
     }
 
-    protected Map<ColumnInfo, QueryDefinition> getMatchingColumns(Container container, Map<QueryDefinition, TableInfo> queries, ColumnMatchType columnMatchType)
+    protected Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getMatchingColumns(Container container, Map<QueryDefinition, TableInfo> queries, ColumnMatchType columnMatchType)
     {
-        Map<ColumnInfo, QueryDefinition> matches = new HashMap<ColumnInfo, QueryDefinition>();
+        Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> matches = new HashMap<Pair<FieldKey, ColumnInfo>, QueryDefinition>();
         for (Map.Entry<QueryDefinition, TableInfo> entry : queries.entrySet())
         {
             QueryDefinition query = entry.getKey();
             TableInfo table = entry.getValue();
-            List<ColumnInfo> columns;
+
+            Collection<ColumnInfo> columns;
             if (columnMatchType.equals(ColumnMatchType.All))
-                columns = table.getColumns();
+                columns = table.getExtendedColumns(true);
             else
-                columns = query.getColumns(null, table);
+                columns = table.getExtendedColumns(false);
 
             for (ColumnInfo col : columns)
             {
@@ -209,7 +210,7 @@ public abstract class VisualizationProvider
                         }
                     }
 
-                    matches.put(col, query);
+                    matches.put(Pair.of(col.getFieldKey(), col), query);
                 }
             }
         }
@@ -226,7 +227,7 @@ public abstract class VisualizationProvider
         return _type;
     }
 
-    protected Map<ColumnInfo, QueryDefinition> getMatchingColumns(ViewContext context, ColumnMatchType matchType, String queryName)
+    protected Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getMatchingColumns(ViewContext context, ColumnMatchType matchType, String queryName)
     {
         Pair<QueryDefinition, TableInfo> queryDef = getQueryDefinition(context, matchType, queryName);
         if (queryDef != null)
@@ -235,49 +236,49 @@ public abstract class VisualizationProvider
             return Collections.emptyMap();
     }
 
-    protected Map<ColumnInfo, QueryDefinition> getMatchingColumns(ViewContext context, VisualizationController.QueryType queryType, ColumnMatchType matchType)
+    protected Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getMatchingColumns(ViewContext context, VisualizationController.QueryType queryType, ColumnMatchType matchType)
     {
         Map<QueryDefinition, TableInfo> queries = getQueryDefinitions(context, queryType, matchType);
         return getMatchingColumns(context.getContainer(), queries, matchType);
     }
 
-    public Map<ColumnInfo, QueryDefinition> getMeasures(ViewContext context, VisualizationController.QueryType queryType)
+    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getMeasures(ViewContext context, VisualizationController.QueryType queryType)
     {
         return getMatchingColumns(context, queryType, ColumnMatchType.CONFIGURED_MEASURES);
     }
 
-    public Map<ColumnInfo, QueryDefinition> getMeasures(ViewContext context, String queryName)
+    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getMeasures(ViewContext context, String queryName)
     {
         return getMatchingColumns(context, ColumnMatchType.CONFIGURED_MEASURES, queryName);
     }
 
-    public Map<ColumnInfo, QueryDefinition> getDateMeasures(ViewContext context, VisualizationController.QueryType queryType)
+    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getDateMeasures(ViewContext context, VisualizationController.QueryType queryType)
     {
         return getMatchingColumns(context, queryType, ColumnMatchType.DATETIME_COLS);
     }
 
-    public Map<ColumnInfo, QueryDefinition> getDateMeasures(ViewContext context, String queryName)
+    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getDateMeasures(ViewContext context, String queryName)
     {
         return getMatchingColumns(context, ColumnMatchType.DATETIME_COLS, queryName);
     }
 
-    public Map<ColumnInfo, QueryDefinition> getZeroDateMeasures(ViewContext context, VisualizationController.QueryType queryType)
+    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getZeroDateMeasures(ViewContext context, VisualizationController.QueryType queryType)
     {
         // By default, assume that any date can be a measure date or a zero date.
         return getDateMeasures(context, queryType);
     }
 
-    public Map<ColumnInfo, QueryDefinition> getDimensions(ViewContext context, String queryName)
+    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getDimensions(ViewContext context, String queryName)
     {
         return getMatchingColumns(context, ColumnMatchType.CONFIGURED_DIMENSIONS, queryName);
     }
 
-    public Map<ColumnInfo, QueryDefinition> getAllColumns(ViewContext context, String queryName, boolean hiddenColumns)
+    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getAllColumns(ViewContext context, String queryName, boolean hiddenColumns)
     {
         return getMatchingColumns(context, hiddenColumns ? ColumnMatchType.All : ColumnMatchType.All_VISIBLE, queryName);
     }
 
-    public Map<ColumnInfo, QueryDefinition> getAllColumns(ViewContext context, VisualizationController.QueryType queryType, boolean hiddenColumns)
+    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getAllColumns(ViewContext context, VisualizationController.QueryType queryType, boolean hiddenColumns)
     {
         return getMatchingColumns(context, queryType, hiddenColumns ? ColumnMatchType.All : ColumnMatchType.All_VISIBLE);
     }

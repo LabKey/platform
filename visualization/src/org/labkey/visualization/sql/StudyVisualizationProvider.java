@@ -172,9 +172,9 @@ public class StudyVisualizationProvider extends VisualizationProvider
             return super.isValid(table, query, type);
     }
 
-    protected Map<ColumnInfo, QueryDefinition> getMatchingColumns(Container container, Map<QueryDefinition, TableInfo> queries, ColumnMatchType type)
+    protected Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getMatchingColumns(Container container, Map<QueryDefinition, TableInfo> queries, ColumnMatchType type)
     {
-        Map<ColumnInfo, QueryDefinition> matches = super.getMatchingColumns(container, queries, type);
+        Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> matches = super.getMatchingColumns(container, queries, type);
         if (type == ColumnMatchType.DATETIME_COLS)
         {
             Study study = StudyService.get().getStudy(container);
@@ -195,8 +195,8 @@ public class StudyVisualizationProvider extends VisualizationProvider
                             ColumnInfo visitDate = visitTable.getColumn("visitDate");
                             if (visitDate != null)
                             {
-                                visitDate.setFieldKey(FieldKey.fromParts(visitColName, visitDate.getName()));
-                                matches.put(visitDate, queryDefinition);
+                                FieldKey fieldKey = FieldKey.fromParts(visitColName, visitDate.getName());
+                                matches.put(Pair.of(fieldKey, visitDate), queryDefinition);
                             }
                         }
                     }
@@ -210,8 +210,9 @@ public class StudyVisualizationProvider extends VisualizationProvider
             String visitColName = StudyService.get().getSubjectVisitColumnName(container);
 
             // for studies we want to exclude the subject and visit columns
-            for (ColumnInfo col : matches.keySet())
+            for (Pair<FieldKey, ColumnInfo> pair : matches.keySet())
             {
+                ColumnInfo col = pair.second;
                 String columnName = col.getColumnName();
                 if (subjectColName.equalsIgnoreCase(columnName) || visitColName.equalsIgnoreCase(columnName) || "DataSets".equals(columnName))
                     colsToRemove.add(col);
@@ -232,10 +233,10 @@ public class StudyVisualizationProvider extends VisualizationProvider
     }
 
     @Override
-    public Map<ColumnInfo, QueryDefinition> getZeroDateMeasures(ViewContext context, VisualizationController.QueryType queryType)
+    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getZeroDateMeasures(ViewContext context, VisualizationController.QueryType queryType)
     {
         // For studies, valid zero date columns are found in demographic datasets only:
-        Map<ColumnInfo, QueryDefinition> measures = new HashMap<ColumnInfo, QueryDefinition>();
+        Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> measures = new HashMap<Pair<FieldKey, ColumnInfo>, QueryDefinition>();
         Study study = StudyService.get().getStudy(context.getContainer());
         if (study != null)
         {
@@ -251,7 +252,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
                         for (ColumnInfo col : query.getColumns(null, entry.getValue()))
                         {
                             if (col != null && ColumnMatchType.DATETIME_COLS.match(col))
-                               measures.put(col, query);
+                               measures.put(Pair.of(col.getFieldKey(), col), query);
                         }
                     }
                 }
@@ -262,9 +263,9 @@ public class StudyVisualizationProvider extends VisualizationProvider
 
     private static final boolean INCLUDE_DEMOGRAPHIC_DIMENSIONS = false;
     @Override
-    public Map<ColumnInfo, QueryDefinition> getDimensions(ViewContext context, String queryName)
+    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getDimensions(ViewContext context, String queryName)
     {
-        Map<ColumnInfo, QueryDefinition> dimensions = super.getDimensions(context, queryName);
+        Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> dimensions = super.getDimensions(context, queryName);
         if (INCLUDE_DEMOGRAPHIC_DIMENSIONS)
         {
             // include dimensions from demographic data sources
@@ -300,7 +301,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
     /**
      * All columns for a study if builtIn types were requested would be constrained to datasets only
      */
-    public Map<ColumnInfo, QueryDefinition> getAllColumns(ViewContext context, VisualizationController.QueryType queryType, boolean showHidden)
+    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getAllColumns(ViewContext context, VisualizationController.QueryType queryType, boolean showHidden)
     {
         if (queryType == VisualizationController.QueryType.builtIn || queryType == VisualizationController.QueryType.datasets)
         {

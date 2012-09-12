@@ -79,6 +79,7 @@ import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.Visit;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
@@ -460,7 +461,7 @@ public class VisualizationController extends SpringActionController
     {
         public ApiResponse execute(Form form, BindException errors) throws Exception
         {
-            Map<ColumnInfo, QueryDefinition> measures = new HashMap<ColumnInfo, QueryDefinition>();
+            Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> measures = new HashMap<Pair<FieldKey, ColumnInfo>, QueryDefinition>();
             if (form.getFilters() != null && form.getFilters().length > 0)
             {
                 for (String filter : form.getFilters())
@@ -517,16 +518,18 @@ public class VisualizationController extends SpringActionController
             return resp;
         }
 
-        protected List<Map<String, Object>> getColumnResponse(Map<ColumnInfo, QueryDefinition> cols)
+        protected List<Map<String, Object>> getColumnResponse(Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> cols)
         {
             List<Map<String, Object>> measuresJSON = new ArrayList<Map<String, Object>>();
             int count = 1;
-            for (Map.Entry<ColumnInfo, QueryDefinition> entry : cols.entrySet())
+            for (Map.Entry<Pair<FieldKey, ColumnInfo>, QueryDefinition> entry : cols.entrySet())
             {
                 QueryDefinition query = entry.getValue();
                 boolean isDemographic = isDemographicQueryDefinition(query);
                 // add measure properties
-                Map<String, Object> props = getColumnProps(entry.getKey(), query);
+                FieldKey fieldKey = entry.getKey().first;
+                ColumnInfo column = entry.getKey().second;
+                Map<String, Object> props = getColumnProps(fieldKey, column, query);
                 props.put("schemaName", query.getSchema().getName());
                 props.put("queryName", query.getName());
                 props.put("isUserDefined", !query.isTableQueryDefinition());
@@ -538,11 +541,11 @@ public class VisualizationController extends SpringActionController
             return measuresJSON;
         }
 
-        protected Map<String, Object> getColumnProps(ColumnInfo col, QueryDefinition query)
+        protected Map<String, Object> getColumnProps(FieldKey fieldKey, ColumnInfo col, QueryDefinition query)
         {
             Map<String, Object> props = new HashMap<String, Object>();
 
-            props.put("name", col.getName());
+            props.put("name", fieldKey.toString());
             props.put("label", col.getLabel());
             List<QueryException> errors = new ArrayList<QueryException>();
             TableInfo table = query.getTable(errors, false);
@@ -574,7 +577,7 @@ public class VisualizationController extends SpringActionController
                     errors.reject(ERROR_MSG, "No measure provider found for schema " + form.getSchemaName());
                     return null;
                 }
-                Map<ColumnInfo, QueryDefinition> dimensions = provider.getDimensions(getViewContext(), form.getQueryName());
+                Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> dimensions = provider.getDimensions(getViewContext(), form.getQueryName());
                 List<Map<String, Object>> dimensionJSON = getColumnResponse(dimensions);
                 resp.put("success", true);
                 resp.put("dimensions", dimensionJSON);
@@ -851,7 +854,7 @@ public class VisualizationController extends SpringActionController
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
-            Map<ColumnInfo, QueryDefinition> measures = new HashMap<ColumnInfo, QueryDefinition>();
+            Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> measures = new HashMap<Pair<FieldKey, ColumnInfo>, QueryDefinition>();
             if (form.getFilters() != null && form.getFilters().length > 0)
             {
                 for (String filter : form.getFilters())

@@ -698,4 +698,22 @@ public class DataSetTableImpl extends FilteredTable implements DataSetTable
     {
         return false;
     }
+
+    @Override
+    public Collection<ColumnInfo> getExtendedColumns(boolean hidden)
+    {
+        Collection<ColumnInfo> columns = super.getExtendedColumns(hidden);
+
+        if (_dsd.isAssayData())
+        {
+            TableInfo assayResultTable = createAssayResultTable();
+            if (assayResultTable != null)
+            {
+                columns = new LinkedHashSet<ColumnInfo>(columns);
+                columns.addAll(assayResultTable.getExtendedColumns(hidden));
+            }
+        }
+
+        return columns;
+    }
 }

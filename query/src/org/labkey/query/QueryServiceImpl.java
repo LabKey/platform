@@ -1069,9 +1069,9 @@ public class QueryServiceImpl extends QueryService
         return new SimpleUserSchema(name, description, user, container, schema);
     }
 
-    public List<FieldKey> getDefaultVisibleColumns(List<ColumnInfo> columns)
+    public List<ColumnInfo> getDefaultVisibleColumnInfos(List<ColumnInfo> columns)
     {
-        List<FieldKey> ret = new ArrayList<FieldKey>();
+        List<ColumnInfo> ret = new ArrayList<ColumnInfo>(columns.size());
 
         for (ColumnInfo column : columns)
         {
@@ -1084,6 +1084,18 @@ public class QueryServiceImpl extends QueryService
             if (column.isMvIndicatorColumn())
                 continue;
 
+            ret.add(column);
+        }
+
+        return ret;
+    }
+
+    public List<FieldKey> getDefaultVisibleColumns(List<ColumnInfo> columns)
+    {
+        List<FieldKey> ret = new ArrayList<FieldKey>();
+
+        for (ColumnInfo column : getDefaultVisibleColumnInfos(columns))
+        {
             ret.add(FieldKey.fromParts(column.getName()));
         }
 
