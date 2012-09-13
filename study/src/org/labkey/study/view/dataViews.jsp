@@ -21,7 +21,20 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+  public LinkedHashSet<ClientDependency> getClientDependencies()
+  {
+      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+      resources.add(ClientDependency.fromFilePath("Ext4"));
+      resources.add(ClientDependency.fromFilePath("study/DataViewsPanel.css"));
+      resources.add(ClientDependency.fromFilePath("study/DataViewsPanel.js"));
+      resources.add(ClientDependency.fromFilePath("study/DataViewPropertiesPanel.js"));
+      return resources;
+  }
+%>
 <%
     JspView<Portal.WebPart> me = (JspView) HttpView.currentView();
     User u = me.getViewContext().getUser();
@@ -30,13 +43,6 @@
 <div>
     <div id='dataset-browsing-<%=me.getModelBean().getIndex()%>' class="dvc"></div>
 </div>
-<script type="text/javascript">
-
-    LABKEY.requiresExt4Sandbox(true);
-    LABKEY.requiresCss("study/DataViewsPanel.css");
-    LABKEY.requiresScript("study/DataViewsPanel.js");
-
-</script>
 <script type="text/javascript">
 
     function init()
