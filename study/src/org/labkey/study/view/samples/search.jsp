@@ -1,9 +1,8 @@
-<%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.study.samples.SampleSearchBean" %>
 <%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%
 /*
  * Copyright (c) 2011-2012 LabKey Corporation
@@ -27,6 +26,7 @@
   public LinkedHashSet<ClientDependency> getClientDependencies()
   {
       LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+      resources.add(ClientDependency.fromFilePath("clientapi"));
       resources.add(ClientDependency.fromFilePath("Ext4ClientApi"));
       resources.add(ClientDependency.fromFilePath("extWidgets/SearchPanel.js"));
       resources.add(ClientDependency.fromFilePath("study/redesignUtils.js"));

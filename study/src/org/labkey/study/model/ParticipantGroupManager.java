@@ -99,7 +99,7 @@ public class ParticipantGroupManager
 
     public ParticipantCategoryImpl getParticipantCategory(Container c, User user, String label)
     {
-        SimpleFilter filter = new SimpleFilter("Label", label);
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromString("Label"), label);
 
         ParticipantCategoryImpl[] lists = getParticipantCategories(c, user, filter);
 
@@ -114,10 +114,27 @@ public class ParticipantGroupManager
         return def;
     }
 
+    public boolean categoryExists(Container c, String label)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromString("Label"), label);
+        filter.addCondition(FieldKey.fromString("Container"), c);
+
+        try
+        {
+            ParticipantCategoryImpl[] categories = Table.select(StudySchema.getInstance().getTableInfoParticipantCategory(), Table.ALL_COLUMNS, filter, null, ParticipantCategoryImpl.class);
+
+            return categories.length > 0;
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
     public ParticipantCategoryImpl[] getParticipantCategories(Container c, User user, SimpleFilter filter)
     {
         try {
-            filter.addCondition("Container", c);
+            filter.addCondition(FieldKey.fromString("Container"), c);
             ParticipantCategoryImpl[] categories = Table.select(StudySchema.getInstance().getTableInfoParticipantCategory(), Table.ALL_COLUMNS, filter, null, ParticipantCategoryImpl.class);
             List<ParticipantCategoryImpl> filtered = new ArrayList<ParticipantCategoryImpl>();
 

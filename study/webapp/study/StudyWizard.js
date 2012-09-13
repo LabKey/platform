@@ -6,9 +6,6 @@
 
 Ext.namespace("LABKEY.study");
 
-LABKEY.requiresScript("study/ParticipantGroup.js");
-LABKEY.requiresScript("FileUploadField.js");
-
 Ext.QuickTips.init();
 Ext.GuidedTips.init();
 

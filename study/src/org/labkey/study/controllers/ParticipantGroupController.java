@@ -81,6 +81,17 @@ public class ParticipantGroupController extends BaseStudyController
     public class CreateParticipantCategory extends MutatingApiAction<ParticipantCategorySpecification>
     {
         @Override
+        public void validateForm(ParticipantCategorySpecification form, Errors errors)
+        {
+            ParticipantCategoryImpl category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), form.getLabel());
+
+            if (category.getRowId() != 0)
+            {
+                errors.reject(ERROR_MSG, "The label \"" + form.getLabel() + "\" is not available.");
+            }
+        }
+
+        @Override
         public ApiResponse execute(ParticipantCategorySpecification form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
@@ -689,6 +700,12 @@ public class ParticipantGroupController extends BaseStudyController
         public void validateForm(ParticipantGroupSpecification form, Errors errors)
         {
             form.setContainerId(getContainer().getId());
+            if (ParticipantGroupManager.getInstance().categoryExists(getContainer(), form.getLabel()))
+            {
+                errors.reject(ERROR_MSG, "A group already exists with the name \"" + form.getLabel() + "\". Please choose another name.");
+                return;
+            }
+
             if(!form.getParticipantCategorySpecification().isNew())
             {
                 ParticipantGroup[] participantGroups  = ParticipantGroupManager.getInstance().getParticipantGroups(getContainer(), getUser(), form.getParticipantCategorySpecification());

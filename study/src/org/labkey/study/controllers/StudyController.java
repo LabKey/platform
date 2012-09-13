@@ -86,6 +86,7 @@ import org.labkey.api.thumbnail.StaticThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.*;
 import org.labkey.api.view.*;
+import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
@@ -885,8 +886,11 @@ public class StudyController extends BaseStudyController
             }
             HtmlView header = new HtmlView(sb.toString());
 
-            HtmlView script = new HtmlView("<script type=\"text/javascript\">LABKEY.requiresScript('study/ParticipantGroup.js');</script>");
-            VBox view = new VBox(script, header, queryView);
+            LinkedHashSet<ClientDependency> dependencies = new LinkedHashSet<ClientDependency>();
+            dependencies.add(ClientDependency.fromFilePath("study/ParticipantGroup.js"));
+
+            header.addClientDependencies(dependencies);
+            VBox view = new VBox(header, queryView);
 
             String status = (String)ReportPropsManager.get().getPropertyValue(def.getEntityId(), getContainer(), "status");
             if (status != null)

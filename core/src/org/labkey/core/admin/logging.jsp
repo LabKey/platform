@@ -16,9 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.util.SessionAppender" %>
-<%@ page import="org.apache.log4j.spi.LoggingEvent" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%    
     boolean loggingEnabled = SessionAppender.isLogging(request);

@@ -137,7 +137,7 @@ var discussionMenu = {};
         discussionMenu.menu.show('discussionMenuToggle');
     }
 
-    Ext.onReady(function(){Ext.get("discussionMenuToggle").on("click", onShow)});
+    LABKEY.ExtAdapter.onReady(function(){LABKEY.ExtAdapter.get("discussionMenuToggle").on("click", onShow)});
 })();
 </script>
 <span id=discussionMenuToggle><%

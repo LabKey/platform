@@ -25,10 +25,21 @@
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginBean" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginForm" %>
-<%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+
+  public LinkedHashSet<ClientDependency> getClientDependencies()
+  {
+      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+      resources.add(ClientDependency.fromFilePath("clientapi/core"));
+      return resources;
+  }
+%>
 <%
     HttpView<LoginBean> me = (HttpView<LoginBean>) HttpView.currentView();
     LoginBean bean = me.getModelBean();
@@ -43,16 +54,15 @@
     // Next bit of code makes the enter button work on all browsers.
     %>
 <script type="text/javascript">
-    LABKEY.requiresClientAPI();
-</script>
-<script type="text/javascript">
-    Ext.onReady(function() {
+    LABKEY.ExtAdapter.onReady(function(){
+
         var forms = document.getElementsByTagName('form');
 
         for (var i=0;i < forms.length;i++)
         {
-            addInputSubmitEvent(forms[i]);
+            addInputSubmitEvent(forms[i]); // from utils.js
         }
+
     });
 </script>
     <%

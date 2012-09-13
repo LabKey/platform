@@ -15,40 +15,50 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.admin.AdminUrls"%>
 <%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.security.User"%>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page import="org.labkey.api.study.Visit" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.CohortController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.study.controllers.StudyController.ManageReloadAction" %>
-<%@ page import="org.labkey.study.controllers.StudyController.ManageSitesAction" %>
-<%@ page import="org.labkey.study.controllers.StudyController.ManageStudyPropertiesAction" %>
-<%@ page import="org.labkey.study.controllers.StudyController.ManageTypesAction" %>
-<%@ page import="org.labkey.study.controllers.StudyController.ManageVisitsAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController.*" %>
 <%@ page import="org.labkey.study.controllers.StudyDefinitionController" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController" %>
 <%@ page import="org.labkey.study.importer.StudyReload" %>
+<%@ page import="org.labkey.study.model.ParticipantCategoryImpl" %>
+<%@ page import="org.labkey.study.model.ParticipantGroupManager" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.query.StudyPropertiesQueryView" %>
 <%@ page import="org.labkey.study.security.permissions.ManageRequestSettingsPermission" %>
-<%@ page import="org.labkey.study.model.ParticipantGroupManager" %>
-<%@ page import="org.labkey.study.model.ParticipantCategoryImpl" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
-<%@ page import="java.util.Map" %>
 <%@ page import="java.util.HashMap" %>
-<%@ page import="org.labkey.api.study.DataSet" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
+<%!
+
+  public LinkedHashSet<ClientDependency> getClientDependencies()
+  {
+      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+      resources.add(ClientDependency.fromFilePath("clientapi/ext3"));
+      resources.add(ClientDependency.fromFilePath("reports/rowExpander.js"));
+      resources.add(ClientDependency.fromFilePath("study/ParticipantGroup.js"));
+      resources.add(ClientDependency.fromFilePath("FileUploadField.js"));
+      resources.add(ClientDependency.fromFilePath("study/StudyWizard.js"));
+      return resources;
+  }
+%>
 <%
     JspView<StudyPropertiesQueryView> me = (JspView<StudyPropertiesQueryView>) HttpView.currentView();
     StudyImpl study = getStudy();
@@ -294,12 +304,6 @@
 <%
     }
 %>
-
-<script type="text/javascript">
-    LABKEY.requiresScript("reports/rowExpander.js");
-    LABKEY.requiresScript("study/StudyWizard.js");
-</script>
-
 <script type="text/javascript">
 
     function showNewStudyWizard()

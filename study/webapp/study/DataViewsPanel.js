@@ -566,7 +566,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             flex     : 1,
             sortable : true,
             dataIndex: 'category',
-            renderer : Ext.util.Format.htmlEncode,
+            renderer : Ext4.util.Format.htmlEncode,
             hidden   : true
         });
 
@@ -677,7 +677,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             this.hiddenFilter();
         }
 
-        var filterTask = new Ext.util.DelayedTask(filterSearch, this);
+        var filterTask = new Ext4.util.DelayedTask(filterSearch, this);
 
         var searchField = Ext4.create('Ext.form.field.Text', {
             emptyText       : 'name, category, etc.',
@@ -1083,7 +1083,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
     onEditClick : function(view, record) {
 
-        var tip = Ext.getCmp(this._tipID);
+        var tip = Ext4.getCmp(this._tipID);
         if (tip)
             tip.hide();
 
