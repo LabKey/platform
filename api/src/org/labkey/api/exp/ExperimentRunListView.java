@@ -69,6 +69,12 @@ public class ExperimentRunListView extends QueryView
     public static ExperimentRunListView createView(ViewContext model, ExperimentRunType selectedType, boolean allowCustomizations)
     {
         UserSchema schema = QueryService.get().getUserSchema(model.getUser(), model.getContainer(), selectedType.getSchemaName());
+        if (schema == null)
+        {
+            // Fall back on a generic runs list instead of blowing up if we can't find the schema
+            selectedType = ExperimentRunType.ALL_RUNS_TYPE;
+            schema = QueryService.get().getUserSchema(model.getUser(), model.getContainer(), selectedType.getSchemaName());
+        }
         return new ExperimentRunListView(schema, getRunListQuerySettings(schema, model, selectedType.getTableName(), allowCustomizations), selectedType);
     }
 
