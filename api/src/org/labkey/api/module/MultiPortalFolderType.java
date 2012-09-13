@@ -18,6 +18,10 @@ package org.labkey.api.module;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
@@ -28,10 +32,10 @@ import org.labkey.api.view.template.PageConfig;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -56,9 +60,9 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         return true;
     }
 
-    private Collection<Portal.WebPart> getTabs(ViewContext ctx)
+    private Collection<Portal.WebPart> getTabs(Container container)
     {
-        List<Portal.WebPart> tabs = Portal.getParts(ctx.getContainer(), FolderTab.FOLDER_TAB_PAGE_ID);
+        List<Portal.WebPart> tabs = Portal.getParts(container, FolderTab.FOLDER_TAB_PAGE_ID);
 
         // Build up a list of all the currently defined tab names
         Set<String> currentTabNames = new HashSet<String>();
@@ -79,7 +83,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
 
         // If we don't have any matching tabs any more, reset to the default set
         if (filtered.isEmpty())
-            filtered = resetDefaultTabs(ctx.getContainer());
+            filtered = resetDefaultTabs(container);
 
         return filtered;
     }
@@ -87,21 +91,21 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
     @Override @NotNull
     public AppBar getAppBar(ViewContext ctx, PageConfig pageConfig)
     {
-        Collection<Portal.WebPart> tabs = getTabs(ctx);
+        Collection<Portal.WebPart> tabs = getTabs(ctx.getContainer());
 
         List<NavTree> buttons = new ArrayList<NavTree>();
 
         _activePortalPage = null;
-        Map<String, NavTree> navMap = new HashMap<String, NavTree>();
+        Map<String, NavTree> navMap = new LinkedHashMap<String, NavTree>();
         Map<String, Portal.WebPart> tabMap = new HashMap<String, Portal.WebPart>();
         for (Portal.WebPart tab : tabs)
         {
             FolderTab folderTab = findTab(tab.getName());
             tabMap.put(tab.getName(), tab);
-            if (folderTab != null && folderTab.isVisible(ctx))
+            if (folderTab != null && folderTab.isVisible(ctx.getContainer(), ctx.getUser()))
             {
                 String label = folderTab.getCaption(ctx);
-                NavTree nav = new NavTree(label, folderTab.getURL(ctx));
+                NavTree nav = new NavTree(label, folderTab.getURL(ctx.getContainer(), ctx.getUser()));
                 buttons.add(nav);
                 navMap.put(tab.getName(), nav);
                 // Stop looking for a tab to select if we've already found one
@@ -112,10 +116,33 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                 }
             }
         }
+        // If we didn't find a match, and there is a tab that should be the default, and we're on the generic portal page
+        if (_activePortalPage == null && !navMap.isEmpty() && ctx.getActionURL().equals(PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(ctx.getContainer())))
+        {
+            Map.Entry<String, NavTree> entry = navMap.entrySet().iterator().next();
+            // Mark the first tab as selected
+            _activePortalPage = entry.getKey();
+            entry.getValue().setSelected(true);
+        }
 
         migrateLegacyPortalPage(ctx.getContainer());
 
         return new AppBar(getFolderTitle(ctx), ctx.getContainer().getStartURL(ctx.getUser()), buttons);
+    }
+
+    @Override
+    public ActionURL getStartURL(Container c, User user)
+    {
+        Collection<Portal.WebPart> tabs = getTabs(c);
+        for (Portal.WebPart tab : tabs)
+        {
+            FolderTab folderTab = findTab(tab.getName());
+            if (folderTab.isVisible(c, user))
+            {
+                return folderTab.getURL(c, user);
+            }
+        }
+        return super.getStartURL(c, user);
     }
 
     private void migrateLegacyPortalPage(Container container)
@@ -176,7 +203,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         }
         else
         {
-            Collection<Portal.WebPart> activeTabs = getTabs(ctx);
+            Collection<Portal.WebPart> activeTabs = getTabs(ctx.getContainer());
             if (activeTabs.isEmpty())
             {
                 // No real tabs exist for this folder type, so just use the default portal page

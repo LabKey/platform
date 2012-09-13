@@ -28,8 +28,6 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.PageFlowUtil;
 import org.springframework.web.servlet.mvc.Controller;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -77,9 +75,9 @@ public abstract class FolderTab
             super(pageId, caption);
         }
 
-        public ActionURL getURL(ViewContext context)
+        public ActionURL getURL(Container container, User user)
         {
-            return PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(context.getContainer(), getName());
+            return PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(container, getName());
         }
 
         public boolean isSelectedPage(ViewContext viewContext)
@@ -132,7 +130,7 @@ public abstract class FolderTab
 
     public boolean isSelectedPage(ViewContext viewContext)
     {
-        if (viewContext.getActionURL().equals(getURL(viewContext)))
+        if (viewContext.getActionURL().equals(getURL(viewContext.getContainer(), viewContext.getUser())))
         {
             return true;
         }
@@ -163,11 +161,11 @@ public abstract class FolderTab
         return false;
     }
 
-    public abstract ActionURL getURL(ViewContext viewContext);
+    public abstract ActionURL getURL(Container container, User user);
 
-    public boolean isVisible(ViewContext context)
+    public boolean isVisible(Container c, User u)
     {
-        return canRead(context.getUser(), context.getContainer());
+        return canRead(u, c);
     }
 
     public String getDbName()

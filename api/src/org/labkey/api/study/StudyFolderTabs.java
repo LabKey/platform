@@ -15,8 +15,10 @@
  */
 package org.labkey.api.study;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -42,9 +44,9 @@ public class StudyFolderTabs
         }
 
         @Override
-        public ActionURL getURL(ViewContext context)
+        public ActionURL getURL(Container container, User user)
         {
-            return PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(context.getContainer());
+            return PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(container);
         }
 
         @Override
@@ -74,9 +76,9 @@ public class StudyFolderTabs
         }
 
         @Override
-        public boolean isVisible(ViewContext context)
+        public boolean isVisible(Container c, User user)
         {
-            Study study = StudyService.get().getStudy(context.getContainer());
+            Study study = StudyService.get().getStudy(c);
             return (study != null);
         }
 
@@ -126,9 +128,9 @@ public class StudyFolderTabs
         }
 
         @Override
-        public boolean isVisible(ViewContext context)
+        public boolean isVisible(Container c, User user)
         {
-            Study study = StudyService.get().getStudy(context.getContainer());
+            Study study = StudyService.get().getStudy(c);
             return (study != null);
         }
     }
@@ -171,9 +173,9 @@ public class StudyFolderTabs
         }
 
         @Override
-        public boolean isVisible(ViewContext context)
+        public boolean isVisible(Container c, User user)
         {
-            Study study = StudyService.get().getStudy(context.getContainer());
+            Study study = StudyService.get().getStudy(c);
             return (study != null);
         }
     }
@@ -186,9 +188,9 @@ public class StudyFolderTabs
         }
 
         @Override
-        public ActionURL getURL(ViewContext context)
+        public ActionURL getURL(Container container, User user)
         {
-            return PageFlowUtil.urlProvider(StudyUrls.class).getManageStudyURL(context.getContainer());
+            return PageFlowUtil.urlProvider(StudyUrls.class).getManageStudyURL(container);
         }
 
         @Override
@@ -202,12 +204,12 @@ public class StudyFolderTabs
         }
 
         @Override
-        public boolean isVisible(ViewContext context)
+        public boolean isVisible(Container container, User user)
         {
-            if (!context.getContainer().hasPermission(context.getUser(), AdminPermission.class))
+            if (!container.hasPermission(user, AdminPermission.class))
                 return false;
 
-            Study study = StudyService.get().getStudy(context.getContainer());
+            Study study = StudyService.get().getStudy(container);
             return (study != null);
         }
     }

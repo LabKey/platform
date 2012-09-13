@@ -101,9 +101,9 @@ public class DefaultFolderType implements FolderType
             }
 
             @Override
-            public ActionURL getURL(ViewContext context)
+            public ActionURL getURL(Container container, User user)
             {
-                return getStartURL(context.getContainer(), context.getUser());
+                return getStartURL(container, user);
             }
         };
         return Collections.singletonList(tab);
