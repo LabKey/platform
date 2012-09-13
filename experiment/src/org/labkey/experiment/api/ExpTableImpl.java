@@ -148,6 +148,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable impleme
         return _rootTable.getColumn("LSID");
     }
 
+    // if you change this, see similiar AssayResultTable.createFlagColumn or TSVAssayProvider.createFlagColumn()
     protected ColumnInfo createFlagColumn(String alias)
     {
         ColumnInfo ret = wrapColumn(alias, getLSIDColumn());

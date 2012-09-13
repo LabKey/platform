@@ -1410,7 +1410,7 @@ public class QueryServiceImpl extends QueryService
         if (AppProps.getInstance().isDevMode())
         {
             SQLFragment t = new SQLFragment();
-            t.appendComment("<QueryServiceImpl.getSelectSQL(" + table + ")>", dialect);
+            t.appendComment("<QueryServiceImpl.getSelectSQL(" + AliasManager.makeLegalName(table.getName(), dialect) + ")>", dialect);
             t.append(ret);
             t.appendComment("</QueryServiceImpl.getSelectSQL()>", dialect);
             String s = _prettyPrint(t.getSQL());

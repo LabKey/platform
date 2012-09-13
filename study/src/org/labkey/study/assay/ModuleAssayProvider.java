@@ -22,6 +22,7 @@ import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
 import org.fhcrc.cpas.exp.xml.PropertyDescriptorType;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.api.ExpProtocol.AssayDomainTypes;
@@ -168,8 +169,8 @@ public class ModuleAssayProvider extends TsvAssayProvider
         return description;
     }
 
-    @Override
-    public AssayTableMetadata getTableMetadata(ExpProtocol protocol)
+    @Override @NotNull
+    public AssayTableMetadata getTableMetadata(@NotNull ExpProtocol protocol)
     {
         AssayTableMetadata metadata = super.getTableMetadata(protocol);
         return new AssayTableMetadata(this, protocol, metadata.getSpecimenDetailParentFieldKey(), metadata.getRunFieldKeyFromResults(), metadata.getResultRowIdFieldKey(), metadata.getDatasetRowIdPropertyName())

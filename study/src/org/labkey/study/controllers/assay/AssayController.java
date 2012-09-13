@@ -25,6 +25,7 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.LabkeyError;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -33,8 +34,11 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JsonWriter;
+import org.labkey.api.data.SchemaTableInfo;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.defaults.SetDefaultValuesAssayAction;
 import org.labkey.api.exp.ExperimentException;
@@ -47,6 +51,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.query.ExpRunTable;
+import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.portal.ProjectUrls;
@@ -60,12 +65,15 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.actions.*;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AbstractAssayView;
 import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayResultTable;
 import org.labkey.api.study.assay.AssayRunsView;
+import org.labkey.api.study.assay.AssaySchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayTableMetadata;
 import org.labkey.api.study.assay.AssayUrls;
@@ -102,12 +110,14 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -1040,5 +1050,140 @@ public class AssayController extends SpringActionController
             NavTree result = super.appendNavTrail(root);
             return result.addChild(_protocol.getName() + " Upload Jobs");
         }
-    }    
+    }
+
+
+    public static class SetResultFlagForm extends ProtocolIdForm
+    {
+        Integer[] resultRowIds;
+        String[] lsids;
+        String comment;
+        String columnName = "flag";
+
+        public SetResultFlagForm()
+        {
+        }
+
+        public Integer[] getResultRowIds()
+        {
+            return resultRowIds;
+        }
+
+        public void setResultRowIds(Integer[] rowIds)
+        {
+            this.resultRowIds = rowIds;
+        }
+
+        // These LSIDS are not 'real', it's the Data lsid + ":" + result.rowid
+        public void setLsid(String[] lsids)
+        {
+            this.lsids = lsids;
+        }
+
+        public void setComment(String comment)
+        {
+            this.comment = comment;
+        }
+
+        public String getComment()
+        {
+            return this.comment;
+        }
+
+        public String getColumnName()
+        {
+            return columnName;
+        }
+
+        public void setColumnName(String columnName)
+        {
+            this.columnName = columnName;
+        }
+
+        public List<Integer> getRowList()
+        {
+            if (null != resultRowIds)
+                return Arrays.asList(resultRowIds);
+            if (null == lsids)
+                return Collections.EMPTY_LIST;
+            ArrayList<Integer> ret = new ArrayList<Integer>(lsids.length);
+            for (String lsid : lsids)
+            {
+                try
+                {
+                    if (lsid.endsWith("]"))
+                    {
+                        int i = lsid.lastIndexOf("[");
+                        int rowid = Integer.parseInt(lsid.substring(i+1,lsid.length()-1));
+                        ret.add(rowid);
+                    }
+                }
+                catch (NumberFormatException x) {}
+            }
+            return ret;
+        }
+    }
+
+
+    /**
+     * This is different from ExperimentController$SetFlagAction since Result Rows are not ExpObjects,
+     * and we store flag directly in the materialized table
+     */
+    @RequiresPermissionClass(UpdatePermission.class)
+    public class SetResultFlagAction extends MutatingApiAction<SetResultFlagForm>
+    {
+        @Override
+        protected SetResultFlagForm getCommand(HttpServletRequest request) throws Exception
+        {
+            return new SetResultFlagForm();
+        }
+
+        @Override
+        public ApiResponse execute(SetResultFlagForm form, BindException errors) throws Exception
+        {
+            form.setContainer(getContainer());
+            ExpProtocol protocol = form.getProtocol();
+            String tableName = AssayService.get().getResultsTableName(protocol);
+            AssaySchema schema = AssayService.get().createSchema(getUser(), getContainer());
+            TableInfo table = schema.getTable(tableName);
+            if (!(table instanceof AssayResultTable))
+                throw new NotFoundException();
+            if (null == form.getColumnName())
+                throw new NotFoundException();
+            AssayResultTable assayResultTable = (AssayResultTable) table;
+            SchemaTableInfo sti = (SchemaTableInfo)assayResultTable.getSchemaTableInfo();
+            String comment = StringUtils.trimToNull(form.getComment());
+
+            ColumnInfo flagCol = assayResultTable.getColumn(form.getColumnName());
+            if (null == form.getColumnName())
+                throw new NotFoundException();
+            if (!org.labkey.api.gwt.client.ui.PropertyType.expFlag.getURI().equals(flagCol.getConceptURI()))
+                throw new NotFoundException();
+
+            DbScope scope = sti.getSchema().getScope();
+            int rowsAffected  = 0 ;
+            try
+            {
+                scope.ensureTransaction();
+                for (Integer id : form.getRowList())
+                {
+                    // assuming that column in storage table has same name
+                    Table.update(getUser(), sti, Collections.singletonMap(flagCol.getColumnName(),comment), id);
+                    rowsAffected++;
+                }
+                scope.commitTransaction();
+            }
+            finally
+            {
+                scope.closeConnection();
+            }
+
+            // the flag is editable even if the assay is not
+            JSONObject res = new JSONObject();
+            res.put("success", true);
+            res.put("comment", form.getComment());
+            res.put("rowsAffected", rowsAffected);
+            return new ApiSimpleResponse(res);
+        }
+    }
 }

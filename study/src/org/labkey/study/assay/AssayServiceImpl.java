@@ -235,9 +235,12 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             }
         }
 
-        ExpData data = ExperimentService.get().createData(getContainer(), provider.getDataType());
-        ExperimentDataHandler handler = data.findDataHandler();
         result.setAllowTransformationScript(provider.createDataExchangeHandler() != null);
+
+        boolean supportsFlag = provider.supportsFlagColumnType(ExpProtocol.AssayDomainTypes.Result);
+        for (GWTDomain d : result.getDomains())
+            if (d.getDomainURI().contains(":" + ExpProtocol.AssayDomainTypes.Result.getPrefix() + "."))
+                d.setAllowFlagProperties(supportsFlag);
 
         return result;
     }
