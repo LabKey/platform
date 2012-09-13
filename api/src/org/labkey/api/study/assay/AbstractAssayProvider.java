@@ -530,12 +530,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return result;
     }
 
-    public List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles, AssayRunUploadForm context)
+    public List<AssayDataCollector> getDataCollectors(@Nullable Map<String, File> uploadedFiles, AssayRunUploadForm context)
     {
         return getDataCollectors(uploadedFiles, context, true);
     }
 
-    public List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles, AssayRunUploadForm context, boolean allowFileReuseOnReRun)
+    public List<AssayDataCollector> getDataCollectors(@Nullable Map<String, File> uploadedFiles, AssayRunUploadForm context, boolean allowFileReuseOnReRun)
     {
         List<AssayDataCollector> result = new ArrayList<AssayDataCollector>();
         if (!PipelineDataCollector.getFileQueue(context).isEmpty())
@@ -1431,5 +1431,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public String getRunLSIDPrefix()
     {
         return _runLSIDPrefix;
+    }
+
+    @Override
+    public boolean supportsFlagColumnType(ExpProtocol.AssayDomainTypes type)
+    {
+        return false;
     }
 }

@@ -25,6 +25,7 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.DefaultQueryUpdateService;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
@@ -46,9 +47,11 @@ public class AssayResultUpdateService extends DefaultQueryUpdateService
 {
     private final AssaySchema _schema;
 
-    public AssayResultUpdateService(AssaySchema schema, AssayResultTable table)
+    public AssayResultUpdateService(AssaySchema schema, FilteredTable table)
     {
         super(table, table.getRealTable());
+        if (!(table instanceof AssayResultTable))
+            throw new IllegalArgumentException("Expected AssayResultTable");
         _schema = schema;
     }
 

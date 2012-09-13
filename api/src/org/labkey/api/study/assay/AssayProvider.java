@@ -217,4 +217,6 @@ public interface AssayProvider extends Handler<ExpProtocol>
     AssayRunAsyncContext createRunAsyncContext(AssayRunUploadContext context) throws IOException, ExperimentException;
     String getRunLSIDPrefix();
     void registerLsidHandler();
+
+    boolean supportsFlagColumnType(ExpProtocol.AssayDomainTypes type);
 }

@@ -41,7 +41,6 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;

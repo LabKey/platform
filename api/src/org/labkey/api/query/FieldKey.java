@@ -18,6 +18,7 @@ package org.labkey.api.query;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.ColumnInfo;
@@ -28,6 +29,7 @@ import java.util.List;
 import java.util.Collections;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Map;
 
 /**
  * Maps to a column name. The full string is separated by slashes, where
@@ -119,6 +121,7 @@ public class FieldKey implements Comparable
         return fromParts(strings);
     }
 
+
     static public FieldKey fromParts(FieldKey ... parts)
     {
         FieldKey cur = null;
@@ -138,7 +141,19 @@ public class FieldKey implements Comparable
         }
         return cur;
     }
-    
+
+
+    static public FieldKey remap(FieldKey key, @Nullable FieldKey parent, @Nullable Map<FieldKey,FieldKey> remap)
+    {
+        FieldKey replace = remap == null ? null : remap.get(key);
+        if (null != replace)
+            return replace;
+        else if (null != parent)
+            return FieldKey.fromParts(parent, key);
+        return key;
+    }
+
+
     static public String encodePart(String str)
     {
         str = StringUtils.replace(str, "$", "$D");

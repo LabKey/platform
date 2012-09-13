@@ -1687,7 +1687,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
 
     // TODO: fix up OORIndicator
-    // TODO: fixup display column factories
 
     public void remapFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
     {
@@ -1705,6 +1704,9 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
         remapUrlFieldKeys(parent, remap);
         remapForeignKeyFieldKeys(parent, remap);
+        DisplayColumnFactory factory = getDisplayColumnFactory();
+        if (null != factory && DEFAULT_FACTORY != factory && factory instanceof RemappingDisplayColumnFactory)
+            ((RemappingDisplayColumnFactory)factory).remapFieldKeys(parent, remap);
     }
     
 

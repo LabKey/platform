@@ -35,7 +35,8 @@ public enum PropertyType
     xsdDouble("http://www.w3.org/2001/XMLSchema#double", true, "Number (Double)", "DOUBLE", "Double", "float"),
     xsdDateTime("http://www.w3.org/2001/XMLSchema#dateTime", true, "DateTime", "TIMESTAMP", null, "date"),
     expFileLink("http://cpas.fhcrc.org/exp/xml#fileLink", false, "File", "CLOB"),
-    expAttachment("http://www.labkey.org/exp/xml#attachment", false, "Attachment", "VARCHAR");
+    expAttachment("http://www.labkey.org/exp/xml#attachment", false, "Attachment", "VARCHAR"),
+    expFlag("http://www.labkey.org/exp/xml#flag", false, "Flag", "VARCHAR");
 
     public static final String PARTICIPANT_CONCEPT_URI = "http://cpas.labkey.com/Study#ParticipantId";
 

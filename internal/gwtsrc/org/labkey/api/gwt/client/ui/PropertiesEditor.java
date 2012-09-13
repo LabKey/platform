@@ -887,6 +887,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                 });
                 picker.setAllowAttachmentProperties(_domain.isAllowAttachmentProperties());
                 picker.setAllowFileLinkProperties(_domain.isAllowFileLinkProperties());
+                picker.setAllowFlagProperties(_domain.isAllowFlagProperties());
                 // distinguish between RangeEditable and any ConceptEditable
                 picker.setIsRangeEditable(isRangeEditable(rowObject));
                 type = picker;

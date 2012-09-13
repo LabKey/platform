@@ -213,7 +213,7 @@ public class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression
         if (copy._containerContext instanceof ContainerContext.FieldKeyContext)
         {
             FieldKey key = ((ContainerContext.FieldKeyContext)copy._containerContext).getFieldKey();
-            FieldKey re = _remap(key, parent, remap);
+            FieldKey re = FieldKey.remap(key, parent, remap);
             copy._containerContext = new ContainerContext.FieldKeyContext(re);
         }
         // copy changes backwards

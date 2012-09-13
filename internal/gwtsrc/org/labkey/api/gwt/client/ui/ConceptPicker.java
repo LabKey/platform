@@ -53,6 +53,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
     private boolean isRangeEditable = true;
     private boolean allowFileLinkProperties = true;
     private boolean allowAttachmentProperties = true;
+    private boolean allowFlagProperties = false;
 
     public void onComponentEvent(ComponentEvent ce)
     {
@@ -123,6 +124,12 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
     public void setAllowAttachmentProperties(boolean allowAttachmentProperties)
     {
         this.allowAttachmentProperties = allowAttachmentProperties;
+    }
+
+
+    public void setAllowFlagProperties(boolean allowFlagProperties)
+    {
+        this.allowFlagProperties = allowFlagProperties;
     }
 
 
@@ -237,6 +244,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
             group.add(new ConceptTypeRadio(integerType));
             group.add(new ConceptTypeRadio(doubleType));
             group.add(new ConceptTypeRadio(datetimeType));
+            group.add(new ConceptTypeRadio(flagType));
             group.add(new ConceptTypeRadio(fileType));
             group.add(new ConceptTypeRadio(attachmentType));
             group.add(new ConceptTypeRadio(userType));
@@ -346,6 +354,8 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
                 else if (r._type.getPropertyType() == PropertyType.expMultiLine || r._type.getPropertyType() == PropertyType.xsdString)
                     // Allow toggling between multi-line text and regular text types
                     r.setEnabled(picker.isRangeEditable || null == type || type.getPropertyType() == PropertyType.expMultiLine || type.getPropertyType() == PropertyType.xsdString);
+                else if (r._type == flagType)
+                    r.setEnabled(picker.isRangeEditable && picker.allowFlagProperties);
                 else
                     r.setEnabled(picker.isRangeEditable || null == type || type.getPropertyType() == r._type.getPropertyType());
             }
@@ -589,6 +599,9 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
         }
     };
 
+    // this is really just a string with a special display column,
+    // so I'm just set a special concept type, and using xsdString for base type
+    public static final ConceptType flagType = new BaseConceptType(PropertyType.xsdString.toString(), "Flag", PropertyType.expFlag.getURI());
 
 
     static ConceptType fromPropertyDescriptor(GWTPropertyDescriptor pd)
@@ -597,6 +610,8 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
             return userType;
         if (subjectType.matches(pd))
             return subjectType;
+        if (flagType.matches(pd))
+            return flagType;
         if (!_empty(pd.getLookupQuery()) && !_empty(pd.getLookupSchema()))
             return new LookupConceptType(pd);
         return parseRawValue(pd.getRangeURI());

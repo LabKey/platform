@@ -19,19 +19,29 @@ package org.labkey.api.exp.flag;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.jsp.JspBase;
-import org.labkey.api.jsp.JspLoader;
+import org.labkey.api.query.AliasManager;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.JspView;
+import org.labkey.api.util.UniqueID;
 
 import java.io.IOException;
 import java.io.Writer;
 
 public class FlagColumnRenderer extends DataColumn
 {
+    protected String flagSrc;
+    protected String unflagSrc;
+    protected String defaultTitle = "Flag for review"; // if there is no comment
+    protected String endpoint = null;
+
     public FlagColumnRenderer(ColumnInfo colinfo)
+    {
+        this(colinfo, null, null);
+    }
+
+    public FlagColumnRenderer(ColumnInfo colinfo, String unflagSrc, String flagSrc)
     {
         super(colinfo);
 
@@ -40,19 +50,59 @@ public class FlagColumnRenderer extends DataColumn
         {
             setInputType(displayField.getInputType());
         }
+        String contextPath = AppProps.getInstance().getContextPath();
+        this.unflagSrc = null==unflagSrc ? null : contextPath + unflagSrc;
+        this.flagSrc = null==flagSrc ? null : contextPath + flagSrc;
     }
 
-    static private final String key_scriptrendered = "~~~~FlagColumnScriptRendered~~~";
 
-    public void renderFlagScript(RenderContext ctx, Writer out)
+    String setFlagFn = null;
+    String unique = null;
+
+    protected String getUnique(RenderContext ctx)
     {
-        if (ctx.containsKey(key_scriptrendered))
-            return;
-        ctx.put(key_scriptrendered, true);
+        if (null==unique)
+            unique = String.valueOf(UniqueID.getRequestScopedUID(ctx.getRequest()));
+        return unique;
+    }
+
+    protected String renderFlagScript(RenderContext ctx, Writer out)
+    {
+        if (null != setFlagFn)
+            return setFlagFn;
+
+        String dataRegionName = null == ctx.getCurrentRegion() ? null : ctx.getCurrentRegion().getName();
+        String dr = dataRegionName == null ? "" : AliasManager.makeLegalName(dataRegionName,null).replace("_","");
+
+        setFlagFn = "__setFlag" + dr + "_" + getUnique(ctx);
+
+        if (getDisplayColumn() instanceof FlagColumn)
+        {
+            FlagColumn flagCol = (FlagColumn)getDisplayColumn();
+            if (null == flagSrc)
+                flagSrc = flagCol.urlFlag(true);
+            if (null == unflagSrc)
+                unflagSrc = flagCol.urlFlag(false);
+        }
+        if (null == flagSrc)
+            flagSrc = AppProps.getInstance().getContextPath() +"/Experiment/flagDefault.gif";
+        if (null == unflagSrc)
+            unflagSrc = AppProps.getInstance().getContextPath() +"/Experiment/unflagDefault.gif";
+
         try
         {
-            JspView<Object> v = new JspView<Object>(FlagColumnRenderer.class, "setFlagScript.jsp", null);
-            v.render(ctx.getRequest(), ctx.getViewContext().getResponse());
+            out.write("<script type=\"text/javascript\">\n");
+            out.write("var " + setFlagFn + " = showFlagDialogFn({");
+            if (null != endpoint)
+                out.write("url: " + PageFlowUtil.jsString(endpoint) + ", ");
+            out.write("  dataRegionName: " + PageFlowUtil.jsString(dataRegionName) + ", ");
+//            out.write("  columnName: " + PageFlowUtil.jsString(getBoundColumn().getName()) + ", ");
+            out.write("  imgSrcFlagged: " + PageFlowUtil.jsString(flagSrc) + ", ");
+            out.write("  imgSrcUnflagged: " + PageFlowUtil.jsString(unflagSrc) + ", ");
+            out.write("  imgTitle: " + PageFlowUtil.jsString(defaultTitle));
+            out.write("});\n");
+            out.write("</script>");
+            return setFlagFn;
         }
         catch (Exception e)
         {
@@ -61,7 +111,7 @@ public class FlagColumnRenderer extends DataColumn
     }
 
 
-    public void renderFlag(RenderContext ctx, Writer out) throws IOException
+    protected void renderFlag(RenderContext ctx, Writer out) throws IOException
     {
         renderFlagScript(ctx, out);
         Object boundValue = getColumnInfo().getValue(ctx);
@@ -70,31 +120,32 @@ public class FlagColumnRenderer extends DataColumn
         FlagColumn displayField = (FlagColumn) getColumnInfo().getDisplayField();
         String comment = (String) displayField.getValue(ctx);
         String objectId = (String) getValue(ctx);
-        String src;
         if (objectId == null)
             return;
+        _renderFlag(ctx, out, objectId, comment);
+    }
 
-        if (comment == null)
+
+    Boolean canUpdate = null;
+
+    protected void _renderFlag(RenderContext ctx, Writer out, String objectId, String comment) throws IOException
+    {
+        setFlagFn = renderFlagScript(ctx, out);
+
+        if (null == canUpdate)
+            canUpdate = ctx.getViewContext().hasPermission(UpdatePermission.class);
+        if (Boolean.TRUE == canUpdate && null != objectId)
         {
-            src = displayField.urlFlag(false);
-        }
-        else
-        {
-            src = displayField.urlFlag(true);
-        }
-        boolean canUpdate = ctx.getViewContext().hasPermission(UpdatePermission.class);
-        if (canUpdate)
-        {
-            out.write("<a href=\"#\" onclick=\"return setFlag(");
+            out.write("<a href=\"#\" onclick=\"return " + setFlagFn + "(");
             out.write(hq(objectId));
             out.write(")\">");
         }
 
         out.write("<img height=\"16\" width=\"16\" src=\"");
-        out.write(h(src));
+        out.write(h(null==comment ? unflagSrc : flagSrc));
         out.write("\"");
-        if (comment == null)
-            comment = "Flag for review";
+        if (comment == null && Boolean.TRUE == canUpdate && null != objectId)
+            comment = defaultTitle;
         out.write(" title=\"");
         out.write(h(comment));
         out.write("\"");
@@ -107,6 +158,7 @@ public class FlagColumnRenderer extends DataColumn
             out.write("</a>");
         }
     }
+
 
     public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
     {

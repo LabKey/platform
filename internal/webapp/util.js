@@ -695,3 +695,94 @@ LABKEY.addMarkup(
 '  </table>'+
 '</div>'
 );
+
+
+
+// generator function to create a function to call when flag field is clicked
+function showFlagDialogFn(config)
+{
+    var EXT = window.Ext4||window.Ext;
+    config = EXT.apply({}, config, {
+        url : LABKEY.ActionURL.buildURL('experiment', 'setFlag.api'),
+        defaultComment : "Flagged for review",
+        dialogTitle : "Review",
+        imgTitle : "Flag for review",
+        imgSrcFlagged : LABKEY.contextPath + "/Experiment/flagDefault.gif",
+        imgClassFlagged : "",
+        imgSrcUnflagged : LABKEY.contextPath + "/Experiment/unflagDefault.gif",
+        imgClassUnflagged : ""
+    });
+
+    var setFlag = function(flagId)
+    {
+        var defaultComment = config.defaultComment;
+
+        EXT.QuickTips.init();
+
+        var w;
+        var flagImages = EXT.DomQuery.select("IMG[flagId='" + flagId + "']");
+        if (flagImages && flagImages.length)
+                w = flagImages[0];
+        if (!w)
+            return;
+        if (w.title != config.imgTitle)
+            defaultComment = w.title || defaultComment;
+
+        var el = EXT.get(w);
+        var box = EXT.MessageBox.show({
+            title   : config.dialogTitle,
+            prompt  : true,
+            msg     : 'Enter a comment',
+            value   : defaultComment,
+            width   : 300,
+            fn      : function(btnId, value)
+            {
+                if (btnId == 'ok')
+                {
+                    Ext.Ajax.request(
+                    {
+                        url    : config.url,
+                        params :
+                        {
+                            lsid    : flagId,
+                            comment : value,
+                            unique  : new Date().getTime()
+                        },
+                        success : function()
+                        {
+                            if (value.length)
+                            {
+                                el.dom.src = config.imgSrcFlagged;
+                                el.dom.title = value;
+                                if (config.imgClassUnflagged)
+                                    el.removeClass(config.imgClassUnflagged);
+                                el.addClass(config.imgClassFlagged);
+                            }
+                            else {
+                                el.dom.src = config.imgSrcUnflagged;
+                                el.dom.title = config.imgTitle;
+                                if (config.imgClassFlagged)
+                                    el.removeClass(config.imgClassFlagged);
+                                el.addClass(config.imgClassUnflagged);
+                            }
+                        },
+                        failure : function()
+                        {
+                            alert("Failure!");
+                        }
+                    });
+                }
+            },
+            buttons : EXT.MessageBox.OKCANCEL
+        });
+
+        box.getDialog().setPosition(el.getAnchorXY()[0]-75, el.getAnchorXY()[1]-75);
+    };
+    if (EXT.isReady)
+        return setFlag;
+    else
+        return function(flagId)
+        {
+            Ext.onReady(function(){setFlag(flagId)});
+        }
+}

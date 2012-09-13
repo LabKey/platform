@@ -270,6 +270,7 @@ api/src/org/labkey/api/data/PkFilter.java -text
 api/src/org/labkey/api/data/Project.java -text
 api/src/org/labkey/api/data/PropertyStorageSpec.java -text
 api/src/org/labkey/api/data/QueryProfiler.java -text
+api/src/org/labkey/api/data/RemappingDisplayColumnFactory.java -text
 api/src/org/labkey/api/data/RenderColumn.java -text
 api/src/org/labkey/api/data/RenderContextDecorator.java -text
 api/src/org/labkey/api/data/ResultSetMetaDataImpl.java -text
@@ -4798,7 +4799,6 @@ internal/src/org/labkey/api/exp/FileXarSource.java -text
 internal/src/org/labkey/api/exp/flag/FlagColumn.java -text
 internal/src/org/labkey/api/exp/flag/FlagColumnRenderer.java -text
 internal/src/org/labkey/api/exp/flag/FlagForeignKey.java -text
-internal/src/org/labkey/api/exp/flag/setFlagScript.jsp -text
 internal/src/org/labkey/api/exp/property/AbstractDomainKind.java -text
 internal/src/org/labkey/api/exp/property/AssayBatchDomainKind.java -text
 internal/src/org/labkey/api/exp/property/AssayDomainKind.java -text

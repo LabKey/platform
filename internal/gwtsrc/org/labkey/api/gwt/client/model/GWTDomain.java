@@ -38,6 +38,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     private String container;
     private boolean allowFileLinkProperties;
     private boolean allowAttachmentProperties;
+    private boolean allowFlagProperties = false;
     private DefaultValueType defaultDefaultValueType = null;
     private DefaultValueType[] defaultValueOptions = new DefaultValueType[0];
     private List<FieldType> fields = new ArrayList<FieldType>();
@@ -61,6 +62,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         this.container = src.container;
         this.allowFileLinkProperties = src.allowFileLinkProperties;
         this.allowAttachmentProperties = src.allowAttachmentProperties;
+        this.allowFlagProperties = src.allowFlagProperties;
         this.defaultDefaultValueType = src.defaultDefaultValueType;
         this.defaultValueOptions = src.defaultValueOptions;
         this.defaultValuesURL = src.defaultValuesURL;
@@ -160,6 +162,16 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     public void setAllowAttachmentProperties(boolean allowAttachmentProperties)
     {
         this.allowAttachmentProperties = allowAttachmentProperties;
+    }
+
+    public boolean isAllowFlagProperties()
+    {
+        return allowFlagProperties;
+    }
+
+    public void setAllowFlagProperties(boolean allowFlagProperties)
+    {
+        this.allowFlagProperties = allowFlagProperties;
     }
 
     /**
