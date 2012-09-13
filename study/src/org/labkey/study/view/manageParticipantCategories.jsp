@@ -51,10 +51,12 @@
 <div id="participantCategoriesGrid" class="extContainer"></div>
 
 <script type="text/javascript">
+
+var _grid;
+
 (function(){
 
     var $h = Ext.util.Format.htmlEncode;
-    var _grid;
 
     function renderParticipantCategoriesGrid()
     {
