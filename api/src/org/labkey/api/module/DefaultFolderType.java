@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.list.ListService;
+import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
@@ -103,7 +104,7 @@ public class DefaultFolderType implements FolderType
             @Override
             public ActionURL getURL(Container container, User user)
             {
-                return getStartURL(container, user);
+                return PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(container);
             }
         };
         return Collections.singletonList(tab);

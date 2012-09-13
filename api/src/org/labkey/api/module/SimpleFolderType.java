@@ -20,8 +20,10 @@ import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
+import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.Portal;
@@ -138,7 +140,7 @@ public class SimpleFolderType extends MultiPortalFolderType
             @Override
             public ActionURL getURL(Container container, User user)
             {
-                return getStartURL(container, user);
+                return PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(container);
             }
 
             @Override
