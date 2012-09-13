@@ -244,7 +244,7 @@ public class DavController extends SpringActionController
         {
             if (null == action)
             {
-                _webdavresponse.sendError(WebdavStatus.SC_NOT_IMPLEMENTED);
+                _webdavresponse.sendError(WebdavStatus.SC_METHOD_NOT_ALLOWED);
                 return null;
             }
             action.handleRequest(request, response);
@@ -2609,7 +2609,7 @@ public class DavController extends SpringActionController
         {
             checkReadOnly();
             checkLocked();
-            throw new DavException(WebdavStatus.SC_NOT_IMPLEMENTED);
+            throw new DavException(WebdavStatus.SC_METHOD_NOT_ALLOWED);
         }
     }
 
