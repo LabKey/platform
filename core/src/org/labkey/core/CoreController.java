@@ -890,7 +890,7 @@ public class CoreController extends SpringActionController
         }
     }
 
-    // Requires at least insert permission. Will check for admin if needed
+    // Requires at least delete permission. Will check for admin if needed
     @RequiresPermissionClass(DeletePermission.class)
     public class DeleteContainerAction extends ApiAction<SimpleApiJsonForm>
     {
@@ -901,16 +901,11 @@ public class CoreController extends SpringActionController
             {
                 if (!getContainer().hasPermission(getUser(), AdminPermission.class))
                 {
-                    throw new UnauthorizedException("You must have admin permissions to create subfolders");
+                    throw new UnauthorizedException("You must have admin permissions to delete subfolders");
                 }
             }
 
-            if (getContainer().hasChildren())
-            {
-                throw new ApiUsageException("You cannot delete a container that still has child containers");
-            }
-
-            ContainerManager.delete(getContainer(), getUser());
+            ContainerManager.deleteAll(getContainer(), getUser());
 
             return new ApiSimpleResponse();
         }

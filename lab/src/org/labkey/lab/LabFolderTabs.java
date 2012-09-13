@@ -15,7 +15,9 @@
  */
 package org.labkey.lab;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.FolderTab;
@@ -44,7 +46,7 @@ public class LabFolderTabs
         @Override
         public boolean isSelectedPage(ViewContext viewContext)
         {
-            ActionURL tabURL = getURL(viewContext);
+            ActionURL tabURL = getURL(viewContext.getContainer(), viewContext.getUser());
             ActionURL curURL = viewContext.getActionURL();
 
             return tabURL.getAction().equals(curURL.getAction()) && tabURL.getController().equals(curURL.getController()) && (curURL.getParameter("pageId") == null);
@@ -52,9 +54,9 @@ public class LabFolderTabs
         }
 
         @Override
-        public ActionURL getURL(ViewContext viewContext)
+        public ActionURL getURL(Container container, User user)
         {
-            return PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(viewContext.getContainer());
+            return PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(container);
         }
 
 

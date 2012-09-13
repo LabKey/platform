@@ -37,7 +37,6 @@ import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -127,7 +126,7 @@ public abstract class StudyToolsWebPartFactory extends BaseWebPartFactory
                     {
                         if (folderTab.getName().equalsIgnoreCase(tab.getName()))
                         {
-                            ActionURL url = folderTab.getURL(context);
+                            ActionURL url = folderTab.getURL(context.getContainer(), context.getUser());
                             return new StudyToolsWebPart.Item(noun + " List", iconBase + "participant_list.png", url);
                         }
                     }
