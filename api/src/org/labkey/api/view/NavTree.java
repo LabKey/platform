@@ -547,7 +547,7 @@ public class NavTree implements Collapsible
         if (isDisabled())
             sb.append(",disabled:true");
         sb.append(", showSeparator: false");
-        sb.append(",href:").append(null != getHref() ? PageFlowUtil.qh(getHref()) : "'javascript: void(0)'");
+        sb.append(",href:").append(null != getHref() && !isDisabled() ? PageFlowUtil.qh(getHref()) : "'javascript: void(0)'");
         if (null != getTarget())
             sb.append(",hrefTarget:").append(PageFlowUtil.qh(getTarget()));
         if (null != getScript())

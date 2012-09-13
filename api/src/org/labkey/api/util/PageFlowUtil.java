@@ -1805,8 +1805,8 @@ public class PageFlowUtil
 
         if (AppProps.getInstance().isExt3Required())
             resources.add(ClientDependency.fromFilePath("Ext3.lib.xml"));
-        resources.add(ClientDependency.fromFilePath("internal.lib.xml"));
         resources.add(ClientDependency.fromFilePath("clientapi.lib.xml"));
+        resources.add(ClientDependency.fromFilePath("internal.lib.xml"));
         return resources;
     }
 
