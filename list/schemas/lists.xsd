@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns="http://labkey.org/list/xml"
+            targetNamespace="http://labkey.org/list/xml"
+            elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <xsd:annotation>
+        <xsd:documentation xml:lang="en">Describes the list settings, list-specific properties beyond those included in tableInfo.xsd.
+            Used to generate and read settings.xml in list archives.
+        </xsd:documentation>
+    </xsd:annotation>
+
+    <xsd:element name="lists">
+        <xsd:complexType>
+            <xsd:sequence minOccurs="1" maxOccurs="unbounded">
+                <xsd:element name="list">
+                    <xsd:complexType>
+                        <xsd:attribute name="name" type="xsd:string" use="required"/>
+                        <xsd:attribute name="discussions" type="xsd:int" default="0" use="optional"/>
+                        <xsd:attribute name="allowDelete" type="xsd:boolean" default="true" use="optional"/>
+                        <xsd:attribute name="allowUpload" type="xsd:boolean" default="true" use="optional"/>
+                        <xsd:attribute name="allowExport" type="xsd:boolean" default="true" use="optional"/>
+
+                        <xsd:attribute name="eachItemIndex" type="xsd:boolean" default="false" use="optional"/>
+                        <xsd:attribute name="eachItemTitleSetting" type="xsd:int" default="0" use="optional"/>
+                        <xsd:attribute name="eachItemTitleTemplate" type="xsd:string" use="optional"/>
+                        <xsd:attribute name="eachItemBodySetting" type="xsd:int" default="0" use="optional"/>
+                        <xsd:attribute name="eachItemBodyTemplate" type="xsd:string" use="optional"/>
+
+                        <xsd:attribute name="entireListIndex" type="xsd:boolean" default="false" use="optional"/>
+                        <xsd:attribute name="entireListIndexSetting" type="xsd:int" default="0" use="optional"/>
+                        <xsd:attribute name="entireListTitleSetting" type="xsd:int" default="0" use="optional"/>
+                        <xsd:attribute name="entireListTitleTemplate" type="xsd:string" use="optional"/>
+                        <xsd:attribute name="entireListBodySetting" type="xsd:int" default="0" use="optional"/>
+                        <xsd:attribute name="entireListBodyTemplate" type="xsd:string" use="optional"/>
+                    </xsd:complexType>
+                </xsd:element>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+</xsd:schema>
