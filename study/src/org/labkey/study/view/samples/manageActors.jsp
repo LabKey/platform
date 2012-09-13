@@ -74,9 +74,9 @@
             <td valign="top">
                 <input type="hidden" name="ids" value="<%= actor.getRowId() %>">
                 <input type="text" name="labels" size="40"
-                       value="<%= actor.getLabel() != null ? h(actor.getLabel()) : "" %>">
+                       value="<%= h(actor.getLabel()) %>">
             </td>
-            <td valign="top"><%= actor.isPerSite() ? "Multiple Per Study (Location Affiliated)" : "One Per Study" %></td>
+            <td valign="top"><%= text(actor.isPerSite() ? "Multiple Per Study (Location Affiliated)" : "One Per Study") %></td>
             <td>
                 <%
                     if (showMemberSitesId == actor.getRowId())
@@ -88,7 +88,7 @@
                         <%
                             for (SiteImpl site : study.getSites())
                             {
-                            %><a href="<%= h(buildURL(ShowGroupMembersAction.class)) + "id=" + actor.getRowId() + "&siteId=" + site.getRowId() %>"><%= site.getDisplayName() %></a><br><%
+                            %><a href="<%= h(buildURL(ShowGroupMembersAction.class)) + "id=" + actor.getRowId() + "&siteId=" + site.getRowId() %>"><%= h(site.getDisplayName()) %></a><br><%
                             }
                         }
                         else
@@ -130,8 +130,8 @@
                 <%= generateSubmitButton("Save")%>&nbsp;
                 <%= buttonImg("Done", "document.manageActors.nextPage.value=''; return true;")%>
                 <%= generateButton("Cancel", new ActionURL(StudyController.ManageStudyAction.class, study.getContainer()))%>&nbsp;
-                <%= buttonImg("Change Order", "document.manageActors.nextPage.value='" + new ActionURL(SpecimenController.ManageActorOrderAction.class, study.getContainer()).getLocalURIString() + "'; return true;")%>
-                <input type="hidden" name="nextPage" value="<%=new ActionURL(SpecimenController.ManageActorsAction.class, study.getContainer()).getLocalURIString()%>">
+                <%= buttonImg("Change Order", "document.manageActors.nextPage.value=" + q(new ActionURL(SpecimenController.ManageActorOrderAction.class, study.getContainer()).getLocalURIString()) + "; return true;")%>
+                <input type="hidden" name="nextPage" value="<%=new ActionURL(SpecimenController.ManageActorsAction.class, study.getContainer()) %>">
             </td>
             <td>&nbsp;</td>
         </tr>
