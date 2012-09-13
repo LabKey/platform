@@ -15,6 +15,7 @@
  */
 package org.labkey.api.view;
 
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.data.RenderContext;
 import org.apache.commons.lang3.StringUtils;
@@ -37,6 +38,7 @@ public class PopupMenu extends DisplayElement
     private ButtonStyle _buttonStyle = ButtonStyle.MENUBUTTON;
     private String _imageId = "";
     private String _offset = "-1";
+    private String _extVersion = "Ext3";
     
     public PopupMenu()
     {
@@ -78,6 +80,16 @@ public class PopupMenu extends DisplayElement
     public String getImageId()
     {
         return _imageId;
+    }
+
+    public String getExtVersion()
+    {
+        return _extVersion;
+    }
+
+    public void setExtVerison(String extVerison)
+    {
+        _extVersion = extVerison;
     }
 
     public void render(RenderContext ctx, Writer out) throws IOException
@@ -136,11 +148,32 @@ public class PopupMenu extends DisplayElement
     public void renderMenuScript(Writer out, String dataRegionName) throws IOException
     {
         out.append("<script type=\"text/javascript\">\n");
+        if (getExtVersion().equals("Ext3"))
+        {
+            renderExt3Menu(out, dataRegionName);
+        }
+        else
+        {
+            renderExtMenu(out, dataRegionName);
+        }
+        out.append("\n</script>");
+    }
+
+    private void renderExt3Menu(Writer out, String dataRegionName) throws IOException
+    {
         out.append("Ext.onReady(function() {\n");
         out.append(renderUnregScript(getId(dataRegionName)));
         out.append("        var m = new Ext.menu.Menu(");
         out.append(renderMenuModel(_navTree.getChildList(), getId(dataRegionName)));
-        out.append("         );});\n</script>");
+        out.append("         );});");
+    }
+
+    private void renderExtMenu(Writer out, String dataRegionName) throws IOException
+    {
+        out.append("Ext4.onReady(function() {\n");
+        out.append("         var m = Ext4.create('Ext.menu.Menu', ");
+        out.append(renderMenuModel(_navTree.getChildList(), getId(dataRegionName)));
+        out.append("         );});");
     }
 
     private String renderUnregScript(String id)
@@ -159,10 +192,9 @@ public class PopupMenu extends DisplayElement
 
     private static String renderMenuModel(Collection<NavTree> trees, String id)
     {
-        String sep = "";
         StringBuilder sb = new StringBuilder();
 
-        sb.append("{cls:'extContainer',");
+        sb.append("{cls:'extContainer', showSeparator: false, ");
         sb.append("id:").append(PageFlowUtil.qh(id)).append(",\n");
         sb.append("items:");
         NavTree.toJS(trees, sb, true);

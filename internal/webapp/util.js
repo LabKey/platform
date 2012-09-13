@@ -239,7 +239,7 @@ function notifyExpandCollapse(url, collapse)
 {
     if (collapse)
         url += "&collapse=true";
-    Ext.Ajax.request({url: url});
+    LABKEY.ExtAdapter.Ajax.request({url: url});
 }
 
 var _helpDiv = null;
@@ -286,10 +286,10 @@ function showHelpDiv(elem, titleText, bodyText, width)
 
     var div = getHelpDiv();
 
-    Ext.get("helpDivTitle").update(titleText);
-    Ext.get("helpDivBody").update(bodyText);
+    LABKEY.ExtAdapter.get("helpDivTitle").update(titleText);
+    LABKEY.ExtAdapter.get("helpDivBody").update(bodyText);
 
-    var bd = Ext.get(document.body);
+    var bd = LABKEY.ExtAdapter.get(document.body);
     var sz = bd.getViewSize();
     var viewportWidth = sz.width;
     var viewportHeight = sz.height;
@@ -410,7 +410,7 @@ function removeAnnouncementAttachment(eid, name, xid)
                 name: name
             };
 
-            Ext.Ajax.request({
+            LABKEY.ExtAdapter.Ajax.request({
                 url    : LABKEY.ActionURL.buildURL('announcements', 'deleteAttachment'),
                 method : 'POST',
                 success: function() {
@@ -426,7 +426,7 @@ function removeAnnouncementAttachment(eid, name, xid)
             });
         }
 
-        Ext.Msg.show({
+        LABKEY.ExtAdapter.Msg.show({
             title : 'Remove Attachment',
             msg : 'Please confirm you would like to remove this attachment. This cannot be undone.',
             buttons: Ext.Msg.OKCANCEL,
@@ -479,7 +479,7 @@ function addInputSubmitEvent(form, inputs)
     {
         inputs = form.getElementsByTagName('input');
     }
-    else if (!Ext.isArray(inputs))
+    else if (!LABKEY.ExtAdapter.isArray(inputs))
     {
         inputs = [inputs];
     }
@@ -649,26 +649,49 @@ function handleTabsInTextArea(event)
 
 function showMenu(parent, menuElementId, align) {
     if (!align)
+    {
         align = "tl-bl?";
-    var menu = Ext.menu.MenuMgr.get(menuElementId);
+    }
+
+    var menu, oldExt = false;
+    if (typeof(Ext) != 'undefined') {
+        oldExt = true;
+        menu = Ext.menu.MenuMgr.get(menuElementId);
+    }
+
+    if (typeof(Ext4) != 'undefined' && !menu) {
+        menu = Ext4.menu.Manager.get(menuElementId);
+        oldExt = false;
+    }
+
     if (menu)
     {
         // While the menu's open, highlight the button that caused it to open
-        Ext.get(parent).addClass('labkey-menu-button-active');
-
-        //provide mechanism for menu to identify owner.  primarily used for animations
-        menu.floatParent = parent;
-
-        menu.show(parent, align);
-        var listener = function()
+        if (oldExt)
         {
-            // Get rid of the highlight when the menu disappears, and remove the listener since the menu
-            // can be reused
-            menu.removeListener('beforehide', listener);
-            Ext.get(parent).removeClass('labkey-menu-button-active');
-            menu.floatParent = null;
-        };
-        menu.on('beforehide', listener);
+            Ext.get(parent).addClass('labkey-menu-button-active');
+
+            //provide mechanism for menu to identify owner.  primarily used for animations
+            menu.floatParent = parent;
+
+            menu.show(parent, align);
+            var listener = function()
+            {
+                // Get rid of the highlight when the menu disappears, and remove the listener since the menu
+                // can be reused
+                menu.removeListener('beforehide', listener);
+                Ext.get(parent).removeClass('labkey-menu-button-active');
+                menu.floatParent = null;
+            };
+            menu.on('beforehide', listener);
+        }
+        else
+        {
+            Ext4.get(parent).addCls('labkey-menu-button-active');
+
+            menu.show();
+            menu.alignTo(parent, align);
+        }
     }
     else
         console.error("No menu registered :" + menuElementId);

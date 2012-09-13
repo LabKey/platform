@@ -1,6 +1,9 @@
 // Set USE_NATIVE_JSON so Ext.decode and Ext.encode use JSON.parse and JSON.stringify instead of eval
 Ext.USE_NATIVE_JSON = true;
 
+// set the default ajax timeout from 30's to 5 minutes
+Ext.Ajax.timeout = 5 * 60 * 1000;
+
 Ext.apply(Ext, {
     /**
      * @author Nigel (Animal) White

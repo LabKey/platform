@@ -292,16 +292,18 @@ LABKEY.requiresCss = function(file)
     });
 &lt;/script&gt;
  */
-LABKEY.requiresExt3 = function(immediate)
+LABKEY.requiresExt3 = function(immediate, callback, scope)
 {
     if (arguments.length < 1) immediate = true;
 
     // Require that these CSS files be placed first in the <head> block so that they can be overridden by user customizations
     LABKEY.requiresCss(LABKEY.extJsRoot + '/resources/css/ext-all.css', true);
-//    LABKEY.requiresCss(LABKEY.extJsRoot + '/resources/css/ext-patches.css', true);
-    LABKEY.requiresScript(LABKEY.extJsRoot + "/adapter/ext/ext-base.js", immediate);
-    LABKEY.requiresScript(LABKEY.extJsRoot + "/ext-all" + (LABKEY.devMode ?  "-debug.js" : ".js"), immediate);
-    LABKEY.requiresScript(LABKEY.extJsRoot + "/ext-patches.js", immediate);
+
+    LABKEY.requiresScript([
+         LABKEY.extJsRoot + "/adapter/ext/ext-base.js",
+         LABKEY.extJsRoot + "/ext-all" + (LABKEY.devMode ?  "-debug.js" : ".js"),
+         LABKEY.extJsRoot + "/ext-patches.js"
+    ], immediate, callback, scope, true);
 };
 
 /**
@@ -390,22 +392,37 @@ LABKEY.requiresExt3ClientAPI = function(immediate)
 
     if (LABKEY.devMode)
     {
-        //load individual scripts so that they get loaded from source tree
-        LABKEY.requiresScript("clientapi/ext3/ExtJsConfig.js", immediate);
-        LABKEY.requiresScript("clientapi/ext3/DataRegion.js", immediate);
-        LABKEY.requiresScript("clientapi/ext3/EditorGridPanel.js", immediate);
-        LABKEY.requiresScript("clientapi/ext3/ExtendedJsonReader.js", immediate);
-        LABKEY.requiresScript("clientapi/ext3/FieldKey.js", immediate);
-        LABKEY.requiresScript("clientapi/ext3/FileSystem.js", immediate);
-        LABKEY.requiresScript("clientapi/ext3/FormPanel.js", immediate);
-        LABKEY.requiresScript("clientapi/ext3/GridView.js", immediate);
-        LABKEY.requiresScript("clientapi/ext3/HoverPopup.js", immediate);
-        LABKEY.requiresScript("clientapi/ext3/LongTextEditor.js", immediate);
-        LABKEY.requiresScript("clientapi/ext3/PersistentToolTip.js", immediate);
-        LABKEY.requiresScript("clientapi/ext3/QueryWebPart.js", immediate);
-        LABKEY.requiresScript("clientapi/ext3/SecurityPolicy.js", immediate);
-        LABKEY.requiresScript("clientapi/ext3/Store.js", immediate);
-        LABKEY.requiresScript("clientapi/ext3/Utils.js", immediate);
+        var scripts = [
+            "clientapi/ext3/ExtJsConfig.js",
+            "clientapi/ext3/DataRegion.js",
+            "clientapi/ext3/EditorGridPanel.js",
+            "clientapi/ext3/FieldKey.js",
+            "clientapi/ext3/FileSystem.js",
+            "clientapi/ext3/FormPanel.js",
+            "clientapi/ext3/GridView.js",
+            "clientapi/ext3/HoverPopup.js",
+            "clientapi/ext3/LongTextEditor.js",
+            "clientapi/ext3/PersistentToolTip.js",
+            "clientapi/ext3/QueryWebPart.js",
+            "clientapi/ext3/SecurityPolicy.js",
+            "clientapi/ext3/Store.js",
+            "clientapi/ext3/Utils.js"
+        ];
+
+        if (!window.Ext)
+        {
+            LABKEY.requiresExt3(immediate, function()
+            {
+
+                //load individual scripts so that they get loaded from source tree
+                LABKEY.requiresScript(scripts, immediate);
+
+            });
+        }
+        else
+        {
+            LABKEY.requiresScript(scripts, immediate);
+        }
     }
     else
     {

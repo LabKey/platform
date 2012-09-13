@@ -27,7 +27,7 @@ $panel-base-color: $panel-base-color; // #d3d3d3; //#DFE8F6;
 $panel-header-background-color: $base-color;
 $panel-header-color: #ffffff;
 $panel-body-background-color: #ffffff;
-$panel-border-color: adjust-color($base-color, $hue: 0deg, $saturation: 7.644%, $lightness: 2.627%) !default;
+$panel-border-color: #B4B4B4 !default; //adjust-color($base-color, $hue: 0deg, $saturation: 7.644%, $lightness: 2.627%) !default;
 $panel-header-inner-border: false;
 $panel-header-background-gradient: color-stops($base-color, $base-color);
 
@@ -94,6 +94,41 @@ $button-toolbar-background-gradient-color-stops-focus: null;
 $button-toolbar-background-gradient-color-stops-pressed: null;
 $button-toolbar-background-gradient-color-stops-disabled: null;
 
+//menus
+$menu-background-color: #fff !default;
+$menu-item-active-background-color: #EAEAEA !default;
+
+//menu borders
+$menu-item-active-border-color: #B4B4B4 !default;
+
+//meun sizes
+$menu-link-padding: 2px 21px 2px 27px !default;
+
+.x4-reset .x4-menu-body {
+    padding: 0px !important;
+}
+
+.x4-reset .x4-menu-item-text {
+    font: normal 11px arial,tahoma,sans-serif;
+}
+
+.x4-reset .x4-menu-icon-separator {
+    display: none;
+}
+
+.x4-reset .x4-menu-item-icon {
+    top: 3px !important;
+}
+
+.x4-reset .x4-menu-item-arrow {
+    top: 7px !important;
+    background-image: url(../../../_images/arrow_right.png) !important;
+}
+
+#headerSearchInput-inputEl {
+    line-height: 16px !important;
+    border-color: #B5B8C8 !important;
+}
 
 //window
 $window-background-color: $base-color;

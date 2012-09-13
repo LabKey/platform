@@ -120,8 +120,7 @@ public abstract class AbstractDataRegion extends DisplayElement
     protected void renderHeaderScript(RenderContext ctx, Writer out, Map<String, String> messages, boolean showRecordSelectors) throws IOException
     {
         out.write("<script type=\"text/javascript\">\n");
-        out.write("Ext.onReady(\n");
-        out.write("function () {\n");
+        out.write("Ext.onReady(function() {\n");
         out.write("new LABKEY.DataRegion(\n");
         out.write(getDataRegionJSON(ctx, true).toString(2));
         out.write(");\n");

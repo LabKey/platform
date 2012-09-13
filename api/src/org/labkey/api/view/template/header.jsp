@@ -37,7 +37,18 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.template.TemplateHeaderView" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+
+  public LinkedHashSet<ClientDependency> getClientDependencies()
+  {
+      LinkedHashSet<ClientDependency> resources = new LinkedHashSet<ClientDependency>();
+      resources.add(ClientDependency.fromFilePath("Ext4"));
+      return resources;
+  }
+%>
 <%
     TemplateHeaderView me = ((TemplateHeaderView) HttpView.currentView());
     TemplateHeaderView.TemplateHeaderBean bean = me.getModelBean();
@@ -56,7 +67,7 @@ if ("true".equals(request.getParameter("testFont"))) {
 %><script>
     function changeFontEl(el, themeFontClass)
     {
-        el = Ext.get(el);
+        el = Ext4.get(el);
         if (!el) return;
         <%for (ThemeFont tf : ThemeFont.getThemeFonts()){%>
             el.removeClass(<%=PageFlowUtil.jsString(tf.getClassName())%>);
@@ -66,8 +77,8 @@ if ("true".equals(request.getParameter("testFont"))) {
     function changeFont(themeFontName)
     {
         var className = event.target.className;
-        var body = Ext.getBody();
-        changeFontEl(Ext.getBody(),className);
+        var body = Ext4.getBody();
+        changeFontEl(Ext4.getBody(),className);
         changeFontEl('bodyTableElement',className);
     }
 </script><%}%>
@@ -164,57 +175,97 @@ function labkeyShowWarningMessages(show)
 {
     if (undefined === show)
         show = true;
-    var elem = Ext.get("labkey-warning-messages-area");
+    var elem = Ext4.get("labkey-warning-messages-area");
     if (elem)
         elem.setDisplayed(show, true);
-    elem = Ext.get("labkey-warning-message-icon");
+    elem = Ext4.get("labkey-warning-message-icon");
     if (elem)
         elem.setDisplayed(!show, true);
-    Ext.Ajax.request({
+    Ext4.Ajax.request({
         url    : LABKEY.ActionURL.buildURL('user', 'setShowWarningMessages.api'),
         method : 'GET',
         params : {showMessages: show}
     });
 }
 <% } %>
-var hdrSearch; // Ext.form.TextField
-function submit_onClick()
-{
-    if (hdrSearch && hdrSearch.el.hasClass(hdrSearch.emptyClass) && hdrSearch.el.dom.value == hdrSearch.emptyText)
-        hdrSearch.setRawValue('');
-    document.forms["headerSearchForm"].submit();
-    return true;
-}
-Ext.onReady(function()
-{
-    if (Ext.isSafari || Ext.isWebKit)
-        Ext.get("headerNav").applyStyles({height:Ext.get("header").getSize().height});
 
-    var serverDescription = <%=PageFlowUtil.jsString(LookAndFeelProperties.getInstance(c).getShortName())%> || LABKEY.serverName;
-    var inputEl = Ext.get('headerSearchInput');
-    var parentEl = inputEl.parent();
-    inputEl.remove();
-    hdrSearch = new Ext.form.TextField({id:'headerSearchInput', name:'q', emptyText:'Search', cls:'labkey-main-search', focusClass:'labkey-main-search'});
-    hdrSearch.render(parentEl);
-    var handler = function(item)
-    {
-        var form = Ext.get('headerSearchForm');
-        form.dom.action = item.action;
-        form.dom.target = item.target || '_self';
-        if (hdrSearch.el.hasClass(hdrSearch.emptyClass) && hdrSearch.el.dom.value == hdrSearch.emptyText)
-            hdrSearch.setRawValue(item.emptyText);
-        else
-            form.dom.submit();
-        hdrSearch.emptyText = item.emptyText;
-    };
-    var items = [];
-    items.push({text:serverDescription, emptyText:'Search ' + serverDescription, containerId:'', action:LABKEY.ActionURL.buildURL("search", "search"), target:'', handler:handler});
-    if (LABKEY.project)
-        items.push({text:LABKEY.project.name, emptyText:('Search ' + LABKEY.project.name), containerId:LABKEY.project.id, action:LABKEY.ActionURL.buildURL("search", "search", LABKEY.project.path), target:'', handler:handler});
-    if (window.location.hostname.toLowerCase() != 'labkey.org')
-        items.push({text:'labkey.org', emptyText:'Search labkey.org', containerId:'', action:'http://www.labkey.org/search/home/search.view', target:'_blank', handler:handler});
-    items.push({text:'Google', emptyText:'Search google.com', containerId:'', action:'http://www.google.com/search', target:'_blank', handler:handler});
-    new Ext.menu.Menu({cls:'extContainer',id:'headerSearchMenu',items:items});
-    handler(items[0]);
-});
+// Function called when search is requested
+var submit_onClick;
+
+(function(){
+
+    var hdrSearch; // Ext.form.TextField
+
+    submit_onClick = function() {
+
+        if (hdrSearch && hdrSearch.el.hasCls(hdrSearch.emptyClass) && hdrSearch.el.dom.value == hdrSearch.emptyText)
+            hdrSearch.setRawValue('');
+        document.forms["headerSearchForm"].submit();
+        return true;
+    }
+
+    Ext4.onReady(function() {
+
+        if (Ext4.isSafari || Ext4.isWebKit)
+            Ext4.get("headerNav").applyStyles({height:Ext4.get("header").getSize().height});
+
+        var serverDescription = <%=PageFlowUtil.jsString(LookAndFeelProperties.getInstance(c).getShortName())%> || LABKEY.serverName;
+        var inputEl = Ext4.get('headerSearchInput');
+        var parentEl = inputEl.parent();
+        inputEl.remove();
+        hdrSearch = Ext4.create('Ext.form.field.Text', {
+            renderTo   : parentEl,
+            id         : 'headerSearchInput',
+            name       : 'q',
+            emptyText  : 'Search ' + serverDescription,
+            cls        : 'labkey-main-search',
+            focusClass : 'labkey-main-search'
+        });
+
+        var handler = function(item)
+        {
+            var form = Ext4.get('headerSearchForm');
+            form.dom.action = item.action;
+            form.dom.target = item.target || '_self';
+            if (hdrSearch.getEl().dom.value) {
+                form.dom.submit();
+            }
+//            if (hdrSearch.getEl().hasCls(hdrSearch.emptyCls) && hdrSearch.getEl().dom.value == hdrSearch.emptyText) {
+//                hdrSearch.setRawValue(item.emptyText);
+//            }
+//            else {
+//                form.dom.submit();
+//            }
+            hdrSearch.emptyText = item.emptyText;
+        };
+
+        var items = [{
+            text        : serverDescription,
+            emptyText   : 'Search ' + serverDescription,
+            containerId : '',
+            action      : LABKEY.ActionURL.buildURL("search", "search"),
+            target      : '',
+            handler     : handler
+        }];
+
+        if (LABKEY.project) {
+            items.push({text:LABKEY.project.name, emptyText:('Search ' + LABKEY.project.name), containerId:LABKEY.project.id, action:LABKEY.ActionURL.buildURL("search", "search", LABKEY.project.path), target:'', handler:handler});
+        }
+        if (window.location.hostname.toLowerCase() != 'labkey.org') {
+            items.push({text:'labkey.org', emptyText:'Search labkey.org', containerId:'', action:'http://www.labkey.org/search/home/search.view', target:'_blank', handler:handler});
+        }
+
+        items.push({text:'Google', emptyText:'Search google.com', containerId:'', action:'http://www.google.com/search', target:'_blank', handler:handler});
+
+        Ext4.create('Ext.menu.Menu', {
+            cls   : 'extContainer',
+            id    : 'headerSearchMenu',
+            items : items
+        });
+
+        handler(items[0]);
+
+    });
+
+})();
 </script>

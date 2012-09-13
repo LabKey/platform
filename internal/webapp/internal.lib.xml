@@ -4,7 +4,7 @@
         <script path="internal/Utils.js"/>
     </library>
     <dependencies>
-        <dependency path="Ext3" />
+        <dependency path="Ext4" />
     </dependencies>
 </libraries>
 

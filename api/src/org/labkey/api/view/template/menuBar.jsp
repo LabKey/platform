@@ -47,7 +47,7 @@
     LABKEY.requiresClientAPI();
 </script>
 <script type="text/javascript">
-    Ext.onReady(function(){
+    LABKEY.ExtAdapter.onReady(function(){
         <%
         for (Portal.WebPart part : menus)
         {

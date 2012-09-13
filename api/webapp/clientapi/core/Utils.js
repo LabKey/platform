@@ -766,13 +766,27 @@ LABKEY.Utils.convertToTable(
         // private
         enableButton : function (elem)
         {
-            return LABKEY.ExtAdapter.get(elem).replaceClass("labkey-disabled-button", "labkey-button");
+            if (typeof(Ext4) != 'undefined')
+            {
+                return Ext4.get(elem).replaceCls('labkey-disabled-button', 'labkey-button');
+            }
+            else if (typeof(Ext) != 'undefined')
+            {
+                return Ext.get(elem).replaceClass('labkey-disabled-button', 'labkey-button');
+            }
         },
 
         // private
         disableButton : function (elem)
         {
-            return LABKEY.ExtAdapter.get(elem).replaceClass("labkey-button", "labkey-disabled-button");
+            if (typeof(Ext4) != 'undefined')
+            {
+                return Ext4.get(elem).replaceCls("labkey-button", "labkey-disabled-button");
+            }
+            else if (typeof(Ext) != 'undefined')
+            {
+                return Ext.get(elem).replaceClass('labkey-button', 'labkey-disabled-button');
+            }
         },
 
         /**
@@ -833,11 +847,11 @@ LABKEY.Utils.convertToTable(
                         Date: new Date()
                      }],
                      success: function(){
-                         console.log('Error successfully logged')
+                         console.log('Error successfully logged');
                      },
                      failure: function(error){
                         console.log('Problem logging error');
-                        console.log(error)
+                        console.log(error);
                      }
                 });
             }

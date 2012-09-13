@@ -1805,8 +1805,8 @@ public class PageFlowUtil
 
         if (AppProps.getInstance().isExt3Required())
             resources.add(ClientDependency.fromFilePath("Ext3.lib.xml"));
-        resources.add(ClientDependency.fromFilePath("clientapi.lib.xml"));
         resources.add(ClientDependency.fromFilePath("internal.lib.xml"));
+        resources.add(ClientDependency.fromFilePath("clientapi.lib.xml"));
         return resources;
     }
 
@@ -1815,9 +1815,6 @@ public class PageFlowUtil
      */
     public static void getJavaScriptPaths(Set<String> scripts, Set<String> included)
     {
-        boolean explodedExt = AppProps.getInstance().isDevMode(); // && false;
-        boolean explodedClient = AppProps.getInstance().isDevMode();
-
         LinkedHashSet<ClientDependency> resources = getDefaultJavaScriptPaths();
         if (resources != null)
         {
@@ -1836,7 +1833,6 @@ public class PageFlowUtil
                 }
             }
         }
-
     }
 
     public static String getLabkeyJS()
@@ -1891,10 +1887,8 @@ public class PageFlowUtil
         if (extraResources != null)
             resources.addAll(extraResources);
 
-        if (resources != null)
-        {
-            getJavaScriptFiles(resources, includes, implicitIncludes);
-        }
+        getJavaScriptFiles(resources, includes, implicitIncludes);
+
         StringBuilder sb = new StringBuilder();
 
         sb.append("    <script type=\"text/javascript\">\n        LABKEY.loadedScripts(");
@@ -1910,22 +1904,8 @@ public class PageFlowUtil
         for (String s : includes)
             sb.append("    <script src=\"").append(contextPath).append("/").append(filter(s)).append("?").append(serverHash).append("\" type=\"text/javascript\"></script>\n");
 
-        sb.append("    <script type=\"text/javascript\">\n");
-        sb.append("        Ext.Ajax.timeout = 5 * 60 * 1000; // Default to 5 minute timeout\n");
-        sb.append("    </script>\n");
         return sb.toString();
     }
-
-
-    // TODO: Delete after moving these tags to labkey.org <head>
-    public static String getSearchIncludes()
-    {
-        String contextPath = AppProps.getInstance().getContextPath();
-
-        return "    <link rel=\"search\" type=\"application/opensearchdescription+xml\" href=\"" + contextPath + "/plugins/labkey_documentation.xml\" title=\"LabKey Documentation\">\n" +
-               "    <link rel=\"search\" type=\"application/opensearchdescription+xml\" href=\"" + contextPath + "/plugins/labkey_issues.xml\" title=\"LabKey Issues\">\n";
-    }
-
 
     /** use this version if you don't care which errors are html parsing errors and which are safety warnings */
     public static String validateHtml(String html, Collection<String> errors, boolean scriptAsErrors)

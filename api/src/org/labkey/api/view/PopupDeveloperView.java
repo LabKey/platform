@@ -46,6 +46,7 @@ public class PopupDeveloperView extends PopupMenuView
         setNavTree(navTree);
         setAlign(PopupMenu.Align.RIGHT);
         setButtonStyle(PopupMenu.ButtonStyle.TEXT);
+        setExtVersion("Ext4");
     }
 
     public static List<NavTree> getNavTree(ViewContext context)

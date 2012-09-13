@@ -55,9 +55,9 @@ LABKEY.Visualization = new function() {
             if (data && data.getResponseHeader && data.getResponseHeader('Content-Type')
                     && data.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
             {
-                json = LABKEY.ExtAdapter.decode(data.responseText);
+                json = Ext4.decode(data.responseText);
                 if (json.visualizationConfig)
-                    json.visualizationConfig = LABKEY.ExtAdapter.decode(json.visualizationConfig);
+                    json.visualizationConfig = Ext4.decode(json.visualizationConfig);
             }
 
             if(successCallback)
@@ -82,7 +82,7 @@ LABKEY.Visualization = new function() {
             if (response && response.getResponseHeader && response.getResponseHeader('Content-Type')
                     && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
             {
-                json = LABKEY.ExtAdapter.decode(response.responseText);
+                json = Ext4.decode(response.responseText);
                 measures = createMeasureFn(json);
             }
 
@@ -284,7 +284,7 @@ LABKEY.Visualization = new function() {
             var params = {
                 name : config.name,
                 description : config.description,
-                json : LABKEY.ExtAdapter.encode(config.visualizationConfig),
+                json : Ext4.encode(config.visualizationConfig),
                 replace: config.replace,
                 shared: config.shared,
                 thumbnailType: config.thumbnailType,
@@ -417,13 +417,11 @@ LABKEY.Visualization = new function() {
 /**
  * @namespace Visualization Measures are plottable data elements (columns).  They may be of numeric or date types.
  */
-LABKEY.Visualization.Measure = LABKEY.ExtAdapter.extend(Object,
-    /** @scope LABKEY.Visualization.Measure */
-{
+Ext4.define('LABKEY.Visualization.Measure', {
+
     constructor : function(config)
     {
-        LABKEY.Visualization.Measure.superclass.constructor.call(this, config);
-        LABKEY.ExtAdapter.apply(this, config);
+        Ext4.apply(this, config);
     },
 
     /**
@@ -524,14 +522,15 @@ LABKEY.Visualization.Measure = LABKEY.ExtAdapter.extend(Object,
  *  can be pivoted or transformed.  For example, the 'Analyte Name' dimension may be used to pivit a single 'Result' measure
  * into one series per Analyte.
  */
-LABKEY.Visualization.Dimension = LABKEY.ExtAdapter.extend(Object,
+Ext4.define('LABKEY.Visualization.Dimension', {
+
     /** @scope LABKEY.Visualization.Dimension */
-    {
+
     constructor : function(config)
     {
-        LABKEY.Visualization.Dimension.superclass.constructor.call(this, config);
-        LABKEY.apply(this, config);
+        Ext4.apply(this, config);
     },
+
     /**
      * Returns the name of the query associated with this dimension.
      */
@@ -664,7 +663,7 @@ LABKEY.Visualization.Filter = new function()
         create : function(config)
         {
             if (!config.schemaName)
-                LABKEY.ExtAdapter.Msg.alert("Coding Error!", "You must supply a value for schemaName in your configuration object!");
+                Ext4.Msg.alert("Coding Error!", "You must supply a value for schemaName in your configuration object!");
             else
                 return getURLParameterValue(config);
         }
@@ -709,5 +708,5 @@ LABKEY.Visualization.Type = {
     /**
      * Plots data over time, aligning different series based on configurable start dates.
      */
-        TimeChart : 'ReportService.TimeChartReport'
+    TimeChart : 'ReportService.TimeChartReport'
 };

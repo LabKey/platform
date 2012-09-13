@@ -134,7 +134,7 @@
             margin: 0px;
             border: 1px solid $menu-item-active-border-color;
             cursor: pointer;
-            @include border-radius(3px);
+            @include border-radius(0px); /* Default is 3px but edited to keep consistent menu styling. */
         }
     }
 

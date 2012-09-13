@@ -102,8 +102,7 @@ LABKEY.MultiRequest = function (config) {
         this.send();
     }
 };
-//TODO
-LABKEY.ExtAdapter.extend(LABKEY.MultiRequest, Ext.util.Observable,
+Ext.extend(LABKEY.MultiRequest, Ext.util.Observable,
 /**
  * @lends LABKEY.MultiRequest.prototype
  */

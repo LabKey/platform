@@ -1,6 +1,5 @@
 <libraries xmlns="http://labkey.org/clientLibrary/xml/">
     <library compileInProductionMode="false">
-        <!--<script path="clientapi/Ajax.js"/>-->
     </library>
     <dependencies>
         <dependency path="clientapi/core" />

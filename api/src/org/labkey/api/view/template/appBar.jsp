@@ -108,17 +108,17 @@
 
 <script type="text/javascript">
     (function(){
-        var resizeTask = new Ext.util.DelayedTask(function(){
-            var bodyWidth = Ext.getBody().getWidth();
-            var leftMenuWidth = Ext.getDom("leftmenupanel") ? Ext.getDom("leftmenupanel").offsetWidth : 0;
-            Ext.getDom("labkey-app-bar-table").style.width = (bodyWidth - leftMenuWidth) + "px";
+        var resizeTask = new Ext4.util.DelayedTask(function(){
+            var bodyWidth = Ext4.getBody().getWidth();
+            var leftMenuWidth = Ext4.getDom("leftmenupanel") ? Ext4.getDom("leftmenupanel").offsetWidth : 0;
+            Ext4.getDom("labkey-app-bar-table").style.width = (bodyWidth - leftMenuWidth) + "px";
         });
 
-        Ext.EventManager.on(window, 'resize', function(){
+        Ext4.EventManager.on(window, 'resize', function(){
             resizeTask.delay(100);
         });
 
-        Ext.onReady(function(){
+        Ext4.onReady(function(){
             resizeTask.delay(0);
         });
     })();

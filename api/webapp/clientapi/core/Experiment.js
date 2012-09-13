@@ -38,7 +38,7 @@ LABKEY.Experiment = new function()
             if (response && response.getResponseHeader && response.getResponseHeader('Content-Type')
                     && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
             {
-                json = LABKEY.ExtAdapter.decode(response.responseText);
+                json = Ext.decode(response.responseText);
                 experiment = createExpFn(json);
             }
 
@@ -237,7 +237,7 @@ LABKEY.Experiment = new function()
 
 };
 
-LABKEY.ExtAdapter.namespace('LABKEY', 'LABKEY.Exp');
+Ext.namespace('LABKEY', 'LABKEY.Exp');
 
 /**
  * This constructor isn't called directly, but is used by derived classes.
@@ -396,7 +396,7 @@ LABKEY.Exp.Run = function (config) {
         });
     };
 };
-LABKEY.ExtAdapter.extend(LABKEY.Exp.Run, LABKEY.Exp.ExpObject);
+Ext.extend(LABKEY.Exp.Run, LABKEY.Exp.ExpObject);
 
 /**
  * Create an assay run and import results.
@@ -649,7 +649,7 @@ LABKEY.Exp.Protocol = function (config) {
         }
     }
 };
-LABKEY.ExtAdapter.extend(LABKEY.Exp.Protocol, LABKEY.Exp.ExpObject);
+Ext.extend(LABKEY.Exp.Protocol, LABKEY.Exp.ExpObject);
 
 /**
  * The RunGroup constructor is private.  To retrieve a batch RunGroup
@@ -690,7 +690,7 @@ LABKEY.Exp.RunGroup = function (config) {
     //this.batchProtocol = config.batchProtocol;
     this.hidden = config.hidden;
 };
-LABKEY.ExtAdapter.extend(LABKEY.Exp.RunGroup, LABKEY.Exp.ExpObject);
+Ext.extend(LABKEY.Exp.RunGroup, LABKEY.Exp.ExpObject);
 
 /**
  * The ProtocolApplication constructor is private.
@@ -707,7 +707,7 @@ LABKEY.Exp.ProtocolApplication = function (config) {
     config = config || {};
 
 };
-LABKEY.ExtAdapter.extend(LABKEY.Exp.ProtocolApplication, LABKEY.Exp.ExpObject);
+Ext.extend(LABKEY.Exp.ProtocolApplication, LABKEY.Exp.ExpObject);
 
 /**
  * @class The SampleSet class describes a collection of experimental samples, which are
@@ -763,7 +763,7 @@ LABKEY.Exp.SampleSet = function (config) {
     };
 
 };
-LABKEY.ExtAdapter.extend(LABKEY.Exp.SampleSet, LABKEY.Exp.ExpObject);
+Ext.extend(LABKEY.Exp.SampleSet, LABKEY.Exp.ExpObject);
 
 /**
  * Create a new Sample Set definition.
@@ -825,7 +825,7 @@ LABKEY.Exp.ChildObject = function (config) {
     config = config || {};
     // property holder
 };
-LABKEY.ExtAdapter.extend(LABKEY.Exp.ChildObject, LABKEY.Exp.ExpObject);
+Ext.extend(LABKEY.Exp.ChildObject, LABKEY.Exp.ExpObject);
 
 /**
  * The ProtocolOutput constructor is private.
@@ -847,7 +847,7 @@ LABKEY.Exp.ProtocolOutput = function (config) {
     this.sucessorRuns = config.sucessorRuns;
     this.cpasType = config.cpasType;
 };
-LABKEY.ExtAdapter.extend(LABKEY.Exp.ProtocolOutput, LABKEY.Exp.ExpObject);
+Ext.extend(LABKEY.Exp.ProtocolOutput, LABKEY.Exp.ExpObject);
 
 /**
  * Constructs a new experiment material object.
@@ -875,7 +875,7 @@ LABKEY.Exp.Material = function (config) {
 
     this.sampleSet = config.sampleSet;
 };
-LABKEY.ExtAdapter.extend(LABKEY.Exp.Material, LABKEY.Exp.ProtocolOutput);
+Ext.extend(LABKEY.Exp.Material, LABKEY.Exp.ProtocolOutput);
 
 /**
  * The Data constructor is private.
@@ -990,7 +990,7 @@ LABKEY.Exp.Data = function (config) {
             if(response && response.getResponseHeader && response.getResponseHeader('Content-Type')
                     && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
             {
-                content = LABKEY.ExtAdapter.decode(response.responseText);
+                content = Ext.decode(response.responseText);
             }
             else
             {
@@ -1174,4 +1174,4 @@ LABKEY.Exp.Data = function (config) {
 
     };
 };
-LABKEY.ExtAdapter.extend(LABKEY.Exp.Data, LABKEY.Exp.ProtocolOutput);
+Ext.extend(LABKEY.Exp.Data, LABKEY.Exp.ProtocolOutput);

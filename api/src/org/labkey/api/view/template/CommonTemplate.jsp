@@ -216,7 +216,7 @@ if (null != me.getView("moduleNav"))
 %>
     <script type="text/javascript">LABKEY.loadScripts(); LABKEY.showNavTrail();</script>
     <script type="text/javascript">
-    Ext.onReady(function(){Ext.DomHelper.insertHtml("beforeend",document.body,"<input id=seleniumExtReady name=seleniumExtReady type=hidden>");});
+    Ext4.onReady(function(){Ext4.DomHelper.insertHtml("beforeend",document.body,"<input id=seleniumExtReady name=seleniumExtReady type=hidden>");});
     </script>
     <!--<%= h(request.getHeader("User-Agent")) %>--><%
     if (null != request.getAttribute(ViewServlet.REQUEST_STARTTIME))

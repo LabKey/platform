@@ -70,6 +70,10 @@ public class PopupMenuView extends HttpView<PopupMenu>
         getModelBean().setButtonStyle(buttonStyle);
     }
 
+    public void setExtVersion(String extVersion)
+    {
+        getModelBean().setExtVerison(extVersion);
+    }
 
     protected void renderInternal(PopupMenu model, PrintWriter out) throws Exception
     {
