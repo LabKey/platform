@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:wp="http://labkey.org/data/xml/wiki" targetNamespace="http://labkey.org/data/xml/wiki"
+        elementFormDefault="qualified" attributeFormDefault="unqualified">
+    <xsd:annotation>
+        <xsd:documentation xml:lang="en">File-based Wiki Definition</xsd:documentation>
+    </xsd:annotation>
+
+    <xsd:element name="wikis" type="wp:wikisType"/>
+
+    <xsd:complexType name="wikisType">
+        <xsd:sequence>
+            <xsd:element name="wiki" type="wp:wikiType" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="wikiType">
+        <xsd:attribute name="name" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>The wiki page's name</xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="title" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>The wiki page's title, shown in the UI</xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="parent" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>The wiki page's parent's name</xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="showAttachments" type="xsd:boolean">
+            <xsd:annotation>
+                <xsd:documentation>Whether this page's attachments should be listed in the UI as part of the page's content</xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="shouldIndex" type="xsd:boolean">
+            <xsd:annotation>
+                <xsd:documentation>Whether this page should be indexed by the search service for full text search</xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+</xsd:schema>

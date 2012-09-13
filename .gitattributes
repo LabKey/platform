@@ -3942,6 +3942,7 @@ wiki/radeox/src/org/radeox/util/logging/SystemOutLogger.java -text
 wiki/radeox/src/simplelog.properties -text
 wiki/radeox/src/test/radeox/test/groovy/AllGroovyTests.java -text
 wiki/radeox/src/test/radeox/test/groovy/RadeoxTemplateEngineTest.java -text
+wiki/schemas/wiki.xsd -text
 wiki/src/META-INF/wiki/jars.txt -text
 wiki/src/org/labkey/wiki/BaseWikiPermissions.java -text
 wiki/src/org/labkey/wiki/MenuWikiWebPartFactory.java -text
