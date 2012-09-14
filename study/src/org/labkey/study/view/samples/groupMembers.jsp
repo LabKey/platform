@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.study.controllers.samples.ShowGroupMembersAction" %>
-<%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <script type="text/javascript">LABKEY.requiresScript('completion.js');</script>
@@ -53,7 +52,7 @@
             %>
             <tr>
                 <td><input type="checkbox" name="delete" value="<%= member %>"></td>
-                <td><%= member.getEmail() %></td>
+                <td><%= h(member.getEmail()) %></td>
             </tr>
             <%
                 }
@@ -71,12 +70,12 @@
                   onKeyDown="return ctrlKeyCheck(event);"
                   onBlur="hideCompletionDiv();"
                   autocomplete="off"
-                  onKeyUp="return handleChange(this, event, '<%= bean.getCompleteUsersPrefix() %>');"></textarea><br>
+                  onKeyUp="return handleChange(this, event, <%= q(bean.getCompleteUsersPrefix()) %>);"></textarea><br>
         <input type="checkbox" name="sendEmail" value="true" checked>Send notification emails to all
         new<%
             if (bean.getLdapDomain() != null && bean.getLdapDomain().length() > 0 && !org.labkey.api.security.AuthenticationManager.ALL_DOMAINS.equals(bean.getLdapDomain()))
             {
-        %>, non-<%= bean.getLdapDomain() %>
+        %>, non-<%= h(bean.getLdapDomain()) %>
         <%
             }
         %> users<br><br>

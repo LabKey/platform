@@ -91,7 +91,7 @@ function orderModule(down)
                 for (SampleRequestActor actor : actors)
                 {
                     %>
-                    <option value="<%= actor.getRowId() %>"><%= actor.getLabel() != null ? h(actor.getLabel()) : "" %></option>
+                    <option value="<%= actor.getRowId() %>"><%= h(actor.getLabel()) %></option>
                     <%
                 }
                 %>

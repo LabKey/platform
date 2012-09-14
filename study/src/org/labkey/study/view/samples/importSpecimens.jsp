@@ -16,13 +16,9 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.pipeline.PipelineStatusUrls"%>
-<%@ page import="org.labkey.api.pipeline.PipelineUrls"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController"%>
-<%@ page import="org.labkey.study.pipeline.SpecimenBatch"%>
-<%@ page import="java.util.List" %>
 <%@ page import="org.labkey.study.pipeline.SpecimenArchive" %>
 <%@ page import="java.util.zip.ZipException" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -33,7 +29,7 @@
     boolean hasError = !bean.getErrors().isEmpty();
     int archiveCount = bean.getArchives().size();
 %>
-<%= archiveCount %> specimen archive<%= archiveCount > 1 ? "s" : "" %> selected.<br><br>
+<%= archiveCount %> specimen archive<%= text(archiveCount > 1 ? "s" : "") %> selected.<br><br>
 <%
     try
     {
@@ -48,7 +44,7 @@
             for (SpecimenArchive.EntryDescription entry : archive.getEntryDescriptions())
             {
         %>
-            <tr class="<%= row++ % 2 == 1 ? "labkey-row" : "labkey-alternate-row"%>">
+            <tr class="<%= h(row++ % 2 == 1 ? "labkey-row" : "labkey-alternate-row") %>">
                 <td><%= h(entry.getName()) %></td>
                 <td align="right"><%= entry.getSize() == 0 ? "0" : Math.max(1, entry.getSize() / 1000) %> kb</td>
                 <td><%= h(formatDateTime(entry.getDate())) %></td>

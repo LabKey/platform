@@ -37,7 +37,7 @@
     Study[] studies = StudyManager.getInstance().getAllStudies(ctx.getContainer(), ctx.getUser());
     if (studies.length == 0)
     {
-        out.print("No Studies found in " + (c.equals(c.getProject()) ? "project " : "folder ") + c.getName() + " or child folders.");
+        out.print(text("No Studies found in " + (c.equals(c.getProject()) ? "project " : "folder ") + h(c.getName()) + " or child folders."));
     }
     int i = 0;
     FolderType studyFolderType = ModuleLoader.getInstance().getFolderType("Study");
@@ -58,9 +58,9 @@
     <%if(null != study.getInvestigator()) { %>
         <span class='labkey-study-investigator'><%=h(study.getInvestigator())%></span>
     <%}%>
-            </div>
-            <%=study.getDescriptionHtml()%>
+        </div>
+            <%=text(study.getDescriptionHtml())%>
 <%
     }
 %>
-    <div>
+</div>

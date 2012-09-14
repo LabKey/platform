@@ -29,7 +29,7 @@
 %>
 <form action="<%=h(buildURL(SpecimenController.EmailLabSpecimenListsAction.class))%>" method="POST" enctype="multipart/form-data">
 <input type="hidden" name="id" value="<%= bean.getSampleRequest().getRowId() %>">
-<input type="hidden" name="listType" value="<%= bean.getType().toString() %>">
+<input type="hidden" name="listType" value="<%= h(bean.getType().toString()) %>">
 <%
     if (!bean.isRequirementsComplete())
     {
@@ -44,7 +44,7 @@
 
 <table>
     <tr>
-        <th align="left"><%= originating ? "Originating" : "Providing" %> Location</th>
+        <th align="left"><%= text(originating ? "Originating" : "Providing") %> Location</th>
         <th align="left">Download options</th>
         <th align="left">Specimen IDs</th>
         <th align="left">Email Recipients</th>
@@ -58,8 +58,8 @@
                     "&listType=" + bean.getType().toString() +
                     "&sourceSiteId=" + site.getRowId() + "&export=";
     %>
-    <tr class="<%= rowCount++ % 2 == 0 ? "labkey-alternate-row" : "labkey-row"%>" valign="top">
-        <td><%= site.getDisplayName()%></td>
+    <tr class="<%= text(rowCount++ % 2 == 0 ? "labkey-alternate-row" : "labkey-row") %>" valign="top">
+        <td><%= h(site.getDisplayName()) %></td>
         <td>
             <table>
                 <tr>
@@ -78,7 +78,7 @@
                     {
                 %>
                     <tr valign="top">
-                        <td><%= specimen.getGlobalUniqueId()%></td>
+                        <td><%= h(specimen.getGlobalUniqueId()) %></td>
                     </tr>
                 <%
                     }
@@ -103,7 +103,7 @@
                     <td valign="middle">
                         <input type="checkbox"
                                name="notify"
-                               value="<%= site.getRowId() %>,<%= possibleNotification.getFormValue() %>" <%= hasEmailAddresses ? "" : "DISABLED" %>>
+                               value="<%= site.getRowId() %>,<%= h(possibleNotification.getFormValue()) %>" <%= text(hasEmailAddresses ? "" : "DISABLED") %>>
                     </td>
                     <td valign="middle">
                         <%= h(possibleNotification.getShortRecipientDescription())%><%= hasEmailAddresses ?
@@ -112,8 +112,8 @@
                             " " + possibleNotification.getConfigureEmailsLinkHTML() %>
                     </td>
                     <td valign="middle">
-                        <%= notifySite != null && notifySite.getRowId() == bean.getSampleRequest().getDestinationSiteId() ? "Requesting&nbsp;Location&nbsp;" : "" %>
-                        <%= notifySite != null && notifySite.getRowId() == site.getRowId() ? bean.getType().getDisplay() + "&nbsp;Location" : "" %>
+                        <%= text(notifySite != null && notifySite.getRowId() == bean.getSampleRequest().getDestinationSiteId() ? "Requesting&nbsp;Location&nbsp;" : "") %>
+                        <%= text(notifySite != null && notifySite.getRowId() == site.getRowId() ? bean.getType().getDisplay() + "&nbsp;Location" : "") %>
                     </td>
                 </tr>
                 <%
