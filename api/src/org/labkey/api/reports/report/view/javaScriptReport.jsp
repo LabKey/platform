@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.reports.report.JavaScriptReport.JavaScriptReportBean" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -24,19 +23,19 @@
 
     String uniqueDivName = "div_" + UniqueID.getServerSessionScopedUID();  // Unique div name to support multiple reports per page
 %>
-<div id="<%=uniqueDivName%>"></div>
+<div id="<%=text(uniqueDivName)%>"></div>
 <script type="text/javascript">
     (function()
     {
         // ========== Begin report writer's script ==========
-        <%=bean.script%>
+        <%=text(bean.script)%>
         // ========== End report writer's script ==========
 
         if (render && (typeof render === 'function'))
         {
             render({
-               <%=bean.model.getStandardJavaScriptParameters(16, false)%>
-            }, document.getElementById("<%=uniqueDivName%>"));
+               <%=text(bean.model.getStandardJavaScriptParameters(16, false))%>
+            }, document.getElementById("<%=text(uniqueDivName)%>"));
         }
         else
         {

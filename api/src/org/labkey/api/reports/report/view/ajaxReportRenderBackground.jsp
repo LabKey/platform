@@ -113,7 +113,7 @@
         var extDiv = Ext.get("results");
         extDiv.update(map['results']);
 
-        if (map['status'] == "<%=PipelineJob.COMPLETE_STATUS%>")
+        if (map['status'] == <%=q(PipelineJob.COMPLETE_STATUS)%>)
             stopPolling();
         else if (!timer)
             timer = window.setInterval("pollForResults()", 4000);

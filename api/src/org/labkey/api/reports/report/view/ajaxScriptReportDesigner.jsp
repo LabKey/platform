@@ -101,7 +101,7 @@
 // Since multiple reports could be rendered on the same page, use an anonymous function to provide a separate namespace
 // for all the properties and methods.  The Save button needs to call saveReport(), so new up a class and return an
 // object that provides outside access to saveReport().
-var f_scope<%=uid%> = new (function() {
+var f_scope<%=text(uid)%> = new (function() {
     var previousScript = null,
     previousViewURL    = null,
     scriptText,
@@ -123,22 +123,22 @@ var f_scope<%=uid%> = new (function() {
     var dataTabRegionName = <%=q(report.getDescriptor().getProperty(ReportDescriptor.Prop.dataRegionName) + "_report")%>;
 
     // inherited warning message
-    var inheritedWarningMsg = <%=inherited ? "'<div class=\"labkey-warning-messages\">This view has been made available" +
+    var inheritedWarningMsg = <%=text(inherited ? "'<div class=\"labkey-warning-messages\">This view has been made available" +
         " from a different folder and cannot be edited here. The view can only be edited from the folder it was " +
-        " created in.</div>'" : "undefined"%>;
+        " created in.</div>'" : "undefined")%>;
 
     Ext.onReady(function(){
-        scriptText = document.getElementById("<%=scriptId%>");
-        viewDivExtElement = Ext.get("<%=viewDivId%>");
-        tabsDivExtElement = Ext.get("tabsDiv<%=uid%>");
-        downloadLink = document.getElementById("downloadLink<%=uid%>");
-        downloadHelp = document.getElementById("downloadHelp<%=uid%>");
+        scriptText = document.getElementById(<%=q(scriptId)%>);
+        viewDivExtElement = Ext.get(<%=q(viewDivId)%>);
+        tabsDivExtElement = Ext.get(<%=q("tabsDiv" + uid)%>);
+        downloadLink = document.getElementById(<%=q("downloadLink"+uid)%>);
+        downloadHelp = document.getElementById(<%=q("downloadHelp"+uid)%>);
 
         var activeTab = 0;
         var items = [];
 
-        items.push({title: 'View', contentEl: '<%=viewDivId%>',     listeners: {activate: activateViewTab}});
-        items.push({title: 'Data', contentEl: 'dataTabDiv<%=uid%>', listeners: {activate: activateDataTab}});
+        items.push({title: 'View', contentEl: <%=q(viewDivId)%>,     listeners: {activate: activateViewTab}});
+        items.push({title: 'Data', contentEl: <%=q("dataTabDiv"+uid)%>, listeners: {activate: activateDataTab}});
 
         var sourceAndHelp = <%=sourceAndHelp%>;
         var help = <%=null != helpHtml%>;
@@ -146,17 +146,17 @@ var f_scope<%=uid%> = new (function() {
 
         if (sourceAndHelp)
         {
-            items.push({title: 'Source', contentEl: 'scriptDiv<%=uid%>', listeners: {render: activateSourceTab}});
+            items.push({title: 'Source', contentEl: <%=q("scriptDiv"+uid)%>, listeners: {render: activateSourceTab}});
 
             if (preferSourceTab)
                 activeTab = 2;
 
             if (help)
-                items.push({title: 'Help', contentEl: 'reportHelpDiv<%=uid%>'});
+                items.push({title: 'Help', contentEl: <%=q("reportHelpDiv"+uid)%>});
         }
 
         var tabs = new Ext.TabPanel({
-            renderTo: 'tabsDiv<%=uid%>',
+            renderTo: 'tabsDiv<%=text(uid)%>',
             autoHeight: true,
             width: 1000,
             activeTab: activeTab,
@@ -189,20 +189,20 @@ var f_scope<%=uid%> = new (function() {
 
     function beforeTabChange()
     {
-        if (editAreaLoader) editAreaLoader.execCommand("<%=scriptId%>", 'focus');
+        if (editAreaLoader) editAreaLoader.execCommand(<%=q(scriptId)%>, 'focus');
     }
 
     function activateSourceTab(tab)
     {
         if (!readOnly)
         {
-            Ext.EventManager.on('<%=scriptId%>', 'keydown', handleTabsInTextArea);
+            Ext.EventManager.on(<%=q(scriptId)%>, 'keydown', handleTabsInTextArea);
             editAreaLoader.init({
-                id: "<%=scriptId%>",
+                id: <%=q(scriptId)%>,
                 toolbar: "search, go_to_line, |, undo, redo, |, select_font,|, change_smooth_selection, highlight, reset_highlight, word_wrap, |, help",<%
             if (null != report.getEditAreaSyntax())
             { %>
-                syntax: "<%=report.getEditAreaSyntax()%>",<%
+                syntax: <%=q(report.getEditAreaSyntax())%>,<%
             } %>
                 start_highlight: true,
                 change_callback: "LABKEY.setDirty(true);"  // JavaScript string to eval, NOT a function
@@ -319,7 +319,7 @@ var f_scope<%=uid%> = new (function() {
         // Load the data grid on demand, since it may not be needed.
         if (null == dataDivExtElement)
         {
-            dataDivExtElement = Ext.get('dataDiv<%=uid%>');
+            dataDivExtElement = Ext.get('dataDiv<%=text(uid)%>');
             var url = <%=q(initialViewURL.toString())%>;
             var dataRegionName = <%=q(bean.getDataRegionName())%>;
             var removeableFilters = LABKEY.Filter.getFiltersFromUrl(url, dataRegionName);
@@ -423,9 +423,9 @@ var f_scope<%=uid%> = new (function() {
 
     function updateScript()
     {
-        if (scriptText && editAreaLoader && document.getElementById("edit_area_toggle_checkbox_<%=scriptId%>") && document.getElementById("edit_area_toggle_checkbox_<%=scriptId%>").checked)
+        if (scriptText && editAreaLoader && document.getElementById("edit_area_toggle_checkbox_<%=text(scriptId)%>") && document.getElementById("edit_area_toggle_checkbox_<%=text(scriptId)%>").checked)
         {
-            scriptText.value = editAreaLoader.getValue("<%=scriptId%>");
+            scriptText.value = editAreaLoader.getValue(<%=q(scriptId)%>);
         }
     }
 
@@ -543,31 +543,31 @@ function setDisabled(checkbox, label, disabled)
         return includedScripts.contains(String.valueOf(id));
     }
 %>
-<div id="tabsDiv<%=uid%>" class="extContainer">
-    <div id="<%=viewDivId%>" class="x-hide-display">
+<div id="tabsDiv<%=text(uid)%>" class="extContainer">
+    <div id="<%=text(viewDivId)%>" class="x-hide-display">
     </div>
-    <div id="dataTabDiv<%=uid%>" class="x-hide-display">
+    <div id="dataTabDiv<%=text(uid)%>" class="x-hide-display">
         <table width="100%"><%
             if (sourceAndHelp && report instanceof RReport)
             {
             %>
             <tr><td width="100%">
-                <a href="javascript:void(0)" id="downloadLink<%=uid%>"></a><span id="downloadHelp<%=uid%>"></span>
+                <a href="javascript:void(0)" id="downloadLink<%=text(uid)%>"></a><span id="downloadHelp<%=text(uid)%>"></span>
             </td></tr><%
             }
             %>
             <tr><td width="100%">
-                <div id="dataDiv<%=uid%>">
+                <div id="dataDiv<%=text(uid)%>">
                 </div>
             </td></tr>
         </table>
     </div>
-    <div id="scriptDiv<%=uid%>" class="x-hide-display">
+    <div id="scriptDiv<%=text(uid)%>" class="x-hide-display">
         <form id="renderReport" method="post">
         <table width="100%">
             <tr><td width="100%">
-                <textarea id="<%=scriptId%>" onchange="LABKEY.setDirty(true);return true;"
-                    name="<%=scriptId%>"<%
+                <textarea id="<%=text(scriptId)%>" onchange="LABKEY.setDirty(true);return true;"
+                    name="<%=text(scriptId)%>"<%
                     if (readOnly)
                     { %>
                     readonly="true"<% } %>
@@ -583,12 +583,12 @@ function setDisabled(checkbox, label, disabled)
             %>
             <tr>
                 <td>
-                    <input type="checkbox" <%=inherited ? "disabled" : ""%> name="shareReport"<%=bean.isShareReport() ? " checked" : ""%> onchange="LABKEY.setDirty(true);setDisabled(document.getElementById('sourceTab'), document.getElementById('sourceTabLabel'), !this.checked);return true;"> Make this view available to all users&nbsp;
+                    <input type="checkbox" <%=text(inherited ? "disabled" : "")%> name="shareReport"<%=text(bean.isShareReport() ? " checked" : "")%> onchange="LABKEY.setDirty(true);setDisabled(document.getElementById('sourceTab'), document.getElementById('sourceTabLabel'), !this.checked);return true;"> Make this view available to all users&nbsp;
                 </td>
             </tr>
             <tr >
                 <td style="padding-left:19px;">
-                    <input id="sourceTab" type="checkbox" name="<%=ScriptReportDescriptor.Prop.sourceTabVisible%>"<%=bean.isSourceTabVisible() ? " checked" : ""%><%=bean.isShareReport() && !inherited ? "" : " disabled"%> onchange="LABKEY.setDirty(true);return true;"><span <%=bean.isSourceTabVisible() ? "" : " class=\"labkey-disabled\""%> id="sourceTabLabel"> Show source tab to all users</span>
+                    <input id="sourceTab" type="checkbox" name="<%=ScriptReportDescriptor.Prop.sourceTabVisible%>"<%=text(bean.isSourceTabVisible() ? " checked" : "")%><%=text(bean.isShareReport() && !inherited ? "" : " disabled")%> onchange="LABKEY.setDirty(true);return true;"><span <%=text(bean.isSourceTabVisible() ? "" : " class=\"labkey-disabled\"")%> id="sourceTabLabel"> Show source tab to all users</span>
                 </td>
             </tr> <%
                 // must be project admin (or above to to share a report to child folders            
@@ -596,7 +596,7 @@ function setDisabled(checkbox, label, disabled)
                 {
             %>
             <tr><td>
-                <input type="checkbox" <%=inherited || isSharedFolder ? "disabled" : ""%> name="inheritable"<%=bean.isInheritable() || isSharedFolder ? " checked" : ""%> onchange="LABKEY.setDirty(true);return true;"> Make this view
+                <input type="checkbox" <%=text(inherited || isSharedFolder ? "disabled" : "")%> name="inheritable"<%=text(bean.isInheritable() || isSharedFolder ? " checked" : "")%> onchange="LABKEY.setDirty(true);return true;"> Make this view
                 available in child folders<%=helpPopup("Available in child folders", "If this check box is selected, this view will be available in data grids of child folders " +
                 "where the schema and table are the same as this data grid.")%>
             </td></tr><%
@@ -606,7 +606,7 @@ function setDisabled(checkbox, label, disabled)
                 {
             %>
             <tr><td>
-                <input type="checkbox" id="runInBackground" <%=inherited ? "disabled" : ""%> name="<%=ScriptReportDescriptor.Prop.runInBackground.name()%>"<%=bean.isRunInBackground() ? " checked" : ""
+                <input type="checkbox" id="runInBackground" <%=text(inherited ? "disabled" : "")%> name="<%=text(ScriptReportDescriptor.Prop.runInBackground.name())%>"<%=text(bean.isRunInBackground() ? " checked" : "")
                     %> onchange="LABKEY.setDirty(true);return true;"> Run this view in the background as a pipeline job
             </td></tr><%
                 } %>
@@ -616,14 +616,14 @@ function setDisabled(checkbox, label, disabled)
                 {
             %>
             <tr class="labkey-wp-header"><th align="left" colspan="2">Report Thumbnail</th></tr>
-            <tr><td><input type="radio" name="thumbnailType" value="AUTO" <%=bean.getThumbnailType().equals("AUTO") ? "checked" : ""%> onchange="LABKEY.setDirty(true);return true;"/>
+            <tr><td><input type="radio" name="thumbnailType" value="AUTO" <%=text(bean.getThumbnailType().equals("AUTO") ? "checked" : "")%> onchange="LABKEY.setDirty(true);return true;"/>
                 Auto-generate<%=helpPopup("Auto-generate thumbnail", "Auto-generate a new thumbnail based on the first available output from this report (i.e. image, pdf, etc.)")%></td></tr>
-            <tr><td><input type="radio" name="thumbnailType" value="NONE" <%=bean.getThumbnailType().equals("NONE") ? "checked" : ""%> onchange="LABKEY.setDirty(true);return true;"/>
+            <tr><td><input type="radio" name="thumbnailType" value="NONE" <%=text(bean.getThumbnailType().equals("NONE") ? "checked" : "")%> onchange="LABKEY.setDirty(true);return true;"/>
                 None<%=helpPopup("No thumbnail", "Use the default static image for this report")%></td></tr>
              <%     if (bean.getThumbnailType().equals("CUSTOM"))
                     {
             %>
-            <tr><td><input type="radio" name="thumbnailType" value="CUSTOM" <%=bean.getThumbnailType().equals("CUSTOM") ? "checked" : ""%> onchange="LABKEY.setDirty(true);return true;"/>
+            <tr><td><input type="radio" name="thumbnailType" value="CUSTOM" <%=text(bean.getThumbnailType().equals("CUSTOM") ? "checked" : "")%> onchange="LABKEY.setDirty(true);return true;"/>
                 Keep existing<%=helpPopup("Keep custom thumbnail", "Keep the existing custom thumbnail that has been provided for this report type")%></td></tr>
             <%
                     }
@@ -639,8 +639,8 @@ function setDisabled(checkbox, label, disabled)
                     for (Report sharedReport : sharedReports)
                     { %>
             <tr><td><input type="checkbox" name="<%=ScriptReportDescriptor.Prop.includedReports%>" value="<%=sharedReport.getDescriptor().getReportId()
-                %>"<%=isScriptIncluded(sharedReport.getDescriptor().getReportId(), includedReports) ? " checked" : ""
-                %> onchange="LABKEY.setDirty(true);return true;"> <%=sharedReport.getDescriptor().getProperty(ReportDescriptor.Prop.reportName)%></td></tr><%
+                %>"<%=text(isScriptIncluded(sharedReport.getDescriptor().getReportId(), includedReports) ? " checked" : "")
+                %> onchange="LABKEY.setDirty(true);return true;"> <%=text(sharedReport.getDescriptor().getProperty(ReportDescriptor.Prop.reportName))%></td></tr><%
                     } %>
             <tr><td>&nbsp;</td></tr><%
 
@@ -651,7 +651,7 @@ function setDisabled(checkbox, label, disabled)
                     String extraFormHtml = vf.getExtraFormHtml(ctx, bean);
 
                     if (null != extraFormHtml)
-                        out.print(extraFormHtml);
+                        out.print(text(extraFormHtml));
                 }
             }
 
@@ -685,8 +685,8 @@ function setDisabled(checkbox, label, disabled)
     if (sourceAndHelp && null != helpHtml)
     {
     %>
-    <div id="reportHelpDiv<%=uid%>" class="x-hide-display">
-<%=helpHtml%>
+    <div id="reportHelpDiv<%=text(uid)%>" class="x-hide-display">
+<%=text(helpHtml)%>
     </div>
     <%
     }
