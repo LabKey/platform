@@ -69,13 +69,13 @@ public class DavCrawler implements ShutdownListener
     // we don't want to hold up the actual indexer threads if possible
 
      // 10 directories/second
-    final RateLimiter _listingRateLimiter = new RateLimiter("directory listing", 10, 1000);
+    final RateLimiter _listingRateLimiter = new RateLimiter("directory listing", 10, TimeUnit.SECONDS);
 
     // 1 Mbyte/sec, this seems to be enough to use a LOT of tika cpu time
-    final RateLimiter _fileIORateLimiter = new RateLimiter("file io", 1000000, 1000);
+    final RateLimiter _fileIORateLimiter = new RateLimiter("file io", 1000000, TimeUnit.SECONDS);
 
     // CONSIDER: file count limiter
-    final RateLimiter _filesIndexRateLimiter = new RateLimiter("file index", 100, 1000);
+    final RateLimiter _filesIndexRateLimiter = new RateLimiter("file index", 100, TimeUnit.SECONDS);
 
 
     public static class ResourceInfo
