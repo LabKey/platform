@@ -342,7 +342,7 @@ LABKEY.Exp.ExpObject = function (config) {
  * });
  */
 LABKEY.Exp.Run = function (config) {
-    LABKEY.Exp.Run.superclass.constructor.call(this, config);
+    LABKEY.Exp.ExpObject.call(this, config);
     config = config || {};
 
     this.experiments = config.experiments || [];
@@ -361,42 +361,43 @@ LABKEY.Exp.Run = function (config) {
     this.materialInputs = config.materialInputs || [];
     this.materialOutputs = config.materialOutputs || [];
     this.objectProperties = config.objectProperties || {};
-
-    /**
-     * Deletes the run from the database.
-     * @param config An object that contains the following configuration parameters
-     * @param {Function} config.success A reference to a function to call with the API results. This
-     * function will be passed the following parameters:
-     * <ul>
-     * <li><b>data:</b> a simple object with one property called 'success' which will be set to true.</li>
-     * <li><b>response:</b> The XMLHttpResponse object</li>
-     * </ul>
-     * @param {Function} [config.failure] A reference to a function to call when an error occurs. This
-     * function will be passed the following parameters:
-     * <ul>
-     * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
-     * <li><b>response:</b> The XMLHttpResponse object</li>
-     * </ul>
-     */
-    this.deleteRun = function(config)
-    {
-        if(!LABKEY.Utils.getOnSuccess(config))
-        {
-            console.error("You must specify a callback function in config.success when calling LABKEY.Exp.Run.deleteRun()!");
-            return;
-        }
-
-        LABKEY.Ajax.request(
-        {
-            url : LABKEY.ActionURL.buildURL("experiment", "deleteRun"),
-            method : 'POST',
-            params : { runId : this.id },
-            success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), this, false),
-            failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), this, true)
-        });
-    };
 };
-Ext.extend(LABKEY.Exp.Run, LABKEY.Exp.ExpObject);
+LABKEY.Exp.Run.prototype = new LABKEY.Exp.ExpObject;
+LABKEY.Exp.Run.prototype.constructor = LABKEY.Exp.Run;
+
+/**
+ * Deletes the run from the database.
+ * @param config An object that contains the following configuration parameters
+ * @param {Function} config.success A reference to a function to call with the API results. This
+ * function will be passed the following parameters:
+ * <ul>
+ * <li><b>data:</b> a simple object with one property called 'success' which will be set to true.</li>
+ * <li><b>response:</b> The XMLHttpResponse object</li>
+ * </ul>
+ * @param {Function} [config.failure] A reference to a function to call when an error occurs. This
+ * function will be passed the following parameters:
+ * <ul>
+ * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+ * <li><b>response:</b> The XMLHttpResponse object</li>
+ * </ul>
+ */
+LABKEY.Exp.Run.prototype.deleteRun = function(config)
+{
+    if(!LABKEY.Utils.getOnSuccess(config))
+    {
+        console.error("You must specify a callback function in config.success when calling LABKEY.Exp.Run.deleteRun()!");
+        return;
+    }
+
+    LABKEY.Ajax.request(
+    {
+        url : LABKEY.ActionURL.buildURL("experiment", "deleteRun"),
+        method : 'POST',
+        params : { runId : this.id },
+        success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), this, false),
+        failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), this, true)
+    });
+};
 
 /**
  * Create an assay run and import results.
@@ -632,7 +633,7 @@ LABKEY.Exp.Run.importRun = function (config)
  * @ignore hide from JsDoc for now
  */
 LABKEY.Exp.Protocol = function (config) {
-    LABKEY.Exp.Protocol.superclass.constructor.call(this, config);
+    LABKEY.Exp.ExpObject.call(this, config);
     config = config || {};
 
     this.instrument = config.instrument;
@@ -649,7 +650,8 @@ LABKEY.Exp.Protocol = function (config) {
         }
     }
 };
-Ext.extend(LABKEY.Exp.Protocol, LABKEY.Exp.ExpObject);
+LABKEY.Exp.Protocol.prototype = new LABKEY.Exp.ExpObject;
+LABKEY.Exp.Protocol.prototype.constructor = LABKEY.Exp.Protocol;
 
 /**
  * The RunGroup constructor is private.  To retrieve a batch RunGroup
@@ -676,7 +678,7 @@ Ext.extend(LABKEY.Exp.Protocol, LABKEY.Exp.ExpObject);
  * @param {Boolean} config.hidden Determines whether the RunGroup is hidden.
  */
 LABKEY.Exp.RunGroup = function (config) {
-    LABKEY.Exp.RunGroup.superclass.constructor.call(this, config);
+    LABKEY.Exp.ExpObject.call(this, config);
     config = config || {};
 
     this.batchProtocolId = config.batchProtocolId || 0;
@@ -690,7 +692,8 @@ LABKEY.Exp.RunGroup = function (config) {
     //this.batchProtocol = config.batchProtocol;
     this.hidden = config.hidden;
 };
-Ext.extend(LABKEY.Exp.RunGroup, LABKEY.Exp.ExpObject);
+LABKEY.Exp.RunGroup.prototype = new LABKEY.Exp.ExpObject;
+LABKEY.Exp.RunGroup.prototype.constructor = LABKEY.Exp.RunGroup;
 
 /**
  * The ProtocolApplication constructor is private.
@@ -703,11 +706,12 @@ Ext.extend(LABKEY.Exp.RunGroup, LABKEY.Exp.ExpObject);
  * @ignore hide from JsDoc for now
  */
 LABKEY.Exp.ProtocolApplication = function (config) {
-    LABKEY.Exp.ProtocolApplication.superclass.constructor.call(this, config);
+    LABKEY.Exp.ExpObject.call(this, config);
     config = config || {};
 
 };
-Ext.extend(LABKEY.Exp.ProtocolApplication, LABKEY.Exp.ExpObject);
+LABKEY.Exp.ProtocolApplication.prototype = new LABKEY.Exp.ExpObject;
+LABKEY.Exp.ProtocolApplication.prototype.constructor = LABKEY.Exp.ProtocolApplication;
 
 /**
  * @class The SampleSet class describes a collection of experimental samples, which are
@@ -728,42 +732,42 @@ Ext.extend(LABKEY.Exp.ProtocolApplication, LABKEY.Exp.ExpObject);
  */
 
 LABKEY.Exp.SampleSet = function (config) {
-    LABKEY.Exp.SampleSet.superclass.constructor.call(this, config);
+    LABKEY.Exp.ExpObject.call(this, config);
     config = config || {};
     this.samples = config.samples;
     this.description = config.description;
-    
-    /**
-     * Get a domain design for the SampleSet.
-     *
-     * @param {Function} config.success Required. Function called if the
-     *	"getDomain" function executes successfully. Will be called with the argument {@link LABKEY.Domain.DomainDesign},
-     *    which describes the fields of a domain.
-     * @param {Function} [config.failure] Function called if execution of the "getDomain" function fails.
-     * @param {String} [config.containerPath] The container path in which the requested Domain is defined.
-     *       If not supplied, the current container path will be used.
-     *
-     * @ignore hide from JsDoc for now
-     *
-     * @example
-     * &lt;script type="text/javascript">
-     *   Ext.onReady(function() {
-     *     var ss = new LABKEY.Exp.SampleSet({name: 'MySampleSet'});
-     *     ss.getDomain({
-     *       success : function (domain) {
-     *         console.log(domain);
-     *       }
-     *     });
-     *   }
-     * &lt;/script>
-     */
-    this.getDomain = function (config)
-    {
-        LABKEY.Domain.get(LABKEY.Utils.getOnSuccess(config), LABKEY.Utils.getOnFailure(config), "Samples", this.name, config.containerPath);
-    };
-
 };
-Ext.extend(LABKEY.Exp.SampleSet, LABKEY.Exp.ExpObject);
+LABKEY.Exp.SampleSet.prototype = new LABKEY.Exp.ExpObject;
+LABKEY.Exp.SampleSet.prototype.constructor = LABKEY.Exp.SampleSet;
+
+/**
+ * Get a domain design for the SampleSet.
+ *
+ * @param {Function} config.success Required. Function called if the
+ *	"getDomain" function executes successfully. Will be called with the argument {@link LABKEY.Domain.DomainDesign},
+ *    which describes the fields of a domain.
+ * @param {Function} [config.failure] Function called if execution of the "getDomain" function fails.
+ * @param {String} [config.containerPath] The container path in which the requested Domain is defined.
+ *       If not supplied, the current container path will be used.
+ *
+ * @ignore hide from JsDoc for now
+ *
+ * @example
+ * &lt;script type="text/javascript">
+ *   Ext.onReady(function() {
+ *     var ss = new LABKEY.Exp.SampleSet({name: 'MySampleSet'});
+ *     ss.getDomain({
+ *       success : function (domain) {
+ *         console.log(domain);
+ *       }
+ *     });
+ *   }
+ * &lt;/script>
+ */
+LABKEY.Exp.SampleSet.prototype.getDomain = function (config)
+{
+    LABKEY.Domain.get(LABKEY.Utils.getOnSuccess(config), LABKEY.Utils.getOnFailure(config), "Samples", this.name, config.containerPath);
+};
 
 /**
  * Create a new Sample Set definition.
@@ -821,11 +825,12 @@ LABKEY.Exp.SampleSet.create = function (config)
  * @ignore hide from JsDoc for now
  */
 LABKEY.Exp.ChildObject = function (config) {
-    LABKEY.Exp.ChildObject.superclass.constructor.call(this, config);
+    LABKEY.Exp.ExpObject.call(this, config);
     config = config || {};
     // property holder
 };
-Ext.extend(LABKEY.Exp.ChildObject, LABKEY.Exp.ExpObject);
+LABKEY.Exp.ChildObject.prototype = new LABKEY.Exp.ExpObject;
+LABKEY.Exp.ChildObject.prototype.constructor = LABKEY.Exp.ChildObject;
 
 /**
  * The ProtocolOutput constructor is private.
@@ -837,7 +842,7 @@ Ext.extend(LABKEY.Exp.ChildObject, LABKEY.Exp.ExpObject);
  * @ignore hide from JsDoc for now
  */
 LABKEY.Exp.ProtocolOutput = function (config) {
-    LABKEY.Exp.ProtocolOutput.superclass.constructor.call(this, config);
+    LABKEY.Exp.ExpObject.call(this, config);
     config = config || {};
 
     this.sourceProtocol = config.sourceProtocol;
@@ -847,7 +852,8 @@ LABKEY.Exp.ProtocolOutput = function (config) {
     this.sucessorRuns = config.sucessorRuns;
     this.cpasType = config.cpasType;
 };
-Ext.extend(LABKEY.Exp.ProtocolOutput, LABKEY.Exp.ExpObject);
+LABKEY.Exp.ProtocolOutput.prototype = new LABKEY.Exp.ExpObject;
+LABKEY.Exp.ProtocolOutput.prototype.constructor = LABKEY.Exp.ProtocolOutput;
 
 /**
  * Constructs a new experiment material object.
@@ -870,12 +876,13 @@ Ext.extend(LABKEY.Exp.ProtocolOutput, LABKEY.Exp.ExpObject);
  * @param {String} [config.sampleSet.name] The name of the SampleSet.
  */
 LABKEY.Exp.Material = function (config) {
-    LABKEY.Exp.Material.superclass.constructor.call(this, config);
+    LABKEY.Exp.ProtocolOutput.call(this, config);
     config = config || {};
 
     this.sampleSet = config.sampleSet;
 };
-Ext.extend(LABKEY.Exp.Material, LABKEY.Exp.ProtocolOutput);
+LABKEY.Exp.Material.prototype = new LABKEY.Exp.ProtocolOutput;
+LABKEY.Exp.Material.prototype.constructor = LABKEY.Exp.Material;
 
 /**
  * The Data constructor is private.
@@ -971,7 +978,7 @@ Ext.extend(LABKEY.Exp.Material, LABKEY.Exp.ProtocolOutput);
  * &lt;/script>
  */
 LABKEY.Exp.Data = function (config) {
-    LABKEY.Exp.Data.superclass.constructor.call(this, config);
+    LABKEY.Exp.ProtocolOutput.call(this, config);
     config = config || {};
 
     this.dataType = config.dataType;
@@ -980,6 +987,170 @@ LABKEY.Exp.Data = function (config) {
         this.pipelinePath = config.pipelinePath;
     if (config.role)
         this.role = config.role;
+};
+LABKEY.Exp.Data.prototype = new LABKEY.Exp.ProtocolOutput;
+LABKEY.Exp.Data.prototype.constructor = LABKEY.Exp.Data;
+
+/**
+ * Retrieves the contents of the data object from the server.
+ * @param config An object that contains the following configuration parameters
+ * @param {object} [config.scope] A scoping object for the success and error callback functions (default to this).
+ * @param {function} config.success The function to call when the function finishes successfully.
+ * This function will be called with the parameters:
+ * <ul>
+ * <li><b>content</b> The type of the content varies based on the format requested.
+ * <li><b>format</b> The format used in the request
+ * <li><b>response</b> The original response
+ * </ul>
+ * @param {function} [config.failure] The function to call if this function encounters an error.
+ * This function will be called with the following parameters:
+ * <ul>
+ * <li><b>errorInfo:</b> An object with a property called "exception," which contains the error message.</li>
+ * <li><b>format</b> The format used in the request
+ * <li><b>response</b> The original response
+ * </ul>
+ * @param {String} [config.format] How to format the content. Defaults to plaintext, supported for text/* MIME types,
+ * including .html, .xml, .tsv, .txt, and .csv. Use 'jsonTSV' to get a JSON version of the .xls, .tsv, .or .csv
+ * files, the structure of which matches the argument to convertToExcel in {@link LABKEY.Utils}.
+ * <ul>
+ * <li><b>fileName:</b> the name of the file</li>
+ * <li><b>sheets:</b> an array of the sheets in the file. Text file types will have a single sheet named 'flat'.
+ * <ul><li><b>name:</b> the name of the sheet</li>
+ *     <li><b>values:</b> two-dimensional array of all the cells in the worksheet. First array index is row, second is column</li>
+ * </ul>
+ * </ul>
+ * <br/>Use 'jsonTSVExtended' to get include metadata in the 2D array of cells.
+ * Text file types will not supply additional metadata but populate the 'value' attribute in the map.
+ * Excel files will include:
+ * <ul>
+ * <li><b>value:</b> the string, boolean, date, or number in the cell</li>
+ * <li><b>timeOnly:</b> whether the date part should be ignored for dates</li>
+ * <li><b>formatString:</b> the Java format string to be used to render the value for dates and numbers</li>
+ * <li><b>formattedValue:</b> the formatted string for that value for all value types</li>
+ * <li><b>error:</b> true if this cell has an error</li>
+ * <li><b>formula:</b> if the cell's value is specified by a formula, the text of the formula</li>
+ * </ul>
+ * <br/>
+ * An example of the results for a request for 'jsonTsv' format:
+ * <pre>
+ * {
+"sheets": [
+    {
+        "name": "Sheet1",
+        "data": [
+            [
+                "StringColumn",
+                "DateColumn"
+            ],
+            [
+                "Hello",
+                "16 May 2009 17:00:00"
+            ],
+            [
+                "world",
+                "12/21/2008 08:45AM"
+            ]
+        ]
+    },
+    {
+        "name": "Sheet2",
+        "data": [
+            ["NumberColumn"],
+            [55.44],
+            [100.34],
+            [-1]
+        ]
+    },
+    {
+        "name": "Sheet3",
+        "data": []
+    }
+],
+"fileName": "SimpleExcelFile.xls"
+}</pre>
+ <br/>
+ An example of the same file in the 'jsonTSVExtended' format:
+ <pre>
+ * {
+"sheets": [
+    {
+        "name": "Sheet1",
+        "data": [
+            [
+                {
+                    "value": "StringColumn",
+                    "formattedValue": "StringColumn"
+                },
+                {
+                    "value": "DateColumn",
+                    "formattedValue": "DateColumn"
+                }
+            ],
+            [
+                {
+                    "value": "Hello",
+                    "formattedValue": "Hello"
+                },
+                {
+                    "formatString": "MMMM d, yyyy",
+                    "value": "16 May 2009 17:00:00",
+                    "timeOnly": false,
+                    "formattedValue": "May 17, 2009"
+                }
+            ],
+            [
+                {
+                    "value": "world",
+                    "formattedValue": "world"
+                },
+                 {
+                     "formatString": "M/d/yy h:mm a",
+                     "value": "21 Dec 2008 19:31:00",
+                     "timeOnly": false,
+                     "formattedValue": "12/21/08 7:31 PM"
+                 }
+            ]
+        ]
+    },
+    {
+        "name": "Sheet2",
+        "data": [
+            [{
+                "value": "NumberColumn",
+                "formattedValue": "NumberColumn"
+            }],
+            [{
+                "formatString": "$#,##0.00",
+                "value": 55.44,
+                "formattedValue": "$55.44"
+            }],
+            [{
+                "value": 100.34,
+                "formattedValue": "100.34"
+            }],
+            [{
+                "value": -1,
+                "formattedValue": "-1"
+            }]
+        ]
+    },
+    {
+        "name": "Sheet3",
+        "data": []
+    }
+],
+"fileName": "SimpleExcelFile.xls"
+}
+ </pre>
+ *
+ */
+LABKEY.Exp.Data.prototype.getContent = function(config)
+{
+    if(!LABKEY.Utils.getOnSuccess(config))
+    {
+        alert("You must specify a callback function in config.success when calling LABKEY.Exp.Data.getContent()!");
+        return;
+    }
 
     function getSuccessCallbackWrapper(fn, format, scope)
     {
@@ -1002,176 +1173,14 @@ LABKEY.Exp.Data = function (config) {
         };
     }
 
-    /**
-     * Retrieves the contents of the data object from the server.
-     * @param config An object that contains the following configuration parameters
-     * @param {object} [config.scope] A scoping object for the success and error callback functions (default to this).
-     * @param {function} config.success The function to call when the function finishes successfully.
-     * This function will be called with the parameters:
-     * <ul>
-     * <li><b>content</b> The type of the content varies based on the format requested.
-     * <li><b>format</b> The format used in the request
-     * <li><b>response</b> The original response
-     * </ul>
-     * @param {function} [config.failure] The function to call if this function encounters an error.
-     * This function will be called with the following parameters:
-     * <ul>
-     * <li><b>errorInfo:</b> An object with a property called "exception," which contains the error message.</li>
-     * <li><b>format</b> The format used in the request
-     * <li><b>response</b> The original response
-     * </ul>
-     * @param {String} [config.format] How to format the content. Defaults to plaintext, supported for text/* MIME types,
-     * including .html, .xml, .tsv, .txt, and .csv. Use 'jsonTSV' to get a JSON version of the .xls, .tsv, .or .csv
-     * files, the structure of which matches the argument to convertToExcel in {@link LABKEY.Utils}.
-     * <ul>
-     * <li><b>fileName:</b> the name of the file</li>
-     * <li><b>sheets:</b> an array of the sheets in the file. Text file types will have a single sheet named 'flat'.
-     * <ul><li><b>name:</b> the name of the sheet</li>
-     *     <li><b>values:</b> two-dimensional array of all the cells in the worksheet. First array index is row, second is column</li>
-     * </ul>
-     * </ul>
-     * <br/>Use 'jsonTSVExtended' to get include metadata in the 2D array of cells.
-     * Text file types will not supply additional metadata but populate the 'value' attribute in the map.
-     * Excel files will include:
-     * <ul>
-     * <li><b>value:</b> the string, boolean, date, or number in the cell</li>
-     * <li><b>timeOnly:</b> whether the date part should be ignored for dates</li>
-     * <li><b>formatString:</b> the Java format string to be used to render the value for dates and numbers</li>
-     * <li><b>formattedValue:</b> the formatted string for that value for all value types</li>
-     * <li><b>error:</b> true if this cell has an error</li>
-     * <li><b>formula:</b> if the cell's value is specified by a formula, the text of the formula</li>
-     * </ul>
-     * <br/>
-     * An example of the results for a request for 'jsonTsv' format:
-     * <pre>
-     * {
-    "sheets": [
-        {
-            "name": "Sheet1",
-            "data": [
-                [
-                    "StringColumn",
-                    "DateColumn"
-                ],
-                [
-                    "Hello",
-                    "16 May 2009 17:00:00"
-                ],
-                [
-                    "world",
-                    "12/21/2008 08:45AM"
-                ]
-            ]
-        },
-        {
-            "name": "Sheet2",
-            "data": [
-                ["NumberColumn"],
-                [55.44],
-                [100.34],
-                [-1]
-            ]
-        },
-        {
-            "name": "Sheet3",
-            "data": []
-        }
-    ],
-    "fileName": "SimpleExcelFile.xls"
-}</pre>
-     <br/>
-     An example of the same file in the 'jsonTSVExtended' format:
-     <pre>
-     * {
-    "sheets": [
-        {
-            "name": "Sheet1",
-            "data": [
-                [
-                    {
-                        "value": "StringColumn",
-                        "formattedValue": "StringColumn"
-                    },
-                    {
-                        "value": "DateColumn",
-                        "formattedValue": "DateColumn"
-                    }
-                ],
-                [
-                    {
-                        "value": "Hello",
-                        "formattedValue": "Hello"
-                    },
-                    {
-                        "formatString": "MMMM d, yyyy",
-                        "value": "16 May 2009 17:00:00",
-                        "timeOnly": false,
-                        "formattedValue": "May 17, 2009"
-                    }
-                ],
-                [
-                    {
-                        "value": "world",
-                        "formattedValue": "world"
-                    },
-                     {
-                         "formatString": "M/d/yy h:mm a",
-                         "value": "21 Dec 2008 19:31:00",
-                         "timeOnly": false,
-                         "formattedValue": "12/21/08 7:31 PM"
-                     }
-                ]
-            ]
-        },
-        {
-            "name": "Sheet2",
-            "data": [
-                [{
-                    "value": "NumberColumn",
-                    "formattedValue": "NumberColumn"
-                }],
-                [{
-                    "formatString": "$#,##0.00",
-                    "value": 55.44,
-                    "formattedValue": "$55.44"
-                }],
-                [{
-                    "value": 100.34,
-                    "formattedValue": "100.34"
-                }],
-                [{
-                    "value": -1,
-                    "formattedValue": "-1"
-                }]
-            ]
-        },
-        {
-            "name": "Sheet3",
-            "data": []
-        }
-    ],
-    "fileName": "SimpleExcelFile.xls"
-}
-     </pre>
-     *
-     */
-    this.getContent = function(config)
+    LABKEY.Ajax.request(
     {
-        if(!LABKEY.Utils.getOnSuccess(config))
-        {
-            alert("You must specify a callback function in config.success when calling LABKEY.Exp.Data.getContent()!");
-            return;
-        }
+        url : LABKEY.ActionURL.buildURL("experiment", "showFile"),
+        method : 'GET',
+        params : { rowId : this.id, format: config.format },
+        success: getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.format, config.scope),
+        failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
+    });
 
-        LABKEY.Ajax.request(
-        {
-            url : LABKEY.ActionURL.buildURL("experiment", "showFile"),
-            method : 'GET',
-            params : { rowId : this.id, format: config.format },
-            success: getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.format, config.scope),
-            failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
-        });
-
-    };
 };
-Ext.extend(LABKEY.Exp.Data, LABKEY.Exp.ProtocolOutput);
+
