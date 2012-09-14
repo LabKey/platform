@@ -15,13 +15,14 @@
  */
 package org.labkey.api.util;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
 
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
+import static java.lang.Math.min;
+import static java.lang.Math.max;
 
 /**
  * Created by IntelliJ IDEA.
@@ -33,39 +34,54 @@ import java.util.concurrent.TimeUnit;
 public class RateLimiter
 {
     static final Logger _log = Logger.getLogger(RateLimiter.class);
-    static final boolean _isDebugEnabled = _log.isDebugEnabled();
 
     final String _name;
     final Rate _target;
-    ArrayList<RateAccumulator> _history = new ArrayList<RateAccumulator>(4);
-    RateAccumulator _short;
+    boolean useSystem = false; // for small intervals or testing
+    long minPause;
+    long maxPause;
+
+    // the interval over which history is gathered, and rate is enforced
+    final long historyInterval;
     RateAccumulator _long;
 
-    /* this roughly corresponds to the interval over which history is gathered */
-    final long historyInterval;
+    // size of sub-windows within the history interval
     final long accumulateInterval;
-    long minPause = 500;
+    RateAccumulator _short;
 
+    // collection of 'short' intervals
+    ArrayList<RateAccumulator> _history = new ArrayList<RateAccumulator>(4);
+
+    public RateLimiter(String name, Rate rate)
+    {
+        this(name, rate, 60000, 0);
+    }
 
     public RateLimiter(String name, long count, TimeUnit unit)
     {
-        this(name, count, unit.toMillis(1), 60000);
+        this(name, new Rate(count, 1, unit), 60000, 0);
     }
 
-    public RateLimiter(String name, long count, long duration)
-    {
-        this(name, count,duration,60000);
-    }
-
-    public RateLimiter(String name, long count, long duration, long history)
+    // set accum small to avoid jumpiness (testing)
+    public RateLimiter(String name, Rate rate, long history, long accum)
     {
         this._name = name;
-        this._target = new Rate(count,duration,TimeUnit.MILLISECONDS);
-        long now = System.currentTimeMillis();
+        this._target = rate;
+        if (history < TimeUnit.SECONDS.toMillis(20))
+            useSystem = true;
+        long now = currentTimeMillis();
         _short = new RateAccumulator(now);
         _long = new RateAccumulator(now);
         historyInterval = history;
-        accumulateInterval = history/3;
+        accumulateInterval = 0==accum ? history/3 : accum;
+        minPause = 200;
+        maxPause = history;
+    }
+
+
+    public void setMaxPause(long ms)
+    {
+        maxPause = ms;
     }
 
 
@@ -75,7 +91,7 @@ public class RateLimiter
     }
     
 
-    private final RateAccumulator aggregateRate(long now)
+    private RateAccumulator aggregateRate(long now)
     {
         long start = now;
         long count = 0;
@@ -83,10 +99,16 @@ public class RateLimiter
         {
             if (a._start + historyInterval < now)
                 continue;
-            start = Math.min(start,a._start);
+            start = min(start,a._start);
             count += a._count;
         }
         return new RateAccumulator(start,count);
+    }
+
+
+    private long currentTimeMillis()
+    {
+        return useSystem ? System.currentTimeMillis() : HeartBeat.currentTimeMillis();
     }
 
 
@@ -96,51 +118,54 @@ public class RateLimiter
         return "RateLimiter:" + _name + " " + _target.toString();
     }
 
+
    /*
     * RateLimiter.add() is thread-safe
+    * returns how far (in ms) we are ahead of the target rate
     */
-    public long add(long count, boolean wait)
+    public synchronized long add(long count, boolean wait)
     {
-        long delay;
-        String info = "";
-        long now = System.currentTimeMillis();
-        
-        synchronized (this)
+        long delay = _updateCounts(count);
+        if (!wait)
+            return delay;
+        return _pause(delay);
+    }
+
+
+    private long _pause(long delay)
+    {
+        if  (delay < minPause)
+            return delay;
+        try { this.wait(min(delay,maxPause)); } catch (InterruptedException x) { /* */}
+        return getDelay();
+    }
+
+
+    private synchronized long getDelay()
+    {
+        return _long.getDelay(currentTimeMillis(), _target);
+    }
+
+
+    private synchronized long _updateCounts(long count)
+    {
+        long now = currentTimeMillis();
+        if (_short._start + accumulateInterval < now)
         {
-            if (_short._start + accumulateInterval < now)
+            while (!_history.isEmpty())
             {
-                int size = _history.size();
-                if (size > 3)
-                    _history.remove(size-1);
-                _history.add(0, _short);
-                _short = new RateAccumulator(now);
-                _long = aggregateRate(now);
+                RateAccumulator last = _history.get(_history.size()-1);
+                if (last._start+accumulateInterval > now-historyInterval)
+                    break;
+                _history.remove(_history.size()-1);
             }
-            _short.accumulate(count);
-            _long.accumulate(count);
-            delay = _long.getDelay(now,_target);
-            if (_isDebugEnabled && delay > minPause)
-            {
-                long duration = Math.max(1,now - _long._start);
-                long total = _long._count;
-                info = toString() + " wait " + DateUtil.formatDuration(delay) + " " + total + "/" + DateUtil.formatDuration(duration) + "=" + (1000.0*total/duration) + "/sec";
-            }
+            _history.add(0, _short);
+            _short = new RateAccumulator(now);
+            _long = aggregateRate(now); // consider: reuse RateAccumulator instead of new
         }
-        
-        // concerned that a do/while (delay>0) could lead to some starvation/unfairness
-        if (wait && delay > minPause)
-        {
-            try
-            {
-                _log.debug(info);
-                Thread.sleep(Math.min(historyInterval,delay));
-                return 0;
-            }
-            catch(InterruptedException x)
-            {
-            }
-        }
-        return delay;
+        _short.accumulate(count);
+        _long.accumulate(count);
+        return _long.getDelay(now, _target);
     }
 
 
@@ -149,7 +174,12 @@ public class RateLimiter
         final double _rate;
         final String _toString;        
 
-        Rate(long count, long duration, TimeUnit unit)
+        public Rate(long count, TimeUnit unit)
+        {
+            this(count, 1, unit);
+        }
+
+        public Rate(long count, long duration, TimeUnit unit)
         {
             if (unit == TimeUnit.MILLISECONDS && 0 == (duration%1000))
             {
@@ -162,7 +192,7 @@ public class RateLimiter
             if (duration == 1)
                 _toString = "" + count + "/" + StringUtils.stripEnd(unit.toString(),"S");
             else
-                _toString = "" + count + "/(" + duration + " "  + StringUtils.stripEnd(unit.toString(),"S") + ")";
+                _toString = "" + count + "/(" + duration + " "  + unit.toString()+ ")";
         }
 
 
@@ -201,14 +231,14 @@ public class RateLimiter
         }
         double getRate(long now)
         {
-            return now == 0 ? (double)_count : (double)_count / Math.max(1, now-_start);
+            return (double)_count / max(1000, now-_start);
         }
         long getDelay(long now, Rate target)
         {
             if (getRate(now) <= target._rate)
                 return 0;
-            double remainder = (double)_count/target._rate + _start - now;
-            return (long)Math.max(0,remainder);
+            double remainder = ((double)_count/target._rate) - (now - _start);
+            return (long)max(0,remainder);
         }
         public long getStart()
         {
@@ -221,24 +251,17 @@ public class RateLimiter
     }
 
 
-    public static class TestCase extends junit.framework.TestCase
+    public static class TestCase extends Assert
     {
-        public TestCase()
-        {
-            super();
-        }
-
-        public TestCase(String name)
-        {
-            super(name);
-        }
-
         long _end = 0;
-        
+
+        @org.junit.Test
         public void test()
         {
-            final RateLimiter l = new RateLimiter("test",1,1,1000);
+            final RateLimiter l = new RateLimiter("test",new Rate(1,TimeUnit.MILLISECONDS),10000,500);
             l.minPause = 1;
+            assertEquals("RateLimiter:test 1/MILLISECOND", l.toString());
+            assertEquals(1000.0, l.getTarget().getRate(TimeUnit.SECONDS));
 
             Runnable run = new Runnable()
             {
@@ -266,13 +289,25 @@ public class RateLimiter
             // count should be about 1.0
             RateAccumulator counter = l._long;
             double a = counter.getRate(_end);
+            System.out.println(a);
             assertTrue(a < 2.0);
             assertTrue(a > 0.1);
         }
 
-        public static Test suite()
+        @org.junit.Test
+        public void test2()
         {
-            return new TestSuite(TestCase.class);
+            final RateLimiter l = new RateLimiter("test",new Rate(1,TimeUnit.SECONDS),10000,500);
+            long start = System.currentTimeMillis();
+            for (int i=0 ; i<10 ; i++)
+            {
+                l.add(1,true);
+                System.out.println(System.currentTimeMillis()-start);
+            }
+            long finish = System.currentTimeMillis();
+            long duration = finish-start;
+            assertTrue(duration > 5000);
+            assertTrue(duration < 15000);
         }
     }
 }
