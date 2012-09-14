@@ -1212,8 +1212,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 listeners : {
                     click : function(col, grid, idx, evt, x, y, z)
                     {
-                        store.sync();
-
                         var label = store.getAt(idx).data.label;
                         var id    = store.getAt(idx).data.rowid;
 
@@ -1228,18 +1226,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                             icon    : Ext4.MessageBox.WARNING,
                             fn      : function(btn){
                                 if (btn == 'ok') {
-                                    // TODO: This is deprected -- should use proxy/model 'destroy' api
-                                    Ext4.Ajax.request({
-                                        url    : LABKEY.ActionURL.buildURL('study', 'deleteCategories.api'),
-                                        method : 'POST',
-                                        jsonData : cats,
-                                        success: function() {
-                                            store.load();
-                                        },
-                                        failure: function(response) {
-                                            Ext4.Msg.alert('Failure', Ext4.decode(response.responseText).exception);
-                                        }
-                                    });
+                                    store.removeAt(idx);
                                 }
                             },
                             scope  : this
@@ -1292,6 +1279,11 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     }, 'Dataset.Browser.Category');
                     store.insert(0, r);
                     cellEditing.startEditByPosition({row : 0, column : 0});
+                }
+            },{
+                text    : 'Cancel',
+                handler : function(btn) {
+                    categoryOrderWindow.close();
                 }
             },{
                 text    : 'Done',
