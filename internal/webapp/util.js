@@ -429,8 +429,8 @@ function removeAnnouncementAttachment(eid, name, xid)
         LABKEY.ExtAdapter.Msg.show({
             title : 'Remove Attachment',
             msg : 'Please confirm you would like to remove this attachment. This cannot be undone.',
-            buttons: Ext.Msg.OKCANCEL,
-            icon: Ext.MessageBox.QUESTION,
+            buttons: LABKEY.ExtAdapter.Msg.OKCANCEL,
+            icon: LABKEY.ExtAdapter.Msg.QUESTION,
             fn  : function(b) {
                 if (b == 'ok') {
                     remove();
