@@ -100,11 +100,11 @@
                     }
                     else
                     {
-                %>
-                <%= textLink("Update Members", updateMembersLink) %>
-                <%=  inUseActorIds.contains(actor.getRowId()) ? "" :
-                        textLink("Delete", buildURL(SpecimenController.DeleteActorAction.class) + "id=" + actor.getRowId(), "return confirm('Deleting this actor will delete all information about its membership.  All member emails will need to be entered again if you recreate this actor.')", null) %>
-                <%
+                        %><%= textLink("Update Members", updateMembersLink) %><%
+                        if (!inUseActorIds.contains(actor.getRowId()))
+                        {
+                            %><%=textLink("Delete", buildURL(SpecimenController.DeleteActorAction.class) + "id=" + actor.getRowId(), "return confirm('Deleting this actor will delete all information about its membership.  All member emails will need to be entered again if you recreate this actor.')", null) %><%
+                        }
                     }
                 %>
             </td>
@@ -127,7 +127,7 @@
         <tr>
             <td>&nbsp;</td>
             <td>
-                <%= generateSubmitButton("Save")%>&nbsp;
+                <%= generateSubmitButton("Save") %>&nbsp;
                 <%= buttonImg("Done", "document.manageActors.nextPage.value=''; return true;")%>
                 <%= generateButton("Cancel", new ActionURL(StudyController.ManageStudyAction.class, study.getContainer()))%>&nbsp;
                 <%= buttonImg("Change Order", "document.manageActors.nextPage.value=" + q(new ActionURL(SpecimenController.ManageActorOrderAction.class, study.getContainer()).getLocalURIString()) + "; return true;")%>

@@ -25,13 +25,13 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     LoginController.SetPasswordBean bean = ((JspView<LoginController.SetPasswordBean>)HttpView.currentView()).getModelBean();
-    String errors = formatMissedErrors("form");
+    String errors = formatMissedErrorsStr("form");
 %>
 <form method="POST" id="setPasswordForm" action="<%=h(buildURL(bean.action))%>"><labkey:csrf />
 <%
     if (errors.length() > 0)
     { %>
-    <div><%=errors%></div><%
+    <div><%=text(errors)%></div><%
     }
 
     if (!bean.unrecoverableError)
@@ -57,7 +57,7 @@
     <div style="padding-top: 1em;">
         <label for="<%=input.getObject()%>"><%=h(input.getName())%></label>
         <% if (LoginController.PASSWORD1_TEXT_FIELD_NAME.equals(input.getObject())) { %>
-            <span style="font-size: smaller;">(<%=DbLoginManager.getPasswordRule().getSummaryRuleHTML()%>)</span>
+            <span style="font-size: smaller;">(<%=text(DbLoginManager.getPasswordRule().getSummaryRuleHTML())%>)</span>
         <% } %>
 
         <br/>
@@ -93,7 +93,7 @@
             }
         %>
         </div>
-    <div style="padding-top: 1em;"><%=PageFlowUtil.generateSubmitButton(bean.buttonText, "", "name=\"set\"")%><%=bean.cancellable ? generateButton("Cancel", bean.form.getReturnURLHelper()) : ""%></div><%
+    <div style="padding-top: 1em;"><%=PageFlowUtil.generateSubmitButton(bean.buttonText, "", "name=\"set\"")%><%=text(bean.cancellable ? generateButton("Cancel", bean.form.getReturnURLHelper()) : "")%></div><%
     } %>
 </form>
 

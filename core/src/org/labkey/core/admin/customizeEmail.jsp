@@ -32,7 +32,7 @@
     Container c = getViewContext().getContainer();
 
     List<EmailTemplate> emailTemplates = EmailTemplateService.get().getEditableEmailTemplates(c);
-    String errorHTML = formatMissedErrors("form");
+    String errorHTML = formatMissedErrorsStr("form");
 %>
 <!-- 11769: Layout of email customization page -->
 <style type="text/css">
@@ -41,7 +41,7 @@
         width: 85px;
     }
 </style>
-<%=errorHTML%>
+<%=text(errorHTML)%>
 
 <form action="<%=h(buildURL(AdminController.CustomizeEmailAction.class))%>" method="post">
     <% if (bean.getReturnUrl() != null) { %>
@@ -56,7 +56,7 @@
         for (EmailTemplate et : emailTemplates)
         {
 %>
-            <option value="<%=et.getClass().getName()%>" <%=et.getClass().getName().equals(bean.getTemplateClass()) ? "selected" : ""%>><%=et.getName()%></option>
+            <option value="<%=h(et.getClass().getName())%>" <%=text(et.getClass().getName().equals(bean.getTemplateClass()) ? "selected" : "")%>><%=h(et.getName())%></option>
 <%
         }
 %>

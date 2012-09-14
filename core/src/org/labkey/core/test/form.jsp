@@ -31,8 +31,8 @@
 <%!
     void errorRow(JspWriter out, String path) throws IOException
     {
-        String err = formatErrorsForPath(path);
-        if (null != err && err.length() > 0)
+        String err = formatErrorsForPathStr(path);
+        if (!StringUtils.isEmpty(err))
         {
             out.println("<tr><td colspan=2>" + err + "</td></tr>");
         }
@@ -44,10 +44,10 @@
     assert enctype.equals("multipart/form-data") || enctype.equals("application/x-www-form-urlencoded");
 %>
 <%=formatErrorsForPath("form")%>
-<form enctype="<%=enctype%>" method="POST">
+<form enctype="<%=text(enctype)%>" method="POST">
     <table>
         <%errorRow(out,"form.a");%>
-        <tr><td>a</td><td><input type=checkbox name="a" <%=form.getA()?"checked":""%>><input type=hidden name="<%=SpringActionController.FIELD_MARKER%>a"></td></tr>
+        <tr><td>a</td><td><input type=checkbox name="a" <%=text(form.getA()?"checked":"")%>><input type=hidden name="<%=h(SpringActionController.FIELD_MARKER)%>a"></td></tr>
         <%errorRow(out,"form.b");%>
         <tr><td>b</td><td><input name="b" value="<%=h(form.getB())%>"></td></tr>
         <%errorRow(out,"form.c");%>

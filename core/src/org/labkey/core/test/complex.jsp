@@ -31,7 +31,7 @@
 <%!
     void errorRow(JspWriter out, String path) throws IOException
     {
-        String err = formatErrorsForPath(path);
+        String err = formatErrorsForPathStr(path);
         if (null != err && err.length() > 0)
         {
             out.println("<tr><td colspan=2>" + err + "</td></tr>");
@@ -49,7 +49,7 @@
     assert enctype.equals("multipart/form-data") || enctype.equals("application/x-www-form-urlencoded");
 %>
 
-<form enctype="<%=enctype%>" method="POST">
+<form enctype="<%=text(enctype)%>" method="POST">
 
     <%=formatErrorsForPath("form")%>
 
@@ -64,7 +64,7 @@
     {%>
         <table class="labkey-bordered labkey-alternate-row">
             <%errorRow(out,"form.beans["+i+"].a");%>
-            <tr><td>a</td><td><input type=checkbox name="beans[<%=i%>].a" <%=form.getBeans().get(i).getA()?"checked":""%>><input type=hidden name="<%=SpringActionController.FIELD_MARKER%>beans[<%=i%>].a"></td></tr>
+            <tr><td>a</td><td><input type=checkbox name="beans[<%=i%>].a" <%=text(form.getBeans().get(i).getA()?"checked":"")%>><input type=hidden name="<%=SpringActionController.FIELD_MARKER%>beans[<%=i%>].a"></td></tr>
             <%errorRow(out,"form.beans["+i+"].b");%>
             <tr><td>b</td><td><input name="beans[<%=i%>].b" value="<%=h(form.getBeans().get(i).getB())%>"></td></tr>
             <%errorRow(out,"form.beans["+i+"].c");%>

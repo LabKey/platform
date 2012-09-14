@@ -36,9 +36,9 @@
 <input type="hidden" name="upgradeInProgress" value="<%=bean.form.isUpgradeInProgress()%>" />
 <table width="100%">
 <%
-String webThemeErrors = formatMissedErrors("form");
+String webThemeErrors = formatMissedErrorsStr("form");
 if (null != webThemeErrors) { %>
-    <tr><td colspan=3><%=webThemeErrors%></td></tr>
+    <tr><td colspan=3><%=text(webThemeErrors)%></td></tr>
 <% } %>
 <tr>
 <td valign="top">

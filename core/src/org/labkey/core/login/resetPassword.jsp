@@ -28,13 +28,13 @@
     LoginController.LoginForm form = ((JspView<LoginController.LoginForm>)HttpView.currentView()).getModelBean();
     ActionURL doneURL = AppProps.getInstance().getHomePageActionURL();
 
-    String errors = formatMissedErrors("form");
+    String errors = formatMissedErrorsStr("form");
 %>
 <form method="POST" action="<%=h(buildURL(LoginController.ResetPasswordAction.class))%>"><labkey:csrf/>
     <table><%
         if (errors.length() > 0)
         { %>
-        <tr><td colspan=2><%=errors%></td></tr>
+        <tr><td colspan=2><%=text(errors)%></td></tr>
         <tr><td colspan=2>&nbsp;</td></tr><%
         }
         %>
