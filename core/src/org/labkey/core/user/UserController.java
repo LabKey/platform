@@ -1525,12 +1525,23 @@ public class UserController extends SpringActionController
                 return;
             }
 
+            User user = UserManager.getUser(userId);
+            if (null == user)
+                throw new NotFoundException("User not found :" + userId);
+            String userEmailAddress = user.getEmail();
+
             String displayName = (String) getTypedValue("DisplayName");
 
             if (displayName != null)
             {
+                if (displayName.contains("@"))
+                {
+                    if (!displayName.equalsIgnoreCase(userEmailAddress))
+                        errors.reject(SpringActionController.ERROR_MSG, "The value of the 'Display Name' should not contain '@'.");
+                }
+
                 //ensure that display name is unique
-                User user = UserManager.getUserByDisplayName(displayName);
+                user = UserManager.getUserByDisplayName(displayName);
                 //if there's a user with this display name and it's not the user currently being edited
                 if (user != null && user.getUserId() != userId)
                 {
