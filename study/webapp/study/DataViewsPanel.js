@@ -1081,10 +1081,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
     onEditClick : function(view, record) {
 
-        var tip = Ext4.getCmp(this._tipID);
-        if (tip)
-            tip.hide();
-
         // grab the map of available fields from the edit info for the view type
         var editInfo = this.editInfo[record.data.dataType] || {};
         var formItems = [];
