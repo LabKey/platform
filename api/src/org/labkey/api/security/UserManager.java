@@ -188,7 +188,7 @@ public class UserManager
     public static @Nullable User getUserByDisplayName(String displayName)
     {
         User[] users = new TableSelector(CORE.getTableInfoUsers(), new SimpleFilter("DisplayName", displayName), null).getArray(User.class);
-        return users.length == 0 ? null : users[1];
+        return users.length == 0 ? null : users[0];
     }
 
 
