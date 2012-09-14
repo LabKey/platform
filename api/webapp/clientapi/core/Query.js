@@ -301,7 +301,7 @@ LABKEY.Query = new function()
             if (undefined != config.containerFilter)
                 html += '<input type="hidden" name="containerFilter" value="' + LABKEY.ExtAdapter.htmlEncode(config.containerFilter) + '" />';
             html += "</form>";
-            var newForm = LABKEY.ExtAdapter.domAppend(document.getElementsByTagName('body')[0], html);
+            var newForm = LABKEY.ExtAdapter.DomHelper.append(document.getElementsByTagName('body')[0], html);
             newForm.submit();
         },
 

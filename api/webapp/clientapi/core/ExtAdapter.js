@@ -21,7 +21,7 @@ LABKEY.initExtAdapter = function(LABKEY, Ext){
 
         decode: Ext.JSON ? Ext.JSON.decode : Ext.util.JSON.decode,
 
-        domAppend: Ext.DomHelper.append,
+        DomHelper: Ext.DomHelper,
 
         each: Ext.each,
 

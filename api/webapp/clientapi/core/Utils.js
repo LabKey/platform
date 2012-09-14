@@ -325,7 +325,7 @@ LABKEY.Utils.convertToExcel(
         convertToExcel : function(spreadsheet) {
             // Insert a hidden <form> into to page, put the JSON into it, and submit it - the server's response
             // will make the browser pop up a dialog
-            var newForm = LABKEY.ExtAdapter.domAppend(document.getElementsByTagName('body')[0],
+            var newForm = LABKEY.ExtAdapter.DomHelper.append(document.getElementsByTagName('body')[0],
                 '<form method="POST" action="' + LABKEY.ActionURL.buildURL("experiment", "convertArraysToExcel") + '">' +
                 '<input type="hidden" name="json" value="' + LABKEY.ExtAdapter.htmlEncode(LABKEY.ExtAdapter.encode(spreadsheet)) + '" />' +
                 '</form>');
@@ -356,7 +356,7 @@ LABKEY.Utils.convertToTable(
         convertToTable : function(config) {
             // Insert a hidden <form> into to page, put the JSON into it, and submit it - the server's response
             // will make the browser pop up a dialog
-            var newForm = LABKEY.ExtAdapter.domAppend(document.getElementsByTagName('body')[0],
+            var newForm = LABKEY.ExtAdapter.DomHelper.append(document.getElementsByTagName('body')[0],
                 '<form method="POST" action="' + LABKEY.ActionURL.buildURL("experiment", "convertArraysToTable") + '">' +
                 '<input type="hidden" name="json" value="' + LABKEY.ExtAdapter.htmlEncode(LABKEY.ExtAdapter.encode(config)) + '" />' +
                 '</form>');

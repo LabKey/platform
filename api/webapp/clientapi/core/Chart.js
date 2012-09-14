@@ -160,14 +160,14 @@ LABKEY.Chart = function(config)
         // render the image tag inside the chart div
         if (imageDivName && data.imageMap)
         {
-            LABKEY.ExtAdapter.domAppend(chartDivName, {
+            LABKEY.ExtAdapter.DomHelper.append(chartDivName, {
                 tag: 'img', src: data.imageURL, usemap: imageDivName});
 
-            LABKEY.ExtAdapter.domAppend(imageDivName, data.imageMap);
+            LABKEY.ExtAdapter.DomHelper.append(imageDivName, data.imageMap);
         }
         else
         {
-            LABKEY.ExtAdapter.domAppend(chartDivName, {
+            LABKEY.ExtAdapter.DomHelper.append(chartDivName, {
                 tag: 'img', src: data.imageURL});
         }
     };
