@@ -16,6 +16,7 @@
 
 package org.labkey.api.jsp;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.ReturnUrlForm;
@@ -34,7 +35,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
-import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
 import org.springframework.validation.FieldError;
@@ -162,6 +162,13 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return PageFlowUtil.jsString(str);
     }
 
+    final protected String q(_HtmlString str)
+    {
+        if (null == str) return "null";
+        return q(str.toString());
+    }
+
+
     protected String hq(String str)
     {
         return h(q(str));
@@ -250,14 +257,14 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return PageFlowUtil.textLink(text, url, id);
     }
 
-    public String generateBackButton()
+    public _HtmlString generateBackButton()
     {
-        return PageFlowUtil.generateBackButton();
+        return new _HtmlString(PageFlowUtil.generateBackButton());
     }
 
-    public String generateBackButton(String text)
+    public _HtmlString generateBackButton(String text)
     {
-        return PageFlowUtil.generateBackButton(text);
+        return new _HtmlString(PageFlowUtil.generateBackButton(text));
     }
 
     /**
@@ -299,9 +306,9 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return PageFlowUtil.generateButton(text, href, onClickScript);
     }
 
-    public String generateSubmitButton(String text)
+    public _HtmlString generateSubmitButton(String text)
     {
-        return PageFlowUtil.generateSubmitButton(text);
+        return new _HtmlString(PageFlowUtil.generateSubmitButton(text));
     }
 
     public String generateReturnUrlFormField(URLHelper returnURL)
@@ -309,9 +316,9 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return ReturnUrlForm.generateHiddenFormField(returnURL);
     }
 
-    public String generateReturnUrlFormField(ReturnUrlForm form)
+    public _HtmlString generateReturnUrlFormField(ReturnUrlForm form)
     {
-        return ReturnUrlForm.generateHiddenFormField(form.getReturnURLHelper());
+        return new _HtmlString(ReturnUrlForm.generateHiddenFormField(form.getReturnURLHelper()));
     }
 
     public void include(ModelAndView view, Writer writer) throws Exception
@@ -324,34 +331,34 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return PageFlowUtil.generateSubmitButton(text, onClickScript);
     }
     
-    public String helpPopup(String helpText)
+    public _HtmlString helpPopup(String helpText)
     {
         return helpPopup(null, helpText, false);
     }
 
-    public String helpPopup(String title, String helpText)
+    public _HtmlString helpPopup(String title, String helpText)
     {
         return helpPopup(title, helpText, false);
     }
 
-    public String helpPopup(String title, String helpText, boolean htmlHelpText)
+    public _HtmlString helpPopup(String title, String helpText, boolean htmlHelpText)
     {
-        return PageFlowUtil.helpPopup(title, helpText, htmlHelpText);
+        return new _HtmlString(PageFlowUtil.helpPopup(title, helpText, htmlHelpText));
     }
 
-    public String helpLink(String helpTopic, String displayText)
+    public _HtmlString helpLink(String helpTopic, String displayText)
     {
-        return new HelpTopic(helpTopic).getSimpleLinkHtml(displayText);
+        return new _HtmlString(new HelpTopic(helpTopic).getSimpleLinkHtml(displayText));
     }
 
-    public String formatDate(Date date)
+    public _HtmlString formatDate(Date date)
     {
-        return DateUtil.formatDate(date);
+        return new _HtmlString(null==date ? "" : DateUtil.formatDate(date));
     }
 
-    public String formatDateTime(Date date)
+    public _HtmlString formatDateTime(Date date)
     {
-        return DateUtil.formatDateTime(date);
+        return new _HtmlString(null == date ? "" : DateUtil.formatDateTime(date));
     }
 
     public String getMessage(ObjectError e)
@@ -447,10 +454,15 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return e;
     }
 
-    public String formatErrorsForPath(String path)
+    public String formatErrorsForPathStr(String path)
     {
         List<ObjectError> l = getErrorsForPath(path);
         return _formatErrorList(l, false);
+    }
+
+    public _HtmlString formatErrorsForPath(String path)
+    {
+        return new _HtmlString(formatErrorsForPathStr(path));
     }
 
     //Set<String> _returnedErrors = new HashSet<String>();
@@ -476,23 +488,37 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return missed;
     }
 
-    public String formatMissedErrors(String bean)
+    protected String formatMissedErrorsStr(String bean)
     {
         List<ObjectError> l = getMissedErrors(bean);
         // fieldNames==true is ugly, but these errors are probably not displayed in the right place on the form
         return _formatErrorList(l, true);
     }
 
+    protected _HtmlString formatMissedErrors(String bean)
+    {
+        return new _HtmlString(formatMissedErrorsStr(bean));
+    }
+
+    protected _HtmlString formatMissedErrors(String bean, String prefix, String suffix)
+    {
+        String str = formatMissedErrorsStr(bean);
+        if (StringUtils.isEmpty(str))
+            return new _HtmlString(str);
+        else
+            return new _HtmlString(prefix + str + suffix);
+    }
+
     // If errors exist, returns formatted errors in a <tr> with the specified colspan (or no colspan, for 0 or 1) followed by a blank line
     // If no errors, returns an empty string
-    public String formatMissedErrorsInTable(String bean, int colspan)
+    protected _HtmlString formatMissedErrorsInTable(String bean, int colspan)
     {
-        String errorHTML = formatMissedErrors(bean);
+        String errorHTML = formatMissedErrorsStr(bean);
 
-        if (0 == errorHTML.length())
-            return "";
+        if (StringUtils.isEmpty(errorHTML))
+            return new _HtmlString(errorHTML);
         else
-            return "\n<tr><td" + (colspan > 1 ? " colspan=" + colspan : "") + ">" + errorHTML + "</td></tr>\n<tr><td" + (colspan > 1 ? " colspan=" + colspan : "") + ">&nbsp;</td></tr>";
+            return new _HtmlString("\n<tr><td" + (colspan > 1 ? " colspan=" + colspan : "") + ">" + errorHTML + "</td></tr>\n<tr><td" + (colspan > 1 ? " colspan=" + colspan : "") + ">&nbsp;</td></tr>");
     }
 
     protected String _formatErrorList(List<ObjectError> l, boolean fieldNames)
@@ -539,9 +565,9 @@ abstract public class JspBase extends JspContext implements HasViewContext
         }
     }
 
-    protected String formAction(Class<? extends Controller> actionClass, Method method)
+    protected _HtmlString formAction(Class<? extends Controller> actionClass, Method method)
     {
-        return "action=\"" + SpringActionController.getActionName(actionClass) + "." + method.getSuffix() + "\" method=\"" + method.getMethod() + "\"";
+        return new _HtmlString("action=\"" + SpringActionController.getActionName(actionClass) + "." + method.getSuffix() + "\" method=\"" + method.getMethod() + "\"");
     }
 
     // Provides a unique integer within the context of this request.  Handy for generating element ids, etc. See UniqueID for caveats and warnings.
@@ -593,4 +619,25 @@ abstract public class JspBase extends JspContext implements HasViewContext
         _clientDependencies.addAll(resources);
     }
 
+
+    /**
+     * This is just a marker for JspBase helper methods that return Html and do not need to be encoded
+     * No one should ever see this class it should just get pass directly from the helper to out.write()
+     *
+     * As an aside Java 7 claims to be very good at optimizing usages like this (avoiding the object allocation)
+     * http://docs.oracle.com/javase/7/docs/technotes/guides/vm/performance-enhancements-7.html
+     */
+    protected static class _HtmlString
+    {
+        final String s;
+        _HtmlString(String s)
+        {
+            this.s = s;
+        }
+        @Override
+        public String toString()
+        {
+            return s;
+        }
+    }
 }
