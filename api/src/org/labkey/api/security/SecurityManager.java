@@ -804,7 +804,8 @@ public class SecurityManager
                 {
                     Map<String, Object> m = new HashMap<String, Object>();
                     m.put("UserId", userId);
-                    m.put("DisplayName", null == email.getPersonal() ? email.getEmailAddress() : email.getPersonal());
+                    String displayName = displayNameFromEmail(email, userId);
+                    m.put("DisplayName", displayName);
                     Table.insert(null, core.getTableInfoUsersData(), m);
                 }
                 catch (SQLException x)
@@ -843,6 +844,29 @@ public class SecurityManager
         {
             scope.closeConnection();
         }
+    }
+
+
+    private static String displayNameFromEmail(ValidEmail email, Integer userId)
+    {
+        String displayName;
+
+        if (null != email.getPersonal())
+            displayName = email.getPersonal();
+        else if (email.getEmailAddress().indexOf("@") > 0)
+            displayName = email.getEmailAddress().substring(0,email.getEmailAddress().indexOf("@"));
+        else
+            displayName = email.getEmailAddress();
+
+        displayName = displayName.replace("."," ");
+        displayName = displayName.replace("_"," ");
+        displayName = displayName.replace("@"," ");
+        displayName = StringUtils.trimToEmpty(displayName);
+
+        User existingUser = UserManager.getUserByDisplayName(displayName);
+        if (existingUser != null && existingUser.getUserId() != userId)
+            displayName += userId;
+        return displayName;
     }
 
 
@@ -2367,6 +2391,14 @@ public class SecurityManager
             }
 
             return email;
+        }
+
+        @Test
+        public void testDisplayName() throws Exception
+        {
+            assertEquals("user", displayNameFromEmail(new ValidEmail("user@labkey.org"),1));
+            assertEquals("first last", displayNameFromEmail(new ValidEmail("first.last@labkey.org"),1));
+            assertEquals("Ricky Bobby", displayNameFromEmail(new ValidEmail("Ricky Bobby <user@labkey.org>"),1));
         }
     }
 

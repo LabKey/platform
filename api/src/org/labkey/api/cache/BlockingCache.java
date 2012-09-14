@@ -16,7 +16,14 @@
 package org.labkey.api.cache;
 
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.util.Filter;
+
+import java.util.HashMap;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * User: matthewb
@@ -86,18 +93,29 @@ public class BlockingCache<K, V> implements Cache<K, V>
         //noinspection SynchronizationOnLocalVariableOrMethodParameter
         synchronized (w)
         {
-            if (UNINITIALIZED != w.value)
+            if (isValid(w, key, arg, loader))
+                return w.getValue();
+
+            if (w.isLoading())
             {
+                try {w.wait(TimeUnit.MINUTES.toMillis(1));}catch (InterruptedException x) {/* */}
                 if (isValid(w, key, arg, loader))
                     return w.getValue();
             }
 
-            if (null == loader)
-                loader = _loader;
-            V value = loader.load(key, arg);
-            w.setValue(value);
-            return value;
+            w.setLoading();
         }
+
+        if (null == loader)
+            loader = _loader;
+        V value = loader.load(key, arg);
+        w.setValue(value);
+        //noinspection SynchronizationOnLocalVariableOrMethodParameter
+        synchronized (w)
+        {
+            w.notifyAll();
+        }
+        return value;
     }
 
 
@@ -150,5 +168,77 @@ public class BlockingCache<K, V> implements Cache<K, V>
     public TrackingCache getTrackingCache()
     {
         return _cache.getTrackingCache();
+    }
+
+
+    public static class BlockingCacheTest extends Assert
+    {
+        @Test
+        public void testBlockingGet()
+        {
+            final HashMap<Integer,Wrapper<Integer>> map = new HashMap<Integer,Wrapper<Integer>>();
+            Cache<Integer,Wrapper<Integer>> cache = new Cache<Integer,Wrapper<Integer>>()
+            {
+                @Override
+                public void put(Integer key, Wrapper<Integer> value)
+                {
+                    map.put(key, value);
+                }
+                @Override
+                public void put(Integer key, Wrapper<Integer> value, long timeToLive)
+                {
+                    map.put(key, value);
+                }
+                @Override
+                public Wrapper<Integer> get(Integer key)
+                {
+                    return map.get(key);
+                }
+                @Override public Wrapper<Integer> get(Integer key, @Nullable Object arg, CacheLoader<Integer, Wrapper<Integer>> loader) { throw new UnsupportedOperationException(); }
+                @Override public void remove(Integer key) { throw new UnsupportedOperationException(); }
+                @Override public int removeUsingFilter(Filter<Integer> filter) { throw new UnsupportedOperationException(); }
+                @Override public void clear() { throw new UnsupportedOperationException(); }
+                @Override public void close() { throw new UnsupportedOperationException(); }
+                @Override public TrackingCache getTrackingCache() { throw new UnsupportedOperationException(); }
+            };
+            final AtomicInteger calls = new AtomicInteger();
+            CacheLoader<Integer,Integer> loader = new CacheLoader<Integer, Integer>()
+            {
+                @Override
+                public Integer load(Integer key, @Nullable Object argument)
+                {
+                    calls.incrementAndGet();
+                    try {Thread.sleep(1000);}catch(InterruptedException x){/* */}
+                    return key*key;
+                }
+            };
+            final BlockingCache<Integer,Integer> bc = new BlockingCache<Integer,Integer>(cache,loader);
+            final Object start = new Object();
+            Runnable r = new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    Random r = new Random();
+                    synchronized (start) { try{start.wait(1000);}catch(InterruptedException x){/* */} }
+                    for (int i=0 ; i<100 ; i++)
+                    {
+                        int k = r.nextInt();
+                        bc.get(Math.abs(k % 5));
+                    }
+                }
+            };
+            Thread[] threads = new Thread[10];
+            for (int i=0 ; i<10 ; i++)
+                threads[i] = new Thread(r);
+            for (int i=0 ; i<10 ; i++)
+                threads[i].start();
+            Thread.yield();
+            synchronized (start) { start.notifyAll(); }
+            for (int i=0 ; i<10 ; i++)
+                try { threads[i].join(); } catch (InterruptedException x) {}
+            assertEquals(5, calls.get());
+            assertEquals(5, map.size());
+        }
     }
 }

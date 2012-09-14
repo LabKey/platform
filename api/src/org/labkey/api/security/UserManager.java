@@ -187,7 +187,8 @@ public class UserManager
     // Only used for creating/modifying a user, so no need to cache
     public static @Nullable User getUserByDisplayName(String displayName)
     {
-        return new TableSelector(CORE.getTableInfoUsers(), new SimpleFilter("DisplayName", displayName), null).getObject(User.class);
+        User[] users = new TableSelector(CORE.getTableInfoUsers(), new SimpleFilter("DisplayName", displayName), null).getArray(User.class);
+        return users.length == 0 ? null : users[1];
     }
 
 

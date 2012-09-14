@@ -24,10 +24,22 @@ public class Wrapper<V>
 {
     @SuppressWarnings({"unchecked"})
     protected V value = (V) BlockingCache.UNINITIALIZED;
+    protected boolean loading = false;
+
+    void setLoading()
+    {
+        loading = true;
+    }
+
+    boolean isLoading()
+    {
+        return loading;
+    }
 
     void setValue(V v)
     {
         value = v;
+        this.loading = false;
     }
 
     public V getValue()
