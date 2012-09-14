@@ -11,7 +11,7 @@ exports.Adapter = {
 
     applyIf: Ext.applyIf,
 
-    domAppend: function() { throw Error("DomHelper is not implemented on server-side JS");},
+    DomHelper: function() { throw Error("DomHelper is not implemented on server-side JS");},
 
     each: Ext.each,
 
