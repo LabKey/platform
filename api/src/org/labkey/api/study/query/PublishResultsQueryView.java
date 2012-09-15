@@ -17,17 +17,29 @@
 package org.labkey.api.study.query;
 
 import org.apache.commons.beanutils.ConversionException;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DetailsColumn;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.ShowRows;
+import org.labkey.api.data.SimpleDisplayColumn;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.UpdateColumn;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.gwt.client.ui.PropertyType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
@@ -40,7 +52,13 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.study.actions.StudyPickerColumn;
-import org.labkey.api.study.assay.*;
+import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayPublishService;
+import org.labkey.api.study.assay.AssaySchema;
+import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayTableMetadata;
+import org.labkey.api.study.assay.ParticipantVisitResolver;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -50,7 +68,19 @@ import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: brittp
@@ -875,6 +905,31 @@ public class PublishResultsQueryView extends ResultsQueryView
         FieldKey runIdFieldKey = tableMetadata.getRunRowIdFieldKeyFromResults();
         FieldKey objectIdFieldKey = tableMetadata.getResultRowIdFieldKey();
         FieldKey assayPTIDFieldKey = _defaultValueSource.getParticipantIDFieldKey(tableMetadata);
+        //NOTE: the name of the assay PTID field might not always match ParticipantId.  this allows us to also
+        //support PARTICIPANT_CONCEPT_URI
+        boolean found = false;
+        if (assayPTIDFieldKey != null)
+        {
+            for (ColumnInfo c : selectColumns)
+            {
+                if (assayPTIDFieldKey.equals(c.getFieldKey()))
+                {
+                    found = true;
+                    break;
+                }
+            }
+        }
+        if (!found)
+        {
+            for (ColumnInfo c : selectColumns)
+            {
+                if (PropertyType.PARTICIPANT_CONCEPT_URI.equals(c.getConceptURI()))
+                {
+                    assayPTIDFieldKey = c.getFieldKey();
+                    break;
+                }
+            }
+        }
         FieldKey assayVisitIDFieldKey = _defaultValueSource.getVisitIDFieldKey(tableMetadata, TimepointType.VISIT);
         FieldKey assayDateFieldKey = _defaultValueSource.getVisitIDFieldKey(tableMetadata, TimepointType.DATE);
         FieldKey specimenIDFieldKey = tableMetadata.getSpecimenIDFieldKey();
