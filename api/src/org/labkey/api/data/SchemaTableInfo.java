@@ -627,11 +627,6 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         {
             ret.addAll(columns);
         }
-        else
-        {
-            // Include just the visible columns
-            ret.addAll(QueryService.get().getDefaultVisibleColumnInfos(columns));
-        }
 
         // Include any extra columns named by the default visible set
         ret.addAll(QueryService.get().getColumns(this, getDefaultVisibleColumns()).values());
