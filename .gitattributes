@@ -2844,6 +2844,7 @@ study/resources/schemas/dbscripts/sqlserver/study-12.24-12.25.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-create.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-drop.sql -text
 study/resources/schemas/study.xml -text
+study/schemas/assayProvider.xsd -text
 study/src/org/labkey/study/AssayFolderType.java -text
 study/src/org/labkey/study/BaseCohortFilter.java -text
 study/src/org/labkey/study/CohortFilter.java -text

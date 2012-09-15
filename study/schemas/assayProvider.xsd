@@ -1,0 +1,93 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:ap="http://labkey.org/study/assay/xml"
+           xmlns:exp="http://cpas.fhcrc.org/exp/xml"
+           targetNamespace="http://labkey.org/study/assay/xml"
+           attributeFormDefault="unqualified"
+           elementFormDefault="qualified">
+
+    <xs:import namespace="http://cpas.fhcrc.org/exp/xml" schemaLocation="expTypes.xsd"/>
+
+    <xs:element name="provider" type="ap:ProviderType"/>
+
+    <xs:complexType name="ProviderType">
+        <xs:sequence>
+            <xs:element name="name" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="description" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="inputDataFileSuffix" type="xs:string" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>File extension that should be offered the option to import into designs of this type</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="fieldKeys" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="participantId" type="xs:string" minOccurs="0" maxOccurs="1">
+                            <xs:annotation>
+                                <xs:documentation>Field key relative to the data/results table that gives the ParticipantID for a given row of data</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element name="visitId" type="xs:string" minOccurs="0" maxOccurs="1">
+                            <xs:annotation>
+                                <xs:documentation>Field key relative to the data/results table that gives the VisitID for a given row of data</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element name="date" type="xs:string" minOccurs="0" maxOccurs="1">
+                            <xs:annotation>
+                                <xs:documentation>Field key relative to the data/results table that gives the date for a given row of data</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element name="specimenId" type="xs:string" minOccurs="0" maxOccurs="1">
+                            <xs:annotation>
+                                <xs:documentation>Field key relative to the data/results table that gives the SpecimenID for a given row of data</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="transformScripts" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Ordered list of transformation/validation scripts that must be run as data is
+                        imported. The scripts themselves should be in the assay's ./scripts subdirectory.
+                        Scripts will be executed in the order given here. Any scripts in the ./script subdirectory
+                        that are not listed here will be executed in alphabetical order after all of the scripts
+                        listed here.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="transformScript" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="fileName" type="xs:string" minOccurs="1" maxOccurs="1">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Simple file name (no path) of the script. If a script engine associated
+                                                with the script's file extension isn't registered in the Admin Console,
+                                                the import attempt will fail.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:element>
+                                </xs:sequence>
+                            </xs:complexType>
+                        </xs:element>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="plateBased" type="xs:boolean" default="false">
+            <xs:annotation>
+                <xs:documentation>Not used.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="canCopyToStudy" type="xs:boolean" default="true">
+            <xs:annotation>
+                <xs:documentation>Deprecated. Not used anymore.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+
+    </xs:complexType>
+
+    <xs:element name="domain" type="exp:DomainDescriptorType" />
+    
+</xs:schema>
