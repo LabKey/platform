@@ -205,7 +205,7 @@ public class StudyVisualizationProvider extends VisualizationProvider
         }
         else if (type == ColumnMatchType.All_VISIBLE)
         {
-            List<ColumnInfo> colsToRemove = new ArrayList<ColumnInfo>();
+            List<Pair<FieldKey, ColumnInfo>> colsToRemove = new ArrayList<Pair<FieldKey, ColumnInfo>>();
             String subjectColName = StudyService.get().getSubjectColumnName(container);
             String visitColName = StudyService.get().getSubjectVisitColumnName(container);
 
@@ -215,11 +215,11 @@ public class StudyVisualizationProvider extends VisualizationProvider
                 ColumnInfo col = pair.second;
                 String columnName = col.getColumnName();
                 if (subjectColName.equalsIgnoreCase(columnName) || visitColName.equalsIgnoreCase(columnName) || "DataSets".equals(columnName))
-                    colsToRemove.add(col);
+                    colsToRemove.add(pair);
             }
 
-            for (ColumnInfo col : colsToRemove)
-                matches.remove(col);
+            for (Pair<FieldKey, ColumnInfo> pair : colsToRemove)
+                matches.remove(pair);
         }
         return matches;
     }
