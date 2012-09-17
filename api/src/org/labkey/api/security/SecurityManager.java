@@ -849,24 +849,25 @@ public class SecurityManager
 
     private static String displayNameFromEmail(ValidEmail email, Integer userId)
     {
-        String displayName;
-
-        if (null != email.getPersonal())
-            displayName = email.getPersonal();
-        else if (email.getEmailAddress().indexOf("@") > 0)
-            displayName = email.getEmailAddress().substring(0,email.getEmailAddress().indexOf("@"));
-        else
-            displayName = email.getEmailAddress();
-
-        displayName = displayName.replace("."," ");
-        displayName = displayName.replace("_"," ");
-        displayName = displayName.replace("@"," ");
-        displayName = StringUtils.trimToEmpty(displayName);
-
-        User existingUser = UserManager.getUserByDisplayName(displayName);
-        if (existingUser != null && existingUser.getUserId() != userId)
-            displayName += userId;
-        return displayName;
+        return email.getEmailAddress();
+//        String displayName;
+//
+//        if (null != email.getPersonal())
+//            displayName = email.getPersonal();
+//        else if (email.getEmailAddress().indexOf("@") > 0)
+//            displayName = email.getEmailAddress().substring(0,email.getEmailAddress().indexOf("@"));
+//        else
+//            displayName = email.getEmailAddress();
+//
+//        displayName = displayName.replace("."," ");
+//        displayName = displayName.replace("_"," ");
+//        displayName = displayName.replace("@"," ");
+//        displayName = StringUtils.trimToEmpty(displayName);
+//
+//        User existingUser = UserManager.getUserByDisplayName(displayName);
+//        if (existingUser != null && existingUser.getUserId() != userId)
+//            displayName += userId;
+//        return displayName;
     }
 
 
