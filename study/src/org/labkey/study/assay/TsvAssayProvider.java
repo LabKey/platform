@@ -180,7 +180,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             {
                 if (col.getJdbcType() == JdbcType.VARCHAR && flagConceptURI.equals(col.getConceptURI()))
                 {
-                    col.setDisplayColumnFactory(new _FlagDisplayColumnFactory(protocol));
+                    col.setDisplayColumnFactory(new _FlagDisplayColumnFactory(protocol, this.getName()));
                 }
             }
         }
@@ -190,11 +190,13 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     class _FlagDisplayColumnFactory implements RemappingDisplayColumnFactory
     {
         FieldKey rowId = new FieldKey(null, "RowId");
-        ExpProtocol protocol;
+        final ExpProtocol protocol;
+        final String dataregion;
 
-        _FlagDisplayColumnFactory(ExpProtocol protocol)
+        _FlagDisplayColumnFactory(ExpProtocol protocol, String dataregionName)
         {
             this.protocol = protocol;
+            this.dataregion = dataregionName;
         }
 
         @Override
@@ -206,7 +208,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         @Override
         public DisplayColumn createRenderer(ColumnInfo colInfo)
         {
-            return new _FlagColumnRenderer(colInfo, rowId, protocol);
+            return new _FlagColumnRenderer(colInfo, rowId, protocol, dataregion);
         }
     }
 
@@ -221,8 +223,9 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     {
         final FieldKey rowId;
         final ExpProtocol protocol;
+        final String dataregion;
 
-        _FlagColumnRenderer(ColumnInfo col, FieldKey rowId, ExpProtocol protocol)
+        _FlagColumnRenderer(ColumnInfo col, FieldKey rowId, ExpProtocol protocol, String dataregion)
         {
             super(col);
             this.rowId = rowId;
@@ -231,6 +234,10 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             url.addParameter("rowId", protocol.getRowId());
             url.addParameter("columnName", col.getName());
             this.endpoint = url.getLocalURIString();
+            this.dataregion = dataregion;
+            this.jsConvertPKToLSID = "function(pk){return " +
+                    PageFlowUtil.jsString("protocol" + protocol.getRowId() + "." + getBoundColumn().getLegalName() + "[") +
+                    " + pk + ']'}";
         }
 
         @Override
@@ -239,7 +246,6 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             renderFlagScript(ctx, out);
             Integer id = ctx.get(rowId, Integer.class);
             Object comment = getValue(ctx);
-//            String lsid = null==id ? null : getUnique(ctx) + "::" + String.valueOf(id);
             String lsid = null==id ? null : "protocol" + protocol.getRowId() + "." + getBoundColumn().getLegalName() +  "[" + String.valueOf(id) + "]";
             _renderFlag(ctx, out, lsid, null==comment?null:String.valueOf(comment));
         }
