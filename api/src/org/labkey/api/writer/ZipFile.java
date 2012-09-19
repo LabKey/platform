@@ -31,7 +31,7 @@ import java.util.zip.ZipOutputStream;
  * Date: Apr 27, 2009
  * Time: 5:29:58 PM
  */
-public class ZipFile extends AbstractVirtualFile implements Archive
+public class ZipFile extends AbstractVirtualFile
 {
     private final ZipOutputStream _out;
     private final String _path;
@@ -128,7 +128,7 @@ public class ZipFile extends AbstractVirtualFile implements Archive
         return new ZipFile(_out, _pw, _path + makeLegalName(path) + "/", false);
     }
 
-    public Archive createZipArchive(String name) throws IOException
+    public VirtualFile createZipArchive(String name) throws IOException
     {
         ZipEntry entry = new ZipEntry(_path + makeLegalName(name));
         _out.putNextEntry(entry);

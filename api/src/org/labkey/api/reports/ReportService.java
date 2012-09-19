@@ -146,6 +146,12 @@ public class ReportService
         public String getId();
 
         public String getIconPath();
+
+        public DesignerType getType();
+    }
+
+    public enum DesignerType {
+        DEFAULT, VISUALIZATION
     }
 
     public interface UIProvider

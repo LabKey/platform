@@ -426,6 +426,11 @@ public class GWTPropertyDescriptor implements IsSerializable
         this.facetingBehaviorType.set(facetingBehavior);
     }
 
+    public boolean isSetProtected()
+    {
+        return isProtected.getBoolean() != null;
+    }
+
     public boolean isProtected()
     {
         return isProtected.booleanValue();

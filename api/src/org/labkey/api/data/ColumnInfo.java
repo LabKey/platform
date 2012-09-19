@@ -893,6 +893,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             setDisplayWidth(xmlCol.getDisplayWidth());
         if (xmlCol.isSetNullable())
             nullable = xmlCol.getNullable();
+        if (xmlCol.isSetProtected())
+            isProtected = xmlCol.getProtected();
 
         if (xmlCol.isSetImportAliases())
             importAliases.addAll(Arrays.asList(xmlCol.getImportAliases().getImportAliasArray()));

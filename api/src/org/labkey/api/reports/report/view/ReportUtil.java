@@ -632,8 +632,7 @@ public class ReportUtil
                     if (!StringUtils.isEmpty(view.getCustomIconUrl()))
                     {
                         URLHelper url = new URLHelper(view.getCustomIconUrl());
-                        url.setContextPath(AppProps.getInstance().getContextPath());
-
+                        url.setContextPath(AppProps.getInstance().getParsedContextPath());
                         info.setIcon(url.toString());
                     }
                     info.setThumbnailUrl(PageFlowUtil.urlProvider(QueryUrls.class).urlThumbnail(c));

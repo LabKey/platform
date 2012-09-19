@@ -17,6 +17,7 @@
 package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.action.ApiUsageException;
@@ -58,6 +59,7 @@ import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.api.visualization.TimeChartReport;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
@@ -67,6 +69,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.net.URISyntaxException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -87,6 +90,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class QueryView extends WebPartView<Object>
 {
     public static final String EXPERIMENTAL_GENERIC_DETAILS_URL = "generic-details-url";
+    private static Logger _log = Logger.getLogger(QueryView.class);
 
     public static final String DATAREGIONNAME_DEFAULT = "query";
     protected DataRegion.ButtonBarPosition _buttonBarPosition = DataRegion.ButtonBarPosition.BOTH;
@@ -727,6 +731,7 @@ public class QueryView extends WebPartView<Object>
         if (getSettings().getAllowChooseView())
         {
             bar.add(createViewButton(_itemFilter));
+            bar.add(createChartButton());
         }
 
         if (showInsertNewButton() && canInsert())
@@ -988,7 +993,7 @@ public class QueryView extends WebPartView<Object>
             addGridViews(button, target, current);
 
             if (_showReports)
-                addReportViews(button, target);
+                addReportViews(button);
 
             button.addSeparator();
         }
@@ -1001,7 +1006,11 @@ public class QueryView extends WebPartView<Object>
 
             for (ReportService.UIProvider provider : ReportService.get().getUIProviders())
             {
-                reportDesigners.addAll(provider.getDesignerInfo(getViewContext(), getSettings()));
+                for (ReportService.DesignerInfo designerInfo : provider.getDesignerInfo(getViewContext(), getSettings()))
+                {
+                    if (designerInfo.getType() != ReportService.DesignerType.VISUALIZATION)
+                        reportDesigners.add(designerInfo);
+                }
             }
 
             Collections.sort(reportDesigners, new Comparator<ReportService.DesignerInfo>()
@@ -1053,6 +1062,52 @@ public class QueryView extends WebPartView<Object>
                     "queryName", getSettings().getQueryName()));
             addFilterItems(button);
         }
+        return button;
+    }
+
+    public MenuButton createChartButton()
+    {
+        URLHelper target = urlChangeView();
+        NavTreeMenuButton button = new NavTreeMenuButton("Charts");
+
+        if (!getQueryDef().isTemporary() && _report == null)
+        {
+            List<ReportService.DesignerInfo> reportDesigners = new ArrayList<ReportService.DesignerInfo>();
+            getSettings().setSchemaName(getSchema().getSchemaName());
+
+            for (ReportService.UIProvider provider : ReportService.get().getUIProviders())
+            {
+                for (ReportService.DesignerInfo designerInfo : provider.getDesignerInfo(getViewContext(), getSettings()))
+                {
+                    if (designerInfo.getType() == ReportService.DesignerType.VISUALIZATION)
+                        reportDesigners.add(designerInfo);
+                }
+            }
+
+            Collections.sort(reportDesigners, new Comparator<ReportService.DesignerInfo>()
+            {
+                @Override
+                public int compare(ReportService.DesignerInfo o1, ReportService.DesignerInfo o2)
+                {
+                    return o1.getLabel().compareTo(o2.getLabel());
+                }
+            });
+
+            for (ReportService.DesignerInfo designer : reportDesigners)
+            {
+                NavTree item = new NavTree("Create " + designer.getLabel(), designer.getDesignerURL().getLocalURIString());
+                item.setId(getBaseMenuId() + ":Charts:Create" + designer.getLabel());
+                item.setImageSrc(designer.getIconPath());
+
+                button.addMenuItem(item);
+            }
+        }
+
+        if (!getQueryDef().isTemporary() && _showReports)
+        {
+            addChartViews(button);
+        }
+
         return button;
     }
 
@@ -1191,7 +1246,13 @@ public class QueryView extends WebPartView<Object>
             if (description.length() > 0)
                 item.setDescription(description.toString());
         }
-        item.setImageSrc(getViewContext().getContextPath() + "/reports/grid.gif");
+        try
+        {
+            URLHelper iconUrl = new URLHelper("/reports/grid.gif");
+            iconUrl.setContextPath(AppProps.getInstance().getParsedContextPath());
+            item.setImageSrc(iconUrl.getLocalURIString());
+        }
+        catch (URISyntaxException e) { }
         menu.addMenuItem(item);
 
         // sort the grid view alphabetically, with private views over public ones
@@ -1237,17 +1298,26 @@ public class QueryView extends WebPartView<Object>
             if (description.length() > 0)
                 item.setDescription(description.toString());
 
-            if (null != view.getCustomIconUrl())
-                item.setImageSrc(getViewContext().getContextPath() + "/" + view.getCustomIconUrl());
-            else
-                item.setImageSrc(getViewContext().getContextPath() +
-                        (view.isShared() ? "/reports/grid_shared.gif" : "/reports/grid.gif"));
+            try
+            {
+                URLHelper iconUrl;
+                if (null != view.getCustomIconUrl())
+                    iconUrl = new URLHelper(view.getCustomIconUrl());
+                else
+                    iconUrl = new URLHelper(view.isShared() ? "/reports/grid_shared.gif" : "/reports/grid.gif");
+                iconUrl.setContextPath(AppProps.getInstance().getParsedContextPath());
+                item.setImageSrc(iconUrl.getLocalURIString());
+            }
+            catch (URISyntaxException e)
+            {
+                _log.error("Invalid custom view icon url", e);
+            }
 
             menu.addMenuItem(item);
         }
     }
 
-    protected void addReportViews(MenuButton menu, URLHelper target)
+    protected void addReportViews(MenuButton menu)
     {
         String reportKey = ReportUtil.getReportKey(getSchema().getSchemaName(), getSettings().getQueryName());
         Map<String, List<Report>> views = new TreeMap<String, List<Report>>();
@@ -1258,7 +1328,7 @@ public class QueryView extends WebPartView<Object>
             // Filter out reports that don't match what this view is supposed to show. This can prevent
             // reports that were created on the same schema and table/query from a different view from showing up on a
             // view that's doing magic to add additional filters, for example.
-            if (viewItemFilter.accept(report.getType(), null))
+            if (viewItemFilter.accept(report.getType(), null) && !report.getType().equals(TimeChartReport.TYPE) && !report.getType().equals(GenericChartReport.TYPE))
             {
                 if (canViewReport(getUser(), getContainer(), report) && !report.getDescriptor().isHidden())
                 {
@@ -1298,6 +1368,63 @@ public class QueryView extends WebPartView<Object>
                     item.setStrong(true);
                 item.setImageSrc(ReportService.get().getIconPath(report));
                 item.setScript(getChangeReportScript(reportId));
+                menu.addMenuItem(item);
+            }
+        }
+    }
+
+    protected void addChartViews(MenuButton menu)
+    {
+        String reportKey = ReportUtil.getReportKey(getSchema().getSchemaName(), getSettings().getQueryName());
+        Map<String, List<Report>> views = new TreeMap<String, List<Report>>();
+        ReportService.ItemFilter viewItemFilter = getItemFilter();
+
+        for (Report report : ReportUtil.getReports(getContainer(), getUser(), reportKey, true))
+        {
+            // Filter out reports that don't match what this view is supposed to show. This can prevent
+            // reports that were created on the same schema and table/query from a different view from showing up on a
+            // view that's doing magic to add additional filters, for example.
+            if (viewItemFilter.accept(report.getType(), null) && (report.getType().equals(TimeChartReport.TYPE) || report.getType().equals(GenericChartReport.TYPE)))
+            {
+                if (canViewReport(getUser(), getContainer(), report))
+                {
+                    if (!views.containsKey(report.getType()))
+                        views.put(report.getType(), new ArrayList<Report>());
+
+                    views.get(report.getType()).add(report);
+                }
+            }
+        }
+
+        if (views.size() > 0)
+            menu.addSeparator();
+
+        for (Map.Entry<String, List<Report>> entry : views.entrySet())
+        {
+            List<Report> charts = entry.getValue();
+
+            Collections.sort(charts, new Comparator<Report>()
+            {
+                @Override
+                public int compare(Report o1, Report o2)
+                {
+                    String n1 = StringUtils.defaultString(o1.getDescriptor().getReportName(), "");
+                    String n2 = StringUtils.defaultString(o2.getDescriptor().getReportName(), "");
+
+                    return n1.compareToIgnoreCase(n2);
+                }
+            });
+
+            for (Report chart : charts)
+            {
+                String chartId = chart.getDescriptor().getReportId().toString();
+                NavTree item = new NavTree(chart.getDescriptor().getReportName(), (String) null);
+                item.setImageSrc(ReportService.get().getIconPath(chart));
+                item.setScript(getChangeReportScript(chartId));
+
+                if (chart.getDescriptor().getReportId().equals(getSettings().getReportId()))
+                    item.setStrong(true);
+
                 menu.addMenuItem(item);
             }
         }

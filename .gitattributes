@@ -934,6 +934,7 @@ api/src/org/labkey/api/security/permissions/Permission.java -text
 api/src/org/labkey/api/security/permissions/PermissionManager.java -text
 api/src/org/labkey/api/security/permissions/ReadPermission.java -text
 api/src/org/labkey/api/security/permissions/ReadSomePermission.java -text
+api/src/org/labkey/api/security/permissions/SeeUserEmailAddressesPermission.java -text
 api/src/org/labkey/api/security/permissions/UpdatePermission.java -text
 api/src/org/labkey/api/security/roles/AbstractContextualRole.java -text
 api/src/org/labkey/api/security/roles/AbstractRole.java -text
@@ -951,6 +952,7 @@ api/src/org/labkey/api/security/roles/RestrictedReaderRole.java -text
 api/src/org/labkey/api/security/roles/Role.java -text
 api/src/org/labkey/api/security/roles/RoleConverter.java -text
 api/src/org/labkey/api/security/roles/RoleManager.java -text
+api/src/org/labkey/api/security/roles/SeeEmailAddressesRole.java -text
 api/src/org/labkey/api/security/roles/SiteAdminRole.java -text
 api/src/org/labkey/api/security/roles/SubmitterRole.java -text
 api/src/org/labkey/api/security/roles/TroubleshooterRole.java -text
@@ -1308,7 +1310,6 @@ api/src/org/labkey/api/wiki/WikiRendererDisplayColumn.java -text
 api/src/org/labkey/api/wiki/WikiRendererType.java -text
 api/src/org/labkey/api/wiki/WikiService.java -text
 api/src/org/labkey/api/writer/AbstractVirtualFile.java -text
-api/src/org/labkey/api/writer/Archive.java -text
 api/src/org/labkey/api/writer/ContainerUser.java -text
 api/src/org/labkey/api/writer/FastaEntry.java -text
 api/src/org/labkey/api/writer/FastaGenerator.java -text

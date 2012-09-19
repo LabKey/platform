@@ -100,9 +100,9 @@ public class MemoryVirtualFile extends AbstractVirtualFile
     }
 
     @Override
-    public Archive createZipArchive(String name) throws IOException
+    public VirtualFile createZipArchive(String name) throws IOException
     {
-        throw new UnsupportedOperationException("Creating zip archives is not supported by memory virtual files");
+        return this;
     }
 
     @Override
@@ -171,5 +171,11 @@ public class MemoryVirtualFile extends AbstractVirtualFile
             return true;
         }
         return false;
+    }
+
+    @Override
+    public void close() throws IOException
+    {
+        // no op
     }
 }

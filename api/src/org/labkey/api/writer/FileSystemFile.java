@@ -87,7 +87,7 @@ public class FileSystemFile extends AbstractVirtualFile
         return new FileSystemFile(new File(_root, makeLegalName(name)));
     }
 
-    public Archive createZipArchive(String name) throws FileNotFoundException
+    public VirtualFile createZipArchive(String name) throws FileNotFoundException
     {
         return new ZipFile(_root, name);
     }
@@ -193,5 +193,11 @@ public class FileSystemFile extends AbstractVirtualFile
     {
         File file = new File(_root, makeLegalName(filename));
         return file.delete();
+    }
+
+    @Override
+    public void close() throws IOException
+    {
+        // no op
     }
 }

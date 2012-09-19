@@ -42,8 +42,9 @@ public interface VirtualFile
     public String[] listDirs();
     public boolean delete(String filename);
 
-    public Archive createZipArchive(String name) throws IOException;
+    public VirtualFile createZipArchive(String name) throws IOException;
     public VirtualFile getDir(String path);
     public String makeLegalName(String name);
     public String getLocation();
+    public void close() throws IOException;
 }

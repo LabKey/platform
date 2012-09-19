@@ -83,22 +83,29 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
         private boolean _disabled;
         private String _id;
         private String _iconPath;
+        private ReportService.DesignerType _type;
 
         public DesignerInfoImpl(String reportType, String label, ActionURL designerURL, String iconPath)
         {
-            this(reportType, label, null, designerURL, iconPath);
+            this(reportType, label, null, designerURL, iconPath, ReportService.DesignerType.DEFAULT);
         }
 
         public DesignerInfoImpl(String reportType, String label, String description, ActionURL designerURL, String iconPath)
         {
+            this(reportType, label, description, designerURL, iconPath, ReportService.DesignerType.DEFAULT);
+        }
+
+        public DesignerInfoImpl(String reportType, String label, String description, ActionURL designerURL, String iconPath, ReportService.DesignerType type)
+        {
             if (reportType == null)
                 throw new IllegalArgumentException("The reportType param is required");
-            
+
             _reportType = reportType;
             _label = label;
             _description = description;
             _designerURL = designerURL;
             _iconPath = iconPath;
+            _type = type;
         }
 
         public void setLabel(String label)
@@ -159,6 +166,11 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
         public String getIconPath()
         {
             return _iconPath;
+        }
+
+        public ReportService.DesignerType getType()
+        {
+            return _type;
         }
     }
 }

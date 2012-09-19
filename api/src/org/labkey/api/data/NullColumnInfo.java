@@ -38,6 +38,12 @@ public class NullColumnInfo extends ColumnInfo
         setSqlTypeName(sqlType);
     }
 
+    public NullColumnInfo(TableInfo parent, String name, JdbcType jdbcType)
+    {
+        super(name, parent);
+        setJdbcType(jdbcType);
+    }
+
     @Override
     public SQLFragment getValueSql(String tableAliasName)
     {

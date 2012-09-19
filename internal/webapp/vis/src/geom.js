@@ -94,7 +94,7 @@ LABKEY.vis.Geom.Point.prototype.render = function(paper, grid, scales, data, lay
         return false;
     }
     var hoverText = layerAes.hoverText ? layerAes.hoverText : parentAes.hoverText;
-    var sizeMap = layerAes.size ? layerAes.size : parentAes.size;
+    var pointClickFn = layerAes.pointClickFn ? layerAes.pointClickFn : parentAes.pointClickFn;
     var yScale = this.yMap.side == "left" ? scales.yLeft : scales.yRight;
     var xBinWidth = null, yBinWidth = null;
     if(scales.x.scaleType == 'discrete'){
@@ -126,26 +126,19 @@ LABKEY.vis.Geom.Point.prototype.render = function(paper, grid, scales, data, lay
             y = (y - (yBinWidth / 2)) +(Math.random()*(yBinWidth));
         }
 
-        var color = this.color;
-        if(this.colorMap){
-            if(scales.color.scaleType == 'continuous'){
-                color = scales.color.scale(this.colorMap.getValue(data[i]));
-            } else {
-                color = scales.color.scale(this.colorMap.getValue(data[i]) + ' ' + name);
-            }
-        }
-        var size = sizeMap ? scales.size.scale(sizeMap.getValue(data[i])) : this.size;
-        var shapeFunction = this.shapeMap ? scales.shape.scale(this.shapeMap.getValue(data[i]) + ' ' + name) : function(paper, x, y, r){return paper.circle(x, y, r)};
-        var point = shapeFunction(paper, x, -y, size).attr('fill', color).attr('stroke', color).attr('stroke-opacity', this.opacity/2).attr('fill-opacity', this.opacity);
+        var color = this.colorMap ? scales.color.scale(this.colorMap.getValue(data[i]) + name) : this.color;
+        var size = this.sizeMap ? this.sizeMap.getValue(data[i]) : this.size;
+        var shapeFunction = this.shapeMap ? scales.shape.scale(this.shapeMap.getValue(data[i]) + name) : function(paper, x, y, r){return paper.circle(x, y, r)};
+        var point = shapeFunction(paper, x, -y, size).attr('fill', color).attr('stroke', color).attr('stroke-opacity', this.opacity).attr('fill-opacity', this.opacity);
 
         if(hoverText){
             point.attr('title', hoverText.value(data[i]));
         }
 
-        point.data = data[i];
-        if (layerAes.pointClickFn) {
+        if (pointClickFn) {
+            point.data = data[i];
             point.click(function(clickEvent) {
-                layerAes.pointClickFn.value(clickEvent, this.data);
+                pointClickFn.value(clickEvent, this.data);
             });
         }
     }
@@ -188,7 +181,7 @@ LABKEY.vis.Geom.Path.prototype.render = function(paper, grid, scales, data, laye
 
             if(this.colorMap && this.colorMap.name == this.group.name){
                 // If we have a colorMap and it maps to the same thing as groupedData, then we pass in the group to get the desired color.
-                color = scales.color.scale(group + ' ' + name);
+                color = scales.color.scale(group + name);
             }
 
             if(this.sizeMap){
@@ -243,7 +236,7 @@ LABKEY.vis.Geom.ErrorBar.prototype.render = function(paper, grid, scales, data, 
         var errorAtPoint = this.errorMap.getValue(data[i]);
         var yBottom = -yScale(y - errorAtPoint);
         var yTop = -yScale(y + errorAtPoint);
-        var color = this.colorMap ? scales.color.scale(this.colorMap.getValue(data[i]) + ' ' + name) : this.color;
+        var color = this.colorMap ? scales.color.scale(this.colorMap.getValue(data[i]) + name) : this.color;
 
         var errorBarPath = LABKEY.vis.makeLine(x - 6, yTop, x+6, yTop) + LABKEY.vis.makeLine(x, yTop, x, yBottom) + LABKEY.vis.makeLine(x-6, yBottom, x+6, yBottom); //top bar, middle bar, bottom bar
         var errorBar = paper.path(errorBarPath).attr('stroke-width', this.size).attr('stroke', color).attr('fill', color);
@@ -279,6 +272,7 @@ LABKEY.vis.Geom.Boxplot.prototype.render = function(paper, grid, scales, data, l
     var yScale = this.yMap.side == "left" ? scales.yLeft.scale : scales.yRight.scale;
     var hoverText = layerAes.hoverText ? layerAes.hoverText : parentAes.hoverText;
     var outlierHoverText = layerAes.outlierHoverText ? layerAes.outlierHoverText : parentAes.outlierHoverText;
+    var pointClickFn = layerAes.pointClickFn ? layerAes.pointClickFn : parentAes.pointClickFn;
     var groupedData = null;
     var binWidth = null;
 
@@ -360,6 +354,13 @@ LABKEY.vis.Geom.Boxplot.prototype.render = function(paper, grid, scales, data, l
                     if(outlierHoverText){
                         outlier.attr('title', outlierHoverText.getValue(groupedData[group][i]));
                     }
+                    if (pointClickFn) {
+                        outlier.data = groupedData[group][i];
+                        outlier.click(function(clickEvent) {
+                            pointClickFn.value(clickEvent, this.data);
+                        });
+                    }
+
                 }
             }
         }

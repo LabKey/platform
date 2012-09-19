@@ -394,8 +394,15 @@ public class SecurityPolicy implements HasPermission
         for (RoleAssignment assignment : getAssignments())
         {
             Map<String, Object> assignmentProps = new HashMap<String, Object>();
+            try
+            {
             assignmentProps.put("userId", assignment.getUserId());
             assignmentProps.put("role", assignment.getRole().getUniqueName());
+            }
+            catch (NullPointerException x)
+            {
+
+            }
             assignments.add(assignmentProps);
         }
         props.put("assignments", assignments);

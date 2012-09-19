@@ -372,7 +372,7 @@ public class SchemaColumnMetaData
     {
         VirtualColumnInfo(String name, TableInfo tinfo)
         {
-            super(tinfo,name,null);
+            super(tinfo,name,(String)null);
             setIsUnselectable(true);    // minor hack, to indicate to other code that wants to detect this
         }
     }

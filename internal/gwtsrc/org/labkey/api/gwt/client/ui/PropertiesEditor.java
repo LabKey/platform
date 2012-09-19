@@ -253,7 +253,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                 _extraPropertiesTabPanel.getLayoutTarget().setStyleAttribute("backgroundColor","#eeeeee");
             }
         });
-        _extraPropertiesTabPanel.setPixelSize(350, getExtraPropertiesHeight());
+        _extraPropertiesTabPanel.setPixelSize(360, getExtraPropertiesHeight());
         _extraPropertiesTabPanel.setSelection(_extraPropertiesTabPanel.getItem(0));
         _extraPropertiesTabPanel.addListener(Events.Select, new Listener<TabPanelEvent>()
         {
@@ -308,7 +308,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
     protected int getExtraPropertiesHeight()
     {
-        return 250;
+        return 260;
     }
 
     protected List<PropertyPane<DomainType, FieldType>> createPropertyPanes(DockPanel propertyDock)

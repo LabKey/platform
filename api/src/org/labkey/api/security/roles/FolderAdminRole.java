@@ -36,7 +36,8 @@ public class FolderAdminRole extends AbstractRole
                 UpdatePermission.class,
                 DeletePermission.class,
                 AdminPermission.class,
-                EditSharedViewPermission.class);
+                EditSharedViewPermission.class,
+                SeeUserEmailAddressesPermission.class);
 
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupUsers));

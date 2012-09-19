@@ -27,7 +27,7 @@ LABKEY.vis.Layer = function(config){
 	this.geom = config.geom ? config.geom : null; // This is the geom object used to render on the grid. It is currently required.
 	this.stat = config.stat ? config.stat : null; // This is the stat object used to format the data, it is optional and not currently implemented.
 	this.position = config.position ? config.position : null; // This is the position type used to control how overlapping is handled (e.g. jittering, stacking, dodging). It is not currently implemented.
-    this.name = config.name ? config.name : null;
+    this.name = config.name ? ' ' + config.name : '';
 
     for(var aesthetic in this.aes){
         LABKEY.vis.createGetter(this.aes[aesthetic]);

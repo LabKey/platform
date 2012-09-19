@@ -404,105 +404,111 @@ LABKEY.vis.Plot = function(config){
 	};
 
     var renderLegend = function(){
-        var xPadding = this.scales.yRight ? 25 : 0;
-        var series = null;
-        var colorRows = null;
-        var shapeRows = null;
-        var legendY = 0;
-        var textX = null;
-        var geomX = null;
-        var y = null;
-        var color = null;
+        var xPadding = this.scales.yRight ? 25 : 0,
+            startY = 0,
+            defaultColor = function(){return '#333'},
+            // We default to a rectangle because it's not one of the shapes in the shape scale.
+            defaultShape = function(){
+                return function(paper, x, y, size){
+                    return paper.rect(x - size, y - (size/2), size*2, size);
+                }
+            };
 
-        if((this.legendPos && this.legendPos == "none") || (!this.scales.shape && (!this.scales.color || (this.scales.color.scaleType == 'continuous')))){
+        var compareDomains = function(domain1, domain2){
+            if(domain1.length != domain2.length){
+                return false;
+            }
+
+            domain1.sort();
+            domain2.sort();
+
+            for(var i = 0; i < domain1.length; i++){
+                if(domain1[i] != domain2[i]) {
+                    return false;
+                }
+            }
+
+            return true;
+        };
+
+        var renderPartial = function(paper, grid, y, geomX, textX, domain, shapeFn, colorFn){
+            for(var i = 0; i < domain.length; i++){
+                var translatedY = parseInt(-(grid.topEdge - y)) +.5,
+                    color = colorFn(domain[i]),
+                    shape = shapeFn(domain[i]);
+                
+                shape(paper, geomX, translatedY, 5).attr('fill', color).attr('stroke', color);
+                paper.text(textX, translatedY, domain[i]).attr('text-anchor', 'start').attr('title', domain[i]);
+
+                y = y + 18;
+            }
+
+            // returns the next available y position.
+            return y;
+        };
+
+        if(this.legendPos && this.legendPos == "none"){
             return;
         }
 
-        for(var i = 0; i < this.layers.length; i++){
-            if(this.layers[i].name){
-                if(!series){
-                    series = {};
-                }
-                if(!series[this.layers[i].name]){
-                    series[this.layers[i].name] = {
-                        name: this.layers[i].name,
-                        layers: [this.layers[i]]
-                    };
-                } else {
-                    series[this.layers[i].name].layers.push(this.layers[i]);
-                }
+        if(this.scales.color && this.scales.shape){
+            if(compareDomains(this.scales.color.scale.domain(), this.scales.shape.scale.domain())){
+                renderPartial(
+                        this.paper,
+                        this.grid,
+                        startY,
+                        this.grid.rightEdge + 50,
+                        this.grid.rightEdge + 75 + xPadding,
+                        this.scales.shape.scale.domain(),
+                        this.scales.shape.scale,
+                        this.scales.color.scale
+                )
+            } else {
+                // Color
+                var lastY = renderPartial(
+                        this.paper,
+                        this.grid,
+                        startY,
+                        this.grid.rightEdge + 50,
+                        this.grid.rightEdge + 75 + xPadding,
+                        this.scales.color.scale.domain(),
+                        defaultShape,
+                        this.scales.color.scale
+                );
+
+                // Shape
+                renderPartial(
+                        this.paper,
+                        this.grid,
+                        lastY + 18,
+                        this.grid.rightEdge + 50,
+                        this.grid.rightEdge + 75 + xPadding,
+                        this.scales.shape.scale.domain(),
+                        this.scales.shape.scale,
+                        defaultColor
+                );
             }
-        }
-
-        if(!series){
-            return; //None of the layers were named, we have no knowledge of series, we cannot continue.
-        }
-
-        // Currently we only have 2 discrete scales that will get put on the legend, color and shapes.
-        if(this.scales.color && (!this.scales.color.scaleType || this.scales.color.scaleType == 'discrete')){
-            colorRows = this.scales.color.scale.domain();
-        }
-
-        if(this.scales.shape && (!this.scales.shape.scaleType || this.scales.shape.scaleType == 'discrete')){
-            shapeRows = this.scales.shape ? this.scales.shape.scale.domain() : null;
-        }
-
-        if(!colorRows && !shapeRows){
-            // We have no discrete scales to map on the legend so we'll plot a super basic legend.
-            color = "#000000";
-            for(var s in series){
-                // We'll have 1 row per series.
-                textX = this.grid.rightEdge + 75 + xPadding;
-                geomX = this.grid.rightEdge + 50;
-                y = -(this.grid.topEdge - legendY) +.5;
-                for(var i = 0; i < series[s].layers.length; i++){
-                    this.paper.text(textX, y, s).attr('text-anchor', 'start').attr('title', s);
-
-                    if(series[s].layers[i].geom.type == "Point"){
-                        this.paper.circle(geomX + 10, y, 5).attr('stroke', color).attr('fill', color);
-                    }
-
-                    if(series[s].layers[i].geom.type == "Path"){
-                        this.paper.path(LABKEY.vis.makeLine(geomX, y, geomX + 20, y)).attr('stroke-width', 3).attr('opacity', .6).attr('stroke', color);
-                    }
-                }
-                legendY = legendY + 18;
-            }
-        } else {
-            var legendRows = colorRows ? colorRows : shapeRows;
-
-            for(var i = 0 ; i < legendRows.length; i++){
-                textX = this.grid.rightEdge + 75 + xPadding;
-                geomX = this.grid.rightEdge + 50 + xPadding;
-                y = -(this.grid.topEdge - legendY) +.5;
-                for(var s in series){
-                    if(legendRows[i].indexOf(s) != -1){
-                        this.paper.text(textX, y, legendRows[i]).attr('text-anchor', 'start').attr('title', legendRows[i]);
-                        color = "#000000";
-                        if(colorRows && colorRows.indexOf(legendRows[i]) != -1){
-                            color = this.scales.color.scale(colorRows[colorRows.indexOf(legendRows[i])]);
-                        }
-
-                        for(var j = 0; j < series[s].layers.length; j++){
-                            if(series[s].layers[j].geom.type == "Point"){
-                                if(shapeRows && shapeRows.indexOf(legendRows[i]) !=-1){
-                                    var shape = this.scales.shape.scale(shapeRows[shapeRows.indexOf(legendRows[i])]);
-                                    shape(this.paper, geomX + 10, y, 5).attr('stroke', color).attr('fill', color);
-                                } else if(!shapeRows){
-                                    this.paper.circle(geomX + 10, y, 5).attr('stroke', color).attr('fill', color);
-                                }
-
-                            }
-
-                            if(series[s].layers[j].geom.type == "Path"){
-                                this.paper.path(LABKEY.vis.makeLine(geomX, y, geomX + 20, y)).attr('stroke-width', 3).attr('opacity', .6).attr('stroke', color);
-                            }
-                        }
-                    }
-                }
-
-                legendY = legendY + 18;
-            }
+        } else if(this.scales.color){
+            renderPartial(
+                    this.paper, this.grid,
+                    startY,
+                    this.grid.rightEdge + 50,
+                    this.grid.rightEdge + 75 + xPadding,
+                    this.scales.color.scale.domain(),
+                    defaultShape,
+                    this.scales.color.scale
+            );
+        } else if(this.scales.shape){
+            renderPartial(
+                    this.paper,
+                    this.grid,
+                    startY,
+                    this.grid.rightEdge + 50,
+                    this.grid.rightEdge + 75 + xPadding,
+                    this.scales.shape.scale.domain(),
+                    this.scales.shape.scale,
+                    defaultColor
+            );
         }
     };
 

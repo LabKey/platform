@@ -437,8 +437,6 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
         feature = EXPERIMENTAL_FEATURE_PREFIX + feature;
         if (null != System.getProperty(feature))
             return Boolean.getBoolean(feature);
-        if (!isDevMode())
-            return false;
         return lookupBooleanValue(feature, false);
     }
 

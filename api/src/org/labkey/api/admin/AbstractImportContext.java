@@ -74,7 +74,7 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
         for (int i = 0; i < childNodes.getLength(); i++)
         {
             Node childNode = childNodes.item(i);
-            if (childNode.getNodeType() == Node.ELEMENT_NODE && childNode.getLocalName().equalsIgnoreCase(xmlNodeName))
+            if (childNode.getNodeType() == Node.ELEMENT_NODE && childNode.getLocalName().equalsIgnoreCase(xmlNodeName) && ((Element)childNode).hasAttribute("dir"))
             {
                 String dirName = ((Element)childNode).getAttribute("dir");
 

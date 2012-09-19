@@ -91,6 +91,22 @@ public class FolderImporterImpl implements FolderImporter<FolderDocument.Folder>
         return warnings;
     }
 
+    public void removeImporterByDescription(String removeDesc)
+    {
+        FolderImporter toRemove = null;
+        for (FolderImporter importer : _importers)
+        {
+            if (importer.getDescription().equals(removeDesc))
+            {
+                toRemove = importer;
+                break;
+            }
+        }
+
+        if (toRemove != null)
+            _importers.remove(toRemove);
+    }
+
     @Override
     public boolean supportsVirtualFile()
     {
