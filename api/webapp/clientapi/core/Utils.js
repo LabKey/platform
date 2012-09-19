@@ -678,7 +678,7 @@ LABKEY.Utils.convertToTable(
          * takes any property value pair and places them on the anchor.
          * @param {Object} config a configuration object that models html anchor properties:
          * @param {String} config.href (required if config.onClick not specified) the reference the anchor will use.
-         * @param {String} config.onClick {requried if config.href not specified) script called when the onClick event is fired by
+         * @param {String} config.onClick (requried if config.href not specified) script called when the onClick event is fired by
          * the anchor.
          * @param {String} config.text text that is rendered inside the anchor element.
          */

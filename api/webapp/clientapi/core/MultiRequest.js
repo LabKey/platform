@@ -18,7 +18,7 @@
  */
 
 /**
- * Make multiple ajax requests and fires an event when all are complete.
+ * Make multiple ajax requests and invokes a callback when all are complete.
  * Requests are added as [function, config] array pairs where the config object
  * is passed as the argument to the request function.  The request function's config
  * object argument must accept a success callback named 'success' and a failure
@@ -42,19 +42,24 @@
    },
    failure: function (response, options) {
        console.log("selectRows failure");
-   }
+   },
+   scope: scope // scope to execute success and failure callbacks in.
  };
 
  // add the requests and config arguments one by one
  var multi = new LABKEY.MultiRequest();
- multi.add(LABKEY.Query.selectRows, config);
- multi.add(LABKEY.Query.selectRows, config);
- multi.add(LABKEY.Query.selectRows, config);
- multi.send(function () { console.log("send complete"); });
+ var requestScope = ... // scope to execute the request function in.
+ multi.add(LABKEY.Query.selectRows, config, requestScope);
+ multi.add(LABKEY.Query.selectRows, config, requestScope);
+ multi.add(LABKEY.Query.selectRows, config, requestScope);
+ multi.send(
+   function () { console.log("send complete"); },
+   sendCallbackScope // scope to execute 'send complete' callback in.
+ );
 
  // additional requests won't be sent while other requests are in progress
  multi.add(LABKEY.Query.selectRows, config);
- multi.send(function () { console.log("send complete"); });
+ multi.send(function () { console.log("send complete"); }, sendCallbackScope);
 
  // constructor can take an array of requests [function, config] pairs
  multi = new LABKEY.MultiRequest([
@@ -67,25 +72,38 @@
  // constructor can take a config object with listeners and requests.
  // if there is a 'done' listener, the requests will be sent immediately.
  multi = new LABKEY.MultiRequest({
-   listeners : { 'done': function () { console.log("send complete"); } },
+   listeners : { 'done': function () { console.log("send complete"); }, scope: sendCallbackScope },
    requests : [ [ LABKEY.Query.selectRows, config ],
                 [ LABKEY.Query.selectRows, config ],
                 [ LABKEY.Query.selectRows, config ] ]
+ });
+
+ // Alternate syntax for adding the 'done' event listener.
+ multi = new LABKEY.MultiRequest({
+   listeners : {
+     'done': {
+        fn: function () { console.log("send complete"); }
+        scope: sendCallbackScope
+     }
+   },
  });
  * </pre>
  */
 LABKEY.MultiRequest = function (config) {
     config = config || {};
 
-    this.sending = false;
-    this.waitQ = new Array();
+    var self = this;
+    var sending = false;
+    var waitQ = new Array();
+    var sendQ = new Array();
 
     var requests;
+    var listeners;
     if (LABKEY.ExtAdapter.isArray(config)) {
         requests = config;
     } else {
         requests = config.requests;
-        this.listeners = config.listeners;
+        listeners = config.listeners;
     }
 
     if (requests) {
@@ -95,95 +113,124 @@ LABKEY.MultiRequest = function (config) {
         }
     }
 
-    this.addEvents("done");
-    LABKEY.MultiRequest.superclass.constructor.call(this);
+    var doneCallbacks = [];
+    if (listeners && listeners.done) {
+        if (typeof listeners.done == "function") {
+            doneCallbacks.push({fn: listeners.done, scope: listeners.scope});
+        }
+        else if (typeof listeners.done.fn == "function") {
+            doneCallbacks.push({fn: listeners.done.fn, scope: listeners.done.scope || listeners.scope});
+        }
+    }
 
-    if (this.waitQ.length && this.hasListener("done")) {
+    if (waitQ.length && doneCallbacks.length > 0) {
         this.send();
     }
-};
-Ext.extend(LABKEY.MultiRequest, Ext.util.Observable,
-/**
- * @lends LABKEY.MultiRequest.prototype
- */
-{
+
+    function fireDone() {
+        //console.log("fireDone:");
+        for (var i = 0; i < doneCallbacks.length; i++) {
+            var cb = doneCallbacks[i];
+            //console.log("  invoking done callback: ", cb);
+            if (cb.fn && typeof cb.fn == "function") {
+                cb.fn.call(cb.scope || window);
+            }
+        }
+    }
+
+    function checkDone() {
+        //console.log("checkDone: sendQ.length=" + sendQ.length);
+        sendQ.pop();
+        if (sendQ.length == 0) {
+            sending = false;
+            fireDone();
+            self.send();
+        }
+        return true;
+    }
+
+    function createSequence(fn1, fn2, scope) {
+        return function () {
+            var ret = fn1.apply(scope || this || window, arguments);
+            fn2.apply(scope || this || window, arguments);
+            return ret;
+        }
+    }
+
     /**
      * Adds a request to the queue.
-     * @param fn {Function} A function which takes single config object.
-     * @param config {Object} The config object that will be passed to the request fn
+     * @param fn {Function} A request function which takes single config object.
+     * @param config {Object} The config object that will be passed to the request <code>fn</code>
      * and must contain success and failure callbacks.
+     * @param [scope] {Object} The scope in which to execute the request <code>fn</code>.
+     * Note that the config success and failure callbacks will execute in the <code>config.scope</code> and not the <code>scope</code> argument.
      * @returns {LABKEY.MultiRequest} this object so add calls can be chained.
      * @example
+     * <pre>
      * new MultiRequest().add(Ext.Ajax.request, {
      *     url: LABKEY.ActionURL.buildURL("controller", "action1", "/container/path"),
      *     success: function () { console.log("success 1!"); },
      *     failure: function () { console.log("failure 1!"); },
+     *     scope: this // The scope of the success and failure callbacks.
      * }).add({Ext.Ajax.request, {
      *     url: LABKEY.ActionURL.buildURL("controller", "action2", "/container/path"),
      *     success: function () { console.log("success 2!"); },
      *     failure: function () { console.log("failure 2!"); },
+     *     scope: this // The scope of the success and failure callbacks.
      * }).send(function () { console.log("all done!") });
+     * </pre>
      */
-    add : function (fn, config) {
+    this.add = function (fn, config, scope) {
         config = config || {};
-
-        var self = this;
-        function fireDone() {
-            //console.log("fireDone: self.sendQ.length=" + self.sendQ.length);
-            self.sendQ.pop();
-            if (self.sendQ.length == 0) {
-                self.sending = false;
-                self.fireEvent("done");
-                self.send();
-            }
-            return true;
-        }
 
         var success = LABKEY.Utils.getOnSuccess(config);
         if (!success) success = function () { };
         if (!success._hookInstalled) {
-            config.success = success.createSequence(fireDone);
+            config.success = createSequence(success, checkDone, config.scope);
             config.success._hookInstalled = true;
         }
 
         var failure = LABKEY.Utils.getOnFailure(config);
         if (!failure) failure = function () { };
         if (!failure._hookInstalled) {
-            config.failure = failure.createSequence(fireDone);
+            config.failure = createSequence(failure, checkDone, config.scope);
             config.failure._hookInstalled = true;
         }
 
-        this.waitQ.push(fn.createCallback(config));
+        waitQ.push({fn: fn, args: [config], scope: scope});
         return this;
-    },
+    };
 
     /**
-     * Send the queued up requests.  When all requesta have returned, the callback
+     * Send the queued up requests.  When all requests have returned, the send callback
      * will be called.
      * @param callback {Function} A function with a single argument of 'this'.
      * @param [scope] {Object} The scope in which to execute the callback.
+     *
+     * Alternatively, a single config Object argument:
+     * <ul>
+     * <li>fn: The send callback function.
+     * <li>scope: The scope to execute the send callback function in.
+     * </ul>
      */
-    send : function (callback, scope) {
-        if (this.sending || this.waitQ.length == 0)
+    this.send = function (callback, scope) {
+        if (sending || waitQ.length == 0)
             return;
-        this.sending = true;
-        this.sendQ = this.waitQ;
-        this.waitQ = new Array();
+        sending = true;
+        sendQ = waitQ;
+        waitQ = new Array();
 
-        var len = this.sendQ.length;
+        var len = sendQ.length;
         for (var i = 0; i < len; i++) {
-            var fn = this.sendQ[i];
-            fn();
+            var q = sendQ[i];
+            q.fn.apply(q.scope || window, q.args);
         }
 
         var self = this;
         if (typeof callback == "function") {
-            function onetimeCallback() {
-                self.un("done", onetimeCallback);
-                callback.apply(scope||window, [self]);
-            }
-
-            this.on("done", onetimeCallback);
+            doneCallbacks.push({fn: callback, scope: scope});
+        } else if (typeof callback.fn == "function") {
+            doneCallbacks.push({fn: callback.fn, scope: callback.scope||scope});
         }
-    }
-});
+    };
+};
