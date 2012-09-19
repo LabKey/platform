@@ -727,14 +727,23 @@ function showFlagDialogFn(config)
     var EXT = window.Ext4||window.Ext;
     config = EXT.apply({}, config, {
         url : LABKEY.ActionURL.buildURL('experiment', 'setFlag.api'),
+        dataRegionName : null,
         defaultComment : "Flagged for review",
         dialogTitle : "Review",
         imgTitle : "Flag for review",
         imgSrcFlagged : LABKEY.contextPath + "/Experiment/flagDefault.gif",
         imgClassFlagged : "",
         imgSrcUnflagged : LABKEY.contextPath + "/Experiment/unflagDefault.gif",
-        imgClassUnflagged : ""
+        imgClassUnflagged : "",
+        translatePrimaryKey : null
     });
+
+    function getDataRegion()
+    {
+        if (LABKEY.DataRegions && typeof config.dataRegionName == 'string')
+            return LABKEY.DataRegions[config.dataRegionName];
+        return null;
+    }
 
     var setFlag = function(flagId)
     {
@@ -750,6 +759,15 @@ function showFlagDialogFn(config)
             return;
         if (w.title != config.imgTitle)
             defaultComment = w.title || defaultComment;
+
+        var checkedLsids = [];
+        var dr = getDataRegion();
+        if (dr && typeof config.translatePrimaryKey == 'function')
+        {
+            var pks = dr.getChecked() || [];
+            for (var i=0 ; i<pks.length ; i++)
+                checkedLsids.push(config.translatePrimaryKey(pks[i]));
+        }
 
         var el = EXT.get(w);
         var box = EXT.MessageBox.show({
@@ -778,15 +796,15 @@ function showFlagDialogFn(config)
                                 el.dom.src = config.imgSrcFlagged;
                                 el.dom.title = value;
                                 if (config.imgClassUnflagged)
-                                    el.removeClass(config.imgClassUnflagged);
-                                el.addClass(config.imgClassFlagged);
+                                    (el.removeCls||el.removeClass)(config.imgClassUnflagged);
+                                (el.addCls||el.addClass)(config.imgClassFlagged);
                             }
                             else {
                                 el.dom.src = config.imgSrcUnflagged;
                                 el.dom.title = config.imgTitle;
                                 if (config.imgClassFlagged)
-                                    el.removeClass(config.imgClassFlagged);
-                                el.addClass(config.imgClassUnflagged);
+                                    (el.removeCls||el.removeClass)(config.imgClassFlagged);
+                                (el.addCls||el.addClass)(config.imgClassUnflagged);
                             }
                         },
                         failure : function()
@@ -799,7 +817,7 @@ function showFlagDialogFn(config)
             buttons : EXT.MessageBox.OKCANCEL
         });
 
-        box.getDialog().setPosition(el.getAnchorXY()[0]-75, el.getAnchorXY()[1]-75);
+//        box.getDialog().setPosition(el.getAnchorXY()[0]-75, el.getAnchorXY()[1]-75);
     };
     if (EXT.isReady)
         return setFlag;
