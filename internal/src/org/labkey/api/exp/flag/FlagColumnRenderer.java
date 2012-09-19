@@ -35,6 +35,9 @@ public class FlagColumnRenderer extends DataColumn
     protected String unflagSrc;
     protected String defaultTitle = "Flag for review"; // if there is no comment
     protected String endpoint = null;
+    // to enable multi edit, the dataregion needs to provide a mapping pk->lsid
+    // e.g.  "function(pk) {return pk;}"
+    protected String jsConvertPKToLSID = null;
 
     public FlagColumnRenderer(ColumnInfo colinfo)
     {
@@ -95,6 +98,8 @@ public class FlagColumnRenderer extends DataColumn
             out.write("var " + setFlagFn + " = showFlagDialogFn({");
             if (null != endpoint)
                 out.write("url: " + PageFlowUtil.jsString(endpoint) + ", ");
+            if (null != jsConvertPKToLSID)
+                out.write("  translatePrimaryKey : " + jsConvertPKToLSID + ", ");
             out.write("  dataRegionName: " + PageFlowUtil.jsString(dataRegionName) + ", ");
 //            out.write("  columnName: " + PageFlowUtil.jsString(getBoundColumn().getName()) + ", ");
             out.write("  imgSrcFlagged: " + PageFlowUtil.jsString(flagSrc) + ", ");

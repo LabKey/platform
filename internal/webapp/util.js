@@ -747,18 +747,15 @@ function showFlagDialogFn(config)
 
     var setFlag = function(flagId)
     {
-        var defaultComment = config.defaultComment;
-
         EXT.QuickTips.init();
 
-        var w;
+        var clickedComment;
         var flagImages = EXT.DomQuery.select("IMG[flagId='" + flagId + "']");
-        if (flagImages && flagImages.length)
-                w = flagImages[0];
-        if (!w)
+        if (!flagImages || 0==flagImages.length)
             return;
-        if (w.title != config.imgTitle)
-            defaultComment = w.title || defaultComment;
+        var img = flagImages[0];
+        if (img.title != config.imgTitle)
+            clickedComment = img.title;
 
         var checkedLsids = [];
         var dr = getDataRegion();
@@ -769,12 +766,51 @@ function showFlagDialogFn(config)
                 checkedLsids.push(config.translatePrimaryKey(pks[i]));
         }
 
-        var el = EXT.get(w);
-        var box = EXT.MessageBox.show({
+        var msg = 'Enter a comment';
+        var comment = clickedComment || config.defaultComment;
+        if (checkedLsids.length > 0)
+        {
+            msg = "Enter comment for " + checkedLsids.length + " selected " + (checkedLsids.length==1?"row":"rows");
+            comment = config.defaultComment;        // consider inspect all for equal comments
+        }
+
+        var lsids = checkedLsids.length==0 ? [flagId] : checkedLsids;
+        var successFn = function(response, options)
+        {
+            var comment = options.params.comment;
+            for (var i=0 ; i<lsids.length ; i++)
+            {
+                var lsid = lsids[i];
+                var flagImages = EXT.DomQuery.select("IMG[flagId='" + lsid + "']");
+                if (!flagImages || 0==flagImages.length)
+                    continue;
+                el = EXT.get(flagImages[0]);
+                if (comment)
+                {
+                    el.dom.src = config.imgSrcFlagged;
+                    el.dom.title = comment;
+                    if (config.imgClassUnflagged)
+                        (el.removeCls||el.removeClass)(config.imgClassUnflagged);
+                    (el.addCls||el.addClass)(config.imgClassFlagged);
+                }
+                else
+                {
+                    el.dom.src = config.imgSrcUnflagged;
+                    el.dom.title = config.imgTitle;
+                    if (config.imgClassFlagged)
+                        (el.removeCls||el.removeClass)(config.imgClassFlagged);
+                    (el.addCls||el.addClass)(config.imgClassUnflagged);
+                }
+            }
+        };
+
+        var el = EXT.get(img);
+        var box = EXT.MessageBox.show(
+        {
             title   : config.dialogTitle,
             prompt  : true,
-            msg     : 'Enter a comment',
-            value   : defaultComment,
+            msg     : msg,
+            value   : comment,
             width   : 300,
             fn      : function(btnId, value)
             {
@@ -785,28 +821,11 @@ function showFlagDialogFn(config)
                         url    : config.url,
                         params :
                         {
-                            lsid    : flagId,
+                            lsid    : lsids,
                             comment : value,
                             unique  : new Date().getTime()
                         },
-                        success : function()
-                        {
-                            if (value.length)
-                            {
-                                el.dom.src = config.imgSrcFlagged;
-                                el.dom.title = value;
-                                if (config.imgClassUnflagged)
-                                    (el.removeCls||el.removeClass)(config.imgClassUnflagged);
-                                (el.addCls||el.addClass)(config.imgClassFlagged);
-                            }
-                            else {
-                                el.dom.src = config.imgSrcUnflagged;
-                                el.dom.title = config.imgTitle;
-                                if (config.imgClassFlagged)
-                                    (el.removeCls||el.removeClass)(config.imgClassFlagged);
-                                (el.addCls||el.addClass)(config.imgClassUnflagged);
-                            }
-                        },
+                        success : successFn,
                         failure : function()
                         {
                             alert("Failure!");

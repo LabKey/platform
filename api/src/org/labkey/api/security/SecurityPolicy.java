@@ -71,7 +71,12 @@ public class SecurityPolicy implements HasPermission
     public SecurityPolicy(@NotNull SecurableResource resource, @NotNull RoleAssignment[] assignments)
     {
         this(resource);
-        _assignments.addAll(Arrays.asList(assignments));
+        for (RoleAssignment ra : assignments)
+        {
+            if (null == ra.getRole())
+                continue;
+            _assignments.add(ra);
+        }
     }
 
     public SecurityPolicy(@NotNull SecurableResource resource, @NotNull RoleAssignment[] assignments, Date lastModified)
