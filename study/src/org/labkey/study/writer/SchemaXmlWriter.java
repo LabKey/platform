@@ -81,7 +81,7 @@ public class SchemaXmlWriter implements Writer<List<DataSetDefinition>, ImportCo
 
         for (DataSetDefinition def : definitions)
         {
-            TableInfo ti = schema.createDataSetTableInternal(def);
+            TableInfo ti = schema.getTable(def.getName());
             TableType tableXml = tablesXml.addNewTable();
             DatasetTableInfoWriter w = new DatasetTableInfoWriter(ti, def, _defaultDateFormat, ctx.isRemoveProtected());
             w.writeTable(tableXml);

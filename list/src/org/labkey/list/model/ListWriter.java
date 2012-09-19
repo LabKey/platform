@@ -118,10 +118,12 @@ public class ListWriter
             // Insert standard comment explaining where the data lives, who exported it, and when
             XmlBeansUtil.addStandardExportComment(tablesXml, c, user);
 
+            ListSchema schema = new ListSchema(user, c);
+
             for (Map.Entry<String, ListDefinition> entry : lists.entrySet())
             {
                 ListDefinition def = entry.getValue();
-                TableInfo ti = def.getTable(user);
+                TableInfo ti = schema.getTable(def.getName());
 
                 // Write meta data
                 TableType tableXml = tablesXml.addNewTable();
@@ -281,10 +283,13 @@ public class ListWriter
                 - All user-editable columns (meta data & values)
                 - All primary keys, including the values of auto-increment key columns (meta data & values)
                 - Other key columns (meta data only)
-                - Exclude columns marked as Protected, if removeProtected is true
              */
-            if ((column.isUserEditable() || pks.contains(column) || (metaData && column.isKeyField())) && (!removeProtected || !column.isProtected()))
+            if ((column.isUserEditable() || pks.contains(column) || (metaData && column.isKeyField())))
             {
+                // Exclude columns marked as Protected, if removeProtected is true (except key columns marked as protected, those must be exported)
+                if (removeProtected && column.isProtected() && !pks.contains(column) && !column.isKeyField())
+                    continue;
+
                 columns.add(column);
 
                 // If the column is MV enabled, export the data in the indicator column as well

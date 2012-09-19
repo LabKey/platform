@@ -78,7 +78,7 @@ Ext4.define('LABKEY.vis.GroupSelector', {
         if (this.subject && this.subject.groups)
         {
             Ext4.each(this.subject.groups, function(group){
-                this.selection.push({type:'participantGroup', label:group.label}); 
+                this.selection.push({type:group.type, label:group.label});
             }, this);
         }
 
@@ -86,28 +86,45 @@ Ext4.define('LABKEY.vis.GroupSelector', {
             this.fireEvent('chartDefinitionChanged', true);            
         }, this);
 
-        this.groupFilterList = Ext4.create('LABKEY.ext4.filter.SelectList', {
+        this.selectionChangeTask = new Ext4.util.DelayedTask(function(){
+
+            var groups = [];
+            var selected = this.groupFilterList.getSelection(true);
+            for (var i = 0; i < selected.length; i++) {
+                groups.push(selected[i].data);
+            }
+
+            Ext4.Ajax.request({
+                url      : LABKEY.ActionURL.buildURL('participant-group', 'getSubjectsFromGroups.api'),
+                method   : 'POST',
+                jsonData : Ext4.encode({
+                    groups : groups
+                }),
+                success  : function(response)
+                {
+                    var json = Ext4.decode(response.responseText);
+
+                    this.subjects = json.subjects || [];
+                    this.fireEvent('chartDefinitionChanged', true);
+                },
+                failure  : function(response){
+                    Ext4.Msg.alert('Failure', Ext4.decode(response.responseText));
+                },
+                scope : this
+            });
+        }, this);
+
+        this.groupFilterList = Ext4.create('LABKEY.study.ParticipantFilterPanel', {
             itemId   : 'filterPanel',
             flex     : 1,
             allowAll : true,
-            store : Ext4.create('Ext.data.Store', {
-                model    : 'ParticipantCategory',
-                autoLoad : true,
-                proxy    : {
-                    type   : 'ajax',
-                    url    : LABKEY.ActionURL.buildURL('participant-group', 'browseParticipantGroups.api'),
-                    extraParams : { type : 'participantGroup', includeParticipantIds: true },
-                    reader : {
-                        type : 'json',
-                        root : 'groups'
-                    }
-                }
-            }),
+            includeParticipantIds : true,
+            includeUnassigned : false,
             maxInitSelection: this.maxInitSelection,
             selection : this.selection,
             listeners : {
                 selectionchange : function(){
-                    this.fireChangeTask.delay(1000);
+                    this.selectionChangeTask.delay(1000);
                 },
                 beforerender : function(){
                     this.fireEvent('measureMetadataRequestPending');
@@ -142,28 +159,21 @@ Ext4.define('LABKEY.vis.GroupSelector', {
     },
 
     getUniqueGroupSubjectValues: function(groups){
-        var values = [];
-        for (var i = 0; i < groups.length; i++)
-        {
-            values = Ext4.Array.unique(values.concat(groups[i].participantIds));
-        }
-        return values.sort();
+        return this.subjects || [];
     },
 
     getSubject: function(){
         var groups = [];
-        var selected = this.groupFilterList.getSelection(false);
+        var selected = this.groupFilterList.getSelection(true);
         for (var i = 0; i < selected.length; i++)
         {
-            if (selected[i].get('type') == 'participantGroup')
-            {
-                groups.push({
-                    id : selected[i].get("id"),
-                    categoryId : selected[i].get("categoryId"),
-                    label: selected[i].get("label"),
-                    participantIds: selected[i].get("participantIds") 
-                });
-            }
+            groups.push({
+                id : selected[i].get("id"),
+                categoryId : selected[i].get("categoryId"),
+                label: selected[i].get("label"),
+                type : selected[i].get("type"),
+                participantIds: selected[i].get("participantIds")
+            });
         }
 
         // sort the selected groups array to match the selection list order

@@ -45,7 +45,7 @@
 <script type="text/javascript">
     LABKEY.requiresClientAPI(true);
     LABKEY.requiresExt4Sandbox(true);
-    LABKEY.requiresScript("vis/genericChartPanel.js");
+    LABKEY.requiresScript("vis/genericChart/genericChartPanel.js");
     LABKEY.requiresVisualization();
 
 </script>
@@ -66,6 +66,7 @@
             baseUrl         : '<%=ctx.getActionURL()%>',
             renderTo        : '<%= renderId %>',
             allowShare      : <%=c.hasPermission(ctx.getUser(), ShareReportPermission.class)%>,
+            isDeveloper     : <%=ctx.getUser().isDeveloper()%>,
             hideSave        : <%=ctx.getUser().isGuest()%>,
             autoColumnYName  : <%=form.getAutoColumnYName() != null ? q(form.getAutoColumnYName()) : null%>,
             autoColumnXName  : <%=form.getAutoColumnXName() != null ? q(form.getAutoColumnXName()) : null%>,

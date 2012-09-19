@@ -111,6 +111,7 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             value: '3366FF',  // initial selected color
             fieldLabel: 'Point Color',
             width: 275,
+            height: 60,
             listeners: {
                 select: function(picker, selColor) {
                     if(!this.suppressEvents){
@@ -124,6 +125,57 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
         this.colorFieldContainer = Ext4.create('Ext.form.FieldContainer', {
             layout: 'hbox',
             items: [this.colorLabel, this.pointColorPicker]
+        });
+
+        this.lineColorLabel = Ext4.create('Ext.form.Label', {
+            width: labelWidth,
+            text: 'Line Color'
+        });
+
+        this.lineColorPicker = Ext4.create('Ext.picker.Color', {
+            value: '000000',  // initial selected color
+            fieldLabel: 'Line Color',
+            width: 275,
+            height: 60,
+            listeners: {
+                select: function(picker, selColor) {
+                    if(!this.suppressEvents){
+                        this.hasChanges = true;
+                    }
+                },
+                scope: this
+            }
+        });
+
+        this.lineColorContainer = Ext4.create('Ext.form.FieldContainer', {
+            layout: 'hbox',
+            items: [this.lineColorLabel, this.lineColorPicker]
+        });
+
+
+        this.fillColorLabel = Ext4.create('Ext.form.Label', {
+            width: labelWidth,
+            text: 'Fill Color'
+        });
+
+        this.fillColorPicker = Ext4.create('Ext.picker.Color', {
+            value: '3366FF',  // initial selected color
+            fieldLabel: 'Fill Color',
+            width: 275,
+            height: 60,
+            listeners: {
+                select: function(picker, selColor) {
+                    if(!this.suppressEvents){
+                        this.hasChanges = true;
+                    }
+                },
+                scope: this
+            }
+        });
+
+        this.fillColorContainer = Ext4.create('Ext.form.FieldContainer', {
+            layout: 'hbox',
+            items: [this.fillColorLabel, this.fillColorPicker]
         });
 
         this.lineWidthSlider = Ext4.create('Ext.slider.Single', {
@@ -150,7 +202,9 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             this.lineWidthSlider,
             this.opacitySlider,
             this.pointSizeSlider,
-            this.colorFieldContainer
+            this.colorFieldContainer,
+            this.lineColorContainer,
+            this.fillColorContainer
         ];
 
         this.buttons = [{
@@ -188,7 +242,9 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             opacity: this.getOpacity(),
             pointSize: this.getPointSize(),
             pointColor: this.getPointColor(),
-            lineWidth: this.getLineWidth()
+            lineWidth: this.getLineWidth(),
+            lineColor: this.getLineColor(),
+            fillColor: this.getFillColor()
         };
     },
 
@@ -203,6 +259,10 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
             this.setPointSize(initValues.pointSize);
         if (initValues.hasOwnProperty("pointColor"))
             this.setPointColor(initValues.pointColor);
+        if (initValues.hasOwnProperty("lineColor"))
+            this.setLineColor(initValues.lineColor);
+        if (initValues.hasOwnProperty("fillColor"))
+            this.setFillColor(initValues.fillColor);
 
         this.hasChanges = false;
     },
@@ -228,6 +288,14 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
         if(config.lineWidth){
             this.setLineWidth(config.lineWidth);
+        }
+
+        if(config.lineColor){
+            this.setLineColor(config.lineColor);
+        }
+
+        if(config.fillColor){
+            this.setFillColor(config.fillColor);
         }
 
         this.suppressEvents = false;
@@ -271,5 +339,21 @@ Ext4.define('LABKEY.vis.GenericChartOptionsPanel', {
 
     setLineWidth: function(value){
         this.lineWidthSlider.setValue(value);
+    },
+
+    getLineColor: function(){
+        return this.lineColorPicker.getValue();
+    },
+
+    setLineColor: function(value){
+        this.lineColorPicker.select(value);
+    },
+
+    getFillColor: function(){
+        return this.fillColorPicker.getValue();
+    },
+
+    setFillColor: function(value){
+        this.fillColorPicker.select(value);
     }
 });

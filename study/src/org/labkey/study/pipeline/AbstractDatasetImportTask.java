@@ -16,7 +16,6 @@
 
 package org.labkey.study.pipeline;
 
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
@@ -25,6 +24,7 @@ import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.util.Path;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.model.CohortManager;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
@@ -69,7 +69,9 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
     {
         try
         {
-            doImport(getDatasetsDirectory(), getDatasetsFileName(), getJob(), getStudy());
+            PipelineJob job = getJob();
+            StudyImportContext ctx = new StudyImportContext(job.getUser(), job.getContainer(), job.getLogger());
+            doImport(getDatasetsDirectory(), getDatasetsFileName(), job, ctx, getStudy());
 
             return new RecordedActionSet();
         }
@@ -80,7 +82,7 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
 
     }
 
-    public static void doImport(VirtualFile datasetsDirectory, String datasetsFileName, PipelineJob job, StudyImpl study) throws PipelineJobException
+    public static void doImport(VirtualFile datasetsDirectory, String datasetsFileName, PipelineJob job, StudyImportContext ctx, StudyImpl study) throws PipelineJobException
     {
         if (null != datasetsDirectory && null != datasetsFileName && Arrays.asList(datasetsDirectory.list()).contains(datasetsFileName))
         {
@@ -95,16 +97,16 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
                     reader.validate(errors);
 
                     for (String error : errors)
-                        job.error(error);
+                        ctx.getLogger().error(error);
                 }
                 catch (Exception x)
                 {
-                    job.error("Parse failed: " + datasetsFileName, x);
+                    ctx.getLogger().error("Parse failed: " + datasetsFileName, x);
                     return;
                 }
 
                 List<DatasetImportRunnable> runnables = reader.getRunnables();
-                job.info("Start batch " + datasetsFileName);
+                ctx.getLogger().info("Start batch " + datasetsFileName);
 
                 List<DataSetDefinition> datasets = new ArrayList<DataSetDefinition>();
 
@@ -113,15 +115,17 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
                     String validate = runnable.validate();
                     if (validate != null)
                     {
-                        job.setStatus(validate);
-                        job.error(validate);
+                        if (job != null)
+                            job.setStatus(validate);
+                        ctx.getLogger().error(validate);
                         continue;
                     }
                     String statusMsg = "" + runnable._action + " " + runnable._datasetDefinition.getLabel();
                     datasets.add(runnable._datasetDefinition);
                     if (runnable._tsvName != null)
                         statusMsg += " using file " + runnable._tsvName;
-                    job.setStatus(statusMsg);
+                    if (job != null)
+                        job.setStatus(statusMsg);
 
                     try
                     {
@@ -129,26 +133,27 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
                     }
                     catch (Exception x)
                     {
-                        job.error("Unexpected error loading " + runnable._tsvName, x);
+                        ctx.getLogger().error("Unexpected error loading " + runnable._tsvName, x);
                     }
                 }
 
-                job.info("Finish batch " + datasetsFileName);
+                ctx.getLogger().info("Finish batch " + datasetsFileName);
 
-                job.setStatus("UPDATE participants");
-                job.info("Updating participant visits");
-                StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(job.getUser(), datasets);
+                if (job != null)
+                    job.setStatus("UPDATE participants");
+                ctx.getLogger().info("Updating participant visits");
+                StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(ctx.getUser(), datasets);
 
-                job.info("Finished updating participants");
+                ctx.getLogger().info("Finished updating participants");
             }
             catch (RuntimeException x)
             {
-                job.error("Unexpected error", x);
+                ctx.getLogger().error("Unexpected error", x);
                 throw x;
             }
             finally
             {
-                QuerySnapshotService.get(StudyManager.getSchemaName()).resumeUpdates(job.getUser(), study.getContainer());
+                QuerySnapshotService.get(StudyManager.getSchemaName()).resumeUpdates(ctx.getUser(), study.getContainer());
                 File lock = StudyPipeline.lockForDataset(study, Path.parse(datasetsDirectory.getLocation()).append(datasetsFileName));
                 if (lock.exists() && lock.canRead() && lock.canWrite())
                     lock.delete();

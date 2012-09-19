@@ -256,11 +256,14 @@ Ext4.define('LABKEY.vis.GenericChartGroupingPanel', {
     },
 
     getColorMeasure: function(){
-        return this.colorCombo.getValue();
+        return {
+            name: this.colorCombo.getValue(),
+            label: this.colorCombo.getRawValue()
+        };
     },
 
     setColorMeasure: function(value){
-        this.colorCombo.setValue(value);
+        this.colorCombo.setValue(value.name);
     },
 
     getPointType: function(){
@@ -272,10 +275,15 @@ Ext4.define('LABKEY.vis.GenericChartGroupingPanel', {
     },
 
     getPointMeasure: function(){
-        return this.pointCombo.getValue();
+        return {
+            name: this.pointCombo.getValue(),
+            label: this.pointCombo.getRawValue()
+        };
     },
 
     setPointMeasure: function(value){
-        this.pointCombo.setValue(value);
+        // Have to set value.name because we store an object with name and label,
+        // and name is the value field of the combo box.
+        this.pointCombo.setValue(value.name);
     }
 });

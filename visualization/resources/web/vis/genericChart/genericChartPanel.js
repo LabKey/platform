@@ -8,11 +8,14 @@ LABKEY.requiresExt4Sandbox(true);
 
 LABKEY.requiresCss("study/DataViewsPanel.css");
 LABKEY.requiresCss("_images/icons.css");
+
 LABKEY.requiresScript("vis/genericOptionsPanel.js");
-LABKEY.requiresScript("vis/genericChartOptionsPanel.js");
 LABKEY.requiresScript("vis/mainTitleOptionsPanel.js");
-LABKEY.requiresScript("vis/genericChartAxisPanel.js");
-LABKEY.requiresScript("vis/genericChartGroupingPanel.js");
+LABKEY.requiresScript("vis/developerOptionsPanel.js");
+
+LABKEY.requiresScript("vis/genericChart/genericChartOptionsPanel.js");
+LABKEY.requiresScript("vis/genericChart/genericChartAxisPanel.js");
+LABKEY.requiresScript("vis/genericChart/genericChartGroupingPanel.js");
 
 Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
@@ -81,8 +84,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     initComponent : function() {
 
-        this.editMode = (LABKEY.ActionURL.getParameter("edit") == "true" || !this.reportId) && this.allowEditMode;
-
         // boolean to check if we should allow things like export to PDF
         this.supportedBrowser = !(Ext4.isIE6 || Ext4.isIE7 || Ext4.isIE8);
 
@@ -100,6 +101,17 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             text: 'Grouping',
             handler: function(){
                 this.groupingWindow.setVisible(this.groupingWindow.isHidden());
+            },
+            scope: this
+        });
+
+        this.developerBtn = Ext4.create('Ext.button.Button', {
+            text: 'Developer',
+            hidden: !this.isDeveloper,
+            disabled: !this.supportedBrowser,
+            tooltip: !this.supportedBrowser ? "Developer options not supported for IE6, IE7, or IE8." : null,
+            handler: function(){
+                this.developerWindow.setVisible(this.developerWindow.isHidden());
             },
             scope: this
         });
@@ -158,44 +170,20 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     this.showOptionsBtn.show();
                     this.groupingBtn.show();
                     this.exportPdfBtn.show();
+                    if (this.isDeveloper)
+                        this.developerBtn.show();
                 } else {
                     this.centerPanel.getLayout().setActiveItem(1);
                     this.toggleBtn.setText('View Chart');
                     this.showOptionsBtn.hide();
                     this.groupingBtn.hide();
                     this.exportPdfBtn.hide();
+                    if (this.isDeveloper)
+                        this.developerBtn.hide();
                 }
             },
             scope: this
         });
-
-        var tbarItems = [
-            this.toggleBtn,
-            this.exportPdfBtn,
-			this.groupingBtn
-        ];
-
-        if (this.editMode)
-        {
-            tbarItems.push(this.showOptionsBtn);
-            tbarItems.push('->');
-            tbarItems.push(this.saveBtn);
-            tbarItems.push(this.saveAsBtn);
-        }
-        else if (this.allowEditMode)
-        {
-            // add an "edit" button if the user is allowed to toggle to edit mode for this report
-            tbarItems.push('->');
-            tbarItems.push({
-                xtype: 'button',
-                text: 'Edit',
-                handler: function() {
-                    var params = LABKEY.ActionURL.getParameters();
-                    Ext4.apply(params, {edit: "true"});
-                    window.location = LABKEY.ActionURL.buildURL(LABKEY.ActionURL.getController(), LABKEY.ActionURL.getAction(), null, params);
-                }
-            });
-        }
 
         this.centerPanel = Ext4.create('Ext.panel.Panel', {
             border   : false, frame : false,
@@ -208,7 +196,16 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             },
             activeItem: 0,
             items    : [this.getViewPanel(), this.getDataPanel()],
-            tbar: tbarItems
+            tbar: [
+                this.toggleBtn,
+                this.exportPdfBtn,
+                this.showOptionsBtn,
+                this.groupingBtn,
+                this.developerBtn,
+                '->',
+                this.saveBtn,
+                this.saveAsBtn
+            ]
         });
 
         var typeConvert = function(value, record){
@@ -571,12 +568,12 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
                     this.groupingPanel.supressEvents = true;
 
-                    if(this.groupingPanel.getColorMeasure() == null){
-                        this.groupingPanel.setColorMeasure(this.groupingMeasureStore.getAt(0).get('name'));
+                    if(this.groupingPanel.getColorMeasure().name == null){
+                        this.groupingPanel.setColorMeasure(this.groupingMeasureStore.getAt(0).data);
                     }
 
-                    if(this.groupingPanel.getPointMeasure() == null){
-                        this.groupingPanel.setPointMeasure(this.groupingMeasureStore.getAt(0).get('name'));
+                    if(this.groupingPanel.getPointMeasure().name == null){
+                        this.groupingPanel.setPointMeasure(this.groupingMeasureStore.getAt(0).data);
                     }
 
                     this.groupingPanel.supressEvents = false;
@@ -590,13 +587,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             store: this.groupingMeasureStore,
             listeners: {
                 chartDefinitionChanged: function(){
-                    var renderType = this.optionsPanel.getRenderType();
-                    if(this.renderType != renderType){
-                        this.renderType = renderType;
-
-                        if (!this.reportId)
-                            this.updateWebpartTitle(this.typeToLabel[renderType]);
-                    }
                     this.viewPanel.getEl().mask('Rendering Chart...');
                     this.chartDefinitionChanged.delay(500);
                 },
@@ -632,6 +622,53 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 beforeclose: function(){
                     if(this.initialPanelValues){
                         this.groupingPanel.restoreValues(this.initialPanelValues);
+                    }
+                }
+            }
+        });
+
+        this.developerPanel = Ext4.create('LABKEY.vis.DeveloperOptionsPanel', {
+            isDeveloper: this.isDeveloper || false,
+            pointClickFn: null,
+            defaultPointClickFn: this.getDefaultPointClickFn(),
+            pointClickFnHelp: this.getPointClickFnHelp(),
+            listeners: {
+                chartDefinitionChanged: function(){
+                    this.viewPanel.getEl().mask('Rendering Chart...');
+                    this.chartDefinitionChanged.delay(500);
+                },
+                'closeOptionsWindow': function(canceling){
+                    if (canceling)
+                        this.developerWindow.fireEvent('beforeclose');
+                    this.developerWindow.hide();
+                },
+                scope: this
+            }
+        });
+
+        this.developerWindow = Ext4.create('Ext.window.Window', {
+            title: 'Developer Options',
+            hidden: true,
+            border: 1,
+            width: 800,
+            cls: 'data-window',
+            resizable: false,
+            modal: true,
+            draggable: false,
+            closable: true,
+            closeAction: 'hide',
+            expandOnShow: false,
+            relative: this.developerBtn,
+            items: [this.developerPanel],
+            listeners: {
+                scope: this,
+                show: function(){
+                    this.initialPanelValues = this.developerPanel.getPanelOptionValues();
+                    this.developerWindow.alignTo(this.developerBtn, 'tl-tr', [-175, 30]);
+                },
+                beforeclose: function(){
+                    if(this.initialPanelValues){
+                        this.developerPanel.restoreValues(this.initialPanelValues);
                     }
                 }
             }
@@ -689,6 +726,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         this.items.push(this.optionsWindow);
         this.items.push(this.groupingWindow);
+        this.items.push(this.developerWindow);
         this.items.push(this.centerPanel);
 
         this.callParent();
@@ -1420,6 +1458,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 if(json.chartConfig.chartOptions.grouping){
                     this.groupingPanel.setPanelOptionValues(json.chartConfig.chartOptions.grouping);
                 }
+
+                if (json.chartConfig.chartOptions.developer)
+                    this.developerPanel.setPanelOptionValues(json.chartConfig.chartOptions.developer);
             }
         }
 
@@ -1493,74 +1534,13 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         var chartOptions = this.getChartOptions();
         var scales = {}, geom, plotConfig, newChartDiv, labels, yMin, yMax, yPadding;
-        var xMeasureName = this.xAxisMeasure ? this.xAxisMeasure.name : this.chartData.queryName;
-        var xMeasureLabel = this.xAxisMeasure ? Ext4.util.Format.htmlEncode(this.xAxisMeasure.label) : this.chartData.queryName;
-        var yMeasureName = this.yAxisMeasure.name;
-        var colorMeasureName = null;
-        var colorMeasureLabel = null;
-        var colorAcc = null;
-        var pointMeasureName = null;
-        var pointMeasureLabel = null;
-        var pointAcc = null;
-
-        if(chartOptions.grouping.colorType === 'measure'){
-            colorMeasureName = chartOptions.grouping.colorMeasure;
-            var colorMeasureIdx = this.groupingMeasureStore.find('name', colorMeasureName);
-
-            if(colorMeasureIdx > -1){
-                colorMeasureLabel = this.groupingMeasureStore.getAt(colorMeasureIdx).get('label');
-            }
-
-            colorAcc = function(row){
-                var value = row[colorMeasureName].value;
-
-                if(value === null || value === undefined){
-                    value = "n/a";
-                }
-                
-                return value;
-            };
-
-            scales.color = {scaleType: 'discrete'};
-        }
-
-        if(chartOptions.grouping.pointType === 'measure'){
-            pointMeasureName = chartOptions.grouping.pointMeasure;
-            var pointMeasureIdx = this.groupingMeasureStore.find('name', pointMeasureName);
-
-            if(pointMeasureIdx > -1){
-                pointMeasureLabel = this.groupingMeasureStore.getAt(pointMeasureIdx).get('label');
-            }
-
-            pointAcc = function(row){
-                var value = row[pointMeasureName].value;
-
-                if(value === null || value === undefined){
-                    value = "n/a";
-                }
-
-                return value;
-            };
-        }
-
-        var xAcc = null;
-        var yAcc = function(row){
-            var value = null;
-
-            if(row[yMeasureName]){
-                value = row[yMeasureName].value;
-                if(value === false || value === true){
-                    value = value.toString();
-                }
-            }
-            
-            return value;
-        };
+        var measures = this.initMeasures(chartOptions, this.chartData, this.xAxisMeasure, this.yAxisMeasure);
+        var pointClickFn = null;
 
         // Check if y axis actually has data first, if not show error message and have user select new measure.
         var yDataIsNull = true;
         for(var i = 0; i < this.chartData.rows.length; i++){
-            var value = yAcc(this.chartData.rows[i]);
+            var value = measures.y.acc(this.chartData.rows[i]);
             if(value != null){
                 yDataIsNull = false;
             }
@@ -1570,6 +1550,20 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             this.viewPanel.getEl().unmask();
             Ext.MessageBox.alert('Error', 'All data values for ' + Ext4.util.Format.htmlEncode(this.yAxisMeasure.label) + ' are null. Please choose a different measure', this.showYMeasureWindow, this);
             return;
+        }
+
+        // create a new function from the pointClickFn string provided by the developer
+        if (chartOptions.developer.pointClickFn){
+            // the developer is expected to return a function, so we encapalate it within the anonymous function
+            // (note: the function should have already be validated in a try/catch when applied via the developerOptionsPanel)
+            var devPointClickFn = new Function("", "return " + chartOptions.developer.pointClickFn);
+
+            pointClickFn = function(measureInfo) {
+                return function(clickEvent, data) {
+                    // call the developers function, within the anonymous function, with the params as defined for the developer
+                    devPointClickFn().call(this, data, measureInfo, clickEvent);
+                }
+            };
         }
 
         var xClickHandler = function(scopedThis){
@@ -1601,23 +1595,23 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 (this.renderType == 'auto_plot' && (!this.xAxisMeasure || this.xAxisMeasure.normalizedType == 'string' || this.xAxisMeasure.normalizedType == 'boolean'))) {
 
             if(this.xAxisMeasure){
-                xAcc = function(row){
-                    var value = row[xMeasureName].displayValue ? row[xMeasureName].displayValue : row[xMeasureName].value;
+                measures.x.acc = function(row){
+                    var value = row[measures.x.name].displayValue ? row[measures.x.name].displayValue : row[measures.x.name].value;
                     if(value === null){
-                        value = "Not in " + xMeasureLabel;
+                        value = "Not in " + measures.x.label;
                     }
                     return value;
                 };
             } else {
-                xAcc = function(row){return xMeasureName};
+                measures.x.acc = function(row){return measures.x.name};
             }
 
             scales.x = {scaleType: 'discrete'};
-            yMin = d3.min(this.chartData.rows, yAcc);
-            yMax = d3.max(this.chartData.rows, yAcc);
+            yMin = d3.min(this.chartData.rows, measures.y.acc);
+            yMax = d3.max(this.chartData.rows, measures.y.acc);
             yPadding = ((yMax - yMin) * .1);
 
-            if (chartOptions.yAxis.scaleType == "log" && yMin - yPadding > 0){
+            if (chartOptions.yAxis.scaleType == "log"){
                 // Issue 15760: Quick Chart -- Log Data Renders Incorrectly
                 // When subtracting padding we have to make sure we still produce valid values for a log scale.
                 // log([value less than 0]) = NaN.
@@ -1628,19 +1622,21 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             } else {
                 yMin = yMin - yPadding;
             }
-
+            
             scales.y = {min: yMin, max: yMax + yPadding, scaleType: 'continuous', trans: chartOptions.yAxis.scaleType};
             geom = new LABKEY.vis.Geom.Boxplot({
                 lineWidth: chartOptions.lineWidth,
                 outlierOpacity: chartOptions.opacity,
                 outlierFill: '#' + chartOptions.pointColor,
-                outlierSize: chartOptions.pointSize
+                outlierSize: chartOptions.pointSize,
+                color: '#' + chartOptions.lineColor,
+                fill: '#' + chartOptions.fillColor
             });
         } else if(this.renderType == 'scatter_plot' ||
                 (this.renderType == 'auto_plot' && this.xAxisMeasure.normalizedType == 'int' || this.xAxisMeasure.normalizedType == 'float' || this.xAxisMeasure.normalizedType == 'date')){
 
-            xAcc = function(row){
-                return row[xMeasureName].value;
+            measures.x.acc = function(row){
+                return row[measures.x.name].value;
             };
             
             scales.x = (this.xAxisMeasure.normalizedType == 'int' || this.xAxisMeasure.normalizedType == 'float' || this.xAxisMeasure.normalizedType == 'double') ?
@@ -1674,23 +1670,23 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         labels = {
             main: {
                 value: chartOptions.mainTitle,
-                lookClickable: !forExport && this.editMode,
+                lookClickable: !forExport,
                 listeners: {
-                    click: this.editMode ? mainTitleClickHandler(this) : null
+                    click: mainTitleClickHandler(this)
                 }
             },
             y: {
                 value: chartOptions.yAxis.label ? chartOptions.yAxis.label : Ext4.util.Format.htmlEncode(this.yAxisMeasure.label),
-                lookClickable: !forExport && this.editMode,
+                lookClickable: !forExport,
                 listeners: {
-                    click: this.editMode ? yClickHandler(this) : null
+                    click: yClickHandler(this)
                 }
             },
             x: {
                 value: chartOptions.xAxis.label ? chartOptions.xAxis.label : "Choose a column",
-                lookClickable: !forExport && this.editMode,
+                lookClickable: !forExport,
                 listeners: {
-                    click: this.editMode ? xClickHandler(this) : null
+                    click: xClickHandler(this)
                 }
             }
 
@@ -1703,30 +1699,23 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 !forExport ? newChartDiv.getHeight() - 25 : 600,
                 this.chartData.rows,
                 labels,
-                scales,
-                xMeasureName,
-                this.yAxisMeasure.name,
-                xAcc,
-                yAcc
+                scales
         );
 
-        plotConfig.aes = this.generateAes(
-                geom,
-                xMeasureName, yMeasureName, colorMeasureName, pointMeasureName,
-                xAcc, yAcc, colorAcc, pointAcc
-        );
+        plotConfig.aes = this.generateAes(geom, measures, pointClickFn);
+
+        if(!plotConfig.aes.color && !plotConfig.aes.shape){
+            plotConfig.legendPos = 'none';
+        }
 
         var plot = new LABKEY.vis.Plot(plotConfig);
         plot.render();
 
-        if (!forExport)
-        {
+        if (!forExport){
             this.exportPdfBtn.addListener('click', this.exportChartToPdf, this);
             this.exportPdfBtn.setDisabled(!this.supportedBrowser);
             this.viewPanel.getEl().unmask();
-        }
-        else
-        {
+        } else{
             return newChartDiv.id;
         }
     },
@@ -1740,10 +1729,72 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
     },
 
-    generateAes: function(geom, xAxisName, yAxisName, colorName, pointName, xAcc, yAcc, colorAcc, pointAcc){
+    initMeasures: function(chartOptions, chartData, xMeasure, yMeasure){
+        var measures = {};
+
+        if(chartOptions.grouping.colorType === 'measure'){
+            measures.color = {
+                name: chartOptions.grouping.colorMeasure.name,
+                label: chartOptions.grouping.colorMeasure.label,
+                acc: function(row){
+
+                    var value = row[measures.color.name].displayValue ? row[measures.color.name].displayValue : row[measures.color.name].value;
+
+                    if(value === null || value === undefined){
+                        value = "n/a";
+                    }
+
+                    return value;
+                }
+            };
+        }
+
+        if(chartOptions.grouping.pointType === 'measure'){
+            measures.shape = {
+                name: chartOptions.grouping.pointMeasure.name,
+                label: chartOptions.grouping.pointMeasure.label,
+                acc: function(row){
+                    var value = row[measures.shape.name].displayValue ? row[measures.shape.name].displayValue : row[measures.shape.name].value;
+
+                    if(value === null || value === undefined){
+                        value = "n/a";
+                    }
+
+                    return value;
+                }
+            };
+        }
+
+        measures.x = {
+            name: xMeasure ? xMeasure.name : chartData.queryName,
+            label: xMeasure ? Ext4.util.Format.htmlEncode(xMeasure.label) : chartData.queryName,
+            acc: null // The x-axis accessor depends on the render type. This will be set later.
+        };
+
+        measures.y = {
+            name: yMeasure.name,
+            label: yMeasure.label,
+            acc: function(row){
+                var value = null;
+
+                if(row[yMeasure.name]){
+                    value = row[yMeasure.name].value;
+                    if(value === false || value === true){
+                        value = value.toString();
+                    }
+                }
+
+                return value;
+            }
+        };
+
+        return measures;
+    },
+
+    generateAes: function(geom, measures, pointClickFn){
         var aes = {
-            y: yAcc,
-            x: xAcc
+            y: measures.y.acc,
+            x: measures.x.acc
         };
 
         if(geom.type == "Boxplot"){
@@ -1751,64 +1802,89 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 return x + ':\nMin: ' + stats.min + '\nMax: ' + stats.max + '\nQ1: ' + stats.Q1 + '\nQ2: ' + stats.Q2 +
                         '\nQ3: ' + stats.Q3;
             };
+
             aes.outlierHoverText = function(row){
-                if(row[xAxisName]){
-                    return xAxisName + ': ' + row[xAxisName].value + ', ' + yAxisName + ': ' + row[yAxisName].value;
+                if(row[measures.x.name]){
+                    var hover = measures.x.label + ': ';
+
+                    if(row[measures.x.name].displayValue){
+                        hover = hover + row[measures.x.name].displayValue;
+                    } else {
+                        hover = hover + row[measures.x.name].value;
+                    }
+
+                    return hover + ', \n' + measures.y.label + ': ' + row[measures.y.name].value;
                 } else {
-                    return xAxisName + ', ' + yAxisName + ': ' + row[yAxisName].value;
+                    return measures.x.label + ', \n' + measures.y.label + ': ' + row[measures.y.name].value;
                 }
             }
         } else if(geom.type == "Point"){
             aes.hoverText = function(row){
-                return xAxisName + ': ' + row[xAxisName].value + ', ' + yAxisName + ': ' + row[yAxisName].value;
+                var hover = measures.x.label + ': ';
+
+                if(row[measures.x.name].displayValue){
+                    hover = hover + row[measures.x.name].displayValue;
+                } else {
+                    hover = hover + row[measures.x.name].value;
+                }
+
+
+                hover = hover + ', \n' + measures.y.label + ': ' + row[measures.y.name].value;
+
+                if(measures.color){
+                    hover = hover +  ', \n' + measures.color.label + ': ';
+                    if(row[measures.color.name].displayValue){
+                        hover = hover + row[measures.color.name].displayValue;
+                    } else {
+                        hover = hover + row[measures.color.name].value;
+                    }
+                }
+
+                if(measures.shape && !(measures.color && measures.color.name == measures.shape.name)){
+                    hover = hover +  ', \n' + measures.shape.label + ': ';
+                    if(row[measures.shape.name].displayValue){
+                        hover = hover + row[measures.shape.name].displayValue;
+                    } else {
+                        hover = hover + row[measures.shape.name].value;
+                    }
+                }
+                return hover;
             };
-            
-            if(colorAcc){
-                aes.color = colorAcc;
+
+            if(measures.color){
+                aes.color = measures.color.acc;
             }
 
-            if(pointAcc){
-                aes.shape = pointAcc;
+            if(measures.shape){
+                aes.shape = measures.shape.acc;
             }
+        }
+
+        if (pointClickFn != null)
+        {
+            aes.pointClickFn = pointClickFn(
+                {
+                    schemaName: this.schemaName,
+                    queryName: this.queryName,
+                    xAxis: measures.x.name,
+                    yAxis: measures.y.name,
+                    colorName: measures.color.name,
+                    pointName: measures.point.name
+                }
+            );
         }
 
         return aes;
     },
 
-    generatePlotConfig: function(geom, renderTo, width, height, data, labels, scales, xAxisName, yAxisName, xAcc, yAcc){
-
-        var aes = {
-            y: yAcc,
-            x: xAcc
-        };
-        
-        if(geom.type == "Boxplot"){
-            aes.hoverText = function(x, stats){
-                return x + ':\nMin: ' + stats.min + '\nMax: ' + stats.max + '\nQ1: ' + stats.Q1 + '\nQ2: ' + stats.Q2 +
-                        '\nQ3: ' + stats.Q3;
-            };
-            aes.outlierHoverText = function(row){
-                if(row[xAxisName]){
-                    return xAxisName + ': ' + row[xAxisName].value + ', ' + yAxisName + ': ' + row[yAxisName].value;
-                } else {
-                    return xAxisName + ', ' + yAxisName + ': ' + row[yAxisName].value;
-                }
-            }
-        } else if(geom.type == "Point"){
-            aes.hoverText = function(row){
-                return xAxisName + ': ' + row[xAxisName].value + ', ' + yAxisName + ': ' + row[yAxisName].value;
-            };
-        }
-
+    generatePlotConfig: function(geom, renderTo, width, height, data, labels, scales){
         var plotConfig = {
             renderTo: renderTo,
             width: width,
             height: height,
-            legendPos: 'none',
             labels: labels,
             layers: [new LABKEY.vis.Layer({geom: geom})],
             scales: scales,
-            aes: aes,
             data: data
         };
 
@@ -1870,6 +1946,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         chartOptions.grouping = this.groupingPanel.getPanelOptionValues();
 
+        chartOptions.developer = this.developerPanel.getPanelOptionValues();
+
         return chartOptions;
     },
 
@@ -1921,5 +1999,39 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         }
 
         return false;
+    },
+
+    getDefaultPointClickFn: function() {
+        return "function (data, measureInfo, clickEvent) {\n"
+            + "   // use LABKEY.ActionURL.buildURL to generate a link to a different controller/action within LabKey server\n"
+            + "   var ptidHref = LABKEY.ActionURL.buildURL('study', 'participant', LABKEY.container.path, \n"
+            + "                      {participantId: data['ParticipantId'].value});\n"
+            + "   var queryHref = LABKEY.ActionURL.buildURL('query', 'executeQuery', LABKEY.container.path, \n"
+            + "                      {schemaName: measureInfo[\"schemaName\"], \"query.queryName\": measureInfo[\"queryName\"]});\n\n"
+            + "   // display an Ext message box with some information from the function parameters\n"
+            + "   Ext4.Msg.alert('Data Point Information',\n"
+            + "       'Schema:' + measureInfo[\"schemaName\"]\n"
+            + "       + '<br/> Query: <a href=\"' + queryHref + '\">' + measureInfo[\"queryName\"] + '</a>'\n"
+            + "       + '<br/>' + measureInfo[\"xAxis\"] + ': ' + (data[measureInfo[\"xAxis\"]].displayValue ? data[measureInfo[\"xAxis\"]].displayValue : data[measureInfo[\"xAxis\"]].value)\n"
+            + "       + '<br/>' + measureInfo[\"yAxis\"] + ': ' + (data[measureInfo[\"yAxis\"]].displayValue ? data[measureInfo[\"yAxis\"]].displayValue : data[measureInfo[\"yAxis\"]].value)\n"
+            + "   );\n\n"
+            + "   // you could also directly navigate away from the chart using window.location\n"
+            + "   // window.location = ptidHref;\n"
+            + "}";
+    },
+
+    getPointClickFnHelp: function() {
+        return 'Your code should define a single function to be called when a data point in the chart is clicked. '
+            + 'The function will be called with the following parameters:<br/><br/>'
+            + '<ul style="margin-left:20px;">'
+            + '<li><b>data:</b> the set of data values for the selected data point. Example: </li>'
+            + '<div style="margin-left: 40px;">{</div>'
+            + '<div style="margin-left: 50px;">ParticipantId: {value: "123456789"},<br/>YAxisMeasure: {displayValue: "250", value: 250},<br/>XAxisMeasure: {displayValue: "0.45", value: 0.45000},<br/>ColorMeasure: {value: "Color Value 1"},<br/>PointMeasure: {value: "Point Value 1"}</div>'
+            + '<div style="margin-left: 40px;">}</div>'
+            + '<li><b>measureInfo:</b> the schema name, query name, and measure names selected for the plot</li>'
+            + '<div style="margin-left: 40px;">{</div>'
+            + '<div style="margin-left: 50px;">schemaName: "study",<br/>queryName: "Dataset1",<br/>yAxis: "YAxisMeasure",<br/>xAxis: "XAxisMeasure",<br/>colorName: "ColorMeasure",<br/>pointname: "PointMeasure"</div>'
+            + '<div style="margin-left: 40px;">}</div>'
+            + '<li><b>clickEvent:</b> information from the browser about the click event (i.e. target, position, etc.)</li></ul>';
     }
 });

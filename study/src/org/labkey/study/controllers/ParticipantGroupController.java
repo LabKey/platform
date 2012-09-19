@@ -15,6 +15,7 @@
  */
 package org.labkey.study.controllers;
 
+import org.apache.commons.collections15.CollectionUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
@@ -35,6 +36,7 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.ParticipantCategoryImpl;
@@ -48,6 +50,7 @@ import org.springframework.validation.Errors;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -67,6 +70,7 @@ public class ParticipantGroupController extends BaseStudyController
     enum GroupType {
         participantGroup,
         cohort,
+        participantCategory,
     }
 
     private static final ActionResolver ACTION_RESOLVER = new DefaultActionResolver(ParticipantGroupController.class);
@@ -429,6 +433,7 @@ public class ParticipantGroupController extends BaseStudyController
     public class BrowseParticipantGroups extends ApiAction<BrowseGroupsForm>
     {
         private StudyImpl _study;
+        private String[] _allParticipants;
 
         @Override
         public void validateForm(BrowseGroupsForm browseGroupsForm, Errors errors)
@@ -443,43 +448,49 @@ public class ParticipantGroupController extends BaseStudyController
         public ApiResponse execute(BrowseGroupsForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
-            List<Map<String, Object>> groups = new ArrayList<Map<String, Object>>();
+            List<JSONObject> groups = new ArrayList<JSONObject>();
 
             for (String type : form.getType())
             {
                 GroupType groupType = GroupType.valueOf(type);
+                Set<String> selectedParticipants = new HashSet<String>();
                 switch(groupType)
                 {
                     case participantGroup:
+                        // the api will support either requesting a specific participant category or all of
+                        // the categories (and groups)
+                        if (form.getCategoryId() != -1)
+                        {
+                            ParticipantCategoryImpl category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), form.getCategoryId());
+                            addCategory(form, category, groups);
+                        }
+                        else
+                        {
+                            for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser()))
+                                addCategory(form, category, groups);
+                        }
+                        break;
+                    case participantCategory:
                         for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), getUser()))
                         {
-                            if (form.isIncludePrivateGroups() || category.isShared())
-                            {
-                                JSONObject jsonCategory = category.toJSON();
-
-                                for (ParticipantGroup group : category.getGroups())
-                                {
-                                    if (form.includeParticipantIds())
-                                        groups.add(createGroup(jsonCategory, group.getRowId(), group.getLabel(), true, groupType, group.getRowId(), group.getFilters(), group.getDescription(), group.getCreatedBy(), group.getModifiedBy(), group.getParticipantSet()));
-                                    else
-                                        groups.add(createGroup(jsonCategory, group.getRowId(), group.getLabel(), groupType, group.getRowId(), group.getFilters(), group.getDescription(), group.getCreatedBy(), group.getModifiedBy()));
-                                }
-                            }
+                            // omit orphaned categories
+                            if (category.getGroups().length > 0)
+                                groups.add(category.toJSON());
                         }
-
-                        if (!form.includeParticipantIds())
-                            groups.add(createGroup(null, -1, "Not in any group", groupType));
-
                         break;
                     case cohort:
                         for (CohortImpl cohort : StudyManager.getInstance().getCohorts(getContainer(), getUser()))
                         {
+                            selectedParticipants.addAll(cohort.getParticipantSet());
+                            JSONGroup jsonGroup = new JSONGroup(cohort);
                             if (form.includeParticipantIds())
-                                groups.add(createGroup(null, cohort.getRowId(), cohort.getLabel(), cohort.isEnrolled(), groupType, cohort.getRowId(), null, null, 0, 0, cohort.getParticipantSet()));
-                            else
-                                groups.add(createGroup(null, cohort.getRowId(), cohort.getLabel(), cohort.isEnrolled(), groupType));
+                                jsonGroup.setParticipantIds(cohort.getParticipantSet());
+
+                            groups.add(jsonGroup.toJSON(getViewContext()));
                         }
-                        groups.add(createGroup(null, -1, "Not in any cohort", groupType));
+
+                        if (form.isIncludeUnassigned() && hasUnassignedParticipants(selectedParticipants))
+                            groups.add(new JSONGroup(-1, -1, "Not in any cohort", GroupType.cohort).toJSON(getViewContext()));
                         break;
                 }
             }
@@ -489,43 +500,121 @@ public class ParticipantGroupController extends BaseStudyController
             return resp;
         }
 
-        private Map<String, Object> createGroup(JSONObject category, int id, String label, GroupType type)
+        private void addCategory(BrowseGroupsForm form, ParticipantCategoryImpl category, List<JSONObject> groups)
         {
-            return createGroup(category, id, label, true, type, 0, "", "", 0, 0, Collections.<String>emptySet());
-        }
-        private Map<String, Object> createGroup(JSONObject category, int id, String label, boolean isEnrolled, GroupType type)
-        {
-            return createGroup(category, id, label, isEnrolled, type, 0, "", "", 0, 0, Collections.<String>emptySet());
-        }
+            if (form.isIncludePrivateGroups() || category.isShared())
+            {
+                Set<String> selectedParticipants = new HashSet<String>();
 
-        private Map<String, Object> createGroup(JSONObject category, int id, String label, GroupType type, int categoryId, String filters, String description, int createdBy, int modifiedBy)
-        {
-            return createGroup(category, id, label, true, type, categoryId, filters, description, createdBy, modifiedBy, Collections.<String>emptySet());
-        }
+                for (ParticipantGroup group : category.getGroups())
+                {
+                    selectedParticipants.addAll(group.getParticipantSet());
+                    JSONGroup jsonGroup = new JSONGroup(group, category);
+                    if (form.includeParticipantIds())
+                        jsonGroup.setParticipantIds(group.getParticipantSet());
 
-        private Map<String, Object> createGroup(JSONObject category, int id, String label, boolean enrolled, GroupType type, int categoryId, String filters, String description, int createdBy, int modifiedBy, Set<String> participantIds)
-        {
-            Map<String, Object> group = new HashMap<String, Object>();
-
-            group.put("id", id);
-            group.put("label", label);
-            group.put("enrolled", enrolled);
-            group.put("type", type);
-            group.put("categoryId", categoryId);
-            group.put("filters", filters);
-            group.put("description", description);
-            group.put("participantIds", participantIds);
-            group.put("category", category);
-            group.put("createdBy", getUserJSON(createdBy));
-            group.put("modifiedBy", getUserJSON(modifiedBy));
-
-            return group;
+                    groups.add(jsonGroup.toJSON(getViewContext()));
+                }
+                String[] unassigned = StudyManager.getInstance().getParticipantIdsNotInGroupCategory(_study, getUser(), category.getRowId());
+                if (form.isIncludeUnassigned() && (unassigned.length > 0))
+                    groups.add(new JSONGroup(-1, category.getRowId(), "Not in any group", GroupType.participantGroup).toJSON(getViewContext()));
+            }
         }
 
-        private JSONObject getUserJSON(int id)
+        /**
+         * Determines if the specified set of participants represents all available participants for this folder
+         * @param selectedParticipants
+         * @return
+         */
+        private boolean hasUnassignedParticipants(Set<String> selectedParticipants)
+        {
+            if (_allParticipants == null)
+                _allParticipants = StudyManager.getInstance().getParticipantIds(_study);
+
+            Set<String> participants = new HashSet<String>();
+            participants.addAll(Arrays.asList(_allParticipants));
+
+            return !CollectionUtils.isEqualCollection(selectedParticipants, Arrays.asList(_allParticipants));
+        }
+    }
+
+    static class JSONGroup
+    {
+        private int _groupId;
+        private String _label;
+        private boolean _enrolled = true;
+        private GroupType _type;
+        private int _categoryId;
+        private String _filters;
+        private String _description;
+        private Set<String> _participantIds = new HashSet<String>();
+        private ParticipantCategoryImpl _category;
+        private Integer _createdBy;
+        private Integer _modifiedBy;
+
+        public JSONGroup(ParticipantGroup group, ParticipantCategoryImpl category)
+        {
+            _groupId = group.getRowId();
+            _categoryId = group.getCategoryId();
+            _label = group.getLabel();
+            _filters = group.getFilters();
+            _description = group.getDescription();
+            _createdBy = group.getCreatedBy();
+            _modifiedBy = group.getModifiedBy();
+            _category = category;
+            _type = GroupType.participantGroup;
+        }
+
+        public JSONGroup(CohortImpl cohort)
+        {
+            _groupId = cohort.getRowId();
+            _categoryId = cohort.getRowId();
+            _label = cohort.getLabel();
+            _enrolled = cohort.isEnrolled();
+            _type = GroupType.cohort;
+        }
+
+        public JSONGroup(int groupId, int categoryId, String label, GroupType type)
+        {
+            _groupId = groupId;
+            _categoryId = categoryId;
+            _label = label;
+            _type = type;
+        }
+
+        public void setParticipantIds(Set<String> participantIds)
+        {
+            _participantIds = participantIds;
+        }
+
+        public JSONObject toJSON(ViewContext context)
         {
             JSONObject json = new JSONObject();
-            User currentUser = getViewContext().getUser();
+
+            json.put("id", _groupId);
+            json.put("label", _label);
+            json.put("enrolled", _enrolled);
+            json.put("type", _type);
+            json.put("categoryId", _categoryId);
+            if (_filters != null)
+                json.put("filters", _filters);
+            if (_description != null)
+                json.put("description", _description);
+            json.put("participantIds", _participantIds);
+            if (_category != null)
+                json.put("category", _category.toJSON());
+            if (_createdBy != null)
+                json.put("createdBy", getUserJSON(context, _createdBy));
+            if (_modifiedBy != null)
+                json.put("modifiedBy", getUserJSON(context, _modifiedBy));
+
+            return json;
+        }
+
+        private JSONObject getUserJSON(ViewContext context, int id)
+        {
+            JSONObject json = new JSONObject();
+            User currentUser = context.getUser();
             User user = UserManager.getUser(id);
             json.put("value", id);
             json.put("displayValue", user != null ? user.getDisplayName(currentUser) : null);
@@ -539,6 +628,8 @@ public class ParticipantGroupController extends BaseStudyController
         private String[] _type;
         private boolean _includeParticipantIds = false;
         private boolean _includePrivateGroups = true;
+        private boolean _includeUnassigned = true;
+        private int _categoryId = -1;
 
         public boolean isIncludePrivateGroups()
         {
@@ -569,15 +660,35 @@ public class ParticipantGroupController extends BaseStudyController
         {
             _includeParticipantIds = includeParticipantIds;
         }
+
+        public int getCategoryId()
+        {
+            return _categoryId;
+        }
+
+        public void setCategoryId(int categoryId)
+        {
+            _categoryId = categoryId;
+        }
+
+        public boolean isIncludeUnassigned()
+        {
+            return _includeUnassigned;
+        }
+
+        public void setIncludeUnassigned(boolean includeUnassigned)
+        {
+            _includeUnassigned = includeUnassigned;
+        }
     }
 
     public static class GroupsForm implements CustomApiForm
     {
-        private Map<GroupType, List<Integer>> _groupMap = new HashMap<GroupType, List<Integer>>();
+        private List<Group> _groups = new ArrayList<Group>();
 
-        public Map<GroupType, List<Integer>> getGroupMap()
+        public List<Group> getGroups()
         {
-            return _groupMap;
+            return _groups;
         }
 
         @Override
@@ -594,11 +705,26 @@ public class ParticipantGroupController extends BaseStudyController
                     JSONObject group = groupArr.getJSONObject(i);
 
                     GroupType type = GroupType.valueOf(group.getString("type"));
-                    if (!_groupMap.containsKey(type))
-                        _groupMap.put(type, new ArrayList<Integer>());
 
-                    _groupMap.get(type).add(group.getInt("id"));
+                    int categoryId = group.getInt("categoryId");
+                    int id = group.getInt("id");
+
+                    _groups.add(new Group(type, id, categoryId));
                 }
+            }
+        }
+
+        static class Group
+        {
+            GroupType type;
+            int id;
+            int categoryId;
+
+            public Group(GroupType type, int id, int categoryId)
+            {
+                this.type = type;
+                this.id = id;
+                this.categoryId = categoryId;
             }
         }
     }
@@ -621,60 +747,62 @@ public class ParticipantGroupController extends BaseStudyController
         public ApiResponse execute(GroupsForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
-            Set<String> cohortSubjects = new HashSet<String>();
-            Set<String> groupSubjects = new HashSet<String>();
-            List<String> subjects = new ArrayList<String>();
+            Map<String, Set<String>> categoryToSubjectMap = new HashMap<String, Set<String>>();
 
-            for (Map.Entry<GroupType, List<Integer>> entry : form.getGroupMap().entrySet())
+            for (GroupsForm.Group group : form.getGroups())
             {
-                switch (entry.getKey())
+                String key = group.type.name();
+                if (group.type != GroupType.cohort)
+                    key = group.type.name() + "|" + group.categoryId;
+
+                if (!categoryToSubjectMap.containsKey(key))
+                    categoryToSubjectMap.put(key, new HashSet<String>());
+
+                Set<String> participants = categoryToSubjectMap.get(key);
+
+                switch (group.type)
                 {
                     case participantGroup:
-                        for (int groupId : entry.getValue())
+                        if (group.id == -1)
+                            participants.addAll(Arrays.asList(StudyManager.getInstance().getParticipantIdsNotInGroupCategory(_study, getUser(), group.categoryId)));
+                        else
                         {
-                            if (groupId == -1)
-                            {
-                                groupSubjects.addAll(Arrays.asList(StudyManager.getInstance().getParticipantIdsNotInGroups(_study, getUser())));
-                            }
-                            else
-                            {
-                                ParticipantGroup group = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), getUser(), groupId);
-                                if (group != null)
-                                    groupSubjects.addAll(group.getParticipantSet());
-                            }
+                            ParticipantGroup pg = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), getUser(), group.id);
+                            if (pg != null)
+                                participants.addAll(pg.getParticipantSet());
                         }
                         break;
 
                     case cohort:
-                        for (int groupId : entry.getValue())
-                        {
-                            if (groupId == -1)
-                                cohortSubjects.addAll(Arrays.asList(StudyManager.getInstance().getParticipantIdsNotInCohorts(_study, getUser())));
-                            else
-                                cohortSubjects.addAll(Arrays.asList(StudyManager.getInstance().getParticipantIdsForCohort(_study, groupId, -1)));
-                        }
+                        if (group.id == -1)
+                            participants.addAll(Arrays.asList(StudyManager.getInstance().getParticipantIdsNotInCohorts(_study, getUser())));
+                        else
+                            participants.addAll(Arrays.asList(StudyManager.getInstance().getParticipantIdsForCohort(_study, group.id, -1)));
                         break;
                 }
             }
 
-            // find the intersection of the two facets if we have a selection from both facets (AND behavior)
-            if (form.getGroupMap().containsKey(GroupType.participantGroup) && form.getGroupMap().containsKey(GroupType.cohort))
+            // we want to OR subjects within a category and AND them across categories
+            Collection<String> subjects = new ArrayList<String>();
+            for (Set<String> participants : categoryToSubjectMap.values())
             {
-                for (String ptid : groupSubjects)
+                if (!subjects.isEmpty())
                 {
-                    if (cohortSubjects.contains(ptid))
-                        subjects.add(ptid);
+                    subjects = CollectionUtils.intersection(subjects, participants);
+                    if (subjects.isEmpty())
+                        break;
                 }
+                else
+                    subjects.addAll(participants);
             }
-            else
-            {
-                subjects.addAll(cohortSubjects);
-                subjects.addAll(groupSubjects);
-            }
-            Collections.sort(subjects);
+
+            List<String> sortedSubjects = new ArrayList<String>();
+            sortedSubjects.addAll(subjects);
+
+            Collections.sort(sortedSubjects);
 
             resp.put("success", true);
-            resp.put("subjects", subjects);
+            resp.put("subjects", sortedSubjects);
 
             return resp;
         }

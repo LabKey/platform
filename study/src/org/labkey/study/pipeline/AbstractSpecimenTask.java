@@ -16,15 +16,22 @@
 
 package org.labkey.study.pipeline;
 
+import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.writer.FileSystemFile;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.study.importer.SpecimenImporter;
+import org.labkey.study.importer.StudyImportContext;
+import org.labkey.study.importer.StudyJobSupport;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Date;
@@ -46,7 +53,12 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
     {
         try
         {
-            doImport(getJob().getJobSupport(SpecimenJobSupport.class).getSpecimenArchive(), getJob(), isMerge());
+            PipelineJob job = getJob();
+            SpecimenJobSupport support = job.getJobSupport(SpecimenJobSupport.class);
+            File specimenArchive = support.getSpecimenArchive();
+            StudyImportContext ctx = job.getJobSupport(StudyJobSupport.class).getImportContext();
+
+            doImport(specimenArchive, job, ctx, isMerge());
         }
         catch (Exception e)
         {
@@ -56,61 +68,78 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
         return new RecordedActionSet();
     }
 
-    public static void doImport(File inputFile, PipelineJob job, boolean merge) throws PipelineJobException
+    public static void doImport(@Nullable File inputFile, PipelineJob job, StudyImportContext ctx, boolean merge) throws PipelineJobException
     {
-        // Might need to transform to a file type that we know how to import
-        File specimenArchive;
-        if (inputFile != null && SampleMindedTransformTask.SAMPLE_MINDED_FILE_TYPE.isType(inputFile))
+        VirtualFile specimenDir;
+        File unzipDir = null;
+        try
         {
-            job.setStatus("TRANSFORMING SAMPLEMINDED DATA");
-            specimenArchive = SpecimenBatch.ARCHIVE_FILE_TYPE.getFile(inputFile.getParentFile(), SampleMindedTransformTask.SAMPLE_MINDED_FILE_TYPE.getBaseName(inputFile));
-            SampleMindedTransformTask transformer = new SampleMindedTransformTask(job);
-            transformer.transform(inputFile, specimenArchive);
-        }
-        else
-        {
-            specimenArchive = inputFile;
-        }
-
-
-        if (null == specimenArchive)
-        {
-            job.info("No specimen archive");
-        }
-        else
-        {
-            File unzipDir = null;
-
-            try
+            // backwards compatibility, if we are givn a specimen archive as a zip file, we need to extract it
+            if (inputFile != null)
             {
-                job.info("Unzipping specimen archive " +  specimenArchive.getPath());
-                String tempDirName = DateUtil.formatDateTime(new Date(), "yyMMddHHmmssSSS");
-                unzipDir = new File(specimenArchive.getParentFile(), tempDirName);
-                try
+                // Might need to transform to a file type that we know how to import
+                File specimenArchive;
+                if (SampleMindedTransformTask.SAMPLE_MINDED_FILE_TYPE.isType(inputFile))
                 {
-                    job.setStatus("UNZIPPING SPECIMEN ARCHIVE");
-                    List<File> files = ZipUtil.unzipToDirectory(specimenArchive, unzipDir, job.getLogger());
-                    job.info("Archive unzipped to " + unzipDir.getPath());
-                    job.info("Starting import...");
+                    if (job != null)
+                        job.setStatus("TRANSFORMING SAMPLEMINDED DATA");
+                    specimenArchive = SpecimenBatch.ARCHIVE_FILE_TYPE.getFile(inputFile.getParentFile(), SampleMindedTransformTask.SAMPLE_MINDED_FILE_TYPE.getBaseName(inputFile));
+                    SampleMindedTransformTask transformer = new SampleMindedTransformTask(job);
+                    transformer.transform(inputFile, specimenArchive);
+                }
+                else
+                {
+                    specimenArchive = inputFile;
+                }
+
+                if (null == specimenArchive)
+                {
+                    ctx.getLogger().info("No specimen archive");
+                    return;
+                }
+                else
+                {
+                    if (job != null)
+                        job.setStatus("UNZIPPING SPECIMEN ARCHIVE");
+
+                    ctx.getLogger().info("Unzipping specimen archive " + specimenArchive.getPath());
+                    String tempDirName = DateUtil.formatDateTime(new Date(), "yyMMddHHmmssSSS");
+                    unzipDir = new File(specimenArchive.getParentFile(), tempDirName);
+                    List<File> files = ZipUtil.unzipToDirectory(specimenArchive, unzipDir, ctx.getLogger());
+
+                    ctx.getLogger().info("Archive unzipped to " + unzipDir.getPath());
+                    specimenDir = new FileSystemFile(unzipDir);
+                }
+            }
+            else
+            {
+                // the specimen files must already be "extracted" in the specimens directory
+                specimenDir = ctx.getDir("specimens");
+            }
+
+            if (specimenDir != null)
+            {
+                if (job != null)
                     job.setStatus("PROCESSING SPECIMENS");
+                ctx.getLogger().info("Starting specimen import...");
+                SpecimenImporter importer = new SpecimenImporter();
+                importer.process(ctx.getUser(), ctx.getContainer(), specimenDir, merge, ctx.getLogger());
+            }
+        }
+        catch (Exception e)
+        {
+            throw new PipelineJobException(e);
+        }
+        finally
+        {
+            if (unzipDir != null && unzipDir.exists())
+                delete(unzipDir, ctx.getLogger());
 
-                    SpecimenImporter importer = new SpecimenImporter();
-                    importer.process(job.getUser(), job.getContainer(), files, merge, job.getLogger());
-                }
-                catch (Exception e)
-                {
-                    throw new PipelineJobException(e);
-                }
-            }
-            finally
-            {
-                delete(unzipDir, job);
-                // Since changing specimens in this study will impact specimens in ancillary studies dependent on this study,
-                // we need to force a participant/visit refresh in those study containers (if any):
-                StudyImpl[] dependentStudies = StudyManager.getInstance().getAncillaryStudies(job.getContainer());
-                for (StudyImpl dependentStudy : dependentStudies)
-                    StudyManager.getInstance().getVisitManager(dependentStudy).updateParticipantVisits(job.getUser(), Collections.<DataSetDefinition>emptySet());
-            }
+            // Since changing specimens in this study will impact specimens in ancillary studies dependent on this study,
+            // we need to force a participant/visit refresh in those study containers (if any):
+            StudyImpl[] dependentStudies = StudyManager.getInstance().getAncillaryStudies(ctx.getContainer());
+            for (StudyImpl dependentStudy : dependentStudies)
+                StudyManager.getInstance().getVisitManager(dependentStudy).updateParticipantVisits(ctx.getUser(), Collections.<DataSetDefinition>emptySet());
         }
     }
 
@@ -119,14 +148,15 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
         return getJob().getJobSupport(SpecimenJobSupport.class).isMerge();
     }
 
-    private static void delete(File file, PipelineJob job)
+    private static void delete(File file, Logger log)
     {
         if (file.isDirectory())
         {
             for (File child : file.listFiles())
-                delete(child, job);
+                delete(child, log);
         }
-        job.info("Deleting " + file.getPath());
-        file.delete();
+        log.info("Deleting " + file.getPath());
+        if (!file.delete())
+            log.error("Unable to delete file: " + file.getPath());
     }
 }

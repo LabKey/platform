@@ -33,6 +33,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
@@ -94,14 +95,9 @@ public class QueryDataViewProvider implements DataViewProvider
 
             if (!StringUtils.isEmpty(view.getCustomIconUrl()))
             {
-                StringBuffer sb = new StringBuffer(AppProps.getInstance().getContextPath());
-                String url = view.getCustomIconUrl();
-
-                if (!url.startsWith("/"))
-                    sb.append('/');
-
-                sb.append(url);
-                info.setIcon(sb.toString());
+                URLHelper url = new URLHelper(view.getCustomIconUrl());
+                url.setContextPath(AppProps.getInstance().getParsedContextPath());
+                info.setIcon(url.toString());
             }
 
             info.setThumbnailUrl(PageFlowUtil.urlProvider(QueryUrls.class).urlThumbnail(context.getContainer()));

@@ -1114,6 +1114,7 @@ groupByLoop:
         else
         {
             sql.pushPrefix("SELECT DISTINCT ");
+            selectAll = true;
         }
 
         int count = 0;

@@ -2540,6 +2540,22 @@ public class StudyManager
         }
     }
 
+    public String[] getParticipantIdsNotInGroupCategory(Study study, User user, int categoryId)
+    {
+        TableInfo groupMapTable = StudySchema.getInstance().getTableInfoParticipantGroupMap();
+        TableInfo tableInfoParticipantGroup = StudySchema.getInstance().getTableInfoParticipantGroup();
+
+        DbSchema schema = StudySchema.getInstance().getSchema();
+        SQLFragment sql = new SQLFragment("SELECT ParticipantId FROM " + _tableInfoParticipant + " WHERE Container = ? " +
+                "AND ParticipantId NOT IN (SELECT DISTINCT ParticipantId FROM " + groupMapTable + " WHERE Container = ? AND " +
+                "GroupId IN (SELECT RowId FROM " + tableInfoParticipantGroup + " WHERE CategoryId = ?))",
+                study.getContainer().getId(), study.getContainer().getId(), categoryId);
+
+        SqlSelector selector = new SqlSelector(schema.getScope(), sql);
+
+        return selector.getArray(String.class);
+    }
+
     public Table.TableResultSet getParticipantIdsStartsWith(Study study, String lowerCasePrefix)
     {
         try

@@ -485,7 +485,7 @@ public class SpecimenUtils
         String subject = settings.getSubjectSuffix().replaceAll("%requestId%", "" + sampleRequest.getRowId());
         message.setSubject(getStudy().getLabel() + ": " + subject);
         JspView<NotificationBean> notifyView = new JspView<NotificationBean>("/org/labkey/study/view/samples/notification.jsp",
-                new NotificationBean(getViewContext(), notification, specimenList));
+                new NotificationBean(getViewContext(), notification, specimenList, getStudy().getLabel()));
         message.setTemplateContent(getViewContext().getRequest(), notifyView, "text/html");
 
         boolean first = true;
@@ -520,14 +520,18 @@ public class SpecimenUtils
         private User _user;
         private String _baseServerURI;
         private String _specimenList;
+        private String _studyName;
+        private String _requestURI;
         private RequestNotification _notification;
 
-        public NotificationBean(ViewContext context, RequestNotification notification, String specimenList)
+        public NotificationBean(ViewContext context, RequestNotification notification, String specimenList, String studyName)
         {
             _notification = notification;
             _user = context.getUser();
             _baseServerURI = context.getActionURL().getBaseServerURI();
             _specimenList = specimenList;
+            _studyName = studyName;
+            _requestURI = new ActionURL(SpecimenController.ManageRequestAction.class, context.getContainer()).getURIString();
         }
 
         public @NotNull List<Attachment> getAttachments()
@@ -590,6 +594,16 @@ public class SpecimenUtils
         public String getSpecimenList()
         {
             return _specimenList;
+        }
+
+        public String getStudyName()
+        {
+            return _studyName;
+        }
+
+        public String getRequestURI()
+        {
+            return _requestURI;
         }
     }
 

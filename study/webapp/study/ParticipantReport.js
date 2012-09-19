@@ -388,19 +388,21 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
                         var response = Ext4.decode(response.responseText);
                         for (var i=0;i<response.groups.length;i++){
                             var row = response.groups[i];
-                            for (var j=0;j<row.participantIds.length;j++){
-                                var id = row.participantIds[j];
+                            if(row.participantIds){
+                                for (var j=0;j<row.participantIds.length;j++){
+                                    var id = row.participantIds[j];
 
-                                if(!this.subjectGroupMap[id]){
-                                    this.subjectGroupMap[id] = {
-                                        cohort: null,
-                                        groups: []
+                                    if(!this.subjectGroupMap[id]){
+                                        this.subjectGroupMap[id] = {
+                                            cohort: null,
+                                            groups: []
+                                        }
                                     }
+                                    if (row.type == 'cohort')
+                                        this.subjectGroupMap[id].cohort = row.label;
+                                    else if (row.type == 'participantGroup')
+                                        this.subjectGroupMap[id].groups.push(row.label);
                                 }
-                                if (row.type == 'cohort')
-                                    this.subjectGroupMap[id].cohort = row.label;
-                                else if (row.type == 'participantGroup')
-                                    this.subjectGroupMap[id].groups.push(row.label);
                             }
                         }
                         onLoad.call(this);

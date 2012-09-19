@@ -77,7 +77,7 @@ var _grid;
                 url : LABKEY.ActionURL.buildURL("participant-group", "browseParticipantGroups"),
                 method : 'POST'
             }),
-            baseParams: { type : 'participantGroup', includeParticipantIds: true},
+            baseParams: { type : 'participantGroup', includeParticipantIds: true, includeUnassigned : false},
             root: 'groups',
             fields: [
                 {name: 'rowId', type: 'integer', mapping: 'id'},

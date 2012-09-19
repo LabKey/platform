@@ -190,7 +190,7 @@ public class DatasetWriter implements InternalStudyWriter
         // Write out all the dataset .tsv files
         for (DataSetDefinition def : datasets)
         {
-            TableInfo ti = schema.createDataSetTableInternal(def);
+            TableInfo ti = schema.getTable(def.getName());
             Collection<ColumnInfo> columns = getColumnsToExport(ti, def, false, ctx.isRemoveProtected());
             // Sort the data rows by PTID & sequence, #11261
             Sort sort = new Sort(StudyService.get().getSubjectColumnName(ctx.getContainer()) + ", SequenceNum");
@@ -324,10 +324,10 @@ public class DatasetWriter implements InternalStudyWriter
         return sql;
     }
 
-    private static boolean shouldExport(ColumnInfo column, boolean metaData, boolean removeProtected)
+    private static boolean shouldExport(ColumnInfo column, boolean metaData, boolean removeProtected, boolean isKeyProperty)
     {
         return (column.isUserEditable() || (!metaData && column.getPropertyURI().equals(DataSetDefinition.getQCStateURI()))) &&
-                !(column.getFk() instanceof ContainerForeignKey) && (!removeProtected || !column.isProtected());
+                !(column.getFk() instanceof ContainerForeignKey) && (!removeProtected || !column.isProtected() || isKeyProperty);
     }
 
     public static Collection<ColumnInfo> getColumnsToExport(TableInfo tinfo, DataSetDefinition def, boolean metaData, boolean removeProtected)
@@ -384,7 +384,8 @@ public class DatasetWriter implements InternalStudyWriter
 
         for (ColumnInfo in : inColumns)
         {
-            if (shouldExport(in, metaData, removeProtected) || (metaData && in.getName().equals(def.getKeyPropertyName())))
+            boolean isKeyProperty = in.getName().equals(def.getKeyPropertyName()) || (in.isUserEditable() && (in.equals(ptidColumn) || in.equals(sequenceColumn) || in.getName().toLowerCase().equals("date")));
+            if (shouldExport(in, metaData, removeProtected, isKeyProperty) || (metaData && isKeyProperty))
             {
                 if ("visit".equalsIgnoreCase(in.getName()) && !in.equals(sequenceColumn))
                     continue;

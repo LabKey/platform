@@ -39,6 +39,11 @@ public class StudyImportContext extends AbstractContext
 {
     private File _studyXml;
 
+    public StudyImportContext(User user, Container c, Logger logger)
+    {
+        super(user, c, null, logger, null);
+    }
+
     public StudyImportContext(User user, Container c, File studyXml, Logger logger, VirtualFile root)
     {
         super(user, c, null, logger, root);  // XStream can't seem to serialize the StudyDocument XMLBean, so we always read the file on demand

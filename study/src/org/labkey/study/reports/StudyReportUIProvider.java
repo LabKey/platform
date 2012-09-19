@@ -176,7 +176,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
             url.addParameter(DataSetDefinition.DATASETKEY, NumberUtils.toInt(context.getActionURL().getParameter(DataSetDefinition.DATASETKEY), 0));
             url.setAction(ReportsController.DesignChartAction.class);
 
-            designers.add(new DesignerInfoImpl(StudyChartQueryReport.TYPE, "Chart View", url, _getIconPath(StudyChartQueryReport.TYPE)));
+            designers.add(new DesignerInfoImpl(StudyChartQueryReport.TYPE, "Chart View", null, url, _getIconPath(StudyChartQueryReport.TYPE), ReportService.DesignerType.VISUALIZATION));
 
             // r report
             if (ReportUtil.canCreateScript(context) && RReport.isEnabled())

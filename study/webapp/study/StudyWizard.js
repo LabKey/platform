@@ -51,6 +51,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             this.steps.push(this.getListsPanel());
             this.steps.push(this.getViewsPanel());
             this.steps.push(this.getReportsPanel());
+            this.steps.push(this.getSpecimensPanel());
             this.steps.push(this.getPublishOptionsPanel());
         }
 
@@ -97,6 +98,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     {value: 'Lists', currentStep: false},
                     {value: 'Views', currentStep: false},
                     {value: 'Reports', currentStep: false},
+                    {value: 'Specimens', currentStep: false},
                     {value: 'Publish Options', currentStep: false}
             );
         }
@@ -454,7 +456,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 url : LABKEY.ActionURL.buildURL("participant-group", "browseParticipantGroups", null, {includePrivateGroups : false}),
                 method : 'POST'
             }),
-            baseParams: { type : 'participantGroup', includeParticipantIds: true},
+            baseParams: { type : 'participantGroup', includeParticipantIds: true, includeUnassigned: false },
             root: 'groups',
             fields: [
                 {name: 'id', type: 'integer'},
@@ -892,6 +894,67 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
     },
 
+    getSpecimensPanel: function(){
+        var items = [];
+
+        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Specimens'}) +
+                Ext.DomHelper.markup({tag:'div', html:'&nbsp;'});
+
+        items.push({xtype:'displayfield', html: txt});
+
+        this.includeSpecimensCheckBox = new Ext.form.Checkbox({
+            xtype: 'checkbox',
+            name: 'includeSpecimens',
+            fieldLabel: 'Include Specimens?',
+            checked: true,
+            value: true,
+            listeners: {
+                check: function(cb, checked) {
+                    this.specimenRefreshRadioGroup.setDisabled(!checked);
+                    if (!checked)
+                        this.specimenRefreshRadioGroup.reset();
+                },
+                scope: this
+            }
+        });
+
+        this.specimenRefreshRadioGroup = new Ext.form.RadioGroup({
+            xtype: 'radiogroup',
+            fieldLabel: 'Refresh rate:',
+            disabled: true, // TODO: enable when we are ready to support specimen nightly refresh
+            columns: 1,
+            items: [
+                {boxLabel: 'One-time snapshot', name: 'specimenRefresh', inputValue: false, checked: true},
+                {boxLabel: 'Nightly refresh', name: 'specimenRefresh', inputValue: true}
+            ]
+        });
+
+        var optionsPanel = new Ext.form.FormPanel({
+            defaults: {labelSeparator: ''},
+            padding: '10px 0px',
+            border: false,
+            labelWidth: 120,
+            height: 200,
+            width : 300,
+            items: [
+                this.includeSpecimensCheckBox,
+                this.specimenRefreshRadioGroup
+            ]
+        });
+        items.push(optionsPanel);
+
+        return new Ext.Panel({
+            border: false,
+            name: "Specimens",
+            layout: 'vbox',
+            layoutConfig: {
+                align: 'stretch',
+                pack: 'start'
+            },
+            items: items
+        });
+    },
+
     getVisitsPanel: function(){
         var items = [];
 
@@ -1041,11 +1104,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         items.push({xtype:'displayfield', html: txt});
 
-        //Export Alternate Participant IDs in Datasets
+        //Export Alternate Participant IDs
 
         this.alternateIdsCheckBox = new Ext.form.Checkbox({
             name: 'alternateids',
-            fieldLabel: "Export Alternate " + this.subject.nounSingular + " IDs in Datasets?",
+            fieldLabel: "Export Alternate " + this.subject.nounSingular + " IDs?",
             checked: true,
             value: true
         });
@@ -1135,6 +1198,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             params.useAlternateParticipantIds = this.alternateIdsCheckBox.getValue();
             params.shiftDates = this.shiftDatesCheckBox.getValue();
             params.removeProtectedColumns = this.protectedColumnsCheckBox.getValue();
+            params.includeSpecimens = this.includeSpecimensCheckBox.getValue();
+            params.specimenRefresh = this.specimenRefreshRadioGroup.getValue().inputValue;
         }
 
         var hiddenFields = [];

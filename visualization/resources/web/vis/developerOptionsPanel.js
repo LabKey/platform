@@ -16,6 +16,11 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
 
     constructor : function(config){
 
+        Ext4.applyIf(config, {
+            defaultPointClickFn: null,
+            pointClickFnHelp: null
+        });
+
         this.callParent([config]);
 
         this.addEvents(
@@ -84,22 +89,7 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
                     title: 'Help',
                     width: 600,
                     padding: 5,
-                    html: 'Your code should define a single function to be called when a data point in the chart is clicked. '
-                        + 'The function will be called with the following parameters:<br/><br/>'
-                        + '<ul style="margin-left:20px;">'
-                        + '<li><b>data:</b> the set of data values for the selected data point. Example: </li>'
-                        + '<div style="margin-left: 40px;">{</div>'
-                        + '<div style="margin-left: 50px;">Days: {value: 10},<br/>study_Dataset1_Measure1: {value: 250}<br/>study_Dataset1_ParticipantId: {value: "123456789"}</div>'
-                        + '<div style="margin-left: 40px;">}</div>'    
-                        + '<li><b>columnMap:</b> a mapping from participant, interval, and measure to use when looking up values in the data object</li>'
-                        + '<div style="margin-left: 40px;">{</div>'
-                        + '<div style="margin-left: 50px;">participant: "study_Dataset1_ParticipantId",<br/>measure: "study_Dataset1_Measure1"<br/>interval: "Days"</div>'
-                        + '<div style="margin-left: 40px;">}</div>'
-                        + '<li><b>measureInfo:</b> the schema name, query name, and measure name for the selected series</li>'
-                        + '<div style="margin-left: 40px;">{</div>'
-                        + '<div style="margin-left: 50px;">name: "Measure1",<br/>queryName: "Dataset1"<br/>schemaName: "study"</div>'
-                        + '<div style="margin-left: 40px;">}</div>'
-                        + '<li><b>clickEvent:</b> information from the browser about the click event (i.e. target, position, etc.)</li></ul>'
+                    html: this.getPointClickFnHelp()
                 })
             ]
         });
@@ -165,32 +155,21 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
     },
 
     setEditorDisabled: function() {
-        Ext4.getDom(this.fnErrorDiv).innerHTML = '&nbsp;';
+        if (Ext4.getDom(this.fnErrorDiv) != null)
+            Ext4.getDom(this.fnErrorDiv).innerHTML = '&nbsp;';
+
         this.pointClickFn = null;
         editAreaLoader.setValue(this.pointClickTextAreaId, null);
         this.pointClickTextAreaHtml.disable();
         this.pointClickFnBtn.setText('Enable');
     },
 
+    setDefaultPointClickFn: function(defaultPointClickFn) {
+        this.defaultPointClickFn = defaultPointClickFn;
+    },
+
     getDefaultPointClickFn: function() {
-        return "function (data, columnMap, measureInfo, clickEvent) {\n"
-            + "   // use LABKEY.ActionURL.buildURL to generate a link to a different controller/action within labkey server\n"
-            + "   var ptidHref = LABKEY.ActionURL.buildURL('study', 'participant', LABKEY.container.path, \n"
-            + "                      {participantId: data[columnMap[\"participant\"]].value});\n"
-            + "   var queryHref = LABKEY.ActionURL.buildURL('query', 'executeQuery', LABKEY.container.path, \n"
-            + "                      {schemaName: measureInfo[\"schemaName\"], \"query.queryName\": measureInfo[\"queryName\"]});\n\n"
-            + "   // display an Ext message box with some information from the function parameters\n"
-            + "   Ext4.Msg.alert('Data Point Information',\n"
-            + "       'Participant: <a href=\"' + ptidHref + '\">' + data[columnMap[\"participant\"]].value + '</a>'\n"
-            + "       + '<br/> Interval: ' + data[columnMap[\"interval\"]].value\n"
-            + "       + '<br/> Value: ' + data[columnMap[\"measure\"]].value\n"
-            + "       + '<br/> Meausure Name:' + measureInfo[\"name\"]\n"
-            + "       + '<br/> Schema Name:' + measureInfo[\"schemaName\"]\n"
-            + "       + '<br/> Query Name: <a href=\"' + queryHref + '\">' + measureInfo[\"queryName\"] + '</a>'\n"
-            + "   );\n\n"
-            + "   // you could also directly navigate away from the chart using window.location\n"
-            + "   // window.location = ptidHref;\n"
-            + "}";
+        return this.defaultPointClickFn != null ? this.defaultPointClickFn : "function () {\n\n}";
     },
 
     removeLeadingComments: function(fnText) {
@@ -206,6 +185,14 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
             fnText = fnText.substring(start).trim();
         }
         return fnText;
+    },
+
+    setPointClickFnHelp: function(pointClickFnHelp) {
+        this.pointClickFnHelp = pointClickFnHelp;
+    },
+
+    getPointClickFnHelp: function() {
+        return this.pointClickFnHelp != null ? this.pointClickFnHelp : "";
     },
 
     applyChangesButtonClicked: function() {
@@ -257,6 +244,12 @@ Ext4.define('LABKEY.vis.DeveloperOptionsPanel', {
         }
 
         this.hasChanges = false;
+    },
+
+    setPanelOptionValues: function(config){
+        this.suppressEvents = true;
+        this.restoreValues(config);
+        this.suppressEvents = false;
     },
 
     checkForChangesAndFireEvents : function() {

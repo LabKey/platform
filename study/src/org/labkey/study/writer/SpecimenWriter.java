@@ -15,7 +15,6 @@
  */
 package org.labkey.study.writer;
 
-import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.*;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
@@ -23,7 +22,8 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.importer.SpecimenImporter.SpecimenColumn;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.study.xml.StudyDocument;
+import org.labkey.study.model.StudyManager;
+import org.labkey.study.query.StudyQuerySchema;
 
 import java.io.PrintWriter;
 import java.sql.ResultSet;
@@ -36,17 +36,18 @@ import java.util.List;
  * Date: May 7, 2009
  * Time: 3:49:32 PM
  */
-class SpecimenWriter implements Writer<StudyImpl, ImportContext<StudyDocument.Study>>
+class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
 {
     public String getSelectionText()
     {
         return null;
     }
 
-    public void write(StudyImpl study, ImportContext<StudyDocument.Study> ctx, VirtualFile vf) throws Exception
+    public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
         Collection<SpecimenColumn> columns = SpecimenImporter.SPECIMEN_COLUMNS;
         StudySchema schema = StudySchema.getInstance();
+        StudyQuerySchema querySchema = new StudyQuerySchema(study, ctx.getUser(), true); // to use for checking overlayed XMl metadata
         Container c = ctx.getContainer();
 
         PrintWriter pw = vf.getPrintWriter("specimens.tsv");
@@ -62,6 +63,7 @@ class SpecimenWriter implements Writer<StudyImpl, ImportContext<StudyDocument.St
         {
             SpecimenImporter.TargetTable tt = column.getTargetTable();
             TableInfo tinfo = tt.isEvents() ? schema.getTableInfoSpecimenEvent() : schema.getTableInfoSpecimenDetail();
+            TableInfo queryTable = tt.isEvents() ? querySchema.getTable("SpecimenEvent") : querySchema.getTable("SpecimenDetail");
             ColumnInfo ci = tinfo.getColumn(column.getDbColumnName());
             DataColumn dc = new DataColumn(ci);
             selectColumns.add(dc.getDisplayColumn());
@@ -70,13 +72,33 @@ class SpecimenWriter implements Writer<StudyImpl, ImportContext<StudyDocument.St
 
             sql.append(comma);
 
-            if (null == column.getFkColumn())
+            // export alternate ID in place of Ptid if set in StudyExportContext
+            if (ctx.isAlternateIds() && column.getDbColumnName().equals("Ptid"))
+            {
+                sql.append("ParticipantLookup.AlternateId AS Ptid");
+            }
+            else if (null == column.getFkColumn())
             {
                 // Note that columns can be events, vials, or specimens (grouped vials); the SpecimenDetail view that's
                 // used for export joins vials and specimens into a single view which we're calling 's'.  isEvents catches
                 // those columns that are part of the events table, while !isEvents() catches the rest.  (equivalent to
                 // isVials() || isSpecimens().)
-                sql.append(tt.isEvents() ? "se." : "s.").append(column.getDbColumnName());
+                String col = (tt.isEvents() ? "se." : "s.") + column.getDbColumnName();
+
+                // add expression to shift the date columns
+                if (ctx.isShiftDates() && column.isDateType())
+                {
+                    col = "{fn timestampadd(SQL_TSI_DAY, -ParticipantLookup.DateOffset, " + col + ")} AS " + column.getDbColumnName();
+                }
+
+                // don't export values for columns set as Protected in the XML metadata override
+                if (ctx.isRemoveProtected() && queryTable != null && queryTable.getColumn(column.getDbColumnName()) != null
+                        && queryTable.getColumn(column.getDbColumnName()).isProtected())
+                {
+                    col = "NULL AS " + column.getDbColumnName();
+                }
+
+                sql.append(col);
             }
             else
             {
@@ -104,7 +126,38 @@ class SpecimenWriter implements Writer<StudyImpl, ImportContext<StudyDocument.St
             }
         }
 
-        sql.append("\nWHERE se.Container = ? ORDER BY se.ExternalId");
+        // add join to study.Participant table if we are using alternate IDs or shifting dates
+        if (ctx.isAlternateIds() || ctx.isShiftDates())
+        {
+            sql.append("\n    LEFT JOIN study.Participant AS ParticipantLookup ON (se.Ptid = ParticipantLookup.ParticipantId AND se.Container = ParticipantLookup.Container)");
+        }
+        // add join to study.ParticipantVisit table if we are filtering by visit IDs
+        if (ctx.getVisitIds() != null && !ctx.getVisitIds().isEmpty())
+        {
+            sql.append("\n    LEFT JOIN study.ParticipantVisit AS ParticipantVisitLookup ON (s.Ptid = ParticipantVisitLookup.ParticipantId AND s.ParticipantSequenceNum = ParticipantVisitLookup.ParticipantSequenceNum AND s.Container = ParticipantVisitLookup.Container)");
+        }
+
+        sql.append("\nWHERE se.Container = ? ");
+
+        // add filter for selected participant IDs and Visits IDs
+        if (ctx.getVisitIds() != null && !ctx.getVisitIds().isEmpty())
+        {
+            sql.append("\n AND ParticipantVisitLookup.VisitRowId IN (");
+            sql.append(convertListToString(new ArrayList<Integer>(ctx.getVisitIds()), false));
+            sql.append(")");
+        }
+        if (!ctx.getParticipants().isEmpty())
+        {
+            if (ctx.isAlternateIds())
+                sql.append("\n AND ParticipantLookup.AlternateId IN (");
+            else
+                sql.append("\n AND se.Ptid IN (");
+
+            sql.append(convertListToString(ctx.getParticipants(), true));
+            sql.append(")");
+        }
+
+        sql.append("\nORDER BY se.ExternalId");
         sql.add(c);
 
         ResultSet rs = null;
@@ -124,5 +177,20 @@ class SpecimenWriter implements Writer<StudyImpl, ImportContext<StudyDocument.St
             else if (rs != null)
                 rs.close();
         }
+    }
+
+    private String convertListToString(List list, boolean withQuotes)
+    {
+        StringBuilder sb = new StringBuilder();
+        String sep = "";
+        for (Object obj : list)
+        {
+            sb.append(sep);
+            if (withQuotes) sb.append("'");
+            sb.append(obj.toString());
+            if (withQuotes) sb.append("'");
+            sep = ",";
+        }
+        return sb.toString();
     }
 }

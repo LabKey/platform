@@ -25,7 +25,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
 
     border : false,
     frame  : false,
-    bubbleEvents : ['select', 'selectionchange', 'itemmouseenter', 'itemmouseleave', 'initSelectionComplete', 'beginInitSelection'],
+    bubbleEvents : ['select', 'selectionchange', 'cellclick', 'itemmouseenter', 'itemmouseleave', 'initSelectionComplete', 'beginInitSelection'],
 
     statics : {
         groupSelCache : {} // 15505
@@ -44,24 +44,15 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
 
         this.items = [];
 
-        if (this.description) {
-            this.items.push({
-                xtype : 'box',
-                autoEl: {
-                    tag : 'div',
-                    html: this.description
-                }
-            });
-        }
-
         if (this.allowAll) {
-            var cfg = this.getGridCfg();
+            var cfg = this.getGridCfg(true);
+            cfg.padding = undefined;
             Ext4.apply(cfg, {
                 itemId: 'selectAllToggle',
                 bubbleEvents: [],
                 store  : Ext4.create('Ext.data.Store',{
                     fields : ['id', 'label'],
-                    data   : [{id: -1, label : 'All'}]
+                    data   : [{id: -1, label : this.description}]
                 }),
                 listeners: {
                     selectionchange: function(model, selected) {
@@ -80,6 +71,17 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
                 this.allSelected();
                 return true;
             }, this, {stopPropogation: false});
+        }
+        else {
+            if (this.description) {
+                this.items.push({
+                    xtype : 'box',
+                    autoEl: {
+                        tag : 'div',
+                        html: '<b class="filter-description">' + this.description + '</b>'
+                    }
+                });
+            }
         }
 
         if (this.store) {
@@ -105,7 +107,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
         }
     },
 
-    getGridCfg : function() {
+    getGridCfg : function(isHeader) {
         function initToolTip(view) {
             var labelField = this.labelField;
             var _active;
@@ -151,10 +153,10 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
             store       : this.store,
             border      : false, frame : false,
             bodyStyle   : 'border: none;',
-            layout      : 'fit',
+            padding     : '0 0 0 21px',
             hideHeaders : true,
             multiSelect : true,
-            columns     : this.getColumnCfg(),
+            columns     : this.getColumnCfg(isHeader),
             viewConfig : {
                 stripeRows : false,
                 listeners  : {
@@ -163,7 +165,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
                 }
             },
             selType     : 'checkboxmodel',
-            bubbleEvents: ['select', 'selectionchange', 'itemmouseenter', 'itemmouseleave'],
+            bubbleEvents: ['select', 'selectionchange', 'cellclick', 'itemmouseenter', 'itemmouseleave'],
             scope       : this
         };
     },
@@ -267,13 +269,18 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
         return this.down('#selectGrid');
     },
 
-    getColumnCfg : function() {
+    getColumnCfg : function(isHeader) {
+        var tpl = '<div' + (this.normalWrap ? ' class="normalwrap-gridcell"' : '') + '>{'+this.labelField+':htmlEncode}</div>';
+
+        if (isHeader)
+            tpl =  '<div' + (this.normalWrap ? ' class="normalwrap-gridcell"' : '') + '><b class="filter-description">{'+this.labelField+':htmlEncode}</b></div>';
+
         return [{
             xtype     : 'templatecolumn',
             flex      : 1,
             dataIndex : this.labelField,
             tdCls     : 'x4-label-column-cell',
-            tpl       : '<div' + (this.normalWrap ? ' class="normalwrap-gridcell"' : '') + '>{'+this.labelField+':htmlEncode}</div>',
+            tpl       : tpl,
             scope     : this
         },{
             dataIndex : 'type',
@@ -392,7 +399,7 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
     extend : 'Ext.panel.Panel',
     alias: 'widget.labkey-filterselectpanel',
 
-    bubbleEvents : ['select', 'selectionchange', 'itemmouseenter', 'itemmouseleave', 'initSelectionComplete'],
+    bubbleEvents : ['select', 'selectionchange', 'cellclick', 'itemmouseenter', 'itemmouseleave', 'initSelectionComplete'],
 
     constructor : function(config) {
         Ext4.applyIf(config, {
@@ -412,10 +419,52 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
     initSelectionPanel : function() {
         var filterPanels = [];
 
+        if (this.allowGlobalAll) {
+
+            filterPanels.push({
+                xtype       : 'grid',
+                itemId      : 'globalSelectAll',
+                border      : false, frame : false,
+                bodyStyle   : 'border: none;',
+                hideHeaders : true,
+                multiSelect : true,
+                columns     : [{
+                    xtype     : 'templatecolumn',
+                    dataIndex : 'label',
+                    tdCls     : 'x4-label-column-cell',
+                    tpl       : '<div><b class="filter-description">{label:htmlEncode}</b></div>'
+                }],
+                selType     : 'checkboxmodel',
+                bubbleEvents: [],
+                store  : Ext4.create('Ext.data.Store',{
+                    fields : ['id', 'label'],
+                    data   : [{id: -1, label : 'All'}]
+                }),
+                listeners: {
+                    selectionchange: function(model, selected) {
+                        !selected.length ? this.deselectAll() : this.selectAll();
+                    },
+                    scope: this
+                },
+                scope       : this
+            });
+
+            this.on('selectionchange', function(){
+                console.log('selectionchange');
+                this.allSelected();
+                return true;
+            }, this, {stopPropogation: false});
+
+            this.on('initSelectionComplete', function(){
+                this.allSelected();
+                return true;
+            }, this, {stopPropogation: false});
+        }
+
         for (var f=0; f < this.sections.length; f++) {
             filterPanels.push(Ext4.apply(this.sections[f],{
                 xtype : 'labkey-filterselectlist',
-                allowAll : true,
+                allowAll : this.allowAll,
                 border : false,
                 frame : false
             }));
@@ -502,15 +551,26 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
         for (var i=0; i < filterPanels.length; i++) {
             filterPanels[i].initSelection();
         }
+        this.allSelected();
     },
 
     allSelected : function() {
         var filterPanels = this.getFilterPanels();
         for (var i=0; i < filterPanels.length; i++) {
             if(!filterPanels[i].allSelected())
+            {
+                if (this.allowGlobalAll)
+                    this.getSelectAllToogle().getSelectionModel().deselect(0, true);
                 return false;
+            }
         }
+        if (this.allowGlobalAll)
+            this.getSelectAllToogle().getSelectionModel().select(0, true);
         return true;
+    },
+
+    getSelectAllToogle: function(){
+        return this.down('#globalSelectAll');
     },
 
     getNoSelectionSections : function() {

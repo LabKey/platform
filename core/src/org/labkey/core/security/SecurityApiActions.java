@@ -24,6 +24,7 @@ import org.labkey.api.security.*;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.roles.*;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.util.HString;
 import org.labkey.api.view.*;
@@ -591,8 +592,12 @@ public class SecurityApiActions
             if (container.isRoot())
             {
                 if (resource.equals(container))
+                {
                     // Troubleshooter is the only role assignable in the root container
                     relevantRoles.add(RoleManager.getRole(TroubleshooterRole.class).getUniqueName());
+                    if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_EMAIL_PERMISSION))
+                        relevantRoles.add(RoleManager.getRole(SeeEmailAddressesRole.class).getUniqueName());
+                }
                 else
                     // ExternalIndex case    
                     relevantRoles.add(RoleManager.getRole(ReaderRole.class).getUniqueName());

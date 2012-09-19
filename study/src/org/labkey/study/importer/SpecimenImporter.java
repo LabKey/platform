@@ -39,6 +39,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.*;
+import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.SampleManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.*;
@@ -48,6 +49,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -369,6 +373,11 @@ public class SpecimenImporter
         {
             return getDbColumnName() + "Lookup";
         }
+
+        public boolean isDateType()
+        {
+            return getDbType() != null && (getDbType().equals("DATETIME") || getDbType().equals("TIMESTAMP")) && !getJavaType().equals(TimeOnlyDate.class);
+        }
     }
 
     private static class SpecimenLoadInfo
@@ -540,19 +549,37 @@ public class SpecimenImporter
 
     private static final int SQL_BATCH_SIZE = 100;
 
-    public void process(User user, Container container, List<File> files, boolean merge, Logger logger) throws SQLException, IOException
+    public void process(User user, Container container, VirtualFile specimensDir, boolean merge, Logger logger) throws SQLException, IOException
     {
-        Map<String, File> fileMap = createFilemap(files);
+        Map<String, InputStream> isMap = new HashMap<String, InputStream>();
+        createFilemap(specimensDir, isMap);
 
         // Create a map of Tables->TabLoaders
         Map<String, Iterable<Map<String, Object>>> iterMap = new HashMap<String, Iterable<Map<String, Object>>>();
-        iterMap.put("labs", loadTsv(container, SITE_COLUMNS, fileMap.get("labs"), "study.Site"));
-        iterMap.put("additives", loadTsv(container, ADDITIVE_COLUMNS, fileMap.get("additives"), "study.SpecimenAdditive"));
-        iterMap.put("derivatives", loadTsv(container, DERIVATIVE_COLUMNS, fileMap.get("derivatives"), "study.SpecimenDerivative"));
-        iterMap.put("primary_types", loadTsv(container, PRIMARYTYPE_COLUMNS, fileMap.get("primary_types"), "study.SpecimenPrimaryType"));
-        iterMap.put("specimens", loadTsv(container, SPECIMEN_COLUMNS, fileMap.get("specimens"), "study.Specimen"));
+        iterMap.put("labs", loadTsv(container, SITE_COLUMNS, isMap.get("labs"), "study.Site"));
+        iterMap.put("additives", loadTsv(container, ADDITIVE_COLUMNS, isMap.get("additives"), "study.SpecimenAdditive"));
+        iterMap.put("derivatives", loadTsv(container, DERIVATIVE_COLUMNS, isMap.get("derivatives"), "study.SpecimenDerivative"));
+        iterMap.put("primary_types", loadTsv(container, PRIMARYTYPE_COLUMNS, isMap.get("primary_types"), "study.SpecimenPrimaryType"));
+        iterMap.put("specimens", loadTsv(container, SPECIMEN_COLUMNS, isMap.get("specimens"), "study.Specimen"));
 
-        process(user, container, iterMap, merge, logger);
+        try
+        {
+            process(user, container, iterMap, merge, logger);
+        }
+        finally
+        {
+            // close the tab loaders and any input streams that might still be open
+            for (Iterable<Map<String, Object>> map : iterMap.values())
+            {
+                if (map != null && map instanceof TabLoader)
+                    ((TabLoader)map).close();
+            }
+            for (InputStream is : isMap.values())
+            {
+                if (is != null)
+                    is.close();
+            }
+        }
     }
 
     private void resyncStudy(User user, Container container) throws SQLException
@@ -1113,28 +1140,33 @@ public class SpecimenImporter
             logger.info("Vial count update complete.");
     }
     
-    private Map<String, File> createFilemap(List<File> files) throws IOException
+    private void createFilemap(VirtualFile vf, Map<String, InputStream> fileNameMap) throws IOException
     {
-        Map<String, File> fileMap = new HashMap<String, File>(files.size());
-
-        for (File file : files)
+        for (String dirName  : vf.listDirs())
         {
+            createFilemap(vf.getDir(dirName), fileNameMap);
+        }
+
+        for (String fileName : vf.list())
+        {
+            if (!fileName.toLowerCase().endsWith(".tsv"))
+                continue;
+
             BufferedReader reader = null;
             try
             {
-                reader = new BufferedReader(new FileReader(file));
+                reader = new BufferedReader(new InputStreamReader(vf.getInputStream(fileName)));
                 String line = reader.readLine();
                 line = line.trim();
                 if (line.charAt(0) != '#')
                     throw new IllegalStateException("Import files are expected to start with a comment indicating table name");
-                fileMap.put(line.substring(1).trim().toLowerCase(), file);
+                fileNameMap.put(line.substring(1).trim().toLowerCase(), vf.getInputStream(fileName));
             }
             finally
             {
                 if (reader != null) try { reader.close(); } catch (IOException e) {}
             }
         }
-        return fileMap;
     }
 
     private void info(String message)
@@ -1967,9 +1999,9 @@ public class SpecimenImporter
         return new Pair<List<T>, Integer>(availableColumns, rowCount);
     }
 
-    private Iterable<Map<String, Object>> loadTsv(Container container, Collection<? extends ImportableColumn> columns, File tsvFile, String tableName) throws IOException, SQLException
+    private TabLoader loadTsv(Container container, Collection<? extends ImportableColumn> columns, InputStream tsvIS, String tableName) throws IOException, SQLException
     {
-        if (tsvFile == null || !NetworkDrive.exists(tsvFile))
+        if (tsvIS == null)
         {
             info(tableName + ": no data to merge.");
             return null;
@@ -1981,7 +2013,8 @@ public class SpecimenImporter
         for (ImportableColumn col : columns)
             expectedColumns.put(col.getTsvColumnName().toLowerCase(), col.getColumnDescriptor());
 
-        TabLoader loader = new TabLoader(tsvFile, true);
+        Reader reader = new BufferedReader(new InputStreamReader(tsvIS));
+        TabLoader loader = new TabLoader(reader, true);
 
         for (ColumnDescriptor column : loader.getColumns())
         {

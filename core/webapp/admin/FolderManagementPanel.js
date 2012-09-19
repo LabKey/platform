@@ -159,19 +159,17 @@ Ext4.define('LABKEY.ext.panel.FolderManagementPanel', {
             scope : this
         };
 
-        if (this.draggable) {
-            treeConfig.viewConfig = {
-                plugins: {
-                    ptype: 'treeviewdragdrop'
-                },
-                listeners: {
-                    dragover   : this.onNodeDragOver,
-                    beforedrop : this.onBeforeNodeDrop,
-                    scope : this
-                },
+        treeConfig.viewConfig = {
+            plugins: {
+                ptype: 'treeviewdragdrop'
+            },
+            listeners: {
+                dragover   : this.onNodeDragOver,
+                beforedrop : this.onBeforeNodeDrop,
                 scope : this
-            };
-        }
+            },
+            scope : this
+        };
 
         this.treepanel = Ext4.create('Ext.tree.Panel', treeConfig);
 

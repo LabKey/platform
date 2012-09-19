@@ -191,7 +191,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @Override
     public double getVersion()
     {
-        return 12.20;
+        return 12.21;
     }
 
     @Override
@@ -556,6 +556,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RSERVE_REPORTING,
                 "Rserve Reports",
                 "Use an R Server for R script evaluation instead of running R from a command shell.",
+                false);
+        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_EMAIL_PERMISSION,
+                "Require permission to view email addresses",
+                "Require explicit permission for non-admins to view users' email addresses.",
                 false);
     }
 

@@ -22,6 +22,12 @@ import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.util.FileType;
 import org.labkey.api.view.ViewBackgroundInfo;
+import org.labkey.api.writer.FileSystemFile;
+import org.labkey.api.writer.VirtualFile;
+import org.labkey.study.importer.StudyImportContext;
+import org.labkey.study.importer.StudyJobSupport;
+import org.labkey.study.model.StudyImpl;
+import org.springframework.validation.BindException;
 
 import java.io.File;
 import java.io.Serializable;
@@ -34,7 +40,7 @@ import java.sql.SQLException;
  */
 
 // Pipeline job used for importing individual specimen archives (not as part of a study).
-public class SpecimenBatch extends StudyBatch implements Serializable, SpecimenJobSupport
+public class SpecimenBatch extends StudyBatch implements Serializable, StudyJobSupport
 {
     private boolean _isMerge;
 
@@ -70,8 +76,44 @@ public class SpecimenBatch extends StudyBatch implements Serializable, SpecimenJ
     }
 
     @Override
+    public StudyImportContext getImportContext()
+    {
+        return new StudyImportContext(getUser(), getContainer(), getLogger());
+    }
+
+    @Override
     public TaskPipeline getTaskPipeline()
     {
         return PipelineJobService.get().getTaskPipeline(new TaskId(SpecimenBatch.class));
+    }
+
+    @Override
+    public StudyImpl getStudy()
+    {
+        return getStudy(false);
+    }
+
+    @Override
+    public StudyImpl getStudy(boolean allowNullStudy)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String getOriginalFilename()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public VirtualFile getRoot()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public BindException getSpringErrors()
+    {
+        throw new UnsupportedOperationException();
     }
 }

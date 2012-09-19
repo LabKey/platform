@@ -132,7 +132,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
             returnUrl = context.getActionURL();
         chartBean.setRedirectUrl(returnUrl.getLocalURIString());
         designers.add(new DesignerInfoImpl(ChartQueryReport.TYPE, "Chart View", "XY and Time Charts",
-                ReportUtil.getChartDesignerURL(context, chartBean), _getIconPath(ChartQueryReport.TYPE)));
+                ReportUtil.getChartDesignerURL(context, chartBean), _getIconPath(ChartQueryReport.TYPE), ReportService.DesignerType.VISUALIZATION));
 
         boolean canCreateScript = ReportUtil.canCreateScript(context);
 

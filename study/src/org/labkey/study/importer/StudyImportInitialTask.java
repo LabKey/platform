@@ -69,7 +69,8 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             {
                 for (int i = 0; i < studyXml.getImportDelay(); i = i + DELAY_INCREMENT)
                 {
-                    job.setStatus("Delaying import, waited " + i + " out of "+ studyXml.getImportDelay() + " second delay");
+                    if (job != null)
+                        job.setStatus("Delaying import, waited " + i + " out of "+ studyXml.getImportDelay() + " second delay");
                     try
                     {
                         Thread.sleep(1000 * DELAY_INCREMENT);
@@ -83,8 +84,8 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             // Create the study if it doesn't exist... otherwise, modify the existing properties
             if (null == study)
             {
-                job.info("Loading study from " + originalFileName);
-                job.info("Creating study");
+                ctx.getLogger().info("Loading study from " + originalFileName);
+                ctx.getLogger().info("Creating study");
 
                 // Create study
                 StudyController.StudyPropertiesForm studyForm = new StudyController.StudyPropertiesForm();
@@ -143,8 +144,8 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             }
             else
             {
-                job.info("Reloading study from " + originalFileName);
-                job.info("Loading top-level study properties");
+                ctx.getLogger().info("Reloading study from " + originalFileName);
+                ctx.getLogger().info("Loading top-level study properties");
 
                 TimepointType timepointType = study.getTimepointType();
                 if (studyXml.isSetTimepointType())

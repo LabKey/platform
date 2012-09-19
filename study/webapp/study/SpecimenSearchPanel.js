@@ -181,6 +181,7 @@ Ext4.define('LABKEY.ext.SampleSearchPanel', {
 
             var target = this.down('#extraFieldsPanel');
             target.removeAll();
+            this.addClass('specimenSearchLoaded'); // marker class to know when search panel has loaded
         }
     },
 

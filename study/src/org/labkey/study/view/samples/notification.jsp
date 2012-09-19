@@ -27,14 +27,27 @@
     JspView<SpecimenUtils.NotificationBean> me =
             (JspView<SpecimenUtils.NotificationBean>) HttpView.currentView();
     SpecimenUtils.NotificationBean bean = me.getModelBean();
+    String requestChangeString = bean.getStatus().compareToIgnoreCase("submitted") == 0 ? "submitted" : "updated";
 %>
+<div>
+    <br>
+    Specimen request #<%= bean.getRequestId() %> was <%= requestChangeString %> in <%= bean.getStudyName() %>.
+    <br>
+    <br>
+</div>
 <table width="500px">
+    <tr>
+
+    </tr>
+    <tr>
+        <td valign="top"><b>Request&nbsp;Details</b></td>
+    </tr>
     <tr>
         <td valign="top"><b>Specimen&nbsp;Request</b></td>
         <td align="left"><%= bean.getRequestId() %></td>
     </tr>
     <tr>
-        <td valign="top"><b>Requesting&nbsp;Location</b></td>
+        <td valign="top"><b>Destination</b></td>
         <td align="left"><%= h(bean.getRequestingSiteName()) %></td>
     </tr>
     <tr>
@@ -84,7 +97,6 @@
         }
     %>
 <p>
-    <b>Request&nbsp;Description</b><br>
     <%= bean.getRequestDescription() != null ? h(bean.getRequestDescription(), true) : "" %>
 </p>
     <%
@@ -92,7 +104,7 @@
         {
     %>
 <p>
-    <b>Specimen&nbsp;List</b><br>
+    <b>Specimen&nbsp;List</b> (<a href="<%= bean.getRequestURI() %>id=<%=bean.getRequestId()%>">Request Link</a>)<br><br>
     <%= bean.getSpecimenList() %>
 </p>
     <%

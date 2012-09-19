@@ -34,6 +34,8 @@ public class EmphasisStudyDefinition
     private boolean _removeProtectedColumns;
     private boolean _shiftDates;
     private boolean _useAlternateParticipantIds;
+    private boolean _includeSpecimens;
+    private boolean _specimenRefresh = false;
     private Integer[] _visits;
     private Integer[] _lists;
     private String[] _views;
@@ -189,5 +191,25 @@ public class EmphasisStudyDefinition
     public void setPublish(boolean publish)
     {
         _publish = publish;
+    }
+
+    public boolean isIncludeSpecimens()
+    {
+        return _includeSpecimens;
+    }
+
+    public void setIncludeSpecimens(boolean includeSpecimens)
+    {
+        _includeSpecimens = includeSpecimens;
+    }
+
+    public boolean isSpecimenRefresh()
+    {
+        return _specimenRefresh;
+    }
+
+    public void setSpecimenRefresh(boolean specimenRefresh)
+    {
+        _specimenRefresh = specimenRefresh;
     }
 }

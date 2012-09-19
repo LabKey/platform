@@ -50,7 +50,6 @@ import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TSVGridWriter;
@@ -1232,17 +1231,9 @@ public class IssuesController extends SpringActionController
         }
 
         // add any explicit notification list addresses
-        final HString notify = issue.getNotifyList();
-
-        if (notify != null)
-        {
-            StringTokenizer tokenizer = new StringTokenizer(notify.getSource(), ";\n\r\t");
-
-            while (tokenizer.hasMoreTokens())
-            {
-                emailAddresses.add((String)tokenizer.nextElement());
-            }
-        }
+        List<ValidEmail> emails = issue.getNotifyListEmail();
+        for (ValidEmail email : emails)
+            emailAddresses.add(email.getEmailAddress());
 
         final String current = getUser().getEmail();
 
@@ -2129,7 +2120,10 @@ public class IssuesController extends SpringActionController
             _appendChange(sbHTMLChanges, sbTextChanges, "Title", previous.getTitle(), issue.getTitle(), newIssue);
             _appendChange(sbHTMLChanges, sbTextChanges, "Status", previous.getStatus(), issue.getStatus(), newIssue);
             _appendChange(sbHTMLChanges, sbTextChanges, "Assigned To", previous.getAssignedToName(currentUser), issue.getAssignedToName(currentUser), newIssue);
-            _appendChange(sbHTMLChanges, sbTextChanges, "Notify", previous.getNotifyList(), issue.getNotifyList(), newIssue);
+            _appendChange(sbHTMLChanges, sbTextChanges, "Notify",
+                    new HString(StringUtils.join(previous.getNotifyListDisplayNames(null),";")),
+                    new HString(StringUtils.join(issue.getNotifyListDisplayNames(null),";")),
+                    newIssue);
             _appendChange(sbHTMLChanges, sbTextChanges, "Type", previous.getType(), issue.getType(), newIssue);
             _appendChange(sbHTMLChanges, sbTextChanges, "Area", previous.getArea(), issue.getArea(), newIssue);
             _appendChange(sbHTMLChanges, sbTextChanges, "Priority", HString.valueOf(previous.getPriority()), HString.valueOf(issue.getPriority()), newIssue);

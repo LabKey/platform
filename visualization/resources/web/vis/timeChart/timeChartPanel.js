@@ -7,17 +7,18 @@
 Ext4.namespace("LABKEY.vis");
 
 LABKEY.requiresScript("vis/genericOptionsPanel.js");
-LABKEY.requiresScript("vis/initialMeasurePanel.js");
-LABKEY.requiresScript("vis/saveOptionsPanel.js");
-LABKEY.requiresScript("vis/measureOptionsPanel.js");
-LABKEY.requiresScript("vis/yAxisOptionsPanel.js");
-LABKEY.requiresScript("vis/xAxisOptionsPanel.js");
-LABKEY.requiresScript("vis/groupingOptionsPanel.js");
-LABKEY.requiresScript("vis/aestheticOptionsPanel.js");
-LABKEY.requiresScript("vis/developerOptionsPanel.js");
 LABKEY.requiresScript("vis/mainTitleOptionsPanel.js");
-LABKEY.requiresScript("vis/participantSelector.js");
-LABKEY.requiresScript("vis/groupSelector.js");
+LABKEY.requiresScript("vis/developerOptionsPanel.js");
+
+LABKEY.requiresScript("vis/timeChart/initialMeasurePanel.js");
+LABKEY.requiresScript("vis/timeChart/saveOptionsPanel.js");
+LABKEY.requiresScript("vis/timeChart/measureOptionsPanel.js");
+LABKEY.requiresScript("vis/timeChart/yAxisOptionsPanel.js");
+LABKEY.requiresScript("vis/timeChart/xAxisOptionsPanel.js");
+LABKEY.requiresScript("vis/timeChart/groupingOptionsPanel.js");
+LABKEY.requiresScript("vis/timeChart/aestheticOptionsPanel.js");
+LABKEY.requiresScript("vis/timeChart/participantSelector.js");
+LABKEY.requiresScript("vis/timeChart/groupSelector.js");
 
 LABKEY.requiresScript("study/ParticipantFilterPanel.js");
 LABKEY.requiresScript("study/MeasurePicker.js");
@@ -122,6 +123,8 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         if(this.viewInfo.type != "line")
             return;
         
+        this.editMode = LABKEY.ActionURL.getParameter("edit") == "true";
+
         // chartInfo will be all of the information needed to render the line chart (axis info and data)
         if(typeof this.chartInfo != "object") {
             this.chartInfo = this.getInitializedChartInfo();
@@ -371,8 +374,10 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         });
 
         this.editorDeveloperPanel = Ext4.create('LABKEY.vis.DeveloperOptionsPanel', {
-            isDeveloper: this.isDeveloper,
+            isDeveloper: this.isDeveloper || false,
             pointClickFn: this.chartInfo.pointClickFn || null,
+            defaultPointClickFn: this.getDefaultPointClickFn(),
+            pointClickFnHelp: this.getPointClickFnHelp(),
             bubbleEvents: ['closeOptionsWindow'],
             listeners: {
                 scope: this,
@@ -502,14 +507,13 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         };
 
         // if edit mode, then add the editor panel buttons and save buttons
-        this.editMode = (LABKEY.ActionURL.getParameter("edit") == "true" || !this.editorSavePanel.isSavedReport()) && this.allowEditMode;
         var toolbarButtons = [
             this.viewGridBtn,
             this.viewChartBtn,
             this.exportPdfSingleBtn,
             this.exportPdfMenuBtn
         ];
-        if (this.editMode)
+        if ((this.editMode && this.allowEditMode) || !this.editorSavePanel.isSavedReport())
         {
             toolbarButtons.push(this.measuresButton);
             toolbarButtons.push(this.groupingButton);
@@ -531,7 +535,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
                     Ext4.apply(params, {edit: "true"});
                     window.location = LABKEY.ActionURL.buildURL(LABKEY.ActionURL.getController(), LABKEY.ActionURL.getAction(), null, params);
                 }
-            });
+            })
         }
 
         this.chart = Ext4.create('Ext.panel.Panel', {
@@ -1594,7 +1598,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         {
             // the developer is expected to return a function, so we encapalate it within the anonymous function
             // (note: the function should have already be validated in a try/catch when applied via the developerOptionsPanel)
-            var devPointClickFn = new Function("", "return " + this.editorDeveloperPanel.removeLeadingComments(chartInfo.pointClickFn));
+            var devPointClickFn = new Function("", "return " + chartInfo.pointClickFn);
         }
 
         var pointClickFn = function(columnMap, measureInfo) {
@@ -2300,5 +2304,45 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         if (this.warningText.length > 0)
             this.warningText += "<BR/>";
         this.warningText += message;
+    },
+
+    getDefaultPointClickFn: function() {
+        return "function (data, columnMap, measureInfo, clickEvent) {\n"
+            + "   // use LABKEY.ActionURL.buildURL to generate a link to a different controller/action within LabKey server\n"
+            + "   var ptidHref = LABKEY.ActionURL.buildURL('study', 'participant', LABKEY.container.path, \n"
+            + "                      {participantId: data[columnMap[\"participant\"]].value});\n"
+            + "   var queryHref = LABKEY.ActionURL.buildURL('query', 'executeQuery', LABKEY.container.path, \n"
+            + "                      {schemaName: measureInfo[\"schemaName\"], \"query.queryName\": measureInfo[\"queryName\"]});\n\n"
+            + "   // display an Ext message box with some information from the function parameters\n"
+            + "   Ext4.Msg.alert('Data Point Information',\n"
+            + "       'Participant: <a href=\"' + ptidHref + '\">' + data[columnMap[\"participant\"]].value + '</a>'\n"
+            + "       + '<br/> Interval: ' + data[columnMap[\"interval\"]].value\n"
+            + "       + '<br/> Value: ' + data[columnMap[\"measure\"]].value\n"
+            + "       + '<br/> Meausure Name:' + measureInfo[\"name\"]\n"
+            + "       + '<br/> Schema Name:' + measureInfo[\"schemaName\"]\n"
+            + "       + '<br/> Query Name: <a href=\"' + queryHref + '\">' + measureInfo[\"queryName\"] + '</a>'\n"
+            + "   );\n\n"
+            + "   // you could also directly navigate away from the chart using window.location\n"
+            + "   // window.location = ptidHref;\n"
+            + "}";
+    },
+
+    getPointClickFnHelp: function() {
+        return 'Your code should define a single function to be called when a data point in the chart is clicked. '
+            + 'The function will be called with the following parameters:<br/><br/>'
+            + '<ul style="margin-left:20px;">'
+            + '<li><b>data:</b> the set of data values for the selected data point. Example: </li>'
+            + '<div style="margin-left: 40px;">{</div>'
+            + '<div style="margin-left: 50px;">Days: {value: 10},<br/>study_Dataset1_Measure1: {value: 250}<br/>study_Dataset1_ParticipantId: {value: "123456789"}</div>'
+            + '<div style="margin-left: 40px;">}</div>'
+            + '<li><b>columnMap:</b> a mapping from participant, interval, and measure to use when looking up values in the data object</li>'
+            + '<div style="margin-left: 40px;">{</div>'
+            + '<div style="margin-left: 50px;">participant: "study_Dataset1_ParticipantId",<br/>measure: "study_Dataset1_Measure1"<br/>interval: "Days"</div>'
+            + '<div style="margin-left: 40px;">}</div>'
+            + '<li><b>measureInfo:</b> the schema name, query name, and measure name for the selected series</li>'
+            + '<div style="margin-left: 40px;">{</div>'
+            + '<div style="margin-left: 50px;">name: "Measure1",<br/>queryName: "Dataset1"<br/>schemaName: "study"</div>'
+            + '<div style="margin-left: 40px;">}</div>'
+            + '<li><b>clickEvent:</b> information from the browser about the click event (i.e. target, position, etc.)</li></ul>';
     }
 });

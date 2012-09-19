@@ -23,6 +23,8 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
             cls       : 'participant-filter-panel',
             border    : false, frame : false,
             bodyStyle : 'padding: 5px;',
+            includeParticipantIds : false,
+            includeUnassigned : true,
             subjectNoun : {singular : 'Participant', plural : 'Participants', columnName: 'Participant'}
         });
 
@@ -31,6 +33,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
             extend : 'Ext.data.Model',
             fields : [
                 {name : 'id'},
+                {name : 'categoryId'},
                 {name : 'enrolled'},
                 {name : 'label'},
                 {name : 'description'},
@@ -188,54 +191,87 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
     },
 
     getGroupPanelCfg: function(){
-        if (!this.groupSectionCfg) {
-            var storeConfig = {
-                pageSize : 100,
-                model    : 'LABKEY.study.GroupCohort',
-                autoLoad : true,
-                proxy    : {
-                    type   : 'ajax',
-                    url    : LABKEY.ActionURL.buildURL('participant-group', 'browseParticipantGroups.api'),
-                    reader : {
-                        type : 'json',
-                        root : 'groups'
+
+        var groupPanel = Ext4.create('Ext.panel.Panel', {
+            layout      : 'fit',
+            border      : false,
+            frame       : false
+        });
+
+        // need to get the categories for the panel sections
+        Ext4.Ajax.request({
+            url    : LABKEY.ActionURL.buildURL('participant-group', 'browseParticipantGroups.api'),
+            success : function(response){
+
+                var o = Ext4.decode(response.responseText);
+                var groups = o.groups || [];
+
+                var storeConfig = {
+                    pageSize : 100,
+                    model    : 'LABKEY.study.GroupCohort',
+                    autoLoad : true,
+                    proxy    : {
+                        type   : 'ajax',
+                        url    : LABKEY.ActionURL.buildURL('participant-group', 'browseParticipantGroups.api'),
+                        reader : {
+                            type : 'json',
+                            root : 'groups'
+                        }
                     }
+                };
+
+                var cohortConfig = Ext4.clone(storeConfig);
+                Ext4.apply(cohortConfig.proxy, {
+                    extraParams : {
+                        type : 'cohort',
+                        includeParticipantIds : this.includeParticipantIds,
+                        includeUnassigned : this.includeUnassigned
+                    }
+                });
+
+                var groupSectionCfg = [{
+                    normalWrap  : this.normalWrap,
+                    store       : Ext4.create('Ext.data.Store', cohortConfig),
+                    selection   : this.getInitialSelection('cohort'),
+                    description : 'Cohorts'
+                }];
+
+                for (var i=0; i < o.groups.length; i++)
+                {
+                    var category = o.groups[i];
+                    var groupConfig = Ext4.clone(storeConfig);
+                    Ext4.apply(groupConfig.proxy, {
+                        extraParams : {
+                            type : 'participantGroup',
+                            categoryId : category.rowId,
+                            includeParticipantIds : this.includeParticipantIds,
+                            includeUnassigned : this.includeUnassigned
+                        }
+                    });
+                    groupSectionCfg.push({
+
+                        normalWrap  : this.normalWrap,
+                        store       : Ext4.create('Ext.data.Store', groupConfig),
+                        selection   : this.getInitialSelection('participantGroup'),
+                        description : category.label
+                    });
                 }
-            };
 
-            var cohortConfig = Ext4.clone(storeConfig);
-            Ext4.apply(cohortConfig.proxy, {
-                extraParams : { type : 'cohort'}
-            });
-            var groupConfig = Ext4.clone(storeConfig);
-            Ext4.apply(groupConfig.proxy, {
-                extraParams : { type : 'participantGroup'}
-            });
+                groupPanel.add({
+                    xtype : 'labkey-filterselectpanel',
+                    itemId   : 'filterPanel',
+                    border   : false, frame : false,
+                    allowGlobalAll  : this.allowAll,
+                    allowAll : this.allowAll,
+                    sections : groupSectionCfg
+                })
+            },
+            params : { type : 'participantCategory'},
+            failure : this.onFailure,
+            scope   : this
+        });
 
-            this.groupSectionCfg = [{
-                normalWrap  : this.normalWrap,
-                store       : Ext4.create('Ext.data.Store', cohortConfig),
-                sectionName : 'cohort',
-                noSelection : this.getIsEmptySelection('cohort'),
-                selection   : this.getInitialSelection('cohort'),
-                description : '<b class="filter-description">Cohorts</b>'
-            },{
-                normalWrap  : this.normalWrap,
-                store       : Ext4.create('Ext.data.Store', groupConfig),
-                sectionName : 'participantGroup',
-                noSelection : this.getIsEmptySelection('participantGroup'),
-                selection   : this.getInitialSelection('participantGroup'),
-                description : '<b class="filter-description">Groups</b>'
-            }];
-        }
-
-        return {
-            xtype    : 'labkey-filterselectpanel',
-            itemId   : 'filterPanel',
-            border   : false, frame : false,
-            allowAll : true,
-            sections : this.groupSectionCfg
-        }
+        return groupPanel;
     },
 
     getParticipantPanelCfg: function(){
@@ -256,7 +292,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                 sectionName : 'participant',
                 noSelection : this.getIsEmptySelection('participant'),
                 maxInitSelection : this.maxInitSelection,
-                description : '<b class="filter-description">' + this.subjectNoun.plural + '</b>'
+                description : this.subjectNoun.plural
             }]
         }
 

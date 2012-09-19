@@ -330,6 +330,7 @@ public class DataSetQueryView extends QueryView
     protected void populateButtonBar(DataView view, ButtonBar bar, boolean exportAsWebPage)
     {
         bar.add(createViewButton(getItemFilter()));
+        bar.add(createChartButton());
 
         bar.add(ParticipantGroupManager.getInstance().createParticipantGroupButton(getViewContext(), getDataRegionName(), _cohortFilter, true));
 

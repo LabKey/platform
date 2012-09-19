@@ -15,6 +15,7 @@
  */
 package org.labkey.issue.model;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -22,6 +23,7 @@ import org.labkey.api.data.Entity;
 import org.labkey.api.data.Sort;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.MemTracker;
 
@@ -526,15 +528,83 @@ public class Issue extends Entity implements Serializable, Cloneable
         return comment;
     }
 
+
     public void setNotifyList(HString notifyList)
     {
         _notifyList = notifyList;
     }
 
+
+    public void parseNotifyList(String notifyList)
+    {
+        String[] names = StringUtils.trimToEmpty(notifyList).split(";");
+        ArrayList<String> parsed = new ArrayList<String>();
+        for (String name : names)
+        {
+            name = StringUtils.trimToNull(name);
+            if (null == name) continue;
+            User u = null;
+            try { u = UserManager.getUser(new ValidEmail(name)); } catch (ValidEmail.InvalidEmailException x) {}
+            if (null == u)
+                u = UserManager.getUserByDisplayName(name);
+            parsed.add(null == u ? name : String.valueOf(u.getUserId()));
+        }
+        _notifyList = new HString(StringUtils.join(parsed,";"));
+    }
+
+
     public HString getNotifyList()
     {
         return _notifyList;
     }
+
+
+    public List<String> getNotifyListDisplayNames(User user)
+    {
+        ArrayList<String> ret = new ArrayList<String>();
+        String[] raw = StringUtils.trimToEmpty(null==_notifyList?"":_notifyList.getSource()).split(";");
+        for (String id : raw)
+        {
+            ValidEmail v = null;
+            User u = null;
+            try
+            {
+                v = new ValidEmail(id);
+                u = UserManager.getUser(v);
+            } catch (ValidEmail.InvalidEmailException x) { }
+            if (v == null)
+                try { u = UserManager.getUser(Integer.parseInt(id)); } catch (NumberFormatException x) { };
+            if (v == null && u == null)
+                u = UserManager.getUserByDisplayName(id);
+
+            String display = null != u ? u.getDisplayName(user) : null != v ? v.getEmailAddress() : id;
+            ret.add(display);
+        }
+        return ret;
+    }
+
+
+    public List<ValidEmail> getNotifyListEmail()
+    {
+        ArrayList<ValidEmail> ret = new ArrayList<ValidEmail>();
+        String[] raw = StringUtils.trimToEmpty(null==_notifyList?"":_notifyList.getSource()).split(";");
+        for (String id : raw)
+        {
+            ValidEmail v = null;
+            User u = null;
+            try { v = new ValidEmail(id); } catch (ValidEmail.InvalidEmailException x) { }
+            if (v == null)
+                try { u = UserManager.getUser(Integer.parseInt(id)); } catch (NumberFormatException x) { };
+            if (v == null && u == null)
+                u = UserManager.getUserByDisplayName(id);
+            if (v == null && u != null)
+                try { v = new ValidEmail(u.getEmail()); } catch (ValidEmail.InvalidEmailException x) { }
+            if (null != v)
+                ret.add(v);
+        }
+        return ret;
+    }
+
 
     /* CONSIDER: use Announcements/Notes instead of special Comments class */
 

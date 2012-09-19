@@ -15,7 +15,6 @@
  */
 package org.labkey.study.writer;
 
-import org.labkey.api.writer.Archive;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.SpecimenImporter;
@@ -32,25 +31,26 @@ import org.labkey.study.xml.StudyDocument;
 class SpecimenArchiveWriter implements InternalStudyWriter
 {
     private static final String DEFAULT_DIRECTORY = "specimens";
+    public static final String SELECTION_TEXT = "Specimens";
 
     public String getSelectionText()
     {
-        return "Specimens";
+        return SELECTION_TEXT;
     }
 
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile root) throws Exception
     {
         VirtualFile vf = root.getDir(DEFAULT_DIRECTORY);
 
-        String archiveName = vf.makeLegalName(study.getLabel().replaceAll("\\s", "") + ".specimens");
-
         StudyDocument.Study studyXml = ctx.getXml();
         StudyDocument.Study.Specimens specimens = studyXml.addNewSpecimens();
         specimens.setRepositoryType(study.getRepositorySettings().isSimple() ? RepositoryType.STANDARD : RepositoryType.ADVANCED);
         specimens.setDir(DEFAULT_DIRECTORY);
-        specimens.setFile(archiveName);
 
-        Archive zip = vf.createZipArchive(archiveName);
+        String archiveName = vf.makeLegalName(study.getLabel().replaceAll("\\s", "") + ".specimens");
+        VirtualFile zip = vf.createZipArchive(archiveName);
+        if (!zip.equals(vf)) // MemoryVirtualFile doesn't add a zip archive, it just returns vf
+            specimens.setFile(archiveName);
 
         StudySchema schema = StudySchema.getInstance();
 

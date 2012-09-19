@@ -18,9 +18,12 @@ package org.labkey.core.query;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerTable;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DetailsURL;
@@ -32,6 +35,8 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.SeeUserEmailAddressesPermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.core.user.UserController;
@@ -211,7 +216,7 @@ public class CoreQuerySchema extends UserSchema
         principals.addCondition(new SQLFragment("Container IS NULL or Container=?", getContainer().getProject()));
 
         //only non-guest users may see the principals
-        if (getUser().isGuest())
+        if (!getContainer().hasPermission(getUser(), AdminPermission.class))
             addNullSetFilter(principals);
 
         principals.setDescription("Contains all principals (users and groups) who are members of the current project." +
@@ -249,7 +254,7 @@ public class CoreQuerySchema extends UserSchema
         members.addColumn(col);
 
         //if user is guest, add a null-set filter
-        if (getUser().isGuest())
+        if (!getContainer().hasPermission(getUser(), AdminPermission.class))
         {
             addNullSetFilter(members);
         }
@@ -358,6 +363,7 @@ public class CoreQuerySchema extends UserSchema
 
     protected FilteredTable getUserTable()
     {
+        User user = getUser();
         TableInfo usersBase = CoreSchema.getInstance().getTableInfoUsers();
         FilteredTable users = new FilteredTable(usersBase);
 
@@ -375,10 +381,14 @@ public class CoreQuerySchema extends UserSchema
         users.addWrapColumn(usersBase.getColumn("Description"));
         users.addWrapColumn(usersBase.getColumn("Created"));
         users.addWrapColumn(usersBase.getColumn("Modified"));
-        
-        if (!getUser().isGuest())
+
+        if (canSeeEmailAddresses())
         {
             users.addWrapColumn(usersBase.getColumn("Email"));
+        }
+        else
+        {
+            users.addColumn(new NullColumnInfo(users, "Email", JdbcType.VARCHAR));
         }
 
         if (getUser().isAdministrator() || getContainer().hasPermission(getUser(), AdminPermission.class))
@@ -411,5 +421,13 @@ public class CoreQuerySchema extends UserSchema
     protected void addNullSetFilter(FilteredTable table)
     {
         table.addCondition(new SQLFragment("1=2"));
+    }
+
+    protected boolean canSeeEmailAddresses()
+    {
+        if (!AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_EMAIL_PERMISSION))
+            return true;
+        return getContainer().hasPermission(getUser(),SeeUserEmailAddressesPermission.class) ||
+            ContainerManager.getRoot().hasPermission(getUser(),SeeUserEmailAddressesPermission.class);
     }
 }

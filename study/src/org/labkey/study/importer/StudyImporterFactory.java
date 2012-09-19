@@ -73,7 +73,8 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
 
             if (null != studyDir)
             {
-                job.setStatus("IMPORT " + getDescription());
+                if (job != null)
+                    job.setStatus("IMPORT " + getDescription());
                 ctx.getLogger().info("Loading " + getDescription());
 
                 String studyFileName = "study.xml";
@@ -106,13 +107,12 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                 // the dataset import task handles importing the dataset data and updating the participant and participantVisit tables
                 String datasetsFileName = StudyImportDatasetTask.getDatasetsFileName(studyImportContext);
                 VirtualFile datasetsDirectory = StudyImportDatasetTask.getDatasetsDirectory(studyImportContext, studyDir);
-
                 StudyImpl study = StudyManager.getInstance().getStudy(c);
-                StudyImportDatasetTask.doImport(datasetsDirectory, datasetsFileName, job, study);
+                StudyImportDatasetTask.doImport(datasetsDirectory, datasetsFileName, job, studyImportContext, study);
 
                 // specimen import task
                 File specimenFile = getSpecimenArchive(studyImportContext, studyDir);
-                StudyImportSpecimenTask.doImport(specimenFile, job, false);
+                StudyImportSpecimenTask.doImport(specimenFile, job, studyImportContext, false);
 
                 // the final study import task handles registered study importers like: cohorts, participant comments, categories, etc.
                 StudyImportFinalTask.doImport(job, studyImportContext, errors);
@@ -135,7 +135,6 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
             {
                 Container c = ctx.getContainer();
 
-                // TODO: support specimen archives that are not zipped
                 RepositoryType.Enum repositoryType = specimens.getRepositoryType();
                 StudyController.updateRepositorySettings(c, RepositoryType.STANDARD == repositoryType);
 

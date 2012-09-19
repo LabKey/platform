@@ -74,14 +74,15 @@ public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.
             VirtualFile vf = ctx.getRoot();
             for (InternalStudyImporter importer : internalImporters)
             {
-                job.info("Importing " + importer.getDescription());
-                job.setStatus("IMPORT " + importer.getDescription());
+                if (job != null)
+                    job.setStatus("IMPORT " + importer.getDescription());
+                ctx.getLogger().info("Importing " + importer.getDescription());
                 importer.process(ctx, vf, errors);
-                job.info("Done importing " + importer.getDescription());
+                ctx.getLogger().info("Done importing " + importer.getDescription());
             }
 
             // the registered study importers only need to be called in the Import Study case (not for Import Folder)
-            if (job instanceof StudyImportJob)
+            if (job != null && job instanceof StudyImportJob)
             {
                 Collection<FolderImporter> externalStudyImporters = StudySerializationRegistryImpl.get().getRegisteredStudyImporters();
                 for (FolderImporter importer : externalStudyImporters)

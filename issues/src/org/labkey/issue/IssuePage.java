@@ -22,6 +22,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
@@ -337,10 +338,10 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
     public HString getNotifyListString()
     {
-        final HString notify = _issue.getNotifyList();
-        if (notify != null)
-            return notify.replace(';', '\n');
-        return HString.EMPTY;
+        List<String> names = _issue.getNotifyListDisplayNames(_user);
+        if (names.isEmpty())
+            return HString.EMPTY;
+        return new HString(StringUtils.join(names, "\n"));
     }
 
     public HString getNotifyList()

@@ -15,6 +15,7 @@
  */
 package org.labkey.issue;
 
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
@@ -219,7 +220,8 @@ public class IssueUpdateEmailTemplate extends EmailTemplate
         {
             public HString getHStringValue(Container c)
             {
-                return _newIssue.getNotifyList();
+                List<String> names = _newIssue.getNotifyListDisplayNames(null);
+                return new HString(StringUtils.join(names, ";"));
             }
         });
         _replacements.add(new ReplacementParam("int1", "The first admin-configurable integer field this issue")

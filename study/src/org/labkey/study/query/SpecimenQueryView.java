@@ -165,7 +165,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         {
             if (_historyLinkBase == null)
                 _historyLinkBase = getHistoryLinkBase(ctx.getViewContext());
-            Integer specimenId = (Integer) ctx.getRow().get("RowId");
+            Long specimenId = (Long) ctx.getRow().get("RowId");
             return _historyLinkBase + specimenId;
         }
 
