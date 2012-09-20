@@ -16,10 +16,13 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ArrayListMap;
+import org.labkey.api.data.Table.TableResultSet;
 import org.labkey.api.data.dialect.SqlDialect;
 
 import java.lang.reflect.Array;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -31,6 +34,9 @@ import java.util.Map;
 
 public abstract class BaseSelector<FACTORY extends SqlFactory> extends JdbcCommand implements Selector
 {
+    protected int _rowCount = Table.ALL_ROWS;         // TODO: Should probably move the setters here as well (i.e., allow limit/offset with SqlSelector)
+    protected long _offset = Table.NO_OFFSET;
+
     abstract FACTORY getSqlFactory();  // A single query's SQL factory; this allows better Selector reuse, since query-specific
                                        // optimizations won't mutate the Selector's externally set state.
 
@@ -39,10 +45,92 @@ public abstract class BaseSelector<FACTORY extends SqlFactory> extends JdbcComma
         super(scope, null);
     }
 
-    //@Override      // TODO: Not valid to call at the moment since connection never gets closed
-    public ResultSet getResultSet() throws SQLException
+    // Standard internal handleResultSet method used by everything except ResultSets
+    private <K> K handleResultSet(SqlFactory sqlFactory, ResultSetHandler<K> handler)
     {
-        return getSqlFactory().handleResultSet(null);  // NYI
+        return handleResultSet(sqlFactory, handler, true, false, false, null, null);
+    }
+
+    private <K> K handleResultSet(SqlFactory sqlFactory, ResultSetHandler<K> handler, boolean closeOnSuccess, boolean scrollable,
+        boolean tweakJdbcParameters, @Nullable AsyncQueryRequest asyncRequest, @Nullable Integer statementRowCount)
+    {
+        DbScope scope = getScope();
+        SQLFragment sql = sqlFactory.getSql();
+        boolean queryFailed = false;
+
+        Connection conn = null;
+        ResultSet rs = null;
+
+        try
+        {
+            conn = getConnection();
+
+            if (tweakJdbcParameters && Table.isSelect(sql.toString()) && !scope.isTransactionActive())
+            {
+                // Only fiddle with the Connection settings if we're not inside of a transaction so we won't mess
+                // up any state the caller is relying on. Also, only do this when we're fairly certain that it's
+                // a read-only statement (starting with SELECT)
+                scope.getSqlDialect().configureToDisableJdbcCaching(conn);
+            }
+
+            rs = Table._executeQuery(conn, sql.getSQL(), sql.getParamsArray(), scrollable, asyncRequest, statementRowCount);
+            sqlFactory.processResultSet(rs);
+
+            return handler.handle(rs, conn, scope);
+        }
+        catch(SQLException e)
+        {
+            // TODO: Substitute SQL parameter placeholders with values?
+            Table.logException(sql.getSQL(), sql.getParamsArray(), conn, e, getLogLevel());
+            queryFailed = true;
+            throw getExceptionFramework().translate(getScope(), "Message", sql.getSQL(), e);  // TODO: Change message
+        }
+        finally
+        {
+            if (closeOnSuccess || queryFailed)
+                close(rs, conn);
+        }
+    }
+
+    // TODO: Named parameters
+    // TODO: Set Logger?
+    // TODO: Statement row count
+    private Table.TableResultSet getResultSet(SqlFactory sqlFactory, boolean scrollable, boolean cache, final @Nullable AsyncQueryRequest asyncRequest, @Nullable Integer statementRowCount) throws SQLException
+    {
+        if (cache)
+        {
+            return handleResultSet(sqlFactory, new ResultSetHandler<TableResultSet>()
+            {
+                @Override
+                public TableResultSet handle(ResultSet rs, Connection conn, DbScope scope) throws SQLException
+                {
+                    return Table.cacheResultSet(scope.getSqlDialect(), rs, _rowCount, asyncRequest);
+                }
+            }, true, scrollable, true, asyncRequest, statementRowCount);
+        }
+        else
+        {
+            return handleResultSet(sqlFactory, new ResultSetHandler<TableResultSet>()
+            {
+                @Override
+                public TableResultSet handle(ResultSet rs, Connection conn, DbScope scope) throws SQLException
+                {
+                    return new Table.ResultSetImpl(conn, scope, rs, _rowCount);
+                }
+            }, false, scrollable, true, asyncRequest, statementRowCount);
+        }
+    }
+
+    @Override
+    public Table.TableResultSet getResultSet() throws SQLException
+    {
+        return getResultSet(false, true, null, null);
+    }
+
+    @Override
+    public Table.TableResultSet getResultSet(boolean scrollable, boolean cache, @Nullable AsyncQueryRequest asyncRequest, @Nullable Integer statementRowCount) throws SQLException
+    {
+        return getResultSet(getSqlFactory(), scrollable, cache, asyncRequest, statementRowCount);
     }
 
     private <K> ArrayList<K> getArrayList(final Class<K> clazz, FACTORY factory)
@@ -65,10 +153,10 @@ public abstract class BaseSelector<FACTORY extends SqlFactory> extends JdbcComma
         }
         else
         {
-            list = factory.handleResultSet(new ResultSetHandler<ArrayList<K>>()
+            list = handleResultSet(factory, new ResultSetHandler<ArrayList<K>>()
             {
                 @Override
-                public ArrayList<K> handle(ResultSet rs) throws SQLException
+                public ArrayList<K> handle(ResultSet rs, Connection conn, DbScope scope) throws SQLException
                 {
                     if (Map.class == clazz)
                     {
@@ -115,10 +203,10 @@ public abstract class BaseSelector<FACTORY extends SqlFactory> extends JdbcComma
     {
         SqlFactory rowCountFactory = new RowCountSqlFactory(factory);
 
-        return rowCountFactory.handleResultSet(new ResultSetHandler<Long>()
+        return handleResultSet(rowCountFactory, new ResultSetHandler<Long>()
         {
             @Override
-            public Long handle(ResultSet rs) throws SQLException
+            public Long handle(ResultSet rs, Connection conn, DbScope scope) throws SQLException
             {
                 rs.next();
                 return rs.getLong(1);
@@ -136,10 +224,10 @@ public abstract class BaseSelector<FACTORY extends SqlFactory> extends JdbcComma
     {
         SqlFactory existsFactory = new ExistsSqlFactory(factory);
 
-        return existsFactory.handleResultSet(new ResultSetHandler<Boolean>()
+        return handleResultSet(existsFactory, new ResultSetHandler<Boolean>()
         {
             @Override
-            public Boolean handle(ResultSet rs) throws SQLException
+            public Boolean handle(ResultSet rs, Connection conn, DbScope scope) throws SQLException
             {
                 rs.next();
                 return rs.getBoolean(1);
@@ -186,9 +274,9 @@ public abstract class BaseSelector<FACTORY extends SqlFactory> extends JdbcComma
 
     protected void forEach(final ForEachBlock<ResultSet> block, FACTORY factory)
     {
-        factory.handleResultSet((new ResultSetHandler<Object>() {
+        handleResultSet(factory, (new ResultSetHandler<Object>() {
             @Override
-            public Object handle(ResultSet rs) throws SQLException
+            public Object handle(ResultSet rs, Connection conn, DbScope scope) throws SQLException
             {
                 while (rs.next())
                     block.exec(rs);
@@ -206,10 +294,10 @@ public abstract class BaseSelector<FACTORY extends SqlFactory> extends JdbcComma
 
     protected void forEachMap(final ForEachBlock<Map<String, Object>> block, FACTORY factory)
     {
-        factory.handleResultSet(new ResultSetHandler<Object>()
+        handleResultSet(factory, new ResultSetHandler<Object>()
         {
             @Override
-            public Object handle(ResultSet rs) throws SQLException
+            public Object handle(ResultSet rs, Connection conn, DbScope scope) throws SQLException
             {
                 ResultSetIterator iter = new ResultSetIterator(rs);
 
@@ -277,18 +365,17 @@ public abstract class BaseSelector<FACTORY extends SqlFactory> extends JdbcComma
 
     public interface ResultSetHandler<K>
     {
-        K handle(ResultSet rs) throws SQLException;
+        K handle(ResultSet rs, Connection conn, DbScope scope) throws SQLException;
     }
 
 
     // Wraps the underlying factory's SQL with a SELECT COUNT(*) query
-    private class RowCountSqlFactory extends BaseSqlFactory
+    private static class RowCountSqlFactory extends BaseSqlFactory
     {
         private final SqlFactory _factory;
 
         private RowCountSqlFactory(SqlFactory factory)
         {
-            super(BaseSelector.this);
             _factory = factory;
         }
 
@@ -311,7 +398,6 @@ public abstract class BaseSelector<FACTORY extends SqlFactory> extends JdbcComma
 
         private ExistsSqlFactory(SqlFactory factory)
         {
-            super(BaseSelector.this);
             _factory = factory;
         }
 

@@ -61,11 +61,6 @@ public class SqlSelector extends BaseSelector<SqlSelector.SimpleSqlFactory>
 
     public class SimpleSqlFactory extends BaseSqlFactory
     {
-        protected SimpleSqlFactory()
-        {
-            super(SqlSelector.this);
-        }
-
         @Override
         public SQLFragment getSql()
         {

@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-// TODO: cache, for display, async, etc.
 public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory>
 {
     private final TableInfo _table;
@@ -37,8 +36,6 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory>
     private final @Nullable Filter _filter;
     private final @Nullable Sort _sort;
 
-    private int _rowCount = Table.ALL_ROWS;
-    private long _offset = Table.NO_OFFSET;
     private boolean _forDisplay = false;
 
     // Select specified columns from a table
@@ -79,6 +76,12 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory>
     public TableSelector(ColumnInfo column)
     {
         this(column, null, null);
+    }
+
+    // TODO: Version of getResults() that takes cache, etc. parameters?
+    public Results getResults() throws SQLException
+    {
+        return new ResultsImpl(getResultSet(), _columns);
     }
 
     public TableSelector setRowCount(int rowCount)
@@ -183,7 +186,6 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory>
 
         public TableSqlFactory(@Nullable Filter filter, @Nullable Sort sort, Collection<ColumnInfo> columns, boolean allowSort)
         {
-            super(TableSelector.this);
             _filter = filter;
             _sort = allowSort ? sort : null;    // Ensure consistency
             _columns = columns;
@@ -235,7 +237,7 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory>
         }
 
         @Override
-        protected void processResultSet(ResultSet rs) throws SQLException
+        public void processResultSet(ResultSet rs) throws SQLException
         {
             // Special handling for dialects that don't support offset
             while (_scrollOffset > 0 && rs.next())

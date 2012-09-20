@@ -284,6 +284,27 @@ public class Table
     }
 
 
+    @Deprecated // Use TableSelector
+    public static <K> K selectObject(TableInfo table, int pk, Class<K> clss)
+    {
+        return new TableSelector(table).getObject(pk, clss);
+    }
+
+
+    @Deprecated // Use TableSelector
+    public static <K> K selectObject(TableInfo table, Object pk, Class<K> clss)
+    {
+        return new TableSelector(table).getObject(pk, clss);
+    }
+
+
+    @Deprecated // Use TableSelector
+    public static <K> K selectObject(TableInfo table, @Nullable Container c, Object pk, Class<K> clss)
+    {
+        return new TableSelector(table).getObject(c, pk, clss);
+    }
+
+
     // ================== These methods have not been converted to Selector/Executor ==================
 
     // Careful: caller must track and clean up parameters (e.g., close InputStreams) after execution is complete
@@ -561,7 +582,7 @@ public class Table
             if (cache)
                 return cacheResultSet(schema.getSqlDialect(), rs, rowCount, asyncRequest);
             else
-                return new ResultSetImpl(conn, schema, rs, rowCount);
+                return new ResultSetImpl(conn, schema.getScope(), rs, rowCount);
         }
         catch(SQLException e)
         {
@@ -578,7 +599,7 @@ public class Table
     }
 
     /** @return if this is a statement that starts with SELECT, ignoring comment lines that start with "--" */
-    private static boolean isSelect(String sql)
+    static boolean isSelect(String sql)
     {
         for (String sqlLine : sql.split("\\r?\\n"))
         {
@@ -1213,24 +1234,6 @@ public class Table
     }
 
 
-    public static <K> K selectObject(TableInfo table, int pk, Class<K> clss)
-    {
-        return new TableSelector(table).getObject(pk, clss);
-    }
-
-
-    public static <K> K selectObject(TableInfo table, Object pk, Class<K> clss)
-    {
-        return new TableSelector(table).getObject(pk, clss);
-    }
-
-
-    public static <K> K selectObject(TableInfo table, @Nullable Container c, Object pk, Class<K> clss)
-    {
-        return new TableSelector(table).getObject(c, pk, clss);
-    }
-
-
     public static SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
     {
         return QueryService.get().getSelectSQL(table, columns, filter, sort, ALL_ROWS, NO_OFFSET, false);
@@ -1529,7 +1532,7 @@ public class Table
 
     public static class ResultSetImpl extends ResultSetWrapper implements TableResultSet
     {
-        private final @Nullable DbSchema _schema;
+        private final @Nullable DbScope _scope;
         private final @Nullable Connection _connection;
         private int _maxRows = ALL_ROWS;
 
@@ -1552,12 +1555,12 @@ public class Table
         }
 
 
-        public ResultSetImpl(Connection connection, DbSchema schema, ResultSet rs)
+        public ResultSetImpl(Connection connection, DbScope scope, ResultSet rs)
         {
-            this(connection, schema, rs, ALL_ROWS);
+            this(connection, scope, rs, ALL_ROWS);
         }
 
-        public ResultSetImpl(@Nullable Connection connection, @Nullable DbSchema schema, ResultSet rs, int maxRows)
+        public ResultSetImpl(@Nullable Connection connection, @Nullable DbScope scope, ResultSet rs, int maxRows)
         {
             super(rs);
             assert MemTracker.put(this);
@@ -1565,7 +1568,7 @@ public class Table
             assert null != (_debugCreated = new Throwable("created ResultSetImpl"));
             _maxRows = maxRows;
             _connection = connection;
-            _schema = schema;
+            _scope = scope;
         }
 
 
@@ -1608,7 +1611,7 @@ public class Table
         public void close() throws SQLException
         {
             // Uncached case... close everything down
-            if (null != _schema)
+            if (null != _scope)
             {
                 Statement stmt = getStatement();
                 super.close();
@@ -1616,7 +1619,7 @@ public class Table
                 {
                     stmt.close();
                 }
-                _schema.getScope().releaseConnection(_connection);
+                _scope.releaseConnection(_connection);
             }
             else
                 super.close();

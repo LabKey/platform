@@ -19,6 +19,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.User;
+import org.labkey.api.util.ResultSetUtil;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -37,13 +38,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TableSelectorTestCase extends Assert
 {
     @Test
-    public void testTableSelector()
+    public void testTableSelector() throws SQLException
     {
         testTableSelector(CoreSchema.getInstance().getTableInfoActiveUsers(), User.class);
         testTableSelector(CoreSchema.getInstance().getTableInfoModules(), ModuleContext.class);
     }
 
-    public <K> void testTableSelector(TableInfo table, Class<K> clazz)
+    public <K> void testTableSelector(TableInfo table, Class<K> clazz) throws SQLException
     {
         TableSelector selector = new TableSelector(table, null, null);
 
@@ -100,19 +101,19 @@ public class TableSelectorTestCase extends Assert
         }
     }
 
-    private <K> void testSelectorMethods(TableSelector selector, Class<K> clazz)
+    private <K> void testSelectorMethods(TableSelector selector, Class<K> clazz) throws SQLException
     {
         assertTrue(selector.exists());
 
         K[] array = selector.getArray(clazz);
         Collection<K> collection = selector.getCollection(clazz);
 
-        final AtomicInteger rsCount = new AtomicInteger(0);
+        final AtomicInteger forEachcount = new AtomicInteger(0);
         selector.forEach(new Selector.ForEachBlock<ResultSet>() {
             @Override
             public void exec(ResultSet rs) throws SQLException
             {
-                rsCount.incrementAndGet();
+                forEachcount.incrementAndGet();
             }
         });
 
@@ -135,13 +136,47 @@ public class TableSelectorTestCase extends Assert
             }
         }, clazz);
 
+        ResultSet rs = null;
+
+        // Test cached ResultSet
+        AtomicInteger rsCachedCount = new AtomicInteger(0);
+
+        try
+        {
+            rs = selector.getResultSet();
+
+            while (rs.next())
+                rsCachedCount.incrementAndGet();
+        }
+        finally
+        {
+            ResultSetUtil.close(rs);
+        }
+
+        // Test uncached ResultSet
+        AtomicInteger rsUncachedCount = new AtomicInteger(0);
+
+        try
+        {
+            rs = selector.getResultSet(false, false, null, null);
+
+            while (rs.next())
+                rsUncachedCount.incrementAndGet();
+        }
+        finally
+        {
+            ResultSetUtil.close(rs);
+        }
+
         assertTrue
         (
             array.length == collection.size() &&
-            array.length == rsCount.intValue() &&
+            array.length == forEachcount.intValue() &&
             array.length == mapCount.intValue() &&
             array.length == objCount.intValue() &&
-            array.length == selector.getRowCount()
+            array.length == selector.getRowCount() &&
+            array.length == rsCachedCount.intValue() &&
+            array.length == rsUncachedCount.intValue()
         );
     }
 }

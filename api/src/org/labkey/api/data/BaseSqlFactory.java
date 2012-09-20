@@ -15,7 +15,6 @@
  */
 package org.labkey.api.data;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -26,41 +25,7 @@ import java.sql.SQLException;
 */
 public abstract class BaseSqlFactory implements SqlFactory
 {
-    private final BaseSelector _selector;
-
-    BaseSqlFactory(BaseSelector selector)
-    {
-        _selector = selector;
-    }
-
-    @Override
-    public <K> K handleResultSet(BaseSelector.ResultSetHandler<K> handler)
-    {
-        Connection conn = null;
-        ResultSet rs = null;
-        SQLFragment sql = getSql();
-
-        try
-        {
-            conn = _selector.getConnection();
-            rs = Table._executeQuery(conn, sql.getSQL(), sql.getParamsArray(), false, null, null);
-            processResultSet(rs);
-
-            return handler.handle(rs);
-        }
-        catch(SQLException e)
-        {
-            // TODO: Substitute SQL parameter placeholders with values?
-            Table.logException(sql.getSQL(), sql.getParamsArray(), conn, e, _selector.getLogLevel());
-            throw _selector.getExceptionFramework().translate(_selector.getScope(), "Message", sql.getSQL(), e);  // TODO: Change message
-        }
-        finally
-        {
-            _selector.close(rs, conn);
-        }
-    }
-
-    protected void processResultSet(ResultSet rs) throws SQLException
+    public void processResultSet(ResultSet rs) throws SQLException
     {
     }
 }

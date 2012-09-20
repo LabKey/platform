@@ -16,6 +16,8 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -28,7 +30,9 @@ import java.util.Map;
 */
 public interface Selector
 {
-//    ResultSet getResultSet() throws SQLException;      // TODO: Don't throw SQLException?
+    Table.TableResultSet getResultSet() throws SQLException;
+
+    Table.TableResultSet getResultSet(boolean scrollable, boolean cache, @Nullable AsyncQueryRequest asyncRequest, @Nullable Integer statementRowCount) throws SQLException;
 
     long getRowCount();
 

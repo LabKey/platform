@@ -15,6 +15,9 @@
  */
 package org.labkey.api.data;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 /**
  * User: adam
  * Date: 1/22/12
@@ -23,5 +26,5 @@ package org.labkey.api.data;
 public interface SqlFactory
 {
     SQLFragment getSql();
-    <K> K handleResultSet(BaseSelector.ResultSetHandler<K> handler);
+    void processResultSet(ResultSet rs) throws SQLException;
 }
