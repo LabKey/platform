@@ -138,7 +138,7 @@ public class AnnouncementManager
     public static Pair<AnnouncementModel[], Boolean> getAnnouncements(Container c, SimpleFilter filter, Sort sort, int rowLimit)
     {
         filter.addCondition("Container", c.getId());
-        AnnouncementModel[] recent = new TableSelector(_comm.getTableInfoThreads(), filter, sort).setRowCount(rowLimit + 1).getArray(AnnouncementModel.class);
+        AnnouncementModel[] recent = new TableSelector(_comm.getTableInfoThreads(), filter, sort).setMaxRows(rowLimit + 1).getArray(AnnouncementModel.class);
 
         Boolean limited = (recent.length > rowLimit);
 

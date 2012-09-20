@@ -143,7 +143,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.StringTokenizer;
 
 public class IssuesController extends SpringActionController
 {
@@ -1740,7 +1739,7 @@ public class IssuesController extends SpringActionController
             Map<FieldKey, ColumnInfo> columnMap = QueryService.get().getColumns(IssuesSchema.getInstance().getTableInfoComments(), fields);
 
             TableSelector selector = new TableSelector(IssuesSchema.getInstance().getTableInfoComments(), columnMap.values(), filter, sort);
-            selector.setRowCount(limit);
+            selector.setMaxRows(limit);
             Collection<Map> comments = selector.getCollection(Map.class);
 
             ObjectFactory<Issue.Comment> commentFactory = ObjectFactory.Registry.getFactory(Issue.Comment.class);

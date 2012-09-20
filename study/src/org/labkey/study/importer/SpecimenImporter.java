@@ -46,8 +46,6 @@ import org.labkey.study.model.*;
 import org.labkey.study.visitmanager.VisitManager;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -1033,7 +1031,7 @@ public class SpecimenImporter
             if (logger != null)
                 logger.info("Determining current locations for vials " + (offset + 1) + " through " + (offset + CURRENT_SITE_UPDATE_SIZE) + ".");
 
-            specimens = new TableSelector(StudySchema.getInstance().getTableInfoVial(), containerFilter, null).setRowCount(CURRENT_SITE_UPDATE_SIZE).setOffset(offset).getArray(Specimen.class);
+            specimens = new TableSelector(StudySchema.getInstance().getTableInfoVial(), containerFilter, null).setMaxRows(CURRENT_SITE_UPDATE_SIZE).setOffset(offset).getArray(Specimen.class);
 
             List<List<?>> vialPropertiesParams = new ArrayList<List<?>>();
             List<List<?>> commentParams = new ArrayList<List<?>>();

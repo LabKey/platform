@@ -480,7 +480,7 @@ public class ListDefinitionImpl implements ListDefinition
                 final List<AttachmentParent> attachmentParents = new ArrayList<AttachmentParent>();
 
                 TableSelector ts = new TableSelector(getIndexTable(), Table.ALL_COLUMNS, lstItemFilter, null);
-                ts.setRowCount(step);
+                ts.setMaxRows(step);
                 ts.setOffset(offset);
 
                 ts.forEach(new Selector.ForEachBlock<ResultSet>() {
