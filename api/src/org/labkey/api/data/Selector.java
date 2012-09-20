@@ -30,8 +30,24 @@ import java.util.Map;
 */
 public interface Selector
 {
+    /**
+     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
+     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
+     * resource usage.
+     *
+     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
+     * you must explicitly start your own transaction and commit it.
+     */
     Table.TableResultSet getResultSet() throws SQLException;
 
+    /**
+     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
+     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
+     * resource usage.
+     *
+     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
+     * you must explicitly start your own transaction and commit it.
+     */
     Table.TableResultSet getResultSet(boolean scrollable, boolean cache, @Nullable AsyncQueryRequest asyncRequest, @Nullable Integer statementRowCount) throws SQLException;
 
     long getRowCount();

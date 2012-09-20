@@ -16,6 +16,8 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -29,7 +31,7 @@ import java.util.Map;
 
 // Our new Selector API throws RuntimeExceptions, but the Table layer methods (and its callers) expect
 // checked SQLExceptions. This class helps migrate to the new API by wrapping a Selector and translating
-// its RuntimeSQLExceptions to checked SQLExceptions.
+// its RuntimeSQLExceptions into checked SQLExceptions.
 public class LegacySelector<S extends BaseSelector<?>>
 {
     protected final S _selector;
@@ -40,14 +42,30 @@ public class LegacySelector<S extends BaseSelector<?>>
         selector.setExceptionFramework(ExceptionFramework.JDBC);
     }
 
+    public LegacySelector setMaxRows(int maxRows)
+    {
+        _selector.setMaxRows(maxRows);
+        return this;
+    }
+
+    public LegacySelector setOffset(long offset)
+    {
+        _selector.setOffset(offset);
+        return this;
+    }
+
     // All the results-gathering methods are below
 
-    /* TODO: Fix up caching and connection closing, then expose this
-    public ResultSet getResultSet() throws SQLException
+    public Table.TableResultSet getResultSet() throws SQLException
     {
         return _selector.getResultSet();
     }
-    */
+
+    public Table.TableResultSet getResultSet(boolean scrollable, boolean cache, @Nullable AsyncQueryRequest asyncRequest, @Nullable Integer statementRowCount) throws SQLException
+    {
+        return _selector.getResultSet(scrollable, cache, asyncRequest, statementRowCount);
+    }
+
     public <K> void forEach(Selector.ForEachBlock<K> block, Class<K> clazz) throws SQLException
     {
         try

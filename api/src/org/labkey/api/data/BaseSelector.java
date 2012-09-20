@@ -34,7 +34,7 @@ import java.util.Map;
 
 public abstract class BaseSelector<FACTORY extends SqlFactory> extends JdbcCommand implements Selector
 {
-    protected int _rowCount = Table.ALL_ROWS;         // TODO: Should probably move the setters here as well (i.e., allow limit/offset with SqlSelector)
+    protected int _maxRows = Table.ALL_ROWS;         // TODO: Should probably move the setters here as well (i.e., allow limit/offset with SqlSelector)
     protected long _offset = Table.NO_OFFSET;
 
     abstract FACTORY getSqlFactory();  // A single query's SQL factory; this allows better Selector reuse, since query-specific
@@ -43,6 +43,22 @@ public abstract class BaseSelector<FACTORY extends SqlFactory> extends JdbcComma
     protected BaseSelector(DbScope scope)
     {
         super(scope, null);
+    }
+
+    public BaseSelector setMaxRows(int maxRows)
+    {
+        assert Table.validMaxRows(maxRows) : maxRows + " is an illegal value for maxRows; should be positive, Table.ALL_ROWS or Table.NO_ROWS";
+
+        _maxRows = maxRows;
+        return this;
+    }
+
+    public BaseSelector setOffset(long offset)
+    {
+        assert Table.validOffset(offset) : offset + " is an illegal value for offset; should be positive or Table.NO_OFFSET";
+
+        _offset = offset;
+        return this;
     }
 
     // Standard internal handleResultSet method used by everything except ResultSets
@@ -104,7 +120,7 @@ public abstract class BaseSelector<FACTORY extends SqlFactory> extends JdbcComma
                 @Override
                 public TableResultSet handle(ResultSet rs, Connection conn, DbScope scope) throws SQLException
                 {
-                    return Table.cacheResultSet(scope.getSqlDialect(), rs, _rowCount, asyncRequest);
+                    return Table.cacheResultSet(scope.getSqlDialect(), rs, _maxRows, asyncRequest);
                 }
             }, true, scrollable, true, asyncRequest, statementRowCount);
         }
@@ -115,7 +131,7 @@ public abstract class BaseSelector<FACTORY extends SqlFactory> extends JdbcComma
                 @Override
                 public TableResultSet handle(ResultSet rs, Connection conn, DbScope scope) throws SQLException
                 {
-                    return new Table.ResultSetImpl(conn, scope, rs, _rowCount);
+                    return new Table.ResultSetImpl(conn, scope, rs, _maxRows);
                 }
             }, false, scrollable, true, asyncRequest, statementRowCount);
         }

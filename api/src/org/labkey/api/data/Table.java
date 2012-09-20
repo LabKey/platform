@@ -130,7 +130,7 @@ public class Table
     public static <K> K[] select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss, int rowCount, long offset)
             throws SQLException
     {
-        return new LegacyTableSelector(table, select, filter, sort).setRowCount(rowCount).setOffset(offset).getArray(clss);
+        return new LegacyTableSelector(table, select, filter, sort).setMaxRows(rowCount).setOffset(offset).getArray(clss);
     }
 
     // return a result from a one column resultset. K should be a string or number type
@@ -305,6 +305,107 @@ public class Table
     }
 
 
+    @Deprecated // Use TableSelector
+    public static ResultSet select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
+    {
+        return new LegacyTableSelector(table, select, filter, sort).getResultSet();
+    }
+
+
+    @Deprecated // Use TableSelector
+    public static Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
+    {
+        return new LegacyTableSelector(table, columns, filter, sort).getResults();
+    }
+
+
+    /**
+     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
+     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
+     * resource usage.
+     *
+     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
+     * you must explicitly start your own transaction and commit it.
+     */
+    @Deprecated // Use TableSelector
+    public static Table.TableResultSet executeQuery(DbSchema schema, String sql, Object[] parameters) throws SQLException
+    {
+        return new LegacySqlSelector(schema, fragment(sql, parameters)).getResultSet();
+    }
+
+    /**
+     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
+     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
+     * resource usage.
+     *
+     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
+     * you must explicitly start your own transaction and commit it.
+     */
+    @Deprecated // Use TableSelector
+    public static Table.TableResultSet executeQuery(DbSchema schema, SQLFragment sql) throws SQLException
+    {
+        return new LegacySqlSelector(schema, sql).getResultSet();
+    }
+
+
+    /**
+     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
+     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
+     * resource usage.
+     *
+     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
+     * you must explicitly start your own transaction and commit it.
+     */
+    @Deprecated // Use TableSelector
+    public static Table.TableResultSet executeQuery(DbSchema schema, SQLFragment sql, int rowCount) throws SQLException
+    {
+        return new LegacySqlSelector(schema, sql).setMaxRows(rowCount).getResultSet();
+    }
+
+    /**
+     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
+     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
+     * resource usage.
+     *
+     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
+     * you must explicitly start your own transaction and commit it.
+     */
+    @Deprecated // Use TableSelector
+    public static ResultSet executeQuery(DbSchema schema, SQLFragment sql, int rowCount, boolean cache, boolean scrollable) throws SQLException
+    {
+        return new LegacySqlSelector(schema, sql).setMaxRows(rowCount).getResultSet(scrollable, cache, null, null);
+    }
+
+    /**
+     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
+     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
+     * resource usage.
+     *
+     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
+     * you must explicitly start your own transaction and commit it.
+     */
+    @Deprecated // Use TableSelector
+    public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int rowCount, boolean cache)
+            throws SQLException
+    {
+        return new LegacySqlSelector(schema, Table.fragment(sql, parameters)).setMaxRows(rowCount).getResultSet(false, cache, null, null);
+    }
+
+    /**
+     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
+     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
+     * resource usage.
+     *
+     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
+     * you must explicitly start your own transaction and commit it.
+     */
+    @Deprecated // Use TableSelector
+    public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int rowCount, boolean cache, boolean scrollable)
+            throws SQLException
+    {
+        return new LegacySqlSelector(schema, Table.fragment(sql, parameters)).setMaxRows(rowCount).getResultSet(scrollable, cache, null, null);
+    }
+
     // ================== These methods have not been converted to Selector/Executor ==================
 
     // Careful: caller must track and clean up parameters (e.g., close InputStreams) after execution is complete
@@ -464,87 +565,6 @@ public class Table
                 }
             }
         }
-    }
-
-    /**
-     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
-     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
-     * resource usage.
-     *
-     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
-     * you must explicitly start your own transaction and commit it.
-     */
-    public static Table.TableResultSet executeQuery(DbSchema schema, String sql, Object[] parameters) throws SQLException
-    {
-        return (Table.TableResultSet) executeQuery(schema, sql, parameters, ALL_ROWS, true);
-    }
-
-    /**
-     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
-     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
-     * resource usage.
-     *
-     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
-     * you must explicitly start your own transaction and commit it.
-     */
-    public static Table.TableResultSet executeQuery(DbSchema schema, SQLFragment sql) throws SQLException
-    {
-        return executeQuery(schema, sql.getSQL(), sql.getParams().toArray());
-    }
-
-
-    /**
-     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
-     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
-     * resource usage.
-     *
-     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
-     * you must explicitly start your own transaction and commit it.
-     */
-    public static Table.TableResultSet executeQuery(DbSchema schema, SQLFragment sql, int rowCount) throws SQLException
-    {
-        return (Table.TableResultSet) executeQuery(schema, sql.getSQL(), sql.getParamsArray(), rowCount, NO_OFFSET, true, false, null, null, null);
-    }
-
-    /**
-     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
-     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
-     * resource usage.
-     *
-     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
-     * you must explicitly start your own transaction and commit it.
-     */
-    public static ResultSet executeQuery(DbSchema schema, SQLFragment sql, int rowCount, boolean cache, boolean scrollable) throws SQLException
-    {
-        return executeQuery(schema, sql.getSQL(), sql.getParamsArray(), rowCount, cache, scrollable);
-    }
-
-    /**
-     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
-     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
-     * resource usage.
-     *
-     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
-     * you must explicitly start your own transaction and commit it.
-     */
-    public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int rowCount, boolean cache)
-            throws SQLException
-    {
-        return executeQuery(schema, sql, parameters, rowCount, NO_OFFSET, cache, false, null, null, null);
-    }
-
-    /**
-     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
-     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
-     * resource usage.
-     *
-     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
-     * you must explicitly start your own transaction and commit it.
-     */
-    public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int rowCount, boolean cache, boolean scrollable)
-            throws SQLException
-    {
-        return executeQuery(schema, sql, parameters, rowCount, NO_OFFSET, cache, scrollable, null, null, null);
     }
 
     /**
@@ -1237,18 +1257,6 @@ public class Table
     public static SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
     {
         return QueryService.get().getSelectSQL(table, columns, filter, sort, ALL_ROWS, NO_OFFSET, false);
-    }
-
-
-    public static ResultSet select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
-    {
-        return select(table, columnInfosList(table, select), filter, sort);
-    }
-
-
-    public static Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
-    {
-        return QueryService.get().select(table, columns, filter, sort);
     }
 
 

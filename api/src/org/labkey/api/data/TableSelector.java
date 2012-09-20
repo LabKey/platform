@@ -78,26 +78,32 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory>
         this(column, null, null);
     }
 
+    @Override
+    public TableSelector setMaxRows(int maxRows)
+    {
+        super.setMaxRows(maxRows);
+        return this;
+    }
+
+    @Override
+    public TableSelector setOffset(long offset)
+    {
+        super.setOffset(offset);
+        return this;
+    }
+
+    /**
+     * If no transaction is active and the SQL statement is a SELECT, this method assumes it is safe to tweak
+     * connection parameters (such as disabling auto-commit, and never committing) to optimize memory and other
+     * resource usage.
+     *
+     * If you are, for example, invoking a stored procedure that will have side effects via a SELECT statement,
+     * you must explicitly start your own transaction and commit it.
+     */
     // TODO: Version of getResults() that takes cache, etc. parameters?
     public Results getResults() throws SQLException
     {
         return new ResultsImpl(getResultSet(), _columns);
-    }
-
-    public TableSelector setRowCount(int rowCount)
-    {
-        assert Table.validMaxRows(rowCount) : rowCount + " is an illegal value for rowCount; should be positive, Table.ALL_ROWS or Table.NO_ROWS";
-
-        _rowCount = rowCount;
-        return this;
-    }
-
-    public TableSelector setOffset(long offset)
-    {
-        assert Table.validOffset(offset) : offset + " is an illegal value for offset; should be positive or Table.NO_OFFSET";
-
-        _offset = offset;
-        return this;
     }
 
     public TableSelector setForDisplay(boolean forDisplay)
@@ -211,23 +217,23 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory>
             // NOTE: When ResultSet is supported, we'll need to select one extra row to support isComplete(). Factory will
             // need to know that a ResultSet was requested
 
-            boolean forceSort = _allowSort && (_offset != Table.NO_OFFSET || _rowCount != Table.ALL_ROWS);
+            boolean forceSort = _allowSort && (_offset != Table.NO_OFFSET || _maxRows != Table.ALL_ROWS);
 
             if (requiresManualScrolling())
             {
                 // Offset is set but the dialect's SQL doesn't support it, so implement offset manually:
-                // - Select offset + rowCount rows
+                // - Select offset + maxRows rows
                 // - Set _scrollOffset so getResultSet() skips over the rows we don't want
 
                 _scrollOffset = _offset;
-                return QueryService.get().getSelectSQL(_table, columns, _filter, _sort, (int)_offset + _rowCount, 0, forceSort);
+                return QueryService.get().getSelectSQL(_table, columns, _filter, _sort, (int)_offset + _maxRows, 0, forceSort);
             }
             else
             {
-                // Standard case is simply to create SQL using the rowCount and offset
+                // Standard case is simply to create SQL using maxRows and offset
 
                 _scrollOffset = 0;
-                return QueryService.get().getSelectSQL(_table, columns, _filter, _sort, _rowCount, _offset, forceSort);
+                return QueryService.get().getSelectSQL(_table, columns, _filter, _sort, _maxRows, _offset, forceSort);
             }
         }
 

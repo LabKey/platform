@@ -61,19 +61,19 @@ public class TableSelectorTestCase extends Assert
             int rowCount = 3;
             int offset = 2;
 
-            selector.setRowCount(Table.ALL_ROWS);
+            selector.setMaxRows(Table.ALL_ROWS);
             assertEquals(count, (int) selector.getRowCount());
             assertEquals(count, selector.getArray(clazz).length);
             assertEquals(count, selector.getCollection(clazz).size());
 
             // First, query all the rows into an array and a list; we'll use these to validate that rowCount and
             // offset are working. Set an explicit row count to force the same sorting that will result below.
-            selector.setRowCount(count);
+            selector.setMaxRows(count);
             K[] sortedArray = selector.getArray(clazz);
             List<K> sortedList = new ArrayList<K>(selector.getCollection(clazz));
 
             // Set a row count, verify the lengths and contents against the expected array & list subsets
-            selector.setRowCount(rowCount);
+            selector.setMaxRows(rowCount);
             assertEquals(rowCount, (int) selector.getRowCount());
             K[] rowCountArray = selector.getArray(clazz);
             assertEquals(rowCount, rowCountArray.length);
@@ -93,7 +93,7 @@ public class TableSelectorTestCase extends Assert
             assertEquals(sortedList.subList(offset, offset + rowCount), offsetList);
 
             // Back to all rows and verify
-            selector.setRowCount(Table.ALL_ROWS);
+            selector.setMaxRows(Table.ALL_ROWS);
             selector.setOffset(Table.NO_OFFSET);
             assertEquals(count, (int) selector.getRowCount());
             assertEquals(count, selector.getArray(clazz).length);

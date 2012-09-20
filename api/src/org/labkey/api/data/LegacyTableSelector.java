@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
 
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Set;
 
@@ -55,22 +56,22 @@ public class LegacyTableSelector extends LegacySelector<TableSelector>
         super(new TableSelector(column, filter, sort));
     }
 
-    public LegacyTableSelector setRowCount(int rowCount)
+    @Override
+    public LegacyTableSelector setMaxRows(int maxRows)
     {
-        _selector.setRowCount(rowCount);
+        super.setMaxRows(maxRows);
         return this;
     }
 
+    @Override
     public LegacyTableSelector setOffset(long offset)
     {
-        _selector.setOffset(offset);
+        super.setOffset(offset);
         return this;
     }
 
-    /* TODO: Fix up caching and connection closing, then expose this
     public Results getResults() throws SQLException
     {
-        return new ResultsImpl(_selector.getResultSet(), ((TableSelector)_selector).getColumns());
+        return _selector.getResults();
     }
-    */
 }
