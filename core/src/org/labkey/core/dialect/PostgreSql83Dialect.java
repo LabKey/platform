@@ -645,9 +645,9 @@ class PostgreSql83Dialect extends SqlDialect
     }
 
 
-    // Make sure that the PL/pgSQL language is enabled in the associated database.  If not, throw.  It would be nice
-    // to CREATE LANGUAGE at this point, however, that requires SUPERUSER permissions and takes us down the path of
-    // creating call handlers and other complexities.  It looks like PostgreSQL 8.1 has a simpler form of CREATE LANGUAGE...
+    // Make sure that the PL/pgSQL language is enabled in the associated database. If not, throw. It would be nice
+    // to use CREATE LANGUAGE at this point, however, that requires SUPERUSER permissions and takes us down the path of
+    // creating call handlers and other complexities. It looks like PostgreSQL 8.1 has a simpler form of CREATE LANGUAGE...
     // once we require 8.1 we should consider using it here.
 
     @Override
