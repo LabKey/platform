@@ -16,6 +16,7 @@
 
 package org.labkey.bigiron.mssql;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -42,6 +43,8 @@ import java.util.Set;
 */
 public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
 {
+    private static final Logger _log = Logger.getLogger(MicrosoftSqlServerDialectFactory.class);
+
     private String getProductName()
     {
         return "Microsoft SQL Server";
@@ -56,6 +59,8 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
             return null;
     }
 
+    private final String _recommended = getProductName() + " 2012 is the recommended version.";
+
     @Override
     public @Nullable SqlDialect createFromProductNameAndVersion(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws DatabaseNotSupportedException
     {
@@ -67,17 +72,23 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
 
         // Good resource for past & current SQL Server version numbers: http://www.sqlteam.com/article/sql-server-versions
 
-        if (version >= 110)
-            return new MicrosoftSqlServer2012Dialect();
-
-        if (version >= 105)
-            return new MicrosoftSqlServer2008R2Dialect();
-
-        if (version >= 100)
-            return new MicrosoftSqlServer2008Dialect();
-
         if (version >= 90)
-            return new MicrosoftSqlServer2005Dialect();
+        {
+            if (version < 105 && logWarnings)
+                _log.warn("LabKey Server is not fully compatible with " + getProductName() + " version " + databaseProductVersion + ".  " + _recommended);
+
+            if (version >= 110)
+                return new MicrosoftSqlServer2012Dialect();
+
+            if (version >= 105)
+                return new MicrosoftSqlServer2008R2Dialect();
+
+            if (version >= 100)
+                return new MicrosoftSqlServer2008Dialect();
+
+            if (version >= 90)
+                return new MicrosoftSqlServer2005Dialect();
+        }
 
         throw new DatabaseNotSupportedException(getProductName() + " version " + databaseProductVersion + " is not supported.");
     }
