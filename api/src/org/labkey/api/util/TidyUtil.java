@@ -124,7 +124,7 @@ public class TidyUtil
 
     private static Document tidyParseDOM(final Tidy tidy, final String content, final Collection<String> errors)
     {
-        // TIDY does not property parse the contents of script tags!
+        // TIDY does not properly parse the contents of script tags!
         // see bug 5007
         // CONSIDER: fix jtidy see ParserImpl$ParseScript
         Map<String,String> scriptMap = new HashMap<String,String>();
