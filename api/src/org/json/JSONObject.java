@@ -220,6 +220,8 @@ public class JSONObject extends HashMap<String, Object>
                 String key = "";
                 if (name.startsWith("get"))
                 {
+                    if (name.equals("getClass"))
+                        continue;
                     key = name.substring(3);
                 }
                 else if (name.startsWith("is"))
