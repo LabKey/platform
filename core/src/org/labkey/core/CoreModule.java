@@ -29,6 +29,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.ClientAPIAuditViewFactory;
 import org.labkey.api.collections.ArrayListMap;
+import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.etl.CachingDataIterator;
@@ -52,6 +53,10 @@ import org.labkey.api.module.SpringModule;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.reader.MapLoader;
@@ -80,30 +85,13 @@ import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.ReplacedRunFilter;
 import org.labkey.api.thumbnail.ThumbnailService;
-import org.labkey.api.util.Compress;
-import org.labkey.api.util.ContextListener;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.ExtUtil;
-import org.labkey.api.util.FileType;
-import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.HString;
-import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.MimeMap;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Path;
-import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.util.ShutdownListener;
-import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.StringUtilsLabKey;
-import org.labkey.api.util.SystemMaintenance;
-import org.labkey.api.util.TestContext;
-import org.labkey.api.util.UsageReportingLevel;
+import org.labkey.api.util.*;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.BaseWebPartFactory;
@@ -126,6 +114,7 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.core.admin.ActionsTsvWriter;
 import org.labkey.core.admin.AdminController;
+import org.labkey.core.admin.CustomizeMenuForm;
 import org.labkey.core.admin.importer.FolderTypeImporterFactory;
 import org.labkey.core.admin.importer.PageImporterFactory;
 import org.labkey.core.admin.importer.SearchSettingsImporterFactory;
@@ -161,6 +150,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -356,9 +346,147 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                         }
                         return view;
                     }
-                }));
+                },
+                new AlwaysAvailableWebPartFactory("Customize Menu", WebPartFactory.LOCATION_MENUBAR, true, false) {
+                    public WebPartView getWebPartView(final ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+                    {
+                        LookAndFeelProperties props = LookAndFeelProperties.getInstance(portalCtx.getContainer());
+                        final CustomizeMenuForm form = AdminController.getCustomizeMenuForm(props);
+                        String title = "My Menu";
+                        if (form.getTitle() != null && !form.getTitle().equals(""))
+                            title = form.getTitle();
+                        final QueryView queryView = createMenuQueryView(portalCtx, title);
+                        WebPartView view = new WebPartView(title) {
+                            @Override
+                            protected void renderView(Object model, PrintWriter out) throws Exception
+                            {
+                                out.write("<table style='width:50'><tr><td style='vertical-align:top;padding:4px'>");
+                                out.write("Schema or query has not been selected.");
+                                out.write("</td></tr></table>");
+                            }
+                        };
+                        if (queryView != null)
+                        {
+                            queryView.setFrame(WebPartView.FrameType.PORTAL);
+                            return queryView;
+                        }
+                        view.setFrame(WebPartView.FrameType.PORTAL);
+                        return view;
+
+
+                    }
+                    public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
+                    {
+                        LookAndFeelProperties props = LookAndFeelProperties.getInstance(context.getContainer());
+                        CustomizeMenuForm form = AdminController.getCustomizeMenuForm(props);
+                        JspView<CustomizeMenuForm> view = new JspView<CustomizeMenuForm>("/org/labkey/core/admin/customizeMenu.jsp", form);
+                        view.setTitle(form.getTitle());
+                        view.setFrame(WebPartView.FrameType.PORTAL);
+                        return view;
+                    }
+                }
+        ));
     }
 
+    private QueryView createMenuQueryView(final ViewContext context, String title)
+    {
+        Container container = context.getContainer();
+        LookAndFeelProperties props = LookAndFeelProperties.getInstance(container);
+        final CustomizeMenuForm form = AdminController.getCustomizeMenuForm(props);
+        String schemaName = StringUtils.trimToNull(form.getSchemaName());
+        if (null == schemaName)
+            return null;
+
+        UserSchema schema = QueryService.get().getUserSchema(context.getUser(), container, schemaName);
+        if (null == schema)
+            throw new IllegalArgumentException("Schema '" + schemaName + "' could not be found.");
+
+        QuerySettings settings = new QuerySettings(context, null, form.getQueryName());
+
+        //need to explicitly turn off various UI options that will try to refer to the
+        //current URL and query string
+        settings.setAllowChooseQuery(false);
+        settings.setAllowChooseView(false);
+        settings.setAllowCustomizeView(false);
+
+        settings.setShowRows(ShowRows.PAGINATED);
+        settings.setMaxRows(100);
+        settings.setViewName(form.getViewName());
+
+        QueryView view = new QueryView(schema, settings, null)
+        {
+            @Override
+            protected void renderDataRegion(PrintWriter out) throws Exception
+            {
+//                out.write("<table style='width:50'><tr><td style='vertical-align:top;padding:4px'>");
+                out.write("<table style='width:50'>");
+                ColumnInfo columnInfo = getTable().getColumn(form.getColumnName());
+                String urlBase = form.getUrlBottom();
+                if (urlBase != null && !urlBase.contentEquals(""))
+                    columnInfo.setURL(StringExpressionFactory.createURL(form.getUrlBottom()));
+                DataColumn dataColumn = new DataColumn(columnInfo, false);
+
+/*                DataRegion dataRegion = new DataRegion();
+                dataRegion.addDisplayColumn(displayColumn);
+
+                dataRegion.setShowBorders(false);
+                dataRegion.setShowFilterDescription(false);
+                dataRegion.setShowPaginationCount(false);
+                dataRegion.setShowSurroundingBorder(false);
+                dataRegion.setShowPaginationCount(false);
+                dataRegion.setShowPagination(false);
+                dataRegion.setShowRecordSelectors(false);
+                dataRegion.setSortable(false);
+                dataRegion.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
+                
+                RenderContext renderContext = new RenderContext(context);
+                dataRegion.render(renderContext, out);
+*/
+//                out.write("<tr><td>Custom Menu 1</td></tr>");
+//                out.write("</td></tr></table>");
+
+
+                RenderContext renderContext = new RenderContext(context);
+                Results results = getResults();
+                renderContext.setResults(results);
+                ResultSet rs = results.getResultSet();
+                ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
+                try
+                {
+                    while (rs.next())
+                    {
+                        out.write("<tr><td>");
+//                        String value = (String)results.getRowMap().get(columnInfo.getColumnName());
+                        renderContext.setRow(factory.getRowMap(rs));
+                        dataColumn.renderGridCellContents(renderContext, out);
+                        out.write("</td></tr>");
+                    }
+                }
+                finally
+                {
+                    ResultSetUtil.close(results);
+                }
+                out.write("</table>");
+            }
+        };
+        view.setTitle(title);
+
+        view.setShowBorders(false);
+        view.setShowConfiguredButtons(false);
+        view.setShowDeleteButton(false);
+        view.setShowDetailsColumn(false);
+        view.setShowExportButtons(false);
+        view.setShowFilterDescription(false);
+        view.setShowImportDataButton(false);
+        view.setShowInsertNewButton(false);
+        view.setShowPaginationCount(false);
+        view.setAllowExportExternalQuery(false);
+        view.setShowSurroundingBorder(false);
+        view.setShowPaginationCount(false);
+        view.setShowPagination(false);
+
+        return view;
+    }
 
     @Override
     public void beforeUpdate(ModuleContext moduleContext)

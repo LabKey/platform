@@ -622,6 +622,7 @@ core/src/org/labkey/core/admin/ActionsHelper.java -text
 core/src/org/labkey/core/admin/ActionsTsvWriter.java -text
 core/src/org/labkey/core/admin/ActionsView.java -text
 core/src/org/labkey/core/admin/AdminController.java -text
+core/src/org/labkey/core/admin/CustomizeMenuForm.java -text
 core/src/org/labkey/core/admin/FileSettingsForm.java -text
 core/src/org/labkey/core/admin/FilesSiteSettingsAction.java -text
 core/src/org/labkey/core/admin/FolderManagementAction.java -text
@@ -634,6 +635,7 @@ core/src/org/labkey/core/admin/checkDatabase.jsp -text
 core/src/org/labkey/core/admin/confirmProjectMove.jsp -text
 core/src/org/labkey/core/admin/createFolder.jsp -text
 core/src/org/labkey/core/admin/customizeEmail.jsp -text
+core/src/org/labkey/core/admin/customizeMenu.jsp -text
 core/src/org/labkey/core/admin/customizeSite.jsp -text
 core/src/org/labkey/core/admin/deleteFolder.jsp -text
 core/src/org/labkey/core/admin/editMenuBar.jsp -text

@@ -142,6 +142,7 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NavTreeManager;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.Portal;
 import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.TermsOfUseException;
 import org.labkey.api.view.UnauthorizedException;
@@ -5098,4 +5099,78 @@ public class AdminController extends SpringActionController
             return root.addChild("Experimental Features");
         }
     }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class CustomizeMenuAction extends FormViewAction<CustomizeMenuForm>
+    {
+        Portal.WebPart _webPart;
+
+        public void validateCommand(CustomizeMenuForm form, Errors errors)
+        {
+        }
+        public ModelAndView getView(CustomizeMenuForm form, boolean reshow, BindException errors) throws Exception
+        {
+            return null;
+        }
+
+        public boolean handlePost(CustomizeMenuForm form, BindException errors) throws Exception
+        {
+            WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(getViewContext().getContainer());
+            setCustomizeMenuForm(form, props);
+            return true;
+        }
+
+        public ActionURL getSuccessURL(CustomizeMenuForm form)
+        {
+            return new ActionURL(ProjectSettingsAction.class, getContainer());
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+    public static CustomizeMenuForm getCustomizeMenuForm(LookAndFeelProperties props)
+    {
+        CustomizeMenuForm form = new CustomizeMenuForm();
+        form.setSchemaName(props.getSchemaName());
+        form.setQueryName(props.getQueryName());
+        form.setColumnName(props.getColumnName());
+        form.setViewName(props.getViewName());
+        form.setFolderName(props.getFolderName());
+        form.setTitle(props.getTitle());
+        form.setUrlTop(props.getUrlTop());
+        form.setUrlBottom(props.getUrlBottom());
+        form.setRootFolder(props.getRootFolder());
+        form.setFolderTypes(props.getFolderTypes());
+        form.setChoiceListQuery(props.isChoiceListQuery());
+        form.setIncludeAllDescendants(props.isIncludeAllDescendants());
+        return form;
+    }
+
+    private static void setCustomizeMenuForm(CustomizeMenuForm form, WriteableLookAndFeelProperties props)
+    {
+        props.setSchemaName(form.getSchemaName());
+        props.setQueryName(form.getQueryName());
+        props.setColumnName(form.getColumnName());
+        props.setViewName(form.getViewName());
+        props.setFolderName(form.getFolderName());
+        props.setTitle(form.getTitle());
+        props.setUrlTop(form.getUrlTop());
+        props.setUrlBottom(form.getUrlBottom());
+        props.setRootFolder(form.getRootFolder());
+        props.setFolderTypes(form.getFolderTypes());
+        props.setChoiceListQuery(form.isChoiceListQuery());
+        props.setIncludeAllDescendants(form.isIncludeAllDescendants());
+        try
+        {
+            props.save();
+        }
+        catch (SQLException e)
+        {
+
+        }
+    }
+
 }
