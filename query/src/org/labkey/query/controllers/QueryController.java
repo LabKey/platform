@@ -2446,25 +2446,12 @@ public class QueryController extends SpringActionController
         return null != table && null != updateService;
     }
 
-    public static class ExecuteSqlForm
+    public static class ExecuteSqlForm extends APIQueryForm
     {
-        private String _schemaName;
         private String _sql;
         private Integer _maxRows;
         private Integer _offset;
-        private String _containerFilter;
         private boolean _saveInSession;
-        private boolean _includeTotalCount = true;
-
-        public String getSchemaName()
-        {
-            return _schemaName;
-        }
-
-        public void setSchemaName(String schemaName)
-        {
-            _schemaName = schemaName;
-        }
 
         public String getSql()
         {
@@ -2496,16 +2483,6 @@ public class QueryController extends SpringActionController
             _offset = offset;
         }
 
-        public String getContainerFilter()
-        {
-            return _containerFilter;
-        }
-
-        public void setContainerFilter(String containerFilter)
-        {
-            _containerFilter = containerFilter;
-        }
-
         public void setLimit(Integer limit)
         {
             _maxRows = limit;
@@ -2525,16 +2502,6 @@ public class QueryController extends SpringActionController
         {
             _saveInSession = saveInSession;
         }
-
-        public boolean isIncludeTotalCount()
-        {
-            return _includeTotalCount;
-        }
-
-        public void setIncludeTotalCount(boolean includeTotalCount)
-        {
-            _includeTotalCount = includeTotalCount;
-        }
     }
 
     @RequiresPermissionClass(ReadPermission.class)
@@ -2543,37 +2510,37 @@ public class QueryController extends SpringActionController
     {
         public ApiResponse execute(ExecuteSqlForm form, BindException errors) throws Exception
         {
-            String schemaName = StringUtils.trimToNull(form.getSchemaName());
+            if (form.getSchema() == null)
+            {
+                throw new NotFoundException("Could not find schema: " + form.getSchemaName().getSource());
+            }
+
+            String schemaName = StringUtils.trimToNull(form.getQuerySettings().getSchemaName());
             if (null == schemaName)
                 throw new IllegalArgumentException("No value was supplied for the required parameter 'schemaName'.");
             String sql = StringUtils.trimToNull(form.getSql());
             if (null == sql)
                 throw new IllegalArgumentException("No value was supplied for the required parameter 'sql'.");
 
-            UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), schemaName);
-            if (null == schema)
-                throw new IllegalArgumentException("Schema '" + schemaName + "' could not be found.");
-
             //create a temp query settings object initialized with the posted LabKey SQL
             //this will provide a temporary QueryDefinition to Query
-            QuerySettings settings;
+            QuerySettings settings = form.getQuerySettings();
             if (form.isSaveInSession())
             {
                 QueryDefinition def = QueryService.get().saveSessionQuery(getViewContext(), getContainer(), schemaName, sql);
-                settings = new QuerySettings(getViewContext(), "executeSql", def.getName());
+                settings.setDataRegionName("executeSql");
+                settings.setQueryName(def.getName());
             }
             else
-                settings = new TempQuerySettings(getViewContext(), sql);
+            {
+                settings = new TempQuerySettings(getViewContext(), sql, settings);
+            }
 
             //need to explicitly turn off various UI options that will try to refer to the
             //current URL and query string
             settings.setAllowChooseQuery(false);
             settings.setAllowChooseView(false);
             settings.setAllowCustomizeView(false);
-
-            // Issue 12233: add implicit maxRows=100k when using client API
-            settings.setShowRows(ShowRows.PAGINATED);
-            settings.setMaxRows(100000);
 
             //apply optional settings (maxRows, offset)
             boolean metaDataOnly = false;
@@ -2583,6 +2550,11 @@ public class QueryController extends SpringActionController
                 settings.setMaxRows(Table.ALL_ROWS == form.getMaxRows() ? 1 : form.getMaxRows());
                 metaDataOnly = (Table.ALL_ROWS == form.getMaxRows());
             }
+
+            // Issue 12233: add implicit maxRows=100k when using client API
+            settings.setShowRows(ShowRows.PAGINATED);
+            if (settings.getMaxRows() > 100000)
+                settings.setMaxRows(100000);
 
             int offset = 0;
             if (null != form.getOffset())
@@ -2600,7 +2572,7 @@ public class QueryController extends SpringActionController
             }
 
             //build a query view using the schema and settings
-            QueryView view = new QueryView(schema, settings, errors);
+            QueryView view = new QueryView(form.getSchema(), settings, errors);
             view.setShowRecordSelectors(false);
             view.setShowExportButtons(false);
             view.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
