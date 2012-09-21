@@ -36,6 +36,8 @@
     <%
         for (NavTree tab : tabs)
         {
+            if (null != tab.getText() && tab.getText().length() > 0)
+            {
             %>
             <li class="<%=(tab.getId().equals(tabId) ? "labkey-tab-active" : "labkey-tab-inactive")%>" id="<%=view._prefix%>tab<%=tab.getId()%>"><%
 
@@ -50,9 +52,10 @@
             else
             {
                 String href = StringUtils.defaultString(tab.getHref(), "javascript:void(0);");
-                %><a href="<%=h(href)%>" onclick="<%=h(tab.getScript())%>"><%=h(tab.getText())%></a><%
+                %><a href="<%=h(href)%>" onclick="<%=h(tab.getScript())%>"><%=h(tab.getText())%>asd</a><%
             }
             %></li><%
+            }
         }
     %>
         <div class="x-clear"></div>

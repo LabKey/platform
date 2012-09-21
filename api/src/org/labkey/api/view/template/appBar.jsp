@@ -33,12 +33,17 @@
     AppBar bean = me.getModelBean();
     if (null == bean)
         return;
+
+    // 16065: case is wrong on frame header for home project
+    String folderTitle = bean.getFolderTitle();
+    if (folderTitle.equals("home"))
+        folderTitle = "Home";
 %>
 <div class="labkey-app-bar">
 <div class="labkey-folder-header">
 <table class="labkey-folder-header" id="labkey-app-bar-table">
     <tr>
-        <td class="labkey-folder-title"><a href="<%=h(bean.getHref())%>"><%=h(bean.getFolderTitle())%></a></td>
+        <td class="labkey-folder-title"><a href="<%=h(bean.getHref())%>"><%=h(folderTitle)%></a></td>
         <td class="button-bar">
             <ul class="labkey-tab-strip">
                 <table cellpadding="0" cellspacing="0">
@@ -47,9 +52,12 @@
                     NavTree[] tabs = bean.getButtons();
                     for (NavTree navTree : tabs)
                     {
+                        if (null != navTree.getText() && navTree.getText().length() > 0)
+                        {
                 %>
                         <td><li class="<%=navTree.isSelected() ? "labkey-tab-active" : "labkey-tab-inactive"%>"><a href="<%=h(navTree.getHref())%>" id="<%=h(navTree.getText())%>Tab"><%=h(navTree.getText())%></a></td>
                 <%
+                        }
                     }
                     if (context.getContainer().getFolderType().hasConfigurableTabs() && context.hasPermission(org.labkey.api.security.permissions.AdminPermission.class))
                     {

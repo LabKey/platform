@@ -54,6 +54,20 @@ public class TempQuerySettings extends QuerySettings
         setQueryName("sql");
     }
 
+    /**
+     * This constructor allows for a deep copy of an existing query settings to be instantiated
+     * as a TempQuerySettings.
+     */
+    public TempQuerySettings(ViewContext context, String sql, QuerySettings settings)
+    {
+        this(context, sql, settings.getDataRegionName());
+
+        // deep copy settings
+        this.setMaxRows(settings.getMaxRows());
+
+        // Other settings that are required can be added here.
+    }
+
     @Override
     protected QueryDefinition createQueryDef(UserSchema schema)
     {
