@@ -47,7 +47,6 @@ import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileType;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Job;
 import org.labkey.api.util.NetworkDrive;
@@ -1147,14 +1146,24 @@ abstract public class PipelineJob extends Job implements Serializable
      * logs to the weblog for the PipelineJob class, allowing administrators
      * to collect whatever level of logging they want from PipelineJobs.
      */
-    private class OutputLogger extends Logger
+    private static class OutputLogger extends Logger
     {
+        private final PipelineJob _job;
         private boolean _isSettingStatus;
 
-        protected OutputLogger(String name)
+        // Required for xstream serialization on Java 7
+        @SuppressWarnings({"UnusedDeclaration"})
+        private OutputLogger()
+        {
+            //noinspection NullableProblems
+            this(null, "");
+        }
+
+        protected OutputLogger(PipelineJob job, String name)
         {
             super(name);
 
+            _job = job;
             repository = new OutputLoggerRepository(name, this);
         }
 
@@ -1165,7 +1174,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
         public void debug(Object message, Throwable t)
         {
-            getClassLogger().debug(getSystemLogMessage(message), t);
+            _job.getClassLogger().debug(getSystemLogMessage(message), t);
             super.debug(message, t);
         }
 
@@ -1176,7 +1185,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
         public void info(Object message, Throwable t)
         {
-            getClassLogger().info(getSystemLogMessage(message), t);
+            _job.getClassLogger().info(getSystemLogMessage(message), t);
             super.info(message, t);
         }
 
@@ -1187,7 +1196,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
         public void warn(Object message, Throwable t)
         {
-            getClassLogger().warn(getSystemLogMessage(message), t);
+            _job.getClassLogger().warn(getSystemLogMessage(message), t);
             super.warn(message, t);
         }
 
@@ -1198,7 +1207,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
         public void error(Object message, Throwable t)
         {
-            getClassLogger().error(getSystemLogMessage(message), t);
+            _job.getClassLogger().error(getSystemLogMessage(message), t);
             super.error(message, t);
             setErrorStatus(message);
         }
@@ -1210,7 +1219,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
         public void fatal(Object message, Throwable t)
         {
-            getClassLogger().fatal(getSystemLogMessage(message), t);
+            _job.getClassLogger().fatal(getSystemLogMessage(message), t);
             super.fatal(message, t);
             setErrorStatus(message);
         }
@@ -1219,7 +1228,7 @@ abstract public class PipelineJob extends Job implements Serializable
         {
             StringBuilder sb = new StringBuilder();
             sb.append("(from pipeline job log file ");
-            sb.append(getLogFile().getPath());
+            sb.append(_job.getLogFile().getPath());
             if (message != null)
             {
                 sb.append(": ");
@@ -1237,7 +1246,7 @@ abstract public class PipelineJob extends Job implements Serializable
             _isSettingStatus = true;
             try
             {
-                setStatus(PipelineJob.ERROR_STATUS, message.toString());
+                _job.setStatus(PipelineJob.ERROR_STATUS, message.toString());
             }
             finally
             {
@@ -1357,7 +1366,7 @@ abstract public class PipelineJob extends Job implements Serializable
         if (_logger == null)
         {
             // Create appending logger.
-            _logger = new OutputLogger(PipelineJob.class.getSimpleName() + ".Logger." + _logFile);
+            _logger = new OutputLogger(this, PipelineJob.class.getSimpleName() + ".Logger." + _logFile);
             _logger.removeAllAppenders();
             SafeFileAppender appender = new SafeFileAppender(_logFile);
             appender.setLayout(new PatternLayout("%d{DATE} %-5p: %m%n"));

@@ -38,7 +38,7 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
 {
     private final User _user;
     private final Container _c;
-    private final Logger _logger;
+    private final transient Logger _logger;
     private final @Nullable VirtualFile _root;
     private final Map<Class<? extends ImportContext>, ImportContext> _contextMap = new HashMap<Class<? extends ImportContext>, ImportContext>();
 

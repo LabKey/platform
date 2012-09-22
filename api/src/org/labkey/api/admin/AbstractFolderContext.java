@@ -15,16 +15,12 @@
  */
 package org.labkey.api.admin;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.admin.AbstractImportContext;
-import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.apache.log4j.Logger;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
-
-import java.io.File;
 
 /**
  * User: cnathe
@@ -32,7 +28,8 @@ import java.io.File;
  */
 public abstract class AbstractFolderContext extends AbstractImportContext<FolderDocument.Folder, FolderDocument>
 {
-    public enum ExportType {
+    public enum ExportType
+    {
         ALL,
         STUDY
     }

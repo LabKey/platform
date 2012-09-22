@@ -35,6 +35,13 @@ public class FileSystemFile extends AbstractVirtualFile
 {
     private final File _root;
 
+    // Required for xstream serialization on Java 7
+    @SuppressWarnings({"UnusedDeclaration"})
+    private FileSystemFile()
+    {
+        _root = null;
+    }
+
     public FileSystemFile(File root)
     {
         ensureWriteableDirectory(root);
