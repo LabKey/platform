@@ -78,7 +78,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
         }
         catch (ConversionException e)
         {
-            throw new IOException("Failed to restore the checkpoint from the database.");
+            throw new IOException("Failed to restore the checkpoint from the database.", e);
         }
         catch (PipelineValidationException e)
         {

@@ -15,16 +15,14 @@
  */
 package org.labkey.study.writer;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractImportContext;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.admin.ImportException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.xml.StudyDocument;
-import org.apache.log4j.Logger;
-
-import java.io.File;
 
 /**
  * User: adam

@@ -32,8 +32,6 @@ import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.pipeline.SpecimenBatch;
-import org.labkey.study.pipeline.SpecimenJobSupport;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.xml.RepositoryType;
 import org.labkey.study.xml.StudyDocument;
@@ -48,7 +46,7 @@ import java.io.File;
  */
 public class StudyImportJob extends PipelineJob implements StudyJobSupport
 {
-    private static final Logger LOG = Logger.getLogger(StudyImportJob.class);
+    private static final transient Logger LOG = Logger.getLogger(StudyImportJob.class);
 
     private final StudyImportContext _ctx;
     private final VirtualFile _root;

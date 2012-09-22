@@ -39,6 +39,14 @@ public class StudyImportContext extends AbstractContext
 {
     private File _studyXml;
 
+    // Required for xstream serialization on Java 7
+    @SuppressWarnings({"UnusedDeclaration"})
+    private StudyImportContext()
+    {
+        //noinspection NullableProblems
+        super(null, null, null, null, null);
+    }
+
     public StudyImportContext(User user, Container c, Logger logger)
     {
         super(user, c, null, logger, null);
