@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory>
+public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory, TableSelector>
 {
     private final TableInfo _table;
     private final Collection<ColumnInfo> _columns;
@@ -79,16 +79,8 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory>
     }
 
     @Override
-    public TableSelector setMaxRows(int maxRows)
+    protected TableSelector getThis()
     {
-        super.setMaxRows(maxRows);
-        return this;
-    }
-
-    @Override
-    public TableSelector setOffset(long offset)
-    {
-        super.setOffset(offset);
         return this;
     }
 
@@ -173,7 +165,7 @@ public class TableSelector extends BaseSelector<TableSelector.TableSqlFactory>
     }
 
     @Override
-    TableSqlFactory getSqlFactory()
+    protected TableSqlFactory getSqlFactory()
     {
         // Return the standard SQL factory (a TableSqlFactory); exposed methods can create custom factories (or wrap
         // this one) to optimize specific queries (see getRowCount() and getObject()).

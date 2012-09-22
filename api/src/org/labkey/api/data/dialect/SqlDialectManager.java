@@ -57,9 +57,9 @@ public class SqlDialectManager
     }
 
 
-    public static SqlDialect getFromMetaData(DatabaseMetaData md) throws SQLException, SqlDialectNotSupportedException, DatabaseNotSupportedException
+    public static SqlDialect getFromMetaData(DatabaseMetaData md, boolean logWarnings) throws SQLException, SqlDialectNotSupportedException, DatabaseNotSupportedException
     {
-        return getFromProductName(md.getDatabaseProductName(), md.getDatabaseProductVersion(), md.getDriverVersion(), true);
+        return getFromProductName(md.getDatabaseProductName(), md.getDatabaseProductVersion(), md.getDriverVersion(), logWarnings);
     }
 
     public static SqlDialect getFromProductName(String dataBaseProductName, String databaseProductVersion, String jdbcDriverVersion, boolean logWarnings) throws SqlDialectNotSupportedException, DatabaseNotSupportedException

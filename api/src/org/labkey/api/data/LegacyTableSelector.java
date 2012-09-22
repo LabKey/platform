@@ -29,7 +29,7 @@ import java.util.Set;
 */
 
 // Standard TableSelector that throws checked SQLExceptions instead of RuntimeExceptions.
-public class LegacyTableSelector extends LegacySelector<TableSelector>
+public class LegacyTableSelector extends LegacySelector<TableSelector, LegacyTableSelector>
 {
     public LegacyTableSelector(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
     {
@@ -57,16 +57,8 @@ public class LegacyTableSelector extends LegacySelector<TableSelector>
     }
 
     @Override
-    public LegacyTableSelector setMaxRows(int maxRows)
+    protected LegacyTableSelector getThis()
     {
-        super.setMaxRows(maxRows);
-        return this;
-    }
-
-    @Override
-    public LegacyTableSelector setOffset(long offset)
-    {
-        super.setOffset(offset);
         return this;
     }
 

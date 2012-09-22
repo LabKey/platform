@@ -16,7 +16,7 @@
 
 package org.labkey.api.data;
 
-public class SqlSelector extends BaseSelector<SqlSelector.SimpleSqlFactory>
+public class SqlSelector extends BaseSelector<SqlSelector.SimpleSqlFactory, SqlSelector>
 {
     private final SQLFragment _sql;
 
@@ -51,9 +51,14 @@ public class SqlSelector extends BaseSelector<SqlSelector.SimpleSqlFactory>
         this(schema.getScope(), new SQLFragment(sql, params));
     }
 
+    @Override
+    protected SqlSelector getThis()
+    {
+        return this;
+    }
 
     @Override
-    SimpleSqlFactory getSqlFactory()
+    protected SimpleSqlFactory getSqlFactory()
     {
         return new SimpleSqlFactory();
     }

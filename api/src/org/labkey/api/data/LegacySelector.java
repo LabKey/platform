@@ -32,26 +32,31 @@ import java.util.Map;
 // Our new Selector API throws RuntimeExceptions, but the Table layer methods (and its callers) expect
 // checked SQLExceptions. This class helps migrate to the new API by wrapping a Selector and translating
 // its RuntimeSQLExceptions into checked SQLExceptions.
-public class LegacySelector<S extends BaseSelector<?>>
-{
-    protected final S _selector;
 
-    public LegacySelector(S selector)
+// This declaration borders insanity...
+abstract class LegacySelector<SELECTOR extends BaseSelector<?, SELECTOR>, LEGACYSELECTOR extends LegacySelector<SELECTOR, LEGACYSELECTOR>>
+{
+    protected final SELECTOR _selector;
+
+    public LegacySelector(SELECTOR selector)
     {
         _selector = selector;
         selector.setExceptionFramework(ExceptionFramework.JDBC);
     }
 
-    public LegacySelector setMaxRows(int maxRows)
+    // LEGACYSELECTOR and getThis() make it easier to chain setMaxRows() and setOffset() while returning the correct subclass type
+    protected abstract LEGACYSELECTOR getThis();
+
+    public LEGACYSELECTOR setMaxRows(int maxRows)
     {
         _selector.setMaxRows(maxRows);
-        return this;
+        return getThis();
     }
 
-    public LegacySelector setOffset(long offset)
+    public LEGACYSELECTOR setOffset(long offset)
     {
         _selector.setOffset(offset);
-        return this;
+        return getThis();
     }
 
     // All the results-gathering methods are below

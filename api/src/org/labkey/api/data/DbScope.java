@@ -109,7 +109,7 @@ public class DbScope
 
             try
             {
-                _dialect = SqlDialectManager.getFromMetaData(dbmd);
+                _dialect = SqlDialectManager.getFromMetaData(dbmd, true);
                 assert MemTracker.remove(_dialect);
             }
             finally
@@ -740,8 +740,8 @@ public class DbScope
         try
         {
             conn = DriverManager.getConnection(masterUrl, username, password);
-            // get version specific dialect
-            dialect = SqlDialectManager.getFromMetaData(conn.getMetaData());
+            // Get version-specific dialect; don't log version warnings.
+            dialect = SqlDialectManager.getFromMetaData(conn.getMetaData(), false);
             createSql = dialect.getCreateDatabaseSql(dbName);
             stmt = conn.prepareStatement(createSql);
             stmt.execute();

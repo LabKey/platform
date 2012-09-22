@@ -32,12 +32,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public abstract class BaseSelector<FACTORY extends SqlFactory> extends JdbcCommand implements Selector
+public abstract class BaseSelector<FACTORY extends SqlFactory, SELECTOR extends BaseSelector<FACTORY, SELECTOR>> extends JdbcCommand implements Selector
 {
-    protected int _maxRows = Table.ALL_ROWS;         // TODO: Should probably move the setters here as well (i.e., allow limit/offset with SqlSelector)
+    protected int _maxRows = Table.ALL_ROWS;
     protected long _offset = Table.NO_OFFSET;
 
-    abstract FACTORY getSqlFactory();  // A single query's SQL factory; this allows better Selector reuse, since query-specific
+    abstract protected FACTORY getSqlFactory();  // A single query's SQL factory; this allows better Selector reuse, since query-specific
                                        // optimizations won't mutate the Selector's externally set state.
 
     protected BaseSelector(DbScope scope)
@@ -45,20 +45,23 @@ public abstract class BaseSelector<FACTORY extends SqlFactory> extends JdbcComma
         super(scope, null);
     }
 
-    public BaseSelector setMaxRows(int maxRows)
+    // SELECTOR and getThis() make it easier to chain setMaxRows() and setOffset() while returning the correct selector type from subclasses
+    abstract protected SELECTOR getThis();
+
+    public SELECTOR setMaxRows(int maxRows)
     {
         assert Table.validMaxRows(maxRows) : maxRows + " is an illegal value for maxRows; should be positive, Table.ALL_ROWS or Table.NO_ROWS";
 
         _maxRows = maxRows;
-        return this;
+        return getThis();
     }
 
-    public BaseSelector setOffset(long offset)
+    public SELECTOR setOffset(long offset)
     {
         assert Table.validOffset(offset) : offset + " is an illegal value for offset; should be positive or Table.NO_OFFSET";
 
         _offset = offset;
-        return this;
+        return getThis();
     }
 
     // Standard internal handleResultSet method used by everything except ResultSets
