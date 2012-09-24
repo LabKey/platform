@@ -21,9 +21,13 @@ import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerTable;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.NullColumnInfo;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DetailsURL;
@@ -33,6 +37,7 @@ import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
@@ -41,6 +46,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.SeeUserEmailAddressesPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.core.user.UserController;
 import org.labkey.core.workbook.WorkbooksTableInfo;
@@ -486,6 +492,23 @@ public class CoreQuerySchema extends UserSchema
             throw errors.get(0);
         TableInfo t;
         t = def.getTable(this, errors, true);
+        t.getColumn("UserId").setDisplayColumnFactory(new DisplayColumnFactory(){
+            @Override
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new DataColumn(colInfo,false)
+                {
+                    public String renderURL(RenderContext ctx)
+                    {
+                        Object type = ctx.get(new FieldKey(null, "Type"));
+                        if (!"u".equals(type))
+                            return null;
+                        return super.renderURL(ctx);
+                    }
+                };
+            }
+
+        });
         return t;
     }
 
