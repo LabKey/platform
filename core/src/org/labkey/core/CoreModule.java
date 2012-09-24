@@ -350,12 +350,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 new AlwaysAvailableWebPartFactory("Customize Menu", WebPartFactory.LOCATION_MENUBAR, true, false) {
                     public WebPartView getWebPartView(final ViewContext portalCtx, Portal.WebPart webPart) throws Exception
                     {
-                        LookAndFeelProperties props = LookAndFeelProperties.getInstance(portalCtx.getContainer());
-                        final CustomizeMenuForm form = AdminController.getCustomizeMenuForm(props);
+                        final CustomizeMenuForm form = AdminController.getCustomizeMenuForm(webPart);
                         String title = "My Menu";
                         if (form.getTitle() != null && !form.getTitle().equals(""))
                             title = form.getTitle();
-                        final QueryView queryView = createMenuQueryView(portalCtx, title);
+                        final QueryView queryView = createMenuQueryView(portalCtx, title, form);
                         WebPartView view = new WebPartView(title) {
                             @Override
                             protected void renderView(Object model, PrintWriter out) throws Exception
@@ -377,8 +376,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     }
                     public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
                     {
-                        LookAndFeelProperties props = LookAndFeelProperties.getInstance(context.getContainer());
-                        CustomizeMenuForm form = AdminController.getCustomizeMenuForm(props);
+                        CustomizeMenuForm form = AdminController.getCustomizeMenuForm(webPart);
                         JspView<CustomizeMenuForm> view = new JspView<CustomizeMenuForm>("/org/labkey/core/admin/customizeMenu.jsp", form);
                         view.setTitle(form.getTitle());
                         view.setFrame(WebPartView.FrameType.PORTAL);
@@ -388,11 +386,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ));
     }
 
-    private QueryView createMenuQueryView(final ViewContext context, String title)
+    private QueryView createMenuQueryView(final ViewContext context, String title, final CustomizeMenuForm form)
     {
         Container container = context.getContainer();
-        LookAndFeelProperties props = LookAndFeelProperties.getInstance(container);
-        final CustomizeMenuForm form = AdminController.getCustomizeMenuForm(props);
         String schemaName = StringUtils.trimToNull(form.getSchemaName());
         if (null == schemaName)
             return null;

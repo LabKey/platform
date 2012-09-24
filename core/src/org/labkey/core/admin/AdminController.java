@@ -5115,8 +5115,7 @@ public class AdminController extends SpringActionController
 
         public boolean handlePost(CustomizeMenuForm form, BindException errors) throws Exception
         {
-            WriteableLookAndFeelProperties props = LookAndFeelProperties.getWriteableInstance(getViewContext().getContainer());
-            setCustomizeMenuForm(form, props);
+            setCustomizeMenuForm(form, getContainer(),  getUser());
             return true;
         }
 
@@ -5131,41 +5130,78 @@ public class AdminController extends SpringActionController
         }
     }
 
-    public static CustomizeMenuForm getCustomizeMenuForm(LookAndFeelProperties props)
+    protected static final String CUSTOMMENU_SCHEMA = "customMenuSchemaName";
+    protected static final String CUSTOMMENU_QUERY = "customMenuQueryName";
+    protected static final String CUSTOMMENU_VIEW = "customMenuViewName";
+    protected static final String CUSTOMMENU_COLUMN = "customMenuColumnName";
+    protected static final String CUSTOMMENU_FOLDER = "customMenuFolderName";
+    protected static final String CUSTOMMENU_TITLE = "customMenuTitle";
+    protected static final String CUSTOMMENU_URLTOP = "customMenuUrlTop";
+    protected static final String CUSTOMMENU_URLBOTTOM = "customMenuUrlBottom";
+    protected static final String CUSTOMMENU_ROOTFOLDER = "customMenuRootFolder";
+    protected static final String CUSTOMMENU_FOLDERTYPES = "customMenuFolderTypes";
+    protected static final String CUSTOMMENU_CHOICELISTQUERY = "customMenuChoiceListQuery";
+    protected static final String CUSTOMMENU_INCLUDEALLDESCENDANTS = "customIncludeAllDescendants";
+
+    public static CustomizeMenuForm getCustomizeMenuForm(Portal.WebPart webPart)
     {
         CustomizeMenuForm form = new CustomizeMenuForm();
-        form.setSchemaName(props.getSchemaName());
-        form.setQueryName(props.getQueryName());
-        form.setColumnName(props.getColumnName());
-        form.setViewName(props.getViewName());
-        form.setFolderName(props.getFolderName());
-        form.setTitle(props.getTitle());
-        form.setUrlTop(props.getUrlTop());
-        form.setUrlBottom(props.getUrlBottom());
-        form.setRootFolder(props.getRootFolder());
-        form.setFolderTypes(props.getFolderTypes());
-        form.setChoiceListQuery(props.isChoiceListQuery());
-        form.setIncludeAllDescendants(props.isIncludeAllDescendants());
+        Map<String, String> menuProps = webPart.getPropertyMap();
+
+        String schemaName = menuProps.get(CUSTOMMENU_SCHEMA);
+        String queryName = menuProps.get(CUSTOMMENU_QUERY);
+        String columnName = menuProps.get(CUSTOMMENU_COLUMN);
+        String viewName = menuProps.get(CUSTOMMENU_VIEW);
+        String folderName = menuProps.get(CUSTOMMENU_FOLDER);
+        String title = menuProps.get(CUSTOMMENU_TITLE); if (null == title) title = "My Menu";
+        String urlTop = menuProps.get(CUSTOMMENU_URLTOP);
+        String urlBottom = menuProps.get(CUSTOMMENU_URLBOTTOM);
+        String rootFolder = menuProps.get(CUSTOMMENU_ROOTFOLDER);
+        String folderTypes = menuProps.get(CUSTOMMENU_FOLDERTYPES);
+        String choiceListQueryString = menuProps.get(CUSTOMMENU_CHOICELISTQUERY);
+        boolean choiceListQuery = null == choiceListQueryString ? true : choiceListQueryString.equalsIgnoreCase("true");
+        String includeAllDescendantsString = menuProps.get(CUSTOMMENU_INCLUDEALLDESCENDANTS);
+        boolean includeAllDescendants = null == includeAllDescendantsString ? true : includeAllDescendantsString.equalsIgnoreCase("true");
+
+        form.setSchemaName(schemaName);
+        form.setQueryName(queryName);
+        form.setColumnName(columnName);
+        form.setViewName(viewName);
+        form.setFolderName(folderName);
+        form.setTitle(title);
+        form.setUrlTop(urlTop);
+        form.setUrlBottom(urlBottom);
+        form.setRootFolder(rootFolder);
+        form.setFolderTypes(folderTypes);
+        form.setChoiceListQuery(choiceListQuery);
+        form.setIncludeAllDescendants(includeAllDescendants);
+
+        form.setWebPartIndex(webPart.getIndex());
+        form.setPageId(webPart.getPageId());
         return form;
     }
 
-    private static void setCustomizeMenuForm(CustomizeMenuForm form, WriteableLookAndFeelProperties props)
+    private static void setCustomizeMenuForm(CustomizeMenuForm form, Container container, User user)
     {
-        props.setSchemaName(form.getSchemaName());
-        props.setQueryName(form.getQueryName());
-        props.setColumnName(form.getColumnName());
-        props.setViewName(form.getViewName());
-        props.setFolderName(form.getFolderName());
-        props.setTitle(form.getTitle());
-        props.setUrlTop(form.getUrlTop());
-        props.setUrlBottom(form.getUrlBottom());
-        props.setRootFolder(form.getRootFolder());
-        props.setFolderTypes(form.getFolderTypes());
-        props.setChoiceListQuery(form.isChoiceListQuery());
-        props.setIncludeAllDescendants(form.isIncludeAllDescendants());
+        Portal.WebPart webPart = Portal.getPart(container, form.getPageId(), form.getWebPartIndex());
+        Map<String, String> menuProps = webPart.getPropertyMap();
+
+        menuProps.put(CUSTOMMENU_SCHEMA, form.getSchemaName());
+        menuProps.put(CUSTOMMENU_QUERY, form.getQueryName());
+        menuProps.put(CUSTOMMENU_COLUMN, form.getColumnName());
+        menuProps.put(CUSTOMMENU_VIEW, form.getViewName());
+        menuProps.put(CUSTOMMENU_FOLDER, form.getFolderName());
+        menuProps.put(CUSTOMMENU_TITLE, form.getTitle());
+        menuProps.put(CUSTOMMENU_URLTOP, form.getUrlTop());
+        menuProps.put(CUSTOMMENU_URLBOTTOM, form.getUrlBottom());
+        menuProps.put(CUSTOMMENU_ROOTFOLDER, form.getRootFolder());
+        menuProps.put(CUSTOMMENU_FOLDERTYPES, form.getFolderTypes());
+        menuProps.put(CUSTOMMENU_CHOICELISTQUERY, form.isChoiceListQuery() ? "true" : "false");
+        menuProps.put(CUSTOMMENU_INCLUDEALLDESCENDANTS, form.isIncludeAllDescendants() ? "true" : "false");
+
         try
         {
-            props.save();
+            Portal.updatePart(user, webPart);
         }
         catch (SQLException e)
         {

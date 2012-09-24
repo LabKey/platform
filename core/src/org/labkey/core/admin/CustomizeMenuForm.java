@@ -24,6 +24,8 @@ public class CustomizeMenuForm
     private String _rootFolder;
     private String _folderTypes;
     private boolean _includeAllDescendants;
+    private int _webPartIndex;
+    private String _pageId;
 
     public String getSchemaName()
     {
@@ -144,5 +146,25 @@ public class CustomizeMenuForm
     public void setIncludeAllDescendants(boolean includeAllDescendants)
     {
         _includeAllDescendants = includeAllDescendants;
+    }
+
+    public int getWebPartIndex()
+    {
+        return _webPartIndex;
+    }
+
+    public void setWebPartIndex(int webPartIndex)
+    {
+        _webPartIndex = webPartIndex;
+    }
+
+    public String getPageId()
+    {
+        return _pageId;
+    }
+
+    public void setPageId(String pageId)
+    {
+        _pageId = pageId;
     }
 }
