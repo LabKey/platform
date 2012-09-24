@@ -106,7 +106,7 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     }
 
 
-    public void afterConstruct()
+    public void remapFieldKeys()
     {
         initFieldKeyMap();
         for (ColumnInfo ci : getColumns())
@@ -116,7 +116,6 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
                 continue;
             ci.remapFieldKeys(null, remap);
         }
-        super.afterConstruct();
     }
 
 

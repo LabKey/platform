@@ -30,6 +30,9 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
@@ -60,6 +63,7 @@ public class CoreQuerySchema extends UserSchema
 
     public static final String USERS_TABLE_NAME = "Users";
     public static final String GROUPS_TABLE_NAME = "Groups";
+    public static final String USERS_AND_GROUPS_TABLE_NAME = "UsersAndGroups";
     public static final String SITE_USERS_TABLE_NAME = "SiteUsers";
     public static final String PRINCIPALS_TABLE_NAME = "Principals";
     public static final String MEMBERS_TABLE_NAME = "Members";
@@ -76,7 +80,7 @@ public class CoreQuerySchema extends UserSchema
     public Set<String> getTableNames()
     {
         return PageFlowUtil.set(USERS_TABLE_NAME, SITE_USERS_TABLE_NAME, PRINCIPALS_TABLE_NAME,
-                MEMBERS_TABLE_NAME, GROUPS_TABLE_NAME, CONTAINERS_TABLE_NAME, WORKBOOKS_TABLE_NAME);
+                MEMBERS_TABLE_NAME, GROUPS_TABLE_NAME, USERS_AND_GROUPS_TABLE_NAME, CONTAINERS_TABLE_NAME, WORKBOOKS_TABLE_NAME);
     }
 
 
@@ -92,6 +96,8 @@ public class CoreQuerySchema extends UserSchema
             return getMembers();
         if (GROUPS_TABLE_NAME.equalsIgnoreCase(name))
             return getGroups();
+        if (USERS_AND_GROUPS_TABLE_NAME.equalsIgnoreCase(name))
+            return getUsersAndGroupsTable();
         if (WORKBOOKS_TABLE_NAME.equalsIgnoreCase(name))
             return getWorkbooks();
         if (CONTAINERS_TABLE_NAME.equalsIgnoreCase(name))
@@ -279,6 +285,8 @@ public class CoreQuerySchema extends UserSchema
         return members;
     }
 
+
+
     public TableInfo getUsers()
     {
         if (getContainer().isRoot())
@@ -317,6 +325,8 @@ public class CoreQuerySchema extends UserSchema
         return users;
     }
 
+
+
     private void addGroupsColumn(FilteredTable users)
     {
         ColumnInfo groupsCol = users.wrapColumn("Groups", users.getRealTable().getColumn("userid"));
@@ -330,6 +340,8 @@ public class CoreQuerySchema extends UserSchema
         }, "Group"));
         users.addColumn(groupsCol);
     }
+
+
 
     protected TableInfo getMembersTable()
     {
@@ -360,6 +372,8 @@ public class CoreQuerySchema extends UserSchema
 
         return result;
     }
+
+
 
     protected FilteredTable getUserTable()
     {
@@ -417,6 +431,64 @@ public class CoreQuerySchema extends UserSchema
 
         return users;
     }
+
+
+
+    protected TableInfo getUsersAndGroupsTable()
+    {
+        QueryDefinition def = QueryService.get().createQueryDef(getUser(), getContainer(), this, "UsersAndGroups");
+        def.setSql(
+                "SELECT \n" +
+                "  Users.UserId,\n" +
+                "  Users.DisplayName,\n" +
+                "  Users.Email,\n" +
+                "  'u' AS Type,\n" +
+                "  NULL AS Container\n" +
+                "FROM Users\n" +
+                "\n" +
+                "UNION\n" +
+                "\n" +
+                "SELECT \n" +
+                "  Groups.Userid,\n" +
+                "  Groups.Name as DisplayName,\n" +
+                "  NULL AS Email,\n" +
+                "  Groups.Type,\n" +
+                "  Groups.Container\n" +
+                "FROM Groups");
+        def.setMetadataXml(
+                "<ns:tables xmlns:ns=\"http://labkey.org/data/xml\">\n" +
+                        "  <ns:table tableName=\"UsersAndGroups\" tableDbType=\"NOT_IN_DB\">\n" +
+                        "    <ns:description>Union of the Users and Groups tables</ns:description>\n" +
+                        "    <ns:pkColumnName>UserId</ns:pkColumnName>\n" +
+                        "    <ns:columns>\n" +
+                        "      <ns:column columnName=\"UserId\">\n" +
+                        "        <ns:isKeyField>true</ns:isKeyField>\n" +
+                        "        <ns:dimension>true</ns:dimension>\n" +
+                        "        <ns:fk>\n" +
+                        "          <ns:fkDbSchema>core</ns:fkDbSchema>\n" +
+                        "          <ns:fkTable>Users</ns:fkTable>\n" +
+                        "          <ns:fkColumnName>UserId</ns:fkColumnName>\n" +
+                        "        </ns:fk>\n" +
+                        "      </ns:column>\n" +
+                        "      <ns:column columnName=\"Container\">\n" +
+                        "        <ns:dimension>true</ns:dimension>\n" +
+                        "        <ns:fk>\n" +
+                        "          <ns:fkDbSchema>core</ns:fkDbSchema>\n" +
+                        "          <ns:fkTable>Containers</ns:fkTable>\n" +
+                        "          <ns:fkColumnName>EntityId</ns:fkColumnName>\n" +
+                        "        </ns:fk>\n" +
+                        "      </ns:column>\n" +
+                        "    </ns:columns>\n" +
+                        "  </ns:table>\n" +
+                        "</ns:tables>");
+        List<QueryException> errors = new ArrayList<QueryException>();
+        if (!errors.isEmpty())
+            throw errors.get(0);
+        TableInfo t;
+        t = def.getTable(this, errors, true);
+        return t;
+    }
+
 
     protected void addNullSetFilter(FilteredTable table)
     {
