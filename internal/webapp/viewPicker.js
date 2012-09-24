@@ -15,7 +15,7 @@ var dataUrlFieldName = 'viewDataUrl';
                                     // schema, query, view, column, folder, rootFolder, folderTypes
 var initialValues = new Array();        // TODO: Select these values in combos
 
-function populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includeSchema, columnCombo, folderCombo)
+function populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includeSchema, columnCombo)
 {
     var schemas;
 
@@ -43,7 +43,7 @@ function populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includ
             columnCombo.clearValue();
         LABKEY.Query.getQueries({
             schemaName: record.data[record.fields.first().name],
-            successCallback: function(details) { populateQueries(queryCombo, viewCombo, details, columnCombo); }
+            successCallback: function(details) { populateQueries(schemaCombo, queryCombo, viewCombo, details, columnCombo); }
         });
     });
 
@@ -62,7 +62,7 @@ function populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includ
     }
 }
 
-function populateQueries(queryCombo, viewCombo, queriesInfo, columnCombo)
+function populateQueries(schemaCombo, queryCombo, viewCombo, queriesInfo, columnCombo)
 {
     var records = [];
     for (var i = 0; i < queriesInfo.queries.length; i++)
@@ -78,10 +78,24 @@ function populateQueries(queryCombo, viewCombo, queriesInfo, columnCombo)
         viewCombo.clearValue();
         if (columnCombo)
             columnCombo.clearValue();
+        var queryName = record.data[record.fields.first().name];
+        var schemaName = schemaCombo.getValue();
         LABKEY.Query.getQueryViews({
-            schemaName: queriesInfo.schemaName,
-            queryName: record.data[record.fields.first().name],
-            successCallback: function(details) { populateViews(viewCombo, details, columnCombo); }
+            schemaName: schemaName,
+            queryName: queryName,
+            successCallback: function(details)
+            {
+                populateViews(schemaCombo, queryCombo, viewCombo, details, columnCombo);
+                if (columnCombo)
+                {
+                    LABKEY.Query.getQueryDetails({
+                        schemaName: schemaName,
+                        queryName: queryName,
+                        initializeMissingView: true,
+                        successCallback: function(details) { populateColumns(columnCombo, details); }
+                    });
+                }
+            }
         })
     });
 
@@ -102,7 +116,7 @@ function populateQueries(queryCombo, viewCombo, queriesInfo, columnCombo)
 
 var defaultViewLabel = "[default view]";
 
-function populateViews(viewCombo, queryViews, columnCombo)
+function populateViews(schemaCombo, queryCombo, viewCombo, queryViews, columnCombo)
 {
     var records = [[defaultViewLabel]];
 
@@ -122,11 +136,11 @@ function populateViews(viewCombo, queryViews, columnCombo)
         {
             columnCombo.clearValue();
             LABKEY.Query.getQueryDetails({
-                schemaName: queryViews.schemaName,
-                queryName: queryViews.queryName,
+                schemaName: schemaCombo.getValue(),
+                queryName: queryCombo.getValue(),
                 initializeMissingView: true,
                 successCallback: function(details) { populateColumns(columnCombo, details); }
-            })
+            });
         });
     }
 
@@ -145,11 +159,11 @@ function populateViews(viewCombo, queryViews, columnCombo)
     }
 
     viewCombo.setValue(initialView);
-    if (columnCombo)
-    {
-        var record = viewCombo.getStore().getAt(viewComboIndex);
-        viewCombo.fireEvent('select', viewCombo, record, viewComboIndex);
-    }
+//    if (columnCombo)
+//    {
+//        var record = viewCombo.getStore().getAt(viewComboIndex);
+//        viewCombo.fireEvent('select', viewCombo, record, viewComboIndex);
+//    }
 }
 
 function populateColumns(columnCombo, details)
@@ -183,7 +197,7 @@ function populateColumns(columnCombo, details)
 
 function populateFolders(schemaCombo, queryCombo, viewCombo, columnCombo, folderCombo, details, includeSchema)
 {
-    var records = [];
+    var records = [["[current folder]", ""]];
 
     var folders = details.containers;
     if (folders && folders.length > 0)
@@ -199,7 +213,7 @@ function populateFolders(schemaCombo, queryCombo, viewCombo, columnCombo, folder
         if (columnCombo)
             columnCombo.clearValue();
         LABKEY.Query.getSchemas({
-            containerPath: record.data[record.fields.items[1].name],
+            containerPath: folderCombo.getValue(),
             successCallback: function(schemasInfo)
             {
                 populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includeSchema, columnCombo, folderCombo);
@@ -207,11 +221,11 @@ function populateFolders(schemaCombo, queryCombo, viewCombo, columnCombo, folder
         });
     });
 
-    var initialFolder = records[0].name;
+    var initialFolder = records[0].path;
     var folderComboIndex = 0;
     if (initialValues[4])
     {
-        folderComboIndex = folderCombo.getStore().findExact('name', initialValues[4]);
+        folderComboIndex = folderCombo.getStore().findExact('path', initialValues[4]);
 
         if (-1 != folderComboIndex)
         {
@@ -253,11 +267,11 @@ function populateRootFolder(folderCombo, details)
     folderCombo.store.removeAll();
     folderCombo.store.loadData(records);
 
-    var initialFolder = records[0].name;
+    var initialFolder = records[0].path;
     var folderComboIndex = 0;
     if (initialValues[5])
     {
-        folderComboIndex = folderCombo.getStore().findExact('name', initialValues[4]);
+        folderComboIndex = folderCombo.getStore().findExact('path', initialValues[5]);
 
         if (-1 != folderComboIndex)
         {
@@ -269,11 +283,12 @@ function populateRootFolder(folderCombo, details)
 
     folderCombo.setValue(initialFolder);
     var record = folderCombo.getStore().getAt(folderComboIndex);
+    folderCombo.fireEvent('select', folderCombo, record, folderComboIndex);
 }
 
 function populateFolderTypes(details, folderTypesCombo, rootFolderCombo, schemaCombo, queryCombo, viewCombo, columnCombo, folderCombo, includeSchema)
 {
-    var records = [];
+    var records = [["[none]",""]];
 
     for (var folderType in details)
         records[records.length] = [folderType, folderType];
@@ -285,7 +300,7 @@ function populateFolderTypes(details, folderTypesCombo, rootFolderCombo, schemaC
     var folderTypesComboIndex = 0;
     if (initialValues[6])
     {
-        folderTypesComboIndex = folderTypesCombo.getStore().findExact('name', initialValues[4]);
+        folderTypesComboIndex = folderTypesCombo.getStore().findExact('name', initialValues[6]);
 
         if (-1 != folderTypesComboIndex)
         {
@@ -297,6 +312,7 @@ function populateFolderTypes(details, folderTypesCombo, rootFolderCombo, schemaC
 
     folderTypesCombo.setValue(initialFolder);
     var record = folderTypesCombo.getStore().getAt(folderTypesComboIndex);
+    folderTypesCombo.fireEvent('select', folderTypesCombo, record, folderTypesComboIndex);
 
     LABKEY.Security.getContainers({
         container: ["/"],
@@ -348,6 +364,33 @@ function createCombo(fieldLabel, name, id, allowBlank)
     return combo;
 }
 
+function createFolderCombo(fieldLabel, name, id, allowBlank)
+{
+    var combo = new Ext.form.ComboBox({
+        typeAhead: false,
+        store: new Ext.data.ArrayStore({
+            fields: [{
+                name: dataFieldName,
+                sortType: function(value) { return value.toLowerCase(); }
+            },{
+                name: 'path'
+            }],
+            sortInfo: { field: dataFieldName }
+        }),
+        valueField: 'path',
+        displayField: dataFieldName,
+        fieldLabel: fieldLabel,
+        name: name,
+        id: id,
+        allowBlank: allowBlank,
+        readOnly:false,
+        editable:false,
+        mode:'local',
+        triggerAction: 'all',
+        lazyInit: false
+    });
+    return combo;
+}
 function createSchemaCombo()
 {
     return createCombo("Schema", "schema", "userQuery_schema", false);
@@ -363,43 +406,19 @@ function createViewCombo()
     return createCombo("View", "view", "userQuery_view", true);
 }
 
-function createFolderCombo()
+function createBasicFolderCombo()
 {
-//    return createCombo("Folder", "folders", "userQuery_folders", true);
-    var combo = new Ext.form.ComboBox({
-        typeAhead: false,
-        store: new Ext.data.ArrayStore({
-            fields: [{
-                name: dataFieldName,
-                sortType: function(value) { return value.toLowerCase(); }
-            },{
-                name: 'path'
-            }],
-            sortInfo: { field: dataFieldName }
-        }),
-        valueField: dataFieldName,
-        displayField: dataFieldName,
-        fieldLabel: "Folder",
-        name: "folders",
-        id: "userQuery_folders",
-        allowBlank: true,
-        readOnly:false,
-        editable:false,
-        mode:'local',
-        triggerAction: 'all',
-        lazyInit: false
-    });
-    return combo;
+    return createFolderCombo("Folder", "folders", "userQuery_folders", true);
 }
 
 function createColumnCombo()
 {
-    return createCombo("Title Column", "column", "userQuery_Column", true);
+    return createCombo("Title Column", "column", "userQuery_Column", false);
 }
 
 function createRootFolderCombo()
 {
-    return createCombo("Root Folder", "rootFolder", "userQuery_rootFolder", true);
+    return createFolderCombo("Root Folder", "rootFolder", "userQuery_rootFolder", true);
 }
 
 function createFolderTypesCombo()
@@ -420,7 +439,7 @@ function chooseView(title, helpText, sep, submitFunction, currentValue, includeS
     var viewCombo = createViewCombo();
 
     LABKEY.Query.getSchemas({
-        successCallback: function(schemasInfo) { populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includeSchema, null); }
+        successCallback: function(schemasInfo) { populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includeSchema); }
     });
 
     var labelStyle = 'border-bottom:1px solid #AAAAAA;margin:3px';
@@ -482,7 +501,7 @@ function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue
     var queryCombo = createQueryCombo();
     var viewCombo = createViewCombo();
     var columnCombo = createColumnCombo();
-    var folderCombo = createFolderCombo();
+    var folderCombo = createBasicFolderCombo();
 
     var title = "";
     var schemaName = "";
@@ -513,7 +532,7 @@ function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue
         includeAllDescendants = currentValue.includeAllDescendants;
         rootFolder = currentValue.rootFolder;
         folderType = currentValue.folderTypes;
-        initialValues = [schemaName, queryName, viewName, columnName, rootFolder, folderType];
+        initialValues = [schemaName, queryName, viewName, columnName, folderName, rootFolder, folderType];
 
         pageId = currentValue.pageId;
         webPartIndex = currentValue.webPartIndex;
@@ -562,6 +581,15 @@ function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue
         labelWidth: 50
     });
 
+    var includeAllDescendantsCheckbox = new Ext.form.Checkbox({
+        name: 'includeAllDescendants',
+        fieldLabel: 'Include All Descendants',
+        labelSeparator: '',
+        value: true,
+        checked: includeAllDescendants,
+        width: 400
+    });
+
     var rootFolderCombo = createRootFolderCombo();
     var folderTypesCombo = createFolderTypesCombo();
 
@@ -569,7 +597,7 @@ function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue
         padding: 5,
         timeout: Ext.Ajax.timeout,
         hidden: false,
-        items: [rootFolderCombo, folderTypesCombo]
+        items: [includeAllDescendantsCheckbox, rootFolderCombo, folderTypesCombo]
     });
 
     var formMenuSelectPanel = new Ext.Panel({
@@ -637,8 +665,16 @@ function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue
             text: 'Submit',
             id: 'btn_submit',
             handler: function(){
-                var form = formSQV.getForm();
-
+                var isChoiceListQuery = formMenuSelectPanel.items.items[1].checked;
+                var form = null;
+                if (isChoiceListQuery)
+                {
+                    form = formSQV.getForm();
+                }
+                else
+                {
+                    form = formFolders.getForm();
+                }
                 if (form && !form.isValid())
                 {
                     Ext.Msg.alert(title, 'Please complete all required fields.');
@@ -650,7 +686,6 @@ function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue
                 if (viewRecord != defaultViewLabel)
                     viewName = viewRecord;
 
-                var isChoiceListQuery = formMenuSelectPanel.items.items[1].checked;
                 submitFunction({
                     schemaName : schemaCombo.getValue(),
                     queryName : queryCombo.getValue(),
@@ -663,7 +698,7 @@ function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue
                     choiceListQuery: isChoiceListQuery,
                     rootFolder: rootFolderCombo.getValue(),
                     folderTypes: folderTypesCombo.getValue(),
-                    includeAllDescendants: true,                                // TODO
+                    includeAllDescendants: includeAllDescendantsCheckbox.checked,
                     pageId: pageId,
                     webPartIndex: webPartIndex
                 });
