@@ -1556,7 +1556,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         if (chartOptions.developer.pointClickFn){
             // the developer is expected to return a function, so we encapalate it within the anonymous function
             // (note: the function should have already be validated in a try/catch when applied via the developerOptionsPanel)
-            var devPointClickFn = new Function("", "return " + chartOptions.developer.pointClickFn);
+            var devPointClickFn = new Function("", "return " + this.developerPanel.removeLeadingComments(chartOptions.developer.pointClickFn));
 
             pointClickFn = function(measureInfo) {
                 return function(clickEvent, data) {

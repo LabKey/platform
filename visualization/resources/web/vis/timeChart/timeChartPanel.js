@@ -1598,7 +1598,7 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         {
             // the developer is expected to return a function, so we encapalate it within the anonymous function
             // (note: the function should have already be validated in a try/catch when applied via the developerOptionsPanel)
-            var devPointClickFn = new Function("", "return " + chartInfo.pointClickFn);
+            var devPointClickFn = new Function("", "return " + this.editorDeveloperPanel.removeLeadingComments(chartInfo.pointClickFn));
         }
 
         var pointClickFn = function(columnMap, measureInfo) {
