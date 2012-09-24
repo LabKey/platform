@@ -47,19 +47,6 @@ public class LookAndFeelProperties extends AbstractWriteableSettingsGroup
     protected static final String SUPPORT_EMAIL = "supportEmail";
     protected static final String REPORT_A_PROBLEM_PATH_PROP = "reportAProblemPath";
 
-    protected static final String CUSTOMMENU_SCHEMA = "customMenuSchemaName";
-    protected static final String CUSTOMMENU_QUERY = "customMenuQueryName";
-    protected static final String CUSTOMMENU_VIEW = "customMenuViewName";
-    protected static final String CUSTOMMENU_COLUMN = "customMenuColumnName";
-    protected static final String CUSTOMMENU_FOLDER = "customMenuFolderName";
-    protected static final String CUSTOMMENU_TITLE = "customMenuTitle";
-    protected static final String CUSTOMMENU_URLTOP = "customMenuUrlTop";
-    protected static final String CUSTOMMENU_URLBOTTOM = "customMenuUrlBottom";
-    protected static final String CUSTOMMENU_ROOTFOLDER = "customMenuRootFolder";
-    protected static final String CUSTOMMENU_FOLDERTYPES = "customMenuFolderTypes";
-    protected static final String CUSTOMMENU_CHOICELISTQUERY = "customMenuChoiceListQuery";
-    protected static final String CUSTOMMENU_INCLUDEALLDESCENDANTS = "customIncludeAllDescendants";
-
     private Container _c;
 
     protected String getType()
@@ -224,66 +211,6 @@ public class LookAndFeelProperties extends AbstractWriteableSettingsGroup
         if (c.isRoot())
             return c;
         return c.getProject();
-    }
-
-    public String getSchemaName()
-    {
-        return lookupStringValue(CUSTOMMENU_SCHEMA, "");
-    }
-
-    public String getQueryName()
-    {
-        return lookupStringValue(CUSTOMMENU_QUERY, "");
-    }
-
-    public String getFolderName()
-    {
-        return lookupStringValue(CUSTOMMENU_FOLDER, "");
-    }
-
-    public String getViewName()
-    {
-        return lookupStringValue(CUSTOMMENU_VIEW, "");
-    }
-
-    public String getColumnName()
-    {
-        return lookupStringValue(CUSTOMMENU_COLUMN, "");
-    }
-
-    public String getTitle()
-    {
-        return lookupStringValue(CUSTOMMENU_TITLE, "My Menu");
-    }
-
-    public String getUrlTop()
-    {
-        return lookupStringValue(CUSTOMMENU_URLTOP, "");
-    }
-
-    public String getUrlBottom()
-    {
-        return lookupStringValue(CUSTOMMENU_URLBOTTOM, "");
-    }
-
-    public String getRootFolder()
-    {
-        return lookupStringValue(CUSTOMMENU_ROOTFOLDER, "");
-    }
-
-    public String getFolderTypes()
-    {
-        return lookupStringValue(CUSTOMMENU_FOLDERTYPES, "");
-    }
-
-    public boolean isChoiceListQuery()
-    {
-        return lookupBooleanValue(CUSTOMMENU_CHOICELISTQUERY, true);
-    }
-
-    public boolean isIncludeAllDescendants()
-    {
-        return lookupBooleanValue(CUSTOMMENU_INCLUDEALLDESCENDANTS, true);
     }
 
 }

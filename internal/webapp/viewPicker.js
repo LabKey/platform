@@ -12,10 +12,10 @@
 */
 var dataFieldName = 'name';
 var dataUrlFieldName = 'viewDataUrl';
-                                    // schema, query, view, column, folder
+                                    // schema, query, view, column, folder, rootFolder, folderTypes
 var initialValues = new Array();        // TODO: Select these values in combos
 
-function populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includeSchema, columnCombo)
+function populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includeSchema, columnCombo, folderCombo)
 {
     var schemas;
 
@@ -131,9 +131,10 @@ function populateViews(viewCombo, queryViews, columnCombo)
     }
 
     var initialView = defaultViewLabel;
+    var viewComboIndex = viewCombo.getStore().findExact('name', initialView);
     if (initialValues[2])
     {
-        var viewComboIndex = viewCombo.getStore().findExact('name', initialValues[2]);
+        viewComboIndex = viewCombo.getStore().findExact('name', initialValues[2]);
 
         if (-1 != viewComboIndex)
         {
@@ -178,6 +179,134 @@ function populateColumns(columnCombo, details)
 
         initialValues[3] = null;
     }
+}
+
+function populateFolders(schemaCombo, queryCombo, viewCombo, columnCombo, folderCombo, details, includeSchema)
+{
+    var records = [];
+
+    var folders = details.containers;
+    if (folders && folders.length > 0)
+        populateFoldersWithTree(folders[0], records);       // Just 1 at the root
+
+    folderCombo.store.removeAll();
+    folderCombo.store.loadData(records);
+    folderCombo.on("select", function(combo, record, index)
+    {
+        schemaCombo.clearValue();
+        queryCombo.clearValue();
+        viewCombo.clearValue();
+        if (columnCombo)
+            columnCombo.clearValue();
+        LABKEY.Query.getSchemas({
+            containerPath: record.data[record.fields.items[1].name],
+            successCallback: function(schemasInfo)
+            {
+                populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includeSchema, columnCombo, folderCombo);
+            }
+        });
+    });
+
+    var initialFolder = records[0].name;
+    var folderComboIndex = 0;
+    if (initialValues[4])
+    {
+        folderComboIndex = folderCombo.getStore().findExact('name', initialValues[4]);
+
+        if (-1 != folderComboIndex)
+        {
+            initialFolder = initialValues[4];
+        }
+
+        initialValues[4] = null;
+    }
+
+    folderCombo.setValue(initialFolder);
+    var record = folderCombo.getStore().getAt(folderComboIndex);
+    folderCombo.fireEvent('select', folderCombo, record, folderComboIndex);
+}
+
+function populateFoldersWithTree(folder, records)
+{
+    var name = folder.name;
+    if ("/" == folder.path)
+        name = "[root]";
+    records[records.length] = [name, folder.path];
+    if (folder.children)
+    {
+        for (var i = 0; i < folder.children.length; i++)
+        {
+            if (folder.children[i])
+                populateFoldersWithTree(folder.children[i], records);
+        }
+    }
+}
+
+function populateRootFolder(folderCombo, details)
+{
+    var records = [];
+
+    var folders = details.containers;
+    if (folders && folders.length > 0)
+        populateFoldersWithTree(folders[0], records);       // Just 1 at the root
+
+    folderCombo.store.removeAll();
+    folderCombo.store.loadData(records);
+
+    var initialFolder = records[0].name;
+    var folderComboIndex = 0;
+    if (initialValues[5])
+    {
+        folderComboIndex = folderCombo.getStore().findExact('name', initialValues[4]);
+
+        if (-1 != folderComboIndex)
+        {
+            initialFolder = initialValues[5];
+        }
+
+        initialValues[5] = null;
+    }
+
+    folderCombo.setValue(initialFolder);
+    var record = folderCombo.getStore().getAt(folderComboIndex);
+}
+
+function populateFolderTypes(details, folderTypesCombo, rootFolderCombo, schemaCombo, queryCombo, viewCombo, columnCombo, folderCombo, includeSchema)
+{
+    var records = [];
+
+    for (var folderType in details)
+        records[records.length] = [folderType, folderType];
+
+    folderTypesCombo.store.removeAll();
+    folderTypesCombo.store.loadData(records);
+
+    var initialFolder = records[0].name;
+    var folderTypesComboIndex = 0;
+    if (initialValues[6])
+    {
+        folderTypesComboIndex = folderTypesCombo.getStore().findExact('name', initialValues[4]);
+
+        if (-1 != folderTypesComboIndex)
+        {
+            initialFolder = initialValues[6];
+        }
+
+        initialValues[6] = null;
+    }
+
+    folderTypesCombo.setValue(initialFolder);
+    var record = folderTypesCombo.getStore().getAt(folderTypesComboIndex);
+
+    LABKEY.Security.getContainers({
+        container: ["/"],
+        includeSubfolders: true,
+        successCallback: function(details)
+        {
+            populateRootFolder(rootFolderCombo, details);
+            populateFolders(schemaCombo, queryCombo, viewCombo, columnCombo, folderCombo, details, includeSchema);
+        }
+    });
 }
 
 function getArrayArray(simpleArray)
@@ -236,7 +365,31 @@ function createViewCombo()
 
 function createFolderCombo()
 {
-    return createCombo("Folder", "folders", "userQuery_folders", true);
+//    return createCombo("Folder", "folders", "userQuery_folders", true);
+    var combo = new Ext.form.ComboBox({
+        typeAhead: false,
+        store: new Ext.data.ArrayStore({
+            fields: [{
+                name: dataFieldName,
+                sortType: function(value) { return value.toLowerCase(); }
+            },{
+                name: 'path'
+            }],
+            sortInfo: { field: dataFieldName }
+        }),
+        valueField: dataFieldName,
+        displayField: dataFieldName,
+        fieldLabel: "Folder",
+        name: "folders",
+        id: "userQuery_folders",
+        allowBlank: true,
+        readOnly:false,
+        editable:false,
+        mode:'local',
+        triggerAction: 'all',
+        lazyInit: false
+    });
+    return combo;
 }
 
 function createColumnCombo()
@@ -340,6 +493,11 @@ function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue
     var urlTop = "";
     var urlBottom = "";
     var isChoiceListQuery = true;
+    var includeAllDescendants = true;
+    var rootFolder = "";
+    var folderType = "";
+    var pageId = null;
+    var webPartIndex = 0;
 
     if (currentValue)
     {
@@ -352,12 +510,21 @@ function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue
         urlTop = currentValue.urlTop;
         urlBottom = currentValue.urlBottom;
         isChoiceListQuery = currentValue.choiceListQuery;
-        initialValues = [schemaName, queryName, viewName, columnName];
+        includeAllDescendants = currentValue.includeAllDescendants;
+        rootFolder = currentValue.rootFolder;
+        folderType = currentValue.folderTypes;
+        initialValues = [schemaName, queryName, viewName, columnName, rootFolder, folderType];
 
+        pageId = currentValue.pageId;
+        webPartIndex = currentValue.webPartIndex;
     }
 
-    LABKEY.Query.getSchemas({
-        successCallback: function(schemasInfo) { populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includeSchema, columnCombo); }
+    LABKEY.Security.getFolderTypes({
+        successCallback: function(details)
+        {
+            populateFolderTypes(details, folderTypesCombo, rootFolderCombo, schemaCombo, queryCombo, viewCombo,
+                    columnCombo, folderCombo, includeSchema);
+        }
     });
 
     var labelStyle = 'border-bottom:1px solid #AAAAAA;margin:3px';
@@ -496,7 +663,9 @@ function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue
                     choiceListQuery: isChoiceListQuery,
                     rootFolder: rootFolderCombo.getValue(),
                     folderTypes: folderTypesCombo.getValue(),
-                    includeAllDescendants: true                                // TODO
+                    includeAllDescendants: true,                                // TODO
+                    pageId: pageId,
+                    webPartIndex: webPartIndex
                 });
             }
         },{
