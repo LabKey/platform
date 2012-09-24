@@ -5159,9 +5159,9 @@ public class AdminController extends SpringActionController
         String rootFolder = menuProps.get(CUSTOMMENU_ROOTFOLDER);
         String folderTypes = menuProps.get(CUSTOMMENU_FOLDERTYPES);
         String choiceListQueryString = menuProps.get(CUSTOMMENU_CHOICELISTQUERY);
-        boolean choiceListQuery = null == choiceListQueryString ? true : choiceListQueryString.equalsIgnoreCase("true");
+        boolean choiceListQuery = null == choiceListQueryString || choiceListQueryString.equalsIgnoreCase("true");
         String includeAllDescendantsString = menuProps.get(CUSTOMMENU_INCLUDEALLDESCENDANTS);
-        boolean includeAllDescendants = null == includeAllDescendantsString ? true : includeAllDescendantsString.equalsIgnoreCase("true");
+        boolean includeAllDescendants = null == includeAllDescendantsString || includeAllDescendantsString.equalsIgnoreCase("true");
 
         form.setSchemaName(schemaName);
         form.setQueryName(queryName);

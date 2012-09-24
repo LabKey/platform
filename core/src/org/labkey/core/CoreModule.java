@@ -77,6 +77,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserUrls;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
@@ -354,20 +355,77 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                         String title = "My Menu";
                         if (form.getTitle() != null && !form.getTitle().equals(""))
                             title = form.getTitle();
-                        final QueryView queryView = createMenuQueryView(portalCtx, title, form);
-                        WebPartView view = new WebPartView(title) {
-                            @Override
-                            protected void renderView(Object model, PrintWriter out) throws Exception
-                            {
-                                out.write("<table style='width:50'><tr><td style='vertical-align:top;padding:4px'>");
-                                out.write("Schema or query has not been selected.");
-                                out.write("</td></tr></table>");
-                            }
-                        };
-                        if (queryView != null)
+
+                        WebPartView view = null;
+                        if (form.isChoiceListQuery())
                         {
-                            queryView.setFrame(WebPartView.FrameType.PORTAL);
-                            return queryView;
+                            QueryView queryView = createMenuQueryView(portalCtx, title, form);
+                            if (queryView != null)
+                            {
+                                view = queryView;
+                            }
+                            else
+                            {
+                                view = new WebPartView(title) {
+                                    @Override
+                                    protected void renderView(Object model, PrintWriter out) throws Exception
+                                    {
+                                        out.write("<table style='width:50'><tr><td style='vertical-align:top;padding:4px'>");
+                                        out.write("No schema or query selected.");
+                                        out.write("</td></tr></table>");
+                                    }
+                                };
+                            }
+                        }
+                        else
+                        {
+                            Container rootFolder = ContainerManager.getForPath(form.getRootFolder());
+                            final User user = portalCtx.getUser();
+                            Collection<Container> containersTemp = null;
+                            if (form.isIncludeAllDescendants())
+                            {
+                                Set<Container> containerSet = ContainerManager.getAllChildren(rootFolder, user);
+                                containersTemp = containerSet;
+                            }
+                            else
+                            {
+                                List<Container> containerList = ContainerManager.getChildren(rootFolder, user, ReadPermission.class);
+                                containerList.add(rootFolder);
+                                containersTemp = containerList;
+                            }
+                            final Collection<Container> containers = containersTemp;
+
+                            final String filterFolderName = form.getFolderTypes();
+                            view = new WebPartView(title) {
+                                @Override
+                                protected void renderView(Object model, PrintWriter out) throws Exception
+                                {
+                                    boolean seenAtLeastOne = false;
+                                    out.write("<table style='width:50'>");
+                                    for (Container container : containers)
+                                    {
+                                        if (null == StringUtils.trimToNull(filterFolderName) ||
+                                                "[none]".equals(filterFolderName) ||
+                                                container.getFolderType().getName().equals(filterFolderName))
+                                        {
+                                            ActionURL url = container.getStartURL(user);
+                                            if (null != url)
+                                            {
+                                                out.write("<tr><td><a href=\"");
+                                                out.write(PageFlowUtil.filter(url));
+                                                out.write("\">");
+                                                out.write(container.getName());
+                                                out.write("</a></td></tr>");
+                                                seenAtLeastOne = true;
+                                            }
+                                        }
+                                    }
+
+                                    if (!seenAtLeastOne)
+                                        out.write("<tr><td>No folders selected.</td></tr>");
+                                    out.write("</table>");
+                                }
+                            };
                         }
                         view.setFrame(WebPartView.FrameType.PORTAL);
                         return view;
@@ -389,6 +447,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     private QueryView createMenuQueryView(final ViewContext context, String title, final CustomizeMenuForm form)
     {
         Container container = context.getContainer();
+        if (null != StringUtils.trimToNull(form.getFolderName()))
+            container = ContainerManager.getForPath(form.getFolderName());
         String schemaName = StringUtils.trimToNull(form.getSchemaName());
         if (null == schemaName)
             return null;
@@ -414,54 +474,40 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             @Override
             protected void renderDataRegion(PrintWriter out) throws Exception
             {
-//                out.write("<table style='width:50'><tr><td style='vertical-align:top;padding:4px'>");
+                boolean seenAtLeastOne = false;
                 out.write("<table style='width:50'>");
-                ColumnInfo columnInfo = getTable().getColumn(form.getColumnName());
-                String urlBase = form.getUrlBottom();
-                if (urlBase != null && !urlBase.contentEquals(""))
-                    columnInfo.setURL(StringExpressionFactory.createURL(form.getUrlBottom()));
-                DataColumn dataColumn = new DataColumn(columnInfo, false);
-
-/*                DataRegion dataRegion = new DataRegion();
-                dataRegion.addDisplayColumn(displayColumn);
-
-                dataRegion.setShowBorders(false);
-                dataRegion.setShowFilterDescription(false);
-                dataRegion.setShowPaginationCount(false);
-                dataRegion.setShowSurroundingBorder(false);
-                dataRegion.setShowPaginationCount(false);
-                dataRegion.setShowPagination(false);
-                dataRegion.setShowRecordSelectors(false);
-                dataRegion.setSortable(false);
-                dataRegion.setButtonBarPosition(DataRegion.ButtonBarPosition.NONE);
-                
-                RenderContext renderContext = new RenderContext(context);
-                dataRegion.render(renderContext, out);
-*/
-//                out.write("<tr><td>Custom Menu 1</td></tr>");
-//                out.write("</td></tr></table>");
-
-
-                RenderContext renderContext = new RenderContext(context);
-                Results results = getResults();
-                renderContext.setResults(results);
-                ResultSet rs = results.getResultSet();
-                ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
-                try
+                TableInfo tableInfo = getTable();
+                if (null != tableInfo)
                 {
-                    while (rs.next())
+                    ColumnInfo columnInfo = tableInfo.getColumn(form.getColumnName());
+                    String urlBase = form.getUrlBottom();
+                    if (urlBase != null && !urlBase.contentEquals(""))
+                        columnInfo.setURL(StringExpressionFactory.createURL(form.getUrlBottom()));
+                    DataColumn dataColumn = new DataColumn(columnInfo, false);
+
+                    RenderContext renderContext = new RenderContext(context);
+                    Results results = getResults();
+                    renderContext.setResults(results);
+                    ResultSet rs = results.getResultSet();
+                    ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
+                    try
                     {
-                        out.write("<tr><td>");
-//                        String value = (String)results.getRowMap().get(columnInfo.getColumnName());
-                        renderContext.setRow(factory.getRowMap(rs));
-                        dataColumn.renderGridCellContents(renderContext, out);
-                        out.write("</td></tr>");
+                        while (rs.next())
+                        {
+                            out.write("<tr><td>");
+                            renderContext.setRow(factory.getRowMap(rs));
+                            dataColumn.renderGridCellContents(renderContext, out);
+                            out.write("</td></tr>");
+                            seenAtLeastOne = true;
+                        }
+                    }
+                    finally
+                    {
+                        ResultSetUtil.close(results);
                     }
                 }
-                finally
-                {
-                    ResultSetUtil.close(results);
-                }
+                if (!seenAtLeastOne)
+                    out.write("<tr><td>No query results.</td></tr>");
                 out.write("</table>");
             }
         };
