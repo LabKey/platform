@@ -90,6 +90,16 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             return false;
         }
     };
+    public static final DisplayColumnFactory NOWRAP_FACTORY = new DisplayColumnFactory()
+    {
+        public DisplayColumn createRenderer(ColumnInfo colInfo)
+        {
+            DataColumn dataColumn = new DataColumn(colInfo);
+            dataColumn.setNoWrap(true);
+            return dataColumn;
+        }
+    };
+
 
     private static final Logger _log = Logger.getLogger(ColumnInfo.class);
     @SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
