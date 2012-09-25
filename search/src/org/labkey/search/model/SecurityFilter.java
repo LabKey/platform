@@ -59,7 +59,7 @@ class SecurityFilter extends Filter
 
         if (recursive)
         {
-            Set<Container> containers = ContainerManager.getAllChildren(searchRoot, user);
+            List<Container> containers = ContainerManager.getAllChildren(searchRoot, user);
             containerIds = new HashMap<String, Container>(containers.size());
 
             for (Container c : containers)

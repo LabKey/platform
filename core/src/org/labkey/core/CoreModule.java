@@ -157,6 +157,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -337,7 +338,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                         return view;
                     }
                 },
-                new AlwaysAvailableWebPartFactory("Customize Menu", WebPartFactory.LOCATION_MENUBAR, true, false) {
+                new AlwaysAvailableWebPartFactory("Custom Menu", WebPartFactory.LOCATION_MENUBAR, true, false) {
                     public WebPartView getWebPartView(final ViewContext portalCtx, Portal.WebPart webPart) throws Exception
                     {
                         final CustomizeMenuForm form = AdminController.getCustomizeMenuForm(webPart);
@@ -348,79 +349,16 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                         WebPartView view = null;
                         if (form.isChoiceListQuery())
                         {
-                            QueryView queryView = createMenuQueryView(portalCtx, title, form);
-                            if (queryView != null)
-                            {
-                                view = queryView;
-                            }
-                            else
-                            {
-                                view = new WebPartView(title) {
-                                    @Override
-                                    protected void renderView(Object model, PrintWriter out) throws Exception
-                                    {
-                                        out.write("<table style='width:50'><tr><td style='vertical-align:top;padding:4px'>");
-                                        out.write("No schema or query selected.");
-                                        out.write("</td></tr></table>");
-                                    }
-                                };
-                            }
+                            view = createMenuQueryView(portalCtx, title, form);
                         }
                         else
                         {
-                            Container rootFolder = ContainerManager.getForPath(form.getRootFolder());
-                            final User user = portalCtx.getUser();
-                            Collection<Container> containersTemp = null;
-                            if (form.isIncludeAllDescendants())
-                            {
-                                Set<Container> containerSet = ContainerManager.getAllChildren(rootFolder, user);
-                                containersTemp = containerSet;
-                            }
-                            else
-                            {
-                                List<Container> containerList = ContainerManager.getChildren(rootFolder, user, ReadPermission.class);
-                                containerList.add(rootFolder);
-                                containersTemp = containerList;
-                            }
-                            final Collection<Container> containers = containersTemp;
-
-                            final String filterFolderName = form.getFolderTypes();
-                            view = new WebPartView(title) {
-                                @Override
-                                protected void renderView(Object model, PrintWriter out) throws Exception
-                                {
-                                    boolean seenAtLeastOne = false;
-                                    out.write("<table style='width:50'>");
-                                    for (Container container : containers)
-                                    {
-                                        if (null == StringUtils.trimToNull(filterFolderName) ||
-                                                "[none]".equals(filterFolderName) ||
-                                                container.getFolderType().getName().equals(filterFolderName))
-                                        {
-                                            ActionURL url = container.getStartURL(user);
-                                            if (null != url)
-                                            {
-                                                out.write("<tr><td><a href=\"");
-                                                out.write(PageFlowUtil.filter(url));
-                                                out.write("\">");
-                                                out.write(container.getName());
-                                                out.write("</a></td></tr>");
-                                                seenAtLeastOne = true;
-                                            }
-                                        }
-                                    }
-
-                                    if (!seenAtLeastOne)
-                                        out.write("<tr><td>No folders selected.</td></tr>");
-                                    out.write("</table>");
-                                }
-                            };
+                            view = createMenuFolderView(portalCtx, title, form);
                         }
                         view.setFrame(WebPartView.FrameType.PORTAL);
                         return view;
-
-
                     }
+
                     public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
                     {
                         CustomizeMenuForm form = AdminController.getCustomizeMenuForm(webPart);
@@ -433,89 +371,182 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ));
     }
 
-    private QueryView createMenuQueryView(final ViewContext context, String title, final CustomizeMenuForm form)
+    private WebPartView createMenuQueryView(final ViewContext context, String title, final CustomizeMenuForm form)
     {
         Container container = context.getContainer();
         if (null != StringUtils.trimToNull(form.getFolderName()))
             container = ContainerManager.getForPath(form.getFolderName());
         String schemaName = StringUtils.trimToNull(form.getSchemaName());
-        if (null == schemaName)
-            return null;
+        if (null != schemaName)
+        {
+            UserSchema schema = QueryService.get().getUserSchema(context.getUser(), container, schemaName);
+            if (null == schema)
+                throw new IllegalArgumentException("Schema '" + schemaName + "' could not be found.");
 
-        UserSchema schema = QueryService.get().getUserSchema(context.getUser(), container, schemaName);
-        if (null == schema)
-            throw new IllegalArgumentException("Schema '" + schemaName + "' could not be found.");
+            QuerySettings settings = new QuerySettings(context, null, form.getQueryName());
 
-        QuerySettings settings = new QuerySettings(context, null, form.getQueryName());
+            //need to explicitly turn off various UI options that will try to refer to the
+            //current URL and query string
+            settings.setAllowChooseQuery(false);
+            settings.setAllowChooseView(false);
+            settings.setAllowCustomizeView(false);
 
-        //need to explicitly turn off various UI options that will try to refer to the
-        //current URL and query string
-        settings.setAllowChooseQuery(false);
-        settings.setAllowChooseView(false);
-        settings.setAllowCustomizeView(false);
+            settings.setShowRows(ShowRows.PAGINATED);
+            settings.setMaxRows(100);
+            settings.setViewName(form.getViewName());
 
-        settings.setShowRows(ShowRows.PAGINATED);
-        settings.setMaxRows(100);
-        settings.setViewName(form.getViewName());
+            QueryView view = new QueryView(schema, settings, null)
+            {
+                @Override
+                protected void renderDataRegion(PrintWriter out) throws Exception
+                {
+                    boolean seenAtLeastOne = false;
+                    out.write("<table style='width:50'>");
+                    TableInfo tableInfo = getTable();
+                    if (null != tableInfo)
+                    {
+                        ColumnInfo columnInfo = tableInfo.getColumn(form.getColumnName());
+                        String urlBase = form.getUrlBottom();
+                        if (urlBase != null && !urlBase.contentEquals(""))
+                            columnInfo.setURL(StringExpressionFactory.createURL(form.getUrlBottom()));
+                        DataColumn dataColumn = new DataColumn(columnInfo, false);
 
-        QueryView view = new QueryView(schema, settings, null)
+                        RenderContext renderContext = new RenderContext(context);
+                        Results results = getResults();
+                        renderContext.setResults(results);
+                        ResultSet rs = results.getResultSet();
+                        ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
+                        try
+                        {
+                            while (rs.next())
+                            {
+                                out.write("<tr><td>");
+                                renderContext.setRow(factory.getRowMap(rs));
+                                dataColumn.renderGridCellContents(renderContext, out);
+                                out.write("</td></tr>");
+                                seenAtLeastOne = true;
+                            }
+                        }
+                        finally
+                        {
+                            ResultSetUtil.close(results);
+                        }
+                    }
+                    if (!seenAtLeastOne)
+                        out.write("<tr><td>No query results.</td></tr>");
+                    out.write("</table>");
+                }
+            };
+            view.setTitle(title);
+
+            view.setShowBorders(false);
+            view.setShowConfiguredButtons(false);
+            view.setShowDeleteButton(false);
+            view.setShowDetailsColumn(false);
+            view.setShowExportButtons(false);
+            view.setShowFilterDescription(false);
+            view.setShowImportDataButton(false);
+            view.setShowInsertNewButton(false);
+            view.setShowPaginationCount(false);
+            view.setAllowExportExternalQuery(false);
+            view.setShowSurroundingBorder(false);
+            view.setShowPaginationCount(false);
+            view.setShowPagination(false);
+            return view;
+        }
+        else
+        {
+            WebPartView view = new WebPartView(title) {
+                @Override
+                protected void renderView(Object model, PrintWriter out) throws Exception
+                {
+                    out.write("<table style='width:50'><tr><td style='vertical-align:top;padding:4px'>");
+                    out.write("No schema or query selected.");
+                    out.write("</td></tr></table>");
+                }
+            };
+            return view;
+        }
+    }
+
+    private WebPartView createMenuFolderView(final ViewContext context, String title, final CustomizeMenuForm form)
+    {
+        Container rootFolder = ContainerManager.getForPath(form.getRootFolder());
+        final User user = context.getUser();
+        List<Container> containersTemp = null;
+        if (form.isIncludeAllDescendants())
+        {
+            containersTemp = ContainerManager.getAllChildren(rootFolder, user);
+        }
+        else
+        {
+            containersTemp = ContainerManager.getChildren(rootFolder, user, ReadPermission.class);
+            containersTemp.add(rootFolder);
+        }
+
+        Collections.sort(containersTemp, new Comparator<Container>()
         {
             @Override
-            protected void renderDataRegion(PrintWriter out) throws Exception
+            public int compare(Container container1, Container container2)
             {
+                return container1.getName().compareToIgnoreCase(container2.getName());
+            }
+        });
+
+        final Collection<Container> containers = containersTemp;
+
+        WebPartView view = new WebPartView(title) {
+            @Override
+            protected void renderView(Object model, PrintWriter out) throws Exception
+            {
+                final String filterFolderName = form.getFolderTypes();
+                StringExpression expr = null;
+                String urlBase = form.getUrlBottom();
+                if (null != StringUtils.trimToNull(urlBase))
+                {
+                    expr = StringExpressionFactory.createURL(form.getUrlBottom());
+                }
+
                 boolean seenAtLeastOne = false;
                 out.write("<table style='width:50'>");
-                TableInfo tableInfo = getTable();
-                if (null != tableInfo)
+                for (Container container : containers)
                 {
-                    ColumnInfo columnInfo = tableInfo.getColumn(form.getColumnName());
-                    String urlBase = form.getUrlBottom();
-                    if (urlBase != null && !urlBase.contentEquals(""))
-                        columnInfo.setURL(StringExpressionFactory.createURL(form.getUrlBottom()));
-                    DataColumn dataColumn = new DataColumn(columnInfo, false);
-
-                    RenderContext renderContext = new RenderContext(context);
-                    Results results = getResults();
-                    renderContext.setResults(results);
-                    ResultSet rs = results.getResultSet();
-                    ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
-                    try
+                    if (null == StringUtils.trimToNull(filterFolderName) ||
+                            "[none]".equals(filterFolderName) ||
+                            container.getFolderType().getName().equals(filterFolderName))
                     {
-                        while (rs.next())
+                        String uri = null;
+
+                        if (null != expr)
                         {
-                            out.write("<tr><td>");
-                            renderContext.setRow(factory.getRowMap(rs));
-                            dataColumn.renderGridCellContents(renderContext, out);
-                            out.write("</td></tr>");
+                            ActionURL actionURL = new ActionURL(expr.getSource());
+                            actionURL.setContainer(container);
+                            uri = actionURL.getURIString();
+                        }
+                        else
+                        {
+                            ActionURL actionURL = container.getStartURL(user);
+                            if (null != actionURL)
+                                uri = actionURL.getURIString();
+                        }
+
+                        if (null != uri)
+                        {
+                            out.write("<tr><td><a href=\"");
+                            out.write(uri);
+                            out.write("\">");
+                            out.write(container.getName());
+                            out.write("</a></td></tr>");
                             seenAtLeastOne = true;
                         }
                     }
-                    finally
-                    {
-                        ResultSetUtil.close(results);
-                    }
                 }
+
                 if (!seenAtLeastOne)
-                    out.write("<tr><td>No query results.</td></tr>");
+                    out.write("<tr><td>No folders selected.</td></tr>");
                 out.write("</table>");
             }
         };
-        view.setTitle(title);
-
-        view.setShowBorders(false);
-        view.setShowConfiguredButtons(false);
-        view.setShowDeleteButton(false);
-        view.setShowDetailsColumn(false);
-        view.setShowExportButtons(false);
-        view.setShowFilterDescription(false);
-        view.setShowImportDataButton(false);
-        view.setShowInsertNewButton(false);
-        view.setShowPaginationCount(false);
-        view.setAllowExportExternalQuery(false);
-        view.setShowSurroundingBorder(false);
-        view.setShowPaginationCount(false);
-        view.setShowPagination(false);
-
         return view;
     }
 

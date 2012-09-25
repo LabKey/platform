@@ -986,7 +986,7 @@ public class CoreController extends SpringActionController
             }
 
             // Make sure not attempting to make parent a child. Might need to do this with permission bypass.
-            Set<Container> children = ContainerManager.getAllChildren(target, getUser()); // assumes read permission
+            List<Container> children = ContainerManager.getAllChildren(target, getUser()); // assumes read permission
             if (children.contains(parent))
             {
                 errors.reject(ERROR_MSG, "The container '" + parentIdentifier + "' is not a valid parent folder.");
