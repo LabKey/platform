@@ -232,27 +232,16 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             }
         });
 
-        List<String> possibleRoots = new ArrayList<String>();
-        if (null != getSourcePath())
-            possibleRoots.add(getSourcePath() + "/../../..");
-        if (null != System.getProperty("project.root"))
-            possibleRoots.add(System.getProperty("project.root"));
-
-        for (String root : possibleRoots)
+        String projectRoot = AppProps.getInstance().getProjectRoot();
+        if (projectRoot != null)
         {
-            File projectRoot = new File(root);
-            if (projectRoot.exists())
+            File root = new File(projectRoot);
+            if (root.isDirectory())
             {
-                AppProps.getInstance().setProjectRoot(FileUtil.getAbsoluteCaseSensitiveFile(projectRoot).toString());
-
-                root = AppProps.getInstance().getProjectRoot();
                 ResourceFinder api = new ResourceFinder("API", root + "/server/api", root + "/build/modules/api");
                 ModuleLoader.getInstance().registerResourcePrefix("/org/labkey/api", api);
                 ResourceFinder internal = new ResourceFinder("Internal", root + "/server/internal", root + "/build/modules/internal");
                 ModuleLoader.getInstance().registerResourcePrefix("/org/labkey/api", internal);
-
-                // set the root only once
-                break;
             }
         }
 
@@ -903,13 +892,18 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         List<File> resources = super.getResourceDirectories();
 
         String root = AppProps.getInstance().getProjectRoot();
-
-        resources.add(new File(root + "/server/api"));
-        resources.add(new File(root + "/server/internal"));
-        if (AppProps.getInstance().isDevMode())
+        if (root != null)
         {
-            resources.add(new File(root + "/build/modules/api"));
-            resources.add(new File(root + "/build/modules/internal"));
+            resources.add(new File(root + "/server/api"));
+            resources.add(new File(root + "/server/internal"));
+            if (AppProps.getInstance().isDevMode())
+            {
+                resources.add(new File(root + "/server/api/src"));
+                resources.add(new File(root + "/server/internal/src"));
+
+                resources.add(new File(root + "/build/modules/api"));
+                resources.add(new File(root + "/build/modules/internal"));
+            }
         }
 
         return resources;
