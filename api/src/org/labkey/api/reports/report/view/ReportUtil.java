@@ -27,6 +27,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.query.CustomView;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
@@ -43,8 +44,6 @@ import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.model.ViewInfo;
 import org.labkey.api.reports.report.ChartReportDescriptor;
-import org.labkey.api.reports.report.ModuleRReportDescriptor;
-import org.labkey.api.reports.report.RedirectReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
@@ -75,7 +74,6 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -579,7 +577,7 @@ public class ReportUtil
 
             if (includeQueries)
             {
-                for (CustomViewInfo view : QueryService.get().getCustomViewInfos(user, c, schemaName, queryName))
+                for (CustomView view : QueryService.get().getCustomViews(user, c, schemaName, queryName))
                 {
                     if (view.isHidden())
                         continue;

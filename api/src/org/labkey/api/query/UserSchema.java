@@ -32,10 +32,11 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.UnauthorizedException;
@@ -146,7 +147,7 @@ abstract public class UserSchema extends AbstractSchema
         if (!canReadSchema())
             throw new UnauthorizedException("Cannot read query " + getSchemaName() + "." + name + " in " + getContainer().getPath());
 
-        Pair<String,Boolean> key = new Pair(name.toLowerCase(),includeExtraMetadata);
+        Pair<String,Boolean> key = new Pair<String, Boolean>(name.toLowerCase(), includeExtraMetadata);
         boolean useCache = _cacheTableInfos && !forWrite;
         Object torq = null;
 
@@ -537,6 +538,19 @@ abstract public class UserSchema extends AbstractSchema
     public String getDomainURI(String queryName)
     {
         return null;
+    }
+
+    /**
+     * Get a list of module custom view definitions for the schema/query from all modules or only the active modules in the container.
+     * The list is cached in production mode.
+     * @param container Used to determine active modules.
+     * @param qd The query to which the views are attached
+     */
+    public List<CustomView> getModuleCustomViews(Container container, QueryDefinition qd)
+    {
+        // Look under <ROOT>/queries/<SCHEMA_NAME>/<QUERY_NAME> for custom views (.qview.xml) files
+        Path path = new Path(QueryService.MODULE_QUERIES_DIRECTORY, FileUtil.makeLegalName(getName()), FileUtil.makeLegalName(qd.getName()));
+        return QueryService.get().getModuleCustomViews(container, qd, path);
     }
 
     /**

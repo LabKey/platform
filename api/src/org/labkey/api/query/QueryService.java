@@ -89,7 +89,6 @@ abstract public class QueryService
 
     abstract public UserSchema getUserSchema(User user, Container container, String schema);
     abstract public List<CustomView> getCustomViews(User user, Container container, String schema, String query);
-    abstract public List<CustomViewInfo> getCustomViewInfos(User user, Container container, String schema, String query);
     abstract public CustomView getCustomView(User user, Container container, String schema, String query, String name);
     abstract public int importCustomViews(User user, Container container, VirtualFile viewDir) throws XmlValidationException, IOException;
     abstract public void updateCustomViewsAfterRename(@NotNull Container c, @NotNull String schema,
@@ -169,6 +168,14 @@ abstract public class QueryService
      */
     abstract public SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, int rowCount, long offset, boolean forceSort);
 
+    /**
+     * Gets all of the custom views from the given relative path defined in the set of active modules for the
+     * given container.
+     * @param container Container to use to figure out the set of active modules
+     * @param qd the query for which views should be fetched
+     * @param path the relative path within the module to check for custom views
+     */
+    public abstract List<CustomView> getModuleCustomViews(Container container, QueryDefinition qd, Path path);
 
     public interface QueryListener
     {
