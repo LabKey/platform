@@ -76,8 +76,9 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
             if (null != c && c.isUserEditable() || (null != c && c.getName().equals("TimepointType") && study.isEmptyStudy()))
                 updateRow.put(entry.getKey(), entry.getValue());
         }
+        if (!updateRow.isEmpty())
+            Table.update(user, table.getRealTable(), updateRow, study.getContainer().getId());
 
-        Table.update(user, table.getRealTable(), updateRow, study.getContainer().getId());
         StudyManager.getInstance().clearCaches(container, false);
 
         return getRow(user, container, null);
