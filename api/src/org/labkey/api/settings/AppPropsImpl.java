@@ -16,6 +16,7 @@
 package org.labkey.api.settings;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.module.ModuleLoader;
@@ -461,7 +462,7 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     }
 
     // Return the root of the main source tree
-    public String getProjectRoot()
+    public @Nullable String getProjectRoot()
     {
         return _projectRoot;
     }

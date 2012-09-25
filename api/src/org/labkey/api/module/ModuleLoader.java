@@ -111,7 +111,6 @@ public class ModuleLoader implements Filter
     private static final Map<String, Module> _controllerNameToModule = new HashMap<String, Module>();
     private static final Map<Package, String> _packageToPageFlowURL = new HashMap<Package, String>();
     private static final Map<String, Module> _schemaNameToModule = new HashMap<String, Module>();
-    private static final Map<String, Module> _resourcePrefixToModule = new ConcurrentHashMap<String, Module>();
     private static final Map<String, Collection<ResourceFinder>> _resourceFinders = new ConcurrentHashMap<String, Collection<ResourceFinder>>();
     private static final Map<Class, Class<? extends UrlProvider>> _urlProviderToImpl = new HashMap<Class, Class<? extends UrlProvider>>();
     private static final CoreSchema _core = CoreSchema.getInstance();
@@ -279,6 +278,12 @@ public class ModuleLoader implements Filter
         ModuleDependencySorter sorter = new ModuleDependencySorter();
         _modules = sorter.sortModulesByDependencies(_modules, _resourceLoaders);
 
+        // set the project source root before calling .initialize() on modules
+        Module coreModule = _modules.get(0);
+        if (coreModule == null || !DefaultModule.CORE_MODULE_NAME.equals(coreModule.getName()))
+            throw new IllegalStateException("Core module was not first or could not find the Core module. Ensure that Tomcat user can create directories under the <LABKEY_HOME>/modules directory.");
+        setProjectRoot(coreModule);
+
         //initialize each module in turn
         for (Module module : _modules)
         {
@@ -298,11 +303,6 @@ public class ModuleLoader implements Filter
         // Start up a thread that lets us hit a breakpoint in the debugger, even if
         // all the real working threads are hung. This lets us invoke methods in the debugger,
         // gain easier access to statics, etc.
-        Module coreModule = getCoreModule();
-        if (coreModule == null)
-        {
-            throw new IllegalStateException("Could not find the Core module. Ensure that Tomcat user can create directories under the <LABKEY_HOME>/modules directory.");
-        }
         File coreModuleDir = coreModule.getExplodedPath();
         File modulesDir = coreModuleDir.getParentFile();
         new BreakpointThread(modulesDir).start();
@@ -362,6 +362,27 @@ public class ModuleLoader implements Filter
         }
 
         _log.info("Core LabKey Server startup is complete, modules will be initialized after the first HTTP/HTTPS request");
+    }
+
+    // Set the project source root based upon the core module's source path or the project.root system property.
+    private void setProjectRoot(Module core)
+    {
+        List<String> possibleRoots = new ArrayList<String>();
+        if (null != core.getSourcePath())
+            possibleRoots.add(core.getSourcePath() + "/../../..");
+        if (null != System.getProperty("project.root"))
+            possibleRoots.add(System.getProperty("project.root"));
+
+        for (String root : possibleRoots)
+        {
+            File projectRoot = new File(root);
+            if (projectRoot.exists())
+            {
+                AppProps.getInstance().setProjectRoot(FileUtil.getAbsoluteCaseSensitiveFile(projectRoot).toString());
+                // set the root only once
+                break;
+            }
+        }
     }
 
     /** We want to roll the file every time the server starts, which isn't directly supported by Log4J so we do it manually */
@@ -1198,23 +1219,6 @@ public class ModuleLoader implements Filter
     }
 
 
-    public void registerResourcePrefix(String prefix, Module module)
-    {
-        if (null == prefix)
-            return;
-
-        synchronized(_resourcePrefixToModule)
-        {
-            // If prefix is a substring of an existing path or vice versa, throw an exception
-            for (Map.Entry<String, Module> e : _resourcePrefixToModule.entrySet())
-                if (prefix.startsWith(e.getKey()) || e.getKey().startsWith(prefix))
-                    throw new RuntimeException(module.getName() + " module's resource path (" + prefix + ") overlaps with " + e.getValue().getName() + " module's resource path (" + e.getKey() + ")");
-
-            _resourcePrefixToModule.put(prefix, module);
-        }
-    }
-
-
     public void registerResourcePrefix(String prefix, ResourceFinder finder)
     {
         if (null == prefix)
@@ -1222,17 +1226,6 @@ public class ModuleLoader implements Filter
 
         synchronized(_resourceFinders)
         {
-            // First make sure there's no overlap with a different prefix
-            for (Map.Entry<String, Collection<ResourceFinder>> e : _resourceFinders.entrySet())
-            {
-                // We allow more than one finder with the same key (e.g., API and Internal have the same package)
-                if (!prefix.equals(e.getKey()))
-                {
-                    if (prefix.startsWith(e.getKey()) || e.getKey().startsWith(prefix))
-                        throw new RuntimeException(finder.getName() + " prefix (" + prefix + ") overlaps with existing prefix (" + e.getKey() + ")");
-                }
-            }
-
             Collection<ResourceFinder> col = _resourceFinders.get(prefix);
 
             if (null == col)
@@ -1250,20 +1243,32 @@ public class ModuleLoader implements Filter
         //NOTE: jasper encodes underscores in JSPs, so decode this here
         path = path.replaceAll("_005f", "_");
 
+        boolean firstMultiple = true;
+        Collection<ResourceFinder> finders = null;
         for (Map.Entry<String, Collection<ResourceFinder>> e : _resourceFinders.entrySet())
+        {
             if (path.startsWith(e.getKey()))
-                return e.getValue();
+            {
+                if (finders == null)
+                {
+                    finders = e.getValue();
+                }
+                else
+                {
+                    // Combine all ResourceFinders that match the path prefix.
+                    if (firstMultiple)
+                    {
+                        // First time we find multiple matches, create a new LinkedList.
+                        // On subsequent matches we just append to the existing LinkedList.
+                        finders = new LinkedList<ResourceFinder>(finders);
+                        firstMultiple = false;
+                    }
+                    finders.addAll(e.getValue());
+                }
+            }
+        }
 
-        return null;
-    }
-
-    public Module getModuleForResourcePath(String path)
-    {
-        for (Map.Entry<String, Module> e : _resourcePrefixToModule.entrySet())
-            if (path.startsWith(e.getKey()))
-                return e.getValue();
-
-        return null;
+        return finders;
     }
 
     public Resource getResource(Path path)
