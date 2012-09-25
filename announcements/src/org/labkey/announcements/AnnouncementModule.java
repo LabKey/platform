@@ -82,15 +82,14 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
 
     private static Logger _log = Logger.getLogger(AnnouncementModule.class);
 
-    public String getName()
+
+    public AnnouncementModule()
     {
-        return "Announcements";
+        setName("Announcements");
+        setDescription("Message Board and Discussion Service");
+        setVersion(12.20);
     }
 
-    public double getVersion()
-    {
-        return 12.20;
-    }
 
     protected void init()
     {

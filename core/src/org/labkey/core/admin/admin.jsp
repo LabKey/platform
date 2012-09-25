@@ -30,6 +30,7 @@
 <%@ page import="org.labkey.core.user.UserController" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<AdminController.AdminBean> me = (HttpView<AdminController.AdminBean>) HttpView.currentView();
@@ -90,10 +91,10 @@
 %>
     <tr><td colspan="2"><b>Core Database Configuration</b></td></tr>
     <tr><td class="labkey-form-label">Server URL</td><td id="databaseServerURL"><%=h(bean.scope.getURL())%></td></tr>
-    <tr><td class="labkey-form-label">Product Name</td><td id="databaseProductName"><%=bean.scope.getDatabaseProductName() %></td></tr>
-    <tr><td class="labkey-form-label">Product Version</td><td id="databaseProductVersion"><%=bean.scope.getDatabaseProductVersion() %></td></tr>
-    <tr><td class="labkey-form-label">JDBC Driver Name</td><td id="databaseDriverName"><%=bean.scope.getDriverName() %></td></tr>
-    <tr><td class="labkey-form-label">JDBC Driver Version</td><td id="databaseDriverVersion"><%=bean.scope.getDriverVersion() %></td></tr><%
+    <tr><td class="labkey-form-label">Product Name</td><td id="databaseProductName"><%=h(bean.scope.getDatabaseProductName())%></td></tr>
+    <tr><td class="labkey-form-label">Product Version</td><td id="databaseProductVersion"><%=h(bean.scope.getDatabaseProductVersion())%></td></tr>
+    <tr><td class="labkey-form-label">JDBC Driver Name</td><td id="databaseDriverName"><%=h(bean.scope.getDriverName())%></td></tr>
+    <tr><td class="labkey-form-label">JDBC Driver Version</td><td id="databaseDriverVersion"><%=h(bean.scope.getDriverVersion())%></td></tr><%
     if (null != location)
     {
         %><tr><td class="labkey-form-label">JDBC Driver Location</td><td id="databaseDriverLocation"><%=h(location)%></td></tr><%
@@ -101,17 +102,17 @@
     %><tr><td>&nbsp;</td></tr>
 
     <tr><td colspan="2"><b>Runtime Information</b></td></tr>
-    <tr><td class="labkey-form-label">Mode</td><td><%=bean.mode%></td></tr>
-    <tr><td class="labkey-form-label">Asserts</td><td><%=bean.asserts%></td></tr>
-    <tr><td class="labkey-form-label">Servlet Container</td><td><%=bean.servletContainer%></td></tr>
-    <tr><td class="labkey-form-label">Java Runtime</td><td><%=bean.javaVersion%></td></tr>
-    <tr><td class="labkey-form-label">Java Home</td><td><%=bean.javaHome%></td></tr>
-    <tr><td class="labkey-form-label">Username</td><td><%=bean.userName%></td></tr>
-    <tr><td class="labkey-form-label">User Home Dir</td><td><%=bean.userHomeDir%></td></tr>
-    <tr><td class="labkey-form-label">Webapp Dir</td><td><%=bean.webappDir%></td></tr>
-    <tr><td class="labkey-form-label">OS</td><td><%=bean.osName%></td></tr>
-    <tr><td class="labkey-form-label">Working Dir</td><td><%=bean.workingDir%></td></tr>
-    <tr><td class="labkey-form-label">Server GUID</td><td><%=bean.serverGuid%></td></tr>
+    <tr><td class="labkey-form-label">Mode</td><td><%=h(bean.mode)%></td></tr>
+    <tr><td class="labkey-form-label">Asserts</td><td><%=h(bean.asserts)%></td></tr>
+    <tr><td class="labkey-form-label">Servlet Container</td><td><%=h(bean.servletContainer)%></td></tr>
+    <tr><td class="labkey-form-label">Java Runtime</td><td><%=h(bean.javaVersion)%></td></tr>
+    <tr><td class="labkey-form-label">Java Home</td><td><%=h(bean.javaHome)%></td></tr>
+    <tr><td class="labkey-form-label">Username</td><td><%=h(bean.userName)%></td></tr>
+    <tr><td class="labkey-form-label">User Home Dir</td><td><%=h(bean.userHomeDir)%></td></tr>
+    <tr><td class="labkey-form-label">Webapp Dir</td><td><%=h(bean.webappDir)%></td></tr>
+    <tr><td class="labkey-form-label">OS</td><td><%=h(bean.osName)%></td></tr>
+    <tr><td class="labkey-form-label">Working Dir</td><td><%=h(bean.workingDir)%></td></tr>
+    <tr><td class="labkey-form-label">Server GUID</td><td><%=h(bean.serverGuid)%></td></tr>
 
     <tr><td>&nbsp;</td></tr>
 </table>
@@ -125,7 +126,7 @@
     <tr class="labkey-header">
         <td valign="middle" width="9">
             <a id="<%= h(guid) %>" onclick="return toggleLink(this, false);">
-                <img src="<%= contextPath %>/_images/plus.gif">
+                <img src="<%= h(contextPath) %>/_images/plus.gif">
             </a>
         </td>
         <td>
@@ -135,14 +136,18 @@
     <tr style="display:none">
         <td width="9"></td>
         <td style="padding-left: 2em">
-            <table cellpadding="0"><%
+            <% if (!StringUtils.isEmpty(module.getDescription()))
+            {
+                %><div style="padding-left:6px;"><%=h(module.getDescription())%></div><%
+            }
+            %><table cellpadding="0"><%
                 for (Map.Entry<String, String> entry : new TreeMap<String, String>(module.getProperties()).entrySet())
-                {%>
-                <tr>
+                {
+                %><tr>
                     <td nowrap="true" class="labkey-form-label"><%=h(entry.getKey())%></td>
                     <td nowrap="true"><%=h(entry.getValue())%></td>
-                </tr>
-                <% } %>
+                </tr><%
+                } %>
             </table>
         </td>
     </tr><%

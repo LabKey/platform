@@ -32,10 +32,4 @@ public class DatasetsWebPartView extends JspView<Object>
         super("/org/labkey/study/view/datasets.jsp");
         setTitle("Datasets");
     }
-
-    @Override
-    protected void prepareWebPart(Object model) throws ServletException
-    {
-        super.prepareWebPart(model);
-    }
 }
