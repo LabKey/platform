@@ -40,7 +40,7 @@ public interface ExpRun extends ExpObject
     public File getFilePathRoot();
     public void setFilePathRoot(File filePathRoot);
     public void setProtocol(ExpProtocol protocol);
-    public void setJobId(int jobId);
+    public void setJobId(Integer jobId);
     public ExpProtocolApplication addProtocolApplication(User user, ExpProtocolAction action, ExpProtocol.ApplicationType type, String name);
     
     /** Stored in the exp.experimentrun table */
@@ -60,7 +60,7 @@ public interface ExpRun extends ExpObject
 
     List<ExpData> getDataOutputs();
     ExpData[] getAllDataUsedByRun();
-    public int getJobId();
+    public Integer getJobId();
 
     ExpProtocolApplication[] getProtocolApplications();
 
