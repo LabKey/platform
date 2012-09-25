@@ -34,7 +34,9 @@ public class VialTable extends BaseStudyTable
 
         addWrapColumn(getRealTable().getColumn("RowID")).setHidden(true);
         
-        addWrapColumn(getRealTable().getColumn("GlobalUniqueID"));
+        ColumnInfo guid = addWrapColumn(getRealTable().getColumn("GlobalUniqueID"));
+        guid.setDisplayColumnFactory(ColumnInfo.NOWRAP_FACTORY);
+
         addWrapColumn(getRealTable().getColumn("Volume"));
         ColumnInfo specimenCol = wrapColumn("Specimen", getRealTable().getColumn("SpecimenID"));
         specimenCol.setFk(new LookupForeignKey("RowId")

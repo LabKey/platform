@@ -40,7 +40,7 @@
 <form action="<%=h(buildURL(StudyController.UpdateQCStateAction.class))%>" method="POST">
     <input type="hidden" name="update" value="true" />
     <input type="hidden" name="datasetId" value="<%= bean.getDatasetId() %>" />
-    <input type="hidden" name="<%= DataRegionSelection.DATA_REGION_SELECTION_KEY %>" value="<%= bean.getDataRegionSelectionKey() %>" />
+    <input type="hidden" name="<%= h(DataRegionSelection.DATA_REGION_SELECTION_KEY) %>" value="<%= h(bean.getDataRegionSelectionKey()) %>" />
     <table>
         <tr>
             <th>New QC State</th>
@@ -52,7 +52,7 @@
                     {
                         boolean selected = bean.getNewState() != null && bean.getNewState().intValue() == state.getRowId();
                 %>
-                    <option value="<%= state.getRowId() %>" <%= selected ? "SELECTED" : "" %>><%= h(state.getLabel()) %></option>
+                    <option value="<%= state.getRowId() %>" <%= text(selected ? "SELECTED" : "") %>><%= h(state.getLabel()) %></option>
                 <%
                     }
                 %>

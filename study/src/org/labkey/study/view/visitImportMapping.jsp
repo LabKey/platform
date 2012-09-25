@@ -33,29 +33,29 @@
         <tr><td colspan="2">&nbsp;</td></tr><%
             if (!hasCustomMapping)
             {
-                out.print("<tr><td colspan=\"2\">The custom mapping is currently empty</td></tr>");
+                %><tr><td colspan="2">The custom mapping is currently empty</td></tr><%
             }
             else
             {
-                out.print("<tr><th align=\"left\">Name</th><th align=\"left\">Sequence Number Mapping</th></tr>");
+                %><tr><th align="left">Name</th><th align="left">Sequence Number Mapping</th></tr><%
 
                 for (VisitAlias alias : bean.getCustomMapping())
                 {
         %>
-            <tr><td><%=h(alias.getName())%></td><td><%=alias.getSequenceString()%></td></tr><%
+            <tr><td><%=h(alias.getName())%></td><td><%=h(alias.getSequenceString())%></td></tr><%
                 }
             }
         %>
         <tr><td>&nbsp;</td></tr>
         <tr>
-            <td colspan="2"><%=generateButton((hasCustomMapping ? "Replace" : "Import") + " Custom Mapping", StudyController.ImportVisitAliasesAction.class)%><%=hasCustomMapping ? "&nbsp;" + generateButton("Clear Custom Mapping", StudyController.ClearVisitAliasesAction.class) : ""%></td>
+            <td colspan="2"><%=generateButton((hasCustomMapping ? "Replace" : "Import") + " Custom Mapping", StudyController.ImportVisitAliasesAction.class)%><%=text(hasCustomMapping ? "&nbsp;" + generateButton("Clear Custom Mapping", StudyController.ClearVisitAliasesAction.class) : "")%></td>
         </tr>
         <tr><td colspan="2">&nbsp;</td></tr>
         <tr><th colspan="2" align="left">Standard Mapping</th></tr>
         <tr><td colspan="2">&nbsp;</td></tr><%
             if (bean.getStandardMapping().isEmpty())
             {
-                out.print("<tr><td colspan=\"2\">The standard mapping is currently empty</td></tr>");
+                %><tr><td colspan="2">The standard mapping is currently empty</td></tr><%
             }
             else
             {
@@ -72,19 +72,19 @@
 
                 if (gray)
                 {
-                    out.print("<tr><td colspan=\"3\">Grayed out rows below represent mappings that are overridden by custom mappings or previous standard mappings.</td></tr>");
-                    out.print("<tr><td colspan=\"3\">&nbsp;</td></tr>");
+                    %><tr><td colspan="3">Grayed out rows below represent mappings that are overridden by custom mappings or previous standard mappings.</td></tr>
+                    <tr><td colspan="3">&nbsp;</td></tr><%
                 }
 
-                out.print("<tr><th align=\"left\">Label</th><th align=\"left\">Sequence Number Mapping</th><th align=\"left\">Sequence Number Range</th></tr>");
+                %><tr><th align="left">Label</th><th align="left">Sequence Number Mapping</th><th align="left">Sequence Number Range</th></tr><%
 
                 for (VisitAlias alias : bean.getStandardMapping())
                 {
         %>
             <tr>
-                <td<%=alias.isOverridden() ? " class=\"labkey-mv\"" : ""%>><%=h(alias.getName())%></td>
-                <td<%=alias.isOverridden() ? " class=\"labkey-mv\"" : ""%>><%=h(alias.getSequenceNumString())%></td>
-                <td<%=alias.isOverridden() ? " class=\"labkey-mv\"" : ""%>><%=h(alias.getSequenceString())%></td>
+                <td<%=text(alias.isOverridden() ? " class=\"labkey-mv\"" : "")%>><%=h(alias.getName())%></td>
+                <td<%=text(alias.isOverridden() ? " class=\"labkey-mv\"" : "")%>><%=h(alias.getSequenceNumString())%></td>
+                <td<%=text(alias.isOverridden() ? " class=\"labkey-mv\"" : "")%>><%=h(alias.getSequenceString())%></td>
             </tr><%
                 }
             }

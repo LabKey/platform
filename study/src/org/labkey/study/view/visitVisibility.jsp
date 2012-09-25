@@ -40,7 +40,7 @@
         <tr>
             <td><%= visit.getRowId() %></td>
             <td>
-                <input type="text" size="40" name="label" value="<%= visit.getLabel() != null ? visit.getLabel() : "" %>">
+                <input type="text" size="40" name="label" value="<%= h(visit.getLabel()) %>">
             </td>
             <td>
                 <%
@@ -60,7 +60,7 @@
                         for (CohortImpl cohort : cohorts)
                         {
                     %>
-                        <option value="<%= cohort.getRowId()%>" <%= visit.getCohortId() != null && visit.getCohortId() == cohort.getRowId() ? "SELECTED" : ""%>>
+                        <option value="<%= cohort.getRowId()%>" <%= text(visit.getCohortId() != null && visit.getCohortId() == cohort.getRowId() ? "SELECTED" : "") %>>
                             <%= h(cohort.getLabel())%>
                         </option>
                     <%
@@ -79,14 +79,14 @@
                         {
                             String selected = (visit.getType() == type ? "selected" : "");
                             %>
-                            <option value="<%= type.getCode() %>" <%= selected %>><%= type.getMeaning() %></option>
+                            <option value="<%= type.getCode() %>" <%= text(selected) %>><%= h(type.getMeaning()) %></option>
                             <%
                         }
                     %>
                 </select>
             </td>
             <td>
-                <input type="checkbox" name="visible" <%= visit.isShowByDefault() ? "Checked" : "" %> value="<%= visit.getRowId() %>">
+                <input type="checkbox" name="visible" <%= text(visit.isShowByDefault() ? "Checked" : "") %> value="<%= visit.getRowId() %>">
                 <input type="hidden" name="ids" value="<%= visit.getRowId() %>">
             </td>
         </tr>

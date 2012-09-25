@@ -100,21 +100,21 @@ function orderModule(listName, hiddenElName, down)
             <td colspan="2">
                 <input type="checkbox"
                        name="explicitDisplayOrder"
-                       value="true" <%= displayEnabled ? "CHECKED" : "" %>
+                       value="true" <%= text(displayEnabled ? "CHECKED" : "") %>
                        onClick="document.reorder.displayOrderItems.disabled = !this.checked;">
                 Explicitly set display order
             </td>
             <td colspan="2">
                 <input type="checkbox"
                        name="explicitChronologicalOrder"
-                       value="true" <%= chronologicalEnabled ? "CHECKED" : "" %>
+                       value="true" <%= text(chronologicalEnabled ? "CHECKED" : "") %>
                        onClick="document.reorder.chronologicalOrderItems.disabled = !this.checked;">
                 Explicitly set chronological order
             </td>
         </tr>
         <tr>
             <td>
-                <select multiple name="displayOrderItems" size="<%= Math.min(visits.length, 25) %>" <%= displayEnabled ? "" : "DISABLED" %>>
+                <select multiple name="displayOrderItems" size="<%= Math.min(visits.length, 25) %>" <%= text(displayEnabled ? "" : "DISABLED") %>>
                 <%
                     boolean first = true;
                     StringBuilder orderedList = new StringBuilder();
@@ -132,7 +132,7 @@ function orderModule(listName, hiddenElName, down)
                         }
 
                         %>
-                        <option value="<%= visit.getRowId() %>"><%= desc.toString() %></option>
+                        <option value="<%= visit.getRowId() %>"><%= h(desc) %></option>
                         <%
                     }
                 %>
@@ -145,7 +145,7 @@ function orderModule(listName, hiddenElName, down)
             </td>
 
             <td>
-                <select multiple name="chronologicalOrderItems" size="<%= Math.min(visits.length, 25) %>" <%= chronologicalEnabled ? "" : "DISABLED" %>>
+                <select multiple name="chronologicalOrderItems" size="<%= Math.min(visits.length, 25) %>" <%= text(chronologicalEnabled ? "" : "DISABLED") %>>
                 <%
                     visits = getVisits(Visit.Order.CHRONOLOGICAL);
                     first = true;
@@ -164,7 +164,7 @@ function orderModule(listName, hiddenElName, down)
                         }
 
                         %>
-                        <option value="<%= visit.getRowId() %>"><%= desc.toString() %></option>
+                        <option value="<%= visit.getRowId() %>"><%= h(desc.toString()) %></option>
                         <%
                     }
                 %>

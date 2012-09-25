@@ -16,6 +16,7 @@
 
 package org.labkey.study.query;
 
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.study.StudySchema;
 
 /**
@@ -29,7 +30,8 @@ public class SpecimenEventTable extends BaseStudyTable
     {
         super(schema, StudySchema.getInstance().getTableInfoSpecimenEvent(), true);
 
-        addWrapColumn(_rootTable.getColumn("VialId"));
+        ColumnInfo vid = addWrapColumn(_rootTable.getColumn("VialId"));
+        vid.setDisplayColumnFactory(ColumnInfo.NOWRAP_FACTORY);
         addWrapColumn(_rootTable.getColumn("SpecimenNumber"));
         addWrapLocationColumn("LabId", "LabId").setLabel("Location");
         addWrapColumn(_rootTable.getColumn("Stored"));
