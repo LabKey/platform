@@ -44,6 +44,7 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -230,12 +231,6 @@ public class QueryServiceImpl extends QueryService
 
     private Map<Map.Entry<String, String>, QueryDefinition> getAllQueryDefs(User user, Container container, @Nullable String schemaName, boolean inheritable, boolean includeSnapshots)
     {
-        return getAllQueryDefs(user, container, schemaName, inheritable, includeSnapshots, false);
-    }
-
-    private Map<Map.Entry<String, String>, QueryDefinition> getAllQueryDefs(User user, Container container, @Nullable String schemaName,
-                                                                            boolean inheritable, boolean includeSnapshots, boolean allModules)
-    {
         Map<Map.Entry<String, String>, QueryDefinition> ret = new LinkedHashMap<Map.Entry<String, String>, QueryDefinition>();
 
         // session queries have highest priority
@@ -252,7 +247,7 @@ public class QueryServiceImpl extends QueryService
         // look in all the active modules in this container to see if they contain any query definitions
         if (null != schemaName)
         {
-            Collection<Module> modules = allModules ? ModuleLoader.getInstance().getModules() : container.getActiveModules();
+            Collection<Module> modules = container.getActiveModules();
 
             for (Module module : modules)
             {
@@ -356,14 +351,15 @@ public class QueryServiceImpl extends QueryService
     {
         Map<String, QueryDefinition> ret = new CaseInsensitiveHashMap<QueryDefinition>();
 
-        for (QueryDefinition queryDef : getAllQueryDefs(user, container, schema, true, true, false).values())
+        for (QueryDefinition queryDef : getAllQueryDefs(user, container, schema, true, true).values())
             ret.put(queryDef.getName(), queryDef);
 
         return ret.get(name);
     }
 
-    private Map<String, CustomView> getCustomViewMap(User user, Container container, String schema, String query) throws SQLException
+    private Map<String, CustomView> getCustomViewMap(User user, Container container, String schema, String query)
     {
+        // Check for a custom query that matches
         Map<Map.Entry<String, String>, QueryDefinition> queryDefs = getAllQueryDefs(user, container, schema, false, true);
         QueryDefinition qd = queryDefs.get(new Pair<String, String>(schema, query));
         if (qd == null)
@@ -371,6 +367,7 @@ public class QueryServiceImpl extends QueryService
             UserSchema userSchema = QueryService.get().getUserSchema(user, container, schema);
             if (userSchema != null)
             {
+                // Get the built-in query from the schema
                 qd = userSchema.getQueryDefForTable(query);
             }
         }
@@ -382,101 +379,42 @@ public class QueryServiceImpl extends QueryService
         return Collections.emptyMap();
     }
 
-    protected Map<String, CustomView> getCustomViewMap(@Nullable User user, Container container, QueryDefinition qd, boolean inheritable) throws SQLException
+    protected Map<String, CustomView> getCustomViewMap(@Nullable User user, Container container, QueryDefinition qd, boolean inheritable)
     {
         Map<String, CustomView> views = new HashMap<String, CustomView>();
 
-        // custom views in the database get highest precedence
-        for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, qd.getSchema().getName(), qd.getName(), user, inheritable))
-            addCustomView(views, cstmView, qd);
+        // module query views have lower precedence, so add them first
+        for (CustomView view : qd.getSchema().getModuleCustomViews(container, qd))
+        {
+            views.put(view.getName(), view);
+        }
 
-        // module query views have lower precedence
-        for (ModuleCustomViewDef viewDef : getModuleCustomViewDefs(container, qd.getSchema().getName(), qd.getName(), false))
-            addCustomView(views, viewDef, qd);
+        // custom views in the database get highest precedence, so let them overwrite the module-defined views in the map
+        for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, qd.getSchema().getName(), qd.getName(), user, inheritable))
+            views.put(cstmView.getName(), new CustomViewImpl(qd, cstmView));
 
         return views;
     }
 
-    private void addCustomView(Map<String, CustomView> views, CstmView cstmView, QueryDefinition qd)
-    {
-        if (qd instanceof QueryDefinitionImpl && !views.containsKey(cstmView.getName()))
-            views.put(cstmView.getName(), new CustomViewImpl(qd, cstmView));
-    }
-
-    private void addCustomView(Map<String, CustomView> views, ModuleCustomViewDef viewDef, QueryDefinition qd)
-    {
-        if (qd instanceof QueryDefinitionImpl && !views.containsKey(viewDef.getName()))
-            views.put(viewDef.getName(), new ModuleCustomView(qd, viewDef));
-    }
-
     public CustomView getCustomView(User user, Container container, String schema, String query, String name)
     {
-        try
-        {
-            Map<String, CustomView> views = getCustomViewMap(user, container, schema, query);
-            return views.get(name);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        Map<String, CustomView> views = getCustomViewMap(user, container, schema, query);
+        return views.get(name);
     }
 
     public List<CustomView> getCustomViews(User user, Container container, String schema, String query)
     {
-        try
-        {
-            Map<String, CustomView> views = getCustomViewMap(user, container, schema, query);
-            return new ArrayList<CustomView>(views.values());
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return new ArrayList<CustomView>(getCustomViewMap(user, container, schema, query).values());
     }
 
-    public List<CustomViewInfo> getCustomViewInfos(User user, Container container, String schema, String query)
+    public List<CustomView> getModuleCustomViews(Container container, QueryDefinition qd, Path path)
     {
-        try
-        {
-            Map<String, CustomViewInfo> views = new HashMap<String, CustomViewInfo>();
-            String key = StringUtils.defaultString(schema, "") + "-" + StringUtils.defaultString(query, "");
+        List<CustomView> customViews = new ArrayList<CustomView>();
 
-            for (ModuleCustomViewDef viewDef : getModuleCustomViewDefs(container, schema, query, false))
-                views.put(key + "-" + viewDef.getName(), new ModuleCustomViewInfo(viewDef));
+        String schema = qd.getSchema().getName();
+        String query = qd.getName();
 
-            // custom views in the database get highest precedence
-            for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, schema, query, user, true))
-                views.put(key + "-" + cstmView.getName(), new CustomViewInfoImpl(cstmView));
-
-            return new ArrayList<CustomViewInfo>(views.values());
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
-    }
-
-    /**
-     * Get a list of module custom view definitions for the schema/query from all modules or only the active modules in the container.
-     * The list is cached in production mode.
-     * @param container Used to determine active modules.
-     * @param schema The schema name
-     * @param query The query name
-     * @param allModules Get custom views from all modules when true, or just active modules when false.
-     * @return
-     */
-    private List<ModuleCustomViewDef> getModuleCustomViewDefs(Container container, String schema, String query, boolean allModules)
-    {
-        // XXX: null schema and query should search for all schema and query custom views to match .getAllCstmViews() behavior
-        if (schema == null || query == null)
-            return Collections.emptyList();
-
-        List<ModuleCustomViewDef> customViews = new ArrayList<ModuleCustomViewDef>();
-
-        Path path = new Path(MODULE_QUERIES_DIRECTORY, FileUtil.makeLegalName(schema), FileUtil.makeLegalName(query));
-        Collection<Module> modules = allModules ? ModuleLoader.getInstance().getModules() : container.getActiveModules();
-        for (Module module : modules)
+        for (Module module : container.getActiveModules())
         {
             Collection<? extends Resource> views;
 
@@ -521,7 +459,7 @@ public class QueryServiceImpl extends QueryService
                     }
 
                     if (moduleCustomViewDef != null)
-                        customViews.add(moduleCustomViewDef);
+                        customViews.add(new ModuleCustomView(qd, moduleCustomViewDef));
                 }
             }
         }
@@ -1236,7 +1174,7 @@ public class QueryServiceImpl extends QueryService
 
         SQLFragment sqlf = getSelectSQL(table, null, null, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
 
-		return Table.executeQuery(table.getSchema(), sqlf);
+		return new SqlSelector(table.getSchema(), sqlf).getResultSet();
 	}
 
 

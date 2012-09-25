@@ -37,11 +37,9 @@ import org.labkey.api.query.MetadataException;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
-import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ViewOptions;
 import org.labkey.api.security.User;
@@ -148,7 +146,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public CustomView getCustomView(@Nullable User owner, @Nullable HttpServletRequest request, String name)
     {
-        return getAllCustomViews(owner, request, true, false).get(name);
+        return getCustomViews(owner, request).get(name);
     }
 
     public CustomView createCustomView(@Nullable User owner, String name)
@@ -158,39 +156,20 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     public Map<String, CustomView> getCustomViews(@Nullable User owner, @Nullable HttpServletRequest request)
     {
-        return getAllCustomViews(owner, request, true);
-    }
-
-    private Map<String, CustomView> getAllCustomViews(@Nullable User owner, @Nullable HttpServletRequest request, boolean inheritable)
-    {
-        return getAllCustomViews(owner, request, inheritable, false);
-    }
-
-    private Map<String, CustomView> getAllCustomViews(@Nullable User owner, @Nullable HttpServletRequest request, boolean inheritable, boolean allModules)
-    {
         Map<String, CustomView> ret = new LinkedHashMap<String, CustomView>();
 
-        try
+        // Database custom view and module custom views.
+        ret.putAll(QueryServiceImpl.get().getCustomViewMap(owner, getContainer(), this, true));
+
+        // Session views have highest precedence.
+        if (owner != null && request != null)
         {
-            Container container = getContainer();
-
-            // Database custom view and module custom views.
-            ret.putAll(((QueryServiceImpl)QueryService.get()).getCustomViewMap(owner, container, this, inheritable));
-
-            // Session views have highest precedence.
-            if (owner != null && request != null)
+            for (CstmView view : CustomViewSetKey.getCustomViewsFromSession(request, this).values())
             {
-                for (CstmView view : CustomViewSetKey.getCustomViewsFromSession(request, this).values())
-                {
-                    CustomViewImpl v = new CustomViewImpl(this, view);
-                    v.isSession(true);
-                    ret.put(view.getName(), v);
-                }
+                CustomViewImpl v = new CustomViewImpl(this, view);
+                v.isSession(true);
+                ret.put(view.getName(), v);
             }
-        }
-        catch (SQLException e)
-        {
-            log.error("Error", e);
         }
 
         return ret;

@@ -184,7 +184,7 @@ public class QueryManager
         return view;
     }
 
-    public List<CstmView> getAllCstmViews(Container container, String schemaName, String queryName, @Nullable User user, boolean inheritable) throws SQLException
+    public List<CstmView> getAllCstmViews(Container container, String schemaName, String queryName, @Nullable User user, boolean inheritable)
     {
         List<CstmView> views = new ArrayList<CstmView>();
 
@@ -212,7 +212,7 @@ public class QueryManager
         return views;
     }
 
-    public CstmView[] getCstmViews(Container container, @Nullable String schemaName, @Nullable String queryName, @Nullable String viewName, @Nullable User user, boolean inheritableOnly) throws SQLException
+    public CstmView[] getCstmViews(Container container, @Nullable String schemaName, @Nullable String queryName, @Nullable String viewName, @Nullable User user, boolean inheritableOnly)
     {
         CstmView.Key key = new CstmView.Key(container);
         if (schemaName != null)
@@ -240,7 +240,7 @@ public class QueryManager
         return Table.insert(user, getTableInfoCustomView(), view);
     }
 
-    public void delete(User user, CstmView view) throws SQLException
+    public void delete(@Nullable User user, CstmView view) throws SQLException
     {
         Table.delete(getTableInfoCustomView(), view.getCustomViewId());
     }

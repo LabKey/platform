@@ -16,6 +16,7 @@
 
 package org.labkey.study.assay.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ColumnRenderProperties;
 import org.labkey.api.data.CompareType;
@@ -32,6 +33,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpExperimentTable;
 import org.labkey.api.exp.query.ExpRunTable;
+import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
@@ -39,6 +41,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PropertyForeignKey;
+import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
@@ -55,6 +58,7 @@ import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.assay.StudyContainerFilter;
 import org.labkey.api.study.query.ResultsQueryView;
 import org.labkey.api.study.query.RunListQueryView;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpressionFactory;
@@ -239,7 +243,7 @@ public class AssaySchemaImpl extends AssaySchema
     }
 
 
-    private ExpExperimentTable createBatchesTable(ExpProtocol protocol, AssayProvider provider, final ContainerFilter containerFilter)
+    private ExpExperimentTable createBatchesTable(ExpProtocol protocol, AssayProvider provider, @Nullable final ContainerFilter containerFilter)
     {
         final ExpExperimentTable result = ExperimentService.get().createExperimentTable(getBatchesTableName(protocol), this);
         result.populate();
@@ -408,6 +412,28 @@ public class AssaySchemaImpl extends AssaySchema
         col.setURL(fkse.remapFieldKeys(null, map));
     }
 
+    @Override
+    public List<CustomView> getModuleCustomViews(Container container, QueryDefinition qd)
+    {
+        List<CustomView> result = new ArrayList<CustomView>();
+
+        // Look for <MODULE>/assay/<ASSAY_TYPE>/queries/<TABLE_TYPE>/*.qview.xml files
+        // where TABLE_TYPE is Runs, Batches, Data, etc
+        for (Map.Entry<ExpProtocol, AssayProvider> entry : getProtocols().entrySet())
+        {
+            String providerTableType = getProviderTableType(entry.getKey(), qd.getName());
+            if (providerTableType != null)
+            {
+                Path path = new Path(ModuleAssayLoader.ASSAY_DIR_NAME, entry.getValue().getResourceName(), QueryService.MODULE_QUERIES_DIRECTORY, FileUtil.makeLegalName(providerTableType));
+                result.addAll(QueryService.get().getModuleCustomViews(container, qd, path));
+                break;
+            }
+        }
+
+        // Look in the standard location (based on the assay design name) for additional custom views
+        result.addAll(super.getModuleCustomViews(container, qd));
+        return result;
+    }
 
     private static void fixupPropertyURLs(ColumnInfo fk)
     {
