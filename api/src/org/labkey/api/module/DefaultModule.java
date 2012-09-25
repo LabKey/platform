@@ -80,6 +80,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     private ModuleResourceResolver _resolver;
     private String _name = null;
+    private String _description = null;
     private double _version = 0.0;
     private double _requiredServerVersion = 0.0;
     private Set<String> _moduleDependencies = new CaseInsensitiveHashSet();
@@ -483,6 +484,16 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     public void setName(String name)
     {
         _name = name;
+    }
+
+    public String getDescription()
+    {
+        return _description;
+    }
+
+    public void setDescription(String description)
+    {
+        _description = description;
     }
 
     public double getVersion()

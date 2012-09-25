@@ -72,6 +72,12 @@ public interface Module extends Comparable<Module>
     String getName();
 
     /**
+     * Description
+     */
+    @Nullable
+    public String getDescription();
+
+    /**
      * Name to show on the tab in the UI
      */
     public String getTabName(ViewContext context);
