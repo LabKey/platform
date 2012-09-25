@@ -65,7 +65,7 @@ public class DomainEditorServiceBase extends BaseRemoteService
     {
         try
         {
-            Set<Container> set = ContainerManager.getAllChildren(ContainerManager.getRoot(), getUser());
+            List<Container> set = ContainerManager.getAllChildren(ContainerManager.getRoot(), getUser());
             List<String> list = new ArrayList<String>();
             for (Container c : set)
             {

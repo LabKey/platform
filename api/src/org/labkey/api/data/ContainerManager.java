@@ -513,15 +513,15 @@ public class ContainerManager
     }
 
 
-    public static Set<Container> getAllChildren(Container parent, User u)
+    public static List<Container> getAllChildren(Container parent, User u)
     {
         return getAllChildren(parent, u, ReadPermission.class);
     }
     
 
-    public static Set<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm)
+    public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm)
     {
-        Set<Container> result = new HashSet<Container>();
+        List<Container> result = new ArrayList<Container>();
         Container[] containers = getAllChildren(parent);
 
         for (Container container : containers)

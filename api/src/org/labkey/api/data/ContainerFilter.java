@@ -24,6 +24,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -410,7 +411,7 @@ public abstract class ContainerFilter
 
         public Collection<String> getIds(Container currentContainer)
         {
-            Set<Container> containers = new HashSet<Container>(ContainerManager.getAllChildren(currentContainer, _user, _perm));
+            List<Container> containers = new ArrayList<Container>(ContainerManager.getAllChildren(currentContainer, _user, _perm));
             containers.add(currentContainer);
             return toIds(containers);
         }
@@ -779,7 +780,7 @@ public abstract class ContainerFilter
                 // Don't bother filtering, the user can see everything
                 return null;
             }
-            Set<Container> containers = ContainerManager.getAllChildren(ContainerManager.getRoot(), _user, _perm);
+            List<Container> containers = ContainerManager.getAllChildren(ContainerManager.getRoot(), _user, _perm);
             // To reduce the number of ids that need to be passed around, filter out workbooks. They'll get included
             // automatically because we always add them via the SQL that we generate
             Set<String> ids = new HashSet<String>();

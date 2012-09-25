@@ -288,7 +288,7 @@ function populateRootFolder(folderCombo, details)
 
 function populateFolderTypes(details, folderTypesCombo, rootFolderCombo, schemaCombo, queryCombo, viewCombo, columnCombo, folderCombo, includeSchema)
 {
-    var records = [["[none]",""]];
+    var records = [["[all]",""]];
 
     for (var folderType in details)
         records[records.length] = [folderType, folderType];
