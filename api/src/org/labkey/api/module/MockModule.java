@@ -93,6 +93,12 @@ public class MockModule implements Module
         return _name;
     }
 
+    @Override
+    public String getDescription()
+    {
+        return null;
+    }
+
     public String getTabName(ViewContext context)
     {
         return _name;
