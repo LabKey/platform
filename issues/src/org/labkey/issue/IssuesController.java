@@ -125,6 +125,7 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.mail.Address;
+import javax.mail.internet.AddressException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -1188,6 +1189,10 @@ public class IssuesController extends SpringActionController
                 }
             }
             catch (ConfigurationException e)
+            {
+                _log.error("error sending update email to " + to, e);
+            }
+            catch (AddressException e)
             {
                 _log.error("error sending update email to " + to, e);
             }

@@ -338,13 +338,10 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
         if (!query.getParseErrors().isEmpty())
         {
             String resolveURL = null;
-            if (null != ret)
-            {
-                ActionURL sourceURL = urlFor(QueryAction.sourceQuery);
-                if (sourceURL != null)
-                    resolveURL = sourceURL.getLocalURIString(false);
-            }
-            
+            ActionURL sourceURL = urlFor(QueryAction.sourceQuery);
+            if (sourceURL != null)
+                resolveURL = sourceURL.getLocalURIString(false);
+
             for (QueryException qe : query.getParseErrors())
             {
                 if (ExceptionUtil.decorateException(qe, ExceptionUtil.ExceptionInfo.ResolveURL, resolveURL, false))

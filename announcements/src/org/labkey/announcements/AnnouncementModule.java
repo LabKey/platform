@@ -100,6 +100,12 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         return 12.20;
     }
 
+    @Override
+    public void setVersion(double version)
+    {
+        super.setVersion(version);    //To change body of overridden methods use File | Settings | File Templates.
+    }
+
     protected void init()
     {
         addController("announcements", AnnouncementsController.class);

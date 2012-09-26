@@ -890,7 +890,7 @@ public class QueryServiceImpl extends QueryService
     }
 
 
-    public Collection<ColumnInfo> ensureRequiredColumns(TableInfo table, @NotNull Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, @Nullable Set<FieldKey> unresolvedColumns)
+    public Collection<ColumnInfo> ensureRequiredColumns(@NotNull TableInfo table, @NotNull Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, @Nullable Set<FieldKey> unresolvedColumns)
     {
         AliasManager manager = new AliasManager(table, columns);
         Set<FieldKey> selectedColumns = new HashSet<FieldKey>();

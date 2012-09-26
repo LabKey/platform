@@ -160,6 +160,9 @@ public class DataSetQueryView extends QueryView
         DataView view = super.createDataView();
         TableInfo table = view.getTable();
 
+        if (null == table)
+            throw new IllegalStateException("Could not create table from dataset: " + this._dataset.getName());
+
         view.getDataRegion().setShadeAlternatingRows(true);
         view.getDataRegion().setShowBorders(true);
         view.getDataRegion().setRecordSelectorValueColumns("lsid");

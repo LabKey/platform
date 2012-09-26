@@ -115,6 +115,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -531,6 +532,10 @@ public class DavController extends SpringActionController
                     assert null != ret || getResponse().getStatus() != null;
                     if (null != ret && 200 <= ret.code && ret.code < 300)
                         getResponse().setStatus(ret);
+                }
+                catch (SocketException ex)
+                {
+                    return null; // ignore
                 }
                 catch (IOException ex)
                 {

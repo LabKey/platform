@@ -31,7 +31,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.ModuleStaticResolverImpl;
 import org.labkey.api.webdav.WebdavResolverImpl;
-import org.labkey.api.webdav.WebdavService;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -47,6 +46,10 @@ public class WebdavServlet extends HttpServlet
     protected void service(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException
     {
+        if (null != _serverHeader)
+            response.setHeader("Server", _serverHeader);
+        response.setBufferSize(32768);
+
         String fullPath = (null==request.getServletPath()?"":request.getServletPath()) + (null==request.getPathInfo()?"":request.getPathInfo());
 
         URLHelper helper = new URLHelper(request);
@@ -105,7 +108,9 @@ public class WebdavServlet extends HttpServlet
             _resolver = WebdavResolverImpl.get();
         else
             throw new IllegalArgumentException("resolver");
+//        _serverHeader =  "Labkey/" + AppProps.getInstance().getLabkeyVersionString();
     }
 
     WebdavResolver _resolver;
+    String _serverHeader;
 }
