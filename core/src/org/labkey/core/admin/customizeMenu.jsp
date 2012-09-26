@@ -34,7 +34,6 @@
 <div id="someUniqueElement"></div>
 <div id="someUniqueElement2"></div>
 <script type="text/javascript">
-    LABKEY.requiresExt4Sandbox();
     LABKEY.requiresScript("viewPicker.js");
 
     var bean = <%= text(new JSONObject(bean).toString()) %>;
@@ -45,7 +44,7 @@
 
         var init = function()
         {
-            Ext4.QuickTips.init();
+            Ext.QuickTips.init();
 
             var submitFunction = function(params)
             {
@@ -61,13 +60,13 @@
                         LABKEY.Utils.displayAjaxErrorResponse(response, opts);
                     }
                 });
-            }
+            };
 
 
             var cancelFunction = function()
             {
                 window.location = LABKEY.ActionURL.buildURL('admin', 'projectSettings.view', null, {tabId : 'menubar'});
-            }
+            };
 
             var customizeForm = customizeMenu(submitFunction, cancelFunction, 'someUniqueElement2', bean);
 
@@ -75,13 +74,14 @@
                 if (!customizeForm.rendered)
                     return;
 
-                LABKEY.Utils.resizeToViewport(customizeForm, Math.min(w, 1000), h);
+                LABKEY.Utils.resizeToViewport(customizeForm, Math.min(w, 800));
             };
 
             Ext.EventManager.onWindowResize(_resize);
             Ext.EventManager.fireWindowResize();
 
-        }
-        Ext4.onReady(init);
+        };
+
+        Ext.onReady(init);
     })();
 </script>
