@@ -15,19 +15,31 @@
  */
 package org.labkey.api.view;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Level;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
+import org.labkey.api.query.QueryParseException;
+import org.labkey.api.security.User;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.springframework.validation.Errors;
 
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Set;
 
 
 public abstract class DataView extends WebPartView<RenderContext>
@@ -52,7 +64,7 @@ public abstract class DataView extends WebPartView<RenderContext>
     }
 
     
-    public DataView(DataRegion dataRegion, TableViewForm form, Errors errors)
+    public DataView(@Nullable DataRegion dataRegion, TableViewForm form, Errors errors)
     {
         this(dataRegion, errors);
         getRenderContext().setForm(form);
@@ -158,5 +170,74 @@ public abstract class DataView extends WebPartView<RenderContext>
     public String createVerifySelectedScript(ActionURL url, String objectsDescription)
     {
         return "if (verifySelected(" + getDataRegion().getJavascriptFormReference(false) + ", '" + url.getLocalURIString() + "', 'post', '" + objectsDescription + "')) { " + getDataRegion().getJavascriptFormReference(false) + ".submit(); }";
+    }
+
+    protected boolean verboseErrors()
+    {
+        return true;
+    }
+
+    /** TODO duplicated code in QueryView **/
+    protected void renderErrors(PrintWriter writer, String message, List<? extends Throwable> errors)
+    {
+        StringWriter out = new StringWriter();
+        out.write("<p class=\"labkey-error\">");
+        out.write(PageFlowUtil.filter(message));
+        out.write("</p>");
+
+        Set<String> seen = new HashSet<String>();
+
+        if (verboseErrors())
+        {
+            for (Throwable e : errors)
+            {
+                String queryName =   ExceptionUtil.getExceptionDecoration(e, ExceptionUtil.ExceptionInfo.QueryName);
+                String resolveURL =  ExceptionUtil.getExceptionDecoration(e, ExceptionUtil.ExceptionInfo.ResolveURL);
+                String resolveText = ExceptionUtil.getExceptionDecoration(e, ExceptionUtil.ExceptionInfo.ResolveText);
+
+                if (e instanceof QueryParseException)
+                {
+                    String msg = e.getMessage();
+                    if (!StringUtils.isEmpty(queryName) && !msg.contains(queryName))
+                        msg += " in query " + queryName;
+                    out.write(PageFlowUtil.filter(e.getMessage()));
+                }
+                else
+                {
+                    out.write(PageFlowUtil.filter(e.toString()));
+                }
+
+                if (null != resolveURL && seen.add(resolveURL))
+                {
+                    User user = getRenderContext().getViewContext().getUser();
+                    if (user.isAdministrator() || user.isDeveloper())
+                    {
+                        out.write("&nbsp;");
+                        out.write(PageFlowUtil.textLink(StringUtils.defaultString(resolveText, "resolve"), resolveURL));
+                    }
+                }
+                out.write("<br>");
+            }
+        }
+        writer.write(out.toString());
+    }
+
+
+    /**
+     * Since we're using user-defined sql, we can get a SQLException that
+     * doesn't indicate a bug in the product. Don't log to mothership,
+     * and tell the user what happened
+     */
+    @Override
+    protected void renderException(Throwable t, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException
+    {
+        if (t instanceof SQLException || t instanceof QueryParseException)
+        {
+            renderErrors(response.getWriter(), "View " + " has errors", Collections.singletonList(t));
+        }
+        else
+        {
+            super.renderException(t, request, response);
+        }
     }
 }

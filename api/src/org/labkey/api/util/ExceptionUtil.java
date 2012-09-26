@@ -680,6 +680,7 @@ public class ExceptionUtil
                 _exceptionDecorations.put(t, m = new HashMap<Enum,String>());
             if (overwrite || !m.containsKey(key))
             {
+                _logStatic.debug("add decoration to " + t.getClass() + "@" + System.identityHashCode(t) + " " + key + "=" + value);
                 m.put(key,value);
                 return true;
             }

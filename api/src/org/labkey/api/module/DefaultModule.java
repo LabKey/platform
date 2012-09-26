@@ -32,7 +32,6 @@ import org.labkey.api.data.SqlScriptRunner.SqlScript;
 import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.reports.report.*;
-import org.labkey.api.resource.AbstractResource;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurityManager;
@@ -482,6 +481,14 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     public void setName(String name)
     {
+        if (StringUtils.isEmpty(name))
+            return;
+        if (!StringUtils.isEmpty(_name))
+        {
+            if (!_name.equals(name))
+                _log.error("Attempt to change name of module from " + _name + " to " + name + ".");
+            return;
+        }
         _name = name;
     }
 
@@ -502,6 +509,14 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     public void setVersion(double version)
     {
+        if (0.0 == version)
+            return;
+        if (0.0 != _version)
+        {
+            if (_version != version)
+                _log.error("Attempt to change version of module from " + _version + " to " + version + ".");
+            return;
+        }
         _version = version;
     }
 
@@ -512,7 +527,8 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     public void setRequiredServerVersion(double requiredServerVersion)
     {
-        _requiredServerVersion = requiredServerVersion;
+        if (0.0 != requiredServerVersion)
+            _requiredServerVersion = requiredServerVersion;
     }
 
     public Set<String> getModuleDependenciesAsSet()

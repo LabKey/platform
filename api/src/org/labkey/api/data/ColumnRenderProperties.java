@@ -393,7 +393,10 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         // we could not repro this issue, so we will throw a more informative message if it occurs again
         if (getJdbcType() == null)
         {
-            throw new IllegalStateException("The column: " + getName() + " has a null JdbcType.  The propertyURI is: " + getPropertyURI());
+            String msg = "The column: " + getName() + " has a null JdbcType.  The propertyURI is: " + getPropertyURI();
+            if (this instanceof ColumnInfo)
+                msg += " typeName is " + ((ColumnInfo)this).getSqlTypeName();
+            throw new IllegalStateException(msg);
         }
 
         return getJdbcType().sqlType;
@@ -448,23 +451,12 @@ public abstract class ColumnRenderProperties implements ImportAliasable
 
     public boolean isBooleanType()
     {
-        int sqlType = getSqlTypeInt();
-        return (sqlType == Types.BOOLEAN) ||
-                (sqlType == Types.BIT);
+        return getJdbcType() == JdbcType.BOOLEAN;
     }
 
     public boolean isNumericType()
     {
-        int sqlType = getSqlTypeInt();
-        return (sqlType == Types.INTEGER) ||
-                (sqlType == Types.DECIMAL) ||
-                (sqlType == Types.DOUBLE) ||
-                (sqlType == Types.SMALLINT) ||
-                (sqlType == Types.BIGINT) ||
-                (sqlType == Types.FLOAT) ||
-                (sqlType == Types.REAL) ||
-                (sqlType == Types.NUMERIC) ||
-                (sqlType == Types.TINYINT);
+        return getJdbcType().isNumeric();
     }
 
     public static String javaTypeFromSqlType(int sqlType, boolean isObj)

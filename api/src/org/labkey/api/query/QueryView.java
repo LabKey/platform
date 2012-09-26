@@ -273,11 +273,11 @@ public class QueryView extends WebPartView<Object>
 
     protected void renderErrors(PrintWriter out, String message, List<? extends Throwable> errors)
     {
-        out.print("<p class=\"labkey-error\">");
+        out.write("<p class=\"labkey-error\">");
         out.print(PageFlowUtil.filter(message));
         if (_queryDef != null && _queryDef.canEdit(getUser()) && getContainer().equals(_queryDef.getContainer()))
-            out.print("&nbsp;<a href=\"" + getSchema().urlFor(QueryAction.sourceQuery, _queryDef) + "\">Edit Query</a>");
-        out.print("</p>");                
+            out.write("&nbsp;<a href=\"" + getSchema().urlFor(QueryAction.sourceQuery, _queryDef) + "\">Edit Query</a>");
+        out.write("</p>");
 
         Set<String> seen = new HashSet<String>();
 
@@ -300,14 +300,15 @@ public class QueryView extends WebPartView<Object>
                     String resolveText = ExceptionUtil.getExceptionDecoration(e, ExceptionUtil.ExceptionInfo.ResolveText);
                     if (getUser().isDeveloper())
                     {
-                        out.print(" ");
+                        out.write(" ");
                         out.print(PageFlowUtil.textLink(StringUtils.defaultString(resolveText,"resolve"), resolveURL));
                     }
                 }
-                out.print("<br>");
+                out.write("<br>");
             }
         }
     }
+
 
     public MenuButton createQueryPickerButton(String label)
     {
@@ -1656,26 +1657,7 @@ public class QueryView extends WebPartView<Object>
             }
         }
 
-        GridView ret = new GridView(rgn, _errors)
-        {
-            /**
-             * Since we're using user-defined sql, we can get a SQLException that
-             * doesn't indicate a bug in the product. Don't log to mothership,
-             * and tell the user what happened
-             */
-            @Override
-            protected void renderException(Throwable t, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException
-            {
-                if (t instanceof SQLException)
-                {
-                    renderErrors(response.getWriter(), "Query '" + getQueryDef().getName() + "' has errors", Collections.singletonList(t));
-                }
-                else
-                {
-                    super.renderException(t, request, response);
-                }
-            }
-        };
+        GridView ret = new GridView(rgn, _errors);
         setupDataView(ret);
         return ret;
     }
@@ -1760,6 +1742,7 @@ public class QueryView extends WebPartView<Object>
         ret.getRenderContext().put("allowableContainerFilterTypes", getAllowableContainerFilterTypes());
     }
 
+
     protected void renderDataRegion(PrintWriter out) throws Exception
     {
         // make sure table has been instantiated
@@ -1772,6 +1755,7 @@ public class QueryView extends WebPartView<Object>
         }
         include(createDataView(), out);
     }
+
 
     protected TSVGridWriter.ColumnHeaderType getColumnHeaderType()
     {

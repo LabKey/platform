@@ -24,6 +24,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.DisplayElement;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Collections;
 import java.util.Map;
@@ -117,8 +118,9 @@ public abstract class AbstractDataRegion extends DisplayElement
         return dataRegionJSON;
     }
 
-    protected void renderHeaderScript(RenderContext ctx, Writer out, Map<String, String> messages, boolean showRecordSelectors) throws IOException
+    protected void renderHeaderScript(RenderContext ctx, Writer writer, Map<String, String> messages, boolean showRecordSelectors) throws IOException
     {
+        StringWriter out = new StringWriter();
         out.write("<script type=\"text/javascript\">\n");
         out.write("Ext.onReady(function() {\n");
         out.write("new LABKEY.DataRegion(\n");
@@ -134,9 +136,9 @@ public abstract class AbstractDataRegion extends DisplayElement
             }
             out.write("LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].showMessageArea();\n");
         }
-
         out.write("});\n");
         out.write("</script>\n");
+        writer.write(out.toString());
     }
 
     private SimpleFilter getValidFilter(RenderContext ctx)

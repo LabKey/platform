@@ -444,15 +444,46 @@ public class FileSystemResource extends AbstractWebdavResource
         return canReadPerm;
     }
 
+
     public boolean canWrite(User user, boolean forWrite)
     {
-        return super.canWrite(user, forWrite) && hasFileSystem();
+        boolean canWritePerm = super.canWrite(user, forWrite) && hasFileSystem();
+        if (!canWritePerm || !isFile() || !forWrite)
+            return canWritePerm;
+        File f = getFile();
+        if (null == f)
+            return canWritePerm;
+
+        // for real files that we are about to actually write, we want to
+        // check that the OS will allow LabKey server to write the file
+        // should always return true, unless there is a configuration problem
+        if (!f.canWrite())
+        {
+            _log.warn(user.getEmail() + " attempted to write file that is not readable by LabKey Server.  This may be a configuration problem. file: " + f.getPath());
+            return false;
+        }
+        return canWritePerm;
     }
 
 
     public boolean canCreate(User user, boolean forCreate)
     {
-        return super.canCreate(user, forCreate) && hasFileSystem();
+        boolean canCreatePerm = super.canCreate(user, forCreate) && hasFileSystem();
+        if (!canCreatePerm || !isFile() || !forCreate)
+            return canCreatePerm;
+        File f = getFile();
+        if (null == f)
+            return canCreatePerm;
+
+        // for real files that we are about to actually write, we want to
+        // check that the OS will allow LabKey server to write the file
+        // should always return true, unless there is a configuration problem
+        if (!f.canWrite())
+        {
+            _log.warn(user.getEmail() + " attempted to write file that is not readable by LabKey Server.  This may be a configuration problem. file: " + f.getPath());
+            return false;
+        }
+        return canCreatePerm;
     }
 
 
