@@ -477,7 +477,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     }
 
 
-    protected void convertTypes(Map<String,Object> row) throws QueryUpdateServiceException
+    protected void convertTypes(Map<String,Object> row) throws ValidationException
     {
         for (ColumnInfo col : getDbTable().getColumns())
         {
@@ -502,7 +502,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
                 catch (ConversionException e)
                 {
                     String type = ColumnInfo.getFriendlyTypeName(col.getJdbcType().getJavaClass());
-                    throw new QueryUpdateServiceException("Unable to convert value \'" + value.toString() + "\' to " + type + " for column \'" + col.getLabel() + "\'");
+                    throw new ValidationException("Unable to convert value \'" + value.toString() + "\' to " + type, col.getName());
                 }
             }
         }
