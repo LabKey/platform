@@ -26,7 +26,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 
-import java.sql.SQLException;
 import java.util.Set;
 
 /**
@@ -68,21 +67,19 @@ public abstract class ExperimentRunType implements Comparable<ExperimentRunType>
         return _tableName;
     }
 
-    public int getRunCount(User user, Container c)
+    public long getRunCount(User user, Container c)
     {
         UserSchema schema = QueryService.get().getUserSchema(user, c, _schemaName);
+        if (schema == null)
+        {
+            return 0;
+        }
         TableInfo table = schema.getTable(_tableName);
-        SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM (");
-        sql.append(Table.getSelectSQL(table, table.getColumns(), null, null));
-        sql.append(") x");
-        try
+        if (table == null)
         {
-            return Table.executeSingleton(schema.getDbSchema(), sql.getSQL(), sql.getParamsArray(), Integer.class);
+            return 0;
         }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        return new TableSelector(table).getRowCount();
     }
 
     public int compareTo(ExperimentRunType o)
