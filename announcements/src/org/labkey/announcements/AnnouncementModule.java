@@ -85,8 +85,13 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
 
     public AnnouncementModule()
     {
-        setName("Announcements");
         setDescription("Message Board and Discussion Service");
+    }
+
+    @Override
+    public String getName()
+    {
+        return "Announcements";
     }
 
     @Override
