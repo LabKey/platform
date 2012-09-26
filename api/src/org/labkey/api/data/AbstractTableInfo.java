@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.DbCache;
@@ -80,6 +81,8 @@ import java.util.Set;
 
 abstract public class AbstractTableInfo implements TableInfo
 {
+    private static final Logger LOG = Logger.getLogger(AbstractTableInfo.class);
+
     /** Used as a marker to indicate that a URL (such as insert or update) has been explicitly disabled. Null values get filled in with default URLs in some cases */
     public static final ActionURL LINK_DISABLER_ACTION_URL = new ActionURL();
     /** Used as a marker to indicate that a URL (such as insert or update) has been explicitly disabled. Null values get filled in with default URLs in some cases */
@@ -803,6 +806,25 @@ abstract public class AbstractTableInfo implements TableInfo
                     addColumn(wrappedColumn);
                 }
             }
+
+            Map<String, ColumnInfo> originalColumns = constructColumnMap();
+            originalColumns.putAll(_columnMap);
+            for (ColumnInfo columnInfo : originalColumns.values())
+            {
+                removeColumn(columnInfo);
+            }
+            for (ColumnType xmlColumn : xmlTable.getColumns().getColumnArray())
+            {
+                ColumnInfo column = originalColumns.remove(xmlColumn.getColumnName());
+                if (column != null)
+                {
+                    addColumn(column);
+                }
+            }
+            for (ColumnInfo column : originalColumns.values())
+            {
+                addColumn(column);
+            }
         }
 
         if (xmlTable.getButtonBarOptions() != null)
@@ -812,6 +834,62 @@ abstract public class AbstractTableInfo implements TableInfo
         {
             setAggregateRowConfig(xmlTable);
         }
+
+        // This needs to happen AFTER all of the other XML-based config has been applied, so it should always
+        // be at the end of this method
+        if (xmlTable.isSetJavaCustomizer())
+        {
+            configureViaTableCustomizer(errors, xmlTable.getJavaCustomizer());
+        }
+    }
+
+    private void configureViaTableCustomizer(Collection<QueryException> errors, String className)
+    {
+        if (className == null)
+        {
+            return;
+        }
+        className = className.trim();
+        if (className.isEmpty())
+        {
+            return;
+        }
+
+        try
+        {
+            Class c = Class.forName(className);
+            if (!(TableCustomizer.class.isAssignableFrom(c)))
+            {
+                addAndLogError(errors, "Class " + c.getName() + " is not an implementation of " + TableCustomizer.class.getName() + " to configure table " + this, null);
+            }
+            else
+            {
+                Class<TableCustomizer> customizerClass = (Class<TableCustomizer>)c;
+                try
+                {
+                    TableCustomizer customizer = customizerClass.newInstance();
+                    customizer.customize(this);
+                }
+                catch (InstantiationException e)
+                {
+                    addAndLogError(errors, "Unable to create instance of class '" + className + "'" + " to configure table " + this, e);
+                }
+                catch (IllegalAccessException e)
+                {
+                    addAndLogError(errors, "Unable to create instance of class '" + className + "'" + " to configure table " + this, e);
+                }
+            }
+        }
+        catch (ClassNotFoundException e)
+        {
+            addAndLogError(errors, "Unable to load class '" + className + "'" + " to configure table " + this, e);
+        }
+    }
+
+    private void addAndLogError(Collection<QueryException> errors, String message, Exception e)
+    {
+        errors.add(new QueryException(message, e));
+        LOG.warn(message + ((e == null || e.getMessage() == null) ? "" : e.getMessage()));
     }
 
     private void setAggregateRowConfig(TableType xmlTable)

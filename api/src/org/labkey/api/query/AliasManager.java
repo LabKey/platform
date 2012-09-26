@@ -226,4 +226,9 @@ public class AliasManager
             claimAlias(column);
         }
     }
+
+    public void unclaimAlias(ColumnInfo column)
+    {
+        _aliases.remove(column.getAlias());
+    }
 }

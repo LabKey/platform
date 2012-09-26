@@ -248,7 +248,6 @@ public class ExternalScriptEngine extends AbstractScriptEngine
         }
 
         BufferedReader procReader = null;
-        FileWriter writer = null;
         try
         {
             procReader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
@@ -267,9 +266,6 @@ public class ExternalScriptEngine extends AbstractScriptEngine
         {
             if (procReader != null)
                 try {procReader.close();} catch(IOException ignored) {}
-
-            if (writer != null)
-                try {writer.close();} catch(IOException ignored) {}
         }
 
         try

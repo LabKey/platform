@@ -138,7 +138,11 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
                 }
                 if (clusterPath.contains(" ") || clusterPath.contains("%20"))
                 {
-                    throw new PipelineValidationException("Paths cannot contain spaces when submitting a cluster job via Globus:" + job.getLogFile());
+                    throw new PipelineValidationException("Paths cannot contain spaces (or their encoded equivalent, '%20') when submitting a cluster job via Globus:" + job.getLogFile());
+                }
+                if (clusterPath.contains("+") || clusterPath.contains("%2B"))
+                {
+                    throw new PipelineValidationException("Paths cannot contain pluses (or their encoded equivalent, '%2B') when submitting a cluster job via Globus:" + job.getLogFile());
                 }
             }
         }

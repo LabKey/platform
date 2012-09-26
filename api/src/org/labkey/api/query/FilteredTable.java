@@ -396,6 +396,16 @@ public class FilteredTable extends AbstractTableInfo implements ContainerFiltera
         return super.addColumn(column);
     }
 
+    @Override
+    public boolean removeColumn(ColumnInfo column)
+    {
+        boolean result = super.removeColumn(column);
+        if (result && _aliasManager != null)
+        {
+            _aliasManager.unclaimAlias(column);
+        }
+        return result;
+    }
 
     public ColumnInfo addWrapColumn(ColumnInfo column)
     {
