@@ -87,9 +87,13 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     {
         setName("Announcements");
         setDescription("Message Board and Discussion Service");
-        setVersion(12.20);
     }
 
+    @Override
+    public double getVersion()
+    {
+        return 12.20;
+    }
 
     protected void init()
     {
