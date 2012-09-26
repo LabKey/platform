@@ -338,7 +338,7 @@ function getArrayArray(simpleArray)
 
 var s;
 
-function createCombo(fieldLabel, name, id, allowBlank)
+function createCombo(fieldLabel, name, id, allowBlank, width)
 {
     var combo = new Ext.form.ComboBox({
         typeAhead: false,
@@ -361,10 +361,14 @@ function createCombo(fieldLabel, name, id, allowBlank)
         triggerAction: 'all',
         lazyInit: false
     });
+
+    if(width){
+        combo.setWidth(width);
+    }
     return combo;
 }
 
-function createFolderCombo(fieldLabel, name, id, allowBlank)
+function createFolderCombo(fieldLabel, name, id, allowBlank, width)
 {
     var combo = new Ext.form.ComboBox({
         typeAhead: false,
@@ -389,41 +393,46 @@ function createFolderCombo(fieldLabel, name, id, allowBlank)
         triggerAction: 'all',
         lazyInit: false
     });
+
+    if(width){
+        combo.setWidth(width);
+    }
+
     return combo;
 }
-function createSchemaCombo()
+function createSchemaCombo(width)
 {
-    return createCombo("Schema", "schema", "userQuery_schema", false);
+    return createCombo("Schema", "schema", "userQuery_schema", false, width);
 }
 
-function createQueryCombo()
+function createQueryCombo(width)
 {
-    return createCombo("Query", 'query', 'userQuery_query', false);
+    return createCombo("Query", 'query', 'userQuery_query', false, width);
 }
 
-function createViewCombo()
+function createViewCombo(width)
 {
-    return createCombo("View", "view", "userQuery_view", true);
+    return createCombo("View", "view", "userQuery_view", true, width);
 }
 
-function createBasicFolderCombo()
+function createBasicFolderCombo(width)
 {
-    return createFolderCombo("Folder", "folders", "userQuery_folders", true);
+    return createFolderCombo("Folder", "folders", "userQuery_folders", true, width);
 }
 
-function createColumnCombo()
+function createColumnCombo(width)
 {
-    return createCombo("Title Column", "column", "userQuery_Column", false);
+    return createCombo("Title Column", "column", "userQuery_Column", false, width);
 }
 
-function createRootFolderCombo()
+function createRootFolderCombo(width)
 {
-    return createFolderCombo("Root Folder", "rootFolder", "userQuery_rootFolder", true);
+    return createFolderCombo("Root Folder", "rootFolder", "userQuery_rootFolder", true, width);
 }
 
-function createFolderTypesCombo()
+function createFolderTypesCombo(width)
 {
-    return createCombo("Folder Types", "folderTypes", "userQuery_folderTypes", true);
+    return createCombo("Folder Types", "folderTypes", "userQuery_folderTypes", true, width);
 }
 
 // current value is an optional string parameter that provides string containing the current value.
@@ -496,12 +505,12 @@ function chooseView(title, helpText, sep, submitFunction, currentValue, includeS
 
 function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue, includeSchema)
 {
-    var schemaCombo = createSchemaCombo();
+    var schemaCombo = createSchemaCombo(380);
     s = schemaCombo;
-    var queryCombo = createQueryCombo();
-    var viewCombo = createViewCombo();
-    var columnCombo = createColumnCombo();
-    var folderCombo = createBasicFolderCombo();
+    var queryCombo = createQueryCombo(380);
+    var viewCombo = createViewCombo(380);
+    var columnCombo = createColumnCombo(380);
+    var folderCombo = createBasicFolderCombo(380);
 
     var title = "";
     var schemaName = "";
@@ -546,137 +555,123 @@ function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue
         }
     });
 
-    var labelStyle = 'border-bottom:1px solid #AAAAAA;margin:3px';
-
-    var urlBottomField = new Ext.form.TextField({
-        name: 'url',
-        fieldLabel: 'URL',
-        labelSeparator: '',
-        value: urlBottom,
-        width : 200,
-        labelWidth: 50
-    });
-
     var formSQV = new Ext.form.FormPanel({
-        padding: 5,
+        border: false,
+        hidden: !isChoiceListQuery,
         layout: 'form',
-
-        items: [folderCombo, schemaCombo, queryCombo, viewCombo, columnCombo, urlBottomField]});
+        labelSeparator: '',
+        items: [folderCombo, schemaCombo, queryCombo, viewCombo, columnCombo]
+    });
 
     var titleField = new Ext.form.TextField({
         name: 'title',
         fieldLabel: 'Title',
-        labelSeparator: '',
         value: title,
-        width : 400,
-        labelWidth: 50
+        width : 380
     });
 
     var urlField = new Ext.form.TextField({
         name: 'url',
         fieldLabel: 'URL',
-        labelSeparator: '',
         value: urlTop,
-        width : 400,
-        labelWidth: 50
+        width : 380
     });
 
     var includeAllDescendantsCheckbox = new Ext.form.Checkbox({
         name: 'includeAllDescendants',
         fieldLabel: 'Include All Descendants',
-        labelSeparator: '',
         value: true,
         checked: includeAllDescendants,
-        width: 400
+        width: 380
     });
 
-    var rootFolderCombo = createRootFolderCombo();
-    var folderTypesCombo = createFolderTypesCombo();
+    var rootFolderCombo = createRootFolderCombo(380);
+    var folderTypesCombo = createFolderTypesCombo(380);
 
     var formFolders = new Ext.form.FormPanel({
-        padding: 5,
+        border: false,
+        labelSeparator: '',
         timeout: Ext.Ajax.timeout,
-        hidden: false,
+        hidden: isChoiceListQuery,
         items: [includeAllDescendantsCheckbox, rootFolderCombo, folderTypesCombo]
     });
 
-    var formMenuSelectPanel = new Ext.Panel({
-        padding: 5,
-        layout: 'hbox',
-        items: [
-            {
-            xtype: 'label',
-            fieldLabel: 'Menu Items' ,
-            flex: 1
-            },
-            {
-                xtype: 'radio',
-                boxLabel: 'Create from List or Query',
-                name: 'menuSelect',
-                inputValue: 'list',
-                checked: isChoiceListQuery,
-                flex: 2,
-                check: function(checkbox, checked)
-                {
-                    if (checked)
-                    {
-                        formSQV.hidden = false;
-                        formWinPanel.doLayout();
-                    }
-                },
-                id: 'radio2'
-            },{
-                xtype: 'radio',
-                boxLabel: 'Folders',
-                name: 'menuSelect',
-                inputValue: 'folders',
-                checked: !isChoiceListQuery,
-                flex: 3,
-                check: function(checkbox, checked)
-                {
-                    if (checked)
-                    {
-                        formFolders.hidden = false;
-                        formWinPanel.doLayout();
-                    }
-                },
-                id: 'radio3'
+    var queryRadio = new Ext.form.Radio({
+        boxLabel: 'Create from List or Query',
+        name: 'menuSelect',
+        inputValue: 'list',
+        width: 200,
+        checked: isChoiceListQuery,
+        listeners: {
+            scope: this,
+            check: function(checkbox, checked){
+                if (checked){
+                    formSQV.setVisible(true);
+                } else {
+                    formSQV.setVisible(false);
+                }
             }
-        ]
+        },
+        id: 'query-radio'
     });
 
-    var formWinPanel = new Ext.form.FormPanel({
-        padding: 5,
-        timeout: Ext.Ajax.timeout,
-        items: [titleField, urlField, formMenuSelectPanel, formSQV, formFolders]});
+    var folderRadio = new Ext.form.Radio({
+        boxLabel: 'Folders',
+        name: 'menuSelect',
+        inputValue: 'folders',
+        checked: !isChoiceListQuery,
+        listeners: {
+            scope: this,
+            check: function(checkbox, checked){
+                if (checked){
+                    formFolders.setVisible(true);
+                } else {
+                    formFolders.setVisible(false);
+                }
+            }
+        },
+        id: 'folder-radio'
+    });
 
-    var win = new Ext.form.FormPanel({
-//        title: 'Customize Menu',
-        renderTo: renderToDiv,
-//        layout:'fit',
+    var menuRadioGroup = new Ext.form.RadioGroup({
+        fieldLabel: 'Menu Items',
+        width: 380,
+        vertical: false,
+        columns: [.75, .25],
+        items: [queryRadio, folderRadio]
+    });
+
+    var formMenuSelectPanel = new Ext.form.FormPanel({
         border: false,
-        width: 1000,
-//        height: 600,
-//        closeAction:'close',
-//        modal: true,
+        items: [menuRadioGroup]
+    });
+
+    var formWinPanel = new Ext.Panel({
+        border: false,
+        layout: 'form',
+        timeout: Ext.Ajax.timeout,
+        labelSeparator: '',
+        items: [titleField, urlField, formMenuSelectPanel, formSQV, formFolders]
+    });
+
+    var win = new Ext.Panel({
+        renderTo: renderToDiv,
+        border: false,
         items: formWinPanel,
         resizable: true,
         buttons: [{
             text: 'Submit',
             id: 'btn_submit',
             handler: function(){
-                var isChoiceListQuery = formMenuSelectPanel.items.items[1].checked;
+                var isChoiceListQuery = menuRadioGroup.getValue().getRawValue() === 'list';
                 var form = null;
-                if (isChoiceListQuery)
-                {
+                if(isChoiceListQuery){
                     form = formSQV.getForm();
-                }
-                else
-                {
+                } else{
                     form = formFolders.getForm();
                 }
-                if (form && !form.isValid())
-                {
+
+                if (form && !form.isValid()){
                     Ext.Msg.alert(title, 'Please complete all required fields.');
                     return false;
                 }
@@ -694,7 +689,6 @@ function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue
                     columnName: columnCombo.getValue(),
                     title: titleField.getValue(),
                     urlTop: urlField.getValue(),
-                    urlBottom: urlBottomField.getValue(),
                     choiceListQuery: isChoiceListQuery,
                     rootFolder: rootFolderCombo.getValue(),
                     folderTypes: folderTypesCombo.getValue(),
@@ -708,7 +702,6 @@ function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue
             id: 'btn_cancel',
             handler: function(){cancelFunction(); formWinPanel.doLayout();}
         }]
-//        bbar: [{ xtype: 'tbtext', text: '', id:'statusTxt'}]
     });
 
     return win;
