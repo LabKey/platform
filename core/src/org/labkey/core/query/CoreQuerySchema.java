@@ -26,11 +26,9 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
-import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
@@ -52,7 +50,6 @@ import org.labkey.core.user.UserController;
 import org.labkey.core.workbook.WorkbooksTableInfo;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -93,7 +90,7 @@ public class CoreQuerySchema extends UserSchema
     public TableInfo createTable(String name)
     {
         if (USERS_TABLE_NAME.equalsIgnoreCase(name))
-            return getUsers();
+            return getUserTable();
         if (SITE_USERS_TABLE_NAME.equalsIgnoreCase(name))
             return getSiteUsers();
         if (PRINCIPALS_TABLE_NAME.equalsIgnoreCase(name))
@@ -383,6 +380,9 @@ public class CoreQuerySchema extends UserSchema
 
     protected FilteredTable getUserTable()
     {
+        return new UsersTable(this, CoreSchema.getInstance().getSchema().getTable(USERS_TABLE_NAME));
+
+/*
         User user = getUser();
         TableInfo usersBase = CoreSchema.getInstance().getTableInfoUsers();
         FilteredTable users = new FilteredTable(usersBase);
@@ -436,6 +436,7 @@ public class CoreQuerySchema extends UserSchema
         users.setDefaultVisibleColumns(defCols);
 
         return users;
+*/
     }
 
 

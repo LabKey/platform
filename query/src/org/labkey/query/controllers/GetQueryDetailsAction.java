@@ -23,7 +23,6 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JsonWriter;
@@ -249,7 +248,7 @@ public class GetQueryDetailsAction extends ApiAction<GetQueryDetailsAction.Form>
                 if (domain != null)
                 {
                     if (kind.canEditDefinition(user, domain))
-                        resp.put("editDefinitionUrl", kind.urlEditDefinition(domain));
+                        resp.put("editDefinitionUrl", kind.urlEditDefinition(domain, getViewContext()));
                 }
                 else
                 {

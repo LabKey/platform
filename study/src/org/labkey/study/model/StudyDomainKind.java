@@ -19,6 +19,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 
@@ -41,14 +42,14 @@ public class StudyDomainKind extends BaseStudyDomainKind
         return StudySchema.getInstance().getTableInfoStudy();
     }
 
-    public ActionURL urlEditDefinition(Domain domain)
+    public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        return new ActionURL(StudyController.ManageStudyAction.class, domain.getContainer());
+        return new ActionURL(StudyController.ManageStudyAction.class, containerUser.getContainer());
     }
 
-    public ActionURL urlShowData(Domain domain)
+    public ActionURL urlShowData(Domain domain, ContainerUser containerUser)
     {
-        return new ActionURL(StudyController.ManageStudyAction.class, domain.getContainer());
+        return new ActionURL(StudyController.ManageStudyAction.class, containerUser.getContainer());
     }
 
     public SQLFragment sqlObjectIdsInDomain(Domain domain)

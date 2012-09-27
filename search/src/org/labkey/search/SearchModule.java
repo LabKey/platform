@@ -24,7 +24,6 @@ import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.Sort;
 import org.labkey.api.module.DefaultModule;

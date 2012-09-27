@@ -50,6 +50,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.Closure;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 
@@ -1187,12 +1188,18 @@ class PostgreSql83Dialect extends SqlDialect
                     // Some domain wasn't there when we initialized the datasource, so reload now.  This will happpen at bootstrap.
                     initializeUserDefinedTypes(_schema.getScope());
                     scale = _userDefinedTypeScales.get(typeName);
+
+                    // If scale is still null, then we have a problem. We've seen occassional exception reports showing this,
+                    // but haven't had the information to track it down... so log additional info.
+                    if (null == scale)
+                    {
+                        String message = "Null scale for \"" + typeName + "\" in column " + getName() + " in schema \"" + _schema.getName() + "\"";
+                        ExceptionUtil.logExceptionToMothership(null, new Exception(message));
+                        assert false : message;
+                    }
                 }
 
-                assert scale != null;
-
-                if (null != scale)
-                    return scale.intValue();
+                return scale.intValue();
             }
 
             return super.getScale();

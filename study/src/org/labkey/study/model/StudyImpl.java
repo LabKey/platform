@@ -124,6 +124,8 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private int _defaultTimepointDuration = 1;
     private String _alternateIdPrefix;
     private int _alternateIdDigits;
+    private Integer _studySnapshot = null;  // RowId of the study snapshot configuration that created this study (or null)
+    private Date _lastSpecimenLoad = null;
 
     public StudyImpl()
     {
@@ -670,6 +672,13 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return getSourceStudy() != null;
     }
 
+    @Override
+    public boolean isSnapshotStudy()
+    {
+        // StudySnapshot includes both Ancillary and Published Studies (as of 12.3)
+        return getStudySnapshot() != null;
+    }
+
     @Nullable
     public StudyImpl getSourceStudy()
     {
@@ -856,6 +865,26 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public void setDefaultTimepointDuration(int defaultTimepointDuration)
     {
         _defaultTimepointDuration = defaultTimepointDuration;
+    }
+
+    public Integer getStudySnapshot()
+    {
+        return _studySnapshot;
+    }
+
+    public void setStudySnapshot(Integer studySnapshot)
+    {
+        _studySnapshot = studySnapshot;
+    }
+
+    public Date getLastSpecimenLoad()
+    {
+        return _lastSpecimenLoad;
+    }
+
+    public void setLastSpecimenLoad(Date lastSpecimenLoad)
+    {
+        _lastSpecimenLoad = lastSpecimenLoad;
     }
 
     @Override

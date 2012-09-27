@@ -27,6 +27,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 
@@ -137,19 +138,19 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
     }
 
 
-    public ActionURL urlShowData(Domain domain)
+    public ActionURL urlShowData(Domain domain, ContainerUser containerUser)
     {
         DataSet def = getDatasetDefinition(domain.getTypeURI());
-        ActionURL url = new ActionURL(StudyController.DatasetReportAction.class, domain.getContainer());
+        ActionURL url = new ActionURL(StudyController.DatasetReportAction.class, containerUser.getContainer());
         url.addParameter("datasetId", "" + def.getDataSetId());
         return url;
     }
 
 
-    public ActionURL urlEditDefinition(Domain domain)
+    public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
         DataSet def = getDatasetDefinition(domain.getTypeURI());
-        ActionURL url = new ActionURL(StudyController.EditTypeAction.class, domain.getContainer());
+        ActionURL url = new ActionURL(StudyController.EditTypeAction.class, containerUser.getContainer());
         url.addParameter("datasetId", "" + def.getDataSetId());
         return url;
     }

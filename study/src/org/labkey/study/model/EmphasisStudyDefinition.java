@@ -15,10 +15,6 @@
  */
 package org.labkey.study.model;
 
-import org.labkey.api.action.HasViewContext;
-import org.labkey.api.view.ViewContext;
-
-
 /**
  * Created by IntelliJ IDEA.
  * User: klum

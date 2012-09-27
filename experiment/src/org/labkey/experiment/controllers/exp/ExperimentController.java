@@ -515,7 +515,7 @@ public class ExperimentController extends SpringActionController
             // Not all sample sets can be edited
             if (!ExperimentService.get().ensureDefaultSampleSet().equals(_source) && _source.getType().getDomainKind().canEditDefinition(getUser(), _source.getType()))
             {
-                ActionURL editURL = _source.getType().getDomainKind().urlEditDefinition(_source.getType());
+                ActionURL editURL = _source.getType().getDomainKind().urlEditDefinition(_source.getType(), getViewContext());
                 if (editURL != null)
                 {
                     ActionButton editTypeButton = new ActionButton(editURL, "Edit Fields", DataRegion.MODE_DETAILS);

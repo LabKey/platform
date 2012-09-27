@@ -203,7 +203,7 @@
                 new ActionURL(StudyController.DemoModeAction.class, c)) %></td>
     </tr>
 <%
-        if (!study.isAncillaryStudy())
+        if (!study.isAncillaryStudy() && !study.isSnapshotStudy())
         {
 %>
 
@@ -229,7 +229,7 @@
 %>
     <tr>
         <td colspan="3">
-            <p><em>NOTE: specimen repository and request settings are not available for ancillary studies.</em></p>
+            <p><em>NOTE: specimen repository and request settings are not available for ancillary or published studies.</em></p>
         </td>
     </tr>
 <%

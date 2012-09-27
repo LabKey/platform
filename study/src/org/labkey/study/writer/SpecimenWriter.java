@@ -15,6 +15,8 @@
  */
 package org.labkey.study.writer;
 
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.*;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
@@ -22,7 +24,6 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.importer.SpecimenImporter.SpecimenColumn;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.io.PrintWriter;
@@ -36,7 +37,7 @@ import java.util.List;
  * Date: May 7, 2009
  * Time: 3:49:32 PM
  */
-class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
+public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
 {
     public String getSelectionText()
     {
@@ -69,13 +70,12 @@ class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
             selectColumns.add(dc.getDisplayColumn());
             dc.setCaption(column.getTsvColumnName());
             displayColumns.add(dc);
-
-            sql.append(comma);
+            String col = "";
 
             // export alternate ID in place of Ptid if set in StudyExportContext
             if (ctx.isAlternateIds() && column.getDbColumnName().equals("Ptid"))
             {
-                sql.append("ParticipantLookup.AlternateId AS Ptid");
+                col = "ParticipantLookup.AlternateId AS Ptid";
             }
             else if (null == column.getFkColumn())
             {
@@ -83,7 +83,7 @@ class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
                 // used for export joins vials and specimens into a single view which we're calling 's'.  isEvents catches
                 // those columns that are part of the events table, while !isEvents() catches the rest.  (equivalent to
                 // isVials() || isSpecimens().)
-                String col = (tt.isEvents() ? "se." : "s.") + column.getDbColumnName();
+                col = (tt.isEvents() ? "se." : "s.") + column.getDbColumnName();
 
                 // add expression to shift the date columns
                 if (ctx.isShiftDates() && column.isDateType())
@@ -92,20 +92,25 @@ class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
                 }
 
                 // don't export values for columns set as Protected in the XML metadata override
-                if (ctx.isRemoveProtected() && queryTable != null && queryTable.getColumn(column.getDbColumnName()) != null
-                        && queryTable.getColumn(column.getDbColumnName()).isProtected())
+                if (shouldRemoveProtected(ctx.isRemoveProtected(), column, getSpecimenQueryColumn(queryTable, column)))
                 {
                     col = "NULL AS " + column.getDbColumnName();
                 }
-
-                sql.append(col);
             }
             else
             {
-                sql.append(column.getFkTableAlias()).append(".").append(column.getFkColumn());
-                sql.append(" AS ").append(dc.getDisplayColumn().getAlias());  // DisplayColumn will use getAlias() to retrieve the value from the map
+                // DisplayColumn will use getAlias() to retrieve the value from the map
+                col = column.getFkTableAlias() + "." + column.getFkColumn() + " AS " + dc.getDisplayColumn().getAlias();
+
+                // don't export values for columns set as Protected in the XML metadata override
+                if (shouldRemoveProtected(ctx.isRemoveProtected(), column, getSpecimenQueryColumn(queryTable, column)))
+                {
+                    col = "NULL AS " + dc.getDisplayColumn().getAlias();
+                }
             }
 
+            sql.append(comma);
+            sql.append(col);
             comma = ", ";
         }
 
@@ -179,7 +184,34 @@ class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
         }
     }
 
-    private String convertListToString(List list, boolean withQuotes)
+    private ColumnInfo getSpecimenQueryColumn(TableInfo queryTable, SpecimenColumn column)
+    {
+        // if the query table contains the column using the DBColumnName, use that, otherwise try removing the 'id' from the end of the column name
+        if (queryTable != null && column != null)
+        {
+            if (queryTable.getColumn(column.getDbColumnName()) != null)
+                return queryTable.getColumn(column.getDbColumnName());
+            else if (column.getDbColumnName().toLowerCase().endsWith("id"))
+            {
+                String tempColName = column.getDbColumnName().substring(0, column.getDbColumnName().length()-2);
+                return queryTable.getColumn(tempColName);
+            }
+        }
+        return null;
+    }
+
+    private static boolean shouldRemoveProtected(boolean isRemoveProtected, SpecimenColumn column, ColumnInfo queryColumn)
+    {
+        if (isRemoveProtected && !column.isKeyColumn())
+        {
+            if (queryColumn != null && queryColumn.isProtected())
+                return true;
+        }
+
+        return false;
+    }
+
+    private static String convertListToString(List list, boolean withQuotes)
     {
         StringBuilder sb = new StringBuilder();
         String sep = "";
@@ -192,5 +224,52 @@ class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
             sep = ",";
         }
         return sb.toString();
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testConvertListToString()
+        {
+            List<Integer> ints = new ArrayList<Integer>();
+            ints.add(1);
+            ints.add(2);
+            ints.add(3);
+            assertEquals("1,2,3", convertListToString(ints, false));
+            assertEquals("'1','2','3'", convertListToString(ints, true));
+
+            List<String> ptids = new ArrayList<String>();
+            ptids.add("Ptid1");
+            ptids.add("Ptid2");
+            ptids.add("Ptid3");
+            assertEquals("Ptid1,Ptid2,Ptid3", convertListToString(ptids, false));
+            assertEquals("'Ptid1','Ptid2','Ptid3'", convertListToString(ptids, true));
+        }
+
+        @Test
+        public void testShouldRemoveProtected()
+        {
+            ColumnInfo ciProtected = new ColumnInfo("test");
+            ciProtected.setProtected(true);
+            ColumnInfo ciNotProtected = new ColumnInfo("test");
+            ciNotProtected.setProtected(false);
+
+            SpecimenColumn notKeyCol = new SpecimenColumn("test", "test", "INT", SpecimenImporter.TargetTable.SPECIMEN_EVENTS);
+            SpecimenColumn keyCol = new SpecimenColumn("test", "test", "INT", true, SpecimenImporter.TargetTable.SPECIMEN_EVENTS);
+
+            // shouldn't remove if isRemoveProtected is false
+            assertFalse(shouldRemoveProtected(false, notKeyCol, ciProtected));
+            assertFalse(shouldRemoveProtected(false, keyCol, ciProtected));
+
+            // shouldn't remove if it is a key column
+            assertFalse(shouldRemoveProtected(true, keyCol, ciProtected));
+            assertFalse(shouldRemoveProtected(true, keyCol, ciNotProtected));
+
+            // shouldn't remove if not a key column and is not protected
+            assertFalse(shouldRemoveProtected(true, notKeyCol, ciNotProtected));
+
+            // should remove if not a key column and it is protected
+            assertTrue(shouldRemoveProtected(true, notKeyCol, ciProtected));
+        }
     }
 }

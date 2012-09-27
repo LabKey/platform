@@ -30,8 +30,8 @@ TypesController.RepairForm form = (TypesController.RepairForm) HttpView.currentM
 Domain domain = form.domain;
 DomainKind kind = domain ==null ? null : domain.getDomainKind();
 StorageProvisioner.ProvisioningReport.DomainReport report = form.report;
-ActionURL edit = null==kind ? null : kind.urlEditDefinition(domain);
-ActionURL show = null==kind ? null : kind.urlShowData(domain);
+ActionURL edit = null==kind ? null : kind.urlEditDefinition(domain, getViewContext());
+ActionURL show = null==kind ? null : kind.urlShowData(domain, getViewContext());
 boolean hasFix = false;
 if (report != null)
 {

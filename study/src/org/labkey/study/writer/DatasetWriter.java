@@ -16,6 +16,8 @@
 package org.labkey.study.writer;
 
 import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -447,5 +449,39 @@ public class DatasetWriter implements InternalStudyWriter
         }
 
         return outColumns;
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testShouldExportColumn()
+        {
+            // true cases
+            ColumnInfo ci = new ColumnInfo("test");
+            assertTrue(shouldExport(ci, true, true, true));
+            assertTrue(shouldExport(ci, true, true, false));
+            assertTrue(shouldExport(ci, true, false, true));
+            assertTrue(shouldExport(ci, false, true, true));
+            assertTrue(shouldExport(ci, true, false, false));
+            assertTrue(shouldExport(ci, false, true, false));
+            assertTrue(shouldExport(ci, false, false, true));
+            assertTrue(shouldExport(ci, false, false, false));
+
+            ci.setProtected(true);
+            assertTrue(shouldExport(ci, true, true, true));
+
+            // false cases
+            ci = new ColumnInfo("test");
+            ci.setUserEditable(false);
+            assertFalse(shouldExport(ci, true, false, false));
+
+            ci = new ColumnInfo("test");
+            ci.setFk(new ContainerForeignKey(null));
+            assertFalse(shouldExport(ci, true, false, false));
+
+            ci = new ColumnInfo("test");
+            ci.setProtected(true);
+            assertFalse(shouldExport(ci, true, true, false));
+        }
     }
 }

@@ -33,7 +33,6 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.InputStreamReader;
 import java.util.*;
 
@@ -137,7 +136,7 @@ public class DatasetImportRunnable implements Runnable
             {
                 assert cpuDelete.start();
                 _job.info(_datasetDefinition.getLabel() + ": Starting delete" + (useCutoff ? " of rows newer than " + _replaceCutoff : ""));
-                int rows = StudyManager.getInstance().purgeDataset(_study, _datasetDefinition, useCutoff ? _replaceCutoff : null, _job.getUser());
+                int rows = StudyManager.getInstance().purgeDataset(_datasetDefinition, useCutoff ? _replaceCutoff : null, _job.getUser());
                 _job.info(_datasetDefinition.getLabel() + ": Deleted " + rows + " rows");
                 assert cpuDelete.stop();
             }

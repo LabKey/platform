@@ -19,11 +19,11 @@ package org.labkey.study.pipeline;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.study.importer.DatasetImporter;
+import org.labkey.study.importer.StudyImportContext;
+import org.labkey.study.importer.StudyJobSupport;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.study.importer.*;
 import org.labkey.study.xml.StudyDocument;
-
-import java.io.File;
 
 /*
 * User: adam
@@ -56,25 +56,6 @@ public class StudyImportDatasetTask extends AbstractDatasetImportTask<StudyImpor
         VirtualFile root = support.getRoot();
 
         return StudyImportDatasetTask.getDatasetsDirectory(ctx, root);
-    }
-
-    /**
-     * @deprecated
-     */
-    public static File getDatasetsFile(StudyImportContext ctx, VirtualFile root) throws ImportException
-    {
-        StudyDocument.Study.Datasets datasetsXml = ctx.getXml().getDatasets();
-
-        if (null != datasetsXml)
-        {
-            VirtualFile datasetDir = DatasetImporter.getDatasetDirectory(ctx, root);
-            String datasetFilename = datasetsXml.getDefinition().getFile();
-
-            if (null != datasetFilename)
-                return ctx.getStudyFile(root, datasetDir, datasetFilename);
-        }
-
-        return null;
     }
 
     public static String getDatasetsFileName(StudyImportContext ctx) throws ImportException

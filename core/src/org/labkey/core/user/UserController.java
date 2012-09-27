@@ -19,37 +19,116 @@ package org.labkey.core.user;
 import org.apache.commons.collections15.MultiMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.action.*;
+import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.QueryViewAction;
+import org.labkey.api.action.RedirectAction;
+import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleRedirectAction;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.query.AuditLogQueryView;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleDisplayColumn;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableViewForm;
+import org.labkey.api.data.UrlColumn;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.module.ModuleContext;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryUpdateForm;
 import org.labkey.api.query.QueryView;
-import org.labkey.api.security.*;
+import org.labkey.api.security.CSRF;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.LoginUrls;
+import org.labkey.api.security.RequiresLogin;
+import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
+import org.labkey.api.security.SecurityUrls;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.UserUrls;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.impersonation.ImpersonateRoleContextFactory;
 import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.roles.*;
+import org.labkey.api.security.roles.NoPermissionsRole;
+import org.labkey.api.security.roles.OwnerRole;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.*;
-import org.labkey.api.view.*;
+import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataView;
+import org.labkey.api.view.DetailsView;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.TermsOfUseException;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.UpdateView;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.view.template.PrintTemplate;
 import org.labkey.api.view.template.TemplateHeaderView;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.GroupAuditViewFactory;
 import org.labkey.core.query.UserAuditViewFactory;
+import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.security.SecurityController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 public class UserController extends SpringActionController
 {
@@ -144,6 +223,10 @@ public class UserController extends SpringActionController
         }
     }
 
+    public static void registerAdminConsoleLinks()
+    {
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Configuration, "change user properties", new ActionURL(ShowUserPreferencesAction.class, ContainerManager.getRoot()));
+    }
 
     // Note: the column list is dynamic, changing based on the current user's permissions.
     public static String getUserColumnNames(User user, Container c)
@@ -171,7 +254,7 @@ public class UserController extends SpringActionController
         }
     }
 
-    private DataRegion getGridRegion(boolean isOwnRecord)
+    private void setDataRegionButtons(DataRegion rgn, boolean isOwnRecord)
     {
         final User user = getUser();
         Container c = getContainer();
@@ -181,26 +264,6 @@ public class UserController extends SpringActionController
 
         assert isOwnRecord || isAnyAdmin;
 
-        SiteUserDataRegion rgn = new SiteUserDataRegion();
-
-        List<ColumnInfo> cols = CoreSchema.getInstance().getTableInfoUsers().getColumns(getUserColumnNames(user, c));
-        List<DisplayColumn> displayColumns = new ArrayList<DisplayColumn>();
-        final String requiredFields = UserManager.getRequiredUserFields();
-
-        for (ColumnInfo col : cols)
-        {
-            if (isColumnRequired(col.getName(), requiredFields))
-            {
-                final RequiredColumn required = new RequiredColumn(col);
-                displayColumns.add(required.getRenderer());
-            }
-            else
-            {
-                displayColumns.add(col.getRenderer());
-            }
-        }
-
-        rgn.setDisplayColumns(displayColumns);
         SimpleDisplayColumn accountDetails = new UrlColumn(new UserUrlsImpl().getUserDetailsURL(c, currentURL) + "userId=${UserId}", "details");
         accountDetails.setDisplayModes(DataRegion.MODE_GRID);
         rgn.addDisplayColumn(0, accountDetails);
@@ -230,10 +293,16 @@ public class UserController extends SpringActionController
         ButtonBar detailsButtonBar = new ButtonBar();
         if (isAnyAdmin)
             detailsButtonBar.add(showGrid);
+
+        ActionURL editURL = QueryService.get().urlDefault(c, QueryAction.updateQueryRow,
+                CoreSchema.getInstance().getSchemaName(), CoreQuerySchema.USERS_TABLE_NAME);
+        editURL.addParameter("userId", currentURL.getParameter("userId"));
+        editURL.addParameter(QueryParam.srcURL, currentURL.getLocalURIString());
+
         if (isOwnRecord || isSiteAdmin)
         {
-            ActionButton edit = new ActionButton(ShowUpdateAction.class, "Edit");
-            edit.setActionType(ActionButton.Action.GET);
+            ActionButton edit = new ActionButton(editURL, "Edit");
+            edit.setActionType(ActionButton.Action.LINK);
             edit.addContextualRole(OwnerRole.class);
             detailsButtonBar.add(edit);
         }
@@ -241,7 +310,8 @@ public class UserController extends SpringActionController
 
         ButtonBar updateButtonBar = new ButtonBar();
         updateButtonBar.setStyle(ButtonBar.Style.separateButtons);
-        ActionButton update = new ActionButton(ShowUpdateAction.class, "Submit");
+        ActionButton update = new ActionButton(editURL, "Submit");
+        update.setActionType(ActionButton.Action.LINK);
         if (isOwnRecord)
         {
             updateButtonBar.addContextualRole(OwnerRole.class);
@@ -252,8 +322,6 @@ public class UserController extends SpringActionController
         if (isSiteAdmin)
             updateButtonBar.add(showGrid);
         rgn.setButtonBar(updateButtonBar, DataRegion.MODE_UPDATE);
-
-        return rgn;
     }
 
     private void populateUserGridButtonBar(ButtonBar gridButtonBar, boolean siteAdmin, boolean isProjectAdminOrBetter)
@@ -279,9 +347,18 @@ public class UserController extends SpringActionController
             insert.setActionType(ActionButton.Action.LINK);
             gridButtonBar.add(insert);
 
-            ActionButton preferences = new ActionButton(ShowUserPreferencesAction.class, "Preferences");
-            preferences.setActionType(ActionButton.Action.LINK);
-            gridButtonBar.add(preferences);
+            String domainURI = UsersDomainKind.getDomainURI("core", CoreQuerySchema.USERS_TABLE_NAME, UsersDomainKind.getDomainContainer(), getUser());
+            Domain domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI);
+
+            if (domain != null)
+            {
+                ActionURL url = domain.getDomainKind().urlEditDefinition(domain, getViewContext());
+                url.addParameter(QueryParam.srcURL, getViewContext().getActionURL().getLocalURIString());
+
+                ActionButton preferences = new ActionButton(url, "Change User Properties");
+                preferences.setActionType(ActionButton.Action.LINK);
+                gridButtonBar.add(preferences);
+            }
         }
 
         if (isProjectAdminOrBetter)
@@ -597,6 +674,10 @@ public class UserController extends SpringActionController
             queryView.setShowDetailsColumn(true);
             queryView.setFrame(WebPartView.FrameType.NONE);
             queryView.disableContainerFilterSelection();
+            queryView.setShowUpdateColumn(false);
+            queryView.setShowInsertNewButton(false);
+            queryView.setShowImportDataButton(false);
+            queryView.setShowDeleteButton(false);
             return queryView;
         }
 
@@ -767,6 +848,40 @@ public class UserController extends SpringActionController
 
 
     @RequiresSiteAdmin
+    public class ShowUserPreferencesAction extends RedirectAction<UserPreferenceForm>
+    {
+        ActionURL _successUrl;
+
+        @Override
+        public URLHelper getSuccessURL(UserPreferenceForm userPreferenceForm)
+        {
+            return _successUrl;
+        }
+
+        @Override
+        public boolean doAction(UserPreferenceForm userPreferenceForm, BindException errors) throws Exception
+        {
+            String domainURI = UsersDomainKind.getDomainURI("core", CoreQuerySchema.USERS_TABLE_NAME, UsersDomainKind.getDomainContainer(), getUser());
+            Domain domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI);
+
+            if (domain != null)
+            {
+                _successUrl = domain.getDomainKind().urlEditDefinition(domain, getViewContext());
+                _successUrl.addParameter(QueryParam.srcURL, getViewContext().getActionURL().getLocalURIString());
+
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public void validateCommand(UserPreferenceForm target, Errors errors)
+        {
+        }
+    }
+
+/*
+    @RequiresSiteAdmin
     public class ShowUserPreferencesAction extends FormViewAction<UserPreferenceForm>
     {
         public void validateCommand(UserPreferenceForm target, Errors errors)
@@ -815,6 +930,7 @@ public class UserController extends SpringActionController
             return root.addChild("User Preferences");
         }
     }
+*/
 
     public static class AccessDetail
     {
@@ -1216,7 +1332,12 @@ public class UserController extends SpringActionController
                 // Allow display and edit of users with invalid email addresses so they can be fixed, #12276.
             }
 
-            DataRegion rgn = getGridRegion(isOwnRecord);
+            CoreQuerySchema schema = new CoreQuerySchema(getUser(), getContainer());
+            QueryUpdateForm quf = new QueryUpdateForm(schema.createTable(CoreQuerySchema.USERS_TABLE_NAME), getViewContext());
+            DetailsView detailsView = new DetailsView(quf);
+            DataRegion rgn = detailsView.getDataRegion();
+
+            setDataRegionButtons(rgn, isOwnRecord);
             ButtonBar bb = rgn.getButtonBar(DataRegion.MODE_DETAILS);
             bb.setStyle(ButtonBar.Style.separateButtons);
 
@@ -1308,9 +1429,6 @@ public class UserController extends SpringActionController
                 bb.addContextualRole(OwnerRole.class);
             }
 
-            DetailsView detailsView = new DetailsView(rgn, _detailsUserId);
-            detailsView.getViewContext().addContextualRole(ReaderRole.class);
-
             VBox view = new VBox(detailsView);
 
             if (isProjectAdminOrBetter)
@@ -1357,7 +1475,12 @@ public class UserController extends SpringActionController
             if (user.isAdministrator() || isOwnRecord)
             {
                 form.setContainer(null);
-                DataRegion rgn = getGridRegion(isOwnRecord);
+                CoreQuerySchema schema = new CoreQuerySchema(getUser(), getContainer());
+                QueryUpdateForm quf = new QueryUpdateForm(schema.createTable(CoreQuerySchema.USERS_TABLE_NAME), getViewContext());
+                UpdateView updateView = new UpdateView(quf, errors);
+                DataRegion rgn = updateView.getDataRegion();
+
+                setDataRegionButtons(rgn, isOwnRecord);
 
                 rgn.removeColumns("Active");
 

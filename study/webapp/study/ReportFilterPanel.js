@@ -450,7 +450,6 @@ Ext4.define('LABKEY.ext4.filter.SelectPanel', {
             });
 
             this.on('selectionchange', function(){
-                console.log('selectionchange');
                 this.allSelected();
                 return true;
             }, this, {stopPropogation: false});

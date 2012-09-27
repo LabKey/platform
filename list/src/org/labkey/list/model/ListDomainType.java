@@ -39,6 +39,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.list.view.ListController;
 import org.labkey.list.view.ListItemAttachmentParent;
 
@@ -111,7 +112,7 @@ public class ListDomainType extends AbstractDomainKind
         return generateDomainURI(name, container).toString();
     }
 
-    public ActionURL urlShowData(Domain domain)
+    public ActionURL urlShowData(Domain domain, ContainerUser containerUser)
     {
         ListDefinition listDef = ListService.get().getList(domain);
         if (listDef == null)
@@ -119,7 +120,7 @@ public class ListDomainType extends AbstractDomainKind
         return listDef.urlShowData();
     }
 
-    public ActionURL urlEditDefinition(Domain domain)
+    public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
         ListDefinition listDef = ListService.get().getList(domain);
         if (listDef == null)

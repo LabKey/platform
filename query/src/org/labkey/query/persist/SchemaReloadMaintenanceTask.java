@@ -33,9 +33,21 @@ public class SchemaReloadMaintenanceTask implements SystemMaintenance.Maintenanc
     private static final Logger LOG = Logger.getLogger(SchemaReloadMaintenanceTask.class);
 
     @Override
-    public String getMaintenanceTaskName()
+    public String getDescription()
     {
         return "External schema reload";
+    }
+
+    @Override
+    public String getName()
+    {
+        return "SchemaReload";
+    }
+
+    @Override
+    public boolean canDisable()
+    {
+        return true;
     }
 
     @Override

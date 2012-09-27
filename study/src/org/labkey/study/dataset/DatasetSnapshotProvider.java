@@ -392,7 +392,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                         List<String> newRows;
 
                         List<String> importErrors = new ArrayList<String>();
-                        numRowsDeleted = StudyManager.getInstance().purgeDataset(study, dsDef, form.getViewContext().getUser());
+                        numRowsDeleted = StudyManager.getInstance().purgeDataset(dsDef, form.getViewContext().getUser());
 
                         // import the new data
                         newRows = StudyManager.getInstance().importDatasetData(study, form.getViewContext().getUser(),

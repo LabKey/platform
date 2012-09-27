@@ -51,6 +51,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.ContainerUser;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -216,9 +217,9 @@ public class DomainImpl implements Domain
         _properties.add(index, (DomainPropertyImpl)prop);
     }
 
-    public ActionURL urlShowData()
+    public ActionURL urlShowData(ContainerUser context)
     {
-        return getDomainKind().urlShowData(this);
+        return getDomainKind().urlShowData(this, context);
     }
 
     public void delete(@Nullable User user) throws DomainNotFoundException

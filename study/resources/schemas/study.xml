@@ -127,6 +127,12 @@
       <ns:column columnName="AlternateIdDigits">
         <ns:description>Number of digits to use when generating random alternate participant IDs.</ns:description>
       </ns:column>
+      <ns:column columnName="StudySnapshot">
+        <ns:description>RowId of the row in StudySnapshot that contains the settings used when creating this snapshot. Null if the study is not a snapshot.</ns:description>
+      </ns:column>
+      <ns:column columnName="LastSpecimenLoad">
+        <ns:description>Timestamp of the last specimen load.</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="Site" tableDbType="TABLE">
@@ -780,6 +786,7 @@
       <ns:column columnName="GlobalUniqueId">
           <ns:description>The global unique ID of each vial.  Assumed to be globally unique within a study, but duplicates can exist cross-study.</ns:description>
           <ns:datatype>Varchar</ns:datatype>
+          <ns:facetingBehavior>ALWAYS_OFF</ns:facetingBehavior>
       </ns:column>
       <ns:column columnName="Ptid">
           <ns:description>The ID of the subject providing each specimen.</ns:description>
@@ -1487,7 +1494,7 @@
       <ns:column columnName="XML"/>
     </ns:columns>
   </ns:table>
-  <ns:table tableName="cohort" tableDbType="TABLE">
+  <ns:table tableName="Cohort" tableDbType="TABLE">
     <ns:description>Contains one row per defined cohort.</ns:description>
     <ns:columns>
       <ns:column columnName="rowid">
@@ -1654,5 +1661,15 @@
         <ns:column columnName="Container"/>
     </ns:columns>
   </ns:table>
-
+  <ns:table tableName="StudySnapshot" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="Source"/>
+      <ns:column columnName="Destination"/>
+      <ns:column columnName="CreatedBy"/>
+      <ns:column columnName="Created"/>
+      <ns:column columnName="Refresh"/>
+      <ns:column columnName="Settings"/>
+    </ns:columns>
+  </ns:table>
 </ns:tables>

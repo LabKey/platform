@@ -17,8 +17,11 @@ package org.labkey.core;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.FileSqlScriptProvider;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlScriptManager;
@@ -26,14 +29,25 @@ import org.labkey.api.data.SqlScriptRunner;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.StartupListener;
+import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
+import org.labkey.core.query.CoreQuerySchema;
+import org.labkey.core.query.UsersDomainKind;
 
+import javax.servlet.ServletContext;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: adam
@@ -127,5 +141,45 @@ public class CoreUpgradeCode implements UpgradeCode
             ExceptionUtil.logExceptionToMothership(null, wrap);
             ModuleLoader.getInstance().addModuleFailure("Core", wrap);
         }
+    }
+
+    // invoked by core-12.21-12.22.sql
+    @SuppressWarnings({"UnusedDeclaration"})
+    @DeferredUpgrade
+    public void ensureCoreUserPropertyDescriptors(ModuleContext context)
+    {
+        String domainURI = UsersDomainKind.getDomainURI("core", CoreQuerySchema.USERS_TABLE_NAME, UsersDomainKind.getDomainContainer(), context.getUpgradeUser());
+        Domain domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI);
+
+        if (domain == null)
+            domain = PropertyService.get().createDomain(UsersDomainKind.getDomainContainer(), domainURI, CoreQuerySchema.USERS_TABLE_NAME);
+
+        if (domain != null)
+            UsersDomainKind.ensureDomainProperties(domain, context.getUpgradeUser(), context.isNewInstall());
+    }
+
+    // invoked by core-12.22-12.23.sql
+    @SuppressWarnings({"UnusedDeclaration"})
+    @DeferredUpgrade  // This needs to happen later, after all of the MaintenanceTasks have been registered
+    public void migrateSystemMaintenanceSettings(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        Map<String, String> props = PropertyManager.getProperties(-1, ContainerManager.getRoot(), "SiteConfig");
+
+        String interval = props.get("systemMaintenanceInterval");
+        Set<String> enabled = new HashSet<String>();
+
+        for (SystemMaintenance.MaintenanceTask task : SystemMaintenance.getTasks())
+            if (!task.canDisable() || !"never".equals(interval))
+                enabled.add(task.getName());
+
+        String time = props.get("systemMaintenanceTime");
+
+        if (null == time)
+            time = "2:00";
+
+        SystemMaintenance.setProperties(enabled, time);
     }
 }

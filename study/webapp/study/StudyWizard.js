@@ -921,7 +921,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         this.specimenRefreshRadioGroup = new Ext.form.RadioGroup({
             xtype: 'radiogroup',
             fieldLabel: 'Refresh rate:',
-            disabled: true, // TODO: enable when we are ready to support specimen nightly refresh
             columns: 1,
             items: [
                 {boxLabel: 'One-time snapshot', name: 'specimenRefresh', inputValue: false, checked: true},

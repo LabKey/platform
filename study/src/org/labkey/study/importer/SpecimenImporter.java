@@ -304,11 +304,24 @@ public class SpecimenImporter
         private String _joinType;
         private String _fkColumn;
         private String _aggregateEventFunction;
+        private boolean _isKeyColumn = false;
 
         public SpecimenColumn(String tsvColumnName, String dbColumnName, String databaseType, TargetTable eventColumn, boolean unique)
         {
             super(tsvColumnName, dbColumnName, databaseType, unique);
             _targetTable = eventColumn;
+        }
+
+        public SpecimenColumn(String tsvColumnName, String dbColumnName, String databaseType, boolean isKeyColumn, TargetTable eventColumn, boolean unique)
+        {
+            this(tsvColumnName, dbColumnName, databaseType, eventColumn, unique);
+            _isKeyColumn = isKeyColumn;
+        }
+
+        public SpecimenColumn(String tsvColumnName, String dbColumnName, String databaseType, boolean isKeyColumn, TargetTable eventColumn)
+        {
+            this(tsvColumnName, dbColumnName, databaseType, eventColumn, false);
+            _isKeyColumn = isKeyColumn;
         }
 
         public SpecimenColumn(String tsvColumnName, String dbColumnName, String databaseType, TargetTable eventColumn)
@@ -365,6 +378,11 @@ public class SpecimenImporter
         public String getAggregateEventFunction()
         {
             return _aggregateEventFunction;
+        }
+
+        public boolean isKeyColumn()
+        {
+            return _isKeyColumn;
         }
 
         public String getFkTableAlias()
@@ -445,17 +463,17 @@ public class SpecimenImporter
     public static final Collection<SpecimenColumn> SPECIMEN_COLUMNS = Arrays.asList(
             new SpecimenColumn(EVENT_ID_COL, "ExternalId", "INT NOT NULL", TargetTable.SPECIMEN_EVENTS, true),
             new SpecimenColumn("record_source", "RecordSource", "VARCHAR(10)", TargetTable.SPECIMEN_EVENTS),
-            GLOBAL_UNIQUE_ID = new SpecimenColumn(GLOBAL_UNIQUE_ID_TSV_COL, "GlobalUniqueId", "VARCHAR(50)", TargetTable.VIALS, true),
+            GLOBAL_UNIQUE_ID = new SpecimenColumn(GLOBAL_UNIQUE_ID_TSV_COL, "GlobalUniqueId", "VARCHAR(50)", true, TargetTable.VIALS, true),
             LAB_ID = new SpecimenColumn(LAB_ID_TSV_COL, "LabId", "INT", TargetTable.SPECIMEN_EVENTS, "Site", "ExternalId", "LEFT OUTER") {
                 public boolean isUnique() { return true; }
             },
             new SpecimenColumn("originating_location", "OriginatingLocationId", "INT", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS, "Site", "ExternalId", "LEFT OUTER"),
             new SpecimenColumn("unique_specimen_id", "UniqueSpecimenId", "VARCHAR(20)", TargetTable.SPECIMEN_EVENTS),
-            new SpecimenColumn("ptid", "Ptid", "VARCHAR(32)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
+            new SpecimenColumn("ptid", "Ptid", "VARCHAR(32)", true, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
             new SpecimenColumn("parent_specimen_id", "ParentSpecimenId", "INT", TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("draw_timestamp", "DrawTimestamp", DATETIME_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
             new SpecimenColumn("sal_receipt_date", "SalReceiptDate", DATETIME_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
-            new SpecimenColumn(SPEC_NUMBER_TSV_COL, "SpecimenNumber", "VARCHAR(50)", TargetTable.SPECIMEN_EVENTS),
+            new SpecimenColumn(SPEC_NUMBER_TSV_COL, "SpecimenNumber", "VARCHAR(50)", true, TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("class_id", "ClassId", "VARCHAR(4)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
             new SpecimenColumn(VISIT_COL, "VisitValue", NUMERIC_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
             new SpecimenColumn("protocol_number", "ProtocolNumber", "VARCHAR(10)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
@@ -658,9 +676,14 @@ public class SpecimenImporter
 
             resyncStudy(user, container);
 
+            // Set LastSpecimenLoad to now... we'll check this before snapshot study specimen refresh
+            StudyImpl study = StudyManager.getInstance().getStudy(container).createMutable();
+            study.setLastSpecimenLoad(new Date());
+            StudyManager.getInstance().updateStudy(user, study);
+
             // Drop the temp table within the transaction; otherwise, we may get a different connection object,
             // where the table is no longer available.  Note that this means that the temp table will stick around
-            // if an exception is throw during loading, but this is probably okay- the DB will clean it up eventually.
+            // if an exception is thrown during loading, but this is probably okay- the DB will clean it up eventually.
             Table.execute(schema, "DROP TABLE " + loadInfo.getTempTableName());
 
             if (!DEBUG)
@@ -2552,5 +2575,4 @@ public class SpecimenImporter
             }
         }
     }
-    
 }

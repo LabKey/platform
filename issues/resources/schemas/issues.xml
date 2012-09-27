@@ -105,6 +105,7 @@
 				<ns:nullable>false</ns:nullable>
 				<ns:isReadOnly>false</ns:isReadOnly>
 				<ns:isUserEditable>true</ns:isUserEditable>
+                <ns:facetingBehavior>ALWAYS_OFF</ns:facetingBehavior>
 			</ns:column>
 			<ns:column columnName="Status">
 				<ns:columnTitle>Status</ns:columnTitle>

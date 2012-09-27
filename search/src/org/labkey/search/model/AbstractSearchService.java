@@ -1574,9 +1574,21 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
     private static class SearchServiceMaintenanceTask implements SystemMaintenance.MaintenanceTask
     {
-        public String getMaintenanceTaskName()
+        public String getDescription()
         {
             return "Search Service Maintenance";
+        }
+
+        @Override
+        public String getName()
+        {
+            return "SearchService";
+        }
+
+        @Override
+        public boolean canDisable()
+        {
+            return true;
         }
 
         public void run()

@@ -1790,8 +1790,6 @@ public class StudyManager
     }
 
 
-
-
     public List<String> getDatasetLSIDs(User user, DataSetDefinition def) throws ServletException, SQLException
     {
         TableInfo tInfo = def.getTableInfo(user, true);
@@ -1951,68 +1949,18 @@ public class StudyManager
     }
 
 
-    public int purgeDataset(Study study, DataSetDefinition dataset, User user)
+    public int purgeDataset(DataSetDefinition dataset, User user)
     {
-        return purgeDataset(study, dataset, null, user);
+        return purgeDataset(dataset, null, user);
     }
 
     /**
      * Delete all rows from a dataset or just those newer than the cutoff date.
      */
-    public int purgeDataset(Study study, DataSetDefinition dataset, Date cutoff, User user)
+    public int purgeDataset(DataSetDefinition dataset, Date cutoff, User user)
     {
         return dataset.deleteRows(user, cutoff);
     }
-
-    /**
-     * Delete all rows from a dataset or just those newer than the cutoff date.
-     */
-//    public int purgeDatasetOldSchool(Study study, DataSetDefinition dataset, Date cutoff, User user)
-//    {
-//        assert StudySchema.getInstance().getSchema().getScope().isTransactionActive();
-//        Container c = study.getContainer();
-//        int count;
-//
-//        TableInfo data = StudySchema.getInstance().getTableInfoStudyData();
-//        SimpleFilter filter = new SimpleFilter();
-//        filter.addCondition("Container", c.getId());
-//        filter.addCondition("DatasetId", dataset.getDataSetId());
-//
-//        try
-//        {
-//            CPUTimer time = new CPUTimer("purge");
-//            time.start();
-//
-//            SQLFragment sub = new SQLFragment("SELECT LSID FROM " + data + " " + "WHERE Container = ? and DatasetId = ?",
-//                    c.getId(), dataset.getDataSetId());
-//            if (cutoff != null)
-//                sub.append(" AND _VisitDate > ?").add(cutoff);
-//            OntologyManager.deleteOntologyObjects(StudySchema.getInstance().getSchema(), sub, c, false);
-//
-//            SQLFragment studyDataFrag = new SQLFragment(
-//                    "DELETE FROM " + data + "\n" +
-//                    "WHERE Container = ? and DatasetId = ?",
-//                    c.getId(), dataset.getDataSetId());
-//            if (cutoff != null)
-//                studyDataFrag.append(" AND _VisitDate > ?").add(cutoff);
-//            count = Table.execute(StudySchema.getInstance().getSchema(), studyDataFrag);
-//
-//            time.stop();
-//            _log.debug("purgeDataset " + dataset.getDisplayString() + " " + DateUtil.formatDuration(time.getTotal()/1000));
-//        }
-//        catch (SQLException s)
-//        {
-//            throw new RuntimeSQLException(s);
-//        }
-//        finally
-//        {
-//            dataset.unmaterialize();
-//            StudyManager.fireDataSetChanged(dataset);
-//        }
-//        return count;
-//    }
-
-
 
     /**
      * delete a dataset definition along with associated type, data, visitmap entries
@@ -2224,6 +2172,20 @@ public class StudyManager
                 fireDataSetChanged(dsd);
             }
 
+            // Clear this container ID from any source and destination columns of study snapshots. Then delete any
+            // study snapshots that are orphaned (both source and destination are gone).
+            new SqlExecutor(StudySchema.getInstance().getSchema(), getStudySnapshotUpdateSql(c, "Source")).execute();
+            new SqlExecutor(StudySchema.getInstance().getSchema(), getStudySnapshotUpdateSql(c, "Destination")).execute();
+
+            Filter orphanedFilter = new SimpleFilter
+            (
+                new CompareType.CompareClause(FieldKey.fromParts("Source"), CompareType.ISBLANK, null),
+                new CompareType.CompareClause(FieldKey.fromParts("Destination"), CompareType.ISBLANK, null)
+            );
+            Table.delete(StudySchema.getInstance().getTableInfoStudySnapshot(), orphanedFilter);
+
+            assert deletedTables.add(StudySchema.getInstance().getTableInfoStudySnapshot());
+
             scope.commitTransaction();
         }
         finally
@@ -2236,6 +2198,21 @@ public class StudyManager
         //
 
         assert verifyAllTablesWereDeleted(deletedTables, deleteStudyDesigns);
+    }
+
+    private SQLFragment getStudySnapshotUpdateSql(Container c, String columnName)
+    {
+        SQLFragment sql = new SQLFragment();
+        sql.append("UPDATE ");
+        sql.append(StudySchema.getInstance().getTableInfoStudySnapshot().getSelectName());
+        sql.append(" SET ");
+        sql.append(columnName);
+        sql.append(" = NULL WHERE ");
+        sql.append(columnName);
+        sql.append(" = ?");
+        sql.add(c);
+
+        return sql;
     }
 
     // TODO: Check that datasets are deleted as well?
@@ -3721,6 +3698,19 @@ public class StudyManager
         }
     }
 */
+
+    // Return collection of current snapshots that are configured to refresh specimens
+    public Collection<StudySnapshot> getRefreshStudySnapshots()
+    {
+        SQLFragment sql = new SQLFragment("SELECT ss.* FROM ");
+        sql.append(StudySchema.getInstance().getTableInfoStudy(), "s");
+        sql.append(" JOIN ");
+        sql.append(StudySchema.getInstance().getTableInfoStudySnapshot(), "ss");
+        sql.append(" ON s.StudySnapshot = ss.RowId AND Source IS NOT NULL AND Destination IS NOT NULL AND Refresh = ?");
+        sql.add(Boolean.TRUE);
+
+        return new SqlSelector(StudySchema.getInstance().getSchema(), sql).getCollection(StudySnapshot.class);
+    }
 
     /**
      * Convert a placeholder or 'ghost' dataset to an actual dataset by renaming the target dataset to the placeholder's name,

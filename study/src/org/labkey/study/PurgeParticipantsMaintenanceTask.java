@@ -27,9 +27,21 @@ import org.labkey.study.visitmanager.VisitManager;
 public class PurgeParticipantsMaintenanceTask implements SystemMaintenance.MaintenanceTask
 {
     @Override
-    public String getMaintenanceTaskName()
+    public String getDescription()
     {
         return "Purge unused participants";
+    }
+
+    @Override
+    public String getName()
+    {
+        return "PurgeStudyParticipants";
+    }
+
+    @Override
+    public boolean canDisable()
+    {
+        return true;
     }
 
     @Override

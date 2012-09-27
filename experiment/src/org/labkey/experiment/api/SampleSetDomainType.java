@@ -34,7 +34,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.experiment.controllers.exp.ExperimentController;
+import org.labkey.api.writer.ContainerUser;
 
 import java.sql.SQLException;
 import java.util.HashSet;
@@ -70,7 +70,7 @@ public class SampleSetDomainType extends AbstractDomainKind
         return ExperimentService.get().getSampleSet(domain.getTypeURI());
     }
 
-    public ActionURL urlShowData(Domain domain)
+    public ActionURL urlShowData(Domain domain, ContainerUser containerUser)
     {
         ExpSampleSet ss = getSampleSet(domain);
         if (ss == null)
@@ -80,9 +80,9 @@ public class SampleSetDomainType extends AbstractDomainKind
         return (ActionURL) ss.detailsURL();
     }
 
-    public ActionURL urlEditDefinition(Domain domain)
+    public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(domain.getContainer(), domain.getTypeURI(), false, true, false);
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain.getTypeURI(), false, true, false);
     }
 
     public String getTypeLabel(Domain domain)

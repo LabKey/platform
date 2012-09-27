@@ -844,7 +844,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
             List<DisplayColumn> columns = new ArrayList<DisplayColumn>();
             for (DisplayColumn col : allColumns)
             {
-                if (col.shouldRender(renderContext))
+                if (col.shouldRender(renderContext) && !(col instanceof SpecimenRequestDisplayColumn))
                     columns.add(col);
             }
             StringBuilder builder = new StringBuilder();

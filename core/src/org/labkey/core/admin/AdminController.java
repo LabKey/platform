@@ -45,6 +45,7 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.StatusReportingRunnableAction;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporterImpl;
 import org.labkey.api.admin.FolderWriterImpl;
@@ -119,6 +120,7 @@ import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionReportingLevel;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
@@ -130,11 +132,11 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SessionAppender;
 import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.util.SystemMaintenance.SystemMaintenanceProperties;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -158,7 +160,6 @@ import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.api.writer.MemoryVirtualFile;
 import org.labkey.core.admin.sql.SqlScriptController;
-import org.labkey.api.admin.FolderExportContext;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.folder.xml.FolderDocument;
 import org.springframework.validation.BindException;
@@ -233,6 +234,7 @@ public class AdminController extends SpringActionController
 
         // Configuration
         AdminConsole.addLink(SettingsLinkType.Configuration, "site settings", new AdminUrlsImpl().getCustomizeSiteURL());
+        AdminConsole.addLink(SettingsLinkType.Configuration, "system maintenance", new ActionURL(ConfigureSystemMaintenanceAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Configuration, "look and feel settings", new AdminUrlsImpl().getProjectSettingsURL(root));
         AdminConsole.addLink(SettingsLinkType.Configuration, "authentication", PageFlowUtil.urlProvider(LoginUrls.class).getConfigureURL());
         AdminConsole.addLink(SettingsLinkType.Configuration, "email customization", new ActionURL(CustomizeEmailAction.class, root));
@@ -1062,15 +1064,6 @@ public class AdminController extends SpringActionController
                 }
             }
 
-            // Make sure we can parse the system maintenance time
-            Date newSystemMaintenanceTime = SystemMaintenance.parseSystemMaintenanceTime(form.getSystemMaintenanceTime());
-
-            if (null == newSystemMaintenanceTime)
-            {
-                errors.reject(ERROR_MSG, "Invalid format for System Maintenance Time - please enter time in 24-hour format (e.g., 0:30 for 12:30AM, 14:00 for 2:00PM)");
-                return false;
-            }
-
             if (!"".equals(form.getMascotServer()))
             {
                 // we perform the Mascot setting test here in case user did not do so
@@ -1109,15 +1102,6 @@ public class AdminController extends SpringActionController
             props.setMemoryUsageDumpInterval(form.getMemoryUsageDumpInterval());
             props.setMaxBLOBSize(form.getMaxBLOBSize());
             props.setExt3Required(form.isExt3Required());
-
-            // Save the old system maintenance property values, compare with the new ones, and set a flag if they've changed
-            String oldInterval = props.getSystemMaintenanceInterval();
-            Date oldTime = props.getSystemMaintenanceTime();
-            String newInterval = form.getSystemMaintenanceInterval();
-            props.setSystemMaintenanceInterval(newInterval);
-            props.setSystemMaintenanceTime(newSystemMaintenanceTime);
-
-            boolean setSystemMaintenanceTimer = (!oldInterval.equals(newInterval) || !oldTime.equals(newSystemMaintenanceTime));
 
             props.setAdminOnlyMessage(form.getAdminOnlyMessage());
             props.setUserRequestedAdminOnlyMode(form.isAdminOnlyMode());
@@ -1180,9 +1164,6 @@ public class AdminController extends SpringActionController
 
             if (null != level)
                 level.scheduleUpgradeCheck();
-
-            if (setSystemMaintenanceTimer)
-                SystemMaintenance.setTimer();
 
             return true;
         }
@@ -1466,8 +1447,6 @@ public class AdminController extends SpringActionController
         private boolean _ext3Required;
         private String _adminOnlyMessage;
         private int _sslPort;
-        private String _systemMaintenanceInterval;
-        private String _systemMaintenanceTime;
         private int _memoryUsageDumpInterval;
         private int _maxBLOBSize;
         private String _exceptionReportingLevel;
@@ -1573,26 +1552,6 @@ public class AdminController extends SpringActionController
         public void setExt3Required(boolean ext3Required)
         {
             _ext3Required = ext3Required;
-        }
-
-        public String getSystemMaintenanceInterval()
-        {
-            return _systemMaintenanceInterval;
-        }
-
-        public void setSystemMaintenanceInterval(String systemMaintenanceInterval)
-        {
-            _systemMaintenanceInterval = systemMaintenanceInterval;
-        }
-
-        public String getSystemMaintenanceTime()
-        {
-            return _systemMaintenanceTime;
-        }
-
-        public void setSystemMaintenanceTime(String systemMaintenanceTime)
-        {
-            _systemMaintenanceTime = systemMaintenanceTime;
         }
 
         public int getSslPort()
@@ -2329,13 +2288,93 @@ public class AdminController extends SpringActionController
     }
 
 
+    public static class ConfigureSystemMaintenanceForm
+    {
+        private String _maintenanceTime;
+        private Set<String> _enable = Collections.emptySet();
+        private boolean _enableSystemMaintenance;
+
+        public String getMaintenanceTime()
+        {
+            return _maintenanceTime;
+        }
+
+        public void setMaintenanceTime(String maintenanceTime)
+        {
+            _maintenanceTime = maintenanceTime;
+        }
+
+        public Set<String> getEnable()
+        {
+            return _enable;
+        }
+
+        public void setEnable(Set<String> enable)
+        {
+            _enable = enable;
+        }
+
+        public boolean isEnableSystemMaintenance()
+        {
+            return _enableSystemMaintenance;
+        }
+
+        public void setEnableSystemMaintenance(boolean enableSystemMaintenance)
+        {
+            _enableSystemMaintenance = enableSystemMaintenance;
+        }
+    }
+
+
+    @AdminConsoleAction
+    public class ConfigureSystemMaintenanceAction extends FormViewAction<ConfigureSystemMaintenanceForm>
+    {
+        @Override
+        public void validateCommand(ConfigureSystemMaintenanceForm form, Errors errors)
+        {
+            Date date = SystemMaintenance.parseSystemMaintenanceTime(form.getMaintenanceTime());
+
+            if (null == date)
+                errors.reject(ERROR_MSG, "Invalid format for system maintenance time");
+        }
+
+        @Override
+        public ModelAndView getView(ConfigureSystemMaintenanceForm form, boolean reshow, BindException errors) throws Exception
+        {
+            SystemMaintenanceProperties prop = SystemMaintenance.getProperties();
+            return new JspView<SystemMaintenanceProperties>("/org/labkey/core/admin/systemMaintenance.jsp", prop, errors);
+        }
+
+        @Override
+        public boolean handlePost(ConfigureSystemMaintenanceForm form, BindException errors) throws Exception
+        {
+            SystemMaintenance.setTimeDisabled(!form.isEnableSystemMaintenance());
+            SystemMaintenance.setProperties(form.getEnable(), form.getMaintenanceTime());
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ConfigureSystemMaintenanceForm form)
+        {
+            return new AdminUrlsImpl().getAdminConsoleURL();
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return appendAdminNavTrail(root, "Configure System Maintenance", this.getClass());
+        }
+    }
+
     @RequiresSiteAdmin
     public class SystemMaintenanceAction extends StatusReportingRunnableAction<SystemMaintenance>
     {
         @Override
         protected SystemMaintenance newStatusReportingRunnable()
         {
-            return new SystemMaintenance(true);
+            String taskName = (String)getViewContext().get("taskName");
+            return new SystemMaintenance(true, taskName);
         }
     }
 

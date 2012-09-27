@@ -17,13 +17,11 @@
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.settings.AppProps"%>
-<%@ page import="org.labkey.api.util.SystemMaintenance" %>
+<%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.apache.commons.lang3.ObjectUtils" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%=formatMissedErrors("form")%>
@@ -229,34 +227,6 @@ Click the Save button at any time to accept the current settings and continue.</
 </tr>
 
 <tr>
-    <td colspan=2>System maintenance (<%=bean.helpLink%>)</td>
-</tr>
-<tr><td colspan=3 class=labkey-title-area-line></td></tr>
-<tr>
-    <td class="labkey-form-label">Perform regular system maintenance</td>
-    <td>
-        <table>
-            <tr>
-                <td valign="top"><input type="radio" name="systemMaintenanceInterval" value="never" <%="never".equals(appProps.getSystemMaintenanceInterval()) ? "checked" : ""%>></td>
-                <td><b>Never</b> - Do not perform regular system &amp; database maintenance</td>
-            </tr>
-            <tr>
-                <td valign="top"><input type="radio" name="systemMaintenanceInterval" value="daily" <%="daily".equals(appProps.getSystemMaintenanceInterval()) ? "checked" : ""%>></td>
-                <td><b>Daily</b> - Perform regular system &amp; database maintenance every day at <input type="text" name="systemMaintenanceTime" value="<%=SystemMaintenance.formatSystemMaintenanceTime(appProps.getSystemMaintenanceTime())%>" size="4">.  Enter this time in 24-hour format (e.g., 0:30 for 12:30AM, 14:00 for 2:00PM).</td>
-            </tr>
-        </table>
-    </td>
-</tr>
-<tr>
-    <td></td>
-    <td><%=textLink("Run system maintenance now", "javascript:submitSystemMaintenance()")%></td>
-</tr>
-
-<tr>
-    <td>&nbsp;</td>
-</tr>
-
-<tr>
     <td colspan=2>Configure SSL (<%=bean.helpLink%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
@@ -381,4 +351,3 @@ Click the Save button at any time to accept the current settings and continue.</
     <input type="hidden" name="networkDriveUser" value="" />
     <input type="hidden" name="networkDrivePassword" value="" />
 </form>
-<form name="systemMaintenance" action="<%=buildURL(AdminController.SystemMaintenanceAction.class)%>" method="post" target="systemMaintenance"></form>

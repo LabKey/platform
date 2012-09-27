@@ -975,9 +975,21 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
     private static class ReportServiceMaintenanceTask implements SystemMaintenance.MaintenanceTask
     {
-        public String getMaintenanceTaskName()
+        public String getDescription()
         {
             return "Report Service Maintenance";
+        }
+
+        @Override
+        public String getName()
+        {
+            return "ReportService";
+        }
+
+        @Override
+        public boolean canDisable()
+        {
+            return true;
         }
 
         public void run()

@@ -3230,7 +3230,7 @@ public class SpecimenController extends BaseStudyController
                 registerReportFactory(COUNTS_BY_DERIVATIVE_TYPE_TITLE, new TypeCohortReportFactory());
             if (study != null)
             {
-                if (!study.isAncillaryStudy())
+                if (!study.isAncillaryStudy() && !study.isSnapshotStudy())
                 {
                     registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestReportFactory());
                     registerReportFactory(REQUESTS_BY_DERIVATIVE_TYPE_TITLE, new RequestSiteReportFactory());

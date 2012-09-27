@@ -29,6 +29,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.ClientAPIAuditViewFactory;
 import org.labkey.api.collections.ArrayListMap;
+import org.labkey.core.query.UsersDomainKind;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialectManager;
@@ -38,6 +39,7 @@ import org.labkey.api.etl.ResultSetDataIterator;
 import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.FirstRequestHandler;
 import org.labkey.api.module.FolderType;
@@ -183,7 +185,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @Override
     public double getVersion()
     {
-        return 12.21;
+        return 12.23;
     }
 
     @Override
@@ -715,6 +717,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         AdminController.registerAdminConsoleLinks();
         AnalyticsController.registerAdminConsoleLinks();
+        UserController.registerAdminConsoleLinks();
 
         WebdavService.get().setResolver(WebdavResolverImpl.get());
         ModuleLoader.getInstance().registerFolderType(this, new WorkbookFolderType());
@@ -751,6 +754,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "Require permission to view email addresses",
                 "Require explicit permission for non-admins to view users' email addresses.",
                 false);
+
+        PropertyService.get().registerDomainKind(new UsersDomainKind());
     }
 
     @Override
@@ -860,6 +865,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 CachingDataIterator.ScrollTestCase.class,
                 StringUtilsLabKey.TestCase.class,
                 Compress.TestCase.class,
+                ExtUtil.TestCase.class,
+                JsonTest.class,
                 ExtUtil.TestCase.class,
                 ReplacedRunFilter.TestCase.class
         ));

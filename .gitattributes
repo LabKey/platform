@@ -312,6 +312,8 @@ core/resources/schemas/dbscripts/postgresql/core-11.30-12.10.sql -text
 core/resources/schemas/dbscripts/postgresql/core-12.10-12.20.sql -text
 core/resources/schemas/dbscripts/postgresql/core-12.12-12.13.sql -text
 core/resources/schemas/dbscripts/postgresql/core-12.20-12.21.sql -text
+core/resources/schemas/dbscripts/postgresql/core-12.21-12.22.sql -text
+core/resources/schemas/dbscripts/postgresql/core-12.22-12.23.sql -text
 core/resources/schemas/dbscripts/postgresql/core-create.sql -text
 core/resources/schemas/dbscripts/postgresql/core-drop.sql -text
 core/resources/schemas/dbscripts/postgresql/obsolete/bootstrap.sql -text
@@ -444,6 +446,8 @@ core/resources/schemas/dbscripts/sqlserver/core-12.10-12.20.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-12.12-12.13.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-12.13-12.14.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-12.20-12.21.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-12.21-12.22.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-12.22-12.23.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-drop.sql -text
 core/resources/schemas/dbscripts/sqlserver/group_concat_install.sql -text
@@ -668,6 +672,7 @@ core/src/org/labkey/core/admin/setFolderPermissions.jsp -text
 core/src/org/labkey/core/admin/setInitialFolderSettings.jsp -text
 core/src/org/labkey/core/admin/sql/ScriptReorderer.java -text
 core/src/org/labkey/core/admin/sql/SqlScriptController.java -text
+core/src/org/labkey/core/admin/systemMaintenance.jsp -text
 core/src/org/labkey/core/admin/testNetworkDrive.jsp -text
 core/src/org/labkey/core/admin/threads.jsp -text
 core/src/org/labkey/core/admin/view/filesNotifySettings.jsp -text
@@ -717,7 +722,9 @@ core/src/org/labkey/core/query/ContainerAuditViewFactory.java -text
 core/src/org/labkey/core/query/CoreQuerySchema.java -text
 core/src/org/labkey/core/query/GroupAuditViewFactory.java -text
 core/src/org/labkey/core/query/UserAuditViewFactory.java -text
+core/src/org/labkey/core/query/UsersDomainKind.java -text
 core/src/org/labkey/core/query/UsersMsgPrefTable.java -text
+core/src/org/labkey/core/query/UsersTable.java -text
 core/src/org/labkey/core/search/NoopSearchService.java -text
 core/src/org/labkey/core/security/ContainersView.java -text
 core/src/org/labkey/core/security/FolderPermissions.jsp -text
@@ -2661,6 +2668,7 @@ study/resources/schemas/dbscripts/postgresql/study-12.22-12.23.sql -text
 study/resources/schemas/dbscripts/postgresql/study-12.23-12.24.sql -text
 study/resources/schemas/dbscripts/postgresql/study-12.24-12.25.sql -text
 study/resources/schemas/dbscripts/postgresql/study-12.25-12.26.sql -text
+study/resources/schemas/dbscripts/postgresql/study-12.26-12.27.sql -text
 study/resources/schemas/dbscripts/postgresql/study-create.sql -text
 study/resources/schemas/dbscripts/postgresql/study-drop.sql -text
 study/resources/schemas/dbscripts/sqlserver/obsolete/study-0.00-1.11.sql -text
@@ -2847,6 +2855,7 @@ study/resources/schemas/dbscripts/sqlserver/study-12.22-12.23.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-12.23-12.24.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-12.24-12.25.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-12.25-12.26.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-12.26-12.27.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-create.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-drop.sql -text
 study/resources/schemas/study.xml -text
@@ -2860,6 +2869,7 @@ study/src/org/labkey/study/PurgeParticipantsMaintenanceTask.java -text
 study/src/org/labkey/study/QueryHelper.java -text
 study/src/org/labkey/study/SampleManager.java -text
 study/src/org/labkey/study/SingleCohortFilter.java -text
+study/src/org/labkey/study/SpecimenRefreshMaintainanceTask.java -text
 study/src/org/labkey/study/SpecimenServiceImpl.java -text
 study/src/org/labkey/study/StudyCache.java -text
 study/src/org/labkey/study/StudyContainerListener.java -text
@@ -3026,6 +3036,7 @@ study/src/org/labkey/study/model/SpecimenTypeSummaryRow.java -text
 study/src/org/labkey/study/model/StudyDomainKind.java -text
 study/src/org/labkey/study/model/StudyImpl.java -text
 study/src/org/labkey/study/model/StudyManager.java -text
+study/src/org/labkey/study/model/StudySnapshot.java -text
 study/src/org/labkey/study/model/TestDatasetDomainKind.java -text
 study/src/org/labkey/study/model/UploadLog.java -text
 study/src/org/labkey/study/model/VisitDataSet.java -text

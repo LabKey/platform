@@ -22,6 +22,7 @@ import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.ContainerUser;
 
 import java.util.Set;
 
@@ -78,13 +79,13 @@ public class FilePropertiesDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public ActionURL urlShowData(Domain domain)
+    public ActionURL urlShowData(Domain domain, ContainerUser containerUser)
     {
         return null;
     }
 
     @Override
-    public ActionURL urlEditDefinition(Domain domain)
+    public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
         return new ActionURL(FileContentController.DesignerAction.class, domain.getContainer());
     }

@@ -4303,7 +4303,7 @@ public class StudyController extends BaseStudyController
                 try
                 {
                     scope.ensureTransaction();
-                    int numRowsDeleted = StudyManager.getInstance().purgeDataset(getStudy(), dataset, getUser());
+                    int numRowsDeleted = StudyManager.getInstance().purgeDataset(dataset, getUser());
                     scope.commitTransaction();
 
                     // Log the purge

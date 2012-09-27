@@ -77,6 +77,7 @@ import org.labkey.study.model.ParticipantMapper;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.StudySnapshot;
 import org.labkey.study.pipeline.StudyImportDatasetTask;
 import org.labkey.study.pipeline.StudyImportSpecimenTask;
 import org.labkey.study.query.StudyQuerySchema;
@@ -399,6 +400,15 @@ public class CreateAncillaryStudyAction extends MutatingApiAction<EmphasisStudyD
 
                     // import folder items (reports, lists, etc)
                     importFolderItems(newStudy, vf);
+
+                    // Save these snapshot settings to support specimen refresh and provide history
+                    StudySnapshot snapshot = new StudySnapshot(studyCtx, _dstContainer, _form.isSpecimenRefresh());
+                    Table.insert(getUser(), StudySchema.getInstance().getTableInfoStudySnapshot(), snapshot);
+
+                    // Get a fresh copy of the study... import methods may have changed it
+                    StudyImpl mutableStudy = StudyManager.getInstance().getStudy(_dstContainer).createMutable();
+                    mutableStudy.setStudySnapshot(snapshot.getRowId());
+                    StudyManager.getInstance().updateStudy(user, mutableStudy);
                 }
 
                 if (errors.hasErrors())

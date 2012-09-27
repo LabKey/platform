@@ -159,7 +159,9 @@ import org.labkey.study.view.StudyToolsWebPartFactory;
 import org.labkey.study.view.StudyViewLoader;
 import org.labkey.study.view.SubjectDetailsWebPartFactory;
 import org.labkey.study.view.SubjectsWebPart;
+import org.labkey.study.writer.DatasetWriter;
 import org.labkey.study.writer.MissingValueWriterFactory;
+import org.labkey.study.writer.SpecimenWriter;
 import org.labkey.study.writer.StudySerializationRegistryImpl;
 import org.labkey.study.writer.StudyWriterFactory;
 
@@ -214,7 +216,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     public double getVersion()
     {
-        return 12.26;
+        return 12.27;
     }
 
     protected void init()
@@ -384,6 +386,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         }
 
         SystemMaintenance.addTask(new PurgeParticipantsMaintenanceTask());
+        SystemMaintenance.addTask(new SpecimenRefreshMaintainanceTask());
 
         FolderSerializationRegistry folderRegistry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
         if (null != folderRegistry)
@@ -718,6 +721,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     {
         Set<Class> set = new HashSet<Class>();
         set.add(SampleMindedTransformTask.TestCase.class);
+        set.add(DatasetWriter.TestCase.class);
+        set.add(SpecimenWriter.TestCase.class);
         set.add(TsvAssayProvider.TestCase.class);
         return set;
     }

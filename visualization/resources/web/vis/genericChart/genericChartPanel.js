@@ -1704,10 +1704,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         plotConfig.aes = this.generateAes(geom, measures, pointClickFn);
 
-        if(!plotConfig.aes.color && !plotConfig.aes.shape){
-            plotConfig.legendPos = 'none';
-        }
-
         var plot = new LABKEY.vis.Plot(plotConfig);
         plot.render();
 
@@ -1817,7 +1813,16 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 } else {
                     return measures.x.label + ', \n' + measures.y.label + ': ' + row[measures.y.name].value;
                 }
+            };
+
+            if(measures.color){
+                aes.outlierColor = measures.color.acc;
             }
+
+            if(measures.shape){
+                aes.outlierShape = measures.shape.acc;
+            }
+
         } else if(geom.type == "Point"){
             aes.hoverText = function(row){
                 var hover = measures.x.label + ': ';
@@ -1862,16 +1867,18 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
         if (pointClickFn != null)
         {
-            aes.pointClickFn = pointClickFn(
-                {
-                    schemaName: this.schemaName,
-                    queryName: this.queryName,
-                    xAxis: measures.x.name,
-                    yAxis: measures.y.name,
-                    colorName: measures.color.name,
-                    pointName: measures.point.name
-                }
-            );
+            var pointInfo = {
+                schemaName: this.schemaName,
+                queryName: this.queryName,
+                xAxis: measures.x.name,
+                yAxis: measures.y.name
+            };
+            if (measures.color)
+                pointInfo.colorName = measures.color.name;
+            if (measures.shape)
+                pointInfo.pointName = measures.shape.name;
+
+            aes.pointClickFn = pointClickFn(pointInfo);
         }
 
         return aes;
@@ -2030,7 +2037,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             + '<div style="margin-left: 40px;">}</div>'
             + '<li><b>measureInfo:</b> the schema name, query name, and measure names selected for the plot</li>'
             + '<div style="margin-left: 40px;">{</div>'
-            + '<div style="margin-left: 50px;">schemaName: "study",<br/>queryName: "Dataset1",<br/>yAxis: "YAxisMeasure",<br/>xAxis: "XAxisMeasure",<br/>colorName: "ColorMeasure",<br/>pointname: "PointMeasure"</div>'
+            + '<div style="margin-left: 50px;">schemaName: "study",<br/>queryName: "Dataset1",<br/>yAxis: "YAxisMeasure",<br/>xAxis: "XAxisMeasure",<br/>colorName: "ColorMeasure",<br/>pointName: "PointMeasure"</div>'
             + '<div style="margin-left: 40px;">}</div>'
             + '<li><b>clickEvent:</b> information from the browser about the click event (i.e. target, position, etc.)</li></ul>';
     }

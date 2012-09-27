@@ -276,4 +276,9 @@ public class StudySchema
     {
         return getSchema().getTable("ParticipantGroupMap");
     }
+
+    public TableInfo getTableInfoStudySnapshot()
+    {
+        return getSchema().getTable("StudySnapshot");
+    }
 }
