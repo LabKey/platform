@@ -551,6 +551,7 @@ public class ListDefinitionImpl implements ListDefinition
     }
 
 
+/*
     public int insertListItemsOld(User user, DataLoader loader, @NotNull BatchValidationException errors, @Nullable VirtualFile attachmentDir, @Nullable ListImportProgress progress) throws IOException
     {
         Set<String> mvIndicatorColumnNames = new CaseInsensitiveHashSet();
@@ -807,7 +808,7 @@ public class ListDefinitionImpl implements ListDefinition
         }
         return 0;
     }
-
+*/
 
     public int insertListItemsETL(final User user, DataLoader loader, final BatchValidationException errors, @Nullable final VirtualFile attachmentDir, @Nullable ListImportProgress progress) throws IOException
     {

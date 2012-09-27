@@ -31,8 +31,7 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.DataSetTableImpl;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.TreeSet;
 
 /**
  * User: brittp
@@ -261,7 +260,7 @@ public class SequenceVisitManager extends VisitManager
                     "WHERE container = ? AND VisitRowId IS NULL");
             sql.add(c);
 
-            List<Double> sequenceNums = new ArrayList<Double>();
+            TreeSet<Double> sequenceNums = new TreeSet<Double>();
             Table.TableResultSet rs = Table.executeQuery(schema, sql);
             try
             {
@@ -275,13 +274,11 @@ public class SequenceVisitManager extends VisitManager
                 rs.close();
             }
 
-            for (double d : sequenceNums)
-            {
-                StudyManager.getInstance().ensureVisit(getStudy(), user, d, null, true);
-            }
             if (sequenceNums.size() > 0)
+            {
+                StudyManager.getInstance().ensureVisits(getStudy(), user, sequenceNums, null);
                 _updateVisitRowId();
-
+            }
         }
         catch (SQLException x)
         {

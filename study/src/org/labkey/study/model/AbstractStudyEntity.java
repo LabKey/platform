@@ -19,6 +19,7 @@ package org.labkey.study.model;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.Transient;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.MutableSecurityPolicy;
@@ -35,6 +36,7 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import javax.persistence.*;
 
 /**
  * User: brittp
@@ -135,6 +137,8 @@ public abstract class AbstractStudyEntity<T>
         _entityId = entityId;
     }
 
+
+    @Transient
     public SecurityPolicy getPolicy()
     {
         final StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
@@ -177,6 +181,7 @@ public abstract class AbstractStudyEntity<T>
     }
 
     @NotNull
+    @Transient
     public Set<Class<? extends Permission>> getRelevantPermissions()
     {
         return RoleManager.BasicPermissions;
@@ -194,6 +199,7 @@ public abstract class AbstractStudyEntity<T>
         return getDisplayString();
     }
 
+    @Transient
     public SecurableResource getParentResource()
     {
         //by default all study entities are children of the study

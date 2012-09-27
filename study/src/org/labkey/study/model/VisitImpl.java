@@ -16,9 +16,12 @@
 
 package org.labkey.study.model;
 
+import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.Transient;
 import org.labkey.api.study.Cohort;
 import org.labkey.api.study.Visit;
 import org.labkey.study.StudySchema;
@@ -158,6 +161,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     }
 
 
+    @Transient
     public List<VisitDataSet> getVisitDataSets()
     {
         return StudyManager.getInstance().getMapping(this);
@@ -248,5 +252,25 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     public void setChronologicalOrder(int chronologicalOrder)
     {
         _chronologicalOrder = chronologicalOrder;
+    }
+
+
+    static _BeanObjectFactory _f = new _BeanObjectFactory();
+    static
+    {
+        ObjectFactory.Registry.register(VisitImpl.class, _f);
+    }
+
+    private static class _BeanObjectFactory extends BeanObjectFactory<VisitImpl>
+    {
+        _BeanObjectFactory()
+        {
+            super(VisitImpl.class);
+            assert !_readableProperties.remove("visitDataSets");
+            // WHY does VisitImpl need getRelevantPermissions and getPolicy and getParentResource???? WHY?!!!
+            assert !_readableProperties.remove("relevantPermissions");
+            assert !_readableProperties.remove("parentResource");
+            assert !_readableProperties.remove("policy");
+        }
     }
 }

@@ -542,6 +542,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     
 
     /** I think the caching semantics of the dataset are such that I can cache the StorageTableInfo in a member */
+    @Transient
     public TableInfo getStorageTableInfo() throws UnauthorizedException
     {
         if (null == _storageTable)
@@ -1281,6 +1282,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     Domain _domain = null;
 
+    @Transient
     public synchronized Domain getDomain()
     {
         if (null == getTypeURI())
@@ -2612,11 +2614,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         DataSetDefObjectFactory()
         {
             super(DataSetDefinition.class);
-            boolean found;
-            found = _readableProperties.remove("storageTableInfo");
-            assert found;
-            found = _readableProperties.remove("domain");
-            assert found;
+            assert !_readableProperties.remove("storageTableInfo");
+            assert !_readableProperties.remove("domain");
         }
     }
 
