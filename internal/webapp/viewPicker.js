@@ -582,7 +582,8 @@ function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue
 
     var includeAllDescendantsCheckbox = new Ext.form.Checkbox({
         name: 'includeAllDescendants',
-        fieldLabel: 'Include All Descendants',
+        boxLabel: 'Include All Descendants',
+        height: 30,
         value: true,
         checked: includeAllDescendants,
         width: 380
@@ -654,7 +655,7 @@ function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue
         layout: 'form',
         timeout: Ext.Ajax.timeout,
         labelSeparator: '',
-        items: [titleField, urlField, formMenuSelectPanel, formSQV, formFolders]
+        items: [titleField, formMenuSelectPanel, formSQV, formFolders, urlField]
     });
 
     var win = new Ext.Panel({
@@ -670,7 +671,7 @@ function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue
                 var form = null;
                 if(isChoiceListQuery){
                     form = formSQV.getForm();
-                } else{
+                } else {
                     form = formFolders.getForm();
                 }
 
