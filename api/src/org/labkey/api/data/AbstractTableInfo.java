@@ -807,14 +807,17 @@ abstract public class AbstractTableInfo implements TableInfo
                 }
             }
 
+            // Reorder based on the sequence of columns in XML
             Map<String, ColumnInfo> originalColumns = constructColumnMap();
             originalColumns.putAll(_columnMap);
             for (ColumnInfo columnInfo : originalColumns.values())
             {
+                // Remove all the existing columns
                 removeColumn(columnInfo);
             }
             for (ColumnType xmlColumn : xmlTable.getColumns().getColumnArray())
             {
+                // Iterate through the ones in the XML and add them in the right order
                 ColumnInfo column = originalColumns.remove(xmlColumn.getColumnName());
                 if (column != null)
                 {
@@ -823,6 +826,8 @@ abstract public class AbstractTableInfo implements TableInfo
             }
             for (ColumnInfo column : originalColumns.values())
             {
+                // Readd the rest of the columns that weren't in the XML. It's backed by a LinkedHashMap, so they'll
+                // be in the same order they were in originally
                 addColumn(column);
             }
         }
