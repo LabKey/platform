@@ -518,7 +518,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 for (Container container : containers)
                 {
                     if (null == StringUtils.trimToNull(filterFolderName) ||
-                            "[none]".equals(filterFolderName) ||
+                            "[all]".equals(filterFolderName) ||
                             container.getFolderType().getName().equals(filterFolderName))
                     {
                         String uri = null;
