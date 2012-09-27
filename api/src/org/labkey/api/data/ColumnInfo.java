@@ -1028,40 +1028,6 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     }
 
 
-    private static Pattern pat = Pattern.compile("\\$\\{[^}]*}");
-
-    public static String variableSubstitution(String src, Map map, boolean urlencode)
-    {
-        StringBuffer sb = new StringBuffer();
-        Matcher matcher = pat.matcher(src);
-        while (matcher.find())
-        {
-            String varName = src.substring(matcher.start() + 2, matcher.end() - 1);
-
-            //by default substitute "" for unmatched substitutions
-            String substValue = "";
-            Object o = map.get(varName);
-            if (null != o)
-                substValue = o.toString();
-
-            if (urlencode)
-                try
-                {
-                    substValue = URLEncoder.encode(substValue, "UTF-8");
-                }
-                catch (Exception e)
-                {
-                    _log.error("", e);
-                }
-
-            matcher.appendReplacement(sb, substValue);
-        }
-        matcher.appendTail(sb);
-
-        return sb.toString();
-    }
-
-
     public String toString()
     {
         StringBuilder sb = new StringBuilder(64);

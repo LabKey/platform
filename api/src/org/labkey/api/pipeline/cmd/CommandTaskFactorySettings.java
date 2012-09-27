@@ -33,6 +33,7 @@ public class CommandTaskFactorySettings extends AbstractTaskFactorySettings
     private String _cloneName;
     private String _statusName;
     private String _protocolActionName;
+    private Map<String, String> _environment = new HashMap<String, String>();
     private Map<String, TaskPath> _inputPaths = new HashMap<String, TaskPath>();
     private Map<String, TaskPath> _outputPaths = new HashMap<String, TaskPath>();
     private ListToCommandArgs _converter = new ListToCommandArgs();
@@ -258,5 +259,15 @@ public class CommandTaskFactorySettings extends AbstractTaskFactorySettings
     public String getInstallPath()
     {
         return _installPath;
+    }
+
+    public Map<String, String> getEnvironment()
+    {
+        return _environment;
+    }
+
+    public void setEnvironment(Map<String, String> environment)
+    {
+        _environment = environment;
     }
 }

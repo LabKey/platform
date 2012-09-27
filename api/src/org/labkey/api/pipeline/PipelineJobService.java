@@ -33,6 +33,8 @@ import java.util.List;
  */
 abstract public class PipelineJobService implements TaskPipelineRegistry
 {
+    public static final String VERSION_SUBSTITUTION = "${version}";
+
     private static PipelineJobService _instance;
 
     public static PipelineJobService get()
