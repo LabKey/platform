@@ -654,16 +654,29 @@ public class MicrosoftSqlServer2005Dialect extends SqlDialect
         @Override
         public String getDatabase(String url) throws ServletException
         {
-            if (!url.startsWith("jdbc:jtds:sqlserver"))
+            if (url.startsWith("jdbc:jtds:sqlserver"))
+            {
+                int dbEnd = url.indexOf(';');
+                if (-1 == dbEnd)
+                    dbEnd = url.length();
+                int dbDelimiter = url.lastIndexOf('/', dbEnd);
+                if (-1 == dbDelimiter)
+                    throw new ServletException("Invalid jTDS connection url: " + url);
+                return url.substring(dbDelimiter + 1, dbEnd);
+            }
+            else if (url.startsWith("jdbc:sqlserver"))
+            {
+                int dbDelimiter = url.indexOf(";database=");
+                if (-1 == dbDelimiter)
+                    throw new ServletException("Invalid sql server connection url: " + url);
+                dbDelimiter += ";database=".length();
+                int dbEnd = url.indexOf(";",dbDelimiter);
+                if (-1 == dbEnd)
+                    dbEnd = url.length();
+                return url.substring(dbDelimiter, dbEnd);
+            }
+            else
                 throw new ServletException("Unsupported connection url: " + url);
-
-            int dbEnd = url.indexOf(';');
-            if (-1 == dbEnd)
-                dbEnd = url.length();
-            int dbDelimiter = url.lastIndexOf('/', dbEnd);
-            if (-1 == dbDelimiter)
-                throw new ServletException("Invalid jTDS connection url: " + url);
-            return url.substring(dbDelimiter + 1, dbEnd);
         }
     }
 

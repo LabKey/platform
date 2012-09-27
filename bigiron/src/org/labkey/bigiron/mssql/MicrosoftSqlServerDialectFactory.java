@@ -55,6 +55,8 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
     {
         if ("net.sourceforge.jtds.jdbc.Driver".equals(driverClassName))
             return new MicrosoftSqlServer2005Dialect();
+        else if ("com.microsoft.sqlserver.jdbc.SQLServerDriver".equals(driverClassName))
+            return new MicrosoftSqlServer2005Dialect();
         else
             return null;
     }
