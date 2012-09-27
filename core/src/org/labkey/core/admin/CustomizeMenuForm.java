@@ -1,8 +1,6 @@
 package org.labkey.core.admin;
 
 
-import org.labkey.api.view.Portal;
-
 /**
  * Created with IntelliJ IDEA.
  * User: davebradlee
@@ -18,8 +16,7 @@ public class CustomizeMenuForm
     private String _viewName;
     private String _columnName;
     private String _title;
-    private String _urlTop;
-    private String _urlBottom;
+    private String _url;
     private boolean _choiceListQuery;   // choice between List/Query (true) or Folders (false)
     private String _rootFolder;
     private String _folderTypes;
@@ -88,24 +85,14 @@ public class CustomizeMenuForm
         _title = title;
     }
 
-    public String getUrlTop()
+    public String getUrl()
     {
-        return _urlTop;
+        return _url;
     }
 
-    public void setUrlTop(String urlTop)
+    public void setUrl(String url)
     {
-        _urlTop = urlTop;
-    }
-
-    public String getUrlBottom()
-    {
-        return _urlBottom;
-    }
-
-    public void setUrlBottom(String urlBottom)
-    {
-        _urlBottom = urlBottom;
+        _url = url;
     }
 
     public boolean isChoiceListQuery()

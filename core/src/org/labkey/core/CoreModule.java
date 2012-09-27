@@ -88,7 +88,6 @@ import org.labkey.api.security.roles.SiteAdminRole;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -373,19 +372,24 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ));
     }
 
-    private WebPartView createMenuQueryView(final ViewContext context, String title, final CustomizeMenuForm form)
+    private WebPartView createMenuQueryView(ViewContext context, String title, final CustomizeMenuForm form)
     {
-        Container container = context.getContainer();
         if (null != StringUtils.trimToNull(form.getFolderName()))
-            container = ContainerManager.getForPath(form.getFolderName());
+        {
+            Container container = ContainerManager.getForPath(form.getFolderName());
+            context = new ViewContext(context);
+            context.setContainer(container);        // Need ViewComntext with proper container
+        }
+
+        final ViewContext actualContext = context;
         String schemaName = StringUtils.trimToNull(form.getSchemaName());
         if (null != schemaName)
         {
-            UserSchema schema = QueryService.get().getUserSchema(context.getUser(), container, schemaName);
+            UserSchema schema = QueryService.get().getUserSchema(actualContext.getUser(), actualContext.getContainer(), schemaName);
             if (null == schema)
                 throw new IllegalArgumentException("Schema '" + schemaName + "' could not be found.");
 
-            QuerySettings settings = new QuerySettings(context, null, form.getQueryName());
+            QuerySettings settings = new QuerySettings(actualContext, null, form.getQueryName());
 
             //need to explicitly turn off various UI options that will try to refer to the
             //current URL and query string
@@ -408,12 +412,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     if (null != tableInfo)
                     {
                         ColumnInfo columnInfo = tableInfo.getColumn(form.getColumnName());
-                        String urlBase = form.getUrlBottom();
+                        String urlBase = form.getUrl();
                         if (urlBase != null && !urlBase.contentEquals(""))
-                            columnInfo.setURL(StringExpressionFactory.createURL(form.getUrlBottom()));
+                            columnInfo.setURL(StringExpressionFactory.createURL(form.getUrl()));
                         DataColumn dataColumn = new DataColumn(columnInfo, false);
 
-                        RenderContext renderContext = new RenderContext(context);
+                        RenderContext renderContext = new RenderContext(actualContext);
                         Results results = getResults();
                         renderContext.setResults(results);
                         ResultSet rs = results.getResultSet();
@@ -503,10 +507,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             {
                 final String filterFolderName = form.getFolderTypes();
                 StringExpression expr = null;
-                String urlBase = form.getUrlBottom();
+                String urlBase = form.getUrl();
                 if (null != StringUtils.trimToNull(urlBase))
                 {
-                    expr = StringExpressionFactory.createURL(form.getUrlBottom());
+                    expr = StringExpressionFactory.createURL(form.getUrl());
                 }
 
                 boolean seenAtLeastOne = false;

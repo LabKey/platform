@@ -5175,8 +5175,7 @@ public class AdminController extends SpringActionController
     protected static final String CUSTOMMENU_COLUMN = "customMenuColumnName";
     protected static final String CUSTOMMENU_FOLDER = "customMenuFolderName";
     protected static final String CUSTOMMENU_TITLE = "customMenuTitle";
-    protected static final String CUSTOMMENU_URLTOP = "customMenuUrlTop";
-    protected static final String CUSTOMMENU_URLBOTTOM = "customMenuUrlBottom";
+    protected static final String CUSTOMMENU_URL = "customMenuUrl";
     protected static final String CUSTOMMENU_ROOTFOLDER = "customMenuRootFolder";
     protected static final String CUSTOMMENU_FOLDERTYPES = "customMenuFolderTypes";
     protected static final String CUSTOMMENU_CHOICELISTQUERY = "customMenuChoiceListQuery";
@@ -5193,8 +5192,7 @@ public class AdminController extends SpringActionController
         String viewName = menuProps.get(CUSTOMMENU_VIEW);
         String folderName = menuProps.get(CUSTOMMENU_FOLDER);
         String title = menuProps.get(CUSTOMMENU_TITLE); if (null == title) title = "My Menu";
-        String urlTop = menuProps.get(CUSTOMMENU_URLTOP);
-        String urlBottom = menuProps.get(CUSTOMMENU_URLBOTTOM);
+        String urlBottom = menuProps.get(CUSTOMMENU_URL);
         String rootFolder = menuProps.get(CUSTOMMENU_ROOTFOLDER);
         String folderTypes = menuProps.get(CUSTOMMENU_FOLDERTYPES);
         String choiceListQueryString = menuProps.get(CUSTOMMENU_CHOICELISTQUERY);
@@ -5208,8 +5206,7 @@ public class AdminController extends SpringActionController
         form.setViewName(viewName);
         form.setFolderName(folderName);
         form.setTitle(title);
-        form.setUrlTop(urlTop);
-        form.setUrlBottom(urlBottom);
+        form.setUrl(urlBottom);
         form.setRootFolder(rootFolder);
         form.setFolderTypes(folderTypes);
         form.setChoiceListQuery(choiceListQuery);
@@ -5231,8 +5228,7 @@ public class AdminController extends SpringActionController
         menuProps.put(CUSTOMMENU_VIEW, form.getViewName());
         menuProps.put(CUSTOMMENU_FOLDER, form.getFolderName());
         menuProps.put(CUSTOMMENU_TITLE, form.getTitle());
-        menuProps.put(CUSTOMMENU_URLTOP, form.getUrlTop());
-        menuProps.put(CUSTOMMENU_URLBOTTOM, form.getUrlBottom());
+        menuProps.put(CUSTOMMENU_URL, form.getUrl());
         menuProps.put(CUSTOMMENU_ROOTFOLDER, form.getRootFolder());
         menuProps.put(CUSTOMMENU_FOLDERTYPES, form.getFolderTypes());
         menuProps.put(CUSTOMMENU_CHOICELISTQUERY, form.isChoiceListQuery() ? "true" : "false");
