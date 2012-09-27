@@ -33,17 +33,13 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.module.SimpleModule;
-import org.labkey.api.query.QueryAction;
-import org.labkey.api.query.QueryDefinition;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.SimpleUserSchema;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.writer.ContainerUser;
 
 import java.util.Collections;
 import java.util.Map;
@@ -175,7 +171,7 @@ public class SimpleTableDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public ActionURL urlShowData(Domain domain)
+    public ActionURL urlShowData(Domain domain, ContainerUser containerUser)
     {
         SimpleUserSchema.SimpleTable table = getTable(domain);
         if (table == null)
@@ -190,9 +186,9 @@ public class SimpleTableDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public ActionURL urlEditDefinition(Domain domain)
+    public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(domain.getContainer(), domain.getTypeURI(), true, true, true);
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain.getTypeURI(), true, true, true);
     }
 
     @Override

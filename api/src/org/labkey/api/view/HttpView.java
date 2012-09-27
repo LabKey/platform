@@ -26,7 +26,6 @@ import org.labkey.api.util.HString;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.template.ClientDependency;
-import org.labkey.api.view.template.PageConfig;
 import org.springframework.beans.PropertyValues;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.servlet.ModelAndView;

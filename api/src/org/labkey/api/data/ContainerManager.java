@@ -129,7 +129,7 @@ public class ContainerManager
         Description,
         SiteRoot
     }
-    
+
     static Path makePath(Container parent, String name)
     {
         if (null == parent)
@@ -218,7 +218,7 @@ public class ContainerManager
         Path path = makePath(parent, name);
         SQLException sqlx = null;
         Map<String, Object> insertMap = null;
-        
+
         try
         {
             HashMap<String, Object> m = new HashMap<String, Object>();
@@ -277,7 +277,7 @@ public class ContainerManager
         //workbooks inherit perms from their parent so don't create a policy if this is a workbook
         if (!workbook)
             SecurityManager.setAdminOnlyPermissions(c);
-        
+
         _removeFromCache(c); // seems odd, but it removes c.getProject() which clears other things from the cache
 
         // init the list of active modules in the Container
@@ -500,7 +500,7 @@ public class ContainerManager
     {
         return new ArrayList<Container>(getChildrenMap(parent).values());
     }
-    
+
 
     public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm)
     {
@@ -517,7 +517,6 @@ public class ContainerManager
     {
         return getAllChildren(parent, u, ReadPermission.class);
     }
-    
 
     public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm)
     {
@@ -534,7 +533,7 @@ public class ContainerManager
 
         return result;
     }
-    
+
 
     // Returns true only if user has the specified permission in the entire container tree starting at root
     public static boolean hasTreePermission(Container root, User u,  Class<? extends Permission> perm)
@@ -553,6 +552,13 @@ public class ContainerManager
 
     public static Map<String, Container> getChildrenMap(Container parent)
     {
+        if (parent.isWorkbook())
+        {
+            // Optimization to avoid database query (important because some installs have tens of thousands of
+            // workbooks) when the container is a workbook, which is not allowed to have children
+            return Collections.emptyMap();
+        }
+
         String[] childIds = (String[]) CACHE.get(CONTAINER_CHILDREN_PREFIX + parent.getId());
 
         if (null == childIds)
@@ -622,7 +628,7 @@ public class ContainerManager
     {
         return getForId(id.toString());
     }
-    
+
 
     public static Container getForId(String id)
     {
@@ -668,7 +674,7 @@ public class ContainerManager
     public static Container getChild(Container c, String name)
     {
         Path path = c.getParsedPath().append(name);
-        
+
         Container d = _getFromCachePath(path);
         if (null != d)
             return d;
@@ -683,7 +689,7 @@ public class ContainerManager
         Path p = Path.parse(path);
         return getForPath(p);
     }
-    
+
 
     public static Container getForPath(Path path)
     {
@@ -926,7 +932,7 @@ public class ContainerManager
         {
             if (f.isWorkbook())
                 continue;
-            
+
             SecurityPolicy policy = f.getPolicy();
             boolean skip = (!policy.hasPermission(user, ReadPermission.class) || (!f.shouldDisplay(user)));
             //Always put the project and current container in...
@@ -1232,7 +1238,7 @@ public class ContainerManager
         }
     }
 
-    
+
     private static Container[] _getAllChildrenFromCache(Container c)
     {
         return (Container[]) CACHE.get(CONTAINER_ALL_CHILDREN_PREFIX + c.getId());
@@ -1802,7 +1808,7 @@ public class ContainerManager
     public static class TestCase extends Assert implements ContainerListener
     {
         Map<Path, Container> _containers = new HashMap<Path, Container>();
-        Container _testRoot = null;        
+        Container _testRoot = null;
 
         @Before
         public void setUp() throws Exception
@@ -2025,7 +2031,7 @@ public class ContainerManager
 
         @Override
         public void containerMoved(Container c, Container oldParent, User user)
-        {            
+        {
         }
     }
 

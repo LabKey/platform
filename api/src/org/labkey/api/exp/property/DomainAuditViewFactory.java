@@ -141,7 +141,7 @@ public class DomainAuditViewFactory extends SimpleAuditViewFactory
                     {
                         DomainKind kind = PropertyService.get().getDomainKind(domain.getTypeURI());
                         if (kind != null)
-                            out.write("<a href=\"" + kind.urlShowData(domain) + "\">" + PageFlowUtil.filter(domain.getName()) + "</a>");
+                            out.write("<a href=\"" + kind.urlShowData(domain, ctx.getViewContext()) + "\">" + PageFlowUtil.filter(domain.getName()) + "</a>");
                         else
                             out.write(PageFlowUtil.filter(domain.getName()));
                         return;

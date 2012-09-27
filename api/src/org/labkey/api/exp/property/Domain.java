@@ -25,6 +25,7 @@ import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.ContainerUser;
 
 import java.util.List;
 import java.util.Map;
@@ -48,7 +49,7 @@ public interface Domain extends IPropertyType
     @Nullable
     DomainProperty getPropertyByURI(String propertyURI);
     DomainProperty getPropertyByName(String name);
-    ActionURL urlShowData();
+    ActionURL urlShowData(ContainerUser context);
 
     DomainProperty addProperty();
 

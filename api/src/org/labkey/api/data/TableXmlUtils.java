@@ -456,7 +456,7 @@ public class TableXmlUtils
 
                         if (sbTmp.length() > 0)
                         {
-                            sbOut.append("<br>Table ").append(tt.getTableName()).append(" Column ").append(columnType.getColumnName()).append(" errors and warnings<br>");
+                            sbOut.append("<br>Table ").append(tt.getTableName()).append(" column ").append(columnType.getColumnName()).append(" errors and warnings<br>");
                             sbOut.append(sbTmp);
                         }
                     }
@@ -467,7 +467,7 @@ public class TableXmlUtils
                 for (String dbCol : mDbColOrdinals.keySet())
                 {
                     idc = mDbColOrdinals.get(dbCol).intValue();
-                    sbOut.append("ERROR: Table \"").append(tt.getTableName()).append("\", Column \"").append(dbCol).append("\" missing from XML.<br>");
+                    sbOut.append("ERROR: Table \"").append(tt.getTableName()).append("\", column \"").append(dbCol).append("\" missing from XML.<br>");
 
                     if (merge)
                     {

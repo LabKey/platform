@@ -29,9 +29,21 @@ class DatabaseMaintenanceTask implements SystemMaintenance.MaintenanceTask
 {
     private static final Logger _log = Logger.getLogger(DatabaseMaintenanceTask.class);
 
-    public String getMaintenanceTaskName()
+    public String getDescription()
     {
         return "Database maintenance";
+    }
+
+    @Override
+    public String getName()
+    {
+        return "Database";
+    }
+
+    @Override
+    public boolean canDisable()
+    {
+        return true;
     }
 
     public void run()

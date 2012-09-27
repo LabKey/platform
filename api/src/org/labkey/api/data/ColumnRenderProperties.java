@@ -76,6 +76,7 @@ public abstract class ColumnRenderProperties implements ImportAliasable
         to.setInputType(getInputType());
         to.setInputLength(getInputLength());
         to.setInputRows(getInputRows());
+        to.nullable = nullable;
         to.displayWidth = displayWidth;
         to.format = format;
         to.excelFormatString = excelFormatString;

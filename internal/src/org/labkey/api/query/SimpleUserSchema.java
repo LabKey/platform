@@ -159,15 +159,16 @@ public class SimpleUserSchema extends UserSchema
 
     public static class SimpleTable extends FilteredTable implements UpdateableTableInfo
     {
-        SimpleUserSchema _userSchema;
-        ColumnInfo _objectUriCol;
-        Domain _domain;
+        protected UserSchema _userSchema;
+        protected ColumnInfo _objectUriCol;
+        protected Domain _domain;
 
-        public SimpleTable(SimpleUserSchema schema, SchemaTableInfo table)
+        public SimpleTable(UserSchema schema, SchemaTableInfo table)
         {
             super(table, schema.getContainer());
             _userSchema = schema;
-            wrapAllColumns();
+
+            addColumns();
 
             // Generic query details page if none provided in schema xml.
             if (!hasDetailsURL())
@@ -177,15 +178,28 @@ public class SimpleUserSchema extends UserSchema
             }
         }
 
-        protected SimpleUserSchema getUserSchema()
+        protected UserSchema getUserSchema()
         {
             return _userSchema;
+        }
+
+        public void addColumns()
+        {
+            wrapAllColumns();
+            addDomainColumns();
+        }
+
+        protected boolean acceptColumn(ColumnInfo col)
+        {
+            return true;
         }
 
         public void wrapAllColumns()
         {
             for (ColumnInfo col : _rootTable.getColumns())
             {
+                if (!acceptColumn(col)) continue;
+
                 ColumnInfo wrap = wrapColumn(col);
                 // 10945: Copy label from the underlying column -- wrapColumn() doesn't copy the label.
                 wrap.setLabel(col.getLabel());
@@ -260,7 +274,10 @@ public class SimpleUserSchema extends UserSchema
                     }
                 }
             }
+        }
 
+        protected void addDomainColumns()
+        {
             Domain domain = getDomain();
             if (domain != null)
             {
@@ -276,7 +293,7 @@ public class SimpleUserSchema extends UserSchema
                 }
             }
         }
-        
+
         public Iterable<ColumnInfo> getBuiltInColumns()
         {
             return Iterables.filter(getColumns(), new Predicate<ColumnInfo>() {
@@ -328,7 +345,7 @@ public class SimpleUserSchema extends UserSchema
             return (SimpleTableDomainKind)PropertyService.get().getDomainKindByName(SimpleModule.NAMESPACE_PREFIX);
         }
 
-        private String getDomainURI()
+        protected String getDomainURI()
         {
             if (_objectUriCol == null)
                 return null;

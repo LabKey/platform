@@ -18,14 +18,26 @@ package org.labkey.api.util;
 
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.StatusAppender;
 import org.labkey.api.action.StatusReportingRunnable;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.data.PropertyManager;
 
 import javax.servlet.ServletContextEvent;
 import java.text.ParseException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * User: adam
@@ -35,20 +47,26 @@ import java.util.*;
 public class SystemMaintenance extends TimerTask implements ShutdownListener, StatusReportingRunnable
 {
     private static final Object _timerLock = new Object();
+    private static final List<MaintenanceTask> _tasks = new CopyOnWriteArrayList<MaintenanceTask>();
+
     private static Timer _timer = null;
     private static SystemMaintenance _timerTask = null;
-    private static final List<MaintenanceTask> _tasks = new ArrayList<MaintenanceTask>(10);
     private static boolean _taskRunning = false;
 
+    private volatile static boolean _timerDisabled = false;
+
+    private final @Nullable String _taskName;
     private final Logger _log;
     private final boolean _temp;
+
     private StatusAppender _appender;
 
     // temp = true allows manual invocation of system maintenance tasks.  Prevents time check and creates a logger that
     // can report status back to request threads.
-    public SystemMaintenance(boolean temp)
+    public SystemMaintenance(boolean temp, @Nullable String taskName)
     {
         _log = Logger.getLogger(SystemMaintenance.class);
+        _taskName = taskName;
 
         if (temp)
         {
@@ -65,7 +83,7 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
         {
             resetTimer();
 
-            if (!"daily".equals(AppProps.getInstance().getSystemMaintenanceInterval()))
+            if (_timerDisabled)
                 return;
 
             // Create daemon timer for daily maintenance task
@@ -74,26 +92,40 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
             // Timer has a single task that simply kicks off a thread that performs all the maintenance tasks.  This ensures that
             // the maintenance tasks run serially and will allow (if we need to in the future) to control the ordering (for example,
             // purge data first, then compact the database)
-            _timerTask = new SystemMaintenance(false);
+            _timerTask = new SystemMaintenance(false, null);
             ContextListener.addShutdownListener(_timerTask);
             _timer.scheduleAtFixedRate(_timerTask, getNextSystemMaintenanceTime(), DateUtils.MILLIS_PER_DAY);
         }
     }
 
-    // Returns null if time can't be parsed in H:mm format
-    public static Date parseSystemMaintenanceTime(String time)
+    // Returns null if time can't be parsed in h:mm a or H:mm format
+    public static @Nullable Date parseSystemMaintenanceTime(String time)
     {
+        Date date = null;
+
         try
         {
-            return DateUtil.parseDateTime(time, "H:mm");
+            date = DateUtil.parseDateTime(time, "h:mm a");
         }
         catch(ParseException e)
         {
-            return null;
         }
+
+        if (null == date)
+        {
+            try
+            {
+                return DateUtil.parseDateTime(time, "H:mm");
+            }
+            catch(ParseException e)
+            {
+            }
+        }
+
+        return date;
     }
 
-    // Returns null if time can't be parsed in H:mm format
+    // Returns null if time is null
     public static String formatSystemMaintenanceTime(Date time)
     {
         return DateUtil.formatDateTime(time, "H:mm");
@@ -101,24 +133,14 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
 
     private static Date getNextSystemMaintenanceTime()
     {
-        int hour = 2;
-        int minute = 0;
-
         Calendar time = Calendar.getInstance();
-        Date mt = AppProps.getInstance().getSystemMaintenanceTime();
-
-        // Shouldn't ever be null (we're parsing the property we wrote or the default value), but just in case use defaults
-        if (null != mt)
-        {
-            time.setTime(mt);
-            hour = time.get(Calendar.HOUR_OF_DAY);
-            minute = time.get(Calendar.MINUTE);
-        }
+        Date mt = getProperties().getSystemMaintenanceTime();
+        time.setTime(mt);
 
         Calendar nextTime = Calendar.getInstance();
 
-        nextTime.set(Calendar.HOUR_OF_DAY, hour);
-        nextTime.set(Calendar.MINUTE, minute);
+        nextTime.set(Calendar.HOUR_OF_DAY, time.get(Calendar.HOUR_OF_DAY));
+        nextTime.set(Calendar.MINUTE,  time.get(Calendar.MINUTE));
         nextTime.set(Calendar.SECOND, 0);
         nextTime.set(Calendar.MILLISECOND, 0);
 
@@ -140,9 +162,77 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
 
     public static void addTask(MaintenanceTask task)
     {
-        synchronized(_tasks)
+        if (task.getName().contains(","))
+            throw new IllegalStateException("System maintenance task " + task.getClass().getSimpleName() + " has a comma in its name (" + task.getName() + ")");
+        _tasks.add(task);
+    }
+
+    public static List<MaintenanceTask> getTasks()
+    {
+        return _tasks;
+    }
+
+    public static boolean isTimerDisabled()
+    {
+        return _timerDisabled;
+    }
+
+    public static void setTimeDisabled(boolean disable)
+    {
+        _timerDisabled = disable;
+    }
+
+    private final static String SET_NAME = "SystemMaintenance";
+    private final static String TIME_PROPERTY_NAME = "MaintenanceTime";
+    private final static String DISABLED_TASKS_PROPERTY_NAME = "DisabledTasks";
+
+    public static SystemMaintenanceProperties getProperties()
+    {
+        Map<String, String> props = PropertyManager.getProperties(SET_NAME);
+
+        return new SystemMaintenanceProperties(props);
+    }
+
+    public static void setProperties(Set<String> enabledTasks, String time)
+    {
+        PropertyManager.PropertyMap writableProps = PropertyManager.getWritableProperties(SET_NAME, true);
+
+        Set<String> enabled = new HashSet<String>(enabledTasks);
+        Set<String> disabled = new HashSet<String>();
+
+        for (MaintenanceTask task : getTasks())
+            if (!enabled.contains(task.getName()))
+                disabled.add(task.getName());
+
+        writableProps.put(TIME_PROPERTY_NAME, time);
+        writableProps.put(DISABLED_TASKS_PROPERTY_NAME, org.apache.commons.lang3.StringUtils.join(disabled, ","));
+
+        PropertyManager.saveProperties(writableProps);
+        setTimer();
+    }
+
+    public static class SystemMaintenanceProperties
+    {
+        private Date _systemMaintenanceTime;
+        private Set<String> _disabledTasks;
+
+        private SystemMaintenanceProperties(Map<String, String> props)
         {
-            _tasks.add(task);
+            Date time = SystemMaintenance.parseSystemMaintenanceTime(props.get(TIME_PROPERTY_NAME));
+            _systemMaintenanceTime = (null == time ? SystemMaintenance.parseSystemMaintenanceTime("2:00") : time);
+
+            String disabled = props.get(DISABLED_TASKS_PROPERTY_NAME);
+            _disabledTasks = (null == disabled ? Collections.<String>emptySet() : new HashSet<String>(Arrays.asList(disabled.split(","))));
+        }
+
+        public @NotNull Date getSystemMaintenanceTime()
+        {
+            return _systemMaintenanceTime;
+        }
+
+        public @NotNull Set<String> getDisabledTasks()
+        {
+            return _disabledTasks;
         }
     }
 
@@ -196,19 +286,26 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
     {
         public void run()
         {
-            List<MaintenanceTask> tasksCopy;
             _log.info("System maintenance started");
 
-            // Maintenance tasks could take a very long time to complete; make a copy so we don't block adds to the list
-            // for the duration of all maintenance operations
-            synchronized(_tasks)
-            {
-                tasksCopy = new ArrayList<MaintenanceTask>(_tasks);
-            }
+            Set<String> disabledTasks = getProperties().getDisabledTasks();
 
-            for (MaintenanceTask task : tasksCopy)
+            for (MaintenanceTask task : _tasks)
             {
-                _log.info(task.getMaintenanceTaskName() + " started");
+                if (null != _taskName && !_taskName.isEmpty())
+                {
+                    // If _taskName is set, then admin has invoked a single task from the UI... skip all the others
+                    if (!task.getName().equals(_taskName))
+                        continue;
+                }
+                else
+                {
+                    // Run all tasks, except for disabled
+                    if (task.canDisable() && disabledTasks.contains(task.getName()))
+                        continue;
+                }
+
+                _log.info(task.getDescription() + " started");
                 long start = System.currentTimeMillis();
 
                 try
@@ -222,7 +319,7 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
                 }
 
                 long elapsed = System.currentTimeMillis() - start;
-                _log.info(task.getMaintenanceTaskName() + " complete; elapsed time " + elapsed/1000 + " seconds");
+                _log.info(task.getDescription() + " complete; elapsed time " + elapsed/1000 + " seconds");
             }
 
             _log.info("System maintenance complete");           
@@ -232,6 +329,14 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
 
     public interface MaintenanceTask extends Runnable
     {
-        public String getMaintenanceTaskName();
+        // Description used in logging and UI
+        public String getDescription();
+
+        // Short name used in forms and to persist disabled settings
+        // Task name must be unique and cannot contain a comma
+        public String getName();
+
+        // Can this task be disabled?
+        public boolean canDisable();
     }
 }

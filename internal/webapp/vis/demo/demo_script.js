@@ -266,31 +266,35 @@ for(var i = 0; i < 6; i++){
     for(var j = 0; j < 25; j++){
         boxPlotData.push({
             group: group,
-            age: parseInt(25+(Math.random()*(55-25))) //Compute a random age between 18 and 65
+            age: parseInt(25+(Math.random()*(55-25))), //Compute a random age between 18 and 65
+            gender: parseInt((Math.random()*2)) === 0 ? 'male' : 'female'
         });
     }
     for(j = 0; j < 3; j++){
         boxPlotData.push({
             group: group,
-            age: parseInt(75+(Math.random()*(95-75))) //Compute a random age between 18 and 65
+            age: parseInt(75+(Math.random()*(95-75))), //Compute a random age between 18 and 65
+            gender: parseInt((Math.random()*2)) === 0 ? 'male' : 'female'
         });
     }
     for(j = 0; j < 3; j++){
         boxPlotData.push({
             group: group,
-            age: parseInt(1+(Math.random()*(16-1))) //Compute a random age between 18 and 65
+            age: parseInt(1+(Math.random()*(16-1))), //Compute a random age between 18 and 65
+            gender: parseInt((Math.random()*2)) === 0 ? 'male' : 'female'
         });
     }
 }
 
 var boxLayer = new LABKEY.vis.Layer({
     geom: new LABKEY.vis.Geom.Boxplot({
-//        position: 'jitter',
+        position: 'jitter',
 //        color: 'teal',
 //        fill: '#FFFF00',
-//        outlierOpacity: '1',
-//        outlierFill: 'red',
-        showOutliers: false
+        outlierOpacity: '1',
+        outlierFill: 'red',
+        showOutliers: true
+//        showOutliers: false
 //        opacity: '.5'
 //        lineWidth: 3
     }),
@@ -299,7 +303,9 @@ var boxLayer = new LABKEY.vis.Layer({
             return x + ':\nMin: ' + stats.min + '\nMax: ' + stats.max + '\nQ1: ' + stats.Q1 + '\nQ2: ' + stats.Q2 +
                     '\nQ3: ' + stats.Q3;
         },
-        outlierHoverText: function(row){return "Group: " + row.group + ", Age: " + row.age;}
+        outlierHoverText: function(row){return "Group: " + row.group + ", Age: " + row.age;},
+        outlierColor: function(row){return row.gender;},
+        outlierShape: function(row){return row.gender;}
     }
 });
 
@@ -326,7 +332,7 @@ var boxPlot = new LABKEY.vis.Plot({
     },
 //    data: labResultsRows,
     data: boxPlotData,
-    layers: [boxLayer, boxPointLayer],
+    layers: [boxLayer/*, boxPointLayer*/],
     aes: {
         yLeft: 'age',
         x: 'group'

@@ -186,4 +186,10 @@ public abstract class AbstractDomainKind extends DomainKind
             throw new RuntimeException(x);
         }
     }
+
+    @Override
+    public Set<String> getMandatoryPropertyNames(Domain domain)
+    {
+        return Collections.emptySet();
+    }
 }

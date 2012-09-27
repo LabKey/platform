@@ -29,6 +29,7 @@ import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.ContainerUser;
 
 import java.util.HashSet;
 import java.util.List;
@@ -103,24 +104,24 @@ public abstract class AssayDomainKind extends AbstractDomainKind
     }
 
 
-    public ActionURL urlShowData(Domain domain)
+    public ActionURL urlShowData(Domain domain, ContainerUser containerUser)
     {
         ExpProtocol protocol = findProtocol(domain);
         if (protocol != null)
         {
-            return PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(domain.getContainer(), protocol);
+            return PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(containerUser.getContainer(), protocol);
         }
         return null;
     }
 
 
     @Nullable
-    public ActionURL urlEditDefinition(Domain domain)
+    public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
         ExpProtocol protocol = findProtocol(domain);
         if (protocol != null)
         {
-            return PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(domain.getContainer(), protocol, false, null);
+            return PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(containerUser.getContainer(), protocol, false, null);
         }
         return null;
     }

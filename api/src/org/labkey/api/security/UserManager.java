@@ -31,6 +31,7 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.util.HeartBeat;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -505,6 +506,8 @@ public class UserManager
             Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoUsersData() + " WHERE UserId=?", userId);
             Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoLogins() + " WHERE Email=?", user.getEmail());
             Table.execute(CORE.getSchema(), "DELETE FROM " + CORE.getTableInfoPrincipals() + " WHERE UserId=?", userId);
+
+            OntologyManager.deleteOntologyObject(user.getEntityId().toString(), ContainerManager.getSharedContainer(), true);
         }
         catch (SQLException e)
         {

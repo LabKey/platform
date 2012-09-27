@@ -18,12 +18,10 @@ package org.labkey.api.settings;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.util.ExceptionReportingLevel;
-import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.UsageReportingLevel;
 
 import java.net.URISyntaxException;
 import java.sql.SQLException;
-import java.util.Date;
 
 /**
  * User: jeckels
@@ -51,17 +49,6 @@ public class WriteableAppProps extends AppPropsImpl
     public void setSSLPort(int sslPort)
     {
         storeIntValue(SSL_PORT, sslPort);
-    }
-
-    public void setSystemMaintenanceInterval(String systemMaintenanceInterval)
-    {
-        storeStringValue(SYSTEM_MAINTENANCE_INTERVAL, systemMaintenanceInterval);
-    }
-
-    public void setSystemMaintenanceTime(Date time)
-    {
-        String parsedTime = SystemMaintenance.formatSystemMaintenanceTime(time);
-        storeStringValue(SYSTEM_MAINTENANCE_TIME, parsedTime);
     }
 
     public void setMemoryUsageDumpInterval(int memoryUsageDumpInterval)

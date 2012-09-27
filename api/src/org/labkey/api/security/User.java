@@ -26,6 +26,7 @@ import org.labkey.api.security.roles.DeveloperRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.util.GUID;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -44,6 +45,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     private Date _lastLogin = null;
     private boolean _active = false;
     private String _phone;
+    private GUID entityId;
 
     private ImpersonationContext _impersonationContext = new NotImpersonatingContext();
 
@@ -278,5 +280,15 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     public void setPhone(String phone)
     {
         _phone = phone;
+    }
+
+    public GUID getEntityId()
+    {
+        return entityId;
+    }
+
+    public void setEntityId(GUID entityId)
+    {
+        this.entityId = entityId;
     }
 }

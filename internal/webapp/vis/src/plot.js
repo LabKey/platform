@@ -43,10 +43,12 @@ LABKEY.vis.Plot = function(config){
 
         for(var i = 0; i < allAes.length; i++){
             var aes = allAes[i];
-            if(!foundLegendScale && (aes.shape || (aes.color && scales.color && scales.color.scaleType == 'discrete')) && legendPos != 'none'){
+
+            if(!foundLegendScale && (aes.shape || aes.color || aes.outlierColor || aes.outlierShape) && legendPos != 'none'){
                 foundLegendScale = true;
                 right = right + 150;
             }
+
             if(!foundYRight && aes.yRight){
                 foundYRight = true;
                 right = right + 25;
@@ -151,8 +153,14 @@ LABKEY.vis.Plot = function(config){
                     // Not all aesthetics get a scale (like hoverText), so we have to be pretty specific.
                     if(aesthetic === 'x' || aesthetic === 'yLeft' || aesthetic === 'yRight' || aesthetic === 'size'){
                         scales[aesthetic] = {scaleType: 'continuous', trans: 'linear'};
-                    } else if(aesthetic == 'color' || aesthetic == 'shape'){
-                        scales[aesthetic] = {scaleType: 'discrete'};
+                    } else if(aesthetic == 'color' || aesthetic == 'shape' || aesthetic == 'outlierColor' || aesthetic == 'outlierShape'){
+                        if(aesthetic == 'outlierColor'){
+                            scales['color'] = {scaleType: 'discrete'};
+                        } else if(aesthetic == 'outlierShape'){
+                            scales['shape'] = {scaleType: 'discrete'};
+                        } else {
+                            scales[aesthetic] = {scaleType: 'discrete'};
+                        }
                     }
                 }
             }

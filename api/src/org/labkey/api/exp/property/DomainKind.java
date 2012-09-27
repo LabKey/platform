@@ -27,6 +27,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.writer.ContainerUser;
 
 import java.util.List;
 import java.util.Map;
@@ -43,8 +44,8 @@ abstract public class DomainKind implements Handler<String>
      */
     abstract public String generateDomainURI(String schemaName, String queryName, Container container, User user);
 
-    abstract public ActionURL urlShowData(Domain domain);
-    abstract public @Nullable ActionURL urlEditDefinition(Domain domain);
+    abstract public ActionURL urlShowData(Domain domain, ContainerUser containerUser);
+    abstract public @Nullable ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser);
     abstract public ActionURL urlCreateDefinition(String schemaName, String queryName, Container container, User user);
 
     abstract public boolean canCreateDefinition(User user, Container container);
@@ -63,6 +64,13 @@ abstract public class DomainKind implements Handler<String>
      * @return set of strings containing the names. This will be compared ignoring case
      */
     abstract public Set<String> getReservedPropertyNames(Domain domain);
+
+    /**
+     * Return the set of names that are always required and cannot subsequently
+     * be deleted.
+     * @return set of strings containing the names. This will be compared ignoring case
+     */
+    abstract public Set<String> getMandatoryPropertyNames(Domain domain);
 
     // CONSIDER: have DomainKind supply and IDomainInstance or similiar
     // so that it can hold instance data (e.g. a DatasetDefinition)

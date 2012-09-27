@@ -128,7 +128,13 @@ LABKEY.ext.Store = Ext.extend(Ext.data.Store, {
             baseParams['query.ignoreFilter'] = 1;
 
         if(config.maxRows)
-            baseParams['query.maxRows'] = config.maxRows;
+        {
+            // Issue 16076, executeSql needs maxRows not query.maxRows.
+            if (config.sql)
+                baseParams['maxRows'] = config.maxRows;
+            else
+                baseParams['query.maxRows'] = config.maxRows;
+        }
 
         baseParams.apiVersion = 9.1;
 

@@ -114,6 +114,7 @@ LABKEY.vis.Geom.Point.prototype.render = function(paper, grid, scales, data, lay
     for(var i = 0; i < data.length; i++){
         var y = this.getY(yScale.scale, data[i]);
         var x = this.getX(scales.x.scale, data[i]);
+
         if(!x || !y){
             continue;
         }
@@ -128,8 +129,15 @@ LABKEY.vis.Geom.Point.prototype.render = function(paper, grid, scales, data, lay
 
         var color = this.colorMap ? scales.color.scale(this.colorMap.getValue(data[i]) + name) : this.color;
         var size = this.sizeMap ? this.sizeMap.getValue(data[i]) : this.size;
-        var shapeFunction = this.shapeMap ? scales.shape.scale(this.shapeMap.getValue(data[i]) + name) : function(paper, x, y, r){return paper.circle(x, y, r)};
-        var point = shapeFunction(paper, x, -y, size).attr('fill', color).attr('stroke', color).attr('stroke-opacity', this.opacity).attr('fill-opacity', this.opacity);
+        var shapeFunction = this.shapeMap ?
+                scales.shape.scale(this.shapeMap.getValue(data[i]) + name) :
+                function(paper, x, y, r){return paper.circle(x, y, r)};
+
+        var point = shapeFunction(paper, x, -y, size)
+                .attr('fill', color)
+                .attr('fill-opacity', this.opacity)
+                .attr('stroke', color)
+                .attr('stroke-opacity', this.opacity);
 
         if(hoverText){
             point.attr('title', hoverText.value(data[i]));
@@ -264,7 +272,7 @@ LABKEY.vis.Geom.Boxplot = function(config){
     return this;
 };
 LABKEY.vis.Geom.Boxplot.prototype = new LABKEY.vis.Geom.XY();
-LABKEY.vis.Geom.Boxplot.prototype.render = function(paper, grid, scales, data, layerAes, parentAes){
+LABKEY.vis.Geom.Boxplot.prototype.render = function(paper, grid, scales, data, layerAes, parentAes, name){
     if(!this.initAesthetics(scales, layerAes, parentAes)){
         return false;
     }
@@ -273,6 +281,8 @@ LABKEY.vis.Geom.Boxplot.prototype.render = function(paper, grid, scales, data, l
     var hoverText = layerAes.hoverText ? layerAes.hoverText : parentAes.hoverText;
     var outlierHoverText = layerAes.outlierHoverText ? layerAes.outlierHoverText : parentAes.outlierHoverText;
     var pointClickFn = layerAes.pointClickFn ? layerAes.pointClickFn : parentAes.pointClickFn;
+    var outlierColorMap = layerAes.outlierColor ? layerAes.outlierColor : parentAes.outlierColor;
+    var outlierShapeMap = layerAes.outlierShape ? layerAes.outlierShape : parentAes.outlierShape;
     var groupedData = null;
     var binWidth = null;
 
@@ -289,13 +299,11 @@ LABKEY.vis.Geom.Boxplot.prototype.render = function(paper, grid, scales, data, l
                 // Construct the box.
                 box,
                 paper.path(LABKEY.vis.makeLine(x, middleY, x+width, middleY)),
-
                 // Construct the Whiskers.
                 paper.path(LABKEY.vis.makeLine(middleX, bottom, middleX, bottomWhisker)),
                 paper.path(LABKEY.vis.makeLine(whiskerLeft, bottomWhisker, whiskerRight, bottomWhisker)),
                 paper.path(LABKEY.vis.makeLine(middleX, top, middleX, topWhisker)),
                 paper.path(LABKEY.vis.makeLine(whiskerLeft, topWhisker, whiskerRight, topWhisker))
-
         );
         boxSet.attr('stroke', this.color).attr('stroke-width', this.lineWidth);
     };
@@ -342,25 +350,35 @@ LABKEY.vis.Geom.Boxplot.prototype.render = function(paper, grid, scales, data, l
 
         if(this.showOutliers){
             for(i = 0; i < groupedData[group].length; i++){
-                var val = this.yMap.getValue(groupedData[group][i])
+                var val = this.yMap.getValue(groupedData[group][i]);
                 if(val > biggestNotOutlier || val < smallestNotOutlier){
                     var outlier;
                     var outlierX = (this.position == 'jitter') ? x+(Math.random()*(width)) : middleX;
 
-                    outlier = paper.circle(outlierX, -yScale(val), this.outlierSize)
-                            .attr('fill', this.outlierFill)
-                            .attr('stroke', 'none')
-                            .attr('fill-opacity', this.outlierOpacity);
+                    var color = outlierColorMap && scales.color ?
+                            scales.color.scale(outlierColorMap.getValue(groupedData[group][i])) :
+                            this.outlierFill;
+                    
+                    var shapeFunction = outlierShapeMap && scales.shape ?
+                            scales.shape.scale(outlierShapeMap.getValue(groupedData[group][i]) + name) :
+                            function(paper, x, y, r){return paper.circle(x, y, r)};
+
+                    outlier = shapeFunction(paper, outlierX, -yScale(val), this.outlierSize)
+                            .attr('fill', color)
+                            .attr('fill-opacity', this.outlierOpacity)
+                            .attr('stroke', color)
+                            .attr('stroke-opacity', this.outlierOpacity);
+
                     if(outlierHoverText){
                         outlier.attr('title', outlierHoverText.getValue(groupedData[group][i]));
                     }
+
                     if (pointClickFn) {
                         outlier.data = groupedData[group][i];
                         outlier.click(function(clickEvent) {
                             pointClickFn.value(clickEvent, this.data);
                         });
                     }
-
                 }
             }
         }

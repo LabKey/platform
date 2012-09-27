@@ -85,8 +85,6 @@ public class AppProps
         public boolean isUserRequestedAdminOnlyMode();
         public String getAdminOnlyMessage();
         public int getSSLPort();
-        public String getSystemMaintenanceInterval();
-        public Date getSystemMaintenanceTime();
         public int getMemoryUsageDumpInterval();
         public int getMaxBLOBSize();
         public boolean isExt3Required();

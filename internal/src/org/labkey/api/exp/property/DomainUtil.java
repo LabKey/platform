@@ -175,6 +175,7 @@ public class DomainUtil
         }
         Set<String> reservedProperties = domainKind.getReservedPropertyNames(domain);
         d.setReservedFieldNames(new HashSet<String>(reservedProperties));
+        d.setMandatoryFieldNames(new HashSet<String>(domainKind.getMandatoryPropertyNames(domain)));
 
         return d;
     }

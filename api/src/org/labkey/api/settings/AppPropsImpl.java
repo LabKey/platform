@@ -26,7 +26,6 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
-import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.ActionURL;
@@ -41,7 +40,6 @@ import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -78,8 +76,6 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     protected static final String MASCOT_USERACCOUNT_PROP = "MascotUserAccount";
     protected static final String MASCOT_USERPASSWORD_PROP = "MascotUserPassword";
     protected static final String MASCOT_HTTPPROXY_PROP = "MascotHTTPProxy";
-    protected static final String SYSTEM_MAINTENANCE_INTERVAL = "systemMaintenanceInterval";  // NEVER, DAILY
-    protected static final String SYSTEM_MAINTENANCE_TIME = "systemMaintenanceTime"; // 02:00
     protected static final String MEMORY_USAGE_DUMP_INTERVAL = "memoryUsageDumpInterval";
     protected static final String NETWORK_DRIVE_LETTER = "networkDriveLetter";
     protected static final String NETWORK_DRIVE_PATH = "networkDrivePath";
@@ -304,17 +300,6 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     public int getSSLPort()
     {
         return lookupIntValue(SSL_PORT, 443);
-    }
-
-    public String getSystemMaintenanceInterval()
-    {
-        return lookupStringValue(SYSTEM_MAINTENANCE_INTERVAL, "daily");
-    }
-
-    public Date getSystemMaintenanceTime()
-    {
-        String time = lookupStringValue(SYSTEM_MAINTENANCE_TIME, "2:00");
-        return SystemMaintenance.parseSystemMaintenanceTime(time);
     }
 
     public int getMemoryUsageDumpInterval()

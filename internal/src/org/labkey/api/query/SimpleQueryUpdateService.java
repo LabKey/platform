@@ -16,6 +16,7 @@
 package org.labkey.api.query;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.property.Domain;
@@ -28,36 +29,58 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
 {
     public SimpleQueryUpdateService(final SimpleTable queryTable, TableInfo dbTable)
     {
-        super(queryTable, dbTable, new DomainUpdateHelper() {
-            @Override
-            public Domain getDomain()
-            {
-                return queryTable.getDomain();
-            }
+        this(queryTable, dbTable, new SimpleDomainUpdateHelper(queryTable));
+    }
 
-            @Override
-            public ColumnInfo getObjectUriColumn()
-            {
-                return queryTable.getObjectUriColumn();
-            }
-
-            @Override
-            public String createObjectURI()
-            {
-                return queryTable.createPropertyURI();
-            }
-
-            @Override
-            public Iterable<PropertyColumn> getPropertyColumns()
-            {
-                return queryTable.getPropertyColumns();
-            }
-        });
+    public SimpleQueryUpdateService(final SimpleTable queryTable, TableInfo dbTable, DomainUpdateHelper helper)
+    {
+        super(queryTable, dbTable, helper);
     }
 
     @Override
     protected SimpleTable getQueryTable()
     {
         return (SimpleTable)super.getQueryTable();
+    }
+
+    public static class SimpleDomainUpdateHelper implements DomainUpdateHelper
+    {
+        SimpleTable _queryTable;
+
+        public SimpleDomainUpdateHelper(SimpleTable queryTable)
+        {
+            _queryTable = queryTable;
+        }
+
+        @Override
+        public Domain getDomain()
+        {
+            return _queryTable.getDomain();
+        }
+
+        @Override
+        public ColumnInfo getObjectUriColumn()
+        {
+            return _queryTable.getObjectUriColumn();
+        }
+
+        @Override
+        public String createObjectURI()
+        {
+            return _queryTable.createPropertyURI();
+        }
+
+        @Override
+        public Iterable<PropertyColumn> getPropertyColumns()
+        {
+            return _queryTable.getPropertyColumns();
+        }
+
+        @Override
+        public Container getDomainContainer(Container c)
+        {
+            return c;
+        }
+
     }
 }

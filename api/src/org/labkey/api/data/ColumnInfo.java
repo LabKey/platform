@@ -28,6 +28,7 @@ import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PdLookupForeignKey;
@@ -913,6 +914,9 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         {
             setConditionalFormats(ConditionalFormat.convertFromXML(xmlCol.getConditionalFormats()));
         }
+
+        if (xmlCol.isSetFacetingBehavior())
+            facetingBehaviorType = FacetingBehaviorType.valueOf(xmlCol.getFacetingBehavior().toString());
     }
 
     public static String labelFromName(String name)
