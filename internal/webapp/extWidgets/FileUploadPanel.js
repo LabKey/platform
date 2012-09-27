@@ -44,7 +44,6 @@ Ext4.define('LABKEY.ext.FileUploadPanel', {
     overwrite: true,
     initComponent: function(){
         this.url = this.getURL();
-        console.log(this.url);
         Ext4.apply(this, {
             border: false,
             defaults: {

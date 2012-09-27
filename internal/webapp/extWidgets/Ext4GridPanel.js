@@ -229,7 +229,7 @@ Ext4.define('LABKEY.ext4.GridPanel', {
                 col.hidden = true;
             }
 
-            var meta = this.store.findFieldMetadata(col.dataIndex);
+            var meta = LABKEY.ext.Ext4Helper.findFieldMetadata(this.store, col.dataIndex);
             if(!meta)
                 continue;
 
@@ -276,7 +276,7 @@ Ext4.define('LABKEY.ext4.GridPanel', {
         for (var i=0;i<columns.length;i++){
 
             col = columns[i];
-            meta = this.store.findFieldMetadata(col.dataIndex);
+            meta = LABKEY.ext.Ext4Helper.findFieldMetadata(this.store, col.dataIndex);
 
             if(meta && !meta.fixedWidthCol){
                 values = [];

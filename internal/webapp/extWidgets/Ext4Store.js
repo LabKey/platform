@@ -813,9 +813,11 @@ Ext4.define('LABKEY.ext4.ExtendedJsonReader', {
     readRecords: function(data) {
         if(data.metaData){
             this.idProperty = data.metaData.id || this.idProperty || 'id'; //NOTE: normalize which field holds the PK.
-            this.model.prototype.idProperty = this.idProperty;
             this.totalProperty = data.metaData.totalProperty; //NOTE: normalize which field holds total rows.
-            this.model.prototype.totalProperty = this.totalProperty;
+            if (this.model){
+                this.model.prototype.idProperty = this.idProperty;
+                this.model.prototype.totalProperty = this.totalProperty;
+            }
 
             //NOTE: it would be interesting to convert this JSON into a more functional object here
             //for example, columns w/ lookups could actually reference their target

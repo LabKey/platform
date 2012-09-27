@@ -42,6 +42,8 @@ LABKEY.initExtAdapter = function(LABKEY, Ext){
 
         isDefined: Ext.isDefined,
 
+        isEmpty: Ext.isEmpty,
+
         isFunction: Ext.isFunction,
 
         isGecko: Ext.isGecko,

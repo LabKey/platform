@@ -54,7 +54,7 @@ Ext4.define('LABKEY.ext4.ComboBox', {
         this.callParent();
 
         //this is necessary to clear invalid fields, assuming the initial value is set asynchronously on store load
-        this.mon(this.store, 'load', this.isValid, this, {single: true});
+        this.mon(this.store, 'load', this.isValid, this, {single: true, delay: 20});
     }
 });
 

@@ -519,6 +519,11 @@ api/src/org/labkey/api/jsp/taglib/OptionsTag.java -text
 api/src/org/labkey/api/jsp/taglib/RadioTag.java -text
 api/src/org/labkey/api/jsp/taglib/SelectAll.java -text
 api/src/org/labkey/api/jsp/taglib/SimpleTagBase.java -text
+api/src/org/labkey/api/laboratory/LaboratoryService.java -text
+api/src/org/labkey/api/laboratory/assay/AssayImportMethod.java -text
+api/src/org/labkey/api/laboratory/assay/AssayParser.java -text
+api/src/org/labkey/api/laboratory/assay/DefaultAssayImportMethod.java -text
+api/src/org/labkey/api/laboratory/assay/DefaultAssayParser.java -text
 api/src/org/labkey/api/lists/permissions/DesignListPermission.java -text
 api/src/org/labkey/api/mbean/CacheMXBean.java -text
 api/src/org/labkey/api/mbean/ErrorsMXBean.java -text

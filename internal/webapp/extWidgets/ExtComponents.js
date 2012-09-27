@@ -203,6 +203,12 @@ Ext4.define('LABKEY.ext.LinkButton', {
             linkTarget: this.linkTarget,
             tooltip: this.tooltip
         });
+
+        //prevent double clicks
+        this.on('click', function(btn){
+            btn.setDisabled(true);
+            btn.setDisabled.defer(100, this, [false]);
+        })
     },
     showBrackets: true,
     renderSelectors: {

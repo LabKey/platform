@@ -395,12 +395,12 @@ LABKEY.ext.Ext4Helper = new function(){
         getColumnsConfig: function(store, grid, config){
             config = config || {};
 
-            var fields = store.getFields();
+            var fields = store.model.getFields();
             var columns = store.getColumns();
             var cols = new Array();
 
             var col;
-            fields.each(function(field, idx){
+            Ext4.each(fields, function(field, idx){
                 var col;
 
                 if(field.shownInGrid === false)
@@ -430,8 +430,10 @@ LABKEY.ext.Ext4Helper = new function(){
         //private
         getColumnConfig: function(store, col, config, grid){
             col = col || {};
+            col.dataIndex = col.dataIndex || col.name;
+            col.header = col.header || col.caption || col.label || col.name;
 
-            var meta = store.findFieldMetadata(col.dataIndex);
+            var meta = LABKEY.ext.Ext4Helper.findFieldMetadata(store, col.dataIndex);
             if(!meta){
                 return;
             }
@@ -900,6 +902,14 @@ LABKEY.ext.Ext4Helper = new function(){
          */
         getStoreFields: function(store){
             return store.proxy.reader.model.prototype.fields;
+        },
+
+        findFieldMetadata : function(store, fieldName){
+            var fields = store.model.prototype.fields;
+            if(!fields)
+                return null;
+
+            return fields.get(fieldName);
         }
     }
 };
