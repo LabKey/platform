@@ -84,8 +84,11 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
             if (PropertyUtils.isReadable(bean, name))
             {
                 Method readMethod = origDescriptor.getReadMethod();
-                if (readMethod != null && readMethod.getParameterTypes().length == 0)
-                    _readableProperties.add(name);
+                if (null != readMethod)
+                {
+                    if (readMethod.getParameterTypes().length == 0 && null == readMethod.getAnnotation(Transient.class))
+                        _readableProperties.add(name);
+                }
             }
             if (PropertyUtils.isWriteable(bean, name))
                 _writeableProperties.add(name);

@@ -38,7 +38,6 @@ import java.util.Map;
  * User: davebradlee
  * Date: 8/21/12
  * Time: 11:16 AM
- * To change this template use File | Settings | File Templates.
  */
 public class ModuleQueryReportDescriptor extends QueryReportDescriptor
 {

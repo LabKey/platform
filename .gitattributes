@@ -312,6 +312,7 @@ api/src/org/labkey/api/data/TempTableTracker.java -text
 api/src/org/labkey/api/data/TempTableWriter.java -text
 api/src/org/labkey/api/data/TestSchema.java -text
 api/src/org/labkey/api/data/TextWriter.java -text
+api/src/org/labkey/api/data/Transient.java -text
 api/src/org/labkey/api/data/UnionTableInfo.java -text
 api/src/org/labkey/api/data/UpdateColumn.java -text
 api/src/org/labkey/api/data/UpdateableTableInfo.java -text
