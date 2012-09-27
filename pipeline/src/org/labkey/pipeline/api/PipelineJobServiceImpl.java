@@ -15,8 +15,10 @@
  */
 package org.labkey.pipeline.api;
 
+import junit.framework.Assert;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Test;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.file.PathMapper;
 import org.labkey.api.util.NetworkDrive;
@@ -56,7 +58,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
 
     public static PipelineJobServiceImpl initDefaults(@NotNull LocationType locationType)
     {
-        PipelineJobServiceImpl pjs = new PipelineJobServiceImpl(locationType);
+        PipelineJobServiceImpl pjs = new PipelineJobServiceImpl(locationType, true);
         pjs.setAppProperties(new ApplicationPropertiesImpl());
         pjs.setConfigProperties(new ConfigPropertiesImpl());
         pjs.setWorkDirFactory(new WorkDirectoryLocal.Factory());
@@ -93,6 +95,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
     private String _defaultExecutionLocation = TaskFactory.WEBSERVER;
     private int _defaultAutoRetry = 0;
 
+    private boolean _prependVersionWithDot = true;
     private ApplicationProperties _appProperties;
     private ConfigProperties _configProperties;
     private RemoteServerProperties _remoteServerProperties;
@@ -108,10 +111,10 @@ public class PipelineJobServiceImpl extends PipelineJobService
 
     public PipelineJobServiceImpl()
     {
-        this(null);
+        this(null, true);
     }
 
-    public PipelineJobServiceImpl(LocationType locationType)
+    public PipelineJobServiceImpl(LocationType locationType, boolean register)
     {
         _locationType = locationType;
         // Allow Mule/Spring configuration, but keep any current defaults
@@ -135,7 +138,10 @@ public class PipelineJobServiceImpl extends PipelineJobService
             _clusterPathMapper = current._clusterPathMapper;
         }
 
-        setInstance(this);
+        if (register)
+        {
+            setInstance(this);
+        }
     }
 
     /**
@@ -413,10 +419,10 @@ public class PipelineJobServiceImpl extends PipelineJobService
         if (ver == null)
             ver = "";
         ver = ver.trim();
-        if (!"".equals(ver))
+        if (!"".equals(ver) && _prependVersionWithDot)
             ver = "." + ver;
 
-        return path.replace("${version}", ver);
+        return path.replace(VERSION_SUBSTITUTION, ver);
     }
 
     private String getToolsDirPath(String toolsDir, String rel, boolean checkFile)
@@ -470,7 +476,11 @@ public class PipelineJobServiceImpl extends PipelineJobService
         // Make string replacements
         exeRel = getVersionedPath(exeRel, packageName, ver);
 
-        if (new File(exeRel).isAbsolute())
+        // Can't just ask java.io.File.isAbsolute(), because if the web server is running on a different OS from
+        // where the job will be running, we won't decide correctly when seeing if the task needs to run.
+        // Instead, check if it will be an absolute path on either Windows (with a drive letter followed by a colon)
+        // or *nix.
+        if (exeRel.charAt(0) == '/' || (exeRel.length() > 2 && exeRel.charAt(1) == ':'))
         {
             return exeRel;
         }
@@ -544,5 +554,48 @@ public class PipelineJobServiceImpl extends PipelineJobService
     public LocationType getLocationType()
     {
         return _locationType;
+    }
+
+    public boolean isPrependVersionWithDot()
+    {
+        return _prependVersionWithDot;
+    }
+
+    public void setPrependVersionWithDot(boolean prependVersionWithDot)
+    {
+        _prependVersionWithDot = prependVersionWithDot;
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testVersionSubstitution() throws FileNotFoundException
+        {
+            PipelineJobServiceImpl impl = new PipelineJobServiceImpl(null, false);
+            ConfigPropertiesImpl props = new ConfigPropertiesImpl();
+            ApplicationPropertiesImpl appProps = new ApplicationPropertiesImpl();
+            String homeDir = System.getProperty("user.home");
+            appProps.setToolsDirectory(homeDir);
+            impl.setAppProperties(appProps);
+            impl.setConfigProperties(props);
+
+            assertEquals(homeDir + File.separator + "percolator_v.1.04", impl.getExecutablePath("percolator_v" + VERSION_SUBSTITUTION, null, "percolator", "1.04", null));
+            assertEquals(homeDir + File.separator + "percolator", impl.getExecutablePath("percolator", null, "percolator", "1.04", null));
+
+            props.setSoftwarePackages(Collections.singletonMap("percolator", "percolator_v" + VERSION_SUBSTITUTION));
+            try
+            {
+                impl.getExecutablePath("percolator", null, "percolator", "1.04", null);
+            }
+            catch (FileNotFoundException e)
+            {
+                assertTrue("Message contains expected path", e.getMessage().contains(homeDir + File.separator + "percolator_v.1.04" + File.separator + "percolator"));
+                assertTrue("Message contains correct error", e.getMessage().contains("Parent directory does not exist."));
+            }
+
+            impl.setPrependVersionWithDot(false);
+            props.setSoftwarePackages(Collections.<String, String>emptyMap());
+            assertEquals(homeDir + File.separator + "percolator_v1.04", impl.getExecutablePath("percolator_v" + VERSION_SUBSTITUTION, null, "percolator", "1.04", null));
+        }
     }
 }

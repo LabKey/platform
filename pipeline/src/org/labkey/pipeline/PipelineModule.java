@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.pipeline.analysis.CommandTaskImpl;
 import org.labkey.pipeline.importer.FolderImportProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -61,6 +62,7 @@ import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.labkey.pipeline.status.StatusController;
 import org.labkey.pipeline.xstream.PathMapperImpl;
 import org.mule.MuleManager;
+import schemasMicrosoftComOfficeOffice.CTIdMap;
 
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
@@ -199,7 +201,9 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             PathMapperImpl.TestCase.class,
             GlobusClientPropertiesImpl.TestCase.class,
             GlobusJobWrapper.TestCase.class,
-            PipelineCommandTestCase.class
+            PipelineCommandTestCase.class,
+            PipelineJobServiceImpl.TestCase.class,
+            CommandTaskImpl.TestCase.class
         ));
     }
 

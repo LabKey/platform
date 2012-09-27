@@ -15,7 +15,11 @@
  */
 package org.labkey.pipeline.analysis;
 
+import junit.framework.Assert;
 import org.apache.commons.lang3.StringUtils;
+import org.jmock.Mockery;
+import org.jmock.lib.legacy.ClassImposteriser;
+import org.junit.Test;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.cmd.CommandTask;
 import org.labkey.api.pipeline.cmd.*;
@@ -25,7 +29,10 @@ import org.labkey.api.util.NetworkDrive;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * <code>CommandTask</code>
@@ -38,6 +45,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
     {
         private String _statusName = "COMMAND";
         private String _protocolActionName;
+        private Map<String, String> _environment = new HashMap<String, String>();
         private Map<String, TaskPath> _inputPaths = new HashMap<String, TaskPath>();
         private Map<String, TaskPath> _outputPaths = new HashMap<String, TaskPath>();
         private ListToCommandArgs _converter = new ListToCommandArgs();
@@ -74,6 +82,9 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
 
             if (settings.getOutputPaths() != null && settings.getOutputPaths().size() > 0)
                 _outputPaths = settings.getOutputPaths();
+
+            if (settings.getEnvironment() != null && !settings.getEnvironment().isEmpty())
+                _environment = settings.getEnvironment();
 
             if (settings.getConverter() != null && settings.getConverter().getConverters() != null)
                 _converter = settings.getConverter();    
@@ -343,6 +354,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             _wd.inputFile(getJobSupport().getParametersFile(), true);
 
             ProcessBuilder pb = new ProcessBuilder(_factory.toArgs(this));
+            applyEnvironment(pb);
 
             List<String> args = pb.command();
 
@@ -400,6 +412,55 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         finally
         {
             _wd = null;
+        }
+    }
+
+    private static final Pattern pat = Pattern.compile("\\$\\{[^}]*}");
+
+    public String variableSubstitution(String src, Map<String, String> map)
+    {
+        StringBuffer sb = new StringBuffer();
+        Matcher matcher = pat.matcher(src);
+        while (matcher.find())
+        {
+            String varName = src.substring(matcher.start() + 2, matcher.end() - 1);
+
+            String substValue = map.get(varName);
+            if (substValue == null)
+            {
+                //by default substitute "" for unmatched substitutions
+                substValue = "";
+            }
+
+            matcher.appendReplacement(sb, substValue);
+        }
+        matcher.appendTail(sb);
+
+        return sb.toString();
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testSubstitution()
+        {
+            Mockery context = new Mockery();
+            context.setImposteriser(ClassImposteriser.INSTANCE);
+            Factory factory = new Factory();
+            CommandTaskImpl impl = new CommandTaskImpl(context.mock(PipelineJob.class), factory);
+
+            assertEquals("/originalPath:/morePath", impl.variableSubstitution("${TEST}:/morePath", Collections.singletonMap("TEST", "/originalPath")));
+            assertEquals(":/morePath", impl.variableSubstitution("${TEST}:/morePath", Collections.<String, String>emptyMap()));
+            assertEquals("/originalPath:/morePath:/originalPath", impl.variableSubstitution("${TEST}:/morePath:${TEST}", Collections.singletonMap("TEST", "/originalPath")));
+        }
+    }
+
+    private void applyEnvironment(ProcessBuilder pb)
+    {
+        Map<String, String> originalEnvironment = new HashMap<String, String>(pb.environment());
+        for (Map.Entry<String, String> entry : _factory._environment.entrySet())
+        {
+            pb.environment().put(entry.getKey(), variableSubstitution(entry.getValue(), originalEnvironment));
         }
     }
 }

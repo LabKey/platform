@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment.pipeline;
 
+import org.apache.commons.io.FileUtils;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.exp.pipeline.XarGeneratorId;
@@ -592,7 +593,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
             fOut = new FileOutputStream(tempFile);
             exporter.dumpXML(fOut);
             fOut.close();
-            tempFile.renameTo(f);
+            FileUtils.moveFile(tempFile, f);
             fOut = null;
         }
         catch (ExperimentException e)
