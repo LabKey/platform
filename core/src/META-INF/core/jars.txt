@@ -17,7 +17,7 @@ commons-logging-1.1.1.jar|Commons Logging|1.1.1|{link:Apache|http://jakarta.apac
 commons-net-3.1.jar|Commons Net|3.1|{link:Apache|http://jakarta.apache.org/commons/net/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|FTPClient used to retrieve resources from other servers (e.g., GO annotations)
 commons-validator.jar|Commons Validator|1.0.4|{link:Apache|http://jakarta.apache.org/commons/validator/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Data validation and error messages
 core-renderer.jar|FlyingSaucer|R8|{link:FlyingSaucer|http://code.google.com/p/flying-saucer/}|{link:LGPL|http://www.gnu.org/copyleft/lesser.html}|kevink|XHTML/CSS rendering library
-ehcache-core-2.5.2.jar|Ehcache|2.5.2|{link:Terracotta|http://ehcache.org/documentation/overview.html}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Caching library
+ehcache-core-2.6.0.jar|Ehcache|2.6.0|{link:Terracotta|http://ehcache.org/documentation/overview.html}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Caching library
 gson-2.2.2.jar|Google Gson|2.2.2|{link:google-gson|http://code.google.com/p/google-gson}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Converts Java Objects to JSON and vice versa
 guava-r07.jar|Guava: Google Core Libraries for Java 1.5+|r07|{link:guava-libraries|http://code.google.com/p/guava-libraries/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|kevink|Collections Library
 gwt-dnd-3.1.2.jar|Drag-and-Drop Library for Google Web-Toolkit|3.1.2|{link:gwt-dnd|http://code.google.com/p/gwt-dnd/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Library to make it easier to add drag-and-drop to GWT
