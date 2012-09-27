@@ -2011,8 +2011,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
     getDefaultPointClickFn: function() {
         return "function (data, measureInfo, clickEvent) {\n"
             + "   // use LABKEY.ActionURL.buildURL to generate a link to a different controller/action within LabKey server\n"
-            + "   var ptidHref = LABKEY.ActionURL.buildURL('study', 'participant', LABKEY.container.path, \n"
-            + "                      {participantId: data['ParticipantId'].value});\n"
             + "   var queryHref = LABKEY.ActionURL.buildURL('query', 'executeQuery', LABKEY.container.path, \n"
             + "                      {schemaName: measureInfo[\"schemaName\"], \"query.queryName\": measureInfo[\"queryName\"]});\n\n"
             + "   // display an Ext message box with some information from the function parameters\n"
@@ -2023,7 +2021,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             + "       + '<br/>' + measureInfo[\"yAxis\"] + ': ' + (data[measureInfo[\"yAxis\"]].displayValue ? data[measureInfo[\"yAxis\"]].displayValue : data[measureInfo[\"yAxis\"]].value)\n"
             + "   );\n\n"
             + "   // you could also directly navigate away from the chart using window.location\n"
-            + "   // window.location = ptidHref;\n"
+            + "   // window.location = queryHref;\n"
             + "}";
     },
 
@@ -2033,9 +2031,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             + '<ul style="margin-left:20px;">'
             + '<li><b>data:</b> the set of data values for the selected data point. Example: </li>'
             + '<div style="margin-left: 40px;">{</div>'
-            + '<div style="margin-left: 50px;">ParticipantId: {value: "123456789"},<br/>YAxisMeasure: {displayValue: "250", value: 250},<br/>XAxisMeasure: {displayValue: "0.45", value: 0.45000},<br/>ColorMeasure: {value: "Color Value 1"},<br/>PointMeasure: {value: "Point Value 1"}</div>'
+            + '<div style="margin-left: 50px;">YAxisMeasure: {displayValue: "250", value: 250},<br/>XAxisMeasure: {displayValue: "0.45", value: 0.45000},<br/>ColorMeasure: {value: "Color Value 1"},<br/>PointMeasure: {value: "Point Value 1"}</div>'
             + '<div style="margin-left: 40px;">}</div>'
-            + '<li><b>measureInfo:</b> the schema name, query name, and measure names selected for the plot</li>'
+            + '<li><b>measureInfo:</b> the schema name, query name, and measure names selected for the plot. Example:</li>'
             + '<div style="margin-left: 40px;">{</div>'
             + '<div style="margin-left: 50px;">schemaName: "study",<br/>queryName: "Dataset1",<br/>yAxis: "YAxisMeasure",<br/>xAxis: "XAxisMeasure",<br/>colorName: "ColorMeasure",<br/>pointName: "PointMeasure"</div>'
             + '<div style="margin-left: 40px;">}</div>'
