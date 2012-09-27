@@ -15,7 +15,7 @@ var dataUrlFieldName = 'viewDataUrl';
                                     // schema, query, view, column, folder, rootFolder, folderTypes
 var initialValues = new Array();        // TODO: Select these values in combos
 
-function populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includeSchema, columnCombo)
+function populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includeSchema, columnCombo, folderCombo)
 {
     var schemas;
 
@@ -43,7 +43,8 @@ function populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includ
             columnCombo.clearValue();
         LABKEY.Query.getQueries({
             schemaName: record.data[record.fields.first().name],
-            successCallback: function(details) { populateQueries(schemaCombo, queryCombo, viewCombo, details, columnCombo); }
+            containerPath: folderCombo.getValue(),
+            successCallback: function(details) { populateQueries(schemaCombo, queryCombo, viewCombo, details, columnCombo, folderCombo); }
         });
     });
 
@@ -62,7 +63,7 @@ function populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includ
     }
 }
 
-function populateQueries(schemaCombo, queryCombo, viewCombo, queriesInfo, columnCombo)
+function populateQueries(schemaCombo, queryCombo, viewCombo, queriesInfo, columnCombo, folderCombo)
 {
     var records = [];
     for (var i = 0; i < queriesInfo.queries.length; i++)
@@ -81,14 +82,16 @@ function populateQueries(schemaCombo, queryCombo, viewCombo, queriesInfo, column
         var queryName = record.data[record.fields.first().name];
         var schemaName = schemaCombo.getValue();
         LABKEY.Query.getQueryViews({
+            containerPath: folderCombo.getValue(),
             schemaName: schemaName,
             queryName: queryName,
             successCallback: function(details)
             {
-                populateViews(schemaCombo, queryCombo, viewCombo, details, columnCombo);
+                populateViews(schemaCombo, queryCombo, viewCombo, details, columnCombo, folderCombo);
                 if (columnCombo)
                 {
                     LABKEY.Query.getQueryDetails({
+                        containerPath: folderCombo.getValue(),
                         schemaName: schemaName,
                         queryName: queryName,
                         initializeMissingView: true,
@@ -116,7 +119,7 @@ function populateQueries(schemaCombo, queryCombo, viewCombo, queriesInfo, column
 
 var defaultViewLabel = "[default view]";
 
-function populateViews(schemaCombo, queryCombo, viewCombo, queryViews, columnCombo)
+function populateViews(schemaCombo, queryCombo, viewCombo, queryViews, columnCombo, folderCombo)
 {
     var records = [[defaultViewLabel]];
 
@@ -136,6 +139,7 @@ function populateViews(schemaCombo, queryCombo, viewCombo, queryViews, columnCom
         {
             columnCombo.clearValue();
             LABKEY.Query.getQueryDetails({
+                containerPath: folderCombo.getValue(),
                 schemaName: schemaCombo.getValue(),
                 queryName: queryCombo.getValue(),
                 initializeMissingView: true,
@@ -518,7 +522,7 @@ function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue
     var viewName = "";
     var columnName = "";
     var folderName = "";
-    var urlTop = "";
+    var url = "";
     var urlBottom = "";
     var isChoiceListQuery = true;
     var includeAllDescendants = true;
@@ -535,8 +539,7 @@ function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue
         viewName = currentValue.viewName;
         columnName = currentValue.columnName;
         folderName = currentValue.folderName;
-        urlTop = currentValue.urlTop;
-        urlBottom = currentValue.urlBottom;
+        url = currentValue.url;
         isChoiceListQuery = currentValue.choiceListQuery;
         includeAllDescendants = currentValue.includeAllDescendants;
         rootFolder = currentValue.rootFolder;
@@ -573,7 +576,7 @@ function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue
     var urlField = new Ext.form.TextField({
         name: 'url',
         fieldLabel: 'URL',
-        value: urlTop,
+        value: url,
         width : 380
     });
 
@@ -688,7 +691,7 @@ function customizeMenu(submitFunction, cancelFunction, renderToDiv, currentValue
                     folderName: folderCombo.getValue(),
                     columnName: columnCombo.getValue(),
                     title: titleField.getValue(),
-                    urlTop: urlField.getValue(),
+                    url: urlField.getValue(),
                     choiceListQuery: isChoiceListQuery,
                     rootFolder: rootFolderCombo.getValue(),
                     folderTypes: folderTypesCombo.getValue(),
