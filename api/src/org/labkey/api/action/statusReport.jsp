@@ -30,9 +30,7 @@
     var offset = 0;
     var baseURL = <%=q(url.toString() + "offset=")%>;
 
-    Ext.onReady(function(){
-        makeRequest();
-    });
+    Ext.onReady(makeRequest);
 
     function makeRequest()
     {
@@ -40,7 +38,7 @@
             url: baseURL + offset,
             method: 'POST',
             success: LABKEY.Utils.getCallbackWrapper(appendStatus),
-            failure: null
+            failure: function(){setTimeout(makeRequest, 1000)}
         });
     }
 
