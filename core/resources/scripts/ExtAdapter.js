@@ -33,6 +33,8 @@ exports.Adapter = {
 
     isDefined: Ext.isDefined,
 
+    isEmpty: Ext.isEmpty,
+
     isFunction: Ext.isFunction,
 
     isGecko: Ext.isGecko,
