@@ -415,15 +415,29 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                         String urlBase = form.getUrl();
                         if (urlBase != null && !urlBase.contentEquals(""))
                             columnInfo.setURL(StringExpressionFactory.createURL(form.getUrl()));
-                        DataColumn dataColumn = new DataColumn(columnInfo, false);
+                        DataColumn dataColumn = new DataColumn(columnInfo, false)
+                        {
+                            @Override           // so we can use DetailsURL if no other URL can be used
+                            protected String renderURLorValueURL(RenderContext renderContext)
+                            {
+                                String url = super.renderURLorValueURL(renderContext);
+                                if (null == url)
+                                {
+                                    StringExpression expr = getColumnInfo().getParentTable().getDetailsURL(null, renderContext.getContainer());
+                                    if (null != expr)
+                                        url = expr.eval(renderContext);
+                                }
+                                return url;
+                            }
+                        };
 
                         RenderContext renderContext = new RenderContext(actualContext);
-                        Results results = getResults();
-                        renderContext.setResults(results);
-                        ResultSet rs = results.getResultSet();
-                        ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
+                        Results results = getResults(ShowRows.PAGINATED);
                         try
                         {
+                            renderContext.setResults(results);
+                            ResultSet rs = results.getResultSet();
+                            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
                             while (rs.next())
                             {
                                 out.write("<tr><td>");
@@ -477,7 +491,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     private WebPartView createMenuFolderView(final ViewContext context, String title, final CustomizeMenuForm form)
     {
-        Container rootFolder = ContainerManager.getForPath(form.getRootFolder());
+        // If rootPath is "", then use current context's container
+        String rootPath = form.getRootFolder();
+        Container rootFolder = (0 == rootPath.compareTo("")) ? context.getContainer() : ContainerManager.getForPath(rootPath);
         final User user = context.getUser();
         List<Container> containersTemp = null;
         if (form.isIncludeAllDescendants())
