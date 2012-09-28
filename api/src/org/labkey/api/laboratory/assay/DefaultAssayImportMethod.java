@@ -59,11 +59,6 @@ public class DefaultAssayImportMethod implements AssayImportMethod
         return Collections.emptyList();
     }
 
-    public List<String> getPromotedResultFields()
-    {
-        return Collections.emptyList();
-    }
-
     public boolean hideTemplateDownload()
     {
         return false;
@@ -113,13 +108,16 @@ public class DefaultAssayImportMethod implements AssayImportMethod
         meta.put("Run", runMeta);
 
         JSONObject resultsMeta = new JSONObject();
-        resultsMeta.put("sourceMaterial", new JSONObject().put("value", "Plasma"));
-        resultsMeta.put("sampleType", new JSONObject().put("value", "vRNA"));
         resultsMeta.put("sampleId", new JSONObject().put("lookups", false));
         resultsMeta.put("subjectId", new JSONObject().put("lookups", false));
         meta.put("Results", resultsMeta);
 
         return meta;
+    }
+
+    protected JSONObject getJsonObject(JSONObject parent, String key)
+    {
+        return parent.containsKey(key) ? parent.getJSONObject(key): new JSONObject();
     }
 
     public String getPreviewPanelClass()
@@ -133,7 +131,6 @@ public class DefaultAssayImportMethod implements AssayImportMethod
         json.put("name", getName());
         json.put("label", getLabel());
         json.put("additionalFields", getAdditionalFields());
-        json.put("promotedResultFields", getPromotedResultFields());
         json.put("hideTemplateDownload", hideTemplateDownload());
         json.put("tooltip", getTooltip());
         json.put("enterResultsInGrid", doEnterResultsInGrid());

@@ -45,11 +45,6 @@ public interface AssayImportMethod
     abstract public List<String> getAdditionalFields();
 
     /**
-     * An array of result field names that will be displayed below the runs section, and will not appear in the excel template.
-     */
-    abstract public List<String> getPromotedResultFields();
-
-    /**
      * If true, no link to download a template will appear.  Defaults to false
      * @return
      */
@@ -90,8 +85,16 @@ public interface AssayImportMethod
      */
     abstract public JSONObject getMetadata(ViewContext ctx);
 
+    /**
+     * Serialized this import method to JSON, which is consumed by the client
+     * @return
+     */
     abstract public JSONObject toJson(ViewContext ctx);
 
+    /**
+     * Returns the AssayParser used to process data imported through this pathway.
+     * @return
+     */
     abstract public AssayParser getFileParser(Container c, User u, int assayId, JSONObject formData);
 
 }
