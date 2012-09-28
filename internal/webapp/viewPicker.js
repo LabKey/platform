@@ -43,7 +43,7 @@ function populateSchemas(schemaCombo, queryCombo, viewCombo, schemasInfo, includ
             columnCombo.clearValue();
         LABKEY.Query.getQueries({
             schemaName: record.data[record.fields.first().name],
-            containerPath: folderCombo.getValue(),
+            containerPath: folderCombo ? folderCombo.getValue() : LABKEY.Security.currentContainer.path,
             successCallback: function(details) { populateQueries(schemaCombo, queryCombo, viewCombo, details, columnCombo, folderCombo); }
         });
     });
@@ -82,7 +82,7 @@ function populateQueries(schemaCombo, queryCombo, viewCombo, queriesInfo, column
         var queryName = record.data[record.fields.first().name];
         var schemaName = schemaCombo.getValue();
         LABKEY.Query.getQueryViews({
-            containerPath: folderCombo.getValue(),
+            containerPath: folderCombo ? folderCombo.getValue() : LABKEY.Security.currentContainer.path,
             schemaName: schemaName,
             queryName: queryName,
             successCallback: function(details)
@@ -91,7 +91,7 @@ function populateQueries(schemaCombo, queryCombo, viewCombo, queriesInfo, column
                 if (columnCombo)
                 {
                     LABKEY.Query.getQueryDetails({
-                        containerPath: folderCombo.getValue(),
+                        containerPath: folderCombo ? folderCombo.getValue() : LABKEY.Security.currentContainer.path,
                         schemaName: schemaName,
                         queryName: queryName,
                         initializeMissingView: true,
@@ -139,7 +139,7 @@ function populateViews(schemaCombo, queryCombo, viewCombo, queryViews, columnCom
         {
             columnCombo.clearValue();
             LABKEY.Query.getQueryDetails({
-                containerPath: folderCombo.getValue(),
+                containerPath: folderCombo ? folderCombo.getValue() : LABKEY.Security.currentContainer.path,
                 schemaName: schemaCombo.getValue(),
                 queryName: queryCombo.getValue(),
                 initializeMissingView: true,
