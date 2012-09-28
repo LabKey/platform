@@ -179,8 +179,11 @@ public class FlagColumnRenderer extends DataColumn
     protected Object getInputValue(RenderContext ctx)
     {
         FlagColumn displayField = (FlagColumn) getColumnInfo().getDisplayField();
-        String comment = (String) displayField.getValue(ctx);
-        return comment;
+
+        if(null != displayField)
+            return displayField.getValue(ctx);
+
+        return displayField;
     }
 
 }

@@ -36,7 +36,7 @@ public enum PropertyType
     xsdDateTime("http://www.w3.org/2001/XMLSchema#dateTime", true, "DateTime", "TIMESTAMP", null, "date"),
     expFileLink("http://cpas.fhcrc.org/exp/xml#fileLink", false, "File", "CLOB"),
     expAttachment("http://www.labkey.org/exp/xml#attachment", false, "Attachment", "VARCHAR"),
-    expFlag("http://www.labkey.org/exp/xml#flag", false, "Flag", "VARCHAR");
+    expFlag("http://www.labkey.org/exp/xml#flag", false, "Flag (String)", "VARCHAR");
 
     public static final String PARTICIPANT_CONCEPT_URI = "http://cpas.labkey.com/Study#ParticipantId";
 

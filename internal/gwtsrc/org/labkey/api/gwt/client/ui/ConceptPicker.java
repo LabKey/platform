@@ -601,7 +601,7 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
 
     // this is really just a string with a special display column,
     // so I'm just set a special concept type, and using xsdString for base type
-    public static final ConceptType flagType = new BaseConceptType(PropertyType.xsdString.toString(), "Flag", PropertyType.expFlag.getURI());
+    public static final ConceptType flagType = new BaseConceptType(PropertyType.xsdString.toString(), "Flag (String)", PropertyType.expFlag.getURI());
 
 
     static ConceptType fromPropertyDescriptor(GWTPropertyDescriptor pd)
@@ -630,6 +630,8 @@ public class ConceptPicker extends TriggerField<ConceptPicker.ConceptType>
             return subjectType;
         if ("user".equals(str))
             return userType;
+        if ("flag".equals(str))
+            return flagType;
 
         int period = str.indexOf(".");
         if (0 < period && period < str.length()-1)
