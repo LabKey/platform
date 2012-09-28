@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.assay;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.AbstractFileDisplayColumn;
@@ -25,8 +26,10 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryParam;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,22 +43,43 @@ import java.util.Set;
 */
 public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
 {
+    private FieldKey _pkFieldKey;
+
     private FieldKey _objectURIFieldKey;
 
-    public FileLinkDisplayColumn(ColumnInfo col, PropertyDescriptor pd, Container container, FieldKey objectURIFieldKey)
+    /** Use schemaName/queryName and pk FieldKey value to resolve File in CoreController.DownloadFileLinkAction. */
+    public FileLinkDisplayColumn(ColumnInfo col, PropertyDescriptor pd, Container container, @NotNull String schemaName, @NotNull String queryName, @NotNull FieldKey pkFieldKey)
+    {
+        super(col);
+
+        _pkFieldKey = pkFieldKey;
+
+        ActionURL actionURL = PageFlowUtil.urlProvider(CoreUrls.class).getDownloadFileLinkBaseURL(container, pd);
+        actionURL.addParameter(QueryParam.schemaName, schemaName);
+        actionURL.addParameter(QueryParam.queryName, queryName);
+        DetailsURL url = new DetailsURL(actionURL, "pk", pkFieldKey);
+        setURLExpression(url);
+    }
+
+    /** Use LSID FieldKey value as ObjectURI to resolve File in CoreController.DownloadFileLinkAction. */
+    public FileLinkDisplayColumn(ColumnInfo col, PropertyDescriptor pd, Container container, @NotNull FieldKey objectURIFieldKey)
     {
         super(col);
 
         _objectURIFieldKey = objectURIFieldKey;
 
-        setURLExpression(new DetailsURL(PageFlowUtil.urlProvider(CoreUrls.class).getDownloadFileLinkBaseURL(container, pd), "objectURI", objectURIFieldKey));
+        DetailsURL url = new DetailsURL(PageFlowUtil.urlProvider(CoreUrls.class).getDownloadFileLinkBaseURL(container, pd), "objectURI", objectURIFieldKey);
+        setURLExpression(url);
     }
 
     @Override
     public void addQueryFieldKeys(Set<FieldKey> keys)
     {
         super.addQueryFieldKeys(keys);
-        keys.add(_objectURIFieldKey);
+        if (_pkFieldKey != null)
+            keys.add(_pkFieldKey);
+        if (_objectURIFieldKey != null)
+            keys.add(_objectURIFieldKey);
     }
 
     @Override

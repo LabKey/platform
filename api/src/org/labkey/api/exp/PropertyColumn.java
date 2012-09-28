@@ -19,6 +19,7 @@ import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.FileLinkDisplayColumn;
@@ -59,24 +60,22 @@ public class PropertyColumn extends LookupColumn
         _pd = pd;
         _container = container;
         
-        copyAttributes(user, this, pd, _container);
+        copyAttributes(user, this, pd, _container, lsidColumn.getFieldKey());
         setSqlTypeName(getPropertySqlType(pd,OntologyManager.getSqlDialect()));
-
-        // Swap out the renderer for file properties
-        if (pd.getPropertyType() == PropertyType.FILE_LINK)
-        {
-            setDisplayColumnFactory(new DisplayColumnFactory()
-            {
-                public DisplayColumn createRenderer(ColumnInfo colInfo)
-                {
-                    return new FileLinkDisplayColumn(colInfo, pd, container, lsidColumn.getFieldKey());
-                }
-            });
-        }
     }
 
 
-    public static void copyAttributes(User user, ColumnInfo to, PropertyDescriptor pd, Container container)
+    public static void copyAttributes(User user, ColumnInfo to, PropertyDescriptor pd, Container container, FieldKey lsidColumnFieldKey)
+    {
+        copyAttributes(user, to, pd, container, null, null, null, lsidColumnFieldKey);
+    }
+
+    public static void copyAttributes(User user, ColumnInfo to, PropertyDescriptor pd, Container container, String schemaName, String queryName, FieldKey pkFieldKey)
+    {
+        copyAttributes(user, to, pd, container, schemaName, queryName, pkFieldKey, null);
+    }
+
+    private static void copyAttributes(User user, ColumnInfo to, final PropertyDescriptor pd, final Container container, final String schemaName, final String queryName, final FieldKey pkFieldKey, final FieldKey lsidColumnFieldKey)
     {
         // ColumnRenderProperties
         pd.copyTo(to);
@@ -93,6 +92,7 @@ public class PropertyColumn extends LookupColumn
         to.setDescription(description);
         to.setLabel(pd.getLabel() == null ? ColumnInfo.labelFromName(pd.getName()) : pd.getLabel());
 
+        // UNDONE: Move AttachmentDisplayColumn to API and wire it up here.
         if (pd.getPropertyType() == PropertyType.MULTI_LINE)
         {
             to.setDisplayColumnFactory(new DisplayColumnFactory() {
@@ -103,6 +103,23 @@ public class PropertyColumn extends LookupColumn
                     return dc;
                 }
             });
+        }
+        else if (pd.getPropertyType() == PropertyType.FILE_LINK)
+        {
+            if ((schemaName != null && queryName != null && pkFieldKey != null) || lsidColumnFieldKey != null)
+            {
+                // Swap out the renderer for file properties
+                to.setDisplayColumnFactory(new DisplayColumnFactory()
+                {
+                    public DisplayColumn createRenderer(ColumnInfo colInfo)
+                    {
+                        if (schemaName != null && queryName != null && pkFieldKey != null)
+                            return new FileLinkDisplayColumn(colInfo, pd, container, schemaName, queryName, pkFieldKey);
+                        else
+                            return new FileLinkDisplayColumn(colInfo, pd, container, lsidColumnFieldKey);
+                    }
+                });
+            }
         }
 
         if (pd.getLookupSchema() != null && pd.getLookupQuery() != null && user != null)

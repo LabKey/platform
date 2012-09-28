@@ -494,7 +494,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
         if (resolverTypes != null && resolverTypes.size() > 0)
         {
             DomainProperty resolverProperty = addProperty(domain, PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME, PARTICIPANT_VISIT_RESOLVER_PROPERTY_CAPTION, PropertyType.STRING);
-            resolverProperty.setRequired(true);
             resolverProperty.setHidden(true);
         }
 
@@ -839,7 +838,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
     {
         Lsid domainLsid = new Lsid(domain.getTypeURI());
         return domainLsid.getNamespacePrefix().equals(ExpProtocol.ASSAY_DOMAIN_BATCH) ||
-                domainLsid.getNamespacePrefix().equals(ExpProtocol.ASSAY_DOMAIN_RUN);
+                domainLsid.getNamespacePrefix().equals(ExpProtocol.ASSAY_DOMAIN_RUN) ||
+                domainLsid.getNamespacePrefix().equals(ExpProtocol.ASSAY_DOMAIN_DATA);
     }
 
     // UNDONE: also look at result row for TargetStudy

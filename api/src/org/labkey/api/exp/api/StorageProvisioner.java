@@ -495,7 +495,7 @@ public class StorageProvisioner
                 // The columns coming back from JDBC metadata aren't necessarily in the same order that the domain
                 // wants them based on its current property order
                 ti.setColumnIndex(c, index++);
-                PropertyColumn.copyAttributes(null, c, p.getPropertyDescriptor(), p.getContainer());
+                PropertyColumn.copyAttributes(null, c, p.getPropertyDescriptor(), p.getContainer(), null);
 
                 if (p.isMvEnabled())
                 {

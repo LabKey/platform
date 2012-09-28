@@ -23,6 +23,8 @@ import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.DataLoaderSettings;
 import org.labkey.api.qc.ValidationDataHandler;
 import org.labkey.api.query.ValidationException;
@@ -152,7 +154,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 }
             }
 
-            Set<ExpMaterial> inputMaterials = checkData(dataDomain, rawData, resolver);
+            Set<ExpMaterial> inputMaterials = checkData(container, dataDomain, rawData, resolver);
 
             List<Map<String, Object>> fileData = convertPropertyNamesToURIs(rawData, dataDomain);
 
@@ -283,7 +285,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     /**
      * @return the set of materials that are inputs to this run
      */
-    private Set<ExpMaterial> checkData(Domain dataDomain, List<Map<String, Object>> rawData, ParticipantVisitResolver resolver) throws IOException, ValidationException
+    private Set<ExpMaterial> checkData(Container container, Domain dataDomain, List<Map<String, Object>> rawData, ParticipantVisitResolver resolver) throws IOException, ValidationException
     {
         List<String> missing = new ArrayList<String>();
         List<String> unexpected = new ArrayList<String>();
@@ -428,6 +430,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         targetStudy = study != null ? study.getContainer() : null;
                     }
                 }
+
                 boolean valueMissing;
                 if (o == null)
                 {
@@ -454,6 +457,19 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 {
                     valueMissing = false;
                 }
+
+                // UNDONE: Move this check into OntologyManager.insertTabDelimeted
+                // For security reasons, make sure the user hasn't tried to reference a file that's not under
+                // the pipeline root. Otherwise, they could get access to any file on the server
+                if (o instanceof File)
+                {
+                    PipeRoot root = PipelineService.get().findPipelineRoot(container);
+                    if (root == null || !root.isUnderRoot((File)o))
+                    {
+                        throw new ValidationException("Cannot reference file " + o + " from container " + container);
+                    }
+                }
+
                 if (pd.isRequired() && valueMissing && !missingValues.contains(pd.getName()))
                 {
                     missingValues.add(pd.getName());

@@ -33,6 +33,8 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.etl.TableInsertDataIterator;
+import org.labkey.api.exp.PropertyColumn;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -122,11 +124,9 @@ public class AssayResultTable extends FilteredTable implements UpdateableTableIn
                 if (domainProperty != null)
                 {
                     col.setName(domainProperty.getName());
-                    domainProperty.getPropertyDescriptor().copyTo(col);
-                    if (domainProperty.getPropertyDescriptor().getLookupQuery() != null)
-                    {
-                        col.setFk(new PdLookupForeignKey(_schema.getUser(), domainProperty.getPropertyDescriptor(), schema.getContainer()));
-                    }
+                    PropertyDescriptor pd = domainProperty.getPropertyDescriptor();
+                    FieldKey pkFieldKey = new FieldKey(null, AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME);
+                    PropertyColumn.copyAttributes(_schema.getUser(), col, pd, schema.getContainer(), _schema.getName(), getPublicName(), pkFieldKey);
                 }
                 addColumn(col);
 

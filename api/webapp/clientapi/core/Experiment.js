@@ -403,6 +403,8 @@ LABKEY.Exp.Run.prototype.deleteRun = function(config)
  * Create an assay run and import results.
  *
  * @param {Number} config.assayId The assay protocol id.
+ * @param {String} [config.containerPath] The path to the container in which the assay run will be imported,
+ *       if different than the current container. If not supplied, the current container's path will be used.
  * @param {String} [config.name] The name of a run to create. If not provided, the run will be given the same name as the uploaded file or "[Untitled]".
  * @param {String} [config.comments] Run comments.
  * @param {Object} [config.properties] JSON formatted run properties.
@@ -516,7 +518,7 @@ LABKEY.Exp.Run.importRun = function (config)
         var failure = LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true);
 
         var xhr = new XMLHttpRequest();
-        xhr.open('POST', LABKEY.ActionURL.buildURL("assay", "importRun"));
+        xhr.open('POST', LABKEY.ActionURL.buildURL("assay", "importRun", config.containerPath));
         xhr.onprogress = function (evt) {
             if (evt.lengthComputable) {
                 var loaded = evt.loaded / evt.total;
@@ -600,7 +602,7 @@ LABKEY.Exp.Run.importRun = function (config)
         }
 
         LABKEY.Ajax.request({
-            url: LABKEY.ActionURL.buildURL("assay", "importRun"),
+            url: LABKEY.ActionURL.buildURL("assay", "importRun", config.containerPath),
             isUpload: true,
             method: 'POST',
             params: values,
