@@ -39,21 +39,6 @@ public interface AssayImportMethod
     abstract public String getLabel();
 
     /**
-     * An array of fieldname from the batch domain that will be hidden
-     */
-    abstract public List<String> getSkippedBatchFields();
-
-    /**
-     * An array of fieldname from the runs domain that will be hidden
-     */
-    abstract public List<String> getSkippedRunFields();
-
-    /**
-     * An array of fieldname from the runs domain that will be hidden
-     */
-    abstract public List<String> getSkippedResultFields();
-
-    /**
      * An array of new fields to add to the form.  Each item must be an object with the properties, 'name', 'label' and 'domain'.
      * @return
      */

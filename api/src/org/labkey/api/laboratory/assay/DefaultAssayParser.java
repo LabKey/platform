@@ -209,6 +209,8 @@ public class DefaultAssayParser implements AssayParser
 
     public JSONObject getPreview(JSONObject json, File file, String fileName, ViewContext ctx) throws ValidationException, ExperimentException
     {
+        List<Map<String, Object>> rows = parseResults(json, file);
+
         JSONObject ret = new JSONObject();
         JSONArray batches = new JSONArray();
         JSONObject batch = new JSONObject();
@@ -217,7 +219,7 @@ public class DefaultAssayParser implements AssayParser
         JSONArray runs = new JSONArray();
         JSONObject run = new JSONObject();
         run.put("properties", json.get("Run"));
-        run.put("results", parseResults(json, file));
+        run.put("results", rows);
         runs.put(run);
         batch.put("runs", runs);
 

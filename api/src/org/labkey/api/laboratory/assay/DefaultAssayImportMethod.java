@@ -20,7 +20,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ViewContext;
 
+import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -50,21 +52,6 @@ public class DefaultAssayImportMethod implements AssayImportMethod
     public String getLabel()
     {
         return "Default Excel Upload";
-    }
-
-    public List<String> getSkippedBatchFields()
-    {
-        return Collections.emptyList();
-    }
-
-    public List<String> getSkippedRunFields()
-    {
-        return Collections.emptyList();
-    }
-
-    public List<String> getSkippedResultFields()
-    {
-        return Collections.emptyList();
     }
 
     public List<String> getAdditionalFields()
@@ -104,7 +91,35 @@ public class DefaultAssayImportMethod implements AssayImportMethod
 
     public JSONObject getMetadata(ViewContext ctx)
     {
-        return null;
+        JSONObject meta = new JSONObject();
+
+        JSONObject batchMeta = new JSONObject();
+        JSONObject importMethod = new JSONObject();
+        importMethod.put("getInitialValue", "function(panel){if(panel.selectedMethod) {return panel.selectedMethod.name;}}");
+        batchMeta.put("importMethod", importMethod);
+        meta.put("Batch", batchMeta);
+
+        JSONObject runMeta = new JSONObject();
+
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-mm-dd");
+        runMeta.put("Name", new JSONObject().put("value", ctx.getUser().getDisplayName(ctx.getUser()) + "_" + format.format(new Date())));
+
+        JSONObject runDate = new JSONObject();
+        runDate.put("getInitialValue", "function(){return new Date().format('Y-m-d');}");
+        runDate.put("extFormat", "Y-m-d");
+        runMeta.put("performedBy", new JSONObject().put("value", ctx.getUser().getDisplayName(ctx.getUser())));
+        runMeta.put("runDate", runDate);
+        runMeta.put("comments", new JSONObject().put("height", 100));
+        meta.put("Run", runMeta);
+
+        JSONObject resultsMeta = new JSONObject();
+        resultsMeta.put("sourceMaterial", new JSONObject().put("value", "Plasma"));
+        resultsMeta.put("sampleType", new JSONObject().put("value", "vRNA"));
+        resultsMeta.put("sampleId", new JSONObject().put("lookups", false));
+        resultsMeta.put("subjectId", new JSONObject().put("lookups", false));
+        meta.put("Results", resultsMeta);
+
+        return meta;
     }
 
     public String getPreviewPanelClass()
@@ -117,9 +132,6 @@ public class DefaultAssayImportMethod implements AssayImportMethod
         JSONObject json = new JSONObject();
         json.put("name", getName());
         json.put("label", getLabel());
-        json.put("skippedBatchFields", getSkippedBatchFields());
-        json.put("skippedRunFields", getSkippedRunFields());
-        json.put("skippedResultFields", getSkippedResultFields());
         json.put("additionalFields", getAdditionalFields());
         json.put("promotedResultFields", getPromotedResultFields());
         json.put("hideTemplateDownload", hideTemplateDownload());

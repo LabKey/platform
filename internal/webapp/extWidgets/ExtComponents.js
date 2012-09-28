@@ -8,113 +8,6 @@
 Ext4.namespace('LABKEY.ext4');
 
 
-Ext4.define('LABKEY.ext4.RemoteGroup', {
-    initGroup: function(field){
-        Ext4.apply(this, {
-            name: this.name || Ext4.id(),
-            //layout: 'checkboxgroup',
-            //autoHeight: true,
-            //storeLoaded: false,
-            items: [{
-                name: 'placeholder',
-                fieldLabel: 'Loading...'
-            }],
-           fieldRendererTpl : new Ext4.XTemplate('<tpl for=".">' +
-                '{[values["' + this.valueField + '"] ? values["' + this.displayField + '"] : "'+ (this.nullCaption ? this.nullCaption : '[none]') +'"]}' +
-                //allow a flag to display both display and value fields
-                '<tpl if="'+this.showValueInList+'">{[(values["' + this.valueField + '"] ? " ("+values["' + this.valueField + '"]+")" : "")]}</tpl>'+
-                '</tpl>'
-            ).compile()
-        });
-
-        //we need to test whether the store has been created
-        if(!this.store && this.queryName)
-            this.store = LABKEY.ext.Ext4Helper.simpleLookupStore(this);
-
-        if(!this.store){
-            console.log('RemoteGroup requires a store');
-            return;
-        }
-
-        if(this.store && !this.store.events)
-            this.store = Ext4.create(this.store, 'labkey-store');
-
-        if(!this.store || !this.store.model || !this.store.model.prototype.fields.getCount())
-            this.mon(this.store, 'load', this.onStoreLoad, this, {single: true});
-        else
-            this.onStoreLoad();
-    }
-
-    ,onStoreLoad : function(store, records, success) {
-        this.removeAll();
-        if(!success){
-            this.add('Error Loading Store');
-        }
-        else {
-            var toAdd = [];
-            var config;
-            this.store.each(function(record, idx){
-                config = {
-                    boxLabel: (this.tpl ? this.fieldRendererTpl.apply(record.data) : record.get(this.displayField)),
-                    inputValue: record.get(this.valueField),
-                    disabled: this.disabled,
-                    readOnly: this.readOnly || false
-                };
-
-                if(this instanceof Ext4.form.RadioGroup)
-                    config.name = this.name+'_radio';
-
-                toAdd.push(config);
-            }, this);
-            this.add(toAdd);
-        }
-    }
-});
-
-
-/* options:
-valueField: the inputValue of the checkbox
-displayField: the label of the checkbox
-store
-nullCaption
-showValueInList
-
- */
-Ext4.define('LABKEY.ext4.RemoteCheckboxGroup', {
-    extend: 'Ext.form.CheckboxGroup',
-    alias: 'widget.labkey-remotecheckboxgroup',
-    initComponent: function(){
-        this.initGroup(this);
-        this.callParent(arguments);
-    },
-    mixins: {
-        remotegroup: 'LABKEY.ext4.RemoteGroup'
-    }
-});
-
-
-/* options:
-valueField: the inputValue of the checkbox
-displayField: the label of the checkbox
-store
-nullCaption
-showValueInList
-
- */
-Ext4.define('LABKEY.ext4.RemoteRadioGroup', {
-    extend: 'Ext.form.RadioGroup',
-    alias: 'widget.labkey-remoteradiogroup',
-    initComponent: function(){
-        this.initGroup(this);
-        this.callParent(arguments);
-    },
-    mixins: {
-        remotegroup: 'LABKEY.ext4.RemoteGroup'
-    }
-});
-
-
-
 /**
  * This is a combobox containing operators as might be used in a search form.
  * @cfg {String} jsonType The jsonType for the field.  This determines the set of available filters
@@ -218,16 +111,19 @@ Ext4.define('LABKEY.ext.LinkButton', {
     renderTpl:
         '<em id="{id}-btnWrap" class="{splitCls}">' +
             '{linkPrefix}' +
+            //NOTE: IE7+ doesnt support block-level links, so <a> tag is nested
+            '<span id="{id}-btnInnerEl" class="{baseCls}-inner">' +
             '<a id="{id}-btnEl" role="link" ' +
                 '<tpl if="linkCls">class="{linkCls}"</tpl>' +
                 '<tpl if="href">href="{href}" </tpl>' +
                 '<tpl if="linkTarget">target="{linkTarget}" </tpl>' +
                 '<tpl if="tooltip">data-qtip="{tooltip}"</tpl>' +
                 '<tpl if="tabIndex"> tabIndex="{tabIndex}"</tpl>' +
-            '>' +
-            '<span id="{id}-btnInnerEl" class="{baseCls}-inner">{text}</span>' +
-            '<span id="{id}-btnIconEl" class="{baseCls}-icon"></span>' +
+                '>' +
+                '{text}' +
             '</a>' +
+            '</span>' +
+            '<span id="{id}-btnIconEl" class="{baseCls}-icon"></span>' +
             '{linkSuffix}' +
         '</em>'
 });

@@ -16,6 +16,7 @@
 package org.labkey.api.laboratory;
 
 import org.json.JSONObject;
+import org.labkey.api.data.TableCustomizer;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpRun;
@@ -65,4 +66,5 @@ abstract public class LaboratoryService
 
     abstract public AssayImportMethod getManualEntryImportMethod();
 
+    abstract public TableCustomizer getDefaultTableCustomizer();
 }
