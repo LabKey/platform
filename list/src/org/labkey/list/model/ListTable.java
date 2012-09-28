@@ -44,7 +44,6 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
@@ -134,18 +133,8 @@ public class ListTable extends FilteredTable implements UpdateableTableInfo
                 MVDisplayColumnFactory.addMvColumns(this, column, property, colObjectId, listDef.getContainer(), user);
             }
 
-            if (property.getPropertyDescriptor().getPropertyType() == PropertyType.MULTI_LINE)
-            {
-                column.setDisplayColumnFactory(new DisplayColumnFactory() {
-                    public DisplayColumn createRenderer(ColumnInfo colInfo)
-                    {
-                        DataColumn dc = new DataColumn(colInfo);
-                        dc.setPreserveNewlines(true);
-                        return dc;
-                    }
-                });
-            }
-            else if (property.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT)
+            // UNDONE: Move AttachmentDisplayColumn to API and attach in PropertyColumn.copyAttributes()
+            if (property.getPropertyDescriptor().getPropertyType() == PropertyType.ATTACHMENT)
             {
                 column.setDisplayColumnFactory(new DisplayColumnFactory() {
                     public DisplayColumn createRenderer(final ColumnInfo colInfo)

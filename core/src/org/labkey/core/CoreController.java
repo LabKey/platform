@@ -16,6 +16,7 @@
 
 package org.labkey.core;
 
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
@@ -36,11 +37,15 @@ import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.CacheableWriter;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerManager.ContainerParent;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.Results;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.ObjectProperty;
@@ -55,6 +60,10 @@ import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleProperty;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
@@ -331,46 +340,105 @@ public class CoreController extends SpringActionController
             {
                 throw new NotFoundException("No propertyId specified");
             }
-            OntologyObject obj = null;
-            if (form.getObjectId() != null)
-            {
-                obj = OntologyManager.getOntologyObject(form.getObjectId().intValue());
-            }
-            else if (form.getObjectURI() != null)
-            {
-                // Don't filter by container - we'll redirect to the correct container ourselves
-                obj = OntologyManager.getOntologyObject(null, form.getObjectURI());
-            }
-            if (obj == null)
-                throw new NotFoundException("No matching ontology object found");
-            if (!obj.getContainer().equals(getContainer()))
-            {
-                ActionURL correctedURL = getViewContext().getActionURL().clone();
-                Container objectContainer = obj.getContainer();
-                if (objectContainer == null)
-                    throw new NotFoundException();
-                correctedURL.setContainer(objectContainer);
-                throw new RedirectException(correctedURL);
-            }
-
             PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(form.getPropertyId().intValue());
             if (pd == null)
                 throw new NotFoundException();
 
-            Map<String, ObjectProperty> properties = OntologyManager.getPropertyObjects(obj.getContainer(), obj.getObjectURI());
-            ObjectProperty fileProperty = properties.get(pd.getPropertyURI());
-            if (fileProperty == null || fileProperty.getPropertyType() != PropertyType.FILE_LINK || fileProperty.getStringValue() == null)
-                throw new NotFoundException();
-            File file = new File(fileProperty.getStringValue());
+            if (pd.getPropertyType() != PropertyType.FILE_LINK)
+                throw new IllegalArgumentException("Property not file link type");
+
+            OntologyObject obj = null;
+            File file;
+            if (form.getObjectId() != null || form.getObjectURI() != null)
+            {
+                if (form.getObjectId() != null)
+                {
+                    obj = OntologyManager.getOntologyObject(form.getObjectId().intValue());
+                }
+                else if (form.getObjectURI() != null)
+                {
+                    // Don't filter by container - we'll redirect to the correct container ourselves
+                    obj = OntologyManager.getOntologyObject(null, form.getObjectURI());
+                }
+                if (obj == null)
+                    throw new NotFoundException("No matching ontology object found");
+
+                if (!obj.getContainer().equals(getContainer()))
+                {
+                    ActionURL correctedURL = getViewContext().getActionURL().clone();
+                    Container objectContainer = obj.getContainer();
+                    if (objectContainer == null)
+                        throw new NotFoundException();
+                    correctedURL.setContainer(objectContainer);
+                    throw new RedirectException(correctedURL);
+                }
+
+                Map<String, ObjectProperty> properties = OntologyManager.getPropertyObjects(obj.getContainer(), obj.getObjectURI());
+                ObjectProperty fileProperty = properties.get(pd.getPropertyURI());
+                if (fileProperty == null || fileProperty.getPropertyType() != PropertyType.FILE_LINK || fileProperty.getStringValue() == null)
+                    throw new NotFoundException();
+                file = new File(fileProperty.getStringValue());
+            }
+            else if (form.getSchemaName() != null && form.getQueryName() != null && form.getPk() != null)
+            {
+                UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName());
+                if (schema == null)
+                    throw new NotFoundException("Schema not found");
+
+                TableInfo table = schema.getTable(form.getQueryName(), false);
+                if (table == null)
+                    throw new NotFoundException("Query not found in schema");
+
+                List<ColumnInfo> pkCols = table.getPkColumns();
+                if (pkCols.size() != 1)
+                    throw new NotFoundException("Query must have only one pk column");
+                ColumnInfo pkCol = pkCols.get(0);
+
+                ColumnInfo col = table.getColumn(pd.getName());
+                if (col == null)
+                    throw new NotFoundException("PropertyColumn not found on table");
+
+                Object pkVal = ConvertUtils.convert(form.getPk(), pkCol.getJavaClass());
+                SimpleFilter filter = new SimpleFilter(pkCol.getFieldKey(), pkVal);
+                Results results = QueryService.get().select(table, Collections.singletonList(col), filter, null);
+                if (results.getSize() != 1 || !results.next())
+                    throw new NotFoundException("Row not found for primary key");
+
+                String filename = results.getString(col.getFieldKey());
+                if (filename == null)
+                    throw new NotFoundException();
+
+                file = new File(filename);
+            }
+            else
+            {
+                throw new IllegalArgumentException("objectURI or schemaName, queryName, and pk required.");
+            }
+
+            // For security reasons, make sure the user hasn't tried to download a file that's not under
+            // the pipeline root.  Otherwise, they could get access to any file on the server.
+            PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
+            if (root == null)
+                throw new NotFoundException("No pipeline root for container " + getContainer().getPath());
+
+            if (!root.hasPermission(getContainer(), getUser(), ReadPermission.class))
+                throw new UnauthorizedException();
+
+            if (!root.isUnderRoot(file))
+                throw new NotFoundException("Cannot download file that isn't under the pipeline root for container " + getContainer().getPath());
+
             if (!file.exists())
             {
-                Identifiable identifiable = LsidManager.get().getObject(obj.getObjectURI());
+                Identifiable identifiable = null;
+                if (obj != null)
+                    identifiable = LsidManager.get().getObject(obj.getObjectURI());
                 if (identifiable != null && identifiable.getName() != null)
                 {
                     throw new NotFoundException("The file '" + file.getName() + "' attached to the object '" + identifiable.getName() + "' cannot be found. It may have been deleted.");
                 }
                 throw new NotFoundException("File " + file.getPath() + " does not exist on the server file system. It may have been deleted.");
             }
+
             if (file.isDirectory())
                 ZipUtil.zipToStream(getViewContext().getResponse(), file, false);
             else
@@ -389,6 +457,9 @@ public class CoreController extends SpringActionController
         private Integer _propertyId;
         private Integer _objectId;
         private String _objectURI;
+        private String _schemaName;
+        private String _queryName;
+        private String _pk;
 
         public Integer getObjectId()
         {
@@ -418,6 +489,36 @@ public class CoreController extends SpringActionController
         public void setObjectURI(String objectURI)
         {
             _objectURI = objectURI;
+        }
+
+        public String getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            _schemaName = schemaName;
+        }
+
+        public String getQueryName()
+        {
+            return _queryName;
+        }
+
+        public void setQueryName(String queryName)
+        {
+            _queryName = queryName;
+        }
+
+        public String getPk()
+        {
+            return _pk;
+        }
+
+        public void setPk(String pk)
+        {
+            _pk = pk;
         }
     }
 
