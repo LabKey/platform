@@ -46,15 +46,22 @@
     boolean isAdmin = ctx.getUser().isAdministrator();
     boolean hasPermission;
 
+    Container target;
     String containerPath = (String)jsonProps.get("containerPath");
     if(containerPath == null || "".equals(containerPath))
     {
         hasPermission = true; //this means current container
+        target = ctx.getContainer();
     }
     else
     {
-        Container target = ContainerManager.getForPath(containerPath);
-        hasPermission = target.hasPermission(ctx.getUser(), ReadPermission.class);
+        target = ContainerManager.getForPath(containerPath);
+        if (target == null)
+        {
+            // Could also be an entityId
+            target = ContainerManager.getForId(containerPath);
+        }
+        hasPermission = target != null && target.hasPermission(ctx.getUser(), ReadPermission.class);
     }
 %>
 <div id='<%=renderTarget%>'></div>
@@ -65,6 +72,11 @@ Ext4.onReady(function(){
     var config = '<%=jsonProps%>';
     config = Ext4.decode(config);
     config.hideCreateButton = config.hideCreateButton === 'true';
+
+    if(<%=target == null%>){
+        Ext4.get('<%=renderTarget%>').update('The target container has been deleted.');
+        return;
+    }
 
     if(!<%=hasPermission%>){
         Ext4.get('<%=renderTarget%>').update('You do not have permission to view this folder');
