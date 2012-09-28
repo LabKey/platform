@@ -262,7 +262,7 @@ function populateFoldersWithTree(folder, records)
 
 function populateRootFolder(folderCombo, details)
 {
-    var records = [];
+    var records = [["[current folder]", ""]];
 
     var folders = details.containers;
     if (folders && folders.length > 0)

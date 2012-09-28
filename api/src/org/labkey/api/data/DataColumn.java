@@ -307,27 +307,7 @@ public class DataColumn extends DisplayColumn
 
         if (null != o)
         {
-            String url = renderURL(ctx);
-
-            if (url == null)
-            {
-                // See if the value is itself a URL
-                Object value = ctx.get(_displayColumn.getFieldKey());
-                if (value != null)
-                {
-                    String toString = value.toString();
-                    if (StringUtilsLabKey.startsWithURL(toString) &&
-                            !toString.contains(" ") &&
-                            !toString.contains("\n") &&
-                            !toString.contains("\r") &&
-                            !toString.contains("\t"))
-                    {
-                        // Could do more sophisticated URL extraction to try to pull out, but this is likely
-                        // to link most real URLs
-                        url = toString;
-                    }
-                }
-            }
+            String url = renderURLorValueURL(ctx);
 
             if (null != url)
             {
@@ -361,6 +341,31 @@ public class DataColumn extends DisplayColumn
             out.write("&nbsp;");
     }
 
+    protected String renderURLorValueURL(RenderContext ctx)
+    {
+        String url = renderURL(ctx);
+
+        if (url == null)
+        {
+            // See if the value is itself a URL
+            Object value = ctx.get(_displayColumn.getFieldKey());
+            if (value != null)
+            {
+                String toString = value.toString();
+                if (StringUtilsLabKey.startsWithURL(toString) &&
+                        !toString.contains(" ") &&
+                        !toString.contains("\n") &&
+                        !toString.contains("\r") &&
+                        !toString.contains("\t"))
+                {
+                    // Could do more sophisticated URL extraction to try to pull out, but this is likely
+                    // to link most real URLs
+                    url = toString;
+                }
+            }
+        }
+        return url;
+    }
     
     @Override
     public String renderURL(RenderContext ctx)
