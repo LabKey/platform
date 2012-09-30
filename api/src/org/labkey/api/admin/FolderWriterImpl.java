@@ -64,7 +64,7 @@ public class FolderWriterImpl extends BaseFolderWriter
             writer.initialize(ctx);
         }
 
-        // Call all the writers first -- this ensures that folder.xml is the last writer called.
+        // Call all the writers next -- this ensures that folder.xml is the last writer called.
         for (FolderWriter writer : _writers)
         {
             String text = writer.getSelectionText();

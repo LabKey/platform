@@ -142,7 +142,9 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
         context.setUser(user);
         context.setContainer(c);
         context.setActionURL(url);
-        context.setBindPropertyValues(url.getPropertyValues());
+
+        if (null != url)
+            context.setBindPropertyValues(url.getPropertyValues());
 
         HttpServletRequest request = AppProps.getInstance().createMockRequest();
         if (request instanceof MockHttpServletRequest)

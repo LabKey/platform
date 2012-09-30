@@ -96,7 +96,7 @@ public class MemoryVirtualFile extends AbstractVirtualFile
     @Override
     public void saveXmlBean(String filename, XmlObject doc) throws IOException
     {
-        _docMap.put(filename, doc);
+        _docMap.put(filename, doc);    // TODO: Shouldn't this validate before saving?  That would match the other VF impls
     }
 
     @Override

@@ -17,6 +17,7 @@
 package org.labkey.api.util;
 
 import org.apache.xmlbeans.XmlError;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 
@@ -29,10 +30,9 @@ public class XmlValidationException extends Exception
 {
     private final Collection<XmlError> _errorList;
 
-    public XmlValidationException(Collection<XmlError> errorList)
+    public XmlValidationException(Collection<XmlError> errorList, String schemaName, @Nullable String additionalMessage)
     {
-        // TODO: Provide a way to pass in the schema name and include in the message
-        super("Document does not conform to its XML schema");
+        super("Document does not conform to its XML schema, " + schemaName + (null != additionalMessage ? " (" + additionalMessage + ")" : ""));
         _errorList = errorList;
     }
 

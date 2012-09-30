@@ -38,7 +38,6 @@ public class FolderExportContext extends AbstractFolderContext
     private Set<String> _viewIds;
     private Set<String> _reportIds;
     private Set<Integer> _listIds;
-    private Set<Integer> _visitIds;
 
     public FolderExportContext(User user, Container c, Set<String> dataTypes, String format, Logger logger)
     {
@@ -85,16 +84,6 @@ public class FolderExportContext extends AbstractFolderContext
         FolderDocument doc = FolderDocument.Factory.newInstance();
         doc.addNewFolder();
         return doc;
-    }
-
-    public Set<Integer> getVisitIds()
-    {
-        return _visitIds;
-    }
-
-    public void setVisitIds(Integer[] visitIds)
-    {
-        _visitIds = new HashSet<Integer>(Arrays.asList(visitIds));
     }
 
     public Set<String> getReportIds()

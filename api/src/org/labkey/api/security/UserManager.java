@@ -60,7 +60,6 @@ public class UserManager
     private static final Map<Integer, Long> RECENT_USERS = new HashMap<Integer, Long>(100);
 
     private static final String USER_PREF_MAP = "UserPreferencesMap";
-    private static final String USER_REQUIRED_FIELDS = "UserInfoRequiredFields";
 
     public static final String USER_AUDIT_EVENT = "UserAuditEvent";
 
@@ -564,19 +563,6 @@ public class UserManager
         {
             clearUserList(userId);
         }
-    }
-
-    public static String getRequiredUserFields()
-    {
-        Map<String, String> map = getUserPreferences(false);
-        return map.get(USER_REQUIRED_FIELDS);
-    }
-
-    public static void setRequiredUserFields(String requiredFields) throws SQLException
-    {
-        Map<String, String> map = getUserPreferences(true);
-        map.put(USER_REQUIRED_FIELDS, requiredFields);
-        PropertyManager.saveProperties(map);
     }
 
     public static @NotNull Map<String, String> getUserPreferences(boolean writable)

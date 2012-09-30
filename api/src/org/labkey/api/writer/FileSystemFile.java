@@ -72,7 +72,7 @@ public class FileSystemFile extends AbstractVirtualFile
     {
         try
         {
-            XmlBeansUtil.validateXmlDocument(doc);
+            XmlBeansUtil.validateXmlDocument(doc, filename);
         }
         catch (XmlValidationException e)
         {

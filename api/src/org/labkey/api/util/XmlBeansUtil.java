@@ -16,6 +16,7 @@
 package org.labkey.api.util;
 
 import org.apache.xmlbeans.*;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
@@ -58,14 +59,21 @@ public class XmlBeansUtil
         return options;
     }
 
+    @Deprecated  // Use the version below, and pass in details (filename, etc.)
     public static void validateXmlDocument(XmlObject doc) throws XmlValidationException
     {
-        XmlOptions options = new XmlOptions();
+        validateXmlDocument(doc, null);
+    }
+
+    // Details can be filename, etc. to help admin narrow down the source of the problem
+    public static void validateXmlDocument(XmlObject doc, @Nullable String details) throws XmlValidationException
+    {
+        XmlOptions options = getDefaultParseOptions();
         Collection<XmlError> errorList = new LinkedList<XmlError>();
         options.setErrorListener(errorList);
 
         if (!doc.validate(options))
-            throw new XmlValidationException(errorList);
+            throw new XmlValidationException(errorList, doc.schemaType().toString(), details);
     }
 
     public static String getErrorMessage(XmlException ex)

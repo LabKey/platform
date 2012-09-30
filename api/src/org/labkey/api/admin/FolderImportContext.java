@@ -98,7 +98,7 @@ public class FolderImportContext extends AbstractFolderContext
         try
         {
             folderDoc = FolderDocument.Factory.parse(folderXml, XmlBeansUtil.getDefaultParseOptions());
-            XmlBeansUtil.validateXmlDocument(folderDoc);
+            XmlBeansUtil.validateXmlDocument(folderDoc, folderXml.getName());
         }
         catch (XmlException e)
         {
